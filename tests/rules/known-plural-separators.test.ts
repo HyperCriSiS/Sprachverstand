@@ -5,12 +5,15 @@ describe("knownPluralSeparatorsRule", () => {
   it("entfernt verbreitete Separatoren bei sicheren Pluralformen", () => {
     const result = knownPluralSeparatorsRule.apply(
       "Nutzer:innen, Mitarbeiter*innen, Schüler_innen, Bürger/innen, " +
-        "Lehrer·innen und Fahrer•innen"
+        "Lehrer·innen, Fahrer•innen, Entwickler.innen, " +
+        "US-Bürger’innen und Zuschauer‘innen"
     );
 
     expect(result).toEqual({
-      text: "Nutzer, Mitarbeiter, Schüler, Bürger, Lehrer und Fahrer",
-      replacements: 6
+      text:
+        "Nutzer, Mitarbeiter, Schüler, Bürger, Lehrer, Fahrer, " +
+        "Entwickler, US-Bürger und Zuschauer",
+      replacements: 9
     });
   });
 
