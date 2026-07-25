@@ -37,7 +37,9 @@ function regular(
   singular = stem,
   genitiveSingular?: string
 ): PersonForms {
-  return { stem, singular, genitiveSingular, plural };
+  return genitiveSingular === undefined
+    ? { stem, singular, plural }
+    : { stem, singular, genitiveSingular, plural };
 }
 
 const personForms: readonly PersonForms[] = [
