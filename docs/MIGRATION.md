@@ -19,6 +19,7 @@ Requests. Sie beeinflusst den ausgelieferten Code nicht.
 |---|---|---|---|
 | beide | Doppelpunkt, Stern, Unterstrich und Schrägstrich | neu implementiert | sichere unveränderte und explizit abgebildete Pluralformen |
 | beide | Binnen-I im Plural | neu implementiert | dasselbe geprüfte Plurallexikon wie bei Separatorformen |
+| gendersprache-korrigieren | Doppelnennungen | neu implementiert | nur bei lexikalisch identischer maskuliner Pluralform |
 | no-gender | #3 falsche Änderung von „gewinnen“ | Regressionstest | darf niemals verändert werden |
 | no-gender | #29 falsche Änderung von „ersinnen“ | Regressionstest | darf niemals verändert werden |
 | gendersprache-korrigieren | #14 falsche Änderung bei „Rot-Rot“ | Regressionstest | zentraler Negativkatalog |
@@ -29,11 +30,14 @@ Singuläre Binnen-I-Formen wie `NutzerIn` werden erst gemeinsam mit Artikeln,
 Pronomen und Kasuskontext umgesetzt. Eine isolierte Ersetzung würde beispielsweise
 `eine NutzerIn` fälschlich in `eine Nutzer` verwandeln.
 
+Doppelnennungen mit flektierter maskuliner Dativform, etwa `Ärztinnen und Ärzten`,
+bleiben zunächst unverändert. Dafür ist eine eigene Kasusregel erforderlich.
+
 ## Noch zu bewerten
 
 - weitere unregelmäßige Formen außerhalb des ersten geprüften Lexikons
 - singuläres Binnen-I samt Kontext
-- Doppelnennungen
+- flektierte Doppelnennungen und Dativplural
 - Pronomen und Artikel
 - Partizipialformen
 - neue Anführungszeichen- und Apostrophvarianten
