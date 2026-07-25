@@ -28,9 +28,8 @@ const excludedRoles = new Set([
   "spinbutton"
 ]);
 
-const compactUrlPattern =
-  /^(?:(?:https?|ftp|data):\/\/|www\.)\S+$/iu;
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
+const urlPattern = /(?:(?:https?|ftp|data):\/\/|www\.)\S+/iu;
+const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/u;
 const base64Pattern = /^(?:[A-Za-z0-9+/]{4}){12,}(?:==|=)?$/u;
 const longHexPattern = /^(?:0x)?[A-Fa-f0-9]{32,}$/u;
 const compactJsonPattern = /^(?:\{.*"[^"]+"\s*:.*\}|\[\s*\{.*\}\s*\])$/su;
@@ -79,7 +78,7 @@ export function isProbablyTechnicalText(input: string): boolean {
   }
 
   if (
-    compactUrlPattern.test(text) ||
+    urlPattern.test(text) ||
     emailPattern.test(text) ||
     base64Pattern.test(text) ||
     longHexPattern.test(text) ||
