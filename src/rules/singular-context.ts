@@ -41,12 +41,21 @@ function addDeterminer(
 
 function addPossessiveDeterminers(
   base: string,
-  inflectedBase = `${base}e`
+  inflectedBase = `${base}e`,
+  accusative = `${base}en`,
+  dative = `${base}em`,
+  genitiveMasculine = `${base}es`,
+  genitiveFeminine = `${base}er`
 ): void {
   addDeterminer(base, "e", base, "nominative");
-  addDeterminer(inflectedBase, "n", `${base}en`, "accusative");
-  addDeterminer(inflectedBase, "m", `${base}em`, "dative");
-  addDeterminer(`${base}es`, `${base}er`, `${base}es`, "genitive");
+  addDeterminer(inflectedBase, "n", accusative, "accusative");
+  addDeterminer(inflectedBase, "m", dative, "dative");
+  addDeterminer(
+    genitiveMasculine,
+    genitiveFeminine,
+    genitiveMasculine,
+    "genitive"
+  );
 }
 
 addDeterminer("der", "die", "der", "nominative", true);
@@ -79,7 +88,14 @@ addPossessiveDeterminers("dein");
 addPossessiveDeterminers("sein");
 addPossessiveDeterminers("ihr");
 addPossessiveDeterminers("unser");
-addPossessiveDeterminers("euer", "eure");
+addPossessiveDeterminers(
+  "euer",
+  "eure",
+  "euren",
+  "eurem",
+  "eures",
+  "eurer"
+);
 
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
