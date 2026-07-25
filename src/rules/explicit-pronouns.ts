@@ -35,8 +35,8 @@ addPair("seiner", "ihrer");
 
 const pairPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)(?![\p{L}\p{M}])/gu;
-const followingGenderedNounPattern =
-  /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘]in|In)(?![\p{L}\p{M}])/u;
+const followingGenderedTokenPattern =
+  /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In)(?![\p{L}\p{M}])/u;
 
 function applyTokenCase(source: string, replacement: string): string {
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
@@ -79,7 +79,7 @@ function transformExplicitPronouns(input: string): TransformResult {
       }
 
       const followingText = source.slice(offset + match.length);
-      if (followingGenderedNounPattern.test(followingText)) {
+      if (followingGenderedTokenPattern.test(followingText)) {
         return match;
       }
 
