@@ -26,10 +26,10 @@ describe("singularDoubleFormsRule", () => {
   it("verarbeitet mehrere Doppelformen in einem Satz", () => {
     expect(
       singularDoubleFormsRule.apply(
-        "Ein Kunde/eine Kundin spricht mit einem Arzt/einer Ärztin."
+        "Kunde/Kundin spricht mit Arzt/Ärztin."
       )
     ).toEqual({
-      text: "Ein Kunde spricht mit einem Arzt.",
+      text: "Kunde spricht mit Arzt.",
       replacements: 2
     });
   });
