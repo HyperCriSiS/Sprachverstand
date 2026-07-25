@@ -18,191 +18,74 @@ interface PersonForms {
 
 const locale = "de-DE";
 
+function weak(
+  stem: string,
+  singular = stem,
+  obliqueSingular = `${stem}en`
+): PersonForms {
+  return {
+    stem,
+    singular,
+    obliqueSingular,
+    plural: obliqueSingular
+  };
+}
+
+function regular(
+  stem: string,
+  plural: string,
+  singular = stem,
+  genitiveSingular?: string
+): PersonForms {
+  return { stem, singular, genitiveSingular, plural };
+}
+
 const personForms: readonly PersonForms[] = [
-  {
-    stem: "hochschulabsolvent",
-    singular: "hochschulabsolvent",
-    obliqueSingular: "hochschulabsolventen",
-    plural: "hochschulabsolventen"
-  },
-  {
-    stem: "interessent",
-    singular: "interessent",
-    obliqueSingular: "interessenten",
-    plural: "interessenten"
-  },
-  {
-    stem: "absolvent",
-    singular: "absolvent",
-    obliqueSingular: "absolventen",
-    plural: "absolventen"
-  },
-  {
-    stem: "doktorand",
-    singular: "doktorand",
-    obliqueSingular: "doktoranden",
-    plural: "doktoranden"
-  },
-  {
-    stem: "praktikant",
-    singular: "praktikant",
-    obliqueSingular: "praktikanten",
-    plural: "praktikanten"
-  },
-  {
-    stem: "präsident",
-    singular: "präsident",
-    obliqueSingular: "präsidenten",
-    plural: "präsidenten"
-  },
-  {
-    stem: "lieferant",
-    singular: "lieferant",
-    obliqueSingular: "lieferanten",
-    plural: "lieferanten"
-  },
-  { stem: "moderator", singular: "moderator", plural: "moderatoren" },
-  { stem: "redakteur", singular: "redakteur", plural: "redakteure" },
-  {
-    stem: "journalist",
-    singular: "journalist",
-    obliqueSingular: "journalisten",
-    plural: "journalisten"
-  },
-  {
-    stem: "architekt",
-    singular: "architekt",
-    obliqueSingular: "architekten",
-    plural: "architekten"
-  },
-  { stem: "ingenieur", singular: "ingenieur", plural: "ingenieure" },
-  { stem: "professor", singular: "professor", plural: "professoren" },
-  { stem: "direktor", singular: "direktor", plural: "direktoren" },
-  { stem: "funktionär", singular: "funktionär", plural: "funktionäre" },
-  { stem: "aktionär", singular: "aktionär", plural: "aktionäre" },
-  { stem: "sekretär", singular: "sekretär", plural: "sekretäre" },
-  {
-    stem: "astronaut",
-    singular: "astronaut",
-    obliqueSingular: "astronauten",
-    plural: "astronauten"
-  },
-  {
-    stem: "polizist",
-    singular: "polizist",
-    obliqueSingular: "polizisten",
-    plural: "polizisten"
-  },
-  {
-    stem: "tourist",
-    singular: "tourist",
-    obliqueSingular: "touristen",
-    plural: "touristen"
-  },
-  {
-    stem: "migrant",
-    singular: "migrant",
-    obliqueSingular: "migranten",
-    plural: "migranten"
-  },
-  {
-    stem: "mandant",
-    singular: "mandant",
-    obliqueSingular: "mandanten",
-    plural: "mandanten"
-  },
-  {
-    stem: "kandidat",
-    singular: "kandidat",
-    obliqueSingular: "kandidaten",
-    plural: "kandidaten"
-  },
-  {
-    stem: "diplomat",
-    singular: "diplomat",
-    obliqueSingular: "diplomaten",
-    plural: "diplomaten"
-  },
-  {
-    stem: "demokrat",
-    singular: "demokrat",
-    obliqueSingular: "demokraten",
-    plural: "demokraten"
-  },
-  {
-    stem: "student",
-    singular: "student",
-    obliqueSingular: "studenten",
-    plural: "studenten"
-  },
-  {
-    stem: "patient",
-    singular: "patient",
-    obliqueSingular: "patienten",
-    plural: "patienten"
-  },
-  {
-    stem: "experte",
-    singular: "experte",
-    obliqueSingular: "experten",
-    plural: "experten"
-  },
-  {
-    stem: "expert",
-    singular: "experte",
-    obliqueSingular: "experten",
-    plural: "experten"
-  },
-  {
-    stem: "soldat",
-    singular: "soldat",
-    obliqueSingular: "soldaten",
-    plural: "soldaten"
-  },
-  {
-    stem: "athlet",
-    singular: "athlet",
-    obliqueSingular: "athleten",
-    plural: "athleten"
-  },
-  {
-    stem: "jurist",
-    singular: "jurist",
-    obliqueSingular: "juristen",
-    plural: "juristen"
-  },
-  { stem: "friseur", singular: "friseur", plural: "friseure" },
-  { stem: "akteur", singular: "akteur", plural: "akteure" },
-  { stem: "rektor", singular: "rektor", plural: "rektoren" },
-  {
-    stem: "pilot",
-    singular: "pilot",
-    obliqueSingular: "piloten",
-    plural: "piloten"
-  },
-  {
-    stem: "kolleg",
-    singular: "kollege",
-    obliqueSingular: "kollegen",
-    plural: "kollegen"
-  },
-  { stem: "autor", singular: "autor", plural: "autoren" },
-  {
-    stem: "kund",
-    singular: "kunde",
-    obliqueSingular: "kunden",
-    plural: "kunden"
-  },
+  weak("hochschulabsolvent"),
+  weak("interessent"),
+  weak("absolvent"),
+  weak("doktorand"),
+  weak("praktikant"),
+  weak("präsident"),
+  weak("lieferant"),
+  regular("moderator", "moderatoren"),
+  regular("redakteur", "redakteure"),
+  weak("journalist"),
+  weak("architekt"),
+  regular("ingenieur", "ingenieure"),
+  regular("professor", "professoren"),
+  regular("direktor", "direktoren"),
+  regular("funktionär", "funktionäre"),
+  regular("aktionär", "aktionäre"),
+  regular("sekretär", "sekretäre"),
+  weak("astronaut"),
+  weak("polizist"),
+  weak("aktivist"),
+  weak("tourist"),
+  weak("migrant"),
+  weak("mandant"),
+  weak("kandidat"),
+  weak("diplomat"),
+  weak("demokrat"),
+  weak("student"),
+  weak("patient"),
+  weak("experte", "experte", "experten"),
+  weak("expert", "experte", "experten"),
+  weak("soldat"),
+  weak("athlet"),
+  weak("jurist"),
+  regular("friseur", "friseure"),
+  regular("akteur", "akteure"),
+  regular("rektor", "rektoren"),
+  weak("pilot"),
+  weak("kolleg", "kollege", "kollegen"),
+  regular("autor", "autoren"),
+  weak("kund", "kunde", "kunden"),
   { stem: "mutter", plural: "mütter" },
   { stem: "tochter", plural: "töchter" },
   { stem: "bruder", plural: "brüder" },
   { stem: "vater", plural: "väter" },
-  {
-    stem: "ärzt",
-    singular: "arzt",
-    genitiveSingular: "arztes",
-    plural: "ärzte"
-  },
+  regular("ärzt", "ärzte", "arzt", "arztes"),
   {
     stem: "bauer",
     singular: "bauer",
