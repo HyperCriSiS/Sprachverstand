@@ -14,6 +14,7 @@ describe("explicitPronounsRule", () => {
     ["sein’ihr", "sein"],
     ["ihre‘seine", "seine"],
     ["die/der", "der"],
+    ["der/dem", "dem"],
     ["DER:DIE", "DER"],
     ["Sie:Er", "Er"]
   ])("wandelt %s in %s um", (input, expected) => {
@@ -41,7 +42,7 @@ describe("explicitPronounsRule", () => {
     "ihre Nutzer",
     "er/siehe",
     "innerhalb",
-    "der/dem"
+    "der/den"
   ])("lässt %s unverändert", (input) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: input,
