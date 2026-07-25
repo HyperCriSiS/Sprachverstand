@@ -8,10 +8,12 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.2.0` ist die erste funktionale Entwicklungsversion. Sie enthält:
+Version `0.2.0` ist die erste funktionale Entwicklungsversion. Die Änderungen
+seit dieser Version werden unter **Unveröffentlicht** im Changelog gesammelt.
+Das Projekt enthält:
 
 - Manifest V3 für Chromium und Firefox
-- kein Hintergrunddienst und keine unnötige Service-Worker-Abhängigkeit
+- keinen Hintergrunddienst und keine unnötige Service-Worker-Abhängigkeit
 - TypeScript-Regel-Engine mit Risikoprofilen
 - sichere Verarbeitung normaler Textknoten
 - `MutationObserver` für dynamische Webseiten und Single-Page-Anwendungen
@@ -19,35 +21,45 @@ Version `0.2.0` ist die erste funktionale Entwicklungsversion. Sie enthält:
 - globale Aktivierung, Regelprofil und Domain-Ausschlüsse
 - automatisierte Unit-, DOM- und Regressionstests
 - reproduzierbare Builds mit esbuild
-- CI für Typecheck, Tests und beide Browser-Builds
+- CI für Typecheck, getrennte Regeltests und beide Browser-Builds
 
 ### Bereits unterstützte Schreibweisen
 
 - Pluralformen mit `:`, `*`, `_`, `/`, `·` und `•`
 - unveränderte und explizit hinterlegte unregelmäßige Pluralformen
+- gegenderte Wortanfänge in Komposita
 - Binnen-I im Plural
-- Doppelnennungen im Grundkasus
+- Doppelnennungen im Grundkasus und Dativplural
+- explizit gegenderte Singularphrasen mit eindeutigem Artikel- und Kasusmarker
+- korrekte schwache Deklination, etwa `Student` gegenüber `Studenten`
 
 Beispiele:
 
 ```text
-Nutzer:innen                 → Nutzer
-Mitarbeiter*innen            → Mitarbeiter
-Ärzt_innen                   → Ärzte
-Student/innen                → Studenten
-TierärztInnen                → Tierärzte
-Nutzerinnen und Nutzer       → Nutzer
-Koautorinnen/Koautoren       → Koautoren
+Nutzer:innen                         → Nutzer
+Mitarbeiter*innen                    → Mitarbeiter
+Ärzt_innen                           → Ärzte
+Student/innen                        → Studenten
+TierärztInnen                        → Tierärzte
+Nutzer:innenkonto                    → Nutzerkonto
+MutterInnen                          → Mütter
+Nutzerinnen und Nutzer               → Nutzer
+mit Ärztinnen und Ärzten             → mit Ärzten
+jede:r Nutzer:in                     → jeder Nutzer
+eine:n Student:in                    → einen Studenten
+einem:einer Kund:in                  → einem Kunden
 ```
 
 ### Bewusst noch nicht verändert
 
-- singuläre Formen ohne sicheren Artikel- und Kasuskontext
-- flektierte Doppelnennungen wie `Ärztinnen und Ärzten`
+- singuläre Formen ohne eindeutigen Artikel- und Kasusmarker, etwa
+  `eine NutzerIn`
+- Genitivkonstruktionen wie `des:der Nutzer:in`
+- weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
 - Partizipialformen
 
-Eine ausgelassene Ersetzung ist derzeit ausdrücklich besser als eine falsche.
+Eine ausgelassene Ersetzung ist ausdrücklich besser als eine falsche.
 
 ## Voraussetzungen
 

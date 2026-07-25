@@ -5,6 +5,15 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Explizit gegenderte Singularphrasen werden normalisiert, wenn Artikel und
+  Kasus eindeutig markiert sind, etwa `jede:r Nutzer:in` zu `jeder Nutzer`.
+- Schwach deklinierte Personenbezeichnungen werden im Akkusativ und Dativ
+  korrekt flektiert, etwa `eine:n Student:in` zu `einen Studenten`.
+- Separator- und Binnen-I-Schreibweisen verwenden ein gemeinsames zentrales
+  Lexikon für Singular- und Pluralformen.
+
 ### Korrigiert
 
 - Genderformen am Anfang zusammengesetzter Wörter werden normalisiert, etwa
