@@ -57,7 +57,7 @@ const personForms: readonly PersonForms[] = [
   { stem: "bruder", plural: "brüder" },
   { stem: "vater", plural: "väter" },
   { stem: "ärzt", singular: "arzt", plural: "ärzte" },
-  { stem: "bauer", singular: "bauer", obliqueSingular: "bauern", plural: "bauern", match: "exact" }
+  { stem: "bauer", singular: "bauer", obliqueSingular: "bauern", plural: "bauern", match: "exact" as const }
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
