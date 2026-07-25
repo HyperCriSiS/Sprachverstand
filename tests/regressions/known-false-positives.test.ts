@@ -8,7 +8,6 @@ const unchangedExamples = [
   "Heiden und ersinnen",
   "Rot-Rot",
   "Mütter und Väter",
-  "Ärztinnen und Ärzten",
   "Nutzerinnen und Benutzer",
   "Nutzerin und Nutzer",
   "Nutzerinnen und Nutzerinnen",
@@ -20,16 +19,21 @@ const unchangedExamples = [
   "Nutzerinnen",
   "NUTZERINNEN",
   "Bäckerinnung",
-  "Mutter:innen",
-  "MutterInnen",
-  "Tochter:innen",
-  "TochterInnen",
-  "Bruder:innen",
-  "BruderInnen",
   "Erbauer:innen",
-  "Nutzer:innenkonto",
-  "NutzerInnenkonto",
-  "VorNutzer:innenSuffix"
+  "Modellbauer:innen"
+] as const;
+
+const correctedExamples = [
+  ["Ärztinnen und Ärzten", "Ärzten"],
+  ["Mutter:innen", "Mütter"],
+  ["MutterInnen", "Mütter"],
+  ["Tochter:innen", "Töchter"],
+  ["TochterInnen", "Töchter"],
+  ["Bruder:innen", "Brüder"],
+  ["BruderInnen", "Brüder"],
+  ["Nutzer:innenkonto", "Nutzerkonto"],
+  ["NutzerInnenkonto", "Nutzerkonto"],
+  ["VorNutzer:innenSuffix", "VorNutzerSuffix"]
 ] as const;
 
 describe("bekannte Fehlertreffer", () => {
@@ -39,6 +43,15 @@ describe("bekannte Fehlertreffer", () => {
     ).toEqual({
       text: input,
       replacements: 0
+    });
+  });
+
+  it.each(correctedExamples)("korrigiert %s zu %s", (input, expected) => {
+    expect(
+      transformText(input, defaultRules, { profile: "aggressive" })
+    ).toEqual({
+      text: expected,
+      replacements: 1
     });
   });
 });
