@@ -29,5 +29,11 @@ jobs:
       - name: Abhängigkeiten installieren
         run: npm install
 
-      - name: Typen, Tests und Builds prüfen
-        run: npm run check
+      - name: TypeScript prüfen
+        run: npm run typecheck
+
+      - name: Tests ausführen
+        run: npm test
+
+      - name: Browser-Builds erstellen
+        run: npm run build
