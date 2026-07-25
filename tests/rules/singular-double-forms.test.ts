@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { singularDoubleFormsRule } from "../../src/rules/singular-double-forms";
+
+describe("singularDoubleFormsRule", () => {
+  it.each([
+    ["Kunde/Kundin", "Kunde"],
+    ["Kundin / Kunde", "Kunde"],
+    ["Arzt und Ärztin", "Arzt"],
+    ["Studentin oder Student", "Student"],
+    ["Kollege bzw. Kollegin", "Kollege"],
+    ["Nutzer & Nutzerin", "Nutzer"],
+    ["Online-Nutzer beziehungsweise Online-Nutzerin", "Online-Nutzer"],
+    ["Privatkunde/Privatkundin", "Privatkunde"],
+    ["Tierärztin/Tierarzt", "Tierarzt"],
+    ["Koautor und Koautorin", "Koautor"],
+    ["Bauer/Bäuerin", "Bauer"],
+    ["Messebauer/Messebauerin", "Messebauer"],
+    ["KUNDE/KUNDIN", "KUNDE"]
+  ])("führt %s zu %s zusammen", (input, expected) => {
+    expect(singularDoubleFormsRule.apply(input)).toEqual({
+      text: expected,
+      replacements: 1
+    });
+  });
+
+  it("verarbeitet mehrere Doppelformen in einem Satz", () => {
+    expect(
+      singularDoubleFormsRule.apply(
+        "Ein Kunde/eine Kundin spricht mit einem Arzt/einer Ärztin."
+      )
+    ).toEqual({
+      text: "Ein Kunde spricht mit einem Arzt.",
+      replacements: 2
+    });
+  });
+
+  it.each([
+    "Die Kundin ruft an.",
+    "Mutter/Vater",
+    "Nutzer/Benutzer",
+    "Kunde/Kundinnen",
+    "Bauer/Bauerin",
+    "Messebauer/Messebäuerin",
+    "Innen- und Außendienst",
+    "Nutzerin und Nutzerin"
+  ])("lässt %s unverändert", (input) => {
+    expect(singularDoubleFormsRule.apply(input)).toEqual({
+      text: input,
+      replacements: 0
+    });
+  });
+});
