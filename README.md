@@ -3,26 +3,51 @@
 **Macht Webseiten wieder lesbar.**
 
 Sprachverstand ist eine neu entwickelte Browser-Erweiterung zur kontrollierten
-Normalisierung gegenderter deutscher Texte. Das Projekt beginnt mit einer neuen,
-modularen Codebasis. Alte Erweiterungen dienen zunächst nur als Recherche-,
-Fehler- und Testfundus.
+Normalisierung gegenderter deutscher Texte. Die Codebasis ist modular, streng
+typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.1.0` enthält das technische Fundament:
+Version `0.2.0` ist die erste funktionale Entwicklungsversion. Sie enthält:
 
 - Manifest V3 für Chromium und Firefox
-- kein Hintergrunddienst und damit keine unnötige Service-Worker-Abhängigkeit
+- kein Hintergrunddienst und keine unnötige Service-Worker-Abhängigkeit
 - TypeScript-Regel-Engine mit Risikoprofilen
 - sichere Verarbeitung normaler Textknoten
 - `MutationObserver` für dynamische Webseiten und Single-Page-Anwendungen
-- Schutz für Eingabefelder, Editoren, Code, technische Daten und versteckte Inhalte
+- Schutz für Eingabefelder, Editoren, Code, URLs und technische Daten
 - globale Aktivierung, Regelprofil und Domain-Ausschlüsse
-- automatisierte Unit- und DOM-Tests
+- automatisierte Unit-, DOM- und Regressionstests
 - reproduzierbare Builds mit esbuild
+- CI für Typecheck, Tests und beide Browser-Builds
 
-Es wurden in dieser Version noch keine Regeln oder Quelltextteile aus anderen
-Projekten übernommen.
+### Bereits unterstützte Schreibweisen
+
+- Pluralformen mit `:`, `*`, `_`, `/`, `·` und `•`
+- unveränderte und explizit hinterlegte unregelmäßige Pluralformen
+- Binnen-I im Plural
+- Doppelnennungen im Grundkasus
+
+Beispiele:
+
+```text
+Nutzer:innen                 → Nutzer
+Mitarbeiter*innen            → Mitarbeiter
+Ärzt_innen                   → Ärzte
+Student/innen                → Studenten
+TierärztInnen                → Tierärzte
+Nutzerinnen und Nutzer       → Nutzer
+Koautorinnen/Koautoren       → Koautoren
+```
+
+### Bewusst noch nicht verändert
+
+- singuläre Formen ohne sicheren Artikel- und Kasuskontext
+- flektierte Doppelnennungen wie `Ärztinnen und Ärzten`
+- unbekannte oder mehrdeutige Wortformen
+- Partizipialformen
+
+Eine ausgelassene Ersetzung ist derzeit ausdrücklich besser als eine falsche.
 
 ## Voraussetzungen
 
@@ -66,27 +91,34 @@ Der Chromium-Build wird bei Änderungen automatisch aktualisiert.
 2. **Temporäres Add-on laden** auswählen.
 3. `dist/firefox/manifest.json` auswählen.
 
-## Geplante Reihenfolge
+## Qualitätssicherung
 
-1. Technisches Fundament
-2. unabhängiger Testkatalog aus bekannten Fehlerfällen
-3. konservative, sehr sichere Regeln
-4. kontextabhängige Regeln
-5. aggressive optionale Regeln
-6. Domain- und Seitenausnahmen
-7. Browser-Kompatibilität und Leistungstests
-8. Signierung und Veröffentlichung
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+Oder vollständig:
+
+```bash
+npm run check
+```
+
+Jede neue Sprachregel benötigt positive und negative Tests. Bekannte Fehlerfälle
+aus den Rechercheprojekten werden als unabhängige Regressionstests erfasst.
 
 ## Repository und Identität
 
-Das spätere Repository soll unter einem separaten GitHub-Konto privat angelegt
-werden. Vor dem ersten Commit muss die lokale Git-Identität für dieses Repository
-explizit gesetzt werden:
+Das Repository bleibt bis zur späteren Übertragung auf ein separates Projektkonto
+privat. Vor lokalen Commits sollte für dieses Repository eine eigene Git-Identität
+gesetzt werden:
 
 ```bash
 git config user.name "Sprachverstand"
 git config user.email "DEINE_NOREPLY_ADRESSE"
 ```
 
-Die Lizenz wird vor der ersten Verteilung festgelegt, nachdem abschließend
-entschieden wurde, welche fremden Inhalte tatsächlich übernommen werden.
+Die endgültige Lizenz wird vor der ersten Verteilung festgelegt, nachdem
+abschließend entschieden wurde, welche fremden Inhalte tatsächlich übernommen
+werden.

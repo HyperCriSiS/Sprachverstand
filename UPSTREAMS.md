@@ -8,8 +8,11 @@ Fehlerfälle, offene Issues und mögliche Regressionstests ausgewertet:
 - https://github.com/brilliance-richter-huh/gendersprache-korrigieren
 - https://github.com/sternth/no-gender
 
-## Stand 0.1.0
+## Stand 0.2.0
 
-In Version 0.1.0 wurden keine Regeln oder Quelltextteile aus diesen Projekten
-übernommen. Herkunftshinweise werden außerhalb des produktiven Laufzeitcodes
-dokumentiert. Der Regelcode enthält nur technisch notwendige Informationen.
+Die aktuelle Regel-Engine, DOM-Verarbeitung und Browser-Architektur wurden neu
+entwickelt. Bekannte Fehlerfälle und Sprachbeispiele aus den Rechercheprojekten
+werden als eigenständige Tests und neu entworfene Regeln umgesetzt.
+
+Herkunftshinweise bleiben außerhalb des produktiven Laufzeitcodes. Details zu
+einzelnen Entscheidungen stehen in `docs/MIGRATION.md` und in der Git-Historie.
