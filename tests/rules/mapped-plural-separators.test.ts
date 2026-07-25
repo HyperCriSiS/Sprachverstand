@@ -9,6 +9,9 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Kund/innen", "Kunden"],
     ["Autor·innen", "Autoren"],
     ["Moderator•innen", "Moderatoren"],
+    ["Aktivist.innen", "Aktivisten"],
+    ["Journalist’innen", "Journalisten"],
+    ["Architekt‘innen", "Architekten"],
     ["Lieferant:innen", "Lieferanten"],
     ["Praktikant:innen", "Praktikanten"],
     ["Doktorand:innen", "Doktoranden"],
@@ -21,6 +24,9 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Friseur:innen", "Friseure"],
     ["Akteur:innen", "Akteure"],
     ["Bauer:innen", "Bauern"],
+    ["Messebauer*innen", "Messebauer"],
+    ["Modellbauer:innen", "Modellbauer"],
+    ["Erbauer:innen", "Erbauer"],
     ["Mutter:innen", "Mütter"],
     ["Tochter:innen", "Töchter"],
     ["Bruder:innen", "Brüder"],
@@ -35,15 +41,16 @@ describe("mappedPluralSeparatorsRule", () => {
   it("unterstützt zusammengesetzte Wörter und Komposita", () => {
     const result = mappedPluralSeparatorsRule.apply(
       "Tierärzt:innen, Werkstudent*innen, Stammkund_innen, " +
-        "Koautor/innen, Co-Moderator:innen, Ärzt:innenkammer und " +
-        "Mutter:inneninitiative"
+        "Koautor/innen, Co-Moderator:innen, Ärzt:innenkammer, " +
+        "Mutter:inneninitiative und Messebauer*innenverband"
     );
 
     expect(result).toEqual({
       text:
         "Tierärzte, Werkstudenten, Stammkunden, Koautoren, " +
-        "Co-Moderatoren, Ärztekammer und Mütterinitiative",
-      replacements: 7
+        "Co-Moderatoren, Ärztekammer, Mütterinitiative und " +
+        "Messebauerverband",
+      replacements: 8
     });
   });
 
@@ -51,15 +58,6 @@ describe("mappedPluralSeparatorsRule", () => {
     expect(mappedPluralSeparatorsRule.apply("TIERÄRZT:INNEN")).toEqual({
       text: "TIERÄRZTE",
       replacements: 1
-    });
-  });
-
-  it("behandelt Bauer nur als vollständiges Wort", () => {
-    const input = "Erbauer:innen und Modellbauer:innen";
-
-    expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
-      text: input,
-      replacements: 0
     });
   });
 

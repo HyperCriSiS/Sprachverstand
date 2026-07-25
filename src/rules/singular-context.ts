@@ -1,5 +1,8 @@
 import type { Rule, TransformResult } from "../core/rule";
-import { mapKnownPlural } from "./known-plural-separators";
+import {
+  mapKnownPlural,
+  mapKnownSingular
+} from "./known-plural-separators";
 import {
   mapMappedSingular,
   type GrammaticalCase
@@ -11,7 +14,7 @@ interface DeterminerForm {
 }
 
 const locale = "de-DE";
-const separators = [":", "*", "_", "/", "·", "•"] as const;
+const separators = [":", "*", "_", "/", "·", "•", ".", "’", "‘"] as const;
 const determinerForms = new Map<string, DeterminerForm>();
 
 function addDeterminer(
@@ -39,26 +42,32 @@ function addDeterminer(
 addDeterminer("der", "die", "der", "nominative", true);
 addDeterminer("den", "die", "den", "accusative", true);
 addDeterminer("dem", "der", "dem", "dative", true);
+addDeterminer("des", "der", "des", "genitive", true);
 addDeterminer("ein", "e", "ein", "nominative");
 addDeterminer("eine", "n", "einen", "accusative");
 addDeterminer("einem", "einer", "einem", "dative");
+addDeterminer("eines", "einer", "eines", "genitive");
 addDeterminer("kein", "e", "kein", "nominative");
 addDeterminer("keine", "n", "keinen", "accusative");
 addDeterminer("keine", "m", "keinem", "dative");
+addDeterminer("keines", "keiner", "keines", "genitive");
 addDeterminer("jede", "r", "jeder", "nominative");
 addDeterminer("jede", "n", "jeden", "accusative");
 addDeterminer("jede", "m", "jedem", "dative");
+addDeterminer("jedes", "jeder", "jedes", "genitive");
 addDeterminer("welche", "r", "welcher", "nominative");
 addDeterminer("welche", "n", "welchen", "accusative");
 addDeterminer("welche", "m", "welchem", "dative");
+addDeterminer("welches", "welcher", "welches", "genitive");
 addDeterminer("diese", "r", "dieser", "nominative");
 addDeterminer("diese", "n", "diesen", "accusative");
 addDeterminer("diese", "m", "diesem", "dative");
+addDeterminer("dieses", "dieser", "dieses", "genitive");
 
-const determinerToken = String.raw`[\p{L}\p{M}:*_/·•.-]+`;
+const determinerToken = String.raw`[\p{L}\p{M}:*_/·•.’‘-]+`;
 const nounBase = String.raw`[\p{L}\p{M}’'-]+`;
 const separatorSingularPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})(?:[:*_/·•])in(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})(?:[:*_/·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
 const binnenISingularPattern = new RegExp(
@@ -93,7 +102,11 @@ function mapSingular(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
-  return mapMappedSingular(base, grammaticalCase) ?? mapKnownPlural(base);
+  return (
+    mapMappedSingular(base, grammaticalCase) ??
+    mapKnownSingular(base, grammaticalCase) ??
+    (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base))
+  );
 }
 
 function transformPattern(input: string, pattern: RegExp): TransformResult {

@@ -50,6 +50,9 @@ jobs:
       - name: Singularkontext testen
         run: npm exec vitest run tests/rules/singular-context.test.ts
 
+      - name: Singularsonderformen testen
+        run: npm exec vitest run tests/rules/special-singular-forms.test.ts
+
       - name: Doppelnennungen testen
         run: npm exec vitest run tests/rules/double-forms.test.ts
 

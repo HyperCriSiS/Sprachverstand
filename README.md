@@ -25,13 +25,15 @@ Das Projekt enthält:
 
 ### Bereits unterstützte Schreibweisen
 
-- Pluralformen mit `:`, `*`, `_`, `/`, `·` und `•`
+- Pluralformen mit `:`, `*`, `_`, `/`, `·`, `•`, `.`, `’` und `‘`
 - unveränderte und explizit hinterlegte unregelmäßige Pluralformen
 - gegenderte Wortanfänge in Komposita
 - Binnen-I im Plural
 - Doppelnennungen im Grundkasus und Dativplural
 - explizit gegenderte Singularphrasen mit eindeutigem Artikel- und Kasusmarker
+- Nominativ, Akkusativ, Dativ und Genitiv
 - korrekte schwache Deklination, etwa `Student` gegenüber `Studenten`
+- sichere natürliche Familienformen wie `Mutter:in`
 
 Beispiele:
 
@@ -40,24 +42,32 @@ Nutzer:innen                         → Nutzer
 Mitarbeiter*innen                    → Mitarbeiter
 Ärzt_innen                           → Ärzte
 Student/innen                        → Studenten
+US-Bürger’innen                      → US-Bürger
 TierärztInnen                        → Tierärzte
 Nutzer:innenkonto                    → Nutzerkonto
 MutterInnen                          → Mütter
+Mutter:in                            → Mutter
+Bauer:innen                          → Bauern
+Messebauer*innen                     → Messebauer
 Nutzerinnen und Nutzer               → Nutzer
 mit Ärztinnen und Ärzten             → mit Ärzten
 jede:r Nutzer:in                     → jeder Nutzer
 eine:n Student:in                    → einen Studenten
 einem:einer Kund:in                  → einem Kunden
+des:der Nutzer:in                    → des Nutzers
+des:der Student:in                   → des Studenten
+des:der Ärzt:in                      → des Arztes
 ```
 
 ### Bewusst noch nicht verändert
 
 - singuläre Formen ohne eindeutigen Artikel- und Kasusmarker, etwa
   `eine NutzerIn`
-- Genitivkonstruktionen wie `des:der Nutzer:in`
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
+- Possessivpronomen und weitere Pronomenformen
 - Partizipialformen
+- zugängliche Attribute wie `alt` und `aria-label`
 
 Eine ausgelassene Ersetzung ist ausdrücklich besser als eine falsche.
 

@@ -9,10 +9,16 @@ dokumentiert.
 
 - Explizit gegenderte Singularphrasen werden normalisiert, wenn Artikel und
   Kasus eindeutig markiert sind, etwa `jede:r Nutzer:in` zu `jeder Nutzer`.
+- Genitivformen werden lexikalisch korrekt gebildet, etwa `des:der Nutzer:in`
+  zu `des Nutzers`, `des:der Student:in` zu `des Studenten` und
+  `des:der Ärzt:in` zu `des Arztes`.
 - Schwach deklinierte Personenbezeichnungen werden im Akkusativ und Dativ
   korrekt flektiert, etwa `eine:n Student:in` zu `einen Studenten`.
 - Separator- und Binnen-I-Schreibweisen verwenden ein gemeinsames zentrales
   Lexikon für Singular- und Pluralformen.
+- Punkt sowie typografische Apostrophe werden als Genderseparatoren erkannt.
+- Natürlich feminine Familienformen wie `Mutter:in` werden ohne Änderung des
+  grammatischen Geschlechts normalisiert.
 
 ### Korrigiert
 
@@ -22,6 +28,10 @@ dokumentiert.
   Tochter, Bruder und Vater wurden ebenfalls ergänzt.
 - Doppelnennungen im Dativ behalten ihre Flexion, etwa
   `mit Ärztinnen und Ärzten` zu `mit Ärzten`.
+- `Bauer:innen` wird zu `Bauern`, während Komposita wie
+  `Messebauer*innen` korrekt zu `Messebauer` werden.
+- Historische Fehlertreffer wie `Innen- und Außendienst`, `LogIn`, `AddIn`,
+  `PlugIn` und `DriveIn` sind als Regressionen geschützt.
 
 ## 0.2.0
 

@@ -1,5 +1,6 @@
 import type { Rule } from "../core/rule";
 import { transformGenderedPlural } from "./gendered-plural";
+import type { GrammaticalCase } from "./person-lexicon";
 
 /*
  * Nur Endungen, deren maskuline Pluralform unverändert bleibt. Das Lexikon
@@ -62,11 +63,31 @@ const safePluralSuffixes = [
   "zuschauer"
 ] as const;
 
-export function mapKnownPlural(base: string): string | undefined {
+function isKnownBase(base: string): boolean {
   const normalizedBase = base.toLocaleLowerCase("de-DE");
-  return safePluralSuffixes.some((suffix) => normalizedBase.endsWith(suffix))
-    ? base
-    : undefined;
+  return safePluralSuffixes.some((suffix) => normalizedBase.endsWith(suffix));
+}
+
+export function mapKnownPlural(base: string): string | undefined {
+  return isKnownBase(base) ? base : undefined;
+}
+
+export function mapKnownSingular(
+  base: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  if (!isKnownBase(base)) {
+    return undefined;
+  }
+
+  if (grammaticalCase !== "genitive") {
+    return base;
+  }
+
+  const lowerBase = base.toLocaleLowerCase("de-DE");
+  const upperBase = base.toLocaleUpperCase("de-DE");
+  const suffix = base === upperBase && base !== lowerBase ? "S" : "s";
+  return base + suffix;
 }
 
 export const knownPluralSeparatorsRule: Rule = {

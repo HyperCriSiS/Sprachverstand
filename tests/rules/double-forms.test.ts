@@ -9,6 +9,8 @@ describe("doubleFormsRule", () => {
     ["Studenten & Studentinnen", "Studenten"],
     ["Koautorinnen/Koautoren", "Koautoren"],
     ["Bauerinnen bzw. Bauern", "Bauern"],
+    ["Modellbauerinnen und Modellbauer", "Modellbauer"],
+    ["Messebauerinnen oder Messebauer", "Messebauer"],
     [
       "Online-Nutzerinnen beziehungsweise Online-Nutzer",
       "Online-Nutzer"
@@ -54,7 +56,6 @@ describe("doubleFormsRule", () => {
     "Nutzerin und Nutzer",
     "Nutzerinnen und Nutzerinnen",
     "Nutzer:innen und Nutzer:innen",
-    "Modellbauerinnen und Modellbauer",
     "Nutzerinnen und Nutzerkonten"
   ])("lässt %s unverändert", (input) => {
     expect(doubleFormsRule.apply(input)).toEqual({

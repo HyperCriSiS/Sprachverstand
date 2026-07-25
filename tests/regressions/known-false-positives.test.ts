@@ -14,26 +14,37 @@ const unchangedExamples = [
   "Innen",
   "Innenstadt",
   "Innenminister",
+  "Innen- und Außendienst",
   "LinkedIn",
+  "LogIn",
+  "AddIn",
+  "PlugIn",
+  "DriveIn",
   "InDesign",
   "Nutzerinnen",
   "NUTZERINNEN",
-  "Bäckerinnung",
-  "Erbauer:innen",
-  "Modellbauer:innen"
+  "Bäckerinnung"
 ] as const;
 
 const correctedExamples = [
   ["Ärztinnen und Ärzten", "Ärzten"],
   ["Mutter:innen", "Mütter"],
   ["MutterInnen", "Mütter"],
+  ["Mutter:in", "Mutter"],
   ["Tochter:innen", "Töchter"],
   ["TochterInnen", "Töchter"],
   ["Bruder:innen", "Brüder"],
   ["BruderInnen", "Brüder"],
   ["Nutzer:innenkonto", "Nutzerkonto"],
   ["NutzerInnenkonto", "Nutzerkonto"],
-  ["VorNutzer:innenSuffix", "VorNutzerSuffix"]
+  ["VorNutzer:innenSuffix", "VorNutzerSuffix"],
+  ["des:der Nutzer:in", "des Nutzers"],
+  ["des:der Student:in", "des Studenten"],
+  ["des:der Ärzt:in", "des Arztes"],
+  ["Erbauer:innen", "Erbauer"],
+  ["Modellbauer:innen", "Modellbauer"],
+  ["Messebauer*innen", "Messebauer"],
+  ["US-Bürger’innen", "US-Bürger"]
 ] as const;
 
 describe("bekannte Fehlertreffer", () => {
