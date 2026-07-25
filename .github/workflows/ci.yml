@@ -47,6 +47,9 @@ jobs:
       - name: Binnen-I testen
         run: npm exec vitest run tests/rules/binnen-i.test.ts
 
+      - name: Singularkontext testen
+        run: npm exec vitest run tests/rules/singular-context.test.ts
+
       - name: Doppelnennungen testen
         run: npm exec vitest run tests/rules/double-forms.test.ts
 
