@@ -90,6 +90,24 @@ export function mapKnownSingular(
   return base + suffix;
 }
 
+export function mapKnownSingularPair(
+  left: string,
+  right: string
+): string | undefined {
+  const normalizedLeft = left.toLocaleLowerCase("de-DE");
+  const normalizedRight = right.toLocaleLowerCase("de-DE");
+
+  if (isKnownBase(left) && normalizedRight === `${normalizedLeft}in`) {
+    return left;
+  }
+
+  if (isKnownBase(right) && normalizedLeft === `${normalizedRight}in`) {
+    return right;
+  }
+
+  return undefined;
+}
+
 export const knownPluralSeparatorsRule: Rule = {
   id: "plural.known-separator-innen",
   risk: "safe",
