@@ -13,19 +13,26 @@ Requests. Sie beeinflusst den ausgelieferten Code nicht.
 | no-gender | #1 springender Cursor in Editoren | neu gelöst | Eingaben und `contenteditable` werden ausgeschlossen |
 | no-gender | #8 beschädigte Base64-Inhalte | neu gelöst | technische Textknoten werden nicht verarbeitet |
 
-## Erste Regelphase
+## Umgesetzte Schreibweisen
 
 | Quelle | Eintrag | Entscheidung | Umsetzung |
 |---|---|---|---|
 | beide | Doppelpunkt, Stern, Unterstrich und Schrägstrich | neu implementiert | sichere unveränderte und explizit abgebildete Pluralformen |
+| beide | Binnen-I im Plural | neu implementiert | dasselbe geprüfte Plurallexikon wie bei Separatorformen |
 | no-gender | #3 falsche Änderung von „gewinnen“ | Regressionstest | darf niemals verändert werden |
 | no-gender | #29 falsche Änderung von „ersinnen“ | Regressionstest | darf niemals verändert werden |
-| gendersprache-korrigieren | #14 falsche Änderung bei „Rot-Rot“ | Regressionstest | später in gemeinsamen Negativkatalog aufnehmen |
+| gendersprache-korrigieren | #14 falsche Änderung bei „Rot-Rot“ | Regressionstest | zentraler Negativkatalog |
+
+## Bewusst zurückgestellt
+
+Singuläre Binnen-I-Formen wie `NutzerIn` werden erst gemeinsam mit Artikeln,
+Pronomen und Kasuskontext umgesetzt. Eine isolierte Ersetzung würde beispielsweise
+`eine NutzerIn` fälschlich in `eine Nutzer` verwandeln.
 
 ## Noch zu bewerten
 
-- Binnen-I
-- weitere unregelmäßige Pluralformen außerhalb des ersten geprüften Lexikons
+- weitere unregelmäßige Formen außerhalb des ersten geprüften Lexikons
+- singuläres Binnen-I samt Kontext
 - Doppelnennungen
 - Pronomen und Artikel
 - Partizipialformen

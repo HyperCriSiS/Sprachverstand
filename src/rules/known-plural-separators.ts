@@ -62,9 +62,11 @@ const safePluralSuffixes = [
   "zuschauer"
 ] as const;
 
-function hasSafePluralSuffix(word: string): boolean {
-  const normalizedWord = word.toLocaleLowerCase("de-DE");
-  return safePluralSuffixes.some((suffix) => normalizedWord.endsWith(suffix));
+export function mapKnownPlural(base: string): string | undefined {
+  const normalizedBase = base.toLocaleLowerCase("de-DE");
+  return safePluralSuffixes.some((suffix) => normalizedBase.endsWith(suffix))
+    ? base
+    : undefined;
 }
 
 export const knownPluralSeparatorsRule: Rule = {
@@ -72,8 +74,6 @@ export const knownPluralSeparatorsRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    return transformGenderedPlural(input, (base) =>
-      hasSafePluralSuffix(base) ? base : undefined
-    );
+    return transformGenderedPlural(input, mapKnownPlural);
   }
 };

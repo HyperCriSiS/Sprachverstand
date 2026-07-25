@@ -84,7 +84,7 @@ function applyCase(source: string, replacement: string): string {
   return replacement.toLocaleLowerCase(locale);
 }
 
-function mapPlural(base: string): string | undefined {
+export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
 
   for (const mapping of pluralMappings) {
@@ -110,6 +110,6 @@ export const mappedPluralSeparatorsRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    return transformGenderedPlural(input, mapPlural);
+    return transformGenderedPlural(input, mapMappedPlural);
   }
 };
