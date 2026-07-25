@@ -9,6 +9,12 @@ describe("isProbablyTechnicalText", () => {
     expect(isProbablyTechnicalText("https://example.org/test")).toBe(true);
     expect(isProbablyTechnicalText("name@example.org")).toBe(true);
     expect(
+      isProbablyTechnicalText("Siehe https://example.org/Nutzer:innen")
+    ).toBe(true);
+    expect(
+      isProbablyTechnicalText("Kontakt: name@example.org")
+    ).toBe(true);
+    expect(
       isProbablyTechnicalText("0123456789abcdef0123456789abcdef")
     ).toBe(true);
   });
