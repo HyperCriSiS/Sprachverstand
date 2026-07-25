@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Sprachverstand",
+  "version": "0.1.0",
+  "description": "Macht Webseiten wieder lesbar.",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Sprachverstand",
+    "default_popup": "popup/popup.html"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "sprachverstand@addon.invalid",
+      "strict_min_version": "121.0"
+    }
+  }
+}

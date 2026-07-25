@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sprachverstand – Einstellungen</title>
+    <link rel="stylesheet" href="options.css">
+    <script src="options.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Sprachverstand</h1>
+      <p>Macht Webseiten wieder lesbar.</p>
+
+      <form id="settings-form">
+        <label class="checkbox-row">
+          <input id="enabled" type="checkbox">
+          Erweiterung aktivieren
+        </label>
+
+        <label>
+          Regelprofil
+          <select id="profile">
+            <option value="conservative">Konservativ</option>
+            <option value="standard">Standard</option>
+            <option value="aggressive">Aggressiv</option>
+          </select>
+        </label>
+
+        <label>
+          Ausgeschlossene Domains
+          <textarea
+            id="excluded-domains"
+            rows="8"
+            placeholder="example.org&#10;intranet.example.org"
+          ></textarea>
+          <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst.</small>
+        </label>
+
+        <div class="actions">
+          <button type="submit">Speichern</button>
+          <button id="reset" type="button">Zurücksetzen</button>
+          <output id="status" aria-live="polite"></output>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

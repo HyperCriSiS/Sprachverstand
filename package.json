@@ -1,0 +1,27 @@
+{
+  "name": "sprachverstand",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Macht Webseiten wieder lesbar.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "clean": "node scripts/build.mjs --clean",
+    "build": "node scripts/build.mjs",
+    "build:chromium": "node scripts/build.mjs --target chromium",
+    "build:firefox": "node scripts/build.mjs --target firefox",
+    "dev": "node scripts/build.mjs --target chromium --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "jsdom": "29.1.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

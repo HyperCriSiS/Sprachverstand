@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sprachverstand</title>
+    <link rel="stylesheet" href="popup.css">
+    <script src="popup.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Sprachverstand</h1>
+        <output id="state"></output>
+      </header>
+
+      <label class="switch-row">
+        <span>Aktiv</span>
+        <input id="enabled" type="checkbox">
+      </label>
+
+      <label>
+        Regelprofil
+        <select id="profile">
+          <option value="conservative">Konservativ</option>
+          <option value="standard">Standard</option>
+          <option value="aggressive">Aggressiv</option>
+        </select>
+      </label>
+
+      <button id="open-options" type="button">Einstellungen</button>
+    </main>
+  </body>
+</html>
