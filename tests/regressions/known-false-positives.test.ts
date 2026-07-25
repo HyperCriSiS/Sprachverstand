@@ -8,13 +8,22 @@ const unchangedExamples = [
   "Heiden und ersinnen",
   "Rot-Rot",
   "Innen",
+  "Innenstadt",
+  "Innenminister",
+  "LinkedIn",
+  "InDesign",
   "Nutzerinnen",
+  "NUTZERINNEN",
   "Bäckerinnung",
   "Mutter:innen",
+  "MutterInnen",
   "Tochter:innen",
+  "TochterInnen",
   "Bruder:innen",
+  "BruderInnen",
   "Erbauer:innen",
   "Nutzer:innenkonto",
+  "NutzerInnenkonto",
   "VorNutzer:innenSuffix"
 ] as const;
 
