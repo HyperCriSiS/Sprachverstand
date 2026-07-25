@@ -25,6 +25,18 @@ describe("singularContextRule", () => {
     ["der:die NutzerIn", "der Nutzer"],
     ["jede:r Tierärzt:in", "jeder Tierarzt"],
     ["eine:n KoautorIn", "einen Koautor"],
+    ["mein:e Nutzer:in", "mein Nutzer"],
+    ["meine:n Student:in", "meinen Studenten"],
+    ["meine:m Kund:in", "meinem Kunden"],
+    ["meines:meiner Ärzt:in", "meines Arztes"],
+    ["dein:e Kolleg:in", "dein Kollege"],
+    ["unser:e Tierärzt:in", "unser Tierarzt"],
+    ["eure:n Pilot:in", "euren Piloten"],
+    ["eure:m Nutzer:in", "eurem Nutzer"],
+    ["eures:eurer Bürger:in", "eures Bürgers"],
+    ["Ihr:e Nutzer:in", "Ihr Nutzer"],
+    ["sein:ihr Nutzer:in", "sein Nutzer"],
+    ["ihrem:seinem Student:in", "seinem Studenten"],
     ["JEDE:R NUTZER:IN", "JEDER NUTZER"],
     ["DES:DER NUTZER:IN", "DES NUTZERS"]
   ])("wandelt %s in %s um", (input, expected) => {
@@ -52,6 +64,7 @@ describe("singularContextRule", () => {
     "ein:e Ausgabe",
     "eine:n Kundin",
     "jede:r Hebamme:in",
+    "mein:e Hebamme:in",
     "jede:r NutzerInnen",
     "jede:r Nutzer:innen",
     "des:der Messebauer:in"
