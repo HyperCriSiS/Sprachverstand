@@ -1,7 +1,5 @@
 import type { Rule } from "../core/rule";
-
-const genderedPluralPattern =
-  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:[:*_/·•])innen(?![\p{L}\p{M}])/giu;
+import { transformGenderedPlural } from "./gendered-plural";
 
 /*
  * Nur Endungen, deren maskuline Pluralform unverändert bleibt. Das Lexikon
@@ -74,20 +72,8 @@ export const knownPluralSeparatorsRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    let replacements = 0;
-
-    const text = input.replace(
-      genderedPluralPattern,
-      (match: string, masculinePlural: string) => {
-        if (!hasSafePluralSuffix(masculinePlural)) {
-          return match;
-        }
-
-        replacements += 1;
-        return masculinePlural;
-      }
+    return transformGenderedPlural(input, (base) =>
+      hasSafePluralSuffix(base) ? base : undefined
     );
-
-    return { text, replacements };
   }
 };

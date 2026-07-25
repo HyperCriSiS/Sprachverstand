@@ -17,7 +17,7 @@ Requests. Sie beeinflusst den ausgelieferten Code nicht.
 
 | Quelle | Eintrag | Entscheidung | Umsetzung |
 |---|---|---|---|
-| beide | Doppelpunkt, Stern, Unterstrich und Schrägstrich | neu implementieren | zunächst nur geprüft sichere Pluralformen |
+| beide | Doppelpunkt, Stern, Unterstrich und Schrägstrich | neu implementiert | sichere unveränderte und explizit abgebildete Pluralformen |
 | no-gender | #3 falsche Änderung von „gewinnen“ | Regressionstest | darf niemals verändert werden |
 | no-gender | #29 falsche Änderung von „ersinnen“ | Regressionstest | darf niemals verändert werden |
 | gendersprache-korrigieren | #14 falsche Änderung bei „Rot-Rot“ | Regressionstest | später in gemeinsamen Negativkatalog aufnehmen |
@@ -25,7 +25,7 @@ Requests. Sie beeinflusst den ausgelieferten Code nicht.
 ## Noch zu bewerten
 
 - Binnen-I
-- unregelmäßige Pluralformen wie `Ärzt:innen`, `Student:innen` und `Kund:innen`
+- weitere unregelmäßige Pluralformen außerhalb des ersten geprüften Lexikons
 - Doppelnennungen
 - Pronomen und Artikel
 - Partizipialformen
