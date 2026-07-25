@@ -32,8 +32,23 @@ jobs:
       - name: TypeScript prüfen
         run: npm run typecheck
 
-      - name: Tests ausführen
-        run: npm test
+      - name: Kern- und DOM-Tests
+        run: npm exec vitest run tests/transform-text.test.ts tests/text-safety.test.ts tests/dom-processor.test.ts
+
+      - name: Fehlertreffer-Regressionen
+        run: npm exec vitest run tests/regressions/known-false-positives.test.ts
+
+      - name: Sichere Separatorformen testen
+        run: npm exec vitest run tests/rules/known-plural-separators.test.ts
+
+      - name: Flexionslexikon testen
+        run: npm exec vitest run tests/rules/mapped-plural-separators.test.ts
+
+      - name: Binnen-I testen
+        run: npm exec vitest run tests/rules/binnen-i.test.ts
+
+      - name: Doppelnennungen testen
+        run: npm exec vitest run tests/rules/double-forms.test.ts
 
       - name: Browser-Builds erstellen
         run: npm run build
