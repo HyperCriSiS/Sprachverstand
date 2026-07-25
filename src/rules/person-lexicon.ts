@@ -10,6 +10,8 @@ interface PersonForms {
   readonly stem: string;
   readonly plural: string;
   readonly singular?: string;
+  readonly feminineSingular?: string;
+  readonly compoundFeminineSingular?: string;
   readonly obliqueSingular?: string;
   readonly genitiveSingular?: string;
   readonly compoundPlural?: string;
@@ -91,6 +93,8 @@ const personForms: readonly PersonForms[] = [
   {
     stem: "bauer",
     singular: "bauer",
+    feminineSingular: "bäuerin",
+    compoundFeminineSingular: "bauerin",
     obliqueSingular: "bauern",
     plural: "bauern",
     compoundPlural: "bauer",
@@ -147,6 +151,28 @@ function findSingularMapping(base: string): PersonForms | undefined {
   );
 }
 
+function hasMatchingPrefixes(
+  masculine: string,
+  feminine: string,
+  masculineSuffix: string,
+  feminineSuffix: string
+): boolean {
+  const normalizedMasculine = masculine.toLocaleLowerCase(locale);
+  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
+
+  if (
+    !normalizedMasculine.endsWith(masculineSuffix) ||
+    !normalizedFeminine.endsWith(feminineSuffix)
+  ) {
+    return false;
+  }
+
+  return (
+    normalizedMasculine.slice(0, -masculineSuffix.length) ===
+    normalizedFeminine.slice(0, -feminineSuffix.length)
+  );
+}
+
 export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
 
@@ -195,4 +221,69 @@ export function mapMappedSingular(
   }
 
   return applyMapping(base, mapping, replacement);
+}
+
+export function mapMappedSingularPair(
+  left: string,
+  right: string
+): string | undefined {
+  for (const mapping of personForms) {
+    if (!mapping.singular) {
+      continue;
+    }
+
+    const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
+    const direct = hasMatchingPrefixes(
+      left,
+      right,
+      mapping.singular,
+      feminine
+    );
+    const reverse = hasMatchingPrefixes(
+      right,
+      left,
+      mapping.singular,
+      feminine
+    );
+
+    if (mapping.match !== "exact" || left.length === mapping.singular.length) {
+      if (direct) {
+        return left;
+      }
+    }
+
+    if (mapping.match !== "exact" || right.length === mapping.singular.length) {
+      if (reverse) {
+        return right;
+      }
+    }
+
+    if (!mapping.compoundFeminineSingular) {
+      continue;
+    }
+
+    if (
+      hasMatchingPrefixes(
+        left,
+        right,
+        mapping.singular,
+        mapping.compoundFeminineSingular
+      )
+    ) {
+      return left;
+    }
+
+    if (
+      hasMatchingPrefixes(
+        right,
+        left,
+        mapping.singular,
+        mapping.compoundFeminineSingular
+      )
+    ) {
+      return right;
+    }
+  }
+
+  return undefined;
 }
