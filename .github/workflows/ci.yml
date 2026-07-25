@@ -53,6 +53,12 @@ jobs:
       - name: Singularsonderformen testen
         run: npm exec vitest run tests/rules/special-singular-forms.test.ts
 
+      - name: Singular-Doppelformen testen
+        run: npm exec vitest run tests/rules/singular-double-forms.test.ts
+
+      - name: Pronomen und Possessivpaare testen
+        run: npm exec vitest run tests/rules/explicit-pronouns.test.ts
+
       - name: Doppelnennungen testen
         run: npm exec vitest run tests/rules/double-forms.test.ts
 

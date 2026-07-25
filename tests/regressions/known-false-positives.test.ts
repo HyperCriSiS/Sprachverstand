@@ -8,8 +8,9 @@ const unchangedExamples = [
   "Heiden und ersinnen",
   "Rot-Rot",
   "Mütter und Väter",
+  "Mutter/Vater",
+  "Die Kundin ruft an.",
   "Nutzerinnen und Benutzer",
-  "Nutzerin und Nutzer",
   "Nutzerinnen und Nutzerinnen",
   "Innen",
   "Innenstadt",
@@ -23,7 +24,9 @@ const unchangedExamples = [
   "InDesign",
   "Nutzerinnen",
   "NUTZERINNEN",
-  "Bäckerinnung"
+  "Bäckerinnung",
+  "Bauer/Bauerin",
+  "sein:ihr Hebamme:in"
 ] as const;
 
 const correctedExamples = [
@@ -44,7 +47,16 @@ const correctedExamples = [
   ["Erbauer:innen", "Erbauer"],
   ["Modellbauer:innen", "Modellbauer"],
   ["Messebauer*innen", "Messebauer"],
-  ["US-Bürger’innen", "US-Bürger"]
+  ["US-Bürger’innen", "US-Bürger"],
+  ["Kunde/Kundin", "Kunde"],
+  ["Nutzerin und Nutzer", "Nutzer"],
+  ["Tierärztin/Tierarzt", "Tierarzt"],
+  ["mein:e Nutzer:in", "mein Nutzer"],
+  ["eure:n Pilot:in", "euren Piloten"],
+  ["sein:ihr Nutzer:in", "sein Nutzer"],
+  ["er:sie", "er"],
+  ["ihm:ihr", "ihm"],
+  ["seines:ihres", "seines"]
 ] as const;
 
 describe("bekannte Fehlertreffer", () => {
