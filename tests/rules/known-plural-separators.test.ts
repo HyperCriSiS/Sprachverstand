@@ -26,7 +26,8 @@ describe("knownPluralSeparatorsRule", () => {
   it("lässt morphologisch unsichere Wörter unverändert", () => {
     const input =
       "Ärzt:innen, Student:innen, Kolleg:innen, Kund:innen, " +
-      "Mutter:innen und Bauer:innen";
+      "Mutter:innen, Bauer:innen, Autor:innen, Moderator:innen und " +
+      "Lieferant:innen";
 
     expect(knownPluralSeparatorsRule.apply(input)).toEqual({
       text: input,
