@@ -52,6 +52,28 @@ function sameWord(left: string, right: string): boolean {
   );
 }
 
+function toDativePlural(plural: string): string {
+  const lowerPlural = plural.toLocaleLowerCase(locale);
+
+  if (lowerPlural.endsWith("n") || lowerPlural.endsWith("s")) {
+    return plural;
+  }
+
+  const upperPlural = plural.toLocaleUpperCase(locale);
+  const ending = plural === upperPlural && plural !== lowerPlural ? "N" : "n";
+  return plural + ending;
+}
+
+function matchesMasculineSurface(
+  canonicalPlural: string,
+  surface: string
+): boolean {
+  return (
+    sameWord(canonicalPlural, surface) ||
+    sameWord(toDativePlural(canonicalPlural), surface)
+  );
+}
+
 function collapsePair(left: string, right: string): string | undefined {
   const leftCandidate = parseGenderedCandidate(left);
   const rightCandidate = parseGenderedCandidate(right);
@@ -59,7 +81,7 @@ function collapsePair(left: string, right: string): string | undefined {
   if (
     leftCandidate &&
     !rightCandidate &&
-    sameWord(leftCandidate.masculine, right)
+    matchesMasculineSurface(leftCandidate.masculine, right)
   ) {
     return right;
   }
@@ -67,7 +89,7 @@ function collapsePair(left: string, right: string): string | undefined {
   if (
     rightCandidate &&
     !leftCandidate &&
-    sameWord(rightCandidate.masculine, left)
+    matchesMasculineSurface(rightCandidate.masculine, left)
   ) {
     return left;
   }

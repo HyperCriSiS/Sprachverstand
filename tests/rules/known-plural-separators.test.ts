@@ -16,11 +16,14 @@ describe("knownPluralSeparatorsRule", () => {
 
   it("erhält Großschreibung und zusammengesetzte Wörter", () => {
     const result = knownPluralSeparatorsRule.apply(
-      "NUTZER:INNEN und Online-Nutzer:innen"
+      "NUTZER:INNEN, Online-Nutzer:innen, Nutzer:innenkonto und " +
+        "Mitarbeiter*innenportal"
     );
 
-    expect(result.text).toBe("NUTZER und Online-Nutzer");
-    expect(result.replacements).toBe(2);
+    expect(result).toEqual({
+      text: "NUTZER, Online-Nutzer, Nutzerkonto und Mitarbeiterportal",
+      replacements: 4
+    });
   });
 
   it("lässt morphologisch unsichere Wörter unverändert", () => {
@@ -38,15 +41,6 @@ describe("knownPluralSeparatorsRule", () => {
   it("verändert keine normalen Wörter oder bloßen Femininformen", () => {
     const input =
       "Nutzerinnen gewinnen innen, während andere etwas ersinnen.";
-
-    expect(knownPluralSeparatorsRule.apply(input)).toEqual({
-      text: input,
-      replacements: 0
-    });
-  });
-
-  it("ersetzt keine Wortbestandteile", () => {
-    const input = "Nutzer:innenkonto und VorNutzer:innenSuffix";
 
     expect(knownPluralSeparatorsRule.apply(input)).toEqual({
       text: input,

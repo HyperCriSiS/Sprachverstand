@@ -3,6 +3,17 @@
 Alle wesentlichen Änderungen an Sprachverstand werden in dieser Datei
 dokumentiert.
 
+## Unveröffentlicht
+
+### Korrigiert
+
+- Genderformen am Anfang zusammengesetzter Wörter werden normalisiert, etwa
+  `Nutzer:innenkonto` zu `Nutzerkonto` und `Ärzt:innenkammer` zu `Ärztekammer`.
+- `Mutter:innen` und `MutterInnen` werden zu `Mütter`; entsprechende Formen für
+  Tochter, Bruder und Vater wurden ebenfalls ergänzt.
+- Doppelnennungen im Dativ behalten ihre Flexion, etwa
+  `mit Ärztinnen und Ärzten` zu `mit Ärzten`.
+
 ## 0.2.0
 
 ### Hinzugefügt
