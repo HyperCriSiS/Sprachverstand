@@ -30,7 +30,10 @@ Das Projekt enthält:
 - gegenderte Wortanfänge in Komposita
 - Binnen-I im Plural
 - Doppelnennungen im Grundkasus und Dativplural
+- explizite Singular-Doppelformen wie `Kunde/Kundin`
 - explizit gegenderte Singularphrasen mit eindeutigem Artikel- und Kasusmarker
+- Possessivartikel in Nominativ, Akkusativ, Dativ und Genitiv
+- explizite Pronomen- und Possessivpaare wie `er:sie` und `seinem:ihrem`
 - Nominativ, Akkusativ, Dativ und Genitiv
 - korrekte schwache Deklination, etwa `Student` gegenüber `Studenten`
 - sichere natürliche Familienformen wie `Mutter:in`
@@ -51,12 +54,17 @@ Bauer:innen                          → Bauern
 Messebauer*innen                     → Messebauer
 Nutzerinnen und Nutzer               → Nutzer
 mit Ärztinnen und Ärzten             → mit Ärzten
+Kunde/Kundin                         → Kunde
+Tierärztin/Tierarzt                  → Tierarzt
 jede:r Nutzer:in                     → jeder Nutzer
 eine:n Student:in                    → einen Studenten
 einem:einer Kund:in                  → einem Kunden
 des:der Nutzer:in                    → des Nutzers
-des:der Student:in                   → des Studenten
-des:der Ärzt:in                      → des Arztes
+mein:e Nutzer:in                     → mein Nutzer
+eure:n Pilot:in                      → euren Piloten
+er:sie                               → er
+ihm:ihr                              → ihm
+seines:ihres                         → seines
 ```
 
 ### Bewusst noch nicht verändert
@@ -65,7 +73,6 @@ des:der Ärzt:in                      → des Arztes
   `eine NutzerIn`
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
-- Possessivpronomen und weitere Pronomenformen
 - Partizipialformen
 - zugängliche Attribute wie `alt` und `aria-label`
 
