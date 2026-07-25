@@ -42,7 +42,9 @@ describe("explicitPronounsRule", () => {
     "ihre Nutzer",
     "er/siehe",
     "innerhalb",
-    "der/den"
+    "der/den",
+    "sein:ihr Hebamme:in",
+    "der:die unbekannte:r"
   ])("lässt %s unverändert", (input) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: input,
