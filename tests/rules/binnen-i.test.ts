@@ -14,15 +14,29 @@ describe("binnenIPluralRule", () => {
     });
   });
 
-  it("unterstützt zusammengesetzte Formen", () => {
+  it("unterstützt zusammengesetzte Formen und Komposita", () => {
     const result = binnenIPluralRule.apply(
       "Online-NutzerInnen, TierärztInnen, WerkstudentInnen, " +
-        "KoautorInnen und StammkundInnen"
+        "KoautorInnen, StammkundInnen, NutzerInnenkonto und " +
+        "MutterInneninitiative"
     );
 
     expect(result).toEqual({
-      text: "Online-Nutzer, Tierärzte, Werkstudenten, Koautoren und Stammkunden",
-      replacements: 5
+      text:
+        "Online-Nutzer, Tierärzte, Werkstudenten, Koautoren, " +
+        "Stammkunden, Nutzerkonto und Mütterinitiative",
+      replacements: 7
+    });
+  });
+
+  it("unterstützt unregelmäßige Familienpluralformen", () => {
+    const result = binnenIPluralRule.apply(
+      "MutterInnen, TochterInnen, BruderInnen und VaterInnen"
+    );
+
+    expect(result).toEqual({
+      text: "Mütter, Töchter, Brüder und Väter",
+      replacements: 4
     });
   });
 
@@ -44,9 +58,8 @@ describe("binnenIPluralRule", () => {
     });
   });
 
-  it("verändert keine eingebetteten oder unbekannten Formen", () => {
-    const input =
-      "NutzerInnenkonto, MutterInnen, TochterInnen und BruderInnen";
+  it("verändert keine unbekannten Binnen-I-Formen", () => {
+    const input = "SchwesterInnen und CousineInnen";
 
     expect(binnenIPluralRule.apply(input)).toEqual({
       text: input,

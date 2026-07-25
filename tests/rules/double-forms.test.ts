@@ -16,7 +16,11 @@ describe("doubleFormsRule", () => {
     ["Nutzer:innen und Nutzer", "Nutzer"],
     ["Nutzer und NutzerInnen", "Nutzer"],
     ["Ärzt*innen/Ärzte", "Ärzte"],
-    ["Nutzerinnen und Nutzer:innen", "Nutzer"]
+    ["Nutzerinnen und Nutzer:innen", "Nutzer"],
+    ["Ärztinnen und Ärzten", "Ärzten"],
+    ["Ärzten und Ärztinnen", "Ärzten"],
+    ["Nutzerinnen und Nutzern", "Nutzern"],
+    ["Bürgern und Bürgerinnen", "Bürgern"]
   ])("führt %s zu %s zusammen", (input, expected) => {
     expect(doubleFormsRule.apply(input)).toEqual({
       text: expected,
@@ -26,10 +30,12 @@ describe("doubleFormsRule", () => {
 
   it("ersetzt Doppelnennungen innerhalb eines Satzes", () => {
     expect(
-      doubleFormsRule.apply("Die Nutzerinnen und Nutzer lesen den Text.")
+      doubleFormsRule.apply(
+        "Die Nutzerinnen und Nutzer sprechen mit Ärztinnen und Ärzten."
+      )
     ).toEqual({
-      text: "Die Nutzer lesen den Text.",
-      replacements: 1
+      text: "Die Nutzer sprechen mit Ärzten.",
+      replacements: 2
     });
   });
 
@@ -43,7 +49,7 @@ describe("doubleFormsRule", () => {
   it.each([
     "Heiden und ersinnen",
     "Mütter und Väter",
-    "Ärztinnen und Ärzten",
+    "Ärztinnen und Ärztes",
     "Nutzerinnen und Benutzer",
     "Nutzerin und Nutzer",
     "Nutzerinnen und Nutzerinnen",

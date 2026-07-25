@@ -12,8 +12,8 @@ interface PluralMapping {
 const locale = "de-DE";
 
 const pluralMappings: readonly PluralMapping[] = [
-  { stem: "interessent", plural: "interessenten" },
   { stem: "hochschulabsolvent", plural: "hochschulabsolventen" },
+  { stem: "interessent", plural: "interessenten" },
   { stem: "absolvent", plural: "absolventen" },
   { stem: "doktorand", plural: "doktoranden" },
   { stem: "praktikant", plural: "praktikanten" },
@@ -51,6 +51,10 @@ const pluralMappings: readonly PluralMapping[] = [
   { stem: "kolleg", plural: "kollegen" },
   { stem: "autor", plural: "autoren" },
   { stem: "kund", plural: "kunden" },
+  { stem: "mutter", plural: "mütter" },
+  { stem: "tochter", plural: "töchter" },
+  { stem: "bruder", plural: "brüder" },
+  { stem: "vater", plural: "väter" },
   { stem: "ärzt", plural: "ärzte" },
   { stem: "bauer", plural: "bauern", match: "exact" as const }
 ].sort((left, right) => right.stem.length - left.stem.length);

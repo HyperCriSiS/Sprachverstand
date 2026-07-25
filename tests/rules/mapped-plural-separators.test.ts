@@ -20,7 +20,11 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Aktionär:innen", "Aktionäre"],
     ["Friseur:innen", "Friseure"],
     ["Akteur:innen", "Akteure"],
-    ["Bauer:innen", "Bauern"]
+    ["Bauer:innen", "Bauern"],
+    ["Mutter:innen", "Mütter"],
+    ["Tochter:innen", "Töchter"],
+    ["Bruder:innen", "Brüder"],
+    ["Vater:innen", "Väter"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
@@ -28,15 +32,18 @@ describe("mappedPluralSeparatorsRule", () => {
     });
   });
 
-  it("unterstützt zusammengesetzte Wörter", () => {
+  it("unterstützt zusammengesetzte Wörter und Komposita", () => {
     const result = mappedPluralSeparatorsRule.apply(
       "Tierärzt:innen, Werkstudent*innen, Stammkund_innen, " +
-        "Koautor/innen und Co-Moderator:innen"
+        "Koautor/innen, Co-Moderator:innen, Ärzt:innenkammer und " +
+        "Mutter:inneninitiative"
     );
 
     expect(result).toEqual({
-      text: "Tierärzte, Werkstudenten, Stammkunden, Koautoren und Co-Moderatoren",
-      replacements: 5
+      text:
+        "Tierärzte, Werkstudenten, Stammkunden, Koautoren, " +
+        "Co-Moderatoren, Ärztekammer und Mütterinitiative",
+      replacements: 7
     });
   });
 
@@ -57,7 +64,7 @@ describe("mappedPluralSeparatorsRule", () => {
   });
 
   it("verändert keine nicht hinterlegten Formen", () => {
-    const input = "Mutter:innen, Tochter:innen und Bruder:innen";
+    const input = "Schwester:innen und Cousine:innen";
 
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: input,
