@@ -39,6 +39,16 @@ function addDeterminer(
   }
 }
 
+function addPossessiveDeterminers(
+  base: string,
+  inflectedBase = `${base}e`
+): void {
+  addDeterminer(base, "e", base, "nominative");
+  addDeterminer(inflectedBase, "n", `${base}en`, "accusative");
+  addDeterminer(inflectedBase, "m", `${base}em`, "dative");
+  addDeterminer(`${base}es`, `${base}er`, `${base}es`, "genitive");
+}
+
 addDeterminer("der", "die", "der", "nominative", true);
 addDeterminer("den", "die", "den", "accusative", true);
 addDeterminer("dem", "der", "dem", "dative", true);
@@ -63,6 +73,18 @@ addDeterminer("diese", "r", "dieser", "nominative");
 addDeterminer("diese", "n", "diesen", "accusative");
 addDeterminer("diese", "m", "diesem", "dative");
 addDeterminer("dieses", "dieser", "dieses", "genitive");
+
+addPossessiveDeterminers("mein");
+addPossessiveDeterminers("dein");
+addPossessiveDeterminers("sein");
+addPossessiveDeterminers("ihr");
+addPossessiveDeterminers("unser");
+addPossessiveDeterminers("euer", "eure");
+
+addDeterminer("sein", "ihr", "sein", "nominative", true);
+addDeterminer("seinen", "ihren", "seinen", "accusative", true);
+addDeterminer("seinem", "ihrem", "seinem", "dative", true);
+addDeterminer("seines", "ihres", "seines", "genitive", true);
 
 const determinerToken = String.raw`[\p{L}\p{M}:*_/·•.’‘-]+`;
 const nounBase = String.raw`[\p{L}\p{M}’'-]+`;
