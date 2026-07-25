@@ -19,6 +19,14 @@ dokumentiert.
 - Punkt sowie typografische Apostrophe werden als Genderseparatoren erkannt.
 - Natürlich feminine Familienformen wie `Mutter:in` werden ohne Änderung des
   grammatischen Geschlechts normalisiert.
+- Explizite Singular-Doppelformen wie `Kunde/Kundin`, `Arzt und Ärztin` und
+  `Tierärztin/Tierarzt` werden nur bei lexikalisch identischer Personenform
+  zusammengeführt.
+- Possessivartikel mit eindeutigem Kasus werden gemeinsam mit dem Substantiv
+  normalisiert, etwa `mein:e Nutzer:in` zu `mein Nutzer` und
+  `eure:n Pilot:in` zu `euren Piloten`.
+- Explizite Pronomen- und Possessivpaare wie `er:sie`, `ihm:ihr` und
+  `seines:ihres` werden auf die maskuline Form reduziert.
 
 ### Korrigiert
 
