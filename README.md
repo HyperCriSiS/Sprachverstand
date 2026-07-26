@@ -8,8 +8,11 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.2.0` ist die erste funktionale Entwicklungsversion. Die Änderungen
-seit dieser Version werden unter **Unveröffentlicht** im Changelog gesammelt.
+Version `0.3.0` ist der erste manuell testbare Beta-Stand. Die CI erzeugt für
+jeden geprüften Commit Chromium-, Firefox- und Quellcode-Pakete samt
+SHA-256-Prüfsummen. Die Installations- und Testanleitung steht unter
+[`docs/BETA-TEST.md`](docs/BETA-TEST.md).
+
 Das Projekt enthält:
 
 - Manifest V3 für Chromium und Firefox
@@ -22,8 +25,8 @@ Das Projekt enthält:
   nachträgliche Attributänderungen
 - Schutz für Eingabefelder, Editoren, Code, URLs und technische Daten
 - globale Aktivierung, Regelprofil und Domain-Ausschlüsse
-- automatisierte Unit-, DOM- und Regressionstests
-- reproduzierbare Builds mit esbuild
+- automatisierte Unit-, DOM-, Änderungsumfang- und Regressionstests
+- reproduzierbare Builds und geprüfte Beta-Pakete
 - CI für Typecheck, getrennte Regeltests und beide Browser-Builds
 
 ### Bereits unterstützte Schreibweisen
@@ -113,6 +116,9 @@ Der Chromium-Build wird bei Änderungen automatisch aktualisiert.
 
 ## Manuell laden
 
+Die vollständige Beta-Anleitung steht in
+[`docs/BETA-TEST.md`](docs/BETA-TEST.md).
+
 ### Chromium
 
 1. `chrome://extensions` öffnen.
@@ -154,6 +160,6 @@ git config user.name "Sprachverstand"
 git config user.email "DEINE_NOREPLY_ADRESSE"
 ```
 
-Die endgültige Lizenz wird vor der ersten Verteilung festgelegt, nachdem
-abschließend entschieden wurde, welche fremden Inhalte tatsächlich übernommen
-werden.
+Die endgültige Lizenz wird vor der ersten öffentlichen Verteilung festgelegt,
+nachdem abschließend entschieden wurde, welche fremden Inhalte tatsächlich
+übernommen werden.
