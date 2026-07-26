@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isProbablyTechnicalText,
+  shouldProcessAccessibleAttribute,
   shouldProcessTextNode
 } from "../src/core/text-safety";
 
@@ -47,5 +48,49 @@ describe("shouldProcessTextNode", () => {
 
     expect(shouldProcessTextNode(codeNode)).toBe(false);
     expect(shouldProcessTextNode(editorNode)).toBe(false);
+  });
+});
+
+describe("shouldProcessAccessibleAttribute", () => {
+  it("akzeptiert ausschließlich freigegebene Textattribute", () => {
+    const image = document.createElement("img");
+    image.alt = "Nutzer:innen im Bild";
+    document.body.append(image);
+
+    expect(
+      shouldProcessAccessibleAttribute(image, "alt", image.alt)
+    ).toBe(true);
+    expect(
+      shouldProcessAccessibleAttribute(image, "data-label", "Nutzer:innen")
+    ).toBe(false);
+  });
+
+  it("ignoriert technische und bewusst ausgeschlossene Attribute", () => {
+    document.body.innerHTML = `
+      <div data-sprachverstand-ignore aria-label="Nutzer:innen"></div>
+      <div aria-hidden="true" title="Nutzer:innen"></div>
+      <code title="Nutzer:innen"></code>
+      <img alt="https://example.org/Nutzer:innen">
+    `;
+
+    const ignored = document.querySelector(
+      "[data-sprachverstand-ignore]"
+    ) as Element;
+    const hidden = document.querySelector("[aria-hidden]") as Element;
+    const code = document.querySelector("code") as Element;
+    const image = document.querySelector("img") as HTMLImageElement;
+
+    expect(
+      shouldProcessAccessibleAttribute(ignored, "aria-label", "Nutzer:innen")
+    ).toBe(false);
+    expect(
+      shouldProcessAccessibleAttribute(hidden, "title", "Nutzer:innen")
+    ).toBe(false);
+    expect(
+      shouldProcessAccessibleAttribute(code, "title", "Nutzer:innen")
+    ).toBe(false);
+    expect(
+      shouldProcessAccessibleAttribute(image, "alt", image.alt)
+    ).toBe(false);
   });
 });
