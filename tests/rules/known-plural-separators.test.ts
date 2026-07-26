@@ -6,14 +6,14 @@ describe("knownPluralSeparatorsRule", () => {
     const result = knownPluralSeparatorsRule.apply(
       "Nutzer:innen, Mitarbeiter*innen, Schüler_innen, Bürger/innen, " +
         "Lehrer·innen, Fahrer•innen, Entwickler.innen, " +
-        "US-Bürger’innen und Zuschauer‘innen"
+        "US-Bürger’innen, Zuschauer‘innen und „Mitarbeiter/-innen“"
     );
 
     expect(result).toEqual({
       text:
         "Nutzer, Mitarbeiter, Schüler, Bürger, Lehrer, Fahrer, " +
-        "Entwickler, US-Bürger und Zuschauer",
-      replacements: 9
+        "Entwickler, US-Bürger, Zuschauer und „Mitarbeiter“",
+      replacements: 10
     });
   });
 
