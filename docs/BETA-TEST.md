@@ -10,6 +10,18 @@ gedacht. Sie ist noch nicht für den Browser-Store signiert.
 - `sprachverstand-0.3.0-beta.1-source.zip`
 - `SHA256SUMS.txt`
 
+## Prüfsummen kontrollieren
+
+Nach dem Entpacken des GitHub-Actions-Artefakts im selben Verzeichnis wie die
+Pakete ausführen:
+
+```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+Unter Windows können die drei in `SHA256SUMS.txt` angegebenen Werte zum Beispiel
+mit `Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
+
 ## Chromium installieren
 
 1. Das Chromium-ZIP entpacken.
