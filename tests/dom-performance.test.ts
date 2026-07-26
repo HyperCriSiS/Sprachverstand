@@ -42,12 +42,14 @@ describe("DomProcessor Änderungsumfang", () => {
 
     ruleCalls = 0;
     const target = document.querySelectorAll("p")[500]?.firstChild as Text;
-    target.data = "Ein:e Nutzer:in";
+    target.data = "Neue Nutzer:innen";
 
     await new Promise((resolve) => window.setTimeout(resolve, 0));
     processor.flush();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    processor.flush();
 
-    expect(target.data).toBe("Ein:e Nutzer:in");
+    expect(target.data).toBe("Neue Nutzer");
     expect(ruleCalls).toBeLessThanOrEqual(2);
   });
 
