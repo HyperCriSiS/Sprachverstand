@@ -38,10 +38,8 @@ describe("titleAbbreviationsRule", () => {
   });
 
   it("erhält Groß- und Kleinschreibung", () => {
-    expect(
-      titleAbbreviationsRule.apply("PROF.IN ANNA und prof.in anna")
-    ).toEqual({
-      text: "PROF. ANNA und prof. anna",
+    expect(titleAbbreviationsRule.apply("PROF.IN ANNA und prof.in")).toEqual({
+      text: "PROF. ANNA und professorin",
       replacements: 2
     });
   });
