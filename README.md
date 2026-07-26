@@ -16,7 +16,10 @@ Das Projekt enthält:
 - keinen Hintergrunddienst und keine unnötige Service-Worker-Abhängigkeit
 - TypeScript-Regel-Engine mit Risikoprofilen
 - sichere Verarbeitung normaler Textknoten
-- `MutationObserver` für dynamische Webseiten und Single-Page-Anwendungen
+- kontrollierte Verarbeitung von `alt`, `aria-label`, `aria-description` und
+  `title`
+- `MutationObserver` für dynamische Webseiten, Single-Page-Anwendungen und
+  nachträgliche Attributänderungen
 - Schutz für Eingabefelder, Editoren, Code, URLs und technische Daten
 - globale Aktivierung, Regelprofil und Domain-Ausschlüsse
 - automatisierte Unit-, DOM- und Regressionstests
@@ -37,6 +40,8 @@ Das Projekt enthält:
 - Nominativ, Akkusativ, Dativ und Genitiv
 - korrekte schwache Deklination, etwa `Student` gegenüber `Studenten`
 - sichere natürliche Familienformen wie `Mutter:in`
+- dieselben sicheren Regeln in sichtbarem Text und freigegebenen zugänglichen
+  Attributen
 
 Beispiele:
 
@@ -74,7 +79,8 @@ seines:ihres                         → seines
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
 - Partizipialformen
-- zugängliche Attribute wie `alt` und `aria-label`
+- nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
+  URLs
 
 Eine ausgelassene Ersetzung ist ausdrücklich besser als eine falsche.
 

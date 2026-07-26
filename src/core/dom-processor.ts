@@ -1,5 +1,9 @@
 import type { Rule, RuleProfile } from "./rule";
-import { shouldProcessTextNode } from "./text-safety";
+import {
+  accessibleAttributeNames,
+  shouldProcessAccessibleAttribute,
+  shouldProcessTextNode
+} from "./text-safety";
 import { transformText } from "./transform-text";
 
 export interface DomProcessorOptions {
@@ -12,6 +16,7 @@ export interface DomProcessorOptions {
 export class DomProcessor {
   private observer: MutationObserver | undefined;
   private readonly pendingNodes = new Set<Node>();
+  private readonly pendingAttributes = new Map<Element, Set<string>>();
   private flushScheduled = false;
   private running = false;
 
@@ -42,6 +47,13 @@ export class DomProcessor {
           continue;
         }
 
+        if (record.type === "attributes") {
+          if (record.target instanceof Element && record.attributeName) {
+            this.queueAttribute(record.target, record.attributeName);
+          }
+          continue;
+        }
+
         for (const addedNode of record.addedNodes) {
           this.queue(addedNode);
         }
@@ -51,6 +63,8 @@ export class DomProcessor {
     this.observer.observe(this.document.documentElement, {
       childList: true,
       characterData: true,
+      attributes: true,
+      attributeFilter: [...accessibleAttributeNames],
       subtree: true
     });
   }
@@ -60,6 +74,7 @@ export class DomProcessor {
     this.observer?.disconnect();
     this.observer = undefined;
     this.pendingNodes.clear();
+    this.pendingAttributes.clear();
     this.flushScheduled = false;
   }
 
@@ -81,10 +96,18 @@ export class DomProcessor {
 
     this.flushScheduled = false;
     const nodes = [...this.pendingNodes];
+    const attributes = [...this.pendingAttributes.entries()];
     this.pendingNodes.clear();
+    this.pendingAttributes.clear();
 
     for (const node of nodes) {
       this.processRoot(node);
+    }
+
+    for (const [element, attributeNames] of attributes) {
+      for (const attributeName of attributeNames) {
+        this.processAccessibleAttribute(element, attributeName);
+      }
     }
   }
 
@@ -98,15 +121,24 @@ export class DomProcessor {
       return;
     }
 
+    if (root instanceof Element) {
+      this.processAccessibleAttributes(root);
+    }
+
     const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
     const walker = this.document.createTreeWalker(
       root,
-      nodeFilter.SHOW_TEXT
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
     );
 
     let currentNode = walker.nextNode();
     while (currentNode) {
-      this.processTextNode(currentNode as Text);
+      if (currentNode.nodeType === Node.TEXT_NODE) {
+        this.processTextNode(currentNode as Text);
+      } else if (currentNode instanceof Element) {
+        this.processAccessibleAttributes(currentNode);
+      }
+
       currentNode = walker.nextNode();
     }
   }
@@ -117,7 +149,21 @@ export class DomProcessor {
     }
 
     this.pendingNodes.add(node);
+    this.scheduleFlush();
+  }
 
+  private queueAttribute(element: Element, attributeName: string): void {
+    if (!this.running) {
+      return;
+    }
+
+    const attributeNames = this.pendingAttributes.get(element) ?? new Set<string>();
+    attributeNames.add(attributeName);
+    this.pendingAttributes.set(element, attributeNames);
+    this.scheduleFlush();
+  }
+
+  private scheduleFlush(): void {
     if (this.flushScheduled) {
       return;
     }
@@ -131,6 +177,43 @@ export class DomProcessor {
       return;
     }
 
+    const result = this.transformValue(node.data);
+    if (result.replacements === 0 || result.text === node.data) {
+      return;
+    }
+
+    node.data = result.text;
+    this.options.onReplacements?.(result.replacements);
+  }
+
+  private processAccessibleAttributes(element: Element): void {
+    for (const attributeName of accessibleAttributeNames) {
+      this.processAccessibleAttribute(element, attributeName);
+    }
+  }
+
+  private processAccessibleAttribute(
+    element: Element,
+    attributeName: string
+  ): void {
+    const value = element.getAttribute(attributeName);
+    if (
+      value === null ||
+      !shouldProcessAccessibleAttribute(element, attributeName, value)
+    ) {
+      return;
+    }
+
+    const result = this.transformValue(value);
+    if (result.replacements === 0 || result.text === value) {
+      return;
+    }
+
+    element.setAttribute(attributeName, result.text);
+    this.options.onReplacements?.(result.replacements);
+  }
+
+  private transformValue(input: string) {
     const transformOptions = this.options.disabledRuleIds
       ? {
           profile: this.options.profile,
@@ -138,17 +221,6 @@ export class DomProcessor {
         }
       : { profile: this.options.profile };
 
-    const result = transformText(
-      node.data,
-      this.options.rules,
-      transformOptions
-    );
-
-    if (result.replacements === 0 || result.text === node.data) {
-      return;
-    }
-
-    node.data = result.text;
-    this.options.onReplacements?.(result.replacements);
+    return transformText(input, this.options.rules, transformOptions);
   }
 }

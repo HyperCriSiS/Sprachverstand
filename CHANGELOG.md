@@ -27,6 +27,10 @@ dokumentiert.
   `eure:n Pilot:in` zu `euren Piloten`.
 - Explizite Pronomen- und Possessivpaare wie `er:sie`, `ihm:ihr` und
   `seines:ihres` werden auf die maskuline Form reduziert.
+- Zugängliche Textattribute `alt`, `aria-label`, `aria-description` und `title`
+  werden mit denselben sicheren Regeln wie sichtbare Textknoten verarbeitet.
+- Der `MutationObserver` reagiert gezielt auf spätere Änderungen der
+  freigegebenen zugänglichen Attribute.
 
 ### Korrigiert
 
@@ -40,6 +44,13 @@ dokumentiert.
   `Messebauer*innen` korrekt zu `Messebauer` werden.
 - Historische Fehlertreffer wie `Innen- und Außendienst`, `LogIn`, `AddIn`,
   `PlugIn` und `DriveIn` sind als Regressionen geschützt.
+
+### Sicherheit
+
+- Andere Attribute wie `value`, `placeholder`, `data-*`, IDs und URLs werden
+  nicht verändert.
+- Ignorierte, versteckte, editierbare und technische Attributinhalte bleiben
+  unberührt.
 
 ## 0.2.0
 
