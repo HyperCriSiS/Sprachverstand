@@ -11,6 +11,7 @@ export interface DomProcessorOptions {
   readonly profile: RuleProfile;
   readonly disabledRuleIds?: ReadonlySet<string>;
   readonly protectedTerms?: readonly string[];
+  readonly processAccessibleAttributes?: boolean;
   readonly onReplacementCountChange?: (count: number) => void;
 }
 
@@ -29,7 +30,10 @@ export class DomProcessor {
   private readonly pendingNodes = new Set<Node>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
-  private readonly attributeChanges = new Map<Element, Map<string, ChangeRecord>>();
+  private readonly attributeChanges = new Map<
+    Element,
+    Map<string, ChangeRecord>
+  >();
   private flushScheduled = false;
   private countNotificationScheduled = false;
   private running = false;
@@ -79,13 +83,18 @@ export class DomProcessor {
       }
     });
 
-    this.observer.observe(this.document.documentElement, {
+    const observerOptions: MutationObserverInit = {
       childList: true,
       characterData: true,
-      attributes: true,
-      attributeFilter: [...accessibleAttributeNames],
       subtree: true
-    });
+    };
+
+    if (this.options.processAccessibleAttributes !== false) {
+      observerOptions.attributes = true;
+      observerOptions.attributeFilter = [...accessibleAttributeNames];
+    }
+
+    this.observer.observe(this.document.documentElement, observerOptions);
 
     this.scheduleCountNotification();
   }
@@ -177,7 +186,10 @@ export class DomProcessor {
       return;
     }
 
-    if (root instanceof Element) {
+    if (
+      root instanceof Element &&
+      this.options.processAccessibleAttributes !== false
+    ) {
       this.processAccessibleAttributes(root);
     }
 
@@ -191,7 +203,10 @@ export class DomProcessor {
     while (currentNode) {
       if (currentNode.nodeType === Node.TEXT_NODE) {
         this.processTextNode(currentNode as Text);
-      } else if (currentNode instanceof Element) {
+      } else if (
+        currentNode instanceof Element &&
+        this.options.processAccessibleAttributes !== false
+      ) {
         this.processAccessibleAttributes(currentNode);
       }
 
@@ -213,7 +228,8 @@ export class DomProcessor {
       return;
     }
 
-    const attributeNames = this.pendingAttributes.get(element) ?? new Set<string>();
+    const attributeNames =
+      this.pendingAttributes.get(element) ?? new Set<string>();
     attributeNames.add(attributeName);
     this.pendingAttributes.set(element, attributeNames);
     this.scheduleFlush();
