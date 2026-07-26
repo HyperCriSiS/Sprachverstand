@@ -3,42 +3,90 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
     <title>Sprachverstand – Einstellungen</title>
     <link rel="stylesheet" href="options.css">
     <script src="options.js" defer></script>
   </head>
   <body>
     <main>
-      <h1>Sprachverstand</h1>
-      <p>Macht Webseiten wieder lesbar.</p>
+      <header class="page-header">
+        <h1>Sprachverstand</h1>
+        <p>Regeln und Ausnahmen verständlich selbst festlegen.</p>
+      </header>
 
       <form id="settings-form">
-        <label class="checkbox-row">
-          <input id="enabled" type="checkbox">
-          Erweiterung aktivieren
-        </label>
+        <section>
+          <h2>Allgemein</h2>
+          <label class="checkbox-row prominent-toggle">
+            <input id="enabled" type="checkbox">
+            <span>
+              <strong>Erweiterung aktivieren</strong>
+              <small>Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt.</small>
+            </span>
+          </label>
+        </section>
 
-        <label>
-          Regelprofil
-          <select id="profile">
-            <option value="conservative">Konservativ</option>
-            <option value="standard">Standard</option>
-            <option value="aggressive">Aggressiv</option>
-          </select>
-        </label>
+        <section>
+          <div class="section-heading">
+            <div>
+              <h2>Was soll korrigiert werden?</h2>
+              <p>Jede Regelgruppe ist einzeln wählbar. Ausdrücklich weibliche Bezeichnungen werden nicht pauschal verändert.</p>
+            </div>
+            <div class="compact-actions">
+              <button id="select-all-rules" type="button">Alle</button>
+              <button id="select-no-rules" type="button">Keine</button>
+            </div>
+          </div>
+          <div id="rule-groups" class="rule-groups"></div>
+        </section>
 
-        <label>
-          Ausgeschlossene Domains
-          <textarea
-            id="excluded-domains"
-            rows="8"
-            placeholder="example.org&#10;intranet.example.org"
-          ></textarea>
-          <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst.</small>
-        </label>
+        <section>
+          <h2>Wo soll korrigiert werden?</h2>
+          <label class="checkbox-row">
+            <input id="process-accessible-attributes" type="checkbox">
+            <span>
+              <strong>Bildbeschreibungen und zugängliche Beschriftungen</strong>
+              <small>Verarbeitet ausschließlich <code>alt</code>, <code>aria-label</code>, <code>aria-description</code> und <code>title</code>.</small>
+            </span>
+          </label>
+        </section>
+
+        <section>
+          <h2>Persönliche Ausnahmen</h2>
+          <label>
+            Wörter oder vollständige Phrasen nie verändern
+            <textarea
+              id="protected-terms"
+              rows="7"
+              spellcheck="false"
+              placeholder="Nutzer:innen&#10;Meine geschützte Phrase"
+            ></textarea>
+            <small>
+              Eine wörtliche Ausnahme pro Zeile, Groß-/Kleinschreibung wird ignoriert.
+              Keine regulären Ausdrücke oder Platzhalter. Ein einzelnes Wort schützt nicht automatisch längere Komposita.
+              Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste wird nur lokal im Browser gespeichert.
+            </small>
+          </label>
+        </section>
+
+        <section>
+          <h2>Ausgeschlossene Domains</h2>
+          <label>
+            Sprachverstand auf diesen Webseiten vollständig deaktivieren
+            <textarea
+              id="excluded-domains"
+              rows="7"
+              spellcheck="false"
+              inputmode="url"
+              placeholder="example.org&#10;intranet.example.org"
+            ></textarea>
+            <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst.</small>
+          </label>
+        </section>
 
         <div class="actions">
-          <button type="submit">Speichern</button>
+          <button type="submit" class="primary">Speichern</button>
           <button id="reset" type="button">Zurücksetzen</button>
           <output id="status" aria-live="polite"></output>
         </div>
