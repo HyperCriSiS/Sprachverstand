@@ -32,8 +32,8 @@ jobs:
       - name: TypeScript prüfen
         run: npm run typecheck
 
-      - name: Kern- und DOM-Tests
-        run: npm exec vitest run tests/transform-text.test.ts tests/text-safety.test.ts tests/dom-processor.test.ts
+      - name: Kern-, DOM- und Badge-Tests
+        run: npm exec vitest run tests/transform-text.test.ts tests/text-safety.test.ts tests/dom-processor.test.ts tests/badge.test.ts
 
       - name: Gezielten Änderungsumfang testen
         run: npm exec vitest run tests/dom-performance.test.ts
