@@ -1,52 +1,127 @@
-# Sprachverstand 0.3.0 – Beta 1 testen
+# Sprachverstand 0.4.0 – Beta 2 testen
 
-Diese Beta ist für manuelle Funktions-, Kompatibilitäts- und Fehlertreffertests
-gedacht. Sie ist noch nicht für den Browser-Store signiert.
+Diese Beta ergänzt reversible Seitenänderungen, Live-Counter, konkrete
+Regelgruppen, persönliche Ausnahmen und die mobile Firefox-Oberfläche.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.3.0-beta.1-chromium.zip`
-- `sprachverstand-0.3.0-beta.1-firefox.xpi`
-- `sprachverstand-0.3.0-beta.1-source.zip`
+- `sprachverstand-0.4.0-beta.2-chromium.zip`
+- `sprachverstand-0.4.0-beta.2-firefox.xpi`
+- `sprachverstand-0.4.0-beta.2-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
-
-Nach dem Entpacken des GitHub-Actions-Artefakts im selben Verzeichnis wie die
-Pakete ausführen:
 
 ```bash
 sha256sum -c SHA256SUMS.txt
 ```
 
-Unter Windows können die drei in `SHA256SUMS.txt` angegebenen Werte zum Beispiel
-mit `Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
+Unter Windows können die Werte mit
+`Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
 
-## Chromium installieren
+## Desktop installieren
 
-1. Das Chromium-ZIP entpacken.
-2. `chrome://extensions` beziehungsweise die Erweiterungsseite des Browsers
-   öffnen.
-3. Den Entwicklermodus aktivieren.
+### Chromium
+
+1. Chromium-ZIP entpacken.
+2. `chrome://extensions` öffnen.
+3. Entwicklermodus aktivieren.
 4. **Entpackte Erweiterung laden** wählen.
 5. Den entpackten Ordner auswählen.
 
-## Firefox installieren
-
-Die XPI ist noch nicht von Mozilla signiert und kann deshalb in einem normalen
-Firefox-Profil nicht dauerhaft installiert werden.
+### Firefox
 
 1. `about:debugging#/runtime/this-firefox` öffnen.
 2. **Temporäres Add-on laden** wählen.
-3. Die Datei `sprachverstand-0.3.0-beta.1-firefox.xpi` auswählen.
+3. Die Firefox-XPI oder `dist/firefox/manifest.json` auswählen.
 
-Alternativ kann der entpackte Firefox-Build über dessen `manifest.json` geladen
-werden. Nach einem Neustart muss eine temporäre Erweiterung erneut geladen
-werden.
+## Firefox für Android testen
 
-## Lokale Testseite starten
+Google Chrome auf Android unterstützt keine Erweiterungen. Das verbindliche
+Mobilziel ist Firefox für Android ab Version 142.
 
-Im Repository:
+Mit aktiviertem USB-Debugging, ADB und einem verbundenen Android-Gerät:
+
+```bash
+npm install
+npm run build:firefox
+npx web-ext run \
+  --source-dir dist/firefox \
+  --target=firefox-android
+```
+
+Bei mehreren Geräten oder Firefox-Varianten können zusätzlich
+`--android-device` und `--firefox-apk=org.mozilla.firefox` angegeben werden.
+
+Auf dem Gerät prüfen:
+
+- Popup vollständig sichtbar und ohne horizontales Scrollen
+- Schalter und Schaltflächen gut per Touch bedienbar
+- Optionsseite im normalen Tab
+- Regelkarten auf ungefähr 360 × 640 dp
+- Bildschirmtastatur verdeckt Speichern nicht dauerhaft
+- Systemhelligkeit und Dunkelmodus
+- Zurück-Navigation aus der Optionsseite
+- Counter im Popup, falls das Android-Menü kein Badge am Symbol zeigt
+
+## Funktionsprüfungen
+
+### Sofortiges An- und Ausschalten
+
+1. Eine Seite mit erkannten Formen öffnen.
+2. Sprachverstand ausschalten.
+3. Der ursprüngliche Text muss ohne Reload zurückkehren.
+4. Wieder einschalten.
+5. Der Text muss erneut korrigiert werden.
+
+Hat die Webseite einen Wert nach der Korrektur selbst verändert, darf
+Sprachverstand diese spätere Änderung beim Ausschalten nicht überschreiben.
+
+### Live-Counter
+
+- Das Badge am Symbol zeigt die Zahl erkannter Korrekturen pro Tab.
+- Im Popup steht dieselbe Zahl als Text.
+- Null wird im Badge ausgeblendet.
+- Werte über 999 erscheinen als `999+`.
+- Beim Ausschalten fällt der Wert auf null.
+- Entfernte dynamische Inhalte dürfen nicht dauerhaft weitergezählt werden.
+
+Der Counter zählt korrigierte Fundstellen. Eine zusammengeführte Doppelnennung
+ist daher eine Korrektur, nicht zwingend die Zahl aller beteiligten Wörter.
+
+### Regelgruppen
+
+Jede der sieben Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
+Formen auf den Ursprungszustand zurückgesetzt werden. Die anderen Gruppen müssen
+aktiv bleiben.
+
+### Persönliche Ausnahmen
+
+Als persönliche Ausnahme eintragen:
+
+```text
+Nutzer:innen
+```
+
+Danach gilt:
+
+```text
+Nutzer:innen       → bleibt unverändert
+Nutzer:innenkonto  → wird weiterhin zu Nutzerkonto
+```
+
+Für das Kompositum muss bei Bedarf die vollständige Form separat eingetragen
+werden. Phrasen funktionieren entsprechend vollständig und ohne reguläre
+Ausdrücke.
+
+Die Ausnahmen werden lokal gespeichert und nicht über Browser-Sync übertragen.
+
+### Zugängliche Attribute
+
+Die Option für `alt`, `aria-label`, `aria-description` und `title` ausschalten.
+Sichtbarer Text muss weiterhin korrigiert werden, diese Attribute aber nicht.
+
+## Lokale Testseite
 
 ```bash
 python -m http.server 8080
@@ -58,86 +133,20 @@ Danach öffnen:
 http://127.0.0.1:8080/tests/manual/beta-fixture.html
 ```
 
-Die Testseite enthält sichtbaren Text, zugängliche Attribute, geschützte
-Bereiche und nachträglich eingefügte Inhalte.
-
-## Erwartete Ergebnisse
-
-### Sichtbarer Text
-
-```text
-Nutzer:innen sprechen mit Ärztinnen und Ärzten.
-→ Nutzer sprechen mit Ärzten.
-
-Jede:r Student:in kennt eine:n Koautor:in.
-→ Jeder Student kennt einen Koautor.
-```
-
-`Die Kundin ruft an` muss unverändert bleiben.
-
-### Zugängliche Attribute
-
-Mit den Entwicklerwerkzeugen prüfen:
-
-```text
-alt="Nutzer:innen betrachten das Bild"
-→ alt="Nutzer betrachten das Bild"
-
-aria-label="Nutzer:innen informieren"
-→ aria-label="Nutzer informieren"
-
-title="Ärzt:innen anzeigen"
-→ title="Ärzte anzeigen"
-```
-
-`data-label="Nutzer:innen"` muss unverändert bleiben.
-
-### Geschützte Inhalte
-
-Unverändert bleiben müssen:
-
-- `code` und `pre`
-- `contenteditable`
-- `textarea` und Eingabefelder
-- Elemente mit `data-sprachverstand-ignore`
-- Elemente mit `aria-hidden="true"`
-- `LinkedIn`, `LogIn`, `Innen- und Außendienst`, `gewinnen`, `ersinnen`
-
-### Dynamische Inhalte
-
-Nach etwa einer Sekunde werden ein neuer Absatz, ein `aria-label` und ein
-`title` eingefügt beziehungsweise geändert. Diese Inhalte müssen ohne Neuladen
-der Seite normalisiert werden. Das gleichzeitig gesetzte `data-label` muss
-unverändert bleiben.
-
 ## Reale Seitentests
 
-Besonders wichtig sind:
+Besonders wichtig bleiben:
 
-1. DHL-Anmeldung: Anmeldung, Eingaben und Schaltflächen dürfen nicht beschädigt
-   werden.
-2. ARD und andere Mediatheken: nachgeladene Listen und Dialoge prüfen.
-3. rebuy und andere Single-Page-Anwendungen: Navigation ohne vollständiges
-   Neuladen prüfen.
-4. Große Nachrichtenseiten: Scrollen, Nachladen und CPU-Auslastung beobachten.
-5. React-, Angular- und Vue-Seiten: Dialoge, Tabs und dynamische Beschriftungen
-   prüfen.
-6. Webseiten mit Screenreader: `alt`, `aria-label`, `aria-description` und
-   `title` kontrollieren.
+1. DHL-Anmeldung
+2. ARD und andere Mediatheken
+3. rebuy und weitere Single-Page-Anwendungen
+4. große Nachrichtenseiten
+5. React-, Angular- und Vue-Seiten
+6. Screenreader-Test der zugänglichen Attribute
+7. dieselben kritischen Wege in Firefox für Android
 
 ## Fehler melden
 
-Eine Meldung sollte enthalten:
-
-- Browser und genaue Version
-- Betriebssystem
-- betroffene Adresse
-- ursprünglicher Text oder Attributwert
-- erzeugtes Ergebnis
-- erwartetes Ergebnis
-- reproduzierbare Schritte
-- Angabe, ob Eingabe, Editor, dynamischer Inhalt oder zugängliches Attribut
-  betroffen ist
-
-Keine Zugangsdaten, privaten Nachrichten oder persönlichen Inhalte in eine
-Meldung kopieren.
+Eine Meldung sollte Browser, Version, Betriebssystem, Adresse, Ausgangstext,
+Ergebnis, Erwartung und reproduzierbare Schritte enthalten. Keine Zugangsdaten,
+privaten Nachrichten oder persönlichen Inhalte mitsenden.

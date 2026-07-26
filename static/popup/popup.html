@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
     <title>Sprachverstand</title>
     <link rel="stylesheet" href="popup.css">
     <script src="popup.js" defer></script>
@@ -24,16 +25,9 @@
         <input id="enabled" type="checkbox">
       </label>
 
-      <label>
-        Regelprofil
-        <select id="profile">
-          <option value="conservative">Konservativ</option>
-          <option value="standard">Standard</option>
-          <option value="aggressive">Aggressiv</option>
-        </select>
-      </label>
+      <p id="rules-summary" class="rules-summary"></p>
 
-      <button id="open-options" type="button">Einstellungen</button>
+      <button id="open-options" type="button">Regeln und Ausnahmen</button>
     </main>
   </body>
 </html>

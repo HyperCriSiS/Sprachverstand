@@ -1,5 +1,5 @@
 import { getExtensionApi } from "./browser/api";
-import type { RuleProfile } from "./core/rule";
+import { ruleGroupDefinitions } from "./rules/catalog";
 import type { Settings } from "./settings/defaults";
 import { loadSettings, saveSettings } from "./settings/storage";
 
@@ -16,17 +16,17 @@ function requiredElement<T extends HTMLElement>(
 }
 
 const enabledInput = requiredElement<HTMLInputElement>("#enabled");
-const profileSelect = requiredElement<HTMLSelectElement>("#profile");
 const stateOutput = requiredElement<HTMLOutputElement>("#state");
 const countOutput = requiredElement<HTMLOutputElement>("#count");
+const rulesSummary = requiredElement<HTMLElement>("#rules-summary");
 const optionsButton = requiredElement<HTMLButtonElement>("#open-options");
 
 let settings: Settings;
 
 function render(): void {
   enabledInput.checked = settings.enabled;
-  profileSelect.value = settings.profile;
   stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
+  rulesSummary.textContent = `${settings.enabledRuleGroupIds.length} von ${ruleGroupDefinitions.length} Regelgruppen aktiv`;
 }
 
 async function renderCurrentCount(): Promise<void> {
@@ -41,17 +41,16 @@ async function renderCurrentCount(): Promise<void> {
   const response = (await api.runtime.sendMessage({
     type: "sprachverstand.get-count",
     tabId: tab.id
-  })) as { readonly count?: unknown } | undefined;
+  })) as { readonly text?: unknown } | undefined;
 
   countOutput.textContent =
-    typeof response?.count === "number" ? String(response.count) : "0";
+    typeof response?.text === "string" ? response.text : "0";
 }
 
-async function persist(): Promise<void> {
+async function persistEnabled(): Promise<void> {
   settings = {
     ...settings,
-    enabled: enabledInput.checked,
-    profile: profileSelect.value as RuleProfile
+    enabled: enabledInput.checked
   };
 
   await saveSettings(settings);
@@ -67,11 +66,7 @@ async function start(): Promise<void> {
   await renderCurrentCount();
 
   enabledInput.addEventListener("change", () => {
-    void persist();
-  });
-
-  profileSelect.addEventListener("change", () => {
-    void persist();
+    void persistEnabled();
   });
 
   optionsButton.addEventListener("click", () => {

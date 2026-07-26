@@ -233,4 +233,23 @@ describe("DomProcessor", () => {
     expect(processor.getReplacementCount()).toBe(0);
     expect(counts.at(-1)).toBe(0);
   });
+
+  it("kann zugängliche Attribute unabhängig vom sichtbaren Text abschalten", () => {
+    document.body.innerHTML = `
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processAccessibleAttributes: false
+    });
+    processor.start();
+
+    expect(document.querySelector("p")?.textContent).toBe("Nutzer lesen.");
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer:innen im Team"
+    );
+  });
 });

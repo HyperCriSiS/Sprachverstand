@@ -8,45 +8,56 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.3.0` ist der erste manuell testbare Beta-Stand. Die CI erzeugt für
-jeden geprüften Commit Chromium-, Firefox- und Quellcode-Pakete samt
-SHA-256-Prüfsummen. Die Installations- und Testanleitung steht unter
-[`docs/BETA-TEST.md`](docs/BETA-TEST.md).
+Version `0.4.0` ist **Beta 2**. Sie ergänzt die erste Beta um reversible
+Seitenänderungen, einen Live-Zähler, konkrete einzeln auswählbare Regelgruppen,
+persönliche Ausnahmen und eine mobile Oberfläche für Firefox auf Android.
 
-Das Projekt enthält:
+Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
+Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
+steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
+
+## Eigenschaften
 
 - Manifest V3 für Chromium und Firefox
-- keinen Hintergrunddienst und keine unnötige Service-Worker-Abhängigkeit
-- TypeScript-Regel-Engine mit Risikoprofilen
+- Firefox für Android als offiziell vorgesehenes Mobilziel
+- TypeScript-Regel-Engine mit sieben verständlichen Regelgruppen
+- jede Regelgruppe einzeln aktivierbar und mit Beispiel erklärt
+- reversible Änderungen: Ausschalten stellt eigene Änderungen ohne Reload zurück
+- Live-Zähler pro Tab im Symbol und im Popup
+- persönliche literale Ausnahmen für Wörter und vollständige Phrasen
+- Domain-Ausschlüsse
 - sichere Verarbeitung normaler Textknoten
-- kontrollierte Verarbeitung von `alt`, `aria-label`, `aria-description` und
-  `title`
+- optional kontrollierte Verarbeitung von `alt`, `aria-label`,
+  `aria-description` und `title`
 - `MutationObserver` für dynamische Webseiten, Single-Page-Anwendungen und
   nachträgliche Attributänderungen
 - Schutz für Eingabefelder, Editoren, Code, URLs und technische Daten
-- globale Aktivierung, Regelprofil und Domain-Ausschlüsse
-- automatisierte Unit-, DOM-, Änderungsumfang- und Regressionstests
+- kleiner Hintergrundprozess ausschließlich für Badge und Tab-Zähler
+- automatisierte Unit-, DOM-, Änderungsumfang-, Einstellungs- und
+  Regressionstests
+- Firefox-Desktop- und Firefox-Android-Kompatibilitätsprüfung mit `web-ext lint`
 - reproduzierbare Builds und geprüfte Beta-Pakete
-- CI für Typecheck, getrennte Regeltests und beide Browser-Builds
 
-### Bereits unterstützte Schreibweisen
+## Auswählbare Regelgruppen
 
-- Pluralformen mit `:`, `*`, `_`, `/`, `·`, `•`, `.`, `’` und `‘`
-- unveränderte und explizit hinterlegte unregelmäßige Pluralformen
-- gegenderte Wortanfänge in Komposita
-- Binnen-I im Plural
-- Doppelnennungen im Grundkasus und Dativplural
-- explizite Singular-Doppelformen wie `Kunde/Kundin`
-- explizit gegenderte Singularphrasen mit eindeutigem Artikel- und Kasusmarker
-- Possessivartikel in Nominativ, Akkusativ, Dativ und Genitiv
-- explizite Pronomen- und Possessivpaare wie `er:sie` und `seinem:ihrem`
-- Nominativ, Akkusativ, Dativ und Genitiv
-- korrekte schwache Deklination, etwa `Student` gegenüber `Studenten`
-- sichere natürliche Familienformen wie `Mutter:in`
-- dieselben sicheren Regeln in sichtbarem Text und freigegebenen zugänglichen
-  Attributen
+Die frühere Auswahl „Konservativ / Standard / Aggressiv“ wurde entfernt. Alle
+aktuellen produktiven Regeln waren ohnehin als sicher eingestuft, sodass diese
+Profile bislang praktisch keinen sichtbaren Unterschied erzeugten.
 
-Beispiele:
+Stattdessen stehen konkrete Gruppen zur Verfügung:
+
+1. Genderzeichen im Plural
+2. Binnen-I im Plural
+3. Doppelnennungen im Plural
+4. Gegenderte Singularformen mit Artikel
+5. Doppelnennungen im Singular
+6. Explizite Pronomen- und Possessivpaare
+7. Künstlich gegenderte Familienformen
+
+Neue riskantere Regelarten werden später als eigene, standardmäßig deaktivierte
+Gruppen ergänzt und nicht hinter einem unklaren Profilnamen versteckt.
+
+## Beispiele
 
 ```text
 Nutzer:innen                         → Nutzer
@@ -75,7 +86,27 @@ ihm:ihr                              → ihm
 seines:ihres                         → seines
 ```
 
-### Bewusst noch nicht verändert
+Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` bleiben unverändert.
+
+## Persönliche Ausnahmen
+
+Persönliche Ausnahmen sind wörtliche Wörter oder vollständige Phrasen:
+
+```text
+Nutzer:innen
+Meine geschützte Phrase
+```
+
+- eine Ausnahme pro Zeile
+- Groß- und Kleinschreibung wird ignoriert
+- keine regulären Ausdrücke und keine Platzhalter
+- exakte Wort- und Phrasengrenzen
+- `Nutzer:innen` schützt nicht automatisch `Nutzer:innenkonto`
+- maximal 100 Einträge mit jeweils 80 Zeichen
+- lokale Speicherung im Browser; die Liste wird nicht über Browser-Sync
+  übertragen
+
+## Bewusst noch nicht verändert
 
 - singuläre Formen ohne eindeutigen Artikel- und Kasusmarker, etwa
   `eine NutzerIn`
@@ -87,12 +118,22 @@ seines:ihres                         → seines
 
 Eine ausgelassene Ersetzung ist ausdrücklich besser als eine falsche.
 
+## Unterstützte Browser
+
+- Firefox Desktop
+- Firefox für Android
+- Chromium-basierte Desktop-Browser
+
+Google Chrome auf Android unterstützt keine Browser-Erweiterungen. Andere
+Chromium-basierte Android-Browser mit eigener Erweiterungsunterstützung können
+funktionieren, sind aber kein verbindliches Veröffentlichungsziel.
+
 ## Voraussetzungen
 
 - Node.js 24 LTS oder neuer
 - npm
 
-## Einrichtung
+## Einrichtung und Prüfung
 
 ```bash
 npm install
@@ -106,60 +147,32 @@ dist/chromium/
 dist/firefox/
 ```
 
-## Entwicklung
+Firefox für Android kann mit einem per ADB verbundenen Gerät getestet werden:
 
 ```bash
-npm run dev
+web-ext run --source-dir dist/firefox --target=firefox-android
 ```
-
-Der Chromium-Build wird bei Änderungen automatisch aktualisiert.
 
 ## Manuell laden
 
 Die vollständige Beta-Anleitung steht in
 [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
 
-### Chromium
+### Chromium Desktop
 
 1. `chrome://extensions` öffnen.
 2. Entwicklermodus aktivieren.
 3. **Entpackte Erweiterung laden** auswählen.
 4. `dist/chromium` auswählen.
 
-### Firefox
+### Firefox Desktop
 
 1. `about:debugging#/runtime/this-firefox` öffnen.
 2. **Temporäres Add-on laden** auswählen.
 3. `dist/firefox/manifest.json` auswählen.
 
-## Qualitätssicherung
-
-```bash
-npm run typecheck
-npm test
-npm run build
-```
-
-Oder vollständig:
-
-```bash
-npm run check
-```
-
-Jede neue Sprachregel benötigt positive und negative Tests. Bekannte Fehlerfälle
-aus den Rechercheprojekten werden als unabhängige Regressionstests erfasst.
-
 ## Repository und Identität
 
-Das Repository bleibt bis zur späteren Übertragung auf ein separates Projektkonto
-privat. Vor lokalen Commits sollte für dieses Repository eine eigene Git-Identität
-gesetzt werden:
-
-```bash
-git config user.name "Sprachverstand"
-git config user.email "DEINE_NOREPLY_ADRESSE"
-```
-
-Die endgültige Lizenz wird vor der ersten öffentlichen Verteilung festgelegt,
-nachdem abschließend entschieden wurde, welche fremden Inhalte tatsächlich
-übernommen werden.
+Das Repository bleibt bis zur späteren Übertragung auf ein separates
+Projektkonto privat. Die endgültige Lizenz wird vor der ersten öffentlichen
+Verteilung festgelegt.

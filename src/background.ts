@@ -66,7 +66,13 @@ api.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   if (isGetCountMessage(message)) {
-    return { count: countsByTab.get(message.tabId) ?? 0 };
+    const cachedCount = countsByTab.get(message.tabId);
+    if (cachedCount !== undefined) {
+      return { text: formatBadgeCount(cachedCount) || "0" };
+    }
+
+    const badgeText = await api.action.getBadgeText({ tabId: message.tabId });
+    return { text: badgeText || "0" };
   }
 
   return undefined;

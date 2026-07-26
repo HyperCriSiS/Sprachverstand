@@ -5,6 +5,42 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.4.0 – Beta 2 (2026-07-26)
+
+### Hinzugefügt
+
+- Sieben konkrete, einzeln aktivierbare Regelgruppen ersetzen die abstrakten
+  Profilnamen. Jede Gruppe enthält eine verständliche Beschreibung und ein
+  Beispiel.
+- Persönliche literale Ausnahmen schützen einzelne Wörter oder vollständige
+  Phrasen über exakte Grenzen.
+- Die Verarbeitung zugänglicher Attribute lässt sich separat ein- und
+  ausschalten.
+- Firefox für Android wird über `gecko_android` als Mobilziel ausgewiesen und
+  durch `web-ext lint` gegen die festgelegte Mindestversion geprüft.
+- Die Einstellungsseite ist für 360 × 640 dp, Touch-Bedienung und Safe Areas
+  ausgelegt.
+- Persönliche Ausnahmen werden lokal getrennt von den synchronisierbaren
+  Grundeinstellungen gespeichert.
+- Der Popup-Zähler kann den Badge-Wert auch nach einem Neustart des
+  Chromium-Service-Workers wieder auslesen.
+
+### Geändert
+
+- Die früheren Profile `Konservativ`, `Standard` und `Aggressiv` wurden aus der
+  Oberfläche entfernt. Alle aktuellen produktiven Regeln waren als `safe`
+  eingestuft und unterschieden sich dadurch bislang nicht.
+- Alte Einstellungen mit `disabledRuleIds` werden automatisch auf die neuen
+  Regelgruppen migriert.
+- Beta-Artefakte tragen den Zusatz `beta.2`.
+
+### Mobil und Datenschutz
+
+- Firefox erklärt im Manifest ausdrücklich, dass keine Daten gesammelt oder
+  übertragen werden.
+- Google Chrome für Android bleibt ausgeschlossen, da dieser Browser keine
+  Erweiterungen unterstützt.
+
 ## 0.3.0 – Beta 1 (2026-07-26)
 
 ### Hinzugefügt

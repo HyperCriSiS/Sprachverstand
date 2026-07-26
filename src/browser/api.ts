@@ -16,14 +16,17 @@ export type MessageListener = (
   sender: MessageSender
 ) => unknown | Promise<unknown>;
 
+export interface StorageArea {
+  get(
+    keys?: string | readonly string[] | Record<string, unknown>
+  ): Promise<Record<string, unknown>>;
+  set(items: Record<string, unknown>): Promise<void>;
+}
+
 export interface ExtensionApi {
   readonly storage: {
-    readonly sync: {
-      get(
-        keys?: string | readonly string[] | Record<string, unknown>
-      ): Promise<Record<string, unknown>>;
-      set(items: Record<string, unknown>): Promise<void>;
-    };
+    readonly sync: StorageArea;
+    readonly local: StorageArea;
     readonly onChanged: {
       addListener(
         listener: (
@@ -52,6 +55,7 @@ export interface ExtensionApi {
       readonly text: string;
       readonly tabId?: number;
     }): Promise<void> | void;
+    getBadgeText(details: { readonly tabId?: number }): Promise<string>;
     setBadgeBackgroundColor(details: {
       readonly color: string;
       readonly tabId?: number;
