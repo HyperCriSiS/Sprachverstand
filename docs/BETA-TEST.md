@@ -1,13 +1,13 @@
-# Sprachverstand 0.4.0 – Beta 2 testen
+# Sprachverstand 0.4.1 – Beta 3 testen
 
 Diese Beta ergänzt reversible Seitenänderungen, Live-Counter, konkrete
 Regelgruppen, persönliche Ausnahmen und die mobile Firefox-Oberfläche.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.4.0-beta.2-chromium.zip`
-- `sprachverstand-0.4.0-beta.2-firefox.xpi`
-- `sprachverstand-0.4.0-beta.2-source.zip`
+- `sprachverstand-0.4.1-beta.3-chromium.zip`
+- `sprachverstand-0.4.1-beta.3-firefox.xpi`
+- `sprachverstand-0.4.1-beta.3-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -91,7 +91,7 @@ ist daher eine Korrektur, nicht zwingend die Zahl aller beteiligten Wörter.
 
 ### Regelgruppen
 
-Jede der sieben Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
+Jede der acht Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
 Formen auf den Ursprungszustand zurückgesetzt werden. Die anderen Gruppen müssen
 aktiv bleiben.
 
@@ -131,6 +131,28 @@ Danach öffnen:
 
 ```text
 http://127.0.0.1:8080/tests/manual/beta-fixture.html
+```
+
+### Popup-Breite
+
+Das Popup muss auf Desktop und Android als normal lesbares Bedienfeld erscheinen.
+Ein nur wenige Millimeter breiter Streifen ist ein Fehler.
+
+### Anreden und Schrägstrich-Bindestrich
+
+```text
+Sehr geehrte Mitarbeitende → Sehr geehrte Mitarbeiter
+Liebe Teilnehmende → Liebe Teilnehmer
+Sehr geehrte Nutzende unserer Produkte → Sehr geehrte Nutzer unserer Produkte
+„Mitarbeiter/-innen“ → „Mitarbeiter“
+```
+
+Unverändert bleiben müssen:
+
+```text
+Sehr geehrte Persönlichkeiten
+Liebes Kollegium
+Die Mitarbeitenden arbeiten.
 ```
 
 ## Reale Seitentests
