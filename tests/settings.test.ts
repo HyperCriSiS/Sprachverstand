@@ -6,6 +6,7 @@ import {
   ruleGroupDefinitions
 } from "../src/rules/catalog";
 import {
+  currentSettingsRevision,
   defaultSettings,
   maximumProtectedTermLength,
   maximumProtectedTerms,
@@ -18,6 +19,7 @@ describe("Einstellungen", () => {
       defaultEnabledRuleGroupIds
     );
     expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds).size).toBe(0);
+    expect(defaultSettings.settingsRevision).toBe(currentSettingsRevision);
   });
 
   it("migriert alte deaktivierte Regel-IDs auf verständliche Gruppen", () => {
@@ -33,6 +35,29 @@ describe("Einstellungen", () => {
     expect(settings.excludedDomains).toEqual(["example.org"]);
   });
 
+  it("aktiviert neu eingeführte Standardgruppen bei alten Gruppenlisten", () => {
+    const settings = normalizeSettings({
+      enabledRuleGroupIds: ["plural-separators"],
+      settingsRevision: 0
+    });
+
+    expect(settings.enabledRuleGroupIds).toEqual([
+      "plural-separators",
+      "salutation-participles",
+      "title-abbreviations"
+    ]);
+    expect(settings.settingsRevision).toBe(currentSettingsRevision);
+  });
+
+  it("respektiert deaktivierte Gruppen nach aktueller Migration", () => {
+    const settings = normalizeSettings({
+      settingsRevision: currentSettingsRevision,
+      enabledRuleGroupIds: ["plural-separators", "unbekannt"]
+    });
+
+    expect(settings.enabledRuleGroupIds).toEqual(["plural-separators"]);
+  });
+
   it("verwirft unbekannte Gruppen und begrenzt persönliche Ausnahmen", () => {
     const longTerm = "x".repeat(maximumProtectedTermLength + 1);
     const protectedTerms = [
@@ -46,6 +71,7 @@ describe("Einstellungen", () => {
     ];
 
     const settings = normalizeSettings({
+      settingsRevision: currentSettingsRevision,
       enabledRuleGroupIds: ["plural-separators", "unbekannt"],
       protectedTerms,
       processAccessibleAttributes: false
