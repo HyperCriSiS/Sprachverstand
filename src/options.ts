@@ -1,5 +1,6 @@
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
+  currentSettingsRevision,
   defaultSettings,
   maximumProtectedTermLength,
   maximumProtectedTerms,
@@ -120,6 +121,7 @@ function readForm(): Settings {
     .filter((id): id is string => Boolean(id));
 
   return {
+    settingsRevision: currentSettingsRevision,
     enabled: enabledInput.checked,
     excludedDomains: readLines(excludedDomainsInput.value),
     enabledRuleGroupIds,
