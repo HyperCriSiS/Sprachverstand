@@ -1,6 +1,7 @@
 import { getExtensionApi } from "./browser/api";
 import { DomProcessor } from "./core/dom-processor";
 import { defaultRules } from "./rules";
+import { disabledRuleIdsForGroups } from "./rules/catalog";
 import { isDomainExcluded } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
 import {
@@ -39,10 +40,12 @@ function applySettings(settings: Settings): void {
 
   const options = {
     rules: defaultRules,
-    profile: settings.profile,
-    disabledRuleIds: new Set(settings.disabledRuleIds),
+    profile: "aggressive" as const,
+    disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
+    protectedTerms: settings.protectedTerms,
+    processAccessibleAttributes: settings.processAccessibleAttributes,
     onReplacementCountChange: reportReplacementCount
-  } as const;
+  };
 
   if (processor) {
     processor.updateOptions(options);
