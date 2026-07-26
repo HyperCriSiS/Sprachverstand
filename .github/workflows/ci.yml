@@ -41,6 +41,9 @@ jobs:
       - name: DOM und Wiederherstellung testen
         run: npm exec vitest run tests/dom-processor.test.ts
 
+      - name: Einstellungen und Regelgruppen testen
+        run: npm exec vitest run tests/settings.test.ts
+
       - name: Badge-Zähler testen
         run: npm exec vitest run tests/badge.test.ts
 
@@ -77,26 +80,30 @@ jobs:
       - name: Browser-Builds erstellen
         run: npm run build
 
+      - name: Firefox Desktop und Android linten
+        run: npm run lint:firefox
+
       - name: Beta-Pakete erstellen und prüfen
         shell: bash
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
+          BETA="beta.2"
           mkdir -p artifacts
 
           (
             cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-beta.1-chromium.zip" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip" .
           )
 
           (
             cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-beta.1-firefox.xpi" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" .
           )
 
           git archive \
             --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-beta.1-source.zip" \
+            --output="artifacts/sprachverstand-${VERSION}-${BETA}-source.zip" \
             HEAD
 
           cp docs/BETA-TEST.md artifacts/
@@ -104,21 +111,21 @@ jobs:
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${VERSION}-beta.1-chromium.zip" \
-              "sprachverstand-${VERSION}-beta.1-firefox.xpi" \
-              "sprachverstand-${VERSION}-beta.1-source.zip" \
+              "sprachverstand-${VERSION}-${BETA}-chromium.zip" \
+              "sprachverstand-${VERSION}-${BETA}-firefox.xpi" \
+              "sprachverstand-${VERSION}-${BETA}-source.zip" \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-source.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
 
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-${{ github.sha }}
+          name: sprachverstand-beta-2-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
