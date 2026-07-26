@@ -35,6 +35,9 @@ jobs:
       - name: Kern- und DOM-Tests
         run: npm exec vitest run tests/transform-text.test.ts tests/text-safety.test.ts tests/dom-processor.test.ts
 
+      - name: Gezielten Änderungsumfang testen
+        run: npm exec vitest run tests/dom-performance.test.ts
+
       - name: Fehlertreffer-Regressionen
         run: npm exec vitest run tests/regressions/known-false-positives.test.ts
 
@@ -64,3 +67,45 @@ jobs:
 
       - name: Browser-Builds erstellen
         run: npm run build
+
+      - name: Beta-Pakete erstellen und prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          mkdir -p artifacts
+
+          (
+            cd dist/chromium
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-beta.1-chromium.zip" .
+          )
+
+          (
+            cd dist/firefox
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-beta.1-firefox.xpi" .
+          )
+
+          git archive \
+            --format=zip \
+            --output="artifacts/sprachverstand-${VERSION}-beta.1-source.zip" \
+            HEAD
+
+          cp docs/BETA-TEST.md artifacts/
+
+          sha256sum \
+            artifacts/sprachverstand-${VERSION}-beta.1-chromium.zip \
+            artifacts/sprachverstand-${VERSION}-beta.1-firefox.xpi \
+            artifacts/sprachverstand-${VERSION}-beta.1-source.zip \
+            > artifacts/SHA256SUMS.txt
+
+          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-beta.1-source.zip"
+
+      - name: Beta-Pakete hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprachverstand-beta-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
