@@ -37,18 +37,18 @@ h1 {
   font-size: 18px;
 }
 
-label {
-  display: grid;
-  gap: 6px;
-  font-size: 13px;
-}
-
 .switch-row {
   font-size: 15px;
 }
 
 .count-row {
   font-size: 13px;
+}
+
+.rules-summary {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.8;
 }
 
 #count {
@@ -63,19 +63,10 @@ input[type="checkbox"] {
   height: 24px;
 }
 
-select,
 button {
   min-height: 44px;
-  font: inherit;
-}
-
-select {
-  width: 100%;
-  font-size: 16px;
-}
-
-button {
   padding: 0 14px;
+  font: inherit;
   cursor: pointer;
   touch-action: manipulation;
 }
