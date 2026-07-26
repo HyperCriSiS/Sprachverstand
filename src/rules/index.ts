@@ -8,12 +8,14 @@ import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
 import { singularDoubleFormsRule } from "./singular-double-forms";
 import { specialSingularFormsRule } from "./special-singular-forms";
+import { titleAbbreviationsRule } from "./title-abbreviations";
 
 export const defaultRules: readonly Rule[] = [
   singularContextRule,
   specialSingularFormsRule,
   singularDoubleFormsRule,
   explicitPronounsRule,
+  titleAbbreviationsRule,
   salutationParticiplesRule,
   doubleFormsRule,
   knownPluralSeparatorsRule,

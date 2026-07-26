@@ -6,8 +6,15 @@ import {
 
 export const maximumProtectedTerms = 100;
 export const maximumProtectedTermLength = 80;
+export const currentSettingsRevision = 2;
+
+const introducedDefaultGroups = [
+  { revision: 1, groupId: "salutation-participles" },
+  { revision: 2, groupId: "title-abbreviations" }
+] as const;
 
 export interface Settings {
+  readonly settingsRevision: number;
   readonly enabled: boolean;
   readonly excludedDomains: readonly string[];
   readonly enabledRuleGroupIds: readonly string[];
@@ -16,6 +23,7 @@ export interface Settings {
 }
 
 export const defaultSettings: Settings = {
+  settingsRevision: currentSettingsRevision,
   enabled: true,
   excludedDomains: [],
   enabledRuleGroupIds: defaultEnabledRuleGroupIds,
@@ -44,6 +52,27 @@ function protectedTermArray(value: unknown): string[] {
     .slice(0, maximumProtectedTerms);
 }
 
+function storedRevision(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+
+function migrateEnabledRuleGroups(
+  enabledRuleGroupIds: readonly string[],
+  fromRevision: number
+): string[] {
+  const migrated = new Set(enabledRuleGroupIds);
+
+  for (const introduced of introducedDefaultGroups) {
+    if (introduced.revision > fromRevision) {
+      migrated.add(introduced.groupId);
+    }
+  }
+
+  return normalizeEnabledRuleGroupIds([...migrated]);
+}
+
 export function normalizeSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") {
     return defaultSettings;
@@ -51,11 +80,17 @@ export function normalizeSettings(value: unknown): Settings {
 
   const input = value as Record<string, unknown>;
   const legacyDisabledRuleIds = stringArray(input.disabledRuleIds);
-  const enabledRuleGroupIds = Array.isArray(input.enabledRuleGroupIds)
+  const revision = storedRevision(input.settingsRevision);
+  const hasEnabledGroupList = Array.isArray(input.enabledRuleGroupIds);
+  const normalizedGroups = hasEnabledGroupList
     ? normalizeEnabledRuleGroupIds(input.enabledRuleGroupIds)
     : enabledGroupsFromLegacyDisabledRuleIds(legacyDisabledRuleIds);
+  const enabledRuleGroupIds = hasEnabledGroupList
+    ? migrateEnabledRuleGroups(normalizedGroups, revision)
+    : normalizedGroups;
 
   return {
+    settingsRevision: currentSettingsRevision,
     enabled:
       typeof input.enabled === "boolean"
         ? input.enabled

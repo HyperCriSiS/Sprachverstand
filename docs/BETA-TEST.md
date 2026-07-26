@@ -1,13 +1,13 @@
-# Sprachverstand 0.4.1 – Beta 3 testen
+# Sprachverstand 0.4.2 – Beta 4 testen
 
-Diese Beta ergänzt reversible Seitenänderungen, Live-Counter, konkrete
-Regelgruppen, persönliche Ausnahmen und die mobile Firefox-Oberfläche.
+Diese Beta ergänzt kontextabhängige Regeln für gegenderte Titelabkürzungen wie
+`Prof.in` und `Dr.in`.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.4.1-beta.3-chromium.zip`
-- `sprachverstand-0.4.1-beta.3-firefox.xpi`
-- `sprachverstand-0.4.1-beta.3-source.zip`
+- `sprachverstand-0.4.2-beta.4-chromium.zip`
+- `sprachverstand-0.4.2-beta.4-firefox.xpi`
+- `sprachverstand-0.4.2-beta.4-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -91,9 +91,35 @@ ist daher eine Korrektur, nicht zwingend die Zahl aller beteiligten Wörter.
 
 ### Regelgruppen
 
-Jede der acht Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
+Jede der neun Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
 Formen auf den Ursprungszustand zurückgesetzt werden. Die anderen Gruppen müssen
 aktiv bleiben.
+
+### Gegenderte Titelabkürzungen
+
+```text
+Prof.in Anna Müller       → Prof. Anna Müller
+Dr.in Eva Schmidt         → Dr. Eva Schmidt
+Prof.in Dr.in Lea Weber   → Prof. Dr. Lea Weber
+die Prof.in               → die Professorin
+mit der Dr.in             → mit der Doktorin
+Prof.in                   → Professorin
+```
+
+Unverändert bleiben müssen:
+
+```text
+Professorin Müller
+Doktorin Schmidt
+Prof.innen
+Dr.innen
+Prof. Weber
+Dr. König
+```
+
+Die Regel soll die weibliche Bedeutung nicht beseitigen. Vor Namen wird nur das
+gegenderte Kürzel auf die normale Titelabkürzung zurückgeführt; als
+Personenbezeichnung wird die weibliche Vollform ausgeschrieben.
 
 ### Persönliche Ausnahmen
 

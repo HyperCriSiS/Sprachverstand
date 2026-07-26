@@ -56,6 +56,9 @@ jobs:
       - name: Sichere Separatorformen testen
         run: npm exec vitest run tests/rules/known-plural-separators.test.ts
 
+      - name: Titelabkürzungen testen
+        run: npm exec vitest run tests/rules/title-abbreviations.test.ts
+
       - name: Anreden mit Partizipformen testen
         run: npm exec vitest run tests/rules/salutation-participles.test.ts
 
@@ -98,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.3"
+          BETA="beta.4"
           mkdir -p artifacts
 
           (
@@ -135,7 +138,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-3-${{ github.sha }}
+          name: sprachverstand-beta-4-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14

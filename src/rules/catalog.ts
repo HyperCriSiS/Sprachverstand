@@ -74,6 +74,15 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     defaultEnabled: true
   },
   {
+    id: "title-abbreviations",
+    label: "Gegenderte Titelabkürzungen",
+    description:
+      "Schreibt Prof.in und Dr.in je nach Kontext aus oder führt sie auf den normalen Titel zurück.",
+    example: "Prof.in Anna Müller → Prof. Anna Müller · die Prof.in → die Professorin",
+    ruleIds: ["title.gendered-abbreviations"],
+    defaultEnabled: true
+  },
+  {
     id: "salutation-participles",
     label: "Partizipformen in eindeutigen Anreden",
     description:
