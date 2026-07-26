@@ -8,9 +8,9 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.4.0` ist **Beta 2**. Sie ergänzt die erste Beta um reversible
-Seitenänderungen, einen Live-Zähler, konkrete einzeln auswählbare Regelgruppen,
-persönliche Ausnahmen und eine mobile Oberfläche für Firefox auf Android.
+Version `0.4.2` ist **Beta 4**. Sie ergänzt die bisherigen Beta-Stände um eine
+kontextabhängige Normalisierung gegenderter Titelabkürzungen wie `Prof.in` und
+`Dr.in`.
 
 Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
 Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
@@ -20,7 +20,7 @@ steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
 
 - Manifest V3 für Chromium und Firefox
 - Firefox für Android als offiziell vorgesehenes Mobilziel
-- TypeScript-Regel-Engine mit sieben verständlichen Regelgruppen
+- TypeScript-Regel-Engine mit neun verständlichen Regelgruppen
 - jede Regelgruppe einzeln aktivierbar und mit Beispiel erklärt
 - reversible Änderungen: Ausschalten stellt eigene Änderungen ohne Reload zurück
 - Live-Zähler pro Tab im Symbol und im Popup
@@ -53,6 +53,8 @@ Stattdessen stehen konkrete Gruppen zur Verfügung:
 5. Doppelnennungen im Singular
 6. Explizite Pronomen- und Possessivpaare
 7. Künstlich gegenderte Familienformen
+8. Gegenderte Titelabkürzungen
+9. Partizipformen in eindeutigen Anreden
 
 Neue riskantere Regelarten werden später als eigene, standardmäßig deaktivierte
 Gruppen ergänzt und nicht hinter einem unklaren Profilnamen versteckt.
@@ -62,6 +64,7 @@ Gruppen ergänzt und nicht hinter einem unklaren Profilnamen versteckt.
 ```text
 Nutzer:innen                         → Nutzer
 Mitarbeiter*innen                    → Mitarbeiter
+Mitarbeiter/-innen                   → Mitarbeiter
 Ärzt_innen                           → Ärzte
 Student/innen                        → Studenten
 US-Bürger’innen                      → US-Bürger
@@ -84,9 +87,13 @@ eure:n Pilot:in                      → euren Piloten
 er:sie                               → er
 ihm:ihr                              → ihm
 seines:ihres                         → seines
+Prof.in Anna Müller                  → Prof. Anna Müller
+die Prof.in                          → die Professorin
+Liebe Teilnehmende                   → Liebe Teilnehmer
 ```
 
-Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` bleiben unverändert.
+Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` sowie Vollformen wie
+`Professorin Müller` bleiben unverändert.
 
 ## Persönliche Ausnahmen
 
@@ -112,7 +119,8 @@ Meine geschützte Phrase
   `eine NutzerIn`
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
-- Partizipialformen
+- Partizipialformen außerhalb eindeutiger Anreden
+- Pluralkürzel wie `Prof.innen` und `Dr.innen`
 - nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
   URLs
 
