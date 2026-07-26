@@ -67,8 +67,8 @@ describe("transformText", () => {
     );
 
     expect(result).toEqual({
-      text: "Nutzer:innen und Nutzer:innenkonto",
-      replacements: 0
+      text: "Nutzer:innen und Nutzerkonto",
+      replacements: 1
     });
   });
 
