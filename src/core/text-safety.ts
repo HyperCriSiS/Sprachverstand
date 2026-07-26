@@ -1,3 +1,15 @@
+export const accessibleAttributeNames = [
+  "alt",
+  "aria-label",
+  "aria-description",
+  "title"
+] as const;
+
+export type AccessibleAttributeName =
+  (typeof accessibleAttributeNames)[number];
+
+const accessibleAttributeNameSet = new Set<string>(accessibleAttributeNames);
+
 const excludedTags = new Set([
   "SCRIPT",
   "STYLE",
@@ -21,6 +33,21 @@ const excludedTags = new Set([
   "EMBED"
 ]);
 
+const excludedAttributeTags = new Set([
+  "SCRIPT",
+  "STYLE",
+  "NOSCRIPT",
+  "TEMPLATE",
+  "CODE",
+  "PRE",
+  "KBD",
+  "SAMP",
+  "VAR",
+  "IFRAME",
+  "OBJECT",
+  "EMBED"
+]);
+
 const excludedRoles = new Set([
   "textbox",
   "searchbox",
@@ -39,7 +66,36 @@ function isContentEditable(element: Element): boolean {
   return value === "" || value === "true" || value === "plaintext-only";
 }
 
-function hasExcludedAncestor(element: Element | null): boolean {
+function hasCommonExcludedAncestor(
+  element: Element | null,
+  excludedTagNames: ReadonlySet<string>
+): boolean {
+  let current = element;
+
+  while (current) {
+    if (excludedTagNames.has(current.tagName)) {
+      return true;
+    }
+
+    if (isContentEditable(current)) {
+      return true;
+    }
+
+    if (current.hasAttribute("data-sprachverstand-ignore")) {
+      return true;
+    }
+
+    if (current.getAttribute("aria-hidden") === "true") {
+      return true;
+    }
+
+    current = current.parentElement;
+  }
+
+  return false;
+}
+
+function hasExcludedTextAncestor(element: Element | null): boolean {
   let current = element;
 
   while (current) {
@@ -105,9 +161,29 @@ export function shouldProcessTextNode(node: Text): boolean {
     return false;
   }
 
-  if (hasExcludedAncestor(node.parentElement)) {
+  if (hasExcludedTextAncestor(node.parentElement)) {
     return false;
   }
 
   return !isProbablyTechnicalText(node.data);
+}
+
+export function shouldProcessAccessibleAttribute(
+  element: Element,
+  attributeName: string,
+  value: string
+): attributeName is AccessibleAttributeName {
+  if (!accessibleAttributeNameSet.has(attributeName)) {
+    return false;
+  }
+
+  if (!element.isConnected) {
+    return false;
+  }
+
+  if (hasCommonExcludedAncestor(element, excludedAttributeTags)) {
+    return false;
+  }
+
+  return !isProbablyTechnicalText(value);
 }
