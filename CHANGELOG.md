@@ -5,6 +5,8 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.3.0 – Beta 1 (2026-07-26)
+
 ### Hinzugefügt
 
 - Explizit gegenderte Singularphrasen werden normalisiert, wenn Artikel und
@@ -31,6 +33,12 @@ dokumentiert.
   werden mit denselben sicheren Regeln wie sichtbare Textknoten verarbeitet.
 - Der `MutationObserver` reagiert gezielt auf spätere Änderungen der
   freigegebenen zugänglichen Attribute.
+- Die CI erzeugt geprüfte Chromium-, Firefox-XPI- und Quellcode-Pakete mit
+  SHA-256-Prüfsummen.
+- Eine lokale Beta-Testseite deckt sichtbare Texte, zugängliche Attribute,
+  geschützte Bereiche und dynamische Mutationen ab.
+- Änderungsumfang-Regressionen stellen sicher, dass einzelne Mutationen keinen
+  erneuten Komplettscan großer Seiten auslösen.
 
 ### Korrigiert
 
@@ -51,6 +59,8 @@ dokumentiert.
   nicht verändert.
 - Ignorierte, versteckte, editierbare und technische Attributinhalte bleiben
   unberührt.
+- Ausdrücklich weibliche Personenbezeichnungen werden nicht pauschal verändert.
+- Unbekannte oder mehrdeutige Formen bleiben unverändert.
 
 ## 0.2.0
 
