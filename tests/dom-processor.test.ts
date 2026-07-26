@@ -164,4 +164,73 @@ describe("DomProcessor", () => {
     expect(image.title).toBe("Nutzer anzeigen");
     expect(image.getAttribute("data-label")).toBe("Nutzer:innen");
   });
+
+  it("stellt eigene Text- und Attributänderungen beim Abschalten zurück", () => {
+    document.body.innerHTML = `
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    expect(document.querySelector("p")?.textContent).toBe("Nutzer lesen.");
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer im Team"
+    );
+
+    processor.stop({ restore: true });
+
+    expect(document.querySelector("p")?.textContent).toBe(
+      "Nutzer:innen lesen."
+    );
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer:innen im Team"
+    );
+  });
+
+  it("überschreibt beim Zurücksetzen keine späteren Seitenänderungen", () => {
+    document.body.innerHTML = `<p>Nutzer:innen lesen.</p>`;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    const paragraph = document.querySelector("p") as HTMLParagraphElement;
+    paragraph.firstChild!.textContent = "Die Webseite hat den Inhalt geändert.";
+
+    processor.stop({ restore: true });
+
+    expect(paragraph.textContent).toBe("Die Webseite hat den Inhalt geändert.");
+  });
+
+  it("meldet die aktuelle Zahl und setzt sie beim Wiederherstellen auf null", async () => {
+    document.body.innerHTML = `
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
+    `;
+    const counts: number[] = [];
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      onReplacementCountChange: (count) => counts.push(count)
+    });
+    processor.start();
+    await Promise.resolve();
+
+    expect(processor.getReplacementCount()).toBe(2);
+    expect(counts.at(-1)).toBe(2);
+
+    processor.stop({ restore: true });
+    await Promise.resolve();
+
+    expect(processor.getReplacementCount()).toBe(0);
+    expect(counts.at(-1)).toBe(0);
+  });
 });

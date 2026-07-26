@@ -10,15 +10,30 @@ export interface DomProcessorOptions {
   readonly rules: readonly Rule[];
   readonly profile: RuleProfile;
   readonly disabledRuleIds?: ReadonlySet<string>;
-  readonly onReplacements?: (amount: number) => void;
+  readonly protectedTerms?: readonly string[];
+  readonly onReplacementCountChange?: (count: number) => void;
+}
+
+export interface StopOptions {
+  readonly restore?: boolean;
+}
+
+interface ChangeRecord {
+  readonly original: string;
+  readonly transformed: string;
+  readonly replacements: number;
 }
 
 export class DomProcessor {
   private observer: MutationObserver | undefined;
   private readonly pendingNodes = new Set<Node>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
+  private readonly textChanges = new Map<Text, ChangeRecord>();
+  private readonly attributeChanges = new Map<Element, Map<string, ChangeRecord>>();
   private flushScheduled = false;
+  private countNotificationScheduled = false;
   private running = false;
+  private replacementCount = 0;
 
   public constructor(
     private readonly document: Document,
@@ -54,6 +69,10 @@ export class DomProcessor {
           continue;
         }
 
+        for (const removedNode of record.removedNodes) {
+          this.forgetRoot(removedNode);
+        }
+
         for (const addedNode of record.addedNodes) {
           this.queue(addedNode);
         }
@@ -67,26 +86,63 @@ export class DomProcessor {
       attributeFilter: [...accessibleAttributeNames],
       subtree: true
     });
+
+    this.scheduleCountNotification();
   }
 
-  public stop(): void {
+  public stop(options: StopOptions = {}): void {
     this.running = false;
     this.observer?.disconnect();
     this.observer = undefined;
     this.pendingNodes.clear();
     this.pendingAttributes.clear();
     this.flushScheduled = false;
+
+    if (options.restore) {
+      this.restoreAll();
+    } else {
+      this.clearTracking();
+    }
   }
 
   public updateOptions(options: DomProcessorOptions): void {
+    const wasRunning = this.running;
+
+    if (wasRunning) {
+      this.stop({ restore: true });
+    }
+
     this.options = options;
 
-    if (this.running) {
-      const root = this.document.body ?? this.document.documentElement;
-      if (root) {
-        this.queue(root);
+    if (wasRunning) {
+      this.start();
+    }
+  }
+
+  public getReplacementCount(): number {
+    return this.replacementCount;
+  }
+
+  public restoreAll(): void {
+    for (const [node, change] of this.textChanges) {
+      if (node.isConnected && node.data === change.transformed) {
+        node.data = change.original;
       }
     }
+
+    for (const [element, changes] of this.attributeChanges) {
+      if (!element.isConnected) {
+        continue;
+      }
+
+      for (const [attributeName, change] of changes) {
+        if (element.getAttribute(attributeName) === change.transformed) {
+          element.setAttribute(attributeName, change.original);
+        }
+      }
+    }
+
+    this.clearTracking();
   }
 
   public flush(): void {
@@ -173,17 +229,32 @@ export class DomProcessor {
   }
 
   private processTextNode(node: Text): void {
+    const tracked = this.textChanges.get(node);
+    if (tracked) {
+      if (node.data === tracked.transformed) {
+        return;
+      }
+
+      this.removeTextChange(node, tracked);
+    }
+
     if (!shouldProcessTextNode(node)) {
       return;
     }
 
-    const result = this.transformValue(node.data);
-    if (result.replacements === 0 || result.text === node.data) {
+    const original = node.data;
+    const result = this.transformValue(original);
+    if (result.replacements === 0 || result.text === original) {
       return;
     }
 
+    this.textChanges.set(node, {
+      original,
+      transformed: result.text,
+      replacements: result.replacements
+    });
+    this.adjustReplacementCount(result.replacements);
     node.data = result.text;
-    this.options.onReplacements?.(result.replacements);
   }
 
   private processAccessibleAttributes(element: Element): void {
@@ -196,7 +267,17 @@ export class DomProcessor {
     element: Element,
     attributeName: string
   ): void {
+    const tracked = this.attributeChanges.get(element)?.get(attributeName);
     const value = element.getAttribute(attributeName);
+
+    if (tracked) {
+      if (value === tracked.transformed) {
+        return;
+      }
+
+      this.removeAttributeChange(element, attributeName, tracked);
+    }
+
     if (
       value === null ||
       !shouldProcessAccessibleAttribute(element, attributeName, value)
@@ -209,18 +290,130 @@ export class DomProcessor {
       return;
     }
 
+    const changes =
+      this.attributeChanges.get(element) ?? new Map<string, ChangeRecord>();
+    changes.set(attributeName, {
+      original: value,
+      transformed: result.text,
+      replacements: result.replacements
+    });
+    this.attributeChanges.set(element, changes);
+    this.adjustReplacementCount(result.replacements);
     element.setAttribute(attributeName, result.text);
-    this.options.onReplacements?.(result.replacements);
   }
 
   private transformValue(input: string) {
-    const transformOptions = this.options.disabledRuleIds
-      ? {
-          profile: this.options.profile,
-          disabledRuleIds: this.options.disabledRuleIds
-        }
-      : { profile: this.options.profile };
+    const transformOptions = {
+      profile: this.options.profile,
+      ...(this.options.disabledRuleIds
+        ? { disabledRuleIds: this.options.disabledRuleIds }
+        : {}),
+      ...(this.options.protectedTerms
+        ? { protectedTerms: this.options.protectedTerms }
+        : {})
+    };
 
     return transformText(input, this.options.rules, transformOptions);
+  }
+
+  private forgetRoot(root: Node): void {
+    if (root.nodeType === Node.TEXT_NODE) {
+      const node = root as Text;
+      const change = this.textChanges.get(node);
+      if (change) {
+        this.removeTextChange(node, change);
+      }
+      return;
+    }
+
+    if (root instanceof Element) {
+      this.removeAllAttributeChanges(root);
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(
+      root,
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
+    );
+
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      if (currentNode.nodeType === Node.TEXT_NODE) {
+        const textNode = currentNode as Text;
+        const change = this.textChanges.get(textNode);
+        if (change) {
+          this.removeTextChange(textNode, change);
+        }
+      } else if (currentNode instanceof Element) {
+        this.removeAllAttributeChanges(currentNode);
+      }
+
+      currentNode = walker.nextNode();
+    }
+  }
+
+  private removeTextChange(node: Text, change: ChangeRecord): void {
+    this.textChanges.delete(node);
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAttributeChange(
+    element: Element,
+    attributeName: string,
+    change: ChangeRecord
+  ): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    changes.delete(attributeName);
+    if (changes.size === 0) {
+      this.attributeChanges.delete(element);
+    }
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAllAttributeChanges(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    let removedReplacements = 0;
+    for (const change of changes.values()) {
+      removedReplacements += change.replacements;
+    }
+
+    this.attributeChanges.delete(element);
+    this.adjustReplacementCount(-removedReplacements);
+  }
+
+  private clearTracking(): void {
+    this.textChanges.clear();
+    this.attributeChanges.clear();
+    this.replacementCount = 0;
+    this.scheduleCountNotification();
+  }
+
+  private adjustReplacementCount(delta: number): void {
+    if (delta === 0) {
+      return;
+    }
+
+    this.replacementCount = Math.max(0, this.replacementCount + delta);
+    this.scheduleCountNotification();
+  }
+
+  private scheduleCountNotification(): void {
+    if (this.countNotificationScheduled) {
+      return;
+    }
+
+    this.countNotificationScheduled = true;
+    queueMicrotask(() => {
+      this.countNotificationScheduled = false;
+      this.options.onReplacementCountChange?.(this.replacementCount);
+    });
   }
 }

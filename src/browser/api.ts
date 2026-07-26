@@ -3,6 +3,19 @@ export interface StorageChange {
   readonly newValue?: unknown;
 }
 
+export interface ExtensionTab {
+  readonly id?: number;
+}
+
+export interface MessageSender {
+  readonly tab?: ExtensionTab;
+}
+
+export type MessageListener = (
+  message: unknown,
+  sender: MessageSender
+) => unknown | Promise<unknown>;
+
 export interface ExtensionApi {
   readonly storage: {
     readonly sync: {
@@ -28,6 +41,31 @@ export interface ExtensionApi {
   };
   readonly runtime: {
     openOptionsPage(): Promise<void> | void;
+    sendMessage(message: unknown): Promise<unknown>;
+    readonly onMessage: {
+      addListener(listener: MessageListener): void;
+      removeListener(listener: MessageListener): void;
+    };
+  };
+  readonly action: {
+    setBadgeText(details: {
+      readonly text: string;
+      readonly tabId?: number;
+    }): Promise<void> | void;
+    setBadgeBackgroundColor(details: {
+      readonly color: string;
+      readonly tabId?: number;
+    }): Promise<void> | void;
+  };
+  readonly tabs: {
+    query(queryInfo: {
+      readonly active: boolean;
+      readonly currentWindow: boolean;
+    }): Promise<ExtensionTab[]>;
+    readonly onRemoved: {
+      addListener(listener: (tabId: number) => void): void;
+      removeListener(listener: (tabId: number) => void): void;
+    };
   };
 }
 

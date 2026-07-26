@@ -63,6 +63,7 @@ for (const target of targets) {
 
   const buildContext = await context({
     entryPoints: {
+      background: path.join(projectRoot, "src", "background.ts"),
       content: path.join(projectRoot, "src", "content.ts"),
       "popup/popup": path.join(projectRoot, "src", "popup.ts"),
       "options/options": path.join(projectRoot, "src", "options.ts")

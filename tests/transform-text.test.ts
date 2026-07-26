@@ -55,4 +55,36 @@ describe("transformText", () => {
 
     expect(result.text).toBe("Nutzer:innen");
   });
+
+  it("schützt persönliche Wörter und Phrasen ohne Teilworttreffer", () => {
+    const result = transformText(
+      "Nutzer:innen und Nutzer:innenkonto",
+      [safeRule],
+      {
+        profile: "conservative",
+        protectedTerms: ["Nutzer:innen"]
+      }
+    );
+
+    expect(result).toEqual({
+      text: "Nutzer:innen und Nutzerkonto",
+      replacements: 1
+    });
+  });
+
+  it("wendet Regeln außerhalb persönlicher Ausnahmen weiter an", () => {
+    const result = transformText(
+      "Geschützte Nutzer:innen und weitere Nutzer:innen",
+      [safeRule],
+      {
+        profile: "conservative",
+        protectedTerms: ["Geschützte Nutzer:innen"]
+      }
+    );
+
+    expect(result).toEqual({
+      text: "Geschützte Nutzer:innen und weitere Nutzer",
+      replacements: 1
+    });
+  });
 });
