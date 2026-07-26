@@ -4,6 +4,7 @@ import { mappedPluralSeparatorsRule } from "../../src/rules/mapped-plural-separa
 describe("mappedPluralSeparatorsRule", () => {
   it.each([
     ["Ärzt:innen", "Ärzte"],
+    ["Ärzt/-innen", "Ärzte"],
     ["Student*innen", "Studenten"],
     ["Kolleg_innen", "Kollegen"],
     ["Kund/innen", "Kunden"],
