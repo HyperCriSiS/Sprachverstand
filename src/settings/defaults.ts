@@ -1,24 +1,27 @@
-import type { RuleProfile } from "../core/rule";
+import {
+  defaultEnabledRuleGroupIds,
+  enabledGroupsFromLegacyDisabledRuleIds,
+  normalizeEnabledRuleGroupIds
+} from "../rules/catalog";
+
+export const maximumProtectedTerms = 100;
+export const maximumProtectedTermLength = 80;
 
 export interface Settings {
   readonly enabled: boolean;
-  readonly profile: RuleProfile;
   readonly excludedDomains: readonly string[];
-  readonly disabledRuleIds: readonly string[];
+  readonly enabledRuleGroupIds: readonly string[];
+  readonly protectedTerms: readonly string[];
+  readonly processAccessibleAttributes: boolean;
 }
 
 export const defaultSettings: Settings = {
   enabled: true,
-  profile: "conservative",
   excludedDomains: [],
-  disabledRuleIds: []
+  enabledRuleGroupIds: defaultEnabledRuleGroupIds,
+  protectedTerms: [],
+  processAccessibleAttributes: true
 };
-
-const validProfiles = new Set<RuleProfile>([
-  "conservative",
-  "standard",
-  "aggressive"
-]);
 
 function stringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
@@ -35,23 +38,34 @@ function stringArray(value: unknown): string[] {
   ];
 }
 
+function protectedTermArray(value: unknown): string[] {
+  return stringArray(value)
+    .filter((entry) => entry.length <= maximumProtectedTermLength)
+    .slice(0, maximumProtectedTerms);
+}
+
 export function normalizeSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") {
     return defaultSettings;
   }
 
-  const input = value as Partial<Record<keyof Settings, unknown>>;
-  const profile = validProfiles.has(input.profile as RuleProfile)
-    ? (input.profile as RuleProfile)
-    : defaultSettings.profile;
+  const input = value as Record<string, unknown>;
+  const legacyDisabledRuleIds = stringArray(input.disabledRuleIds);
+  const enabledRuleGroupIds = Array.isArray(input.enabledRuleGroupIds)
+    ? normalizeEnabledRuleGroupIds(input.enabledRuleGroupIds)
+    : enabledGroupsFromLegacyDisabledRuleIds(legacyDisabledRuleIds);
 
   return {
     enabled:
       typeof input.enabled === "boolean"
         ? input.enabled
         : defaultSettings.enabled,
-    profile,
     excludedDomains: stringArray(input.excludedDomains),
-    disabledRuleIds: stringArray(input.disabledRuleIds)
+    enabledRuleGroupIds,
+    protectedTerms: protectedTermArray(input.protectedTerms),
+    processAccessibleAttributes:
+      typeof input.processAccessibleAttributes === "boolean"
+        ? input.processAccessibleAttributes
+        : defaultSettings.processAccessibleAttributes
   };
 }
