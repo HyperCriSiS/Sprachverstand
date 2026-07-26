@@ -56,6 +56,16 @@ jobs:
       - name: Sichere Separatorformen testen
         run: npm exec vitest run tests/rules/known-plural-separators.test.ts
 
+      - name: Anreden mit Partizipformen testen
+        run: npm exec vitest run tests/rules/salutation-participles.test.ts
+
+      - name: Popup-Breite absichern
+        shell: bash
+        run: |
+          grep -q "width: 320px" static/popup/popup.css
+          grep -q "min-width: 320px" static/popup/popup.css
+          ! grep -q "100vw" static/popup/popup.css
+
       - name: Flexionslexikon testen
         run: npm exec vitest run tests/rules/mapped-plural-separators.test.ts
 
@@ -88,7 +98,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.2"
+          BETA="beta.3"
           mkdir -p artifacts
 
           (
@@ -125,7 +135,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-2-${{ github.sha }}
+          name: sprachverstand-beta-3-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
