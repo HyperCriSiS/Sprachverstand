@@ -5,6 +5,35 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.4.2 – Beta 4 (2026-07-26)
+
+### Hinzugefügt
+
+- Gegenderte Titelabkürzungen werden kontextabhängig normalisiert.
+- Vor Namen und weiteren Titeln wird `Prof.in` zu `Prof.` und `Dr.in` zu `Dr.`.
+- Mit eindeutig weiblichem Artikel oder alleinstehend werden die Formen zu
+  `Professorin` beziehungsweise `Doktorin` ausgeschrieben.
+- Die neue Funktion besitzt eine eigene, einzeln abschaltbare Regelgruppe.
+
+### Sicherheit
+
+- Voll ausgeschriebene weibliche Formen bleiben unverändert.
+- Pluralformen wie `Prof.innen` und `Dr.innen` werden nicht durch die
+  Singularregel angeschnitten.
+
+## 0.4.1 – Beta 3 (2026-07-26)
+
+### Hinzugefügt
+
+- Kontextgebundene Partizipformen in eindeutigen Anreden, etwa
+  `Liebe Teilnehmende` zu `Liebe Teilnehmer`.
+- Schrägstrich-Bindestrich-Formen wie `Mitarbeiter/-innen` werden erkannt.
+
+### Korrigiert
+
+- Das Popup verwendet eine stabile intrinsische Breite und öffnet nicht mehr als
+  wenige Millimeter breiter Streifen.
+
 ## 0.4.0 – Beta 2 (2026-07-26)
 
 ### Hinzugefügt
