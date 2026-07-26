@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sprachverstand Beta-Test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    section { margin: 2rem 0; padding: 1rem; border: 1px solid #aaa; border-radius: 0.5rem; }
+    code, pre { background: #eee; padding: 0.2rem 0.4rem; }
+    .status { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Sprachverstand Beta-Testseite</h1>
+
+  <section id="static">
+    <h2>Statischer sichtbarer Text</h2>
+    <p>Nutzer:innen sprechen mit Ärztinnen und Ärzten.</p>
+    <p>Jede:r Student:in kennt eine:n Koautor:in.</p>
+    <p>Die Kundin ruft an und muss ausdrücklich weiblich bleiben.</p>
+  </section>
+
+  <section id="attributes">
+    <h2>Zugängliche Attribute</h2>
+    <img
+      alt="Nutzer:innen betrachten das Bild"
+      title="Ärzt:innen anzeigen"
+      width="1"
+      height="1"
+    >
+    <button
+      type="button"
+      aria-label="Nutzer:innen informieren"
+      aria-description="Ärzt:innen und Student:innen erreichen"
+      title="Nutzer:innen auswählen"
+      data-label="Nutzer:innen"
+    >Attributwerte mit den Entwicklerwerkzeugen prüfen</button>
+  </section>
+
+  <section id="protected">
+    <h2>Geschützte Inhalte</h2>
+    <code>Nutzer:innen</code>
+    <pre>Nutzer:innen</pre>
+    <div contenteditable="true">Nutzer:innen</div>
+    <textarea>Nutzer:innen</textarea>
+    <div data-sprachverstand-ignore>Nutzer:innen</div>
+    <div aria-hidden="true">Nutzer:innen</div>
+    <p>LinkedIn, LogIn, Innen- und Außendienst, gewinnen, ersinnen</p>
+  </section>
+
+  <section id="dynamic">
+    <h2>Dynamische Inhalte</h2>
+    <p id="dynamic-status" class="status">Wird nach einer Sekunde ergänzt.</p>
+    <div id="dynamic-target" title="Neutraler Hinweis"></div>
+  </section>
+
+  <script>
+    window.setTimeout(() => {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = "Neue Nutzer:innen sprechen mit Ärzt:innen.";
+      paragraph.setAttribute("aria-label", "Neue Nutzer:innen und Ärzt:innen");
+      document.querySelector("#dynamic-target").append(paragraph);
+
+      const target = document.querySelector("#dynamic-target");
+      target.setAttribute("title", "Nutzer:innen dynamisch anzeigen");
+      target.setAttribute("data-label", "Nutzer:innen");
+
+      document.querySelector("#dynamic-status").textContent =
+        "Dynamische Inhalte wurden eingefügt.";
+    }, 1000);
+  </script>
+</body>
+</html>
