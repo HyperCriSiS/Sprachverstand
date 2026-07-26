@@ -13,7 +13,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Genderzeichen im Plural",
     description:
       "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen.",
-    example: "Nutzer:innen → Nutzer · Ärzt*innen → Ärzte",
+    example: "Nutzer:innen → Nutzer · Mitarbeiter/-innen → Mitarbeiter",
     ruleIds: [
       "plural.known-separator-innen",
       "plural.mapped-separator-innen"
@@ -71,6 +71,15 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
       "Natürlich feminine Familienwörter behalten ihr grammatisches Geschlecht.",
     example: "Mutter:in → Mutter",
     ruleIds: ["singular.natural-family-forms"],
+    defaultEnabled: true
+  },
+  {
+    id: "salutation-participles",
+    label: "Partizipformen in eindeutigen Anreden",
+    description:
+      "Ersetzt ausgewählte Partizipformen nur nach klaren Anredeformeln wie ‚Sehr geehrte‘ oder ‚Liebe‘.",
+    example: "Liebe Teilnehmende → Liebe Teilnehmer",
+    ruleIds: ["salutation.participial-forms"],
     defaultEnabled: true
   }
 ] as const;
