@@ -10,6 +10,7 @@ const protectedTermsKey = "protectedTerms";
 
 function syncedSettings(settings: Settings): Omit<Settings, "protectedTerms"> {
   return {
+    settingsRevision: settings.settingsRevision,
     enabled: settings.enabled,
     excludedDomains: settings.excludedDomains,
     enabledRuleGroupIds: settings.enabledRuleGroupIds,
