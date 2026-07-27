@@ -1,24 +1,31 @@
 # Recherchequellen
 
-Sprachverstand ist eine neue Implementierung.
+Sprachverstand ist eine eigenständige Neuimplementierung.
 
-Folgende Projekte werden als Recherchequellen für bekannte Schreibweisen,
-Fehlerfälle, offene Issues und mögliche Regressionstests ausgewertet:
+Folgende Projekte wurden als Recherchequellen für bekannte Schreibweisen,
+Flexionsfälle, Fehlerfälle, offene Issues und mögliche Regressionstests
+ausgewertet:
 
 - https://github.com/brilliance-richter-huh/gendersprache-korrigieren
 - https://github.com/sternth/no-gender
 - https://github.com/motsiw/rggl
 
-## Stand 0.2.0
+Unser ausdrücklicher Dank gilt den Entwicklern, Mitwirkenden, Testern und
+Issue-Autoren dieser Projekte. Ihre offen dokumentierte Arbeit hat wichtige
+Hinweise für Anforderungen, Grenzfälle und Sicherheitsprüfungen geliefert.
 
-Die aktuelle Regel-Engine, DOM-Verarbeitung und Browser-Architektur wurden neu
-entwickelt. Bekannte Fehlerfälle und Sprachbeispiele aus den Rechercheprojekten
-werden als eigenständige Tests und neu entworfene Regeln umgesetzt.
+## Art der Nutzung
+
+Es wurden keine Codebestandteile oder fremden Regexketten übernommen. Die
+Regel-Engine, DOM-Verarbeitung und Browser-Architektur wurden neu entwickelt.
+Öffentlich dokumentierte Sprachbeispiele, Flexionsfälle, Fehlertreffer und
+fachliche Kategorien dienten als Recherchebasis und wurden in eigenständig
+formulierte Regeln und Tests überführt.
 
 `rggl` enthält eine umfangreiche, über Jahre gewachsene Kasus- und
-Flexionssammlung. Das Projekt steht unter GPL-3.0. Konkreter Quelltext und
-Regexketten werden deshalb nicht kopiert; fachliche Kategorien, öffentlich
-dokumentierte Fehlerfälle und Sprachbeispiele werden unabhängig neu umgesetzt.
+Flexionssammlung und steht unter GPL-3.0. Deshalb wird besonders darauf geachtet,
+keine Quelltextpassagen, Regexketten oder vollständigen Datenbestände zu
+übernehmen.
 
-Herkunftshinweise bleiben außerhalb des produktiven Laufzeitcodes. Details zu
-einzelnen Entscheidungen stehen in `docs/MIGRATION.md` und in der Git-Historie.
+Die Herkunft einzelner fachlicher Anregungen bleibt in `docs/MIGRATION.md`, der
+Git-Historie und den Pull Requests nachvollziehbar.
