@@ -12,6 +12,11 @@ describe("unmarkedSingularRule", () => {
     ["Lehrer/-in", "Lehrer"],
     ["Verkäufer/-in", "Verkäufer"],
     ["Mitarbeiter/-in", "Mitarbeiter"],
+    ["Verbündete_r", "Verbündeter"],
+    ["Verbündete*r", "Verbündeter"],
+    ["Pat*in", "Pate"],
+    ["Dozent*in", "Dozent"],
+    ["Jüd*in", "Jude"],
     ["FRISÖR/-IN", "FRISÖR"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(unmarkedSingularRule.apply(input)).toEqual({
@@ -26,7 +31,11 @@ describe("unmarkedSingularRule", () => {
     "Mutter:in",
     "Prof.in",
     "Dr.in",
-    "zehn Zuhörer*inne"
+    "zehn Zuhörer*inne",
+    "trans* Personen",
+    "inter* Personen",
+    "Inter*feindlichkeit",
+    "Inter*diskriminierung"
   ])("lässt den unbekannten oder nicht passenden Fall %s unverändert", (input) => {
     expect(unmarkedSingularRule.apply(input)).toEqual({
       text: input,
