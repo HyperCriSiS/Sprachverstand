@@ -148,8 +148,10 @@ Issue-Autoren dieser Projekte. Ihre Vorarbeit und die offen dokumentierten
 Erfahrungen haben wichtige Hinweise für die Architektur, Testfälle und
 Sicherheitsgrenzen von Sprachverstand geliefert.
 
-Sprachverstand übernimmt keinen Quelltext oder fremde Regexketten. Regeln und
-Tests wurden unabhängig neu entwickelt. Weitere Details stehen in
+Es wurden keine Codebestandteile oder fremden Regexketten übernommen.
+Öffentlich dokumentierte Sprachbeispiele, Flexionsfälle und Fehlertreffer dienten
+als Recherchebasis; die Regel-Engine und ihre konkrete technische Umsetzung
+wurden eigenständig entwickelt. Weitere Details stehen in
 [`UPSTREAMS.md`](UPSTREAMS.md).
 
 ## Projektstatus
