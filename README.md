@@ -8,10 +8,9 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.5.0` ist **Beta 5**. Sie ergänzt das SV-Logo, direkt im Popup
-schaltbare Regelgruppen, einen live aktualisierten Seitenzähler, neue sichere
-Singular- und Pluralformen sowie zwei bewusst optionale Regelgruppen für
-mehrdeutige Umschreibungen und Stellenanzeigen-Zusätze.
+Version `0.5.1` ist **Beta 6**. Sie ergänzt den ersten Kontextkatalog für
+geschlechtsneutrale Umschreibungen, `Benutzungshandbuch → Benutzerhandbuch`,
+`PolitikerInnen → Politiker` und einen Satztest für `zehn Zuhörer*innen`.
 
 Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
 Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
@@ -40,6 +39,7 @@ steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
   Regressionstests
 - Firefox-Desktop- und Firefox-Android-Kompatibilitätsprüfung mit `web-ext lint`
 - reproduzierbare Builds und geprüfte Beta-Pakete
+- versionierter Kontextkatalog für mehrdeutige Partizip- und Stilformen
 
 ## Auswählbare Regelgruppen
 
@@ -59,12 +59,13 @@ Stattdessen stehen konkrete Gruppen zur Verfügung:
 8. Künstlich gegenderte Familienformen
 9. Gegenderte Titelabkürzungen
 10. Partizipformen in eindeutigen Anreden
-11. Geschlechtsneutrale Umschreibungen *(standardmäßig aus)*
+11. Kontextgebundene Umschreibungen *(standardmäßig aus)*
 12. Geschlechtszusätze in Stellenanzeigen *(standardmäßig aus)*
 
-Die beiden letzten Gruppen sind bewusst deaktiviert, weil `Studierende`,
-`Lesende` oder `(m/w/d)` je nach Kontext tatsächliche Information tragen können.
-Sie werden nicht hinter einem unklaren Profilnamen versteckt.
+Die beiden letzten Gruppen sind bewusst deaktiviert. Die Umschreibungsgruppe
+arbeitet nicht mehr mit einer pauschalen Partizipliste, sondern nur mit einzeln
+geprüften Wendungen. Weitere Fundstellen werden in
+[`data/neutral-context-catalog.json`](data/neutral-context-catalog.json) gesammelt.
 
 ## Beispiele
 
@@ -112,9 +113,11 @@ Professor/-in                         → Professor
 Direktor_in                           → Direktor
 ```
 
-Bei aktivierter optionaler Gruppe **Geschlechtsneutrale Umschreibungen** gilt
-zusätzlich etwa `Studierende → Studenten` und `Lesende → Leser`. Die optionale
-Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
+Bei aktivierter optionaler Gruppe **Kontextgebundene Umschreibungen** gilt
+zusätzlich `mitarbeitende Personen → Mitarbeiter` und
+`Benutzungshandbuch → Benutzerhandbuch`. Einzelne Wörter wie `Studierende` oder
+`Lesende` werden außerhalb sicherer Kontexte nicht mehr pauschal verändert. Die
+optionale Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
 
 Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` sowie Vollformen wie
 `Professorin Müller` bleiben unverändert.
@@ -145,8 +148,9 @@ Meine geschützte Phrase
 - unbekannte oder mehrdeutige Wortformen
 - nicht in der optionalen Umschreibungsgruppe hinterlegte Partizipialformen
 - Pluralkürzel wie `Prof.innen` und `Dr.innen`
-- vollständige feminine Formen wie `Politikerinnen` ohne sichtbares Genderzeichen
-- reguläre Begriffe wie `Testpersonen`, `ärztliche Sprechstunde` und `Benutzungshandbuch`
+- vollständige feminine Formen wie `Politikerinnen` ohne sichtbares Genderzeichen;
+  die eindeutig markierte Form `PolitikerInnen` wird dagegen zu `Politiker`
+- reguläre Begriffe wie `Testpersonen` und `ärztliche Sprechstunde`
 - nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
   URLs
 

@@ -60,6 +60,7 @@ const personForms: readonly PersonForms[] = [
   regular("ingenieur", "ingenieure"),
   regular("professor", "professoren"),
   regular("direktor", "direktoren"),
+  regular("politiker", "politiker"),
   regular("funktionär", "funktionäre"),
   regular("aktionär", "aktionäre"),
   regular("sekretär", "sekretäre"),

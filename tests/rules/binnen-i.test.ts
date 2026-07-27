@@ -5,12 +5,12 @@ describe("binnenIPluralRule", () => {
   it("wandelt sichere Pluralformen um", () => {
     const result = binnenIPluralRule.apply(
       "NutzerInnen, MitarbeiterInnen, ÄrztInnen, StudentInnen, " +
-        "KollegInnen und KundInnen"
+        "KollegInnen, KundInnen und PolitikerInnen"
     );
 
     expect(result).toEqual({
-      text: "Nutzer, Mitarbeiter, Ärzte, Studenten, Kollegen und Kunden",
-      replacements: 6
+      text: "Nutzer, Mitarbeiter, Ärzte, Studenten, Kollegen, Kunden und Politiker",
+      replacements: 7
     });
   });
 
@@ -49,7 +49,7 @@ describe("binnenIPluralRule", () => {
 
   it("verändert keine normalen Feminina oder Wörter mit Innen", () => {
     const input =
-      "Nutzerinnen, Ärztinnen, Innen, Innenstadt, Innenminister, " +
+      "Nutzerinnen, Ärztinnen, Politikerinnen, Innen, Innenstadt, Innenminister, " +
         "LinkedIn und InDesign";
 
     expect(binnenIPluralRule.apply(input)).toEqual({

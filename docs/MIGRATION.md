@@ -53,10 +53,12 @@ Sprachverstand teilt dies deshalb auf:
 
 - eindeutige Anreden wie `Sehr geehrte Mitarbeitende` werden standardmäßig
   korrigiert;
-- allgemeine Umschreibungen wie `Studierende` oder `Lesende` gehören zu einer
-  getrennten, standardmäßig deaktivierten Regelgruppe;
-- legitime Begriffe wie `Testpersonen`, `Persönlichkeiten`, `Kollegium`,
-  `ärztliche Sprechstunde` und `Benutzungshandbuch` bleiben unverändert.
+- außerhalb dieser Anreden werden nur einzeln geprüfte Wendungen aus dem
+  Kontextkatalog ersetzt;
+- `Benutzungshandbuch` kann in der optionalen Stilgruppe zu
+  `Benutzerhandbuch` werden;
+- legitime Begriffe wie `Testpersonen`, `Persönlichkeiten`, `Kollegium` und
+  `ärztliche Sprechstunde` bleiben unverändert.
 
 ## Bewusst nicht pauschal umgesetzt
 
@@ -88,3 +90,13 @@ und viele normale Wörter beschädigen.
   deaktivierte Gruppen.
 - Zitate werden standardmäßig korrigiert; auf Wunsch können Inhalte innerhalb
   üblicher Anführungszeichen geschützt werden.
+
+## Kontextkatalog statt pauschaler Partizipregel
+
+Beta 6 ersetzt die globale optionale Wortliste für `Studierende`, `Lesende` und
+ähnliche Formen durch einen versionierten Kontextkatalog. Sichere Anreden bleiben
+aktiv. Weitere Fälle werden als `collect`, `implemented` oder `reject` erfasst.
+Das verhindert, dass wörtliche Tätigkeitsbeschreibungen durch eine bloße
+Endungsregel verändert werden.
+
+Siehe `data/neutral-context-catalog.json` und `docs/NEUTRAL-CONTEXTS.md`.

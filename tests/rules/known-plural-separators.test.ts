@@ -50,4 +50,11 @@ describe("knownPluralSeparatorsRule", () => {
       replacements: 0
     });
   });
+
+  it("korrigiert die vollständige Sternchen-Pluralform im Satz", () => {
+    expect(knownPluralSeparatorsRule.apply("zehn Zuhörer*innen")).toEqual({
+      text: "zehn Zuhörer",
+      replacements: 1
+    });
+  });
 });
