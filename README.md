@@ -8,9 +8,9 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.5.1` ist **Beta 6**. Sie ergänzt den ersten Kontextkatalog für
-geschlechtsneutrale Umschreibungen, `Benutzungshandbuch → Benutzerhandbuch`,
-`PolitikerInnen → Politiker` und einen Satztest für `zehn Zuhörer*innen`.
+Version `0.5.2` ist **Beta 7**. Sie behebt den in Waterfox sichtbaren
+Popup-Höhenfehler und ersetzt beschädigte PNG-Dateien des SV-Symbols. Die CI
+validiert die Bilddaten nun vollständig einschließlich CRC und Abmessungen.
 
 Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
 Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung

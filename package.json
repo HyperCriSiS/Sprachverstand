@@ -1,6 +1,6 @@
 {
   "name": "sprachverstand",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Macht Webseiten wieder lesbar.",
   "type": "module",
@@ -16,8 +16,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run test && npm run build && npm run lint:firefox",
-    "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors"
+    "check": "npm run typecheck && npm run test && npm run build && npm run validate:icons && npm run lint:firefox",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
+    "validate:icons": "node scripts/validate-icons.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.1",

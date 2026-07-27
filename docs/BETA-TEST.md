@@ -1,14 +1,14 @@
-# Sprachverstand 0.5.1 – Beta 6 testen
+# Sprachverstand 0.5.2 – Beta 7 testen
 
-Diese Beta ergänzt einen versionierten Kontextkatalog, eine sichere
-Binnen-I-Regel für `PolitikerInnen`, die optionale Stilform
-`Benutzungshandbuch → Benutzerhandbuch` und zusätzliche Satzregressionen.
+Diese Beta behebt den in Waterfox und Firefox beobachteten vertikalen
+Popup-Zirkelschluss und ersetzt beschädigte PNG-Dateien des SV-Symbols. Die
+Sprachregeln entsprechen Beta 6.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.1-beta.6-chromium.zip`
-- `sprachverstand-0.5.1-beta.6-firefox.xpi`
-- `sprachverstand-0.5.1-beta.6-source.zip`
+- `sprachverstand-0.5.2-beta.7-chromium.zip`
+- `sprachverstand-0.5.2-beta.7-firefox.xpi`
+- `sprachverstand-0.5.2-beta.7-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -60,6 +60,14 @@ Auf dem Gerät prüfen:
 - Counter im Popup, falls Android kein Badge am Symbol zeigt
 
 ## Popup und Zähler
+
+Waterfox/Firefox-Regressionsprüfung:
+
+- Das Popup muss sofort ungefähr 320 Pixel breit und deutlich höher als eine
+  einzelne Titelzeile erscheinen.
+- Es darf kein wenige Millimeter hoher Streifen entstehen.
+- Das SV-Symbol muss links im Popup und in der Browserleiste sichtbar sein.
+- Die Regelliste muss innerhalb des Popups scrollbar sein.
 
 Im Popup müssen sichtbar sein:
 

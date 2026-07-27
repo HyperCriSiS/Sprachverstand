@@ -79,11 +79,14 @@ jobs:
         run: |
           grep -q "width: 320px" static/popup/popup.css
           grep -q "min-width: 320px" static/popup/popup.css
-          ! grep -q "100vw" static/popup/popup.css
+          ! grep -Eq "[0-9](vw|vh)" static/popup/popup.css
+          grep -q "min-height: 500px" static/popup/popup.css
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
           grep -q 'icons/icon48.png' static/options/options.html
-          test -s assets/icons.base64.json
+          for size in 32 48 128; do
+            test -s "static/icons/icon${size}.png"
+          done
           grep -q '"default_icon"' manifests/chromium.json
           grep -q '"default_icon"' manifests/firefox.json
 
@@ -111,15 +114,8 @@ jobs:
       - name: Browser-Builds erstellen
         run: npm run build
 
-      - name: Erzeugte Logo-Dateien prüfen
-        shell: bash
-        run: |
-          for target in chromium firefox; do
-            test -s "dist/${target}/icons/icon16.png"
-            test -s "dist/${target}/icons/icon32.png"
-            test -s "dist/${target}/icons/icon48.png"
-            test -s "dist/${target}/icons/icon128.png"
-          done
+      - name: Erzeugte Logo-Dateien vollständig prüfen
+        run: npm run validate:icons
 
       - name: Firefox Desktop und Android linten
         run: npm run lint:firefox
@@ -129,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.6"
+          BETA="beta.7"
           mkdir -p artifacts
 
           (
@@ -166,7 +162,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-6-${{ github.sha }}
+          name: sprachverstand-beta-7-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
