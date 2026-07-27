@@ -53,7 +53,7 @@ function transformMarkedAdjectives(input: string): TransformResult {
     markedAdjectivePattern,
     (_match: string, base: string) => {
       replacements += 1;
-      return `${base}r`;
+      return applyTokenCase(base, "verbündeter");
     }
   );
 
