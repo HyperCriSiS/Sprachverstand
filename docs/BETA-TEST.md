@@ -1,14 +1,14 @@
-# Sprachverstand 0.5.0 – Beta 5 testen
+# Sprachverstand 0.5.1 – Beta 6 testen
 
-Diese Beta ergänzt das SV-Logo, direkt im Popup schaltbare Regelgruppen, einen
-live aktualisierten Zähler, neue Singular- und Pluralformen sowie optionale
-Regeln für mehrdeutige Umschreibungen und Stellenanzeigen-Zusätze.
+Diese Beta ergänzt einen versionierten Kontextkatalog, eine sichere
+Binnen-I-Regel für `PolitikerInnen`, die optionale Stilform
+`Benutzungshandbuch → Benutzerhandbuch` und zusätzliche Satzregressionen.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.0-beta.5-chromium.zip`
-- `sprachverstand-0.5.0-beta.5-firefox.xpi`
-- `sprachverstand-0.5.0-beta.5-source.zip`
+- `sprachverstand-0.5.1-beta.6-chromium.zip`
+- `sprachverstand-0.5.1-beta.6-firefox.xpi`
+- `sprachverstand-0.5.1-beta.6-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -81,7 +81,7 @@ live erscheinen.
 
 Zehn Gruppen sind standardmäßig aktiv. Zwei riskantere Gruppen sind zunächst aus:
 
-- **Geschlechtsneutrale Umschreibungen**
+- **Kontextgebundene Umschreibungen**
 - **Geschlechtszusätze in Stellenanzeigen**
 
 Jede Gruppe einzeln deaktivieren und prüfen, dass nur ihre eigenen Änderungen
@@ -96,6 +96,8 @@ Anfänger*innen                       → Anfänger
 Zuhörer*innen                        → Zuhörer
 Freund:innen                         → Freunde
 ChirurgInnen                         → Chirurgen
+PolitikerInnen                       → Politiker
+zehn Zuhörer*innen                   → zehn Zuhörer
 Bäuer_innen                          → Bauern
 Bauern_Bäuerinnen                    → Bauern
 Koch/Köchin                          → Koch
@@ -113,21 +115,28 @@ Professor/-in                        → Professor
 Direktor_in                          → Direktor
 ```
 
-## Optionale Umschreibungen
+## Kontextgebundene Umschreibungen
 
-Nach Aktivierung von **Geschlechtsneutrale Umschreibungen**:
+Nach Aktivierung von **Kontextgebundene Umschreibungen**:
 
 ```text
-Mitarbeitende             → Mitarbeiter
-Studierende               → Studenten
-Lesende                   → Leser
-Teilnehmende              → Teilnehmer
-Nutzende                  → Nutzer
-mitarbeitende Personen    → Mitarbeiter
+mitarbeitende Personen  → Mitarbeiter
+Benutzungshandbuch      → Benutzerhandbuch
 ```
 
-Diese Gruppe bleibt standardmäßig aus, weil beispielsweise `Lesende` auch
-wörtlich Menschen bezeichnen kann, die gerade lesen.
+Einzelne Partizipformen werden außerhalb bereits sicher erkannter Anreden nicht
+mehr pauschal verändert:
+
+```text
+Studierende
+Lesende
+Teilnehmende
+Nutzende
+```
+
+Die Fundstellen und Entscheidungen stehen in
+`data/neutral-context-catalog.json`. Neue Beispiele werden mit vollständigem
+Kontext gesammelt, bevor daraus eine Regel entsteht.
 
 Nach Aktivierung von **Geschlechtszusätze in Stellenanzeigen**:
 
@@ -159,7 +168,6 @@ manueller Grenztest.
 
 ```text
 Besuch der ärztlichen Sprechstunde
-Benutzungshandbuch
 Politikerinnen
 Testpersonen
 zehn Zuhörer*inne
@@ -167,9 +175,11 @@ Sehr geehrte Persönlichkeiten
 Liebes Kollegium
 ```
 
-- `Politikerinnen` kann ausdrücklich nur Frauen meinen.
-- `Testpersonen`, `ärztliche Sprechstunde` und `Benutzungshandbuch` sind normale
-  Begriffe und keine Genderformen.
+- `Politikerinnen` kann ausdrücklich nur Frauen meinen; `PolitikerInnen` wird
+  wegen des sichtbaren Binnen-I dagegen zu `Politiker`.
+- `Testpersonen` und `ärztliche Sprechstunde` bleiben als normale Begriffe unverändert.
+- `Benutzungshandbuch` ist keine Genderzeichenform, wird aber in der optionalen
+  Stilgruppe zu `Benutzerhandbuch`.
 - `Zuhörer*inne` ist eine fehlerhafte Schreibweise; Sprachverstand ist kein
   allgemeines Rechtschreibprogramm.
 

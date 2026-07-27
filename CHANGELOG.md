@@ -5,6 +5,29 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.5.1 – Beta 6 (2026-07-27)
+
+### Hinzugefügt
+
+- `PolitikerInnen` wird als eindeutig markierte Binnen-I-Form zu `Politiker`;
+  die reguläre feminine Form `Politikerinnen` bleibt unverändert.
+- Die optionale Umschreibungsgruppe ersetzt
+  `Benutzungshandbuch` durch `Benutzerhandbuch`.
+- `zehn Zuhörer*innen` ist als vollständiger Satzfall abgesichert.
+- Ein maschinenlesbarer Kontextkatalog sammelt Partizip- und
+  Personenumschreibungen mit Kontext, Sicherheitsbewertung und Umsetzungsstatus.
+
+### Geändert
+
+- Die optionale Gruppe heißt nun **Kontextgebundene Umschreibungen**.
+- Einzelne Partizipformen wie `Studierende` oder `Lesende` werden außerhalb
+  geprüfter Kontexte nicht mehr pauschal ersetzt.
+
+### Datenschutz
+
+- Der Kontextkatalog wird manuell gepflegt. Sprachverstand sammelt oder
+  überträgt weiterhin keine Seitentexte.
+
 ## 0.5.0 – Beta 5 (2026-07-27)
 
 ### Hinzugefügt

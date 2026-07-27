@@ -102,10 +102,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   },
   {
     id: "neutral-person-terms",
-    label: "Geschlechtsneutrale Umschreibungen",
+    label: "Kontextgebundene Umschreibungen",
     description:
-      "Ersetzt ausgewählte Partizip- und Personenumschreibungen auch außerhalb von Anreden. Kann in wörtlich gemeinten Sätzen die Bedeutung verändern.",
-    example: "Studierende → Studenten · Lesende → Leser",
+      "Ersetzt nur einzeln geprüfte Umschreibungen und feste Wendungen. Weitere Kontexte werden im Projektkatalog gesammelt.",
+    example: "mitarbeitende Personen → Mitarbeiter · Benutzungshandbuch → Benutzerhandbuch",
     ruleIds: ["neutral.person-terms"],
     defaultEnabled: false
   },

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Beleg- und Entscheidungskatalog für geschlechtsneutrale Personenumschreibungen",
+  "entries": [
+    {
+      "id": "salutation-mitarbeitende",
+      "source": "Sehr geehrte Mitarbeitende",
+      "replacement": "Sehr geehrte Mitarbeiter",
+      "context": "Anrede",
+      "confidence": "safe",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
+    },
+    {
+      "id": "salutation-teilnehmende",
+      "source": "Liebe Teilnehmende",
+      "replacement": "Liebe Teilnehmer",
+      "context": "Anrede",
+      "confidence": "safe",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
+    },
+    {
+      "id": "persons-mitarbeitende",
+      "source": "mitarbeitende Personen",
+      "replacement": "Mitarbeiter",
+      "context": "explizite Personenumschreibung",
+      "confidence": "safe",
+      "status": "implemented",
+      "ruleGroup": "neutral-person-terms"
+    },
+    {
+      "id": "compound-benutzungshandbuch",
+      "source": "Benutzungshandbuch",
+      "replacement": "Benutzerhandbuch",
+      "context": "feste unpersönliche Umschreibung",
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "neutral-person-terms"
+    },
+    {
+      "id": "heading-studierende",
+      "source": "Studierende",
+      "replacement": "Studenten",
+      "context": "alleinstehende Überschrift, Navigation oder Rollenbezeichnung",
+      "confidence": "candidate",
+      "status": "collect",
+      "ruleGroup": null
+    },
+    {
+      "id": "job-ad-mitarbeitende",
+      "source": "Wir suchen Mitarbeitende",
+      "replacement": "Wir suchen Mitarbeiter",
+      "context": "Stellenanzeige oder Personalgewinnung",
+      "confidence": "candidate",
+      "status": "collect",
+      "ruleGroup": null
+    },
+    {
+      "id": "institutional-participants",
+      "source": "Teilnehmende des Kurses",
+      "replacement": "Teilnehmer des Kurses",
+      "context": "institutionelle Rollenbezeichnung",
+      "confidence": "candidate",
+      "status": "collect",
+      "ruleGroup": null
+    },
+    {
+      "id": "literal-readers",
+      "source": "die gerade Lesenden",
+      "replacement": null,
+      "context": "tatsächlich ausgeübte Tätigkeit",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    },
+    {
+      "id": "literal-waiting",
+      "source": "die seit Stunden Wartenden",
+      "replacement": null,
+      "context": "tatsächlich ausgeübte Tätigkeit",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    }
+  ]
+}
