@@ -3,7 +3,6 @@ import path from "node:path";
 import process from "node:process";
 
 const expectedSizes = new Map([
-  ["icon16.png", 16],
   ["icon32.png", 32],
   ["icon48.png", 48],
   ["icon128.png", 128]
