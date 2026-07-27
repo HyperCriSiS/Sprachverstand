@@ -39,10 +39,10 @@ describe("salutationParticiplesRule", () => {
   it("verarbeitet mehrere ausgewählte Partizipformen", () => {
     expect(
       salutationParticiplesRule.apply(
-        "Studierende und Arbeitnehmende sprechen mit Lesenden."
+        "Studierende, Arbeitnehmende und Lesende treffen sich."
       )
     ).toEqual({
-      text: "Studenten und Arbeitnehmer sprechen mit Lesern.",
+      text: "Studenten, Arbeitnehmer und Leser treffen sich.",
       replacements: 3
     });
   });
