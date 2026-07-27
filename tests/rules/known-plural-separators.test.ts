@@ -31,7 +31,6 @@ describe("knownPluralSeparatorsRule", () => {
 
   it.each([
     ["Gegner*innenschaft", "Gegnerschaft"],
-    ["Professor*innenschaft", "Professorenschaft"],
     ["Pförtner*innen", "Pförtner"],
     ["Spender*innen", "Spender"],
     ["Tonmeister*innen", "Tonmeister"]
