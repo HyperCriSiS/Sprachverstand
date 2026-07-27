@@ -84,6 +84,15 @@
       "ruleGroup": "salutation-participles"
     },
     {
+      "id": "compound-studierendenwerk",
+      "source": "Studierendenwerk",
+      "replacement": "Studentenwerk",
+      "context": "mögliche feste Institutionsbezeichnung oder Eigenname",
+      "confidence": "candidate",
+      "status": "collect",
+      "ruleGroup": null
+    },
+    {
       "id": "literal-readers",
       "source": "die gerade Lesenden",
       "replacement": null,
