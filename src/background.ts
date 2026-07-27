@@ -11,8 +11,31 @@ interface GetCountMessage {
   readonly tabId: number;
 }
 
+interface SetInspectedTabMessage {
+  readonly type: "sprachverstand.set-inspected-tab";
+  readonly tabId: number;
+}
+
+interface GetInspectedCountMessage {
+  readonly type: "sprachverstand.get-inspected-count";
+}
+
 const api = getExtensionApi();
 const countsByTab = new Map<number, number>();
+let inspectedTabId: number | undefined;
+let lastCountedTabId: number | undefined;
+
+async function notifyCountUpdate(tabId: number, count: number): Promise<void> {
+  await api.runtime
+    .sendMessage({
+      type: "sprachverstand.count-updated",
+      tabId,
+      text: formatBadgeCount(count) || "0"
+    })
+    .catch(() => {
+      // Popup oder Einstellungsseite sind meist nicht geöffnet.
+    });
+}
 
 function isReplacementCountMessage(
   message: unknown
@@ -41,6 +64,31 @@ function isGetCountMessage(message: unknown): message is GetCountMessage {
   );
 }
 
+function isSetInspectedTabMessage(
+  message: unknown
+): message is SetInspectedTabMessage {
+  if (!message || typeof message !== "object") {
+    return false;
+  }
+
+  const candidate = message as Partial<SetInspectedTabMessage>;
+  return (
+    candidate.type === "sprachverstand.set-inspected-tab" &&
+    typeof candidate.tabId === "number"
+  );
+}
+
+function isGetInspectedCountMessage(
+  message: unknown
+): message is GetInspectedCountMessage {
+  return (
+    Boolean(message) &&
+    typeof message === "object" &&
+    (message as Partial<GetInspectedCountMessage>).type ===
+      "sprachverstand.get-inspected-count"
+  );
+}
+
 api.runtime.onMessage.addListener(async (message, sender) => {
   if (isReplacementCountMessage(message)) {
     const tabId = sender.tab?.id;
@@ -50,6 +98,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
 
     const count = Math.max(0, Math.trunc(message.count));
     countsByTab.set(tabId, count);
+    lastCountedTabId = tabId;
 
     await Promise.all([
       api.action.setBadgeBackgroundColor({
@@ -61,8 +110,29 @@ api.runtime.onMessage.addListener(async (message, sender) => {
         tabId
       })
     ]);
+    await notifyCountUpdate(tabId, count);
 
     return undefined;
+  }
+
+  if (isSetInspectedTabMessage(message)) {
+    inspectedTabId = message.tabId;
+    return undefined;
+  }
+
+  if (isGetInspectedCountMessage(message)) {
+    const tabId = inspectedTabId ?? lastCountedTabId;
+    if (tabId === undefined) {
+      return { text: "0" };
+    }
+
+    const cachedCount = countsByTab.get(tabId);
+    if (cachedCount !== undefined) {
+      return { tabId, text: formatBadgeCount(cachedCount) || "0" };
+    }
+
+    const badgeText = await api.action.getBadgeText({ tabId });
+    return { tabId, text: badgeText || "0" };
   }
 
   if (isGetCountMessage(message)) {
@@ -80,4 +150,10 @@ api.runtime.onMessage.addListener(async (message, sender) => {
 
 api.tabs.onRemoved.addListener((tabId) => {
   countsByTab.delete(tabId);
+  if (inspectedTabId === tabId) {
+    inspectedTabId = undefined;
+  }
+  if (lastCountedTabId === tabId) {
+    lastCountedTabId = undefined;
+  }
 });

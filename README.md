@@ -8,9 +8,10 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.4.2` ist **Beta 4**. Sie ergänzt die bisherigen Beta-Stände um eine
-kontextabhängige Normalisierung gegenderter Titelabkürzungen wie `Prof.in` und
-`Dr.in`.
+Version `0.5.0` ist **Beta 5**. Sie ergänzt das SV-Logo, direkt im Popup
+schaltbare Regelgruppen, einen live aktualisierten Seitenzähler, neue sichere
+Singular- und Pluralformen sowie zwei bewusst optionale Regelgruppen für
+mehrdeutige Umschreibungen und Stellenanzeigen-Zusätze.
 
 Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
 Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
@@ -20,12 +21,14 @@ steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
 
 - Manifest V3 für Chromium und Firefox
 - Firefox für Android als offiziell vorgesehenes Mobilziel
-- TypeScript-Regel-Engine mit neun verständlichen Regelgruppen
-- jede Regelgruppe einzeln aktivierbar und mit Beispiel erklärt
+- TypeScript-Regel-Engine mit zwölf verständlichen Regelgruppen
+- jede Regelgruppe im Popup und in den Einstellungen einzeln aktivierbar und mit Beispiel erklärt
 - reversible Änderungen: Ausschalten stellt eigene Änderungen ohne Reload zurück
-- Live-Zähler pro Tab im Symbol und im Popup
+- Live-Zähler pro Tab im Symbol, Popup und Einstellungsfenster
 - persönliche literale Ausnahmen für Wörter und vollständige Phrasen
 - Domain-Ausschlüsse
+- SV-Monogramm als Erweiterungs-, Popup- und Einstellungslogo
+- wahlweise Schutz direkt zitierter Schreibweisen in Anführungszeichen
 - sichere Verarbeitung normaler Textknoten
 - optional kontrollierte Verarbeitung von `alt`, `aria-label`,
   `aria-description` und `title`
@@ -50,14 +53,18 @@ Stattdessen stehen konkrete Gruppen zur Verfügung:
 2. Binnen-I im Plural
 3. Doppelnennungen im Plural
 4. Gegenderte Singularformen mit Artikel
-5. Doppelnennungen im Singular
-6. Explizite Pronomen- und Possessivpaare
-7. Künstlich gegenderte Familienformen
-8. Gegenderte Titelabkürzungen
-9. Partizipformen in eindeutigen Anreden
+5. Gegenderte Singularformen ohne Artikel
+6. Doppelnennungen im Singular
+7. Explizite Pronomen- und Possessivpaare
+8. Künstlich gegenderte Familienformen
+9. Gegenderte Titelabkürzungen
+10. Partizipformen in eindeutigen Anreden
+11. Geschlechtsneutrale Umschreibungen *(standardmäßig aus)*
+12. Geschlechtszusätze in Stellenanzeigen *(standardmäßig aus)*
 
-Neue riskantere Regelarten werden später als eigene, standardmäßig deaktivierte
-Gruppen ergänzt und nicht hinter einem unklaren Profilnamen versteckt.
+Die beiden letzten Gruppen sind bewusst deaktiviert, weil `Studierende`,
+`Lesende` oder `(m/w/d)` je nach Kontext tatsächliche Information tragen können.
+Sie werden nicht hinter einem unklaren Profilnamen versteckt.
 
 ## Beispiele
 
@@ -65,6 +72,8 @@ Gruppen ergänzt und nicht hinter einem unklaren Profilnamen versteckt.
 Nutzer:innen                         → Nutzer
 Mitarbeiter*innen                    → Mitarbeiter
 Mitarbeiter/-innen                   → Mitarbeiter
+Anfänger*innen                       → Anfänger
+Zuhörer*innen                        → Zuhörer
 Ärzt_innen                           → Ärzte
 Student/innen                        → Studenten
 US-Bürger’innen                      → US-Bürger
@@ -77,8 +86,13 @@ Messebauer*innen                     → Messebauer
 Nutzerinnen und Nutzer               → Nutzer
 mit Ärztinnen und Ärzten             → mit Ärzten
 Kunde/Kundin                         → Kunde
+Koch/Köchin                           → Koch
+Bauern_Bäuerinnen                     → Bauern
 Tierärztin/Tierarzt                  → Tierarzt
 jede:r Nutzer:in                     → jeder Nutzer
+ein/-e Frisör/-in                    → ein Frisör
+eine/n Erzieher/-in                  → einen Erzieher
+ein_e Handwerker_in                  → ein Handwerker
 eine:n Student:in                    → einen Studenten
 einem:einer Kund:in                  → einem Kunden
 des:der Nutzer:in                    → des Nutzers
@@ -90,7 +104,17 @@ seines:ihres                         → seines
 Prof.in Anna Müller                  → Prof. Anna Müller
 die Prof.in                          → die Professorin
 Liebe Teilnehmende                   → Liebe Teilnehmer
+Sehr geehrte mitarbeitende Personen  → Sehr geehrte Mitarbeiter
+Makler*in                             → Makler
+Expert*in                             → Experte
+Ärzt_in                               → Arzt
+Professor/-in                         → Professor
+Direktor_in                           → Direktor
 ```
+
+Bei aktivierter optionaler Gruppe **Geschlechtsneutrale Umschreibungen** gilt
+zusätzlich etwa `Studierende → Studenten` und `Lesende → Leser`. Die optionale
+Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
 
 Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` sowie Vollformen wie
 `Professorin Müller` bleiben unverändert.
@@ -115,12 +139,14 @@ Meine geschützte Phrase
 
 ## Bewusst noch nicht verändert
 
-- singuläre Formen ohne eindeutigen Artikel- und Kasusmarker, etwa
-  `eine NutzerIn`
+- unmarkierte Binnen-I-Singularformen wie `eine NutzerIn`, deren Schreibweise
+  ohne Separator nicht sicher von einer ausdrücklich weiblichen Form zu trennen ist
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
-- Partizipialformen außerhalb eindeutiger Anreden
+- nicht in der optionalen Umschreibungsgruppe hinterlegte Partizipialformen
 - Pluralkürzel wie `Prof.innen` und `Dr.innen`
+- vollständige feminine Formen wie `Politikerinnen` ohne sichtbares Genderzeichen
+- reguläre Begriffe wie `Testpersonen`, `ärztliche Sprechstunde` und `Benutzungshandbuch`
 - nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
   URLs
 

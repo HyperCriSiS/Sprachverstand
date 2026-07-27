@@ -105,7 +105,7 @@ addDeterminer("seines", "ihres", "seines", "genitive", true);
 const determinerToken = String.raw`[\p{L}\p{M}:*_/·•.’‘-]+`;
 const nounBase = String.raw`[\p{L}\p{M}’'-]+`;
 const separatorSingularPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})(?:[:*_/·•.’‘])in(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
 const binnenISingularPattern = new RegExp(
@@ -158,9 +158,10 @@ function transformPattern(input: string, pattern: RegExp): TransformResult {
       whitespace: string,
       base: string
     ) => {
-      const determinerForm = determinerForms.get(
-        determiner.toLocaleLowerCase(locale)
-      );
+      const normalizedDeterminer = determiner
+        .toLocaleLowerCase(locale)
+        .replaceAll("/-", "/");
+      const determinerForm = determinerForms.get(normalizedDeterminer);
 
       if (!determinerForm) {
         return match;

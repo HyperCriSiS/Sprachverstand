@@ -10,9 +10,12 @@
   </head>
   <body>
     <main>
-      <header>
-        <h1>Sprachverstand</h1>
-        <output id="state"></output>
+      <header class="brand-header">
+        <img src="../icons/icon32.png" width="32" height="32" alt="">
+        <div>
+          <h1>Sprachverstand</h1>
+          <output id="state"></output>
+        </div>
       </header>
 
       <div class="count-row" aria-live="polite">
@@ -21,13 +24,16 @@
       </div>
 
       <label class="switch-row">
-        <span>Aktiv</span>
+        <span>Erweiterung aktiv</span>
         <input id="enabled" type="checkbox">
       </label>
 
-      <p id="rules-summary" class="rules-summary"></p>
+      <section class="rules-panel">
+        <h2>Was soll korrigiert werden?</h2>
+        <div id="rule-groups" class="popup-rules"></div>
+      </section>
 
-      <button id="open-options" type="button">Regeln und Ausnahmen</button>
+      <button id="open-options" type="button">Ausnahmen und weitere Einstellungen</button>
     </main>
   </body>
 </html>

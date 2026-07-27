@@ -1,4 +1,4 @@
-import type { Rule, RuleProfile } from "./rule";
+import { isRiskAllowed, type Rule, type RuleProfile } from "./rule";
 import {
   accessibleAttributeNames,
   shouldProcessAccessibleAttribute,
@@ -12,12 +12,47 @@ export interface DomProcessorOptions {
   readonly disabledRuleIds?: ReadonlySet<string>;
   readonly protectedTerms?: readonly string[];
   readonly processAccessibleAttributes?: boolean;
+  readonly processQuotedText?: boolean;
   readonly onReplacementCountChange?: (count: number) => void;
 }
 
 export interface StopOptions {
   readonly restore?: boolean;
 }
+
+const leadingContextLimit = 120;
+const blockBoundaryTags = new Set([
+  "ADDRESS",
+  "ARTICLE",
+  "ASIDE",
+  "BLOCKQUOTE",
+  "DIV",
+  "DL",
+  "FIELDSET",
+  "FIGCAPTION",
+  "FIGURE",
+  "FOOTER",
+  "FORM",
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "H6",
+  "HEADER",
+  "HR",
+  "LI",
+  "MAIN",
+  "NAV",
+  "OL",
+  "P",
+  "SECTION",
+  "TABLE",
+  "TD",
+  "TH",
+  "TR",
+  "UL"
+]);
 
 interface ChangeRecord {
   readonly original: string;
@@ -259,7 +294,10 @@ export class DomProcessor {
     }
 
     const original = node.data;
-    const result = this.transformValue(original);
+    const leadingContext = this.needsLeadingContext(original)
+      ? this.collectLeadingContext(node)
+      : undefined;
+    const result = this.transformValue(original, leadingContext);
     if (result.replacements === 0 || result.text === original) {
       return;
     }
@@ -318,7 +356,7 @@ export class DomProcessor {
     element.setAttribute(attributeName, result.text);
   }
 
-  private transformValue(input: string) {
+  private transformValue(input: string, leadingContext?: string) {
     const transformOptions = {
       profile: this.options.profile,
       ...(this.options.disabledRuleIds
@@ -326,10 +364,62 @@ export class DomProcessor {
         : {}),
       ...(this.options.protectedTerms
         ? { protectedTerms: this.options.protectedTerms }
-        : {})
+        : {}),
+      processQuotedText: this.options.processQuotedText !== false,
+      ...(leadingContext ? { leadingContext } : {})
     };
 
     return transformText(input, this.options.rules, transformOptions);
+  }
+
+  private needsLeadingContext(input: string): boolean {
+    for (const rule of this.options.rules) {
+      if (
+        !rule.applyWithLeadingContext ||
+        !rule.leadingContextCandidate ||
+        this.options.disabledRuleIds?.has(rule.id) ||
+        !isRiskAllowed(rule.risk, this.options.profile)
+      ) {
+        continue;
+      }
+
+      rule.leadingContextCandidate.lastIndex = 0;
+      if (rule.leadingContextCandidate.test(input)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private collectLeadingContext(node: Text): string | undefined {
+    const chunks: string[] = [];
+    let collectedLength = 0;
+    let current: Node | null = node;
+
+    while (current?.parentNode) {
+      let sibling = current.previousSibling;
+      while (sibling) {
+        const text = sibling.textContent ?? "";
+        if (text) {
+          chunks.unshift(text);
+          collectedLength += text.length;
+          if (collectedLength >= leadingContextLimit) {
+            return chunks.join("").slice(-leadingContextLimit);
+          }
+        }
+        sibling = sibling.previousSibling;
+      }
+
+      const parent: Node | null = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        break;
+      }
+      current = parent;
+    }
+
+    const context = chunks.join("").slice(-leadingContextLimit);
+    return context || undefined;
   }
 
   private forgetRoot(root: Node): void {

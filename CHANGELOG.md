@@ -5,6 +5,48 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.5.0 – Beta 5 (2026-07-27)
+
+### Hinzugefügt
+
+- Das SV-Monogramm wird als Erweiterungssymbol und in Popup sowie Einstellungen
+  verwendet.
+- Alle zwölf Regelgruppen sind im Popup mit Titel und Beispiel direkt schaltbar.
+- Der Seitenzähler wird über Hintergrundnachrichten live im Popup und im
+  Einstellungsfenster aktualisiert.
+- Gegenderte Singularformen ohne Artikel werden lexikalisch kontrolliert
+  normalisiert, etwa `Makler*in`, `Ärzt_in` und `Professor/-in`.
+- Schrägstrich-Bindestrich-Artikel wie `ein/-e Frisör/-in` und
+  `eine/n Erzieher/-in` werden korrekt flektiert.
+- Weitere Lexikoneinträge und Formen für Anfänger, Zuhörer, Freunde, Chirurgen,
+  Köche und Bauern wurden ergänzt.
+- Eine standardmäßig deaktivierte Gruppe ersetzt ausgewählte
+  geschlechtsneutrale Umschreibungen wie `Studierende` oder `Lesende`.
+- Eine standardmäßig deaktivierte Gruppe entfernt verbreitete
+  Stellenanzeigen-Zusätze wie `(m/w/d)`.
+- Direkt zitierte Schreibweisen können über eine separate Option innerhalb
+  gängiger Anführungszeichen geschützt werden; standardmäßig werden sie weiter
+  korrigiert.
+
+### Korrigiert
+
+- `Sehr geehrte Mitarbeitende` funktioniert auch dann, wenn das Personenwort in
+  einem eigenen Inline-Textknoten liegt.
+- `Sehr geehrte mitarbeitende Personen` wird zu `Sehr geehrte Mitarbeiter`.
+- `Bauern_Bäuerinnen`, `Bäuer_innen`, `Koch/Köchin`, `ChirurgInnen`,
+  `Freund:innen` und weitere gemeldete Formen werden erkannt.
+- Neue Standardgruppen werden bei bestehenden Installationen einmalig aktiviert,
+  ohne später bewusst deaktivierte Gruppen zurückzusetzen.
+
+### Bewusste Grenzen
+
+- `Politikerinnen` bleibt als mögliche ausdrücklich weibliche Bezeichnung
+  unverändert.
+- `Testpersonen`, `ärztliche Sprechstunde` und `Benutzungshandbuch` sind keine
+  Genderformen und bleiben unverändert.
+- Die fehlerhafte Form `Zuhörer*inne` wird nicht als automatische Tippkorrektur
+  behandelt.
+
 ## 0.4.2 – Beta 4 (2026-07-26)
 
 ### Hinzugefügt

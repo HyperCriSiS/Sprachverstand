@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
 import { createRegexRule } from "../src/core/rule";
+import { salutationParticiplesRule } from "../src/rules/salutation-participles";
 
 const rule = createRegexRule({
   id: "test.separator",
@@ -251,5 +252,37 @@ describe("DomProcessor", () => {
     expect(document.querySelector("img")?.getAttribute("alt")).toBe(
       "Nutzer:innen im Team"
     );
+  });
+
+  it("kann direkt zitierte Schreibweisen von der Verarbeitung ausnehmen", () => {
+    document.body.innerHTML = `<p>„Nutzer:innen“ und Nutzer:innen</p>`;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processQuotedText: false
+    });
+    processor.start();
+
+    expect(document.querySelector("p")?.textContent).toBe(
+      "„Nutzer:innen“ und Nutzer"
+    );
+  });
+
+  it("verarbeitet Anreden auch über getrennte Inline-Textknoten", () => {
+    document.body.innerHTML = `
+      <p>Sehr geehrte <strong>Mitarbeitende</strong></p>
+      <p>Die <strong>Mitarbeitenden</strong> arbeiten.</p>
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [salutationParticiplesRule],
+      profile: "aggressive"
+    });
+    processor.start();
+
+    const paragraphs = document.querySelectorAll("p");
+    expect(paragraphs[0]?.textContent).toBe("Sehr geehrte Mitarbeiter");
+    expect(paragraphs[1]?.textContent).toBe("Die Mitarbeitenden arbeiten.");
   });
 });
