@@ -14,7 +14,8 @@ function syncedSettings(settings: Settings): Omit<Settings, "protectedTerms"> {
     enabled: settings.enabled,
     excludedDomains: settings.excludedDomains,
     enabledRuleGroupIds: settings.enabledRuleGroupIds,
-    processAccessibleAttributes: settings.processAccessibleAttributes
+    processAccessibleAttributes: settings.processAccessibleAttributes,
+    processQuotedText: settings.processQuotedText
   };
 }
 

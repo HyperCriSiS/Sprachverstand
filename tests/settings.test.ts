@@ -18,7 +18,11 @@ describe("Einstellungen", () => {
     expect(defaultSettings.enabledRuleGroupIds).toEqual(
       defaultEnabledRuleGroupIds
     );
-    expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds).size).toBe(0);
+    expect(defaultSettings.enabledRuleGroupIds).not.toContain("neutral-person-terms");
+    expect(defaultSettings.enabledRuleGroupIds).not.toContain("job-ad-suffixes");
+    expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds)).toEqual(
+      new Set(["neutral.person-terms", "job-ad.gender-suffixes"])
+    );
     expect(defaultSettings.settingsRevision).toBe(currentSettingsRevision);
   });
 
@@ -32,6 +36,8 @@ describe("Einstellungen", () => {
 
     expect(settings.enabledRuleGroupIds).not.toContain("plural-binnen-i");
     expect(settings.enabledRuleGroupIds).toContain("plural-separators");
+    expect(settings.enabledRuleGroupIds).not.toContain("neutral-person-terms");
+    expect(settings.enabledRuleGroupIds).not.toContain("job-ad-suffixes");
     expect(settings.excludedDomains).toEqual(["example.org"]);
   });
 
@@ -44,7 +50,8 @@ describe("Einstellungen", () => {
     expect(settings.enabledRuleGroupIds).toEqual([
       "plural-separators",
       "salutation-participles",
-      "title-abbreviations"
+      "title-abbreviations",
+      "unmarked-singular"
     ]);
     expect(settings.settingsRevision).toBe(currentSettingsRevision);
   });
@@ -74,13 +81,15 @@ describe("Einstellungen", () => {
       settingsRevision: currentSettingsRevision,
       enabledRuleGroupIds: ["plural-separators", "unbekannt"],
       protectedTerms,
-      processAccessibleAttributes: false
+      processAccessibleAttributes: false,
+      processQuotedText: false
     });
 
     expect(settings.enabledRuleGroupIds).toEqual(["plural-separators"]);
     expect(settings.protectedTerms).toHaveLength(maximumProtectedTerms);
     expect(settings.protectedTerms).not.toContain(longTerm);
     expect(settings.processAccessibleAttributes).toBe(false);
+    expect(settings.processQuotedText).toBe(false);
   });
 
   it("ordnet jede produktive Regel genau einer sichtbaren Gruppe zu", () => {

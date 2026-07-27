@@ -17,39 +17,58 @@ body {
 
 main {
   display: grid;
-  gap: 14px;
-  padding: max(16px, env(safe-area-inset-top))
-    max(16px, env(safe-area-inset-right))
-    max(16px, env(safe-area-inset-bottom))
-    max(16px, env(safe-area-inset-left));
+  gap: 12px;
+  max-height: min(620px, 92vh);
+  padding: max(14px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
 }
 
-header,
+.brand-header,
 .switch-row,
 .count-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+}
+
+.brand-header {
+  justify-content: flex-start;
+}
+
+.brand-header img {
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+
+.brand-header > div {
+  display: grid;
+  gap: 1px;
+}
+
+h1,
+h2 {
+  margin: 0;
 }
 
 h1 {
-  margin: 0;
   font-size: 18px;
 }
 
+h2 {
+  font-size: 14px;
+}
+
+#state,
+.count-row,
+.popup-rule code {
+  font-size: 12px;
+}
+
 .switch-row {
-  font-size: 15px;
-}
-
-.count-row {
-  font-size: 13px;
-}
-
-.rules-summary {
-  margin: 0;
-  font-size: 13px;
-  opacity: 0.8;
+  font-size: 14px;
 }
 
 #count {
@@ -60,13 +79,55 @@ h1 {
 }
 
 input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+
+.rules-panel {
+  display: grid;
+  min-height: 0;
+  gap: 8px;
+}
+
+.popup-rules {
+  display: grid;
+  max-height: 300px;
+  gap: 6px;
+  padding-right: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.popup-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 8px;
+}
+
+.popup-rule-content {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.popup-rule strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.popup-rule code {
+  overflow-wrap: anywhere;
+  opacity: 0.78;
 }
 
 button {
   min-height: 44px;
-  padding: 0 14px;
+  padding: 8px 12px;
   font: inherit;
   cursor: pointer;
   touch-action: manipulation;

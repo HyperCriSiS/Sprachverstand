@@ -6,11 +6,12 @@ import {
 
 export const maximumProtectedTerms = 100;
 export const maximumProtectedTermLength = 80;
-export const currentSettingsRevision = 2;
+export const currentSettingsRevision = 3;
 
 const introducedDefaultGroups = [
   { revision: 1, groupId: "salutation-participles" },
-  { revision: 2, groupId: "title-abbreviations" }
+  { revision: 2, groupId: "title-abbreviations" },
+  { revision: 3, groupId: "unmarked-singular" }
 ] as const;
 
 export interface Settings {
@@ -20,6 +21,7 @@ export interface Settings {
   readonly enabledRuleGroupIds: readonly string[];
   readonly protectedTerms: readonly string[];
   readonly processAccessibleAttributes: boolean;
+  readonly processQuotedText: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -28,7 +30,8 @@ export const defaultSettings: Settings = {
   excludedDomains: [],
   enabledRuleGroupIds: defaultEnabledRuleGroupIds,
   protectedTerms: [],
-  processAccessibleAttributes: true
+  processAccessibleAttributes: true,
+  processQuotedText: true
 };
 
 function stringArray(value: unknown): string[] {
@@ -101,6 +104,10 @@ export function normalizeSettings(value: unknown): Settings {
     processAccessibleAttributes:
       typeof input.processAccessibleAttributes === "boolean"
         ? input.processAccessibleAttributes
-        : defaultSettings.processAccessibleAttributes
+        : defaultSettings.processAccessibleAttributes,
+    processQuotedText:
+      typeof input.processQuotedText === "boolean"
+        ? input.processQuotedText
+        : defaultSettings.processQuotedText
   };
 }

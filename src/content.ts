@@ -44,6 +44,7 @@ function applySettings(settings: Settings): void {
     disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
     protectedTerms: settings.protectedTerms,
     processAccessibleAttributes: settings.processAccessibleAttributes,
+    processQuotedText: settings.processQuotedText,
     onReplacementCountChange: reportReplacementCount
   };
 

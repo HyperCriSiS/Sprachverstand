@@ -42,6 +42,23 @@ async function prepareStaticFiles(target) {
   );
   manifest.version = packageJson.version;
 
+  const encodedIcons = JSON.parse(
+    await readFile(path.join(projectRoot, "assets", "icons.base64.json"), "utf8")
+  );
+  const iconDirectory = path.join(outputDirectory, "icons");
+  await mkdir(iconDirectory, { recursive: true });
+
+  for (const [fileName, encodedIcon] of Object.entries(encodedIcons)) {
+    if (typeof encodedIcon !== "string") {
+      throw new Error(`Ungültige Icon-Daten für ${fileName}`);
+    }
+
+    await writeFile(
+      path.join(iconDirectory, fileName),
+      Buffer.from(encodedIcon, "base64")
+    );
+  }
+
   await writeFile(
     path.join(outputDirectory, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,

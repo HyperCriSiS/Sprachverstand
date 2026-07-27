@@ -1,13 +1,14 @@
-# Sprachverstand 0.4.2 – Beta 4 testen
+# Sprachverstand 0.5.0 – Beta 5 testen
 
-Diese Beta ergänzt kontextabhängige Regeln für gegenderte Titelabkürzungen wie
-`Prof.in` und `Dr.in`.
+Diese Beta ergänzt das SV-Logo, direkt im Popup schaltbare Regelgruppen, einen
+live aktualisierten Zähler, neue Singular- und Pluralformen sowie optionale
+Regeln für mehrdeutige Umschreibungen und Stellenanzeigen-Zusätze.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.4.2-beta.4-chromium.zip`
-- `sprachverstand-0.4.2-beta.4-firefox.xpi`
-- `sprachverstand-0.4.2-beta.4-source.zip`
+- `sprachverstand-0.5.0-beta.5-chromium.zip`
+- `sprachverstand-0.5.0-beta.5-firefox.xpi`
+- `sprachverstand-0.5.0-beta.5-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -40,8 +41,6 @@ Unter Windows können die Werte mit
 Google Chrome auf Android unterstützt keine Erweiterungen. Das verbindliche
 Mobilziel ist Firefox für Android ab Version 142.
 
-Mit aktiviertem USB-Debugging, ADB und einem verbundenen Android-Gerät:
-
 ```bash
 npm install
 npm run build:firefox
@@ -50,52 +49,131 @@ npx web-ext run \
   --target=firefox-android
 ```
 
-Bei mehreren Geräten oder Firefox-Varianten können zusätzlich
-`--android-device` und `--firefox-apk=org.mozilla.firefox` angegeben werden.
-
 Auf dem Gerät prüfen:
 
-- Popup vollständig sichtbar und ohne horizontales Scrollen
-- Schalter und Schaltflächen gut per Touch bedienbar
+- neues SV-Symbol in der Erweiterungsliste
+- Popup vollständig sichtbar und vertikal scrollbar
+- alle Regelgruppen per Touch schaltbar
 - Optionsseite im normalen Tab
-- Regelkarten auf ungefähr 360 × 640 dp
 - Bildschirmtastatur verdeckt Speichern nicht dauerhaft
 - Systemhelligkeit und Dunkelmodus
-- Zurück-Navigation aus der Optionsseite
-- Counter im Popup, falls das Android-Menü kein Badge am Symbol zeigt
+- Counter im Popup, falls Android kein Badge am Symbol zeigt
 
-## Funktionsprüfungen
+## Popup und Zähler
 
-### Sofortiges An- und Ausschalten
+Im Popup müssen sichtbar sein:
 
-1. Eine Seite mit erkannten Formen öffnen.
-2. Sprachverstand ausschalten.
-3. Der ursprüngliche Text muss ohne Reload zurückkehren.
-4. Wieder einschalten.
-5. Der Text muss erneut korrigiert werden.
+- SV-Logo
+- globaler Aktivschalter
+- Zahl der Korrekturen im aktiven Tab
+- alle zwölf Regelgruppen nur mit Titel und Beispiel
+- Schaltfläche für Ausnahmen und weitere Einstellungen
 
-Hat die Webseite einen Wert nach der Korrektur selbst verändert, darf
-Sprachverstand diese spätere Änderung beim Ausschalten nicht überschreiben.
+Regelgruppen und Aktivschalter im Popup mehrfach umschalten. Die Seite muss ohne
+Reload wiederhergestellt und neu verarbeitet werden. Der Zähler muss dabei
+innerhalb kurzer Zeit folgen und darf nicht auf einem alten Wert stehen bleiben.
 
-### Live-Counter
+Wird die Einstellungsseite aus dem Popup geöffnet, zeigt sie die Zahl des zuvor
+betrachteten Seitentabs. Änderungen nach dem Speichern müssen dort ebenfalls
+live erscheinen.
 
-- Das Badge am Symbol zeigt die Zahl erkannter Korrekturen pro Tab.
-- Im Popup steht dieselbe Zahl als Text.
-- Null wird im Badge ausgeblendet.
-- Werte über 999 erscheinen als `999+`.
-- Beim Ausschalten fällt der Wert auf null.
-- Entfernte dynamische Inhalte dürfen nicht dauerhaft weitergezählt werden.
+## Regelgruppen
 
-Der Counter zählt korrigierte Fundstellen. Eine zusammengeführte Doppelnennung
-ist daher eine Korrektur, nicht zwingend die Zahl aller beteiligten Wörter.
+Zehn Gruppen sind standardmäßig aktiv. Zwei riskantere Gruppen sind zunächst aus:
 
-### Regelgruppen
+- **Geschlechtsneutrale Umschreibungen**
+- **Geschlechtszusätze in Stellenanzeigen**
 
-Jede der neun Gruppen einzeln deaktivieren und prüfen, dass nur die zugehörigen
-Formen auf den Ursprungszustand zurückgesetzt werden. Die anderen Gruppen müssen
-aktiv bleiben.
+Jede Gruppe einzeln deaktivieren und prüfen, dass nur ihre eigenen Änderungen
+zurückgesetzt werden.
 
-### Gegenderte Titelabkürzungen
+## Neue Kernfälle
+
+```text
+Sehr geehrte Mitarbeitende           → Sehr geehrte Mitarbeiter
+Sehr geehrte mitarbeitende Personen  → Sehr geehrte Mitarbeiter
+Anfänger*innen                       → Anfänger
+Zuhörer*innen                        → Zuhörer
+Freund:innen                         → Freunde
+ChirurgInnen                         → Chirurgen
+Bäuer_innen                          → Bauern
+Bauern_Bäuerinnen                    → Bauern
+Koch/Köchin                          → Koch
+ein/-e Frisör/-in                    → ein Frisör
+eine/n Erzieher/-in                  → einen Erzieher
+ein_e Handwerker_in                  → ein Handwerker
+Lehrer/-in                           → Lehrer
+Verkäufer/-in                        → Verkäufer
+Mitarbeiter/-in                      → Mitarbeiter
+Makler*in                            → Makler
+Expert*in                            → Experte
+Ärzt_in                              → Arzt
+Professor/in                         → Professor
+Professor/-in                        → Professor
+Direktor_in                          → Direktor
+```
+
+## Optionale Umschreibungen
+
+Nach Aktivierung von **Geschlechtsneutrale Umschreibungen**:
+
+```text
+Mitarbeitende             → Mitarbeiter
+Studierende               → Studenten
+Lesende                   → Leser
+Teilnehmende              → Teilnehmer
+Nutzende                  → Nutzer
+mitarbeitende Personen    → Mitarbeiter
+```
+
+Diese Gruppe bleibt standardmäßig aus, weil beispielsweise `Lesende` auch
+wörtlich Menschen bezeichnen kann, die gerade lesen.
+
+Nach Aktivierung von **Geschlechtszusätze in Stellenanzeigen**:
+
+```text
+eine/n Erzieher/-in (m/w/d) → einen Erzieher
+```
+
+## Anführungszeichen
+
+Standardmäßig werden Genderformen auch innerhalb von Anführungszeichen
+korrigiert:
+
+```text
+„Mitarbeiter/-innen“ → „Mitarbeiter“
+```
+
+Die Option **Text innerhalb von Anführungszeichen korrigieren** ausschalten.
+Danach muss innerhalb desselben Textabschnitts gelten:
+
+```text
+„Mitarbeiter/-innen“ und Mitarbeiter/-innen
+→ „Mitarbeiter/-innen“ und Mitarbeiter
+```
+
+Direkte Zitate, die über mehrere getrennte HTML-Elemente laufen, sind noch ein
+manueller Grenztest.
+
+## Bewusst unverändert
+
+```text
+Besuch der ärztlichen Sprechstunde
+Benutzungshandbuch
+Politikerinnen
+Testpersonen
+zehn Zuhörer*inne
+Sehr geehrte Persönlichkeiten
+Liebes Kollegium
+```
+
+- `Politikerinnen` kann ausdrücklich nur Frauen meinen.
+- `Testpersonen`, `ärztliche Sprechstunde` und `Benutzungshandbuch` sind normale
+  Begriffe und keine Genderformen.
+- `Zuhörer*inne` ist eine fehlerhafte Schreibweise; Sprachverstand ist kein
+  allgemeines Rechtschreibprogramm.
+
+## Titelabkürzungen
 
 ```text
 Prof.in Anna Müller       → Prof. Anna Müller
@@ -103,25 +181,12 @@ Dr.in Eva Schmidt         → Dr. Eva Schmidt
 Prof.in Dr.in Lea Weber   → Prof. Dr. Lea Weber
 die Prof.in               → die Professorin
 mit der Dr.in             → mit der Doktorin
-Prof.in                   → Professorin
 ```
 
-Unverändert bleiben müssen:
+Unverändert bleiben `Professorin Müller`, `Doktorin Schmidt`, `Prof.innen`,
+`Dr.innen`, `Prof. Weber` und `Dr. König`.
 
-```text
-Professorin Müller
-Doktorin Schmidt
-Prof.innen
-Dr.innen
-Prof. Weber
-Dr. König
-```
-
-Die Regel soll die weibliche Bedeutung nicht beseitigen. Vor Namen wird nur das
-gegenderte Kürzel auf die normale Titelabkürzung zurückgeführt; als
-Personenbezeichnung wird die weibliche Vollform ausgeschrieben.
-
-### Persönliche Ausnahmen
+## Persönliche Ausnahmen
 
 Als persönliche Ausnahme eintragen:
 
@@ -136,13 +201,7 @@ Nutzer:innen       → bleibt unverändert
 Nutzer:innenkonto  → wird weiterhin zu Nutzerkonto
 ```
 
-Für das Kompositum muss bei Bedarf die vollständige Form separat eingetragen
-werden. Phrasen funktionieren entsprechend vollständig und ohne reguläre
-Ausdrücke.
-
-Die Ausnahmen werden lokal gespeichert und nicht über Browser-Sync übertragen.
-
-### Zugängliche Attribute
+## Zugängliche Attribute
 
 Die Option für `alt`, `aria-label`, `aria-description` und `title` ausschalten.
 Sichtbarer Text muss weiterhin korrigiert werden, diese Attribute aber nicht.
@@ -157,28 +216,6 @@ Danach öffnen:
 
 ```text
 http://127.0.0.1:8080/tests/manual/beta-fixture.html
-```
-
-### Popup-Breite
-
-Das Popup muss auf Desktop und Android als normal lesbares Bedienfeld erscheinen.
-Ein nur wenige Millimeter breiter Streifen ist ein Fehler.
-
-### Anreden und Schrägstrich-Bindestrich
-
-```text
-Sehr geehrte Mitarbeitende → Sehr geehrte Mitarbeiter
-Liebe Teilnehmende → Liebe Teilnehmer
-Sehr geehrte Nutzende unserer Produkte → Sehr geehrte Nutzer unserer Produkte
-„Mitarbeiter/-innen“ → „Mitarbeiter“
-```
-
-Unverändert bleiben müssen:
-
-```text
-Sehr geehrte Persönlichkeiten
-Liebes Kollegium
-Die Mitarbeitenden arbeiten.
 ```
 
 ## Reale Seitentests
@@ -196,5 +233,5 @@ Besonders wichtig bleiben:
 ## Fehler melden
 
 Eine Meldung sollte Browser, Version, Betriebssystem, Adresse, Ausgangstext,
-Ergebnis, Erwartung und reproduzierbare Schritte enthalten. Keine Zugangsdaten,
-privaten Nachrichten oder persönlichen Inhalte mitsenden.
+Ergebnis, Erwartung, aktive Regelgruppen und reproduzierbare Schritte enthalten.
+Keine Zugangsdaten, privaten Nachrichten oder persönlichen Inhalte mitsenden.

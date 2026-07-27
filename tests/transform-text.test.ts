@@ -87,4 +87,31 @@ describe("transformText", () => {
       replacements: 1
     });
   });
+
+  it("korrigiert standardmäßig auch innerhalb von Anführungszeichen", () => {
+    expect(
+      transformText("„Nutzer:innen“ und Nutzer:innen", [safeRule], {
+        profile: "conservative"
+      })
+    ).toEqual({
+      text: "„Nutzer“ und Nutzer",
+      replacements: 2
+    });
+  });
+
+  it("kann direkt zitierte Schreibweisen schützen", () => {
+    expect(
+      transformText(
+        "„Nutzer:innen“ und \"Nutzer:innen\" sowie Nutzer:innen",
+        [safeRule],
+        {
+          profile: "conservative",
+          processQuotedText: false
+        }
+      )
+    ).toEqual({
+      text: "„Nutzer:innen“ und \"Nutzer:innen\" sowie Nutzer",
+      replacements: 1
+    });
+  });
 });

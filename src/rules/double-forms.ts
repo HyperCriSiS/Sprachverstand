@@ -12,7 +12,7 @@ interface GenderedCandidate {
 const locale = "de-DE";
 const word = String.raw`[\p{L}\p{M}’'-]+(?:(?:[:*_/·•])innen)?`;
 const doubleFormPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])(${word})(\s+(?:und|oder|beziehungsweise|bzw\.)\s+|\s*[&/]\s*)(${word})(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])(${word})(\s+(?:und|oder|beziehungsweise|bzw\.)\s+|\s*[&/_]\s*)(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
 const separatorPattern =
@@ -75,6 +75,16 @@ function matchesMasculineSurface(
 }
 
 function collapsePair(left: string, right: string): string | undefined {
+  const normalizedLeft = left.toLocaleLowerCase(locale);
+  const normalizedRight = right.toLocaleLowerCase(locale);
+
+  if (
+    (normalizedLeft === "bauern" && normalizedRight === "bäuerinnen") ||
+    (normalizedRight === "bauern" && normalizedLeft === "bäuerinnen")
+  ) {
+    return normalizedLeft === "bauern" ? left : right;
+  }
+
   const leftCandidate = parseGenderedCandidate(left);
   const rightCandidate = parseGenderedCandidate(right);
 

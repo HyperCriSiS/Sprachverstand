@@ -47,6 +47,15 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     defaultEnabled: true
   },
   {
+    id: "unmarked-singular",
+    label: "Gegenderte Singularformen ohne Artikel",
+    description:
+      "Sichtbar markierte Singularformen werden nur für bekannte Personenbezeichnungen normalisiert.",
+    example: "Makler*in → Makler · Professor/-in → Professor",
+    ruleIds: ["singular.unmarked-marker"],
+    defaultEnabled: true
+  },
+  {
     id: "singular-double-forms",
     label: "Doppelnennungen im Singular",
     description:
@@ -90,6 +99,24 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     example: "Liebe Teilnehmende → Liebe Teilnehmer",
     ruleIds: ["salutation.participial-forms"],
     defaultEnabled: true
+  },
+  {
+    id: "neutral-person-terms",
+    label: "Geschlechtsneutrale Umschreibungen",
+    description:
+      "Ersetzt ausgewählte Partizip- und Personenumschreibungen auch außerhalb von Anreden. Kann in wörtlich gemeinten Sätzen die Bedeutung verändern.",
+    example: "Studierende → Studenten · Lesende → Leser",
+    ruleIds: ["neutral.person-terms"],
+    defaultEnabled: false
+  },
+  {
+    id: "job-ad-suffixes",
+    label: "Geschlechtszusätze in Stellenanzeigen",
+    description:
+      "Entfernt verbreitete Zusätze wie (m/w/d).",
+    example: "Erzieher (m/w/d) → Erzieher",
+    ruleIds: ["job-ad.gender-suffixes"],
+    defaultEnabled: false
   }
 ] as const;
 
@@ -123,8 +150,10 @@ export function enabledGroupsFromLegacyDisabledRuleIds(
   const disabled = new Set(disabledRuleIds);
 
   return ruleGroupDefinitions
-    .filter((group) =>
-      group.ruleIds.every((ruleId) => !disabled.has(ruleId))
+    .filter(
+      (group) =>
+        group.defaultEnabled &&
+        group.ruleIds.every((ruleId) => !disabled.has(ruleId))
     )
     .map((group) => group.id);
 }

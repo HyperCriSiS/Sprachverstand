@@ -1,3 +1,4 @@
+import { getExtensionApi } from "./browser/api";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   currentSettingsRevision,
@@ -7,6 +8,12 @@ import {
   type Settings
 } from "./settings/defaults";
 import { loadSettings, saveSettings } from "./settings/storage";
+
+interface CountUpdatedMessage {
+  readonly type: "sprachverstand.count-updated";
+  readonly tabId: number;
+  readonly text: string;
+}
 
 function requiredElement<T extends HTMLElement>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -20,8 +27,11 @@ function requiredElement<T extends HTMLElement>(selector: string): T {
 
 const form = requiredElement<HTMLFormElement>("#settings-form");
 const enabledInput = requiredElement<HTMLInputElement>("#enabled");
+const countOutput = requiredElement<HTMLOutputElement>("#count");
 const processAccessibleAttributesInput =
   requiredElement<HTMLInputElement>("#process-accessible-attributes");
+const processQuotedTextInput =
+  requiredElement<HTMLInputElement>("#process-quoted-text");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const protectedTermsInput =
   requiredElement<HTMLTextAreaElement>("#protected-terms");
@@ -33,6 +43,21 @@ const selectNoRulesButton =
   requiredElement<HTMLButtonElement>("#select-no-rules");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
+
+let activeTabId: number | undefined;
+
+function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
+  if (!message || typeof message !== "object") {
+    return false;
+  }
+
+  const candidate = message as Partial<CountUpdatedMessage>;
+  return (
+    candidate.type === "sprachverstand.count-updated" &&
+    typeof candidate.tabId === "number" &&
+    typeof candidate.text === "string"
+  );
+}
 
 function createRuleGroupControls(): void {
   const fragment = document.createDocumentFragment();
@@ -75,6 +100,7 @@ function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
+  processQuotedTextInput.checked = settings.processQuotedText;
   protectedTermsInput.value = settings.protectedTerms.join("\n");
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
@@ -126,7 +152,8 @@ function readForm(): Settings {
     excludedDomains: readLines(excludedDomainsInput.value),
     enabledRuleGroupIds,
     protectedTerms: readProtectedTerms(),
-    processAccessibleAttributes: processAccessibleAttributesInput.checked
+    processAccessibleAttributes: processAccessibleAttributesInput.checked,
+    processQuotedText: processQuotedTextInput.checked
   };
 }
 
@@ -139,10 +166,31 @@ function showStatus(message: string, isError = false): void {
   }, 4000);
 }
 
+async function renderCurrentCount(): Promise<void> {
+  const api = getExtensionApi();
+  const response = (await api.runtime.sendMessage({
+    type: "sprachverstand.get-inspected-count"
+  })) as { readonly tabId?: unknown; readonly text?: unknown } | undefined;
+
+  activeTabId =
+    typeof response?.tabId === "number" ? response.tabId : activeTabId;
+  countOutput.textContent =
+    typeof response?.text === "string" ? response.text : "0";
+}
+
+function refreshCountAfterChange(): void {
+  for (const delay of [0, 60, 180, 400]) {
+    window.setTimeout(() => {
+      void renderCurrentCount();
+    }, delay);
+  }
+}
+
 async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
     showStatus("Gespeichert – offene Seiten werden sofort neu verarbeitet.");
+    refreshCountAfterChange();
   } catch (error) {
     showStatus(
       error instanceof Error
@@ -153,9 +201,25 @@ async function persist(): Promise<void> {
   }
 }
 
+function handleRuntimeMessage(message: unknown): void {
+  if (
+    isCountUpdatedMessage(message) &&
+    message.tabId === activeTabId
+  ) {
+    countOutput.textContent = message.text || "0";
+  }
+}
+
 async function start(): Promise<void> {
   createRuleGroupControls();
   render(await loadSettings());
+  await renderCurrentCount();
+
+  const api = getExtensionApi();
+  api.runtime.onMessage.addListener(handleRuntimeMessage);
+  window.addEventListener("unload", () => {
+    api.runtime.onMessage.removeListener(handleRuntimeMessage);
+  });
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -178,6 +242,7 @@ async function start(): Promise<void> {
     render(defaultSettings);
     void saveSettings(defaultSettings).then(() => {
       showStatus("Auf sichere Standardeinstellungen zurückgesetzt.");
+      refreshCountAfterChange();
     });
   });
 }

@@ -1,4 +1,4 @@
-import type { Rule } from "../core/rule";
+import type { Rule, TransformResult } from "../core/rule";
 
 const locale = "de-DE";
 
@@ -11,8 +11,21 @@ const salutationReplacements = new Map<string, string>([
   ["lehrende", "lehrer"]
 ]);
 
-const salutationPattern =
-  /(?<![\p{L}\p{M}])((?:sehr\s+geehrte|liebe)\s+)(Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende)(?![\p{L}\p{M}])/giu;
+const participleSource =
+  String.raw`Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende`;
+const salutationPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:sehr\s+geehrte|liebe)\s+)(${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`,
+  "giu"
+);
+const leadingContextCandidate = new RegExp(
+  String.raw`^\s*(?:${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`,
+  "iu"
+);
+const leadingSalutationPattern = /(?:sehr\s+geehrte|liebe)\s*$/iu;
+const leadingTokenPattern = new RegExp(
+  String.raw`^(\s*)(${participleSource})(?:\s+Personen)?`,
+  "iu"
+);
 
 function applyTokenCase(source: string, replacement: string): string {
   const lowerSource = source.toLocaleLowerCase(locale);
@@ -22,45 +35,71 @@ function applyTokenCase(source: string, replacement: string): string {
     return replacement.toLocaleUpperCase(locale);
   }
 
-  const firstSourceCharacter = [...source][0];
-  if (
-    firstSourceCharacter &&
-    firstSourceCharacter === firstSourceCharacter.toLocaleUpperCase(locale)
-  ) {
-    const characters = [...replacement];
-    const firstReplacementCharacter = characters.shift();
+  const characters = [...replacement];
+  const firstReplacementCharacter = characters.shift();
 
-    return firstReplacementCharacter
-      ? firstReplacementCharacter.toLocaleUpperCase(locale) + characters.join("")
-      : replacement;
+  return firstReplacementCharacter
+    ? firstReplacementCharacter.toLocaleUpperCase(locale) + characters.join("")
+    : replacement;
+}
+
+function transformSalutations(input: string): TransformResult {
+  let replacements = 0;
+
+  const text = input.replace(
+    salutationPattern,
+    (match: string, salutation: string, participle: string) => {
+      const replacement = salutationReplacements.get(
+        participle.toLocaleLowerCase(locale)
+      );
+
+      if (!replacement) {
+        return match;
+      }
+
+      replacements += 1;
+      return salutation + applyTokenCase(participle, replacement);
+    }
+  );
+
+  return { text, replacements };
+}
+
+function transformWithLeadingContext(
+  input: string,
+  leadingContext: string
+): TransformResult {
+  const direct = transformSalutations(input);
+  if (direct.replacements > 0 || !leadingSalutationPattern.test(leadingContext)) {
+    return direct;
   }
 
-  return replacement;
+  const match = leadingTokenPattern.exec(input);
+  const participle = match?.[2];
+  if (!match || !participle) {
+    return direct;
+  }
+
+  const replacement = salutationReplacements.get(
+    participle.toLocaleLowerCase(locale)
+  );
+  if (!replacement) {
+    return direct;
+  }
+
+  return {
+    text:
+      match[1] +
+      applyTokenCase(participle, replacement) +
+      input.slice(match[0].length),
+    replacements: 1
+  };
 }
 
 export const salutationParticiplesRule: Rule = {
   id: "salutation.participial-forms",
   risk: "contextual",
-
-  apply(input) {
-    let replacements = 0;
-
-    const text = input.replace(
-      salutationPattern,
-      (match: string, salutation: string, participle: string) => {
-        const replacement = salutationReplacements.get(
-          participle.toLocaleLowerCase(locale)
-        );
-
-        if (!replacement) {
-          return match;
-        }
-
-        replacements += 1;
-        return salutation + applyTokenCase(participle, replacement);
-      }
-    );
-
-    return { text, replacements };
-  }
+  leadingContextCandidate,
+  apply: transformSalutations,
+  applyWithLeadingContext: transformWithLeadingContext
 };

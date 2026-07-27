@@ -21,6 +21,17 @@ main {
     max(16px, env(safe-area-inset-left));
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-header img {
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
 .page-header h1,
 h2,
 p {
@@ -69,6 +80,23 @@ label {
 
 .prominent-toggle {
   font-size: 17px;
+}
+
+.current-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+#count {
+  min-width: 2ch;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: right;
 }
 
 input[type="checkbox"] {

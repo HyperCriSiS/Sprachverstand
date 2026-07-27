@@ -1,7 +1,8 @@
 # Auswertung der Altprojekte
 
-Diese Datei ist die Arbeitsmatrix für bekannte Fehlerfälle, Issues und Pull
-Requests. Sie beeinflusst den ausgelieferten Code nicht.
+Diese Datei dokumentiert, welche Fehlerfälle und Konzepte aus den geprüften
+Altprojekten in Sprachverstand eingeflossen sind. Fremder Quelltext wird nicht
+übernommen; produktiver Code wird unabhängig neu implementiert.
 
 ## Geprüfte Quellen
 
@@ -9,110 +10,81 @@ Requests. Sie beeinflusst den ausgelieferten Code nicht.
 - `sternth/no-gender`
 - `motsiw/rggl`
 
-Alle funktionalen Issues und Pull Requests werden ausgewertet. Reine
-Abhängigkeitsupdates, generierte Build-Dateien und Projektlöschungen werden nur
-berücksichtigt, wenn sie eine architektonische Aussage enthalten.
+Die vorhandenen funktionalen Issues und Pull Requests aller drei Projekte wurden
+ausgewertet. Ein erneuter Komplettaudit ist erst nötig, wenn dort neue Einträge
+oder relevante Commits erscheinen.
 
-## Bereits durch die neue Architektur gelöst
+## Durch die Architektur gelöst
 
-| Quelle | Eintrag | Entscheidung | Umsetzung |
-|---|---|---|---|
-| gendersprache-korrigieren | #7 unerwünschte Parcel-Verbindungen | neu gelöst | moderner Produktions-Build ohne Parcel-Laufzeit |
-| gendersprache-korrigieren | #19 Änderungen in `code` und `pre` | neu gelöst | zentrale DOM-Sicherheitsprüfung |
-| gendersprache-korrigieren | #31 dynamische Seiten und SPA | neu gelöst | `MutationObserver` für neue und geänderte Textknoten |
-| no-gender | #1 springender Cursor in Editoren | neu gelöst | Eingaben und `contenteditable` werden ausgeschlossen |
-| no-gender | #8 beschädigte Base64-Inhalte | neu gelöst | technische Textknoten werden nicht verarbeitet |
-| rggl | #4 nachgeladene Inhalte | für Textknoten gelöst | ereignisgesteuerte Verarbeitung statt Verzögerung oder periodischem Komplettscan |
-| rggl | #10 Fehler im Hervorhebungsmodus | Architekturentscheidung | kein Ersetzen vollständiger `innerHTML`-Blöcke |
+| Quelle | Fundstelle | Umsetzung in Sprachverstand |
+|---|---|---|
+| gendersprache-korrigieren #19 | Änderungen in `code` und `pre` | zentrale DOM-Sicherheitsprüfung |
+| gendersprache-korrigieren #31 / rggl #4 | dynamisch nachgeladene Inhalte | gezielter `MutationObserver`, kein periodischer Vollscan |
+| no-gender #1 | springender Cursor in Editoren | Eingaben und `contenteditable` ausgeschlossen |
+| no-gender #8 | beschädigte Base64-Inhalte | technische Inhalte werden übersprungen |
+| rggl #7 | Genderformen in Alternativtexten | Positivliste für `alt`, `aria-label`, `aria-description` und `title` |
+| rggl #10 | beschädigte Seiten im Hervorhebungsmodus | kein Umschreiben von `innerHTML` |
 
-## Umgesetzte Schreibweisen
+## Umgesetzte Sprachfälle
 
-| Quelle | Eintrag | Entscheidung | Umsetzung |
-|---|---|---|---|
-| alle | Doppelpunkt, Stern, Unterstrich, Schrägstrich, Mittel- und Hochpunkt | neu implementiert | sichere unveränderte und explizit abgebildete Pluralformen |
-| alle | Binnen-I im Plural | neu implementiert | dasselbe geprüfte Plurallexikon wie bei Separatorformen |
-| gendersprache-korrigieren / no-gender | Doppelnennungen | neu implementiert | nur bei lexikalisch identischer maskuliner Form; Dativ wird erhalten |
-| gendersprache-korrigieren / no-gender | gegenderte Artikel im Singular | neu implementiert | explizite Nominativ-, Akkusativ- und Dativmuster |
-| no-gender | #3 falsche Änderung von `gewinnen` | Regressionstest | darf niemals verändert werden |
-| no-gender | #29 falsche Änderung von `ersinnen` | Regressionstest | darf niemals verändert werden |
-| gendersprache-korrigieren | #14 falsche Änderung bei `Rot-Rot` | Regressionstest | zentraler Negativkatalog |
-| rggl | #5 falsche Änderung von `Innen- und Außendienst` | Regressionstest einplanen | normales Wort `Innen` darf nicht als Binnen-I behandelt werden |
+| Quelle | Fundstelle | Umsetzung |
+|---|---|---|
+| alle | `:`, `*`, `_`, `/`, `·`, `•`, `.`, `’`, `‘` | lexikalisch geprüfte Separatorregeln |
+| alle | Binnen-I | gemeinsames Flexionslexikon |
+| rggl #3 | `Messebauer*innen` | getrennte Formen für `Bauer` und Komposita |
+| rggl #5 | `Innen- und Außendienst` | Negativregression |
+| rggl #6 | `Kunde/Kundin` | sichere Singular-Doppelformen |
+| rggl #11 | typografische Apostrophe | explizit unterstützte Separatoren |
+| rggl PR #1/#2 | `LogIn`, `AddIn`, `PlugIn`, `DriveIn` | Negativregressionen |
+| rggl PR #1/#2 | `Prof.in`, `Dr.in` | eigene kontextabhängige Titelregel |
+| no-gender #10 | `den:die Arbeitnehmer:in` | beide Artikelreihenfolgen und Kasusformen |
+| no-gender #11 | `Privatkund*in` | lexikalisch geprüfte Singularformen ohne Artikel |
+| no-gender #15 | Artikel und Possessivformen | Nominativ, Akkusativ, Dativ und Genitiv |
+| no-gender #24 | `Jede:r` | eindeutiger Singular-Kontext |
+| gendersprache-korrigieren #22 | `(m/w/d)` | eigene optionale, standardmäßig deaktivierte Gruppe |
 
-## Relevante Erkenntnisse aus `rggl`
+## Partizipien und neutrale Umschreibungen
 
-`rggl` dokumentiert 21 geordnete Regelgruppen. Fachlich wertvoll sind vor allem:
+`rggl` #8 und ähnliche Meldungen aus den anderen Projekten zeigen, dass Wörter
+wie `Mitarbeitende`, `Studierende` und `Lesende` nicht sicher durch eine einzige
+breite Regel ersetzt werden können.
 
-- Kasuserkennung über Artikel, Pronomen, Präpositionen und bestimmte Verben
-- getrennte Nominativ-, Akkusativ-, Dativ- und Genitivformen
-- schwache Deklination wie `Student` / `Studenten`
-- abweichende Formen für Komposita
-- unregelmäßige Singular- und Pluralformen
-- substantivierte Adjektive und Partizipialformen
-- Possessivartikel und Pronomenpaare
-- Sonderformen wie `Rom*nja`, `Sinti*zze`, `LuL` und `SuS`
-- optionale Erkennung deutschsprachiger Seiten
+Sprachverstand teilt dies deshalb auf:
 
-Diese Kategorien werden nicht als lange Regexkette übernommen. Sie fließen in
-das zentrale Flexionslexikon, kleine kontextbezogene Parser und unabhängige
-Regressionstests ein.
+- eindeutige Anreden wie `Sehr geehrte Mitarbeitende` werden standardmäßig
+  korrigiert;
+- allgemeine Umschreibungen wie `Studierende` oder `Lesende` gehören zu einer
+  getrennten, standardmäßig deaktivierten Regelgruppe;
+- legitime Begriffe wie `Testpersonen`, `Persönlichkeiten`, `Kollegium`,
+  `ärztliche Sprechstunde` und `Benutzungshandbuch` bleiben unverändert.
 
-## Neu erkannte offene Lücken
+## Bewusst nicht pauschal umgesetzt
 
-| Quelle | Eintrag | Status | Geplante Lösung |
-|---|---|---|---|
-| rggl | #3 `Messebauer*innen` | offen | für `Bauer` zwischen alleinstehender Form `Bauern` und Kompositum `Messebauer` unterscheiden |
-| rggl | #6 `Kunde/Kundin` | offen | explizite singularische Doppelnennungen sicher zusammenführen |
-| rggl | #7 Genderformen in `alt` | offen | kontrollierte Verarbeitung von `alt`, `aria-label` und gegebenenfalls `title`; Attributmutationen beobachten |
-| rggl | #8 weitere Partizipien | zurückgestellt | optionale kontextabhängige Regelklasse |
-| rggl / no-gender / gendersprache-korrigieren | typografische Apostrophe `’` und `‘` | offen | Separatorparser erweitern und Negativtests ergänzen |
-| rggl | #12 `Jüdinnen und Juden` | offen | explizite unregelmäßige Doppelform |
-| no-gender | #10 `den:die Arbeitnehmer:in` | teilweise | weitere Reihenfolgen gegenderter Artikel ergänzen |
-| no-gender | #11 `Privatkund*in` | offen | lexikalisch eindeutige Singularform ohne Artikelkontext |
-| no-gender | #20/#21 substantivierte Adjektive | offen | eigene Adjektivflexionslogik |
-| no-gender | #18/#27 Sonderformen | offen | kleine explizite Sonderregeln |
-| gendersprache-korrigieren | #22 `(m/w/d)` | optional | eigene abschaltbare Bereinigungsregel |
+Eine normale feminine Personenbezeichnung wird nicht maskulinisiert.
+`Die Organspenderin widersprach`, `Professorin Müller` oder `Politikerinnen`
+können ausdrücklich Frauen bezeichnen und bleiben unverändert.
 
-## Bewusst nicht allgemein umgesetzt
+Auch breite Schlussregeln, die beliebige Endungen `in` oder `innen` entfernen,
+werden verworfen. Sie würden unter anderem `Innen- und Außendienst`, `LinkedIn`
+und viele normale Wörter beschädigen.
 
-Eine normale feminine Personenbezeichnung wird nicht pauschal maskulinisiert.
-`Die Organspenderin widersprach` kann ausdrücklich eine Frau bezeichnen und muss
-unverändert bleiben. Nur sichtbar gegenderte Konstruktionen oder ausdrücklich
-aktivierte persönliche Regeln dürfen solche Texte verändern.
+## Noch offen
 
-Ebenso wird die breite Schlussregel aus `rggl`, alle verbleibenden Formen auf
-`innen` oder `in` abzuschneiden, nicht übernommen. Sie ist mit Fehlertreffern wie
-`Innen- und Außendienst`, `LinkedIn` und zusammengesetzten `Bauer`-Formen nicht
-vereinbar.
+| Quelle | Fundstelle | Status |
+|---|---|---|
+| rggl #12 | `Jüdinnen und Juden` | als explizite unregelmäßige Doppelform ergänzen |
+| no-gender #20/#21 | substantivierte Adjektive | eigene Flexionslogik erforderlich |
+| no-gender #18/#27 | `Studentys`, `Rom*nja`, `Sinti*zze` | kleine optionale Sonderregeln prüfen |
+| mehrere | sprachlich falsche oder abgeschnittene Formen wie `Zuhörer*inne` | keine allgemeine Rechtschreibkorrektur; nur bei belastbaren realen Mustern |
 
-## Architektonische Entscheidungen
+## Qualitätsgrenzen
 
-- Kein periodischer Vollscan der Webseite.
-- Kein Umschreiben von `innerHTML` zur Hervorhebung von Änderungen.
-- Keine Veränderung von Eingaben, Editoren, Code oder technischen Daten.
-- Attribute werden später nur über eine begrenzte Positivliste verarbeitet.
-- Sprachprüfung soll elementbezogene `lang`-Attribute berücksichtigen, darf aber
-  deutsche Inhalte auf falsch ausgezeichneten Webseiten nicht pauschal sperren.
-- Konkreter GPL- oder AGPL-Quelltext wird nicht unbesehen kopiert.
-
-## Nächste fachliche Reihenfolge
-
-1. Genitivformen und Possessivartikel
-2. Sonderformen im Singular wie `Mutter:in`
-3. alleinstehende und zusammengesetzte `Bauer`-Formen
-4. typografische Apostrophe und Punkt als Separator
-5. explizite singularische Doppelnennungen
-6. zugängliche Textattribute und Attribut-Mutationen
-7. substantivierte Adjektive
-8. optionale Partizipialformen
-9. reale Browsertests für DHL, rebuy, ARD, Adidas und große SPA-Seiten
-
-## Entscheidungswerte
-
-- `neu implementieren`
-- `als Regressionstest übernehmen`
-- `bereits gelöst`
-- `zu riskant`
-- `nicht relevant`
-- `verwerfen`
-
-Konkreter Fremdcode wird nicht unbesehen kopiert oder per Cherry-Pick übernommen.
+- Keine Regel ohne positive und negative Tests.
+- Eine ausgelassene Ersetzung ist besser als eine falsche.
+- Keine periodischen Komplettscans.
+- Kein Umschreiben von `innerHTML`.
+- Eingaben, Editoren, Code und technische Daten bleiben unberührt.
+- Riskantere Bedeutungsänderungen erscheinen als eigene, standardmäßig
+  deaktivierte Gruppen.
+- Zitate werden standardmäßig korrigiert; auf Wunsch können Inhalte innerhalb
+  üblicher Anführungszeichen geschützt werden.

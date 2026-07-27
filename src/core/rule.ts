@@ -9,7 +9,12 @@ export interface TransformResult {
 export interface Rule {
   readonly id: string;
   readonly risk: RuleRisk;
+  readonly leadingContextCandidate?: RegExp;
   apply(input: string): TransformResult;
+  applyWithLeadingContext?(
+    input: string,
+    leadingContext: string
+  ): TransformResult;
 }
 
 export interface RegexRuleDefinition {
