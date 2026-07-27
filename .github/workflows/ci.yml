@@ -71,14 +71,14 @@ jobs:
       - name: Stellenanzeigen-Zusätze testen
         run: npm exec vitest run tests/rules/job-ad-suffixes.test.ts
 
-      - name: Anreden mit Partizipformen testen
+      - name: Neutrale Partizipformen testen
         run: npm exec vitest run tests/rules/salutation-participles.test.ts
 
       - name: Popup, Regelgruppen und Logo absichern
         shell: bash
         run: |
-          grep -q "width: 320px" static/popup/popup.css
-          grep -q "min-width: 320px" static/popup/popup.css
+          grep -q "width: 384px" static/popup/popup.css
+          grep -q "min-width: 384px" static/popup/popup.css
           ! grep -Eq "[0-9](vw|vh)" static/popup/popup.css
           grep -q "min-height: 500px" static/popup/popup.css
           grep -q 'id="rule-groups"' static/popup/popup.html
@@ -125,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.7"
+          BETA="beta.8"
           mkdir -p artifacts
 
           (
@@ -162,7 +162,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-7-${{ github.sha }}
+          name: sprachverstand-beta-8-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
