@@ -1,14 +1,14 @@
-# Sprachverstand 0.5.2 – Beta 7 testen
+# Sprachverstand 0.5.3 – Beta 8 testen
 
-Diese Beta behebt den in Waterfox und Firefox beobachteten vertikalen
-Popup-Zirkelschluss und ersetzt beschädigte PNG-Dateien des SV-Symbols. Die
-Sprachregeln entsprechen Beta 6.
+Diese Beta führt ein randloses, besser ausfüllendes SV-Symbol ein, verbreitert
+und verdichtet das Popup und ergänzt geprüfte Sprachformen aus der
+UdK-Handreichung sowie dem Genderwörterbuch.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.2-beta.7-chromium.zip`
-- `sprachverstand-0.5.2-beta.7-firefox.xpi`
-- `sprachverstand-0.5.2-beta.7-source.zip`
+- `sprachverstand-0.5.3-beta.8-chromium.zip`
+- `sprachverstand-0.5.3-beta.8-firefox.xpi`
+- `sprachverstand-0.5.3-beta.8-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -30,15 +30,29 @@ Unter Windows können die Werte mit
 4. **Entpackte Erweiterung laden** wählen.
 5. Den entpackten Ordner auswählen.
 
-### Firefox
+### Firefox und Waterfox
 
 1. `about:debugging#/runtime/this-firefox` öffnen.
 2. **Temporäres Add-on laden** wählen.
 3. Die Firefox-XPI oder `dist/firefox/manifest.json` auswählen.
 
-## Firefox für Android testen
+## Popup und Symbol
 
-Google Chrome auf Android unterstützt keine Erweiterungen. Das verbindliche
+Prüfen:
+
+- Das Popup öffnet sofort ungefähr 384 Pixel breit und mit normaler Höhe.
+- Jede Regelgruppe zeigt nur einen Beispielausdruck.
+- Die Gruppen sind kompakt durch Trennlinien statt einzelner Karten getrennt.
+- Der Scrollbalken sitzt direkt am rechten Rand.
+- Das SV-Monogramm besitzt keinen dunklen dekorativen Außenrahmen und nutzt die
+  verfügbare Symbolfläche sichtbar besser aus.
+- Symbol, Popup und Einstellungsseite funktionieren im hellen und dunklen Modus.
+- Alle zwölf Regelgruppen lassen sich schalten.
+- Der Korrekturzähler folgt Änderungen ohne Neuladen.
+
+## Firefox für Android
+
+Google Chrome auf Android unterstützt keine Erweiterungen. Das vorgesehene
 Mobilziel ist Firefox für Android ab Version 142.
 
 ```bash
@@ -49,175 +63,117 @@ npx web-ext run \
   --target=firefox-android
 ```
 
-Auf dem Gerät prüfen:
-
-- neues SV-Symbol in der Erweiterungsliste
-- Popup vollständig sichtbar und vertikal scrollbar
-- alle Regelgruppen per Touch schaltbar
-- Optionsseite im normalen Tab
-- Bildschirmtastatur verdeckt Speichern nicht dauerhaft
-- Systemhelligkeit und Dunkelmodus
-- Counter im Popup, falls Android kein Badge am Symbol zeigt
-
-## Popup und Zähler
-
-Waterfox/Firefox-Regressionsprüfung:
-
-- Das Popup muss sofort ungefähr 320 Pixel breit und deutlich höher als eine
-  einzelne Titelzeile erscheinen.
-- Es darf kein wenige Millimeter hoher Streifen entstehen.
-- Das SV-Symbol muss links im Popup und in der Browserleiste sichtbar sein.
-- Die Regelliste muss innerhalb des Popups scrollbar sein.
-
-Im Popup müssen sichtbar sein:
-
-- SV-Logo
-- globaler Aktivschalter
-- Zahl der Korrekturen im aktiven Tab
-- alle zwölf Regelgruppen nur mit Titel und Beispiel
-- Schaltfläche für Ausnahmen und weitere Einstellungen
-
-Regelgruppen und Aktivschalter im Popup mehrfach umschalten. Die Seite muss ohne
-Reload wiederhergestellt und neu verarbeitet werden. Der Zähler muss dabei
-innerhalb kurzer Zeit folgen und darf nicht auf einem alten Wert stehen bleiben.
-
-Wird die Einstellungsseite aus dem Popup geöffnet, zeigt sie die Zahl des zuvor
-betrachteten Seitentabs. Änderungen nach dem Speichern müssen dort ebenfalls
-live erscheinen.
-
-## Regelgruppen
-
-Zehn Gruppen sind standardmäßig aktiv. Zwei riskantere Gruppen sind zunächst aus:
-
-- **Kontextgebundene Umschreibungen**
-- **Geschlechtszusätze in Stellenanzeigen**
-
-Jede Gruppe einzeln deaktivieren und prüfen, dass nur ihre eigenen Änderungen
-zurückgesetzt werden.
+Auf dem Gerät zusätzlich Touch-Bedienung, Scrollbarkeit, Safe Areas,
+Bildschirmtastatur und Optionsseite prüfen.
 
 ## Neue Kernfälle
 
 ```text
-Sehr geehrte Mitarbeitende           → Sehr geehrte Mitarbeiter
-Sehr geehrte mitarbeitende Personen  → Sehr geehrte Mitarbeiter
-Anfänger*innen                       → Anfänger
-Zuhörer*innen                        → Zuhörer
-Freund:innen                         → Freunde
-ChirurgInnen                         → Chirurgen
-PolitikerInnen                       → Politiker
-zehn Zuhörer*innen                   → zehn Zuhörer
-Bäuer_innen                          → Bauern
-Bauern_Bäuerinnen                    → Bauern
-Koch/Köchin                          → Koch
-ein/-e Frisör/-in                    → ein Frisör
-eine/n Erzieher/-in                  → einen Erzieher
-ein_e Handwerker_in                  → ein Handwerker
-Lehrer/-in                           → Lehrer
-Verkäufer/-in                        → Verkäufer
-Mitarbeiter/-in                      → Mitarbeiter
-Makler*in                            → Makler
-Expert*in                            → Experte
-Ärzt_in                              → Arzt
-Professor/in                         → Professor
-Professor/-in                        → Professor
-Direktor_in                          → Direktor
+Studierende                    → Studenten
+Lesende                        → Leser
+Arbeitnehmende                 → Arbeitnehmer
+Arbeitgebende                  → Arbeitgeber
+Dozierende                     → Dozenten
+Fördergebende                  → Förderer
+Theatermachende                → Theatermacher
+mitarbeitende Personen         → mitarbeiter
+
+Juden_Jüdinnen                 → Juden
+Jüd*innen                      → Juden
+Gegner*innenschaft             → Gegnerschaft
+Professor*innenschaft          → Professorenschaft
+Verbündete_r                   → Verbündeter
+Pat*in                         → Pate
+Dirigent*innen                 → Dirigenten
+Solist*innenraum               → Solistenraum
+Pförtner*innen                 → Pförtner
+Spender*innen                  → Spender
+Tonmeister*innen               → Tonmeister
 ```
 
-## Kontextgebundene Umschreibungen
-
-Nach Aktivierung von **Kontextgebundene Umschreibungen**:
+Die vorhandenen Fälle müssen weiterhin funktionieren, insbesondere:
 
 ```text
-mitarbeitende Personen  → Mitarbeiter
-Benutzungshandbuch      → Benutzerhandbuch
+Nutzer:innen                   → Nutzer
+PolitikerInnen                 → Politiker
+Ärzt:innen                     → Ärzte
+Student*innen                  → Studenten
+Bauern_Bäuerinnen              → Bauern
+Koch/Köchin                    → Koch
+jede:r Nutzer:in               → jeder Nutzer
+Professor/-in                  → Professor
+Sehr geehrte Mitarbeitende     → Sehr geehrte Mitarbeiter
+Benutzungshandbuch             → Benutzerhandbuch
 ```
 
-Einzelne Partizipformen werden außerhalb bereits sicher erkannter Anreden nicht
-mehr pauschal verändert:
+`Benutzungshandbuch → Benutzerhandbuch` gehört weiterhin zur standardmäßig
+deaktivierten Gruppe **Kontextgebundene Umschreibungen**.
+
+## Partizip-Sicherheitsfälle
+
+Die ausgewählten substantivischen Formen werden ersetzt. Grammatisch anders
+verwendete Partizipien müssen dagegen unverändert bleiben:
 
 ```text
-Studierende
-Lesende
-Teilnehmende
-Nutzende
+Die Mitarbeitenden arbeiten.
+Die seit Stunden Forschenden ruhen.
+Eine Studierende wartet.
+Die Lesende macht eine Pause.
+lesende Kinder
+Lesende Kinder öffnen das Buch.
 ```
 
-Die Fundstellen und Entscheidungen stehen in
-`data/neutral-context-catalog.json`. Neue Beispiele werden mit vollständigem
-Kontext gesammelt, bevor daraus eine Regel entsteht.
+## Terminologische Sterne bewusst unverändert
 
-Nach Aktivierung von **Geschlechtszusätze in Stellenanzeigen**:
+Diese Schreibweisen sind keine Endungen `*in` oder `*innen` und dürfen nicht
+mechanisch verändert werden:
 
 ```text
-eine/n Erzieher/-in (m/w/d) → einen Erzieher
+trans* Personen
+inter* Personen
+Inter*feindlichkeit
+Inter*diskriminierung
 ```
 
-## Anführungszeichen
+Ebenfalls bewusst unverändert:
 
-Standardmäßig werden Genderformen auch innerhalb von Anführungszeichen
-korrigiert:
+```text
+Politikerinnen
+Testpersonen
+Besuch der ärztlichen Sprechstunde
+Sehr geehrte Persönlichkeiten
+Liebes Kollegium
+zehn Zuhörer*inne
+```
+
+## Regelgruppen und Wiederherstellung
+
+Zehn Gruppen sind standardmäßig aktiv. Deaktiviert bleiben zunächst:
+
+- **Kontextgebundene Umschreibungen**
+- **Geschlechtszusätze in Stellenanzeigen**
+
+Jede Gruppe einzeln ausschalten. Nur ihre eigenen Änderungen dürfen
+zurückgesetzt werden. Beim erneuten Einschalten müssen die Texte ohne Reload
+wieder verarbeitet werden.
+
+## Anführungszeichen und Ausnahmen
+
+Standardmäßig wird auch innerhalb von Anführungszeichen korrigiert:
 
 ```text
 „Mitarbeiter/-innen“ → „Mitarbeiter“
 ```
 
-Die Option **Text innerhalb von Anführungszeichen korrigieren** ausschalten.
-Danach muss innerhalb desselben Textabschnitts gelten:
+Nach Deaktivierung der Zitatoption muss gelten:
 
 ```text
 „Mitarbeiter/-innen“ und Mitarbeiter/-innen
 → „Mitarbeiter/-innen“ und Mitarbeiter
 ```
 
-Direkte Zitate, die über mehrere getrennte HTML-Elemente laufen, sind noch ein
-manueller Grenztest.
-
-## Bewusst unverändert
-
-```text
-Besuch der ärztlichen Sprechstunde
-Politikerinnen
-Testpersonen
-zehn Zuhörer*inne
-Sehr geehrte Persönlichkeiten
-Liebes Kollegium
-```
-
-- `Politikerinnen` kann ausdrücklich nur Frauen meinen; `PolitikerInnen` wird
-  wegen des sichtbaren Binnen-I dagegen zu `Politiker`.
-- `Testpersonen` und `ärztliche Sprechstunde` bleiben als normale Begriffe unverändert.
-- `Benutzungshandbuch` ist keine Genderzeichenform, wird aber in der optionalen
-  Stilgruppe zu `Benutzerhandbuch`.
-- `Zuhörer*inne` ist eine fehlerhafte Schreibweise; Sprachverstand ist kein
-  allgemeines Rechtschreibprogramm.
-
-## Titelabkürzungen
-
-```text
-Prof.in Anna Müller       → Prof. Anna Müller
-Dr.in Eva Schmidt         → Dr. Eva Schmidt
-Prof.in Dr.in Lea Weber   → Prof. Dr. Lea Weber
-die Prof.in               → die Professorin
-mit der Dr.in             → mit der Doktorin
-```
-
-Unverändert bleiben `Professorin Müller`, `Doktorin Schmidt`, `Prof.innen`,
-`Dr.innen`, `Prof. Weber` und `Dr. König`.
-
-## Persönliche Ausnahmen
-
-Als persönliche Ausnahme eintragen:
-
-```text
-Nutzer:innen
-```
-
-Danach gilt:
-
-```text
-Nutzer:innen       → bleibt unverändert
-Nutzer:innenkonto  → wird weiterhin zu Nutzerkonto
-```
+Als persönliche Ausnahme `Nutzer:innen` eintragen. Danach bleibt genau diese
+Form unverändert, während `Nutzer:innenkonto` weiterhin zu `Nutzerkonto` wird.
 
 ## Zugängliche Attribute
 
@@ -230,26 +186,14 @@ Sichtbarer Text muss weiterhin korrigiert werden, diese Attribute aber nicht.
 python -m http.server 8080
 ```
 
-Danach öffnen:
-
-```text
-http://127.0.0.1:8080/tests/manual/beta-fixture.html
-```
+Danach `http://127.0.0.1:8080/tests/manual/beta-fixture.html` öffnen.
 
 ## Reale Seitentests
 
-Besonders wichtig bleiben:
+Besonders wichtig bleiben DHL-Anmeldung, Mediatheken, große Nachrichtenseiten,
+rebuy, React-/Angular-/Vue-Seiten, Firefox für Android und ein Screenreader-Test
+der zugänglichen Attribute.
 
-1. DHL-Anmeldung
-2. ARD und andere Mediatheken
-3. rebuy und weitere Single-Page-Anwendungen
-4. große Nachrichtenseiten
-5. React-, Angular- und Vue-Seiten
-6. Screenreader-Test der zugänglichen Attribute
-7. dieselben kritischen Wege in Firefox für Android
-
-## Fehler melden
-
-Eine Meldung sollte Browser, Version, Betriebssystem, Adresse, Ausgangstext,
-Ergebnis, Erwartung, aktive Regelgruppen und reproduzierbare Schritte enthalten.
-Keine Zugangsdaten, privaten Nachrichten oder persönlichen Inhalte mitsenden.
+Eine Fehlermeldung sollte Browser, Version, Betriebssystem, Adresse,
+Ausgangstext, Ergebnis, Erwartung, aktive Regelgruppen und reproduzierbare
+Schritte enthalten. Keine Zugangsdaten oder privaten Inhalte mitsenden.

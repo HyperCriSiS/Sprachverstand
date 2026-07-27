@@ -8,9 +8,12 @@ typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
 
 ## Stand
 
-Version `0.5.2` ist **Beta 7**. Sie behebt den in Waterfox sichtbaren
-Popup-Höhenfehler und ersetzt beschädigte PNG-Dateien des SV-Symbols. Die CI
-validiert die Bilddaten nun vollständig einschließlich CRC und Abmessungen.
+Version `0.5.3` ist **Beta 8**. Sie nutzt ein randloses, besser ausfüllendes
+SV-Symbol, verbreitert und verdichtet das Popup und ergänzt geprüfte Formen aus
+der UdK-Handreichung sowie dem Genderwörterbuch. Dazu gehören unter anderem
+`Studierende`, `Lesende`, `Arbeitnehmende`, `Juden_Jüdinnen`,
+`Gegner*innenschaft` und `Verbündete_r`. Terminologische Schreibweisen wie
+`trans* Personen` und `inter* Personen` bleiben bewusst unverändert.
 
 Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
 Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
@@ -21,7 +24,7 @@ steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
 - Manifest V3 für Chromium und Firefox
 - Firefox für Android als offiziell vorgesehenes Mobilziel
 - TypeScript-Regel-Engine mit zwölf verständlichen Regelgruppen
-- jede Regelgruppe im Popup und in den Einstellungen einzeln aktivierbar und mit Beispiel erklärt
+- jede Regelgruppe im Popup und in den Einstellungen einzeln aktivierbar und mit einem Beispiel erklärt
 - reversible Änderungen: Ausschalten stellt eigene Änderungen ohne Reload zurück
 - Live-Zähler pro Tab im Symbol, Popup und Einstellungsfenster
 - persönliche literale Ausnahmen für Wörter und vollständige Phrasen
@@ -58,13 +61,14 @@ Stattdessen stehen konkrete Gruppen zur Verfügung:
 7. Explizite Pronomen- und Possessivpaare
 8. Künstlich gegenderte Familienformen
 9. Gegenderte Titelabkürzungen
-10. Partizipformen in eindeutigen Anreden
+10. Neutrale Partizipformen
 11. Kontextgebundene Umschreibungen *(standardmäßig aus)*
 12. Geschlechtszusätze in Stellenanzeigen *(standardmäßig aus)*
 
-Die beiden letzten Gruppen sind bewusst deaktiviert. Die Umschreibungsgruppe
-arbeitet nicht mehr mit einer pauschalen Partizipliste, sondern nur mit einzeln
-geprüften Wendungen. Weitere Fundstellen werden in
+Die beiden letzten Gruppen sind bewusst deaktiviert. Die standardmäßig aktive
+Partizipgruppe ersetzt eine begrenzte, geprüfte Liste substantivischer
+Personenbezeichnungen. Grammatisch erkennbare Singular- und Adjektivverwendungen
+bleiben unangetastet. Weitere Fundstellen und Grenzfälle werden in
 [`data/neutral-context-catalog.json`](data/neutral-context-catalog.json) gesammelt.
 
 ## Beispiele
@@ -87,8 +91,8 @@ Messebauer*innen                     → Messebauer
 Nutzerinnen und Nutzer               → Nutzer
 mit Ärztinnen und Ärzten             → mit Ärzten
 Kunde/Kundin                         → Kunde
-Koch/Köchin                           → Koch
-Bauern_Bäuerinnen                     → Bauern
+Koch/Köchin                          → Koch
+Bauern_Bäuerinnen                    → Bauern
 Tierärztin/Tierarzt                  → Tierarzt
 jede:r Nutzer:in                     → jeder Nutzer
 ein/-e Frisör/-in                    → ein Frisör
@@ -106,21 +110,27 @@ Prof.in Anna Müller                  → Prof. Anna Müller
 die Prof.in                          → die Professorin
 Liebe Teilnehmende                   → Liebe Teilnehmer
 Sehr geehrte mitarbeitende Personen  → Sehr geehrte Mitarbeiter
-Makler*in                             → Makler
-Expert*in                             → Experte
-Ärzt_in                               → Arzt
-Professor/-in                         → Professor
-Direktor_in                           → Direktor
+Makler*in                            → Makler
+Expert*in                            → Experte
+Ärzt_in                              → Arzt
+Professor/-in                        → Professor
+Direktor_in                          → Direktor
+Studierende                          → Studenten
+Lesende                              → Leser
+Arbeitnehmende                       → Arbeitnehmer
+Juden_Jüdinnen                       → Juden
+Gegner*innenschaft                   → Gegnerschaft
+Verbündete_r                         → Verbündeter
 ```
 
 Bei aktivierter optionaler Gruppe **Kontextgebundene Umschreibungen** gilt
-zusätzlich `mitarbeitende Personen → Mitarbeiter` und
-`Benutzungshandbuch → Benutzerhandbuch`. Einzelne Wörter wie `Studierende` oder
-`Lesende` werden außerhalb sicherer Kontexte nicht mehr pauschal verändert. Die
-optionale Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
+zusätzlich `Benutzungshandbuch → Benutzerhandbuch`. Die optionale
+Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
 
 Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` sowie Vollformen wie
-`Professorin Müller` bleiben unverändert.
+`Professorin Müller` bleiben unverändert. Ebenso werden terminologische Sterne
+in `trans* Personen`, `inter* Personen`, `Inter*feindlichkeit` und
+`Inter*diskriminierung` nicht als Genderendung behandelt.
 
 ## Persönliche Ausnahmen
 
@@ -146,11 +156,14 @@ Meine geschützte Phrase
   ohne Separator nicht sicher von einer ausdrücklich weiblichen Form zu trennen ist
 - weitere flektierte Doppelnennungen außerhalb der geprüften Formen
 - unbekannte oder mehrdeutige Wortformen
-- nicht in der optionalen Umschreibungsgruppe hinterlegte Partizipialformen
+- satzweite Umformulierungen, Passivkonstruktionen und semantische Synonyme
+- institutionelle Komposita oder Eigennamen wie `Studierendenwerk`, solange der
+  konkrete Kontext nicht eindeutig ist
 - Pluralkürzel wie `Prof.innen` und `Dr.innen`
 - vollständige feminine Formen wie `Politikerinnen` ohne sichtbares Genderzeichen;
   die eindeutig markierte Form `PolitikerInnen` wird dagegen zu `Politiker`
 - reguläre Begriffe wie `Testpersonen` und `ärztliche Sprechstunde`
+- terminologische Sterne wie `trans*` und `inter*`
 - nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
   URLs
 

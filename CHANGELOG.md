@@ -5,6 +5,47 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.5.3 – Beta 8 (2026-07-27)
+
+### Hinzugefügt
+
+- Ausgewählte substantivische Partizipformen werden kontrolliert normalisiert,
+  darunter `Studierende`, `Lesende`, `Arbeitnehmende`, `Dozierende`,
+  `Arbeitgebende`, `Fördergebende` und `Theatermachende`.
+- Weitere geprüfte Formen aus der UdK-Handreichung und dem Genderwörterbuch sind
+  abgedeckt: `Juden_Jüdinnen`, `Jüd*innen`, `Gegner*innenschaft`,
+  `Professor*innenschaft`, `Verbündete_r`, `Pat*in`, `Dirigent*innen`,
+  `Solist*innenraum`, `Pförtner*innen`, `Spender*innen` und
+  `Tonmeister*innen`.
+- Regressionstests schützen `trans* Personen`, `inter* Personen`,
+  `Inter*feindlichkeit` und `Inter*diskriminierung` vor einer falschen
+  Behandlung als Genderendung.
+
+### Geändert
+
+- Das Popup ist mit 384 Pixeln ungefähr 20 Prozent breiter.
+- Jede Regelgruppe zeigt nur noch ein Beispiel.
+- Regelkarten wurden durch kompakte Zeilen mit Trennlinien ersetzt; der
+  Scrollbalken liegt direkt am rechten Rand.
+- Das SV-Symbol nutzt die verfügbare Fläche ohne dekorativen Außenrahmen besser
+  aus.
+
+### Sicherheit
+
+- Partizipformen mit erkennbarem Singularartikel, kleingeschriebene attributive
+  Verwendungen und nachfolgende Substantive bleiben unverändert.
+- Satzweite Umschreibungen, Passivkonstruktionen und terminologische Sterne
+  werden nicht ohne eindeutige mechanische Regel verändert.
+
+## 0.5.2 – Beta 7 (2026-07-27)
+
+### Korrigiert
+
+- Das Popup besitzt in Waterfox und Firefox wieder eine stabile intrinsische
+  Höhe und öffnet nicht mehr als schmaler Streifen.
+- Beschädigte PNG-Symbole wurden durch validierte Binärdateien ersetzt.
+- Die CI prüft PNG-Signatur, Blockgrenzen, CRC32, Abmessungen und Dateiende.
+
 ## 0.5.1 – Beta 6 (2026-07-27)
 
 ### Hinzugefügt

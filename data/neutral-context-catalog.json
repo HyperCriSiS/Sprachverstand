@@ -27,7 +27,7 @@
       "context": "explizite Personenumschreibung",
       "confidence": "safe",
       "status": "implemented",
-      "ruleGroup": "neutral-person-terms"
+      "ruleGroup": "salutation-participles"
     },
     {
       "id": "compound-benutzungshandbuch",
@@ -43,24 +43,51 @@
       "source": "Studierende",
       "replacement": "Studenten",
       "context": "alleinstehende Überschrift, Navigation oder Rollenbezeichnung",
-      "confidence": "candidate",
-      "status": "collect",
-      "ruleGroup": null
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
+    },
+    {
+      "id": "heading-lesende",
+      "source": "Lesende",
+      "replacement": "Leser",
+      "context": "alleinstehende Überschrift, Navigation oder substantivische Personenbezeichnung",
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
     },
     {
       "id": "job-ad-mitarbeitende",
       "source": "Wir suchen Mitarbeitende",
       "replacement": "Wir suchen Mitarbeiter",
       "context": "Stellenanzeige oder Personalgewinnung",
-      "confidence": "candidate",
-      "status": "collect",
-      "ruleGroup": null
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
     },
     {
       "id": "institutional-participants",
       "source": "Teilnehmende des Kurses",
       "replacement": "Teilnehmer des Kurses",
       "context": "institutionelle Rollenbezeichnung",
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
+    },
+    {
+      "id": "employment-arbeitnehmende",
+      "source": "Arbeitnehmende",
+      "replacement": "Arbeitnehmer",
+      "context": "substantivische Personenbezeichnung",
+      "confidence": "contextual",
+      "status": "implemented",
+      "ruleGroup": "salutation-participles"
+    },
+    {
+      "id": "compound-studierendenwerk",
+      "source": "Studierendenwerk",
+      "replacement": "Studentenwerk",
+      "context": "mögliche feste Institutionsbezeichnung oder Eigenname",
       "confidence": "candidate",
       "status": "collect",
       "ruleGroup": null
@@ -69,7 +96,16 @@
       "id": "literal-readers",
       "source": "die gerade Lesenden",
       "replacement": null,
-      "context": "tatsächlich ausgeübte Tätigkeit",
+      "context": "tatsächlich ausgeübte Tätigkeit mit bestimmendem Kontext",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    },
+    {
+      "id": "literal-reading-adjective",
+      "source": "lesende Kinder",
+      "replacement": null,
+      "context": "attributiv verwendetes Partizip statt Personenbezeichnung",
       "confidence": "unsafe",
       "status": "reject",
       "ruleGroup": null
@@ -79,6 +115,33 @@
       "source": "die seit Stunden Wartenden",
       "replacement": null,
       "context": "tatsächlich ausgeübte Tätigkeit",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    },
+    {
+      "id": "terminology-trans-star",
+      "source": "trans* Personen",
+      "replacement": null,
+      "context": "terminologischer Stern; keine Personenendung *in oder *innen",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    },
+    {
+      "id": "terminology-inter-star",
+      "source": "inter* Personen",
+      "replacement": null,
+      "context": "terminologischer Stern; keine Personenendung *in oder *innen",
+      "confidence": "unsafe",
+      "status": "reject",
+      "ruleGroup": null
+    },
+    {
+      "id": "terminology-inter-compounds",
+      "source": "Inter*feindlichkeit und Inter*diskriminierung",
+      "replacement": null,
+      "context": "fachsprachliche Komposita, deren Bedeutung nicht mechanisch normalisiert werden darf",
       "confidence": "unsafe",
       "status": "reject",
       "ruleGroup": null

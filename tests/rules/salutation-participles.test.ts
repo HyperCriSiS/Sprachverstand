@@ -18,10 +18,43 @@ describe("salutationParticiplesRule", () => {
     });
   });
 
-  it("verändert Partizipformen außerhalb eindeutiger Anreden nicht", () => {
-    const input =
-      "Die Mitarbeitenden arbeiten, die seit Stunden Forschenden ruhen und Nutzende testen.";
+  it.each([
+    ["Studierende", "Studenten"],
+    ["Lesende", "Leser"],
+    ["Arbeitnehmende", "Arbeitnehmer"],
+    ["Zuhörende", "Zuhörer"],
+    ["Dozierende", "Dozenten"],
+    ["Arbeitgebende", "Arbeitgeber"],
+    ["Fördergebende", "Förderer"],
+    ["Theatermachende", "Theatermacher"],
+    ["mitarbeitende Personen", "mitarbeiter"],
+    ["Mitarbeitende Personen", "Mitarbeiter"]
+  ])("normalisiert die ausgewählte Personenbezeichnung %s", (input, expected) => {
+    expect(salutationParticiplesRule.apply(input)).toEqual({
+      text: expected,
+      replacements: 1
+    });
+  });
 
+  it("verarbeitet mehrere ausgewählte Partizipformen", () => {
+    expect(
+      salutationParticiplesRule.apply(
+        "Studierende, Arbeitnehmende und Lesende treffen sich."
+      )
+    ).toEqual({
+      text: "Studenten, Arbeitnehmer und Leser treffen sich.",
+      replacements: 3
+    });
+  });
+
+  it.each([
+    "Die Mitarbeitenden arbeiten.",
+    "Die seit Stunden Forschenden ruhen.",
+    "Eine Studierende wartet.",
+    "Die Lesende macht eine Pause.",
+    "lesende Kinder",
+    "Lesende Kinder öffnen das Buch."
+  ])("bewahrt den grammatisch abweichenden Kontext %s", (input) => {
     expect(salutationParticiplesRule.apply(input)).toEqual({
       text: input,
       replacements: 0

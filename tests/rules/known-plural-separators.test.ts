@@ -29,6 +29,18 @@ describe("knownPluralSeparatorsRule", () => {
     });
   });
 
+  it.each([
+    ["Gegner*innenschaft", "Gegnerschaft"],
+    ["Pförtner*innen", "Pförtner"],
+    ["Spender*innen", "Spender"],
+    ["Tonmeister*innen", "Tonmeister"]
+  ])("normalisiert den geprüften sicheren Fall %s", (input, expected) => {
+    expect(knownPluralSeparatorsRule.apply(input)).toEqual({
+      text: expected,
+      replacements: 1
+    });
+  });
+
   it("lässt morphologisch unsichere Wörter unverändert", () => {
     const input =
       "Ärzt:innen, Student:innen, Kolleg:innen, Kund:innen, " +

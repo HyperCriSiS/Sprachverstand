@@ -29,7 +29,6 @@ main {
 
 .page-header img {
   flex: 0 0 auto;
-  border-radius: 12px;
 }
 
 .page-header h1,
@@ -156,32 +155,35 @@ button {
 
 .rule-groups {
   display: grid;
-  gap: 10px;
+  gap: 0;
 }
 
 .rule-card {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-  border-radius: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.rule-card:first-child {
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
 .rule-card-content {
   display: grid;
   min-width: 0;
-  gap: 5px;
+  gap: 4px;
 }
 
 .rule-card code {
   width: fit-content;
   max-width: 100%;
-  padding: 2px 6px;
-  overflow-wrap: anywhere;
-  border-radius: 4px;
-  background: color-mix(in srgb, currentColor 10%, transparent);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 13px;
+  opacity: 0.82;
 }
 
 small {
