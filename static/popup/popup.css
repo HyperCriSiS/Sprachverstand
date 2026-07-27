@@ -11,14 +11,19 @@ html,
 body {
   width: 320px;
   min-width: 320px;
+  min-height: 500px;
   margin: 0;
   overflow-x: hidden;
+}
+
+body {
+  overflow-y: auto;
 }
 
 main {
   display: grid;
   gap: 12px;
-  max-height: min(620px, 92vh);
+  min-height: 500px;
   padding: max(14px, env(safe-area-inset-top))
     max(14px, env(safe-area-inset-right))
     max(14px, env(safe-area-inset-bottom))
