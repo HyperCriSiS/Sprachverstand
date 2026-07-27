@@ -31,7 +31,11 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Mutter:innen", "Mütter"],
     ["Tochter:innen", "Töchter"],
     ["Bruder:innen", "Brüder"],
-    ["Vater:innen", "Väter"]
+    ["Vater:innen", "Väter"],
+    ["Dirigent*innen", "Dirigenten"],
+    ["Dozent*innen", "Dozenten"],
+    ["Solist*innenraum", "Solistenraum"],
+    ["Jüd*innen", "Juden"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
