@@ -4,11 +4,11 @@
 
 <h1 align="center">Sprachverstand</h1>
 
-<p align="center"><strong>Macht Webseiten wieder lesbar.</strong></p>
+<p align="center"><strong>Macht Webseiten adäquat lesbar.</strong></p>
 
 <p align="center">
   Eine datenschutzfreundliche Browser-Erweiterung, die gegenderte Schreibweisen
-  auf dem eigenen Gerät in klassische deutsche Personenbezeichnungen umwandelt.
+  auf dem eigenen Gerät in klassische deutsche Rechtschreibung umwandelt.
 </p>
 
 ## Was ist Sprachverstand?
@@ -29,7 +29,7 @@ angezeigt und vorgelesen werden.
 
 Genderzeichen, ungewohnte Wortformen und häufige Doppelnennungen können den
 visuellen oder gesprochenen Lesefluss unterbrechen. Bei längeren Texten kann das
-die konzentrierte Aufnahme unnötig anstrengend machen – besonders dann, wenn
+die konzentrierte Aufnahme unnötig anstrengend machen, besonders dann, wenn
 eine Sprachausgabe Satzzeichen vorliest, verschluckt oder als zusätzliche Pause
 wiedergibt.
 
@@ -37,11 +37,11 @@ Für blinde und sehbehinderte Menschen ist das nicht nur eine Geschmacksfrage.
 Der Deutsche Blinden- und Sehbehindertenverband weist darauf hin, dass
 Kurzformen mit Sternchen, Unterstrich und Doppelpunkt für viele Nutzer
 problematisch sind. Je nach Screenreader und persönlicher Konfiguration werden
-die Zeichen unterschiedlich behandelt; auch in Braille können zusätzliche
+die Zeichen unterschiedlich behandelt. Auch in Braille können zusätzliche
 Ankündigungszeichen den Lesefluss behindern.
 
-Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich: Eine Studie von
-2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
+Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich:
+Eine Studie von 2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
 Nichtstudenten jedoch anfängliche Verzögerungen, die mit zunehmender Gewöhnung
 rasch zurückgingen. Sprachverstand behauptet deshalb nicht, dass gegenderte
 Sprache grundsätzlich unverständlich sei. Die Erweiterung bietet eine
@@ -82,9 +82,9 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 
 ## Funktionen
 
-- Normalisierung direkt beim Laden der Webseite
-- laufende Verarbeitung dynamisch nachgeladener Inhalte
-- vollständige Wiederherstellung beim Ausschalten
+- Verarbeitung direkt beim Laden der Webseite
+- dynamisch nachgeladene Inhalte werden unmittelbar korrigiert
+- vollständige Wiederherstellung beim Ausschalten, ohne Aktualisierung der Seite
 - einzeln aktivierbare Regelgruppen
 - Korrekturzähler für den aktuellen Tab
 - persönliche Ausnahmen für Wörter und vollständige Phrasen
@@ -120,7 +120,7 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - kein Cloud-Dienst und keine externe Sprach-API
 - keine Analyse des Browserverlaufs
 - kein Tracking und keine Telemetrie
-- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
+- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten außer den jeweiligen Textstellen
 
 Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 
@@ -135,7 +135,7 @@ ist deshalb kein Veröffentlichungsziel.
 
 ## Projektstatus
 
-Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
+Sprachverstand befindet sich in aktiver Entwicklung. Die Regel-Engine ist
 bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
 Performance- und Regressionstests abgesichert.
 
@@ -158,13 +158,6 @@ erstellt.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
-
-## Entwicklungsmodell
-
-- `main` enthält den stabilen, geprüften Stand.
-- `develop` ist der gemeinsame Entwicklungszweig.
-- Separate Feature-Branches werden nur für größere, riskante oder parallel
-  bearbeitete Änderungen verwendet und nach dem Merge wieder gelöscht.
 
 ## Lizenz
 
