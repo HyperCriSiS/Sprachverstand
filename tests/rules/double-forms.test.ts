@@ -22,7 +22,9 @@ describe("doubleFormsRule", () => {
     ["Ärztinnen und Ärzten", "Ärzten"],
     ["Ärzten und Ärztinnen", "Ärzten"],
     ["Nutzerinnen und Nutzern", "Nutzern"],
-    ["Bürgern und Bürgerinnen", "Bürgern"]
+    ["Bürgern und Bürgerinnen", "Bürgern"],
+    ["Juden_Jüdinnen", "Juden"],
+    ["Jüdinnen und Juden", "Juden"]
   ])("führt %s zu %s zusammen", (input, expected) => {
     expect(doubleFormsRule.apply(input)).toEqual({
       text: expected,
