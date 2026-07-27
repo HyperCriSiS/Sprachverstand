@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="static/icons/icon128.png" width="128" height="128" alt="Sprachverstand-Logo">
+  <img src="docs/assets/sprachverstand-logo.svg" width="144" height="144" alt="Sprachverstand-Logo">
 </p>
 
 <h1 align="center">Sprachverstand</h1>
 
-<p align="center"><strong>Macht Webseiten adäquat lesbar.</strong></p>
+<p align="center"><strong>Macht Webseiten leichter lesbar.</strong></p>
 
 <p align="center">
   Eine datenschutzfreundliche Browser-Erweiterung, die gegenderte Schreibweisen
-  auf dem eigenen Gerät in klassische deutsche Rechtschreibung umwandelt.
+  auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
 </p>
 
 ## Was ist Sprachverstand?
@@ -17,9 +17,9 @@ Sprachverstand verarbeitet den Text einer Webseite direkt im Browser. Formen wie
 `Nutzer:innen`, `Mitarbeiter*innen`, `NutzerInnen`, Doppelnennungen und ausgewählte
 Partizipformen werden nach kontrollierten Regeln normalisiert.
 
-Die ursprüngliche Webseite bleibt unverändert. Die Anpassung ist ausschließlich
-für den Nutzer sichtbar, lässt sich jederzeit abschalten und wird ohne Neuladen
-rückgängig gemacht.
+Die Webseite und ihre Serverdaten bleiben unverändert. Sprachverstand passt nur
+die lokale Darstellung im Browser an. Die Verarbeitung lässt sich jederzeit
+abschalten und wird ohne Neuladen rückgängig gemacht.
 
 Sprachverstand ist keine Vorgabe dafür, wie andere schreiben sollen. Es gibt
 Menschen die Kontrolle darüber zurück, wie Texte auf ihrem eigenen Gerät
@@ -40,8 +40,8 @@ problematisch sind. Je nach Screenreader und persönlicher Konfiguration werden
 die Zeichen unterschiedlich behandelt. Auch in Braille können zusätzliche
 Ankündigungszeichen den Lesefluss behindern.
 
-Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich:
-Eine Studie von 2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
+Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich: Eine Studie von
+2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
 Nichtstudenten jedoch anfängliche Verzögerungen, die mit zunehmender Gewöhnung
 rasch zurückgingen. Sprachverstand behauptet deshalb nicht, dass gegenderte
 Sprache grundsätzlich unverständlich sei. Die Erweiterung bietet eine
@@ -120,7 +120,7 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - kein Cloud-Dienst und keine externe Sprach-API
 - keine Analyse des Browserverlaufs
 - kein Tracking und keine Telemetrie
-- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten außer den jeweiligen Textstellen
+- keine dauerhafte Veränderung der Webseite oder ihrer Serverdaten
 
 Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 
@@ -132,6 +132,25 @@ Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel.
+
+## Dank und Recherchequellen
+
+Sprachverstand ist eine eigenständige Neuimplementierung. Bei der Recherche zu
+Schreibweisen, Flexionen, Grenzfällen und bekannten Fehlertreffern haben wir von
+den öffentlich dokumentierten Erfahrungen dieser Projekte gelernt:
+
+- [gendersprache-korrigieren von brilliance-richter-huh](https://github.com/brilliance-richter-huh/gendersprache-korrigieren)
+- [no-gender von sternth](https://github.com/sternth/no-gender)
+- [rggl von motsiw](https://github.com/motsiw/rggl)
+
+Unser ausdrücklicher Dank gilt den Entwicklern, Mitwirkenden, Testern und
+Issue-Autoren dieser Projekte. Ihre Vorarbeit und die offen dokumentierten
+Erfahrungen haben wichtige Hinweise für die Architektur, Testfälle und
+Sicherheitsgrenzen von Sprachverstand geliefert.
+
+Sprachverstand übernimmt keinen Quelltext oder fremde Regexketten. Regeln und
+Tests wurden unabhängig neu entwickelt. Weitere Details stehen in
+[`UPSTREAMS.md`](UPSTREAMS.md).
 
 ## Projektstatus
 
