@@ -1,229 +1,172 @@
-# Sprachverstand
+<p align="center">
+  <img src="static/icons/icon128.png" width="128" height="128" alt="Sprachverstand-Logo">
+</p>
 
-**Macht Webseiten wieder lesbar.**
+<h1 align="center">Sprachverstand</h1>
 
-Sprachverstand ist eine neu entwickelte Browser-Erweiterung zur kontrollierten
-Normalisierung gegenderter deutscher Texte. Die Codebasis ist modular, streng
-typisiert und auf möglichst geringe Fehlertreffer ausgelegt.
+<p align="center"><strong>Macht Webseiten wieder lesbar.</strong></p>
 
-## Stand
+<p align="center">
+  Eine datenschutzfreundliche Browser-Erweiterung, die gegenderte Schreibweisen
+  auf dem eigenen Gerät in klassische deutsche Personenbezeichnungen umwandelt.
+</p>
 
-Version `0.5.3` ist **Beta 8**. Sie nutzt ein randloses, besser ausfüllendes
-SV-Symbol, verbreitert und verdichtet das Popup und ergänzt geprüfte Formen aus
-der UdK-Handreichung sowie dem Genderwörterbuch. Dazu gehören unter anderem
-`Studierende`, `Lesende`, `Arbeitnehmende`, `Juden_Jüdinnen`,
-`Gegner*innenschaft` und `Verbündete_r`. Terminologische Schreibweisen wie
-`trans* Personen` und `inter* Personen` bleiben bewusst unverändert.
+## Was ist Sprachverstand?
 
-Die CI erzeugt für jeden geprüften Commit Chromium-, Firefox- und
-Quellcode-Pakete samt SHA-256-Prüfsummen. Die Installations- und Testanleitung
-steht unter [`docs/BETA-TEST.md`](docs/BETA-TEST.md).
+Sprachverstand verarbeitet den Text einer Webseite direkt im Browser. Formen wie
+`Nutzer:innen`, `Mitarbeiter*innen`, `NutzerInnen`, Doppelnennungen und ausgewählte
+Partizipformen werden nach kontrollierten Regeln normalisiert.
 
-## Eigenschaften
+Die ursprüngliche Webseite bleibt unverändert. Die Anpassung ist ausschließlich
+für den Nutzer sichtbar, lässt sich jederzeit abschalten und wird ohne Neuladen
+rückgängig gemacht.
 
-- Manifest V3 für Chromium und Firefox
-- Firefox für Android als offiziell vorgesehenes Mobilziel
-- TypeScript-Regel-Engine mit zwölf verständlichen Regelgruppen
-- jede Regelgruppe im Popup und in den Einstellungen einzeln aktivierbar und mit einem Beispiel erklärt
-- reversible Änderungen: Ausschalten stellt eigene Änderungen ohne Reload zurück
-- Live-Zähler pro Tab im Symbol, Popup und Einstellungsfenster
-- persönliche literale Ausnahmen für Wörter und vollständige Phrasen
-- Domain-Ausschlüsse
-- SV-Monogramm als Erweiterungs-, Popup- und Einstellungslogo
-- wahlweise Schutz direkt zitierter Schreibweisen in Anführungszeichen
-- sichere Verarbeitung normaler Textknoten
-- optional kontrollierte Verarbeitung von `alt`, `aria-label`,
-  `aria-description` und `title`
-- `MutationObserver` für dynamische Webseiten, Single-Page-Anwendungen und
-  nachträgliche Attributänderungen
-- Schutz für Eingabefelder, Editoren, Code, URLs und technische Daten
-- kleiner Hintergrundprozess ausschließlich für Badge und Tab-Zähler
-- automatisierte Unit-, DOM-, Änderungsumfang-, Einstellungs- und
-  Regressionstests
-- Firefox-Desktop- und Firefox-Android-Kompatibilitätsprüfung mit `web-ext lint`
-- reproduzierbare Builds und geprüfte Beta-Pakete
-- versionierter Kontextkatalog für mehrdeutige Partizip- und Stilformen
+Sprachverstand ist keine Vorgabe dafür, wie andere schreiben sollen. Es gibt
+Menschen die Kontrolle darüber zurück, wie Texte auf ihrem eigenen Gerät
+angezeigt und vorgelesen werden.
 
-## Auswählbare Regelgruppen
+## Warum kann das hilfreich sein?
 
-Die frühere Auswahl „Konservativ / Standard / Aggressiv“ wurde entfernt. Alle
-aktuellen produktiven Regeln waren ohnehin als sicher eingestuft, sodass diese
-Profile bislang praktisch keinen sichtbaren Unterschied erzeugten.
+Genderzeichen, ungewohnte Wortformen und häufige Doppelnennungen können den
+visuellen oder gesprochenen Lesefluss unterbrechen. Bei längeren Texten kann das
+die konzentrierte Aufnahme unnötig anstrengend machen – besonders dann, wenn
+eine Sprachausgabe Satzzeichen vorliest, verschluckt oder als zusätzliche Pause
+wiedergibt.
 
-Stattdessen stehen konkrete Gruppen zur Verfügung:
+Für blinde und sehbehinderte Menschen ist das nicht nur eine Geschmacksfrage.
+Der Deutsche Blinden- und Sehbehindertenverband weist darauf hin, dass
+Kurzformen mit Sternchen, Unterstrich und Doppelpunkt für viele Nutzer
+problematisch sind. Je nach Screenreader und persönlicher Konfiguration werden
+die Zeichen unterschiedlich behandelt; auch in Braille können zusätzliche
+Ankündigungszeichen den Lesefluss behindern.
 
-1. Genderzeichen im Plural
-2. Binnen-I im Plural
-3. Doppelnennungen im Plural
-4. Gegenderte Singularformen mit Artikel
-5. Gegenderte Singularformen ohne Artikel
-6. Doppelnennungen im Singular
-7. Explizite Pronomen- und Possessivpaare
-8. Künstlich gegenderte Familienformen
-9. Gegenderte Titelabkürzungen
-10. Neutrale Partizipformen
-11. Kontextgebundene Umschreibungen *(standardmäßig aus)*
-12. Geschlechtszusätze in Stellenanzeigen *(standardmäßig aus)*
+Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich: Eine Studie von
+2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
+Nichtstudenten jedoch anfängliche Verzögerungen, die mit zunehmender Gewöhnung
+rasch zurückgingen. Sprachverstand behauptet deshalb nicht, dass gegenderte
+Sprache grundsätzlich unverständlich sei. Die Erweiterung bietet eine
+individuelle Lösung für Menschen, die Texte in einer anderen Form leichter
+lesen oder hören können.
 
-Die beiden letzten Gruppen sind bewusst deaktiviert. Die standardmäßig aktive
-Partizipgruppe ersetzt eine begrenzte, geprüfte Liste substantivischer
-Personenbezeichnungen. Grammatisch erkennbare Singular- und Adjektivverwendungen
-bleiben unangetastet. Weitere Fundstellen und Grenzfälle werden in
-[`data/neutral-context-catalog.json`](data/neutral-context-catalog.json) gesammelt.
+Quellen:
+
+- [Deutscher Blinden- und Sehbehindertenverband: Gendern](https://www.dbsv.org/gendern.html)
+- [Zacharski, Kruppa & Ferstl (2025): The Readability of the Non-Binary Gender Star in German](https://doi.org/10.32872/spb.13719)
 
 ## Beispiele
 
-```text
-Nutzer:innen                         → Nutzer
-Mitarbeiter*innen                    → Mitarbeiter
-Mitarbeiter/-innen                   → Mitarbeiter
-Anfänger*innen                       → Anfänger
-Zuhörer*innen                        → Zuhörer
-Ärzt_innen                           → Ärzte
-Student/innen                        → Studenten
-US-Bürger’innen                      → US-Bürger
-TierärztInnen                        → Tierärzte
-Nutzer:innenkonto                    → Nutzerkonto
-MutterInnen                          → Mütter
-Mutter:in                            → Mutter
-Bauer:innen                          → Bauern
-Messebauer*innen                     → Messebauer
-Nutzerinnen und Nutzer               → Nutzer
-mit Ärztinnen und Ärzten             → mit Ärzten
-Kunde/Kundin                         → Kunde
-Koch/Köchin                          → Koch
-Bauern_Bäuerinnen                    → Bauern
-Tierärztin/Tierarzt                  → Tierarzt
-jede:r Nutzer:in                     → jeder Nutzer
-ein/-e Frisör/-in                    → ein Frisör
-eine/n Erzieher/-in                  → einen Erzieher
-ein_e Handwerker_in                  → ein Handwerker
-eine:n Student:in                    → einen Studenten
-einem:einer Kund:in                  → einem Kunden
-des:der Nutzer:in                    → des Nutzers
-mein:e Nutzer:in                     → mein Nutzer
-eure:n Pilot:in                      → euren Piloten
-er:sie                               → er
-ihm:ihr                              → ihm
-seines:ihres                         → seines
-Prof.in Anna Müller                  → Prof. Anna Müller
-die Prof.in                          → die Professorin
-Liebe Teilnehmende                   → Liebe Teilnehmer
-Sehr geehrte mitarbeitende Personen  → Sehr geehrte Mitarbeiter
-Makler*in                            → Makler
-Expert*in                            → Experte
-Ärzt_in                              → Arzt
-Professor/-in                        → Professor
-Direktor_in                          → Direktor
-Studierende                          → Studenten
-Lesende                              → Leser
-Arbeitnehmende                       → Arbeitnehmer
-Juden_Jüdinnen                       → Juden
-Gegner*innenschaft                   → Gegnerschaft
-Verbündete_r                         → Verbündeter
-```
+| Original | Darstellung mit Sprachverstand |
+|---|---|
+| `Nutzer:innen` | `Nutzer` |
+| `Mitarbeiter*innen` | `Mitarbeiter` |
+| `NutzerInnen` | `Nutzer` |
+| `Nutzerinnen und Nutzer` | `Nutzer` |
+| `jede:r Nutzer:in` | `jeder Nutzer` |
+| `Student*innen` | `Studenten` |
+| `Studierende` | `Studenten` |
+| `Arbeitnehmende` | `Arbeitnehmer` |
+| `Juden_Jüdinnen` | `Juden` |
+| `Gegner*innenschaft` | `Gegnerschaft` |
 
-Bei aktivierter optionaler Gruppe **Kontextgebundene Umschreibungen** gilt
-zusätzlich `Benutzungshandbuch → Benutzerhandbuch`. Die optionale
-Stellenanzeigen-Gruppe entfernt Zusätze wie `(m/w/d)`.
+Die Regeln berücksichtigen bekannte Flexionen und zusammengesetzte Wörter, etwa
+`Ärzt:innen → Ärzte`, `Nutzer:innenkonto → Nutzerkonto` oder
+`mit Ärztinnen und Ärzten → mit Ärzten`.
 
-Ausdrücklich weibliche Aussagen wie `Die Kundin ruft an` sowie Vollformen wie
-`Professorin Müller` bleiben unverändert. Ebenso werden terminologische Sterne
-in `trans* Personen`, `inter* Personen`, `Inter*feindlichkeit` und
-`Inter*diskriminierung` nicht als Genderendung behandelt.
+Ausdrücklich weibliche Formen wie `Politikerinnen` oder `Professorin` bleiben
+unverändert. Terminologische Schreibweisen wie `trans* Personen`,
+`inter* Personen`, `Inter*feindlichkeit` und `Inter*diskriminierung` werden
+ebenfalls nicht als Genderendung behandelt.
 
-## Persönliche Ausnahmen
+Eine ausgelassene Ersetzung ist besser als eine falsche. Unbekannte oder
+mehrdeutige Formen bleiben deshalb unangetastet.
 
-Persönliche Ausnahmen sind wörtliche Wörter oder vollständige Phrasen:
+## Funktionen
 
-```text
-Nutzer:innen
-Meine geschützte Phrase
-```
+- Normalisierung direkt beim Laden der Webseite
+- laufende Verarbeitung dynamisch nachgeladener Inhalte
+- vollständige Wiederherstellung beim Ausschalten
+- einzeln aktivierbare Regelgruppen
+- Korrekturzähler für den aktuellen Tab
+- persönliche Ausnahmen für Wörter und vollständige Phrasen
+- Ausschluss einzelner Domains
+- optionaler Schutz von Texten in Anführungszeichen
+- optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
+  `aria-description` und `title`
+- Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
 
-- eine Ausnahme pro Zeile
-- Groß- und Kleinschreibung wird ignoriert
-- keine regulären Ausdrücke und keine Platzhalter
-- exakte Wort- und Phrasengrenzen
-- `Nutzer:innen` schützt nicht automatisch `Nutzer:innenkonto`
-- maximal 100 Einträge mit jeweils 80 Zeichen
-- lokale Speicherung im Browser; die Liste wird nicht über Browser-Sync
-  übertragen
+## Einstellungen
 
-## Bewusst noch nicht verändert
+Im Popup kann Sprachverstand global ein- und ausgeschaltet werden. Außerdem
+lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 
-- unmarkierte Binnen-I-Singularformen wie `eine NutzerIn`, deren Schreibweise
-  ohne Separator nicht sicher von einer ausdrücklich weiblichen Form zu trennen ist
-- weitere flektierte Doppelnennungen außerhalb der geprüften Formen
-- unbekannte oder mehrdeutige Wortformen
-- satzweite Umformulierungen, Passivkonstruktionen und semantische Synonyme
-- institutionelle Komposita oder Eigennamen wie `Studierendenwerk`, solange der
-  konkrete Kontext nicht eindeutig ist
-- Pluralkürzel wie `Prof.innen` und `Dr.innen`
-- vollständige feminine Formen wie `Politikerinnen` ohne sichtbares Genderzeichen;
-  die eindeutig markierte Form `PolitikerInnen` wird dagegen zu `Politiker`
-- reguläre Begriffe wie `Testpersonen` und `ärztliche Sprechstunde`
-- terminologische Sterne wie `trans*` und `inter*`
-- nicht freigegebene Attribute wie `value`, `placeholder`, `data-*`, IDs und
-  URLs
+- Genderzeichen und Binnen-I
+- Doppelnennungen
+- Singularformen mit oder ohne Artikel
+- Pronomen- und Possessivpaare
+- Titelabkürzungen
+- ausgewählte neutrale Partizipformen
+- optionale Umschreibungen
+- optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
 
-Eine ausgelassene Ersetzung ist ausdrücklich besser als eine falsche.
+In den erweiterten Einstellungen stehen persönliche Ausnahmen,
+Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und die Verarbeitung
+zugänglicher Attribute zur Verfügung.
+
+## Datenschutz
+
+Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
+
+- keine Übertragung von Seitentexten
+- kein Cloud-Dienst und keine externe Sprach-API
+- keine Analyse des Browserverlaufs
+- kein Tracking und keine Telemetrie
+- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
+
+Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 
 ## Unterstützte Browser
 
-- Firefox Desktop
+- Firefox für Desktop
 - Firefox für Android
 - Chromium-basierte Desktop-Browser
 
-Google Chrome auf Android unterstützt keine Browser-Erweiterungen. Andere
-Chromium-basierte Android-Browser mit eigener Erweiterungsunterstützung können
-funktionieren, sind aber kein verbindliches Veröffentlichungsziel.
+Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
+ist deshalb kein Veröffentlichungsziel.
 
-## Voraussetzungen
+## Projektstatus
 
-- Node.js 24 LTS oder neuer
+Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
+bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
+Performance- und Regressionstests abgesichert.
+
+Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase.
+
+## Entwicklung
+
+Voraussetzungen:
+
+- Node.js 24 oder neuer
 - npm
-
-## Einrichtung und Prüfung
 
 ```bash
 npm install
 npm run check
 ```
 
-Die fertigen Erweiterungen liegen danach unter:
+Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
+erstellt.
 
-```text
-dist/chromium/
-dist/firefox/
-```
+Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
+und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
-Firefox für Android kann mit einem per ADB verbundenen Gerät getestet werden:
+## Entwicklungsmodell
 
-```bash
-web-ext run --source-dir dist/firefox --target=firefox-android
-```
+- `main` enthält den stabilen, geprüften Stand.
+- `develop` ist der gemeinsame Entwicklungszweig.
+- Separate Feature-Branches werden nur für größere, riskante oder parallel
+  bearbeitete Änderungen verwendet und nach dem Merge wieder gelöscht.
 
-## Manuell laden
+## Lizenz
 
-Die vollständige Beta-Anleitung steht in
-[`docs/BETA-TEST.md`](docs/BETA-TEST.md).
-
-### Chromium Desktop
-
-1. `chrome://extensions` öffnen.
-2. Entwicklermodus aktivieren.
-3. **Entpackte Erweiterung laden** auswählen.
-4. `dist/chromium` auswählen.
-
-### Firefox Desktop
-
-1. `about:debugging#/runtime/this-firefox` öffnen.
-2. **Temporäres Add-on laden** auswählen.
-3. `dist/firefox/manifest.json` auswählen.
-
-## Repository und Identität
-
-Das Repository bleibt bis zur späteren Übertragung auf ein separates
-Projektkonto privat. Die endgültige Lizenz wird vor der ersten öffentlichen
-Verteilung festgelegt.
+Die endgültige Open-Source-Lizenz wird vor der öffentlichen Veröffentlichung
+festgelegt.
