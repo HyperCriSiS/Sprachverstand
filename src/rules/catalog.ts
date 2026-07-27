@@ -13,7 +13,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Genderzeichen im Plural",
     description:
       "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen.",
-    example: "Nutzer:innen → Nutzer · Mitarbeiter/-innen → Mitarbeiter",
+    example: "Nutzer:innen → Nutzer",
     ruleIds: [
       "plural.known-separator-innen",
       "plural.mapped-separator-innen"
@@ -24,7 +24,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     id: "plural-binnen-i",
     label: "Binnen-I im Plural",
     description: "Großes I innerhalb bekannter Personenbezeichnungen.",
-    example: "NutzerInnen → Nutzer · ÄrztInnen → Ärzte",
+    example: "NutzerInnen → Nutzer",
     ruleIds: ["plural.binnen-i"],
     defaultEnabled: true
   },
@@ -51,7 +51,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Gegenderte Singularformen ohne Artikel",
     description:
       "Sichtbar markierte Singularformen werden nur für bekannte Personenbezeichnungen normalisiert.",
-    example: "Makler*in → Makler · Professor/-in → Professor",
+    example: "Makler*in → Makler",
     ruleIds: ["singular.unmarked-marker"],
     defaultEnabled: true
   },
@@ -69,7 +69,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Explizite Pronomen- und Possessivpaare",
     description:
       "Nur sichtbar gegenderte Paarformen; normale weibliche Pronomen bleiben unverändert.",
-    example: "er:sie → er · seines:ihres → seines",
+    example: "er:sie → er",
     ruleIds: ["pronoun.explicit-pairs"],
     defaultEnabled: true
   },
@@ -87,16 +87,16 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Gegenderte Titelabkürzungen",
     description:
       "Schreibt Prof.in und Dr.in je nach Kontext aus oder führt sie auf den normalen Titel zurück.",
-    example: "Prof.in Anna Müller → Prof. Anna Müller · die Prof.in → die Professorin",
+    example: "Prof.in Anna Müller → Prof. Anna Müller",
     ruleIds: ["title.gendered-abbreviations"],
     defaultEnabled: true
   },
   {
     id: "salutation-participles",
-    label: "Partizipformen in eindeutigen Anreden",
+    label: "Neutrale Partizipformen",
     description:
-      "Ersetzt ausgewählte Partizipformen nur nach klaren Anredeformeln wie ‚Sehr geehrte‘ oder ‚Liebe‘.",
-    example: "Liebe Teilnehmende → Liebe Teilnehmer",
+      "Ersetzt ausgewählte Personenbezeichnungen wie Studierende, Lesende und Arbeitnehmende; eindeutige Anreden werden weiterhin vollständig erkannt.",
+    example: "Studierende → Studenten",
     ruleIds: ["salutation.participial-forms"],
     defaultEnabled: true
   },
@@ -105,7 +105,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     label: "Kontextgebundene Umschreibungen",
     description:
       "Ersetzt nur einzeln geprüfte Umschreibungen und feste Wendungen. Weitere Kontexte werden im Projektkatalog gesammelt.",
-    example: "mitarbeitende Personen → Mitarbeiter · Benutzungshandbuch → Benutzerhandbuch",
+    example: "Benutzungshandbuch → Benutzerhandbuch",
     ruleIds: ["neutral.person-terms"],
     defaultEnabled: false
   },
