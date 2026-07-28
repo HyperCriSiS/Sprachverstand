@@ -1,1 +1,0 @@
-The public README logo is the same static PNG used by the add-on. This marker exists only to keep the asset path documented.
