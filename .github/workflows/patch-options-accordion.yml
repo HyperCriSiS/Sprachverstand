@@ -1,8 +1,8 @@
 name: Patch options accordion
 
 on:
-  push:
-    branches: [feat/options-accordion-order]
+  pull_request:
+    branches: [main]
     paths:
       - .github/workflows/patch-options-accordion.yml
 
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: feat/options-accordion-order
+          ref: ${{ github.head_ref }}
 
       - name: Styles, Steuerung und Regressionstests ergänzen
         shell: python
@@ -211,4 +211,4 @@ jobs:
           git add static/options/options.css src/options.ts tests/rules/known-plural-separators.test.ts
           git diff --cached --quiet && exit 0
           git commit -m "ui: add collapsible settings controls"
-          git push origin HEAD:feat/options-accordion-order
+          git push origin HEAD:${{ github.head_ref }}
