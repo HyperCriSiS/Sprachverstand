@@ -12,11 +12,12 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     id: "plural-separators",
     label: "Genderzeichen im Plural",
     description:
-      "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen.",
+      "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen einschließlich quellengeprüfter Sonderformen.",
     example: "Nutzer:innen → Nutzer",
     ruleIds: [
       "plural.known-separator-innen",
-      "plural.mapped-separator-innen"
+      "plural.mapped-separator-innen",
+      "plural.source-audit-forms"
     ],
     defaultEnabled: true
   },
@@ -50,9 +51,12 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     id: "unmarked-singular",
     label: "Sichtbar markierte Singularformen",
     description:
-      "Genderzeichen und Binnen-I werden bei bekannten Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt.",
+      "Genderzeichen und Binnen-I werden bei bekannten und quellengeprüften Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt.",
     example: "NutzerIn → Nutzer",
-    ruleIds: ["singular.unmarked-marker"],
+    ruleIds: [
+      "singular.unmarked-marker",
+      "singular.source-audit-forms"
+    ],
     defaultEnabled: true
   },
   {
