@@ -141,17 +141,17 @@
             persönliche Ausnahmen und eigene Ersetzungen.
           </p>
           <div class="transfer-controls">
-            <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
-            <button id="import-personal-rules" type="button">Einstellungen aus JSON importieren</button>
+            <button id="export-settings" type="button">Alle Einstellungen als JSON exportieren</button>
+            <button id="import-settings" type="button">Einstellungen aus JSON importieren</button>
             <input
-              id="import-personal-rules-file"
+              id="import-settings-file"
               type="file"
               accept="application/json,.json"
               hidden
             >
             <label class="import-mode">
               Umgang mit vorhandenen persönlichen Listen
-              <select id="personal-rules-import-mode">
+              <select id="settings-import-mode">
                 <option value="keep-existing">Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten</option>
                 <option value="prefer-imported">Importierte Einstellungen und importierte Ersetzungsziele übernehmen</option>
                 <option value="replace">Alle Einstellungen und persönlichen Listen vollständig ersetzen</option>
@@ -190,7 +190,7 @@
 
       <footer class="legal-footer">
         <span>Copyright © 2026 HyperCriSiS und Mitwirkende</span>
-        <a href="../legal/legal.html" target="_blank">AGPL-3.0-only, Quelltext und Gewährleistung</a>
+        <a href="../legal/legal.html" target="_blank">Lizenz und Quelltext</a>
       </footer>
     </main>
   </body>
