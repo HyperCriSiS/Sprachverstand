@@ -38,8 +38,8 @@ jobs:
             > /tmp/beta12.patch
           git apply --check /tmp/beta12.patch
           git apply /tmp/beta12.patch
+          git checkout HEAD -- .github/workflows
           rm -rf .automation
-          rm -f .github/workflows/apply-beta12.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
