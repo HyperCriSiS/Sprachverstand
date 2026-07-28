@@ -94,6 +94,28 @@ describe("sourceAuditPluralRule", () => {
     });
   });
 
+  it("deckt den vollständigen A-bis-Z-Abgleich repräsentativ ab", () => {
+    const input =
+      "Akademiker*innen, Babysitter*innen, Coder*innen, Diktator:innen, " +
+      "Evaluator:innen, Follower*innen, Gymnasiast:innen, Historiker*innen, " +
+      "Illustrator:innen, Juror:innen, Kommunikator:innen, Logopäd:innen, " +
+      "Matros:innen, Nachrücker*innen, Operateur:innen, Proband:innen, " +
+      "Quereinsteiger*innen, Rezeptionist:innen, Streamer*innen, Tutor:innen, " +
+      "Überbringer*innen, Visionär:innen, Wikipedianer*innen, " +
+      "Xylophonspieler*innen, Youtuber*innen und Zivilist:innen";
+    const expected =
+      "Akademiker, Babysitter, Coder, Diktatoren, Evaluatoren, Follower, " +
+      "Gymnasiasten, Historiker, Illustratoren, Juroren, Kommunikatoren, " +
+      "Logopäden, Matrosen, Nachrücker, Operateure, Probanden, " +
+      "Quereinsteiger, Rezeptionisten, Streamer, Tutoren, Überbringer, " +
+      "Visionäre, Wikipedianer, Xylophonspieler, Youtuber und Zivilisten";
+
+    expect(sourceAuditPluralRule.apply(input)).toEqual({
+      text: expected,
+      replacements: 26
+    });
+  });
+
   it("verarbeitet sichtbar getrennte Lehrbeispiele der geprüften Quellen", () => {
     expect(
       sourceAuditPluralRule.apply(
