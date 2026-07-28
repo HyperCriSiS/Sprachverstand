@@ -1,0 +1,1 @@
+Temporary staging files for the Beta 12 patch. Removed automatically before the release pull request is reviewed.
