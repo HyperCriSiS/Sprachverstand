@@ -54,6 +54,11 @@ jobs:
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
           grep -q 'icons/icon48.png' static/options/options.html
+          grep -q 'id="custom-replacement-feedback"' static/options/options.html
+          grep -q 'id="custom-preview-input"' static/options/options.html
+          grep -q 'id="custom-preview-output"' static/options/options.html
+          grep -q 'id="export-personal-rules"' static/options/options.html
+          grep -q 'id="import-personal-rules"' static/options/options.html
           grep -q '../legal/legal.html' static/popup/popup.html
           grep -q '../legal/legal.html' static/options/options.html
           test -s LICENSE
@@ -61,6 +66,7 @@ jobs:
           test -s NOTICE
           test -s CONTRIBUTING.md
           test -s data/flexion-regression-cases.json
+          test -s docs/PERSONAL-RULES-FORMAT.md
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
