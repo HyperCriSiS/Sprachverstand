@@ -1,0 +1,63 @@
+name: Originales SV-Icon wiederherstellen
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/restore-original-icon.yml
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository vollständig auschecken
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Ursprüngliche Icon-Dateien wiederherstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Dieser Commit enthält das ursprüngliche, gerahmte SV-Logo aus Beta 7.
+          git checkout a50988df02885492959602a58a60d087708ac596 -- \
+            static/icons/icon32.png \
+            static/icons/icon48.png \
+            static/icons/icon128.png
+
+          python - <<'PY'
+          from pathlib import Path
+
+          readme = Path("README.md")
+          text = readme.read_text(encoding="utf-8")
+          text = text.replace(
+              '<img src="docs/assets/sprachverstand-logo.svg" width="144" height="144" alt="Sprachverstand-Logo">',
+              '<img src="static/icons/icon128.png" width="128" height="128" alt="Sprachverstand-Logo">',
+          )
+          readme.write_text(text, encoding="utf-8")
+          PY
+
+          rm -f docs/assets/sprachverstand-logo.svg
+
+      - name: Änderungen nach dev übertragen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md static/icons/icon32.png static/icons/icon48.png static/icons/icon128.png
+          git add -u docs/assets/sprachverstand-logo.svg
+
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen erforderlich."
+            exit 0
+          fi
+
+          git commit -m "fix: restore original framed SV icon"
+          git push origin HEAD:dev
