@@ -1,0 +1,105 @@
+name: Beta-Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Abhängigkeiten installieren
+        run: npm install
+
+      - name: Vollständige Prüfung ausführen
+        run: npm run check
+
+      - name: Release-Pakete erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          BETA="beta.9"
+          TAG="v${VERSION}-${BETA}"
+          mkdir -p artifacts
+
+          (
+            cd dist/chromium
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip" .
+          )
+
+          (
+            cd dist/firefox
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" .
+          )
+
+          git archive \
+            --format=zip \
+            --output="artifacts/sprachverstand-${VERSION}-${BETA}-source.zip" \
+            HEAD
+
+          cp docs/BETA-TEST.md artifacts/
+
+          (
+            cd artifacts
+            sha256sum \
+              "sprachverstand-${VERSION}-${BETA}-chromium.zip" \
+              "sprachverstand-${VERSION}-${BETA}-firefox.xpi" \
+              "sprachverstand-${VERSION}-${BETA}-source.zip" \
+              > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
+
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "BETA=${BETA}" >> "$GITHUB_ENV"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+
+      - name: GitHub-Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG existiert bereits; Dateien werden aktualisiert."
+            gh release upload "$TAG" artifacts/* --clobber
+          else
+            gh release create "$TAG" \
+              artifacts/* \
+              --target "$GITHUB_SHA" \
+              --title "Sprachverstand ${VERSION} – Beta 9" \
+              --notes-file docs/RELEASE-NOTES.md \
+              --prerelease
+          fi
+
+      - name: Veröffentlichung in der Roadmap vermerken
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 9 veröffentlicht
+
+          Sprachverstand ${VERSION} Beta 9 wurde nach erfolgreicher vollständiger Prüfung veröffentlicht.
+
+          https://github.com/${REPOSITORY}/releases/tag/${TAG}"
