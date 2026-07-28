@@ -34,13 +34,17 @@ jobs:
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
+      - name: Paket- und Lizenzmetadaten prüfen
+        run: |
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
+
       - name: TypeScript prüfen
         run: npm run typecheck
 
       - name: Gesamte Testsuite ausführen
         run: npm run test
 
-      - name: Popup, Regelgruppen und Logo absichern
+      - name: Oberfläche, Regelgruppen und Rechtshinweise absichern
         shell: bash
         run: |
           grep -q "width: 384px" static/popup/popup.css
@@ -50,6 +54,13 @@ jobs:
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
           grep -q 'icons/icon48.png' static/options/options.html
+          grep -q '../legal/legal.html' static/popup/popup.html
+          grep -q '../legal/legal.html' static/options/options.html
+          test -s LICENSE
+          test -s TRADEMARKS.md
+          test -s NOTICE
+          test -s CONTRIBUTING.md
+          test -s data/flexion-regression-cases.json
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
@@ -70,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.10"
+          BETA="beta.11"
           mkdir -p artifacts
 
           (
@@ -107,7 +118,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v6
         with:
-          name: sprachverstand-beta-10-${{ github.sha }}
+          name: sprachverstand-beta-11-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
