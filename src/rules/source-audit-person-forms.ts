@@ -413,8 +413,6 @@ const supplementalBinnenIPluralPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)Innen/gu;
 const supplementalSeparatorSingularPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])/giu;
-const supplementalBinnenISingularPattern =
-  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)In(?![\p{L}\p{M}])/gu;
 const spacedSeparatorPluralPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)\s+[:*_\/+·•.’‘]\s*innen(?![\p{L}\p{M}])/giu;
 const plusPluralPattern =
@@ -452,12 +450,6 @@ export const sourceAuditSingularRule: Rule = {
         transformPattern(
           text,
           supplementalSeparatorSingularPattern,
-          mapSupplementalSingular
-        ),
-      (text) =>
-        transformPattern(
-          text,
-          supplementalBinnenISingularPattern,
           mapSupplementalSingular
         )
     ]);
