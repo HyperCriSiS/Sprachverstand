@@ -63,6 +63,9 @@ Funktionen:
 - Korrekturzähler für den aktuellen Tab
 - persönliche Ausnahmen für Wörter und vollständige Formulierungen
 - eigene wörtliche Ersetzungen, getrennt von Ausnahmen und ohne Regex
+- Live-Vorschau und Konflikthinweise vor dem Speichern eigener Regeln
+- lokaler JSON-Import und -Export persönlicher Ausnahmen und Ersetzungen
+- drei wählbare Strategien für Zielkonflikte beim Import
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
@@ -81,6 +84,8 @@ Datenschutz:
 - kein Tracking und keine Telemetrie
 - keine Werbung und keine Nutzerprofile
 - Einstellungen, Ausnahmen und eigene Ersetzungen bleiben im Browser
+- Importdateien werden nur nach bewusster Auswahl lokal gelesen
+- Exportdateien werden lokal erzeugt und nicht hochgeladen
 
 Unterstützt werden Firefox für Desktop und Firefox für Android.
 
@@ -138,6 +143,9 @@ Wichtige Funktionen:
 - Korrekturzähler für den aktuellen Tab
 - persönliche Wort- und Phrasenausnahmen
 - eigene wörtliche Ersetzungen ohne Regex
+- Live-Vorschau und Konflikthinweise für eigene Regeln
+- lokaler JSON-Import und -Export persönlicher Einträge
+- ausdrücklich wählbare Importstrategie bei Zielkonflikten
 - Ausschluss bestimmter Domains
 - optionaler Schutz zitierter Schreibweisen
 - optionale Verarbeitung zugänglicher Textattribute
@@ -150,6 +158,8 @@ Die gesamte Textverarbeitung erfolgt lokal im Browser. Es werden keine
 Webseitentexte, Adressen, Einstellungen oder Nutzungsdaten an den Entwickler
 oder andere Anbieter übertragen. Sprachverstand verwendet keine Cloud-Dienste,
 keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
+Importdateien werden nur nach einer bewussten Dateiauswahl lokal gelesen;
+Exportdateien werden lokal erzeugt.
 
 ## Chrome Web Store – Datenschutzformular
 
@@ -173,6 +183,13 @@ keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
 > erkennen und ihre Darstellung anzupassen. Der Zugriff wird ausschließlich für
 > diese Kernfunktion verwendet. Webseiteninhalte werden nicht übertragen oder
 > dauerhaft gespeichert.
+
+### Import und Export persönlicher Regeln
+
+> Persönliche Ausnahmen und eigene Ersetzungen können auf ausdrückliche
+> Nutzeraktion als JSON-Datei lokal exportiert oder über den Dateiauswahldialog
+> lokal importiert werden. Hierfür wird keine zusätzliche Netzwerk- oder
+> Dateisystemberechtigung verwendet. Die Dateien werden nicht übertragen.
 
 ### Remote-Code
 
@@ -198,7 +215,9 @@ keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
 
 > Regelgruppen, persönliche Textausnahmen, eigene wörtliche Ersetzungen und
 > Domain-Ausschlüsse werden lokal im Erweiterungsspeicher gespeichert und
-> ausschließlich für die gewählte Konfiguration verwendet.
+> ausschließlich für die gewählte Konfiguration verwendet. Bei einem bewusst
+> ausgelösten Export werden nur persönliche Ausnahmen und eigene Ersetzungen in
+> eine lokale JSON-Datei geschrieben.
 
 ### Eingeschränkte Datennutzung
 
