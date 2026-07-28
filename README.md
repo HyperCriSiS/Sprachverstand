@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/sprachverstand-logo.svg" width="144" height="144" alt="Sprachverstand-Logo">
+  <img src="docs/assets/sprachverstand-logo.png" width="144" height="144" alt="Sprachverstand-Logo">
 </p>
 
 <h1 align="center">Sprachverstand</h1>
@@ -68,25 +68,23 @@ Quellen:
 | `Juden_Jüdinnen` | `Juden` |
 | `Gegner*innenschaft` | `Gegnerschaft` |
 
-### Live-Test
+### Direkt ausprobieren
 
-Die Tabelle verwendet bewusst als Quellcode markierte Beispiele und wird deshalb
-nicht verändert. Der folgende Absatz ist normaler Seitentext. Bei aktiviertem
-Sprachverstand wird er direkt auf dieser GitHub-Seite umgewandelt, sofern die
-jeweils zuständige Regelgruppe eingeschaltet ist:
+Die Vergleichstabelle bleibt absichtlich unverändert, weil ihre Beispiele als
+Quellcode formatiert sind. Der folgende Text ist normaler Seiteninhalt und wird
+bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
 
-Nutzer:innen, Mitarbeiter*innen, NutzerInnen, Nutzerinnen und Nutzer, jede:r
-Nutzer:in, Student*innen, Studierende, Arbeitnehmende, Juden_Jüdinnen und
-Gegner*innenschaft.
+> Unsere Mitarbeiter*innen begrüßen neue Nutzer:innen und Student*innen.
+> Jede:r Nutzer:in erhält ein eigenes Nutzer:innenkonto. Studierende und
+> Arbeitnehmende finden dort weitere Informationen.
 
-Die Regeln berücksichtigen bekannte Flexionen und zusammengesetzte Wörter, etwa
-`Ärzt:innen → Ärzte`, `Nutzer:innenkonto → Nutzerkonto` oder
-`mit Ärztinnen und Ärzten → mit Ärzten`.
+### Grenzen und Sicherheit
 
+Sprachverstand berücksichtigt bekannte Flexionen und zusammengesetzte Wörter.
 Ausdrücklich weibliche Formen wie `Politikerinnen` oder `Professorin` bleiben
 unverändert. Terminologische Schreibweisen wie `trans* Personen`,
 `inter* Personen`, `Inter*feindlichkeit` und `Inter*diskriminierung` werden
-ebenfalls nicht als Genderendung behandelt.
+nicht als Genderendung behandelt.
 
 Eine ausgelassene Ersetzung ist besser als eine falsche. Unbekannte oder
 mehrdeutige Formen bleiben deshalb unangetastet.
@@ -131,7 +129,7 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - kein Cloud-Dienst und keine externe Sprach-API
 - keine Analyse des Browserverlaufs
 - kein Tracking und keine Telemetrie
-- keine dauerhafte Veränderung der Webseite oder ihrer Serverdaten
+- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
 
 Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 
@@ -144,30 +142,9 @@ Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel.
 
-## Dank und Recherchequellen
-
-Sprachverstand ist eine eigenständige Neuimplementierung. Bei der Recherche zu
-Schreibweisen, Flexionen, Grenzfällen und bekannten Fehlertreffern haben wir von
-den öffentlich dokumentierten Erfahrungen dieser Projekte gelernt:
-
-- [gendersprache-korrigieren von brilliance-richter-huh](https://github.com/brilliance-richter-huh/gendersprache-korrigieren)
-- [no-gender von sternth](https://github.com/sternth/no-gender)
-- [rggl von motsiw](https://github.com/motsiw/rggl)
-
-Unser ausdrücklicher Dank gilt den Entwicklern, Mitwirkenden, Testern und
-Issue-Autoren dieser Projekte. Ihre Vorarbeit und die offen dokumentierten
-Erfahrungen haben wichtige Hinweise für die Architektur, Testfälle und
-Sicherheitsgrenzen von Sprachverstand geliefert.
-
-Es wurden keine Codebestandteile oder fremden Regexketten übernommen.
-Öffentlich dokumentierte Sprachbeispiele, Flexionsfälle und Fehlertreffer dienten
-als Recherchebasis; die Regel-Engine und ihre konkrete technische Umsetzung
-wurden eigenständig entwickelt. Weitere Details stehen in
-[`UPSTREAMS.md`](UPSTREAMS.md).
-
 ## Projektstatus
 
-Sprachverstand befindet sich in aktiver Entwicklung. Die Regel-Engine ist
+Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
 bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
 Performance- und Regressionstests abgesichert.
 
@@ -190,6 +167,27 @@ erstellt.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
+
+## Entwicklungsmodell
+
+- `main` enthält den stabilen, geprüften Stand.
+- `dev` ist der gemeinsame Entwicklungszweig.
+- Separate Feature-Branches werden nur für größere, riskante oder parallel
+  bearbeitete Änderungen verwendet und nach dem Merge wieder gelöscht.
+
+## Dank und Herkunft
+
+Bei der Entwicklung wurden öffentlich dokumentierte Anwendungsfälle,
+Grenzfälle und Erfahrungen anderer Projekte berücksichtigt. Unser Dank gilt den
+Entwicklern und Mitwirkenden von:
+
+- [gendersprache-korrigieren](https://github.com/brilliance-richter-huh/gendersprache-korrigieren)
+- [no-gender](https://github.com/sternth/no-gender)
+- [rggl](https://github.com/motsiw/rggl)
+
+Sprachverstand ist eine eigenständige Neuimplementierung. Es wurden keine
+Codebestandteile oder fremden Regexketten übernommen. Details zur fachlichen
+Abgrenzung stehen in [`UPSTREAMS.md`](UPSTREAMS.md).
 
 ## Lizenz
 
