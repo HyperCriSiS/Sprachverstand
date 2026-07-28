@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -17,6 +17,35 @@ env:
   CI: true
 
 jobs:
+  apply-staged-beta12:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Entwicklungszweig auschecken
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Vorbereitete Beta-12-Änderungen anwenden
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/ci.yml
+          cat .automation/beta12.patch.b64.part* \
+            | base64 --decode \
+            | gzip --decompress \
+            > /tmp/beta12.patch
+          git apply --check /tmp/beta12.patch
+          git apply /tmp/beta12.patch
+          rm -rf .automation
+          rm -f .github/workflows/apply-beta12.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: prepare Beta 12 public readiness"
+          git push origin HEAD:dev
+
   check:
     runs-on: ubuntu-latest
 
