@@ -65,7 +65,6 @@ Quellen:
 | `Student*innen` | `Studenten` |
 | `Studierende` | `Studenten` |
 | `Arbeitnehmende` | `Arbeitnehmer` |
-| `Juden_Jüdinnen` | `Juden` |
 | `Gegner*innenschaft` | `Gegnerschaft` |
 
 ### Direkt ausprobieren
