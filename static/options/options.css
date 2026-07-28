@@ -227,3 +227,13 @@ small {
     flex-basis: 100%;
   }
 }
+
+.legal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 20px;
+  font-size: 13px;
+  opacity: 0.78;
+}

@@ -85,6 +85,24 @@
         </section>
 
         <section>
+          <h2>Eigene Ersetzungen</h2>
+          <label>
+            Literale Ersetzungen nach dem Schema <code>Ausgangstext =&gt; Ersetzung</code>
+            <textarea
+              id="custom-replacements"
+              rows="8"
+              spellcheck="false"
+              placeholder="Meine Sonderform => Gewünschte Form&#10;Unnötiger Zusatz =>"
+            ></textarea>
+            <small>
+              Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt.
+              Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert.
+              Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt ausschließlich lokal im Browser.
+            </small>
+          </label>
+        </section>
+
+        <section>
           <h2>Ausgeschlossene Domains</h2>
           <label>
             Sprachverstand auf diesen Webseiten vollständig deaktivieren
@@ -105,6 +123,11 @@
           <output id="status" aria-live="polite"></output>
         </div>
       </form>
+
+      <footer class="legal-footer">
+        <span>Copyright © 2026 HyperCriSiS und Mitwirkende</span>
+        <a href="../legal/legal.html" target="_blank">AGPL-3.0-only, Quelltext und Gewährleistung</a>
+      </footer>
     </main>
   </body>
 </html>

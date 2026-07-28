@@ -12,7 +12,7 @@ interface GenderedCandidate {
 const locale = "de-DE";
 const word = String.raw`[\p{L}\p{M}’'-]+(?:(?:[:*_/·•])innen)?`;
 const doubleFormPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])(${word})(\s+(?:und|oder|beziehungsweise|bzw\.)\s+|\s*[&/_]\s*)(${word})(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])(${word})(\s+(?:und|oder|beziehungsweise|bzw\.)\s+(?:(?:die|den|der)\s+)?|\s*[&/_]\s*(?:(?:die|den|der)\s+)?)(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
 const separatorPattern =

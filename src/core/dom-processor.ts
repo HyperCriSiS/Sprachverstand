@@ -4,6 +4,7 @@ import {
   shouldProcessAccessibleAttribute,
   shouldProcessTextNode
 } from "./text-safety";
+import type { CustomReplacement } from "../settings/defaults";
 import { transformText } from "./transform-text";
 
 export interface DomProcessorOptions {
@@ -11,6 +12,7 @@ export interface DomProcessorOptions {
   readonly profile: RuleProfile;
   readonly disabledRuleIds?: ReadonlySet<string>;
   readonly protectedTerms?: readonly string[];
+  readonly customReplacements?: readonly CustomReplacement[];
   readonly processAccessibleAttributes?: boolean;
   readonly processQuotedText?: boolean;
   readonly onReplacementCountChange?: (count: number) => void;
@@ -364,6 +366,9 @@ export class DomProcessor {
         : {}),
       ...(this.options.protectedTerms
         ? { protectedTerms: this.options.protectedTerms }
+        : {}),
+      ...(this.options.customReplacements
+        ? { customReplacements: this.options.customReplacements }
         : {}),
       processQuotedText: this.options.processQuotedText !== false,
       ...(leadingContext ? { leadingContext } : {})

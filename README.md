@@ -60,12 +60,18 @@ Quellen:
 | `Nutzer:innen` | `Nutzer` |
 | `Mitarbeiter*innen` | `Mitarbeiter` |
 | `NutzerInnen` | `Nutzer` |
+| `NutzerIn` | `Nutzer` |
+| `eine NutzerIn` | `ein Nutzer` |
 | `Nutzerinnen und Nutzer` | `Nutzer` |
 | `jede:r Nutzer:in` | `jeder Nutzer` |
 | `Student*innen` | `Studenten` |
 | `Studierende` | `Studenten` |
 | `Arbeitnehmende` | `Arbeitnehmer` |
 | `Gegner*innenschaft` | `Gegnerschaft` |
+| `Erwachsene:r` | `Erwachsener` |
+| `Rom*nja` | `Roma` |
+| `Sinti*zze` | `Sinti` |
+| `Studentys` | `Studenten` |
 
 ### Direkt ausprobieren
 
@@ -79,7 +85,12 @@ bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
 
 ### Grenzen und Sicherheit
 
-Sprachverstand berücksichtigt bekannte Flexionen und zusammengesetzte Wörter.
+Sprachverstand berücksichtigt bekannte Flexionen, zusammengesetzte Wörter,
+markierte Binnen-I-Singularformen und ausgewählte substantivierte Adjektive.
+Bei Formen wie `eine NutzerIn` wird der Kasus aus sicheren Satz-, Verb- oder
+Präpositionskontexten bestimmt. Reicht der Kontext nicht aus, bleibt die Phrase
+unangetastet statt einen grammatisch falschen Artikel zu erzeugen.
+
 Ausdrücklich weibliche Formen wie `Politikerinnen` oder `Professorin` bleiben
 unverändert. Terminologische Schreibweisen wie `trans* Personen`,
 `inter* Personen`, `Inter*feindlichkeit` und `Inter*diskriminierung` werden
@@ -96,6 +107,7 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 - einzeln aktivierbare Regelgruppen
 - Korrekturzähler für den aktuellen Tab
 - persönliche Ausnahmen für Wörter und vollständige Phrasen
+- eigene literale Ersetzungen, getrennt von Ausnahmen und ohne Regex
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
@@ -110,15 +122,19 @@ lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 - Genderzeichen und Binnen-I
 - Doppelnennungen
 - Singularformen mit oder ohne Artikel
+- substantivierte Adjektive
+- weitere sichtbare Sonderformen
 - Pronomen- und Possessivpaare
 - Titelabkürzungen
 - ausgewählte neutrale Partizipformen
 - optionale Umschreibungen
 - optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
 
-In den erweiterten Einstellungen stehen persönliche Ausnahmen,
-Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und die Verarbeitung
-zugänglicher Attribute zur Verfügung.
+In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
+literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und
+die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind
+case-sensitive, werden genau einmal ausgeführt und ausschließlich lokal
+gespeichert. Ausnahmen haben Vorrang.
 
 ## Datenschutz
 
@@ -130,7 +146,9 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - kein Tracking und keine Telemetrie
 - keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
 
-Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
+Persönliche Ausnahmen, eigene Ersetzungen und Einstellungen werden nur im
+Browser gespeichert. Die vollständigen Angaben stehen in der
+[Datenschutzerklärung](PRIVACY.md).
 
 ## Unterstützte Browser
 
@@ -147,7 +165,9 @@ Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
 bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
 Performance- und Regressionstests abgesichert.
 
-Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase.
+Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase. Die
+versionierten deutschen Storetexte stehen in
+[`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
 
 ## Entwicklung
 
@@ -165,7 +185,10 @@ Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
 erstellt.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
-und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
+und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das
+Verfahren zur Erweiterung und Absicherung des Flexionsbestands ist in
+[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Hinweise für Beiträge stehen
+in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Dank und Herkunft
 
@@ -183,5 +206,17 @@ Abgrenzung stehen in [`UPSTREAMS.md`](UPSTREAMS.md).
 
 ## Lizenz
 
-Die endgültige Open-Source-Lizenz wird vor der öffentlichen Veröffentlichung
-festgelegt.
+Der Quelltext steht unter der **GNU Affero General Public License Version 3,
+ausschließlich Version 3** (`AGPL-3.0-only`). Die vollständigen Bedingungen
+stehen in [`LICENSE`](LICENSE).
+
+Veränderte und weitergegebene Fassungen müssen die Copyleft-Bedingungen der
+AGPL einhalten. Bei einer veränderten netzwerkfähigen Fassung muss der
+entsprechende Quelltext auch den über das Netzwerk interagierenden Nutzern
+angeboten werden.
+
+Der Name **Sprachverstand**, das SV-Logo und andere Herkunftskennzeichen werden
+nicht durch die Softwarelizenz freigegeben. Regeln für offizielle Pakete,
+Namensnennung und Forks stehen in [`TRADEMARKS.md`](TRADEMARKS.md). Das Programm
+wird ohne Gewährleistung bereitgestellt; Einzelheiten stehen in
+[`NOTICE`](NOTICE) und `LICENSE`.

@@ -3,8 +3,12 @@ import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   currentSettingsRevision,
   defaultSettings,
+  maximumCustomReplacementSourceLength,
+  maximumCustomReplacementTargetLength,
+  maximumCustomReplacements,
   maximumProtectedTermLength,
   maximumProtectedTerms,
+  type CustomReplacement,
   type Settings
 } from "./settings/defaults";
 import { loadSettings, saveSettings } from "./settings/storage";
@@ -35,6 +39,8 @@ const processQuotedTextInput =
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const protectedTermsInput =
   requiredElement<HTMLTextAreaElement>("#protected-terms");
+const customReplacementsInput =
+  requiredElement<HTMLTextAreaElement>("#custom-replacements");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
 const selectAllRulesButton =
@@ -102,6 +108,9 @@ function render(settings: Settings): void {
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
   protectedTermsInput.value = settings.protectedTerms.join("\n");
+  customReplacementsInput.value = settings.customReplacements
+    .map((entry) => `${entry.source} => ${entry.replacement}`)
+    .join("\n");
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
@@ -140,6 +149,64 @@ function readProtectedTerms(): string[] {
   return terms;
 }
 
+function readCustomReplacements(): CustomReplacement[] {
+  const replacements = new Map<string, string>();
+  const lines = customReplacementsInput.value.split(/\r?\n/u);
+
+  for (const [index, rawLine] of lines.entries()) {
+    const line = rawLine.trim();
+    if (!line) {
+      continue;
+    }
+
+    const delimiterIndex = line.includes("=>")
+      ? line.indexOf("=>")
+      : line.indexOf("→");
+    if (delimiterIndex < 0) {
+      throw new Error(
+        `Zeile ${index + 1}: Eigene Ersetzungen müssen mit => oder → getrennt werden.`
+      );
+    }
+
+    const delimiterLength = line.startsWith("=>", delimiterIndex) ? 2 : 1;
+    const source = line.slice(0, delimiterIndex).trim();
+    const replacement = line.slice(delimiterIndex + delimiterLength).trim();
+
+    if (!source) {
+      throw new Error(`Zeile ${index + 1}: Der Ausgangstext darf nicht leer sein.`);
+    }
+    if (source.length > maximumCustomReplacementSourceLength) {
+      throw new Error(
+        `Zeile ${index + 1}: Der Ausgangstext darf höchstens ${maximumCustomReplacementSourceLength} Zeichen lang sein.`
+      );
+    }
+    if (replacement.length > maximumCustomReplacementTargetLength) {
+      throw new Error(
+        `Zeile ${index + 1}: Die Ersetzung darf höchstens ${maximumCustomReplacementTargetLength} Zeichen lang sein.`
+      );
+    }
+
+    const existing = replacements.get(source);
+    if (existing !== undefined && existing !== replacement) {
+      throw new Error(
+        `Zeile ${index + 1}: Für „${source}“ sind widersprüchliche Ersetzungen eingetragen.`
+      );
+    }
+    replacements.set(source, replacement);
+  }
+
+  if (replacements.size > maximumCustomReplacements) {
+    throw new Error(
+      `Höchstens ${maximumCustomReplacements} eigene Ersetzungen sind erlaubt.`
+    );
+  }
+
+  return [...replacements].map(([source, replacement]) => ({
+    source,
+    replacement
+  }));
+}
+
 function readForm(): Settings {
   const enabledRuleGroupIds = ruleGroupInputs()
     .filter((input) => input.checked)
@@ -152,6 +219,7 @@ function readForm(): Settings {
     excludedDomains: readLines(excludedDomainsInput.value),
     enabledRuleGroupIds,
     protectedTerms: readProtectedTerms(),
+    customReplacements: readCustomReplacements(),
     processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processQuotedText: processQuotedTextInput.checked
   };

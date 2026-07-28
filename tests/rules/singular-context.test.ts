@@ -35,6 +35,17 @@ describe("singularContextRule", () => {
     ["eure:m Nutzer:in", "eurem Nutzer"],
     ["eures:eurer Bürger:in", "eures Bürgers"],
     ["Ihr:e Nutzer:in", "Ihr Nutzer"],
+    ["ein NutzerIn", "ein Nutzer"],
+    ["einen StudentIn", "einen Studenten"],
+    ["mit einer NutzerIn", "mit einem Nutzer"],
+    ["für eine ÄrztIn", "für einen Arzt"],
+    ["wegen einer StudentIn", "wegen eines Studenten"],
+    ["Eine NutzerIn arbeitet heute.", "Ein Nutzer arbeitet heute."],
+    ["eine NutzerIn", "ein Nutzer"],
+    ["Ich sehe eine NutzerIn.", "Ich sehe einen Nutzer."],
+    ["Wir suchen eine StudentIn.", "Wir suchen einen Studenten."],
+    ["Es gibt eine ÄrztIn.", "Es gibt einen Arzt."],
+    ["Das ist eine NutzerIn.", "Das ist ein Nutzer."],
     ["sein:ihr Nutzer:in", "sein Nutzer"],
     ["ihrem:seinem Student:in", "seinem Studenten"],
     ["JEDE:R NUTZER:IN", "JEDER NUTZER"],
@@ -58,8 +69,8 @@ describe("singularContextRule", () => {
   });
 
   it.each([
-    "eine NutzerIn",
     "NutzerIn",
+    "Vielleicht eine NutzerIn im Team",
     "jede:r Innenstadt",
     "ein:e Ausgabe",
     "eine:n Kundin",

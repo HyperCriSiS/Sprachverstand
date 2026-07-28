@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.10"
+          BETA="beta.11"
           TAG="v${VERSION}-${BETA}"
           mkdir -p artifacts
 
@@ -92,7 +92,7 @@ jobs:
             gh release create "$TAG" \
               artifacts/* \
               --target "$GITHUB_SHA" \
-              --title "Sprachverstand ${VERSION} – Beta 10" \
+              --title "Sprachverstand ${VERSION} – Beta 11" \
               --notes-file docs/RELEASE-NOTES.md \
               --prerelease
           fi
@@ -103,8 +103,8 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 10 veröffentlicht
+          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 11 veröffentlicht
 
-          Sprachverstand ${VERSION} Beta 10 wurde nach erfolgreicher vollständiger Prüfung veröffentlicht.
+          Sprachverstand ${VERSION} Beta 11 wurde nach erfolgreicher vollständiger Prüfung veröffentlicht.
 
           https://github.com/${REPOSITORY}/releases/tag/${TAG}"

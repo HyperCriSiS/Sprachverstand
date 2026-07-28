@@ -15,7 +15,13 @@ describe("singularDoubleFormsRule", () => {
     ["Koautor und Koautorin", "Koautor"],
     ["Bauer/Bäuerin", "Bauer"],
     ["Messebauer/Messebauerin", "Messebauer"],
-    ["KUNDE/KUNDIN", "KUNDE"]
+    ["KUNDE/KUNDIN", "KUNDE"],
+    ["eine Nutzerin oder ein Nutzer", "ein Nutzer"],
+    ["einen Studenten und eine Studentin", "einen Studenten"],
+    ["einer Studentin und einem Studenten", "einem Studenten"],
+    ["eines Arztes oder einer Ärztin", "eines Arztes"],
+    ["meine Kundin und mein Kunde", "mein Kunde"],
+    ["unserem Piloten und unserer Pilotin", "unserem Piloten"]
   ])("führt %s zu %s zusammen", (input, expected) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({
       text: expected,

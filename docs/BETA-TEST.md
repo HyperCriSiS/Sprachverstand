@@ -1,15 +1,17 @@
-# Sprachverstand 0.5.5 – Beta 10 testen
+# Sprachverstand 0.6.0 – Beta 11 testen
 
-Beta 10 bündelt den aktuellen geprüften Stand mit den README-Live-Beispielen
-und dem freigegebenen SV-Monogramm. Die drei statischen PNG-Dateien werden beim
-Build unverändert übernommen und vor jedem Paketbau vollständig validiert.
+Beta 11 erweitert den Sprachkern deutlich, ergänzt eigene lokale Ersetzungen
+und führt die endgültige Open-Source-Lizenz ein. Die Regel-Engine bleibt
+lexikon- und testgestützt; breit abschneidende Rückfall-Regex werden weiterhin
+vermieden.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.5-beta.10-chromium.zip`
-- `sprachverstand-0.5.5-beta.10-firefox.xpi`
-- `sprachverstand-0.5.5-beta.10-source.zip`
+- `sprachverstand-0.6.0-beta.11-chromium.zip`
+- `sprachverstand-0.6.0-beta.11-firefox.xpi`
+- `sprachverstand-0.6.0-beta.11-source.zip`
 - `SHA256SUMS.txt`
+- `BETA-TEST.md`
 
 ## Prüfsummen kontrollieren
 
@@ -36,28 +38,250 @@ Unter Windows können die Werte mit
 2. **Temporäres Add-on laden** wählen.
 3. Die Firefox-XPI oder `dist/firefox/manifest.json` auswählen.
 
-## Popup und Symbol
+## Oberfläche, Symbol und Rechtshinweise
 
 Prüfen:
 
-- Das Popup öffnet sofort ungefähr 384 Pixel breit und mit normaler Höhe.
-- Jede Regelgruppe zeigt nur einen Beispielausdruck.
-- Die Gruppen sind kompakt durch Trennlinien statt einzelner Karten getrennt.
-- Der Scrollbalken sitzt direkt am rechten Rand.
-- Browserleiste, Popup, Einstellungsseite und README zeigen dasselbe freigegebene
-  SV-Monogramm: dunkelblaues, abgerundetes Quadrat mit weißem S und orangem V.
-- Das Motiv ist in 32, 48 und 128 Pixeln vollständig sichtbar und nicht
-  abgeschnitten.
-- Symbol, Popup und Einstellungsseite funktionieren im hellen und dunklen Modus.
-- Alle zwölf Regelgruppen lassen sich schalten.
-- Der Korrekturzähler folgt Änderungen ohne Neuladen.
+- Popup öffnet sofort ungefähr 384 Pixel breit und mit normaler Höhe.
+- Alle 14 Regelgruppen sind sichtbar und einzeln schaltbar.
+- 12 Regelgruppen sind standardmäßig aktiv.
+- **Kontextgebundene Umschreibungen** und
+  **Geschlechtszusätze in Stellenanzeigen** sind standardmäßig deaktiviert.
+- Browserleiste, Popup, Einstellungsseite und README verwenden dasselbe
+  SV-Monogramm.
+- Symbol ist in 32, 48 und 128 Pixeln vollständig sichtbar.
+- Korrekturzähler folgt Änderungen ohne Neuladen.
+- Der Link **Lizenz, Quelltext und Gewährleistung** öffnet die lokale
+  Rechtshinweisseite.
+- Rechtshinweisseite nennt `AGPL-3.0-only`, Quelltextadresse, fehlende
+  Gewährleistung sowie die getrennte Behandlung von Name und Logo.
 
-## README-Live-Test
+## Sichtbar markiertes Binnen-I im Singular
+
+Das große I innerhalb des Wortes ist die Markierung und wird für bekannte
+Personenbezeichnungen erkannt:
+
+```text
+NutzerIn                       → Nutzer
+StudentIn                      → Student
+ÄrztIn                         → Arzt
+PolitikerIn                    → Politiker
+```
+
+Bei einem bereits maskulin flektierten Artikel wird dessen Kasus übernommen:
+
+```text
+ein NutzerIn                   → ein Nutzer
+einen StudentIn                → einen Studenten
+einem PatientIn                → einem Patienten
+eines ÄrztIn                   → eines Arztes
+```
+
+Bei der femininen Artikelform `eine` wird nur in abgesicherten Kontexten
+umflektiert:
+
+```text
+eine NutzerIn                  → ein Nutzer
+Eine NutzerIn arbeitet heute.  → Ein Nutzer arbeitet heute.
+Ich sehe eine NutzerIn.        → Ich sehe einen Nutzer.
+Wir suchen eine StudentIn.     → Wir suchen einen Studenten.
+Es gibt eine ÄrztIn.            → Es gibt einen Arzt.
+Das ist eine NutzerIn.         → Das ist ein Nutzer.
+für eine ÄrztIn                → für einen Arzt
+mit einer StudentIn            → mit einem Studenten
+wegen einer ÄrztIn             → wegen eines Arztes
+```
+
+Ein nicht sicher einzuordnender Satzteil bleibt unverändert:
+
+```text
+Vielleicht eine NutzerIn im Team
+```
+
+## Flektierte Doppelnennungen
+
+### Singular
+
+```text
+eine Nutzerin oder ein Nutzer              → ein Nutzer
+einen Studenten und eine Studentin         → einen Studenten
+einer Studentin und einem Studenten        → einem Studenten
+eines Arztes oder einer Ärztin              → eines Arztes
+meine Kollegin und mein Kollege             → mein Kollege
+```
+
+### Plural
+
+```text
+die Nutzerinnen und die Nutzer              → die Nutzer
+den Ärztinnen und den Ärzten                → den Ärzten
+der Studentinnen und der Studenten          → der Studenten
+Nutzerinnen und Nutzer                       → Nutzer
+Ärzte oder Ärztinnen                         → Ärzte
+```
+
+Paarungen unterschiedlicher Begriffe müssen unverändert bleiben, etwa
+`Nutzerinnen und Kunden` oder `Mütter und Väter`.
+
+## Substantivierte Adjektive
+
+Die neue Regelgruppe verarbeitet nur einen geprüften Katalog und eine zur
+Flexion passende sichtbare Markierung:
+
+```text
+Erwachsene:r                    → Erwachsener
+Erwachsene:n                    → Erwachsenen
+Erwachsene:m                    → Erwachsenem
+ein:e Erwachsene:r             → ein Erwachsener
+eine:n Erwachsene:n            → einen Erwachsenen
+einem:einer Arbeitslose:n       → einem Arbeitslosen
+der:die Beschäftigte:r          → der Beschäftigte
+Vorgesetzte:r                   → Vorgesetzter
+Erziehungsberechtigte:r         → Erziehungsberechtigter
+```
+
+Nicht passende oder attributive Formen bleiben unverändert:
+
+```text
+ein:e Erwachsene:n
+erwachsene Kinder
+zuständige Mitarbeiter
+```
+
+## Weitere sichtbare Genderformen
+
+Die Zuordnungen sind ausdrücklich und nicht als allgemeine Suffixregel
+implementiert:
+
+```text
+Rom*nja                         → Roma
+Rom:nja                         → Roma
+Sinti*zze                       → Sinti
+Sinti:zze                       → Sinti
+Studentys                       → Studenten
+Lesys                           → Leser
+Lehrys                          → Lehrer
+Kollegys                        → Kollegen
+Mitarbeitys                     → Mitarbeiter
+Kommilitonys                    → Kommilitonen
+Wirtys                          → Wirte
+```
+
+Unmarkierte oder zufällig ähnlich endende Wörter bleiben unverändert:
+
+```text
+Romnja
+Sintizze
+Hobbys und Handys
+```
+
+## Erweiterter Flexionsbestand
+
+Stichproben:
+
+```text
+Anwält:innen                    → Anwälte
+Gäst:innen                      → Gäste
+Köch:innen                      → Köche
+Beamt:innen                     → Beamte
+Vorständ:innen                  → Vorstände
+Minister:innen                  → Minister
+Lehrling:innen                  → Lehrlinge
+Zeitzeug:innen                  → Zeitzeugen
+Fotograf:innen                  → Fotografen
+Bibliothekar:innen              → Bibliothekare
+Psycholog:innen                 → Psychologen
+Korrespondent:innen             → Korrespondenten
+Parlamentarier:innen            → Parlamentarier
+Bundeskanzler:innen             → Bundeskanzler
+```
+
+Der technische Fehlertreffer `Robot:innen` muss unverändert bleiben.
+
+## Eigene Ersetzungen
+
+Unter **Eigene Ersetzungen** stehen persönliche wörtliche Zuordnungen getrennt
+von **Persönliche Ausnahmen**. Pro Zeile gilt:
+
+```text
+Ausgangstext => Ersetzung
+```
+
+Testfolge:
+
+1. `Sonderform => gewünschte Form` eintragen und speichern.
+2. `Sonderform` auf einer Testseite prüfen.
+3. Groß-/Kleinschreibung prüfen: `sonderform` darf nicht automatisch mit
+   ersetzt werden.
+4. `A => B` und `B => C` eintragen: Aus `A` darf nur `B`, nicht `C` werden.
+5. `Nutzer:innen => Leser` eintragen: Die eigene Ersetzung muss vor der
+   eingebauten Regel greifen.
+6. Zusätzlich `Nutzer:innen` als persönliche Ausnahme eintragen: Die Ausnahme
+   muss Vorrang haben und den Text unverändert lassen.
+7. Eine leere Zielseite wie `Testzusatz =>` muss den Ausgangstext entfernen.
+8. Prüfen, dass die Einträge nur lokal gespeichert werden.
+
+Benutzerdefinierte Regex, Platzhalter und rekursive Ersetzungsketten werden
+absichtlich nicht unterstützt.
+
+## Bestehende Kernfälle
+
+```text
+Nutzer:innen                   → Nutzer
+Mitarbeiter*innen              → Mitarbeiter
+NutzerInnen                    → Nutzer
+Ärzt:innen                     → Ärzte
+Student*innen                  → Studenten
+Bauern_Bäuerinnen              → Bauern
+Koch/Köchin                    → Koch
+jede:r Nutzer:in               → jeder Nutzer
+Professor/-in                  → Professor
+Sehr geehrte Mitarbeitende     → Sehr geehrte Mitarbeiter
+Studierende                    → Studenten
+Arbeitnehmende                 → Arbeitnehmer
+Juden_Jüdinnen                 → Juden
+Gegner*innenschaft             → Gegnerschaft
+```
+
+`Benutzungshandbuch → Benutzerhandbuch` gehört zur standardmäßig deaktivierten
+Gruppe **Kontextgebundene Umschreibungen**.
+
+## Schutzfälle
+
+Unverändert bleiben insbesondere:
+
+```text
+Politikerinnen
+Professorin
+Testpersonen
+Besuch der ärztlichen Sprechstunde
+Sehr geehrte Persönlichkeiten
+Liebes Kollegium
+zehn Zuhörer*inne
+trans* Personen
+inter* Personen
+Inter*feindlichkeit
+Inter*diskriminierung
+Die seit Stunden Forschenden ruhen.
+lesende Kinder
+```
+
+## Wiederherstellung, Zitate und Attribute
+
+- Jede Regelgruppe einzeln ausschalten. Nur ihre eigenen Änderungen dürfen
+  zurückgesetzt werden.
+- Beim erneuten Einschalten müssen Texte ohne Reload wieder verarbeitet werden.
+- Nach Deaktivierung der Zitatoption bleibt `„Mitarbeiter/-innen“` geschützt,
+  während derselbe Ausdruck außerhalb des Zitats korrigiert wird.
+- Die Option für `alt`, `aria-label`, `aria-description` und `title` ausschalten:
+  sichtbarer Text muss weiterhin korrigiert werden, diese Attribute nicht.
+
+## README-Direkttest
 
 Die Vergleichstabelle auf der GitHub-Startseite bleibt absichtlich unverändert,
-weil ihre Beispiele als Quellcode markiert sind. Der darunterliegende
-**Live-Test** ist normaler Seitentext und muss bei aktiviertem Sprachverstand
-umgewandelt werden.
+weil ihre Beispiele als Quellcode markiert sind. Der Abschnitt
+**Direkt ausprobieren** ist normaler Seiteninhalt und muss bei aktiviertem
+Sprachverstand angepasst werden.
 
 ## Firefox für Android
 
@@ -72,123 +296,8 @@ npx web-ext run \
   --target=firefox-android
 ```
 
-Auf dem Gerät zusätzlich Touch-Bedienung, Scrollbarkeit, Safe Areas,
-Bildschirmtastatur und Optionsseite prüfen.
-
-## Kernfälle
-
-```text
-Studierende                    → Studenten
-Lesende                        → Leser
-Arbeitnehmende                 → Arbeitnehmer
-Arbeitgebende                  → Arbeitgeber
-Dozierende                     → Dozenten
-Fördergebende                  → Förderer
-Theatermachende                → Theatermacher
-mitarbeitende Personen         → mitarbeiter
-
-Juden_Jüdinnen                 → Juden
-Jüd*innen                      → Juden
-Jüdinnen und Juden             → Juden
-Gegner*innenschaft             → Gegnerschaft
-Professor*innenschaft          → Professorenschaft
-Verbündete_r                   → Verbündeter
-Pat*in                         → Pate
-Dirigent*innen                 → Dirigenten
-Solist*innenraum               → Solistenraum
-Pförtner*innen                 → Pförtner
-Spender*innen                  → Spender
-Tonmeister*innen               → Tonmeister
-```
-
-Die vorhandenen Fälle müssen weiterhin funktionieren, insbesondere:
-
-```text
-Nutzer:innen                   → Nutzer
-PolitikerInnen                 → Politiker
-Ärzt:innen                     → Ärzte
-Student*innen                  → Studenten
-Bauern_Bäuerinnen              → Bauern
-Koch/Köchin                    → Koch
-jede:r Nutzer:in               → jeder Nutzer
-Professor/-in                  → Professor
-Sehr geehrte Mitarbeitende     → Sehr geehrte Mitarbeiter
-Benutzungshandbuch             → Benutzerhandbuch
-```
-
-`Benutzungshandbuch → Benutzerhandbuch` gehört weiterhin zur standardmäßig
-deaktivierten Gruppe **Kontextgebundene Umschreibungen**.
-
-## Partizip-Sicherheitsfälle
-
-Die ausgewählten substantivischen Formen werden ersetzt. Grammatisch anders
-verwendete Partizipien müssen dagegen unverändert bleiben:
-
-```text
-Die Mitarbeitenden arbeiten.
-Die seit Stunden Forschenden ruhen.
-Eine Studierende wartet.
-Die Lesende macht eine Pause.
-lesende Kinder
-Lesende Kinder öffnen das Buch.
-```
-
-## Terminologische Sterne bewusst unverändert
-
-Diese Schreibweisen sind keine Endungen `*in` oder `*innen` und dürfen nicht
-mechanisch verändert werden:
-
-```text
-trans* Personen
-inter* Personen
-Inter*feindlichkeit
-Inter*diskriminierung
-```
-
-Ebenfalls bewusst unverändert:
-
-```text
-Politikerinnen
-Testpersonen
-Besuch der ärztlichen Sprechstunde
-Sehr geehrte Persönlichkeiten
-Liebes Kollegium
-zehn Zuhörer*inne
-```
-
-## Regelgruppen und Wiederherstellung
-
-Zehn Gruppen sind standardmäßig aktiv. Deaktiviert bleiben zunächst:
-
-- **Kontextgebundene Umschreibungen**
-- **Geschlechtszusätze in Stellenanzeigen**
-
-Jede Gruppe einzeln ausschalten. Nur ihre eigenen Änderungen dürfen
-zurückgesetzt werden. Beim erneuten Einschalten müssen die Texte ohne Reload
-wieder verarbeitet werden.
-
-## Anführungszeichen und Ausnahmen
-
-Standardmäßig wird auch innerhalb von Anführungszeichen korrigiert:
-
-```text
-„Mitarbeiter/-innen“ → „Mitarbeiter“
-```
-
-Nach Deaktivierung der Zitatoption muss gelten:
-
-```text
-„Mitarbeiter/-innen“ und Mitarbeiter/-innen
-→ „Mitarbeiter/-innen“ und Mitarbeiter
-```
-
-Als persönliche Ausnahme `Nutzer:innen` eintragen. Danach bleibt genau diese
-Form unverändert, während `Nutzer:innenkonto` weiterhin zu `Nutzerkonto` wird.
-
-## Zugängliche Attribute
-
-Die Option für `alt`, `aria-label`, `aria-description` und `title` ausschalten.
-Sichtbarer Text muss weiterhin korrigiert werden, diese Attribute aber nicht.
+Auf dem Gerät Touch-Bedienung, Scrollbarkeit, Safe Areas, Bildschirmtastatur,
+Optionsseite, eigene Ersetzungen und die lokale Rechtshinweisseite prüfen.
 
 ## Lokale Testseite
 

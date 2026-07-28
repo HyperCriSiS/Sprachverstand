@@ -9,14 +9,18 @@ import { neutralPersonTermsRule } from "./neutral-person-terms";
 import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
 import { singularDoubleFormsRule } from "./singular-double-forms";
+import { specialGenderFormsRule } from "./special-gender-forms";
 import { specialSingularFormsRule } from "./special-singular-forms";
+import { substantivizedAdjectivesRule } from "./substantivized-adjectives";
 import { titleAbbreviationsRule } from "./title-abbreviations";
 import { unmarkedSingularRule } from "./unmarked-singular";
 
 export const defaultRules: readonly Rule[] = [
   singularContextRule,
   specialSingularFormsRule,
+  substantivizedAdjectivesRule,
   unmarkedSingularRule,
+  specialGenderFormsRule,
   singularDoubleFormsRule,
   explicitPronounsRule,
   titleAbbreviationsRule,

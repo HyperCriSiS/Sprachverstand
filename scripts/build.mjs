@@ -34,6 +34,17 @@ async function prepareStaticFiles(target) {
     { recursive: true }
   );
 
+  const legalDirectory = path.join(outputDirectory, "legal");
+  await mkdir(legalDirectory, { recursive: true });
+  await Promise.all([
+    cp(path.join(projectRoot, "LICENSE"), path.join(legalDirectory, "LICENSE.txt")),
+    cp(
+      path.join(projectRoot, "TRADEMARKS.md"),
+      path.join(legalDirectory, "TRADEMARKS.md")
+    ),
+    cp(path.join(projectRoot, "NOTICE"), path.join(legalDirectory, "NOTICE.txt"))
+  ]);
+
   const manifest = JSON.parse(
     await readFile(
       path.join(projectRoot, "manifests", `${target}.json`),

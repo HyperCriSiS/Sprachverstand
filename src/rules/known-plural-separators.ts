@@ -8,65 +8,112 @@ import type { GrammaticalCase } from "./person-lexicon";
  * "Student:innen" -> "Student".
  */
 const safePluralSuffixes = [
+  "abnehmer",
   "anfänger",
   "anbieter",
+  "anleiter",
   "anwender",
+  "anwohner",
+  "apotheker",
   "arbeitgeber",
   "arbeitnehmer",
+  "arbeiter",
   "auftraggeber",
   "ausbilder",
+  "aussteller",
+  "bäcker",
+  "beobachter",
+  "berater",
   "benutzer",
   "besitzer",
+  "besteller",
   "besucher",
+  "betreiber",
   "betreuer",
   "bewerber",
+  "bewerter",
   "bewohner",
+  "blogger",
+  "buchhalter",
   "bürger",
   "darsteller",
+  "dienstleister",
+  "dolmetscher",
   "entwickler",
   "eigentümer",
   "empfänger",
   "erfinder",
   "erzieher",
+  "facharbeiter",
   "fahrer",
-  "forscher",
   "förderer",
+  "forscher",
+  "führer",
+  "gastgeber",
   "geber",
   "gegner",
+  "geschäftsführer",
+  "gesetzgeber",
   "gewinner",
   "gründer",
   "handwerker",
   "händler",
+  "hausmeister",
   "helfer",
+  "herausgeber",
   "hersteller",
   "inhaber",
+  "informatiker",
+  "interviewer",
+  "jäger",
   "käufer",
   "künstler",
   "lehrer",
+  "leiter",
   "leser",
   "makler",
+  "manager",
+  "mathematiker",
+  "mechaniker",
   "meister",
   "mieter",
   "mitarbeiter",
+  "musiker",
   "nutzer",
   "partner",
+  "pfarrer",
   "pförtner",
+  "physiker",
   "politiker",
+  "programmierer",
+  "prüfer",
   "redner",
   "richter",
   "rentner",
+  "sachbearbeiter",
+  "sanitäter",
+  "schiedsrichter",
   "schüler",
+  "schriftsteller",
   "spender",
   "sprecher",
+  "steuerzahler",
   "teilnehmer",
   "trainer",
   "unternehmer",
+  "unterstützer",
   "veranstalter",
   "verbraucher",
+  "verfasser",
   "vermieter",
   "verkäufer",
+  "versicherungsnehmer",
+  "verwalter",
   "vertreter",
   "wähler",
+  "wanderer",
+  "wissenschaftler",
+  "zimmerer",
   "zuhörer",
   "zuschauer"
 ] as const;
@@ -111,6 +158,40 @@ export function mapKnownSingularPair(
 
   if (isKnownBase(right) && normalizedLeft === `${normalizedRight}in`) {
     return right;
+  }
+
+  return undefined;
+}
+
+export function mapKnownInflectedSingularPair(
+  left: string,
+  right: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  const candidates: readonly [string, string][] = [
+    [left, right],
+    [right, left]
+  ];
+
+  for (const [feminine, masculine] of candidates) {
+    const normalizedFeminine = feminine.toLocaleLowerCase("de-DE");
+    if (!normalizedFeminine.endsWith("in")) {
+      continue;
+    }
+
+    const feminineBase = feminine.slice(0, -2);
+    if (!isKnownBase(feminineBase)) {
+      continue;
+    }
+
+    const expected = mapKnownSingular(feminineBase, grammaticalCase);
+    if (
+      expected &&
+      expected.toLocaleLowerCase("de-DE") ===
+        masculine.toLocaleLowerCase("de-DE")
+    ) {
+      return masculine;
+    }
   }
 
   return undefined;

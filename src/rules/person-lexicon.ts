@@ -46,26 +46,88 @@ function regular(
 
 const personForms: readonly PersonForms[] = [
   weak("hochschulabsolvent"),
+  weak("psychotherapeut"),
+  regular("administrator", "administratoren"),
+  regular("bibliothekar", "bibliothekare"),
+  regular("parlamentarier", "parlamentarier"),
+  regular("unteroffizier", "unteroffiziere"),
+  regular("supervisor", "supervisoren"),
+  regular("koordinator", "koordinatoren"),
+  regular("organisator", "organisatoren"),
+  regular("kommissar", "kommissare"),
+  regular("kontrolleur", "kontrolleure"),
+  regular("investor", "investoren"),
+  regular("inspektor", "inspektoren"),
+  regular("moderator", "moderatoren"),
+  regular("redakteur", "redakteure"),
+  regular("ingenieur", "ingenieure"),
+  regular("professor", "professoren"),
+  regular("direktor", "direktoren"),
+  regular("funktionär", "funktionäre"),
+  regular("aktionär", "aktionäre"),
+  regular("sekretär", "sekretäre"),
+  regular("millionär", "millionäre"),
+  regular("pensionär", "pensionäre"),
+  regular("regisseur", "regisseure"),
+  regular("sponsor", "sponsoren"),
+  regular("mentor", "mentoren"),
+  regular("lektor", "lektoren"),
+  regular("rektor", "rektoren"),
+  regular("offizier", "offiziere"),
+  regular("minister", "minister"),
+  regular("kanzler", "kanzler"),
+  regular("techniker", "techniker"),
+  regular("übersetzer", "übersetzer"),
+  regular("lehrling", "lehrlinge", "lehrling", "lehrlings"),
+  regular("akteur", "akteure"),
+  regular("friseur", "friseure"),
+  regular("frisör", "frisöre"),
+  regular("notar", "notare"),
+  regular("volontär", "volontäre"),
+  regular("revolutionär", "revolutionäre"),
+  regular("pastor", "pastoren", "pastor", "pastors"),
+  regular("autor", "autoren"),
+  regular("freund", "freunde", "freund", "freundes"),
+  regular("könig", "könige", "könig", "königs"),
+  regular("chef", "chefs", "chef", "chefs"),
+  regular("wirt", "wirte", "wirt", "wirts"),
   weak("interessent"),
+  weak("abonnent"),
+  weak("adressat"),
   weak("absolvent"),
   weak("doktorand"),
   weak("praktikant"),
   weak("präsident"),
   weak("lieferant"),
-  regular("moderator", "moderatoren"),
-  regular("redakteur", "redakteure"),
+  weak("demonstrant"),
+  weak("diskutant"),
+  weak("dissident"),
+  weak("produzent"),
+  weak("referent"),
+  weak("respondent"),
+  weak("konsument"),
+  weak("konkurrent"),
+  weak("korrespondent"),
+  weak("assistent"),
+  weak("agent"),
+  weak("informant"),
+  weak("laborant"),
+  weak("klient"),
   weak("journalist"),
+  weak("komponist"),
+  weak("fotograf"),
+  weak("philosoph"),
+  weak("prophet"),
+  weak("protestant"),
   weak("chirurg"),
   weak("architekt"),
-  regular("ingenieur", "ingenieure"),
-  regular("professor", "professoren"),
-  regular("direktor", "direktoren"),
-  regular("politiker", "politiker"),
-  regular("funktionär", "funktionäre"),
-  regular("aktionär", "aktionäre"),
-  regular("sekretär", "sekretäre"),
+  weak("therapeut"),
   weak("astronaut"),
   weak("polizist"),
+  weak("kapitalist"),
+  weak("sozialist"),
+  weak("spezialist"),
+  weak("terrorist"),
   weak("aktivist"),
   weak("tourist"),
   weak("migrant"),
@@ -73,6 +135,7 @@ const personForms: readonly PersonForms[] = [
   weak("kandidat"),
   weak("diplomat"),
   weak("demokrat"),
+  weak("veteran"),
   weak("student"),
   weak("patient"),
   weak("experte", "experte", "experten"),
@@ -80,14 +143,95 @@ const personForms: readonly PersonForms[] = [
   weak("soldat"),
   weak("athlet"),
   weak("jurist"),
-  regular("friseur", "friseure"),
-  regular("frisör", "frisöre"),
-  regular("akteur", "akteure"),
-  regular("rektor", "rektoren"),
   weak("pilot"),
+  weak("poet"),
+  weak("herr", "herr", "herrn"),
+  weak("narr"),
+  weak("prinz"),
+  weak("held"),
+  weak("mensch"),
+  weak("nachbar", "nachbar", "nachbarn"),
   weak("kolleg", "kollege", "kollegen"),
-  regular("autor", "autoren"),
-  regular("freund", "freunde", "freund", "freundes"),
+  weak("pädagog", "pädagoge", "pädagogen"),
+  weak("psycholog", "psychologe", "psychologen"),
+  weak("biolog", "biologe", "biologen"),
+  weak("soziolog", "soziologe", "soziologen"),
+  weak("theolog", "theologe", "theologen"),
+  weak("geolog", "geologe", "geologen"),
+  weak("archäolog", "archäologe", "archäologen"),
+  weak("anthropolog", "anthropologe", "anthropologen"),
+  weak("ökolog", "ökologe", "ökologen"),
+  weak("zoolog", "zoologe", "zoologen"),
+  {
+    ...weak("zeitzeug", "zeitzeuge", "zeitzeugen"),
+    match: "exact" as const
+  },
+  {
+    ...weak("augenzeug", "augenzeuge", "augenzeugen"),
+    match: "exact" as const
+  },
+  { ...weak("zeug", "zeuge", "zeugen"), match: "exact" as const },
+  { ...weak("postbot", "postbote", "postboten"), match: "exact" as const },
+  { ...weak("bot", "bote", "boten"), match: "exact" as const },
+  { ...weak("miterb", "miterbe", "miterben"), match: "exact" as const },
+  { ...weak("erb", "erbe", "erben"), match: "exact" as const },
+  { ...weak("lai", "laie", "laien"), match: "exact" as const },
+  weak("genoss", "genosse", "genossen"),
+  weak("insass", "insasse", "insassen"),
+  weak("kund", "kunde", "kunden"),
+  {
+    stem: "beamt",
+    singular: "beamter",
+    feminineSingular: "beamtin",
+    obliqueSingular: "beamten",
+    genitiveSingular: "beamten",
+    plural: "beamte"
+  },
+  {
+    stem: "vorständ",
+    singular: "vorstand",
+    feminineSingular: "vorständin",
+    genitiveSingular: "vorstandes",
+    plural: "vorstände"
+  },
+  {
+    stem: "männ",
+    singular: "mann",
+    feminineSingular: "männin",
+    genitiveSingular: "mannes",
+    plural: "männer",
+    match: "exact" as const
+  },
+  { stem: "kaufleut", plural: "kaufleute", match: "exact" as const },
+  { stem: "köch", plural: "köche", match: "exact" as const },
+  {
+    stem: "anwält",
+    singular: "anwalt",
+    feminineSingular: "anwältin",
+    genitiveSingular: "anwalts",
+    plural: "anwälte"
+  },
+  {
+    stem: "gäst",
+    singular: "gast",
+    feminineSingular: "gästin",
+    genitiveSingular: "gastes",
+    plural: "gäste"
+  },
+  {
+    stem: "bischöf",
+    singular: "bischof",
+    feminineSingular: "bischöfin",
+    genitiveSingular: "bischofs",
+    plural: "bischöfe"
+  },
+  {
+    stem: "rät",
+    singular: "rat",
+    feminineSingular: "rätin",
+    genitiveSingular: "rates",
+    plural: "räte"
+  },
   {
     stem: "koch",
     singular: "koch",
@@ -95,7 +239,6 @@ const personForms: readonly PersonForms[] = [
     genitiveSingular: "koches",
     plural: "köche"
   },
-  weak("kund", "kunde", "kunden"),
   { stem: "mutter", plural: "mütter" },
   { stem: "tochter", plural: "töchter" },
   { stem: "bruder", plural: "brüder" },
@@ -299,3 +442,58 @@ export function mapMappedSingularPair(
 
   return undefined;
 }
+export function mapMappedInflectedSingularPair(
+  left: string,
+  right: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  for (const mapping of personForms) {
+    if (!mapping.singular) {
+      continue;
+    }
+
+    const masculine =
+      grammaticalCase === "nominative"
+        ? mapping.singular
+        : grammaticalCase === "genitive"
+          ? mapping.genitiveSingular ??
+            mapping.obliqueSingular ??
+            `${mapping.singular}s`
+          : mapping.obliqueSingular ?? mapping.singular;
+    const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
+
+    if (hasMatchingPrefixes(left, right, feminine, masculine)) {
+      return right;
+    }
+    if (hasMatchingPrefixes(right, left, feminine, masculine)) {
+      return left;
+    }
+
+    if (!mapping.compoundFeminineSingular) {
+      continue;
+    }
+    if (
+      hasMatchingPrefixes(
+        left,
+        right,
+        mapping.compoundFeminineSingular,
+        masculine
+      )
+    ) {
+      return right;
+    }
+    if (
+      hasMatchingPrefixes(
+        right,
+        left,
+        mapping.compoundFeminineSingular,
+        masculine
+      )
+    ) {
+      return left;
+    }
+  }
+
+  return undefined;
+}
+
