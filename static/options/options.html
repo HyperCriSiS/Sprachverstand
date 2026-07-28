@@ -141,17 +141,17 @@
             persönliche Ausnahmen und eigene Ersetzungen.
           </p>
           <div class="transfer-controls">
-            <button id="export-settings" type="button">Alle Einstellungen als JSON exportieren</button>
-            <button id="import-settings" type="button">Einstellungen aus JSON importieren</button>
+            <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
+            <button id="import-personal-rules" type="button">Einstellungen aus JSON importieren</button>
             <input
-              id="import-settings-file"
+              id="import-personal-rules-file"
               type="file"
               accept="application/json,.json"
               hidden
             >
             <label class="import-mode">
               Umgang mit vorhandenen persönlichen Listen
-              <select id="settings-import-mode">
+              <select id="personal-rules-import-mode">
                 <option value="keep-existing">Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten</option>
                 <option value="prefer-imported">Importierte Einstellungen und importierte Ersetzungsziele übernehmen</option>
                 <option value="replace">Alle Einstellungen und persönlichen Listen vollständig ersetzen</option>
