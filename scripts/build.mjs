@@ -2,7 +2,6 @@ import { context } from "esbuild";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { generateIcons } from "./generate-icons.mjs";
 
 const projectRoot = process.cwd();
 const argumentsSet = new Set(process.argv.slice(2));
@@ -55,7 +54,6 @@ if (cleanOnly) {
   process.exit(0);
 }
 
-await generateIcons();
 await rm(path.join(projectRoot, "dist"), { recursive: true, force: true });
 
 const buildContexts = [];
