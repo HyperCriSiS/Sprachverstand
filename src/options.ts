@@ -589,14 +589,14 @@ async function start(): Promise<void> {
   form.addEventListener("change", scheduleInteractiveUpdate);
 
   expandAllSectionsButton.addEventListener("click", () => {
-  setAllSectionsOpen(true);
-});
-collapseAllSectionsButton.addEventListener("click", () => {
-  setAllSectionsOpen(false);
-});
-for (const section of settingsSections) {
-  section.addEventListener("toggle", refreshSectionToggleButtons);
-}
+    setAllSectionsOpen(true);
+  });
+  collapseAllSectionsButton.addEventListener("click", () => {
+    setAllSectionsOpen(false);
+  });
+  for (const section of settingsSections) {
+    section.addEventListener("toggle", refreshSectionToggleButtons);
+  }
 
   selectAllRulesButton.addEventListener("click", () => {
     for (const input of ruleGroupInputs()) {
