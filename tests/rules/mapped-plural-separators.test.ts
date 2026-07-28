@@ -36,7 +36,25 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Dozent*innen", "Dozenten"],
     ["Solist*innenraum", "Solistenraum"],
     ["Professor*innenschaft", "Professorenschaft"],
-    ["Jüd*innen", "Juden"]
+    ["Jüd*innen", "Juden"],
+    ["Anwält:innen", "Anwälte"],
+    ["Gäst:innen", "Gäste"],
+    ["Pädagog:innen", "Pädagogen"],
+    ["Psycholog:innen", "Psychologen"],
+    ["Therapeut:innen", "Therapeuten"],
+    ["Produzent:innen", "Produzenten"],
+    ["Zeug:innen", "Zeugen"],
+    ["Bot:innen", "Boten"],
+    ["Genoss:innen", "Genossen"],
+    ["Bischöf:innen", "Bischöfe"],
+    ["Köch:innen", "Köche"],
+    ["Beamt:innen", "Beamte"],
+    ["Vorständ:innen", "Vorstände"],
+    ["Minister:innen", "Minister"],
+    ["Lehrling:innen", "Lehrlinge"],
+    ["Zeitzeug:innen", "Zeitzeugen"],
+    ["Bibliothekar:innen", "Bibliothekare"],
+    ["Fotograf:innen", "Fotografen"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
@@ -68,7 +86,7 @@ describe("mappedPluralSeparatorsRule", () => {
   });
 
   it("verändert keine nicht hinterlegten Formen", () => {
-    const input = "Schwester:innen und Cousine:innen";
+    const input = "Schwester:innen, Cousine:innen und Robot:innen";
 
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: input,

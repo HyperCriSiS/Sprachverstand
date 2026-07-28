@@ -7,8 +7,11 @@ import {
 
 const settingsKey = "settings";
 const protectedTermsKey = "protectedTerms";
+const customReplacementsKey = "customReplacements";
 
-function syncedSettings(settings: Settings): Omit<Settings, "protectedTerms"> {
+function syncedSettings(
+  settings: Settings
+): Omit<Settings, "protectedTerms" | "customReplacements"> {
   return {
     settingsRevision: settings.settingsRevision,
     enabled: settings.enabled,
@@ -23,22 +26,28 @@ export async function loadSettings(): Promise<Settings> {
   const api = getExtensionApi();
   const [syncedResult, localResult] = await Promise.all([
     api.storage.sync.get(settingsKey),
-    api.storage.local.get(protectedTermsKey)
+    api.storage.local.get([protectedTermsKey, customReplacementsKey])
   ]);
 
   const syncedValue = syncedResult[settingsKey];
   const localProtectedTerms = localResult[protectedTermsKey];
+  const localCustomReplacements = localResult[customReplacementsKey];
   const combinedValue =
     syncedValue && typeof syncedValue === "object"
       ? {
           ...(syncedValue as Record<string, unknown>),
           protectedTerms:
             localProtectedTerms ??
-            (syncedValue as Record<string, unknown>).protectedTerms
+            (syncedValue as Record<string, unknown>).protectedTerms,
+          customReplacements:
+            localCustomReplacements ??
+            (syncedValue as Record<string, unknown>).customReplacements
         }
       : {
           ...defaultSettings,
-          protectedTerms: localProtectedTerms ?? defaultSettings.protectedTerms
+          protectedTerms: localProtectedTerms ?? defaultSettings.protectedTerms,
+          customReplacements:
+            localCustomReplacements ?? defaultSettings.customReplacements
         };
 
   return normalizeSettings(combinedValue);
@@ -53,7 +62,8 @@ export async function saveSettings(settings: Settings): Promise<void> {
       [settingsKey]: syncedSettings(normalized)
     }),
     api.storage.local.set({
-      [protectedTermsKey]: normalized.protectedTerms
+      [protectedTermsKey]: normalized.protectedTerms,
+      [customReplacementsKey]: normalized.customReplacements
     })
   ]);
 }
@@ -71,8 +81,14 @@ export function subscribeToSettings(
       areaName === "sync" && Boolean(changes[settingsKey]);
     const protectedTermsChanged =
       areaName === "local" && Boolean(changes[protectedTermsKey]);
+    const customReplacementsChanged =
+      areaName === "local" && Boolean(changes[customReplacementsKey]);
 
-    if (!synchronizedSettingsChanged && !protectedTermsChanged) {
+    if (
+      !synchronizedSettingsChanged &&
+      !protectedTermsChanged &&
+      !customReplacementsChanged
+    ) {
       return;
     }
 

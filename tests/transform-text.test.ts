@@ -88,6 +88,54 @@ describe("transformText", () => {
     });
   });
 
+  it("wendet eigene Ersetzungen vor den eingebauten Regeln an und schützt das Ergebnis", () => {
+    expect(
+      transformText("Nutzer:innen und Sonderform", [safeRule], {
+        profile: "conservative",
+        customReplacements: [
+          { source: "Nutzer:innen", replacement: "Leser" },
+          { source: "Sonderform", replacement: "Nutzer:innen" }
+        ]
+      })
+    ).toEqual({
+      text: "Leser und Nutzer:innen",
+      replacements: 2
+    });
+  });
+
+  it("führt eigene Ersetzungen nicht rekursiv aus", () => {
+    expect(
+      transformText("A", [], {
+        profile: "conservative",
+        customReplacements: [
+          { source: "A", replacement: "B" },
+          { source: "B", replacement: "C" }
+        ]
+      })
+    ).toEqual({ text: "B", replacements: 1 });
+  });
+
+  it("beachtet bei eigenen Ersetzungen die Groß- und Kleinschreibung", () => {
+    expect(
+      transformText("Form form", [], {
+        profile: "conservative",
+        customReplacements: [{ source: "Form", replacement: "Begriff" }]
+      })
+    ).toEqual({ text: "Begriff form", replacements: 1 });
+  });
+
+  it("gibt persönlichen Ausnahmen Vorrang vor eigenen Ersetzungen", () => {
+    expect(
+      transformText("Nutzer:innen", [safeRule], {
+        profile: "conservative",
+        protectedTerms: ["Nutzer:innen"],
+        customReplacements: [
+          { source: "Nutzer:innen", replacement: "Leser" }
+        ]
+      })
+    ).toEqual({ text: "Nutzer:innen", replacements: 0 });
+  });
+
   it("korrigiert standardmäßig auch innerhalb von Anführungszeichen", () => {
     expect(
       transformText("„Nutzer:innen“ und Nutzer:innen", [safeRule], {

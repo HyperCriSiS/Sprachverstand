@@ -4,44 +4,65 @@ import {
   type RuleProfile,
   type TransformResult
 } from "./rule";
+import type { CustomReplacement } from "../settings/defaults";
 
 export interface TransformOptions {
   readonly profile: RuleProfile;
   readonly disabledRuleIds?: ReadonlySet<string>;
   readonly protectedTerms?: readonly string[];
+  readonly customReplacements?: readonly CustomReplacement[];
   readonly processQuotedText?: boolean;
   readonly leadingContext?: string;
 }
 
 const protectedPatternSourceCache = new Map<string, string>();
+const customPatternSourceCache = new Map<string, string>();
 
 function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-function createProtectedPattern(terms: readonly string[]): RegExp | undefined {
-  const normalizedTerms = [
-    ...new Set(terms.map((term) => term.trim()).filter(Boolean))
+function createLiteralPattern(
+  values: readonly string[],
+  cache: Map<string, string>,
+  flags: string
+): RegExp | undefined {
+  const normalizedValues = [
+    ...new Set(values.map((value) => value.trim()).filter(Boolean))
   ].sort((left, right) => right.length - left.length);
 
-  if (normalizedTerms.length === 0) {
+  if (normalizedValues.length === 0) {
     return undefined;
   }
 
-  const cacheKey = normalizedTerms.join("\u0000");
-  let source = protectedPatternSourceCache.get(cacheKey);
+  const cacheKey = normalizedValues.join("\u0000");
+  let source = cache.get(cacheKey);
 
   if (!source) {
-    source = String.raw`(?<![\p{L}\p{M}\p{N}])(?:${normalizedTerms
+    source = String.raw`(?<![\p{L}\p{M}\p{N}])(?:${normalizedValues
       .map(escapeRegularExpression)
       .join("|")})(?![\p{L}\p{M}\p{N}])`;
-    protectedPatternSourceCache.set(cacheKey, source);
+    cache.set(cacheKey, source);
   }
 
-  return new RegExp(source, "giu");
+  return new RegExp(source, flags);
 }
 
-function applyRules(
+function createProtectedPattern(terms: readonly string[]): RegExp | undefined {
+  return createLiteralPattern(terms, protectedPatternSourceCache, "giu");
+}
+
+function createCustomReplacementPattern(
+  replacements: readonly CustomReplacement[]
+): RegExp | undefined {
+  return createLiteralPattern(
+    replacements.map((entry) => entry.source),
+    customPatternSourceCache,
+    "gu"
+  );
+}
+
+function applyBuiltInRules(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions,
@@ -70,6 +91,53 @@ function applyRules(
   return { text, replacements };
 }
 
+function applyRulesAndCustomReplacements(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions,
+  leadingContext?: string
+): TransformResult {
+  const customReplacements = options.customReplacements ?? [];
+  const customPattern = createCustomReplacementPattern(customReplacements);
+  if (!customPattern) {
+    return applyBuiltInRules(input, rules, options, leadingContext);
+  }
+
+  const replacementMap = new Map(
+    customReplacements.map((entry) => [entry.source, entry.replacement])
+  );
+  let cursor = 0;
+  let text = "";
+  let replacements = 0;
+
+  for (const match of input.matchAll(customPattern)) {
+    const index = match.index;
+    const source = match[0];
+    const before = applyBuiltInRules(
+      input.slice(cursor, index),
+      rules,
+      options,
+      cursor === 0 ? leadingContext : undefined
+    );
+    const replacement = replacementMap.get(source);
+
+    text += before.text + (replacement ?? source);
+    replacements += before.replacements + (replacement === undefined ? 0 : 1);
+    cursor = index + source.length;
+  }
+
+  const after = applyBuiltInRules(
+    input.slice(cursor),
+    rules,
+    options,
+    cursor === 0 ? leadingContext : undefined
+  );
+  text += after.text;
+  replacements += after.replacements;
+
+  return { text, replacements };
+}
+
 function applyRulesWithProtectedTerms(
   input: string,
   rules: readonly Rule[],
@@ -78,7 +146,7 @@ function applyRulesWithProtectedTerms(
   leadingContext?: string
 ): TransformResult {
   if (!protectedPattern) {
-    return applyRules(input, rules, options, leadingContext);
+    return applyRulesAndCustomReplacements(input, rules, options, leadingContext);
   }
 
   let cursor = 0;
@@ -89,7 +157,7 @@ function applyRulesWithProtectedTerms(
     const index = match.index;
     const protectedText = match[0];
 
-    const before = applyRules(
+    const before = applyRulesAndCustomReplacements(
       input.slice(cursor, index),
       rules,
       options,
@@ -100,7 +168,7 @@ function applyRulesWithProtectedTerms(
     cursor = index + protectedText.length;
   }
 
-  const after = applyRules(
+  const after = applyRulesAndCustomReplacements(
     input.slice(cursor),
     rules,
     options,

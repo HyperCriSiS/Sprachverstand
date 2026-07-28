@@ -12,6 +12,9 @@ describe("unmarkedSingularRule", () => {
     ["Lehrer/-in", "Lehrer"],
     ["Verkäufer/-in", "Verkäufer"],
     ["Mitarbeiter/-in", "Mitarbeiter"],
+    ["NutzerIn", "Nutzer"],
+    ["StudentIn", "Student"],
+    ["ÄrztIn", "Arzt"],
     ["Verbündete_r", "Verbündeter"],
     ["Verbündete*r", "Verbündeter"],
     ["Pat*in", "Pate"],
@@ -27,6 +30,7 @@ describe("unmarkedSingularRule", () => {
 
   it.each([
     "Politikerinnen",
+    "Vielleicht eine NutzerIn im Team",
     "Hebamme:in",
     "Mutter:in",
     "Prof.in",

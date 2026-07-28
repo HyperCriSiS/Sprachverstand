@@ -6,13 +6,23 @@ import {
 
 export const maximumProtectedTerms = 100;
 export const maximumProtectedTermLength = 80;
-export const currentSettingsRevision = 3;
+export const maximumCustomReplacements = 100;
+export const maximumCustomReplacementSourceLength = 120;
+export const maximumCustomReplacementTargetLength = 200;
+export const currentSettingsRevision = 5;
 
 const introducedDefaultGroups = [
   { revision: 1, groupId: "salutation-participles" },
   { revision: 2, groupId: "title-abbreviations" },
-  { revision: 3, groupId: "unmarked-singular" }
+  { revision: 3, groupId: "unmarked-singular" },
+  { revision: 4, groupId: "substantivized-adjectives" },
+  { revision: 5, groupId: "special-gender-forms" }
 ] as const;
+
+export interface CustomReplacement {
+  readonly source: string;
+  readonly replacement: string;
+}
 
 export interface Settings {
   readonly settingsRevision: number;
@@ -20,6 +30,7 @@ export interface Settings {
   readonly excludedDomains: readonly string[];
   readonly enabledRuleGroupIds: readonly string[];
   readonly protectedTerms: readonly string[];
+  readonly customReplacements: readonly CustomReplacement[];
   readonly processAccessibleAttributes: boolean;
   readonly processQuotedText: boolean;
 }
@@ -30,6 +41,7 @@ export const defaultSettings: Settings = {
   excludedDomains: [],
   enabledRuleGroupIds: defaultEnabledRuleGroupIds,
   protectedTerms: [],
+  customReplacements: [],
   processAccessibleAttributes: true,
   processQuotedText: true
 };
@@ -53,6 +65,48 @@ function protectedTermArray(value: unknown): string[] {
   return stringArray(value)
     .filter((entry) => entry.length <= maximumProtectedTermLength)
     .slice(0, maximumProtectedTerms);
+}
+
+function customReplacementArray(value: unknown): CustomReplacement[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const replacements = new Map<string, string>();
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const candidate = entry as Record<string, unknown>;
+    if (
+      typeof candidate.source !== "string" ||
+      typeof candidate.replacement !== "string"
+    ) {
+      continue;
+    }
+
+    const source = candidate.source.trim();
+    const replacement = candidate.replacement.trim();
+    if (
+      !source ||
+      source.length > maximumCustomReplacementSourceLength ||
+      replacement.length > maximumCustomReplacementTargetLength
+    ) {
+      continue;
+    }
+
+    replacements.set(source, replacement);
+    if (replacements.size >= maximumCustomReplacements) {
+      break;
+    }
+  }
+
+  return [...replacements].map(([source, replacement]) => ({
+    source,
+    replacement
+  }));
 }
 
 function storedRevision(value: unknown): number {
@@ -101,6 +155,7 @@ export function normalizeSettings(value: unknown): Settings {
     excludedDomains: stringArray(input.excludedDomains),
     enabledRuleGroupIds,
     protectedTerms: protectedTermArray(input.protectedTerms),
+    customReplacements: customReplacementArray(input.customReplacements),
     processAccessibleAttributes:
       typeof input.processAccessibleAttributes === "boolean"
         ? input.processAccessibleAttributes

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "description": "Kuratierte reale und recherchierte Flexionsfälle. Die Einträge sind Testfälle, kein importiertes Wörterbuch.",
+  "sources": [
+    {
+      "id": "field-reports",
+      "label": "Gemeldete Fundstellen und manuelle Praxistests im Sprachverstand-Projekt"
+    },
+    {
+      "id": "duden-declension",
+      "label": "Duden: Deklination und substantivierte Adjektive",
+      "url": "https://www.duden.de/deklination"
+    },
+    {
+      "id": "phettberg-bpb",
+      "label": "Bundeszentrale für politische Bildung: Entgendern nach Phettberg",
+      "url": "https://www.bpb.de/shop/zeitschriften/apuz/geschlechtergerechte-sprache-2022/346085/entgendern-nach-phettberg/"
+    },
+    {
+      "id": "sinti-roma-zentralrat",
+      "label": "Zentralrat Deutscher Sinti und Roma: Kontroverse zur gegenderten Selbstbezeichnung",
+      "url": "https://zentralrat.sintiundroma.de/mitgliederversammlung-beschliesst-papier-ueber-die-kontroverse-zum-gendern-der-selbstbezeichnung-sinti-und-roma/"
+    },
+    {
+      "id": "curated-lexicon",
+      "label": "Eigenständig kuratierte deutsche Personen- und Flexionsformen"
+    }
+  ],
+  "cases": [
+    { "id": "binnen-i-bare-user", "source": "field-reports", "input": "NutzerIn", "expected": "Nutzer" },
+    { "id": "binnen-i-standalone-user", "source": "field-reports", "input": "eine NutzerIn", "expected": "ein Nutzer" },
+    { "id": "binnen-i-nominative-sentence", "source": "field-reports", "input": "Eine NutzerIn arbeitet heute.", "expected": "Ein Nutzer arbeitet heute." },
+    { "id": "binnen-i-accusative-verb", "source": "field-reports", "input": "Ich sehe eine NutzerIn.", "expected": "Ich sehe einen Nutzer." },
+    { "id": "binnen-i-accusative-preposition", "source": "field-reports", "input": "für eine ÄrztIn", "expected": "für einen Arzt" },
+    { "id": "binnen-i-dative-preposition", "source": "field-reports", "input": "mit einer StudentIn", "expected": "mit einem Studenten" },
+    { "id": "binnen-i-genitive-preposition", "source": "field-reports", "input": "wegen einer ÄrztIn", "expected": "wegen eines Arztes" },
+
+    { "id": "double-singular-nominative", "source": "curated-lexicon", "input": "eine Nutzerin oder ein Nutzer", "expected": "ein Nutzer" },
+    { "id": "double-singular-accusative", "source": "curated-lexicon", "input": "einen Studenten und eine Studentin", "expected": "einen Studenten" },
+    { "id": "double-singular-dative", "source": "curated-lexicon", "input": "einer Studentin und einem Studenten", "expected": "einem Studenten" },
+    { "id": "double-singular-genitive", "source": "curated-lexicon", "input": "eines Arztes oder einer Ärztin", "expected": "eines Arztes" },
+    { "id": "double-plural-repeated-article", "source": "curated-lexicon", "input": "die Nutzerinnen und die Nutzer", "expected": "die Nutzer" },
+    { "id": "double-plural-dative-article", "source": "curated-lexicon", "input": "den Ärztinnen und den Ärzten", "expected": "den Ärzten" },
+    { "id": "double-plural-genitive-article", "source": "curated-lexicon", "input": "der Studentinnen und der Studenten", "expected": "der Studenten" },
+
+    { "id": "adjective-adult-nominative", "source": "duden-declension", "input": "Erwachsene:r", "expected": "Erwachsener" },
+    { "id": "adjective-adult-accusative", "source": "duden-declension", "input": "Erwachsene:n", "expected": "Erwachsenen" },
+    { "id": "adjective-adult-dative", "source": "duden-declension", "input": "Erwachsene:m", "expected": "Erwachsenem" },
+    { "id": "adjective-adult-mixed", "source": "duden-declension", "input": "ein:e Erwachsene:r", "expected": "ein Erwachsener" },
+    { "id": "adjective-employed-weak", "source": "duden-declension", "input": "der:die Beschäftigte:r", "expected": "der Beschäftigte" },
+    { "id": "adjective-unemployed-dative", "source": "duden-declension", "input": "einem:einer Arbeitslose:n", "expected": "einem Arbeitslosen" },
+    { "id": "adjective-superior", "source": "curated-lexicon", "input": "Vorgesetzte:r", "expected": "Vorgesetzter" },
+    { "id": "adjective-authorized", "source": "curated-lexicon", "input": "Erziehungsberechtigte:r", "expected": "Erziehungsberechtigter" },
+
+    { "id": "special-romnja", "source": "sinti-roma-zentralrat", "input": "Rom*nja", "expected": "Roma" },
+    { "id": "special-sintizze", "source": "sinti-roma-zentralrat", "input": "Sinti*zze", "expected": "Sinti" },
+    { "id": "phettberg-studentys", "source": "phettberg-bpb", "input": "Studentys", "expected": "Studenten" },
+    { "id": "phettberg-lesys", "source": "phettberg-bpb", "input": "Lesys", "expected": "Leser" },
+    { "id": "phettberg-lehrys", "source": "phettberg-bpb", "input": "Lehrys", "expected": "Lehrer" },
+    { "id": "phettberg-wirtys", "source": "phettberg-bpb", "input": "Wirtys", "expected": "Wirte" },
+    { "id": "phettberg-kollegys", "source": "phettberg-bpb", "input": "Kollegys", "expected": "Kollegen" },
+    { "id": "phettberg-mitarbeitys", "source": "phettberg-bpb", "input": "Mitarbeitys", "expected": "Mitarbeiter" },
+    { "id": "phettberg-kommilitonys", "source": "phettberg-bpb", "input": "Kommilitonys", "expected": "Kommilitonen" },
+
+    { "id": "lexicon-lawyers", "source": "curated-lexicon", "input": "Anwält:innen", "expected": "Anwälte" },
+    { "id": "lexicon-guests", "source": "curated-lexicon", "input": "Gäst:innen", "expected": "Gäste" },
+    { "id": "lexicon-cooks", "source": "curated-lexicon", "input": "Köch:innen", "expected": "Köche" },
+    { "id": "lexicon-officials", "source": "curated-lexicon", "input": "Beamt:innen", "expected": "Beamte" },
+    { "id": "lexicon-board", "source": "curated-lexicon", "input": "Vorständ:innen", "expected": "Vorstände" },
+    { "id": "lexicon-ministers", "source": "curated-lexicon", "input": "Minister:innen", "expected": "Minister" },
+    { "id": "lexicon-apprentices", "source": "curated-lexicon", "input": "Lehrling:innen", "expected": "Lehrlinge" },
+    { "id": "lexicon-witnesses", "source": "curated-lexicon", "input": "Zeitzeug:innen", "expected": "Zeitzeugen" },
+    { "id": "lexicon-photographers", "source": "curated-lexicon", "input": "Fotograf:innen", "expected": "Fotografen" },
+    { "id": "lexicon-librarians", "source": "curated-lexicon", "input": "Bibliothekar:innen", "expected": "Bibliothekare" },
+    { "id": "lexicon-psychologists", "source": "curated-lexicon", "input": "Psycholog:innen", "expected": "Psychologen" },
+    { "id": "lexicon-correspondents", "source": "curated-lexicon", "input": "Korrespondent:innen", "expected": "Korrespondenten" },
+    { "id": "lexicon-parliamentarians", "source": "curated-lexicon", "input": "Parlamentarier:innen", "expected": "Parlamentarier" },
+    { "id": "lexicon-chancellors", "source": "curated-lexicon", "input": "Bundeskanzler:innen", "expected": "Bundeskanzler" },
+
+    { "id": "negative-feminine-politicians", "source": "field-reports", "input": "Politikerinnen", "expected": "Politikerinnen" },
+    { "id": "negative-ambiguous-inline-binnen-i", "source": "field-reports", "input": "Vielleicht eine NutzerIn im Team", "expected": "Vielleicht eine NutzerIn im Team" },
+    { "id": "negative-adjective-use", "source": "duden-declension", "input": "erwachsene Kinder", "expected": "erwachsene Kinder" },
+    { "id": "negative-wrong-adjective-marker", "source": "duden-declension", "input": "ein:e Erwachsene:n", "expected": "ein:e Erwachsene:n" },
+    { "id": "negative-robot", "source": "curated-lexicon", "input": "Robot:innen", "expected": "Robot:innen" },
+    { "id": "negative-plain-romnja", "source": "sinti-roma-zentralrat", "input": "Romnja", "expected": "Romnja" },
+    { "id": "negative-plain-sintizze", "source": "sinti-roma-zentralrat", "input": "Sintizze", "expected": "Sintizze" },
+    { "id": "negative-ordinary-hobbys", "source": "phettberg-bpb", "input": "Hobbys und Handys", "expected": "Hobbys und Handys" }
+  ]
+}

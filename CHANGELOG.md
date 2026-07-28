@@ -5,6 +5,53 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.6.0 – Beta 11 (2026-07-28)
+
+### Hinzugefügt
+
+- Binnen-I-Singularformen wie `NutzerIn` werden als sichtbar markierte Formen
+  erkannt. Artikel werden in sicheren Satz-, Verb-, Präpositions- und
+  Einzelphrasenkontexten passend flektiert.
+- Weitere flektierte Doppelnennungen mit Artikeln und Possessivformen in
+  Nominativ, Akkusativ, Dativ und Genitiv.
+- Eigene Regelgruppe für substantivierte Adjektive wie `Erwachsene:r`,
+  `Beschäftigte:n`, `Volljährige:r` und `Vorgesetzte:r`.
+- Exakt geprüfte Sonderformen wie `Rom*nja`, `Sinti*zze`, `Studentys`, `Lesys`,
+  `Lehrys`, `Kollegys` und `Mitarbeitys`.
+- Eigene literale Ersetzungen, vollständig getrennt von persönlichen Ausnahmen,
+  lokal gespeichert, case-sensitive, nicht rekursiv und ohne Regex-Unterstützung.
+- Maschinenlesbarer Flexions- und Sonderformenkatalog mit quellenbezogenen
+  Positiv- und Negativregressionen.
+- Stark erweitertes Flexionslexikon für häufige schwache, regelmäßige und
+  unregelmäßige Personenformen.
+- Lokale Lizenz- und Quelltextseite in der Erweiterung.
+
+### Geändert
+
+- Version auf 0.6.0 angehoben.
+- Die sichtbaren Regelgruppen wurden um substantivierte Adjektive und weitere
+  Sonderformen erweitert.
+- README, Testanleitung und Release-Dokumentation beschreiben die neue Abdeckung
+  und die getrennten eigenen Ersetzungen.
+
+### Lizenz
+
+- Der Quelltext steht unter `AGPL-3.0-only`.
+- `TRADEMARKS.md` trennt die Rechte am Quelltext von Name, Logo und anderen
+  Herkunftskennzeichen.
+- `NOTICE` und die Erweiterungsoberfläche enthalten Copyright-, Quelltext- und
+  Gewährleistungshinweise.
+
+## 0.5.5 – Beta 10 (2026-07-28)
+
+### Korrigiert
+
+- README und Add-on verwenden dasselbe direkt eingebundene SV-Logo.
+- Die statischen PNG-Symbole wurden ohne helle Außenkontur neu exportiert und
+  nutzen die verfügbare Fläche besser.
+- Der README-Live-Test wurde auf einen kurzen natürlichen Beispieltext reduziert;
+  Sicherheitshinweise stehen in einem eigenen Abschnitt.
+
 ## 0.5.4 – Beta 9 (2026-07-28)
 
 ### Hinzugefügt

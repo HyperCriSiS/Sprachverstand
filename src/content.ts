@@ -43,6 +43,7 @@ function applySettings(settings: Settings): void {
     profile: "aggressive" as const,
     disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
     protectedTerms: settings.protectedTerms,
+    customReplacements: settings.customReplacements,
     processAccessibleAttributes: settings.processAccessibleAttributes,
     processQuotedText: settings.processQuotedText,
     onReplacementCountChange: reportReplacementCount

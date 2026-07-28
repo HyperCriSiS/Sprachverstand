@@ -8,6 +8,8 @@ import {
 import {
   currentSettingsRevision,
   defaultSettings,
+  maximumCustomReplacementSourceLength,
+  maximumCustomReplacements,
   maximumProtectedTermLength,
   maximumProtectedTerms,
   normalizeSettings
@@ -23,6 +25,10 @@ describe("Einstellungen", () => {
     expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds)).toEqual(
       new Set(["neutral.person-terms", "job-ad.gender-suffixes"])
     );
+    expect(defaultSettings.enabledRuleGroupIds).toContain(
+      "substantivized-adjectives"
+    );
+    expect(defaultSettings.enabledRuleGroupIds).toContain("special-gender-forms");
     expect(defaultSettings.settingsRevision).toBe(currentSettingsRevision);
   });
 
@@ -51,7 +57,9 @@ describe("Einstellungen", () => {
       "plural-separators",
       "salutation-participles",
       "title-abbreviations",
-      "unmarked-singular"
+      "unmarked-singular",
+      "substantivized-adjectives",
+      "special-gender-forms"
     ]);
     expect(settings.settingsRevision).toBe(currentSettingsRevision);
   });
@@ -81,6 +89,18 @@ describe("Einstellungen", () => {
       settingsRevision: currentSettingsRevision,
       enabledRuleGroupIds: ["plural-separators", "unbekannt"],
       protectedTerms,
+      customReplacements: [
+        { source: "Sonderform", replacement: "Ziel" },
+        { source: "Sonderform", replacement: "Neues Ziel" },
+        {
+          source: "x".repeat(maximumCustomReplacementSourceLength + 1),
+          replacement: "ignorieren"
+        },
+        ...Array.from(
+          { length: maximumCustomReplacements + 20 },
+          (_, index) => ({ source: `Quelle ${index}`, replacement: `Ziel ${index}` })
+        )
+      ],
       processAccessibleAttributes: false,
       processQuotedText: false
     });
@@ -88,6 +108,12 @@ describe("Einstellungen", () => {
     expect(settings.enabledRuleGroupIds).toEqual(["plural-separators"]);
     expect(settings.protectedTerms).toHaveLength(maximumProtectedTerms);
     expect(settings.protectedTerms).not.toContain(longTerm);
+    expect(settings.customReplacements).toHaveLength(maximumCustomReplacements);
+    expect(settings.customReplacements[0]).toEqual({
+      source: "Sonderform",
+      replacement: "Neues Ziel"
+    });
+    expect(settings.customReplacements.some((entry) => entry.source.startsWith("xxx"))).toBe(false);
     expect(settings.processAccessibleAttributes).toBe(false);
     expect(settings.processQuotedText).toBe(false);
   });

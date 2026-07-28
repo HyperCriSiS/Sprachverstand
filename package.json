@@ -1,6 +1,6 @@
 {
   "name": "sprachverstand",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "private": true,
   "description": "Macht Webseiten leichter lesbar.",
   "type": "module",
@@ -26,5 +26,6 @@
     "typescript": "7.0.2",
     "vitest": "4.1.10",
     "web-ext": "10.5.0"
-  }
+  },
+  "license": "AGPL-3.0-only"
 }

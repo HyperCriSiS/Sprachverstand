@@ -48,11 +48,29 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   },
   {
     id: "unmarked-singular",
-    label: "Gegenderte Singularformen ohne Artikel",
+    label: "Sichtbar markierte Singularformen",
     description:
-      "Sichtbar markierte Singularformen werden nur für bekannte Personenbezeichnungen normalisiert.",
-    example: "Makler*in → Makler",
+      "Genderzeichen und Binnen-I werden bei bekannten Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt.",
+    example: "NutzerIn → Nutzer",
     ruleIds: ["singular.unmarked-marker"],
+    defaultEnabled: true
+  },
+  {
+    id: "substantivized-adjectives",
+    label: "Substantivierte Adjektive",
+    description:
+      "Sichtbar markierte Formen wie Erwachsene:r und Beschäftigte:n werden lexikonbasiert flektiert.",
+    example: "Erwachsene:r → Erwachsener",
+    ruleIds: ["adjective.substantivized-markers"],
+    defaultEnabled: true
+  },
+  {
+    id: "special-gender-forms",
+    label: "Weitere sichtbare Genderformen",
+    description:
+      "Einzeln geprüfte Sonderformen wie Rom*nja, Sinti*zze und Studentys.",
+    example: "Studentys → Studenten",
+    ruleIds: ["special.visible-gender-forms"],
     defaultEnabled: true
   },
   {

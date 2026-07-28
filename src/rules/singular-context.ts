@@ -113,6 +113,196 @@ const binnenISingularPattern = new RegExp(
   "gu"
 );
 
+const ordinaryMasculineDeterminers = new Map<string, DeterminerForm>();
+const nominativeFeminineDeterminers = new Map<string, string>();
+const accusativeFeminineDeterminers = new Map<string, string>();
+const dativeFeminineDeterminers = new Map<string, string>();
+const genitiveFeminineDeterminers = new Map<string, string>();
+
+function addOrdinaryDeterminerSet(
+  masculineNominative: string,
+  masculineAccusative: string,
+  masculineDative: string,
+  masculineGenitive: string,
+  feminineNominativeAccusative: string,
+  feminineDativeGenitive: string
+): void {
+  ordinaryMasculineDeterminers.set(masculineNominative, {
+    masculine: masculineNominative,
+    grammaticalCase: "nominative"
+  });
+  ordinaryMasculineDeterminers.set(masculineAccusative, {
+    masculine: masculineAccusative,
+    grammaticalCase: "accusative"
+  });
+  ordinaryMasculineDeterminers.set(masculineDative, {
+    masculine: masculineDative,
+    grammaticalCase: "dative"
+  });
+  ordinaryMasculineDeterminers.set(masculineGenitive, {
+    masculine: masculineGenitive,
+    grammaticalCase: "genitive"
+  });
+  nominativeFeminineDeterminers.set(
+    feminineNominativeAccusative,
+    masculineNominative
+  );
+  accusativeFeminineDeterminers.set(
+    feminineNominativeAccusative,
+    masculineAccusative
+  );
+  dativeFeminineDeterminers.set(feminineDativeGenitive, masculineDative);
+  genitiveFeminineDeterminers.set(feminineDativeGenitive, masculineGenitive);
+}
+
+addOrdinaryDeterminerSet("der", "den", "dem", "des", "die", "der");
+addOrdinaryDeterminerSet("ein", "einen", "einem", "eines", "eine", "einer");
+addOrdinaryDeterminerSet("kein", "keinen", "keinem", "keines", "keine", "keiner");
+addOrdinaryDeterminerSet("jeder", "jeden", "jedem", "jedes", "jede", "jeder");
+addOrdinaryDeterminerSet(
+  "welcher",
+  "welchen",
+  "welchem",
+  "welches",
+  "welche",
+  "welcher"
+);
+addOrdinaryDeterminerSet(
+  "dieser",
+  "diesen",
+  "diesem",
+  "dieses",
+  "diese",
+  "dieser"
+);
+addOrdinaryDeterminerSet("mein", "meinen", "meinem", "meines", "meine", "meiner");
+addOrdinaryDeterminerSet("dein", "deinen", "deinem", "deines", "deine", "deiner");
+addOrdinaryDeterminerSet("sein", "seinen", "seinem", "seines", "seine", "seiner");
+addOrdinaryDeterminerSet("ihr", "ihren", "ihrem", "ihres", "ihre", "ihrer");
+addOrdinaryDeterminerSet(
+  "unser",
+  "unseren",
+  "unserem",
+  "unseres",
+  "unsere",
+  "unserer"
+);
+addOrdinaryDeterminerSet("euer", "euren", "eurem", "eures", "eure", "eurer");
+
+const ordinaryDeterminerAlternation = [...ordinaryMasculineDeterminers.keys()]
+  .sort((left, right) => right.length - left.length)
+  .join("|");
+const ordinaryBinnenIPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${ordinaryDeterminerAlternation})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+
+function mapAlternation(values: ReadonlyMap<string, string>): string {
+  return [...values.keys()].sort((left, right) => right.length - left.length).join("|");
+}
+
+const accusativePrepositions = "für|durch|gegen|ohne|um";
+const dativePrepositions = "aus|außer|bei|gegenüber|mit|nach|seit|von|zu";
+const genitivePrepositions = "anstatt|außerhalb|innerhalb|statt|trotz|während|wegen";
+const accusativeFemininePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${accusativePrepositions})(\s+)(${mapAlternation(accusativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+const dativeFemininePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${dativePrepositions})(\s+)(${mapAlternation(dativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+const genitiveFemininePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${genitivePrepositions})(\s+)(${mapAlternation(genitiveFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+const commonFiniteVerbs = [
+  "arbeitet",
+  "bekommt",
+  "benötigt",
+  "braucht",
+  "darf",
+  "erhält",
+  "fragt",
+  "hat",
+  "ist",
+  "kann",
+  "liest",
+  "meldet",
+  "möchte",
+  "muss",
+  "nutzt",
+  "sagt",
+  "schreibt",
+  "soll",
+  "war",
+  "wird",
+  "will"
+].join("|");
+const nominativeSentencePattern = new RegExp(
+  String.raw`(^|[.!?]\s+|[;:]\s+)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(?=\s+(?:${commonFiniteVerbs})\b)`,
+  "giu"
+);
+const standaloneNominativePattern = new RegExp(
+  String.raw`^(\s*)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(\s*[.!?]?)$`,
+  "giu"
+);
+const accusativeVerbContext = [
+  "begrüße",
+  "begrüßen",
+  "begrüßt",
+  "beobachte",
+  "beobachten",
+  "beobachtet",
+  "besuche",
+  "besuchen",
+  "besucht",
+  "brauche",
+  "brauchen",
+  "braucht",
+  "empfange",
+  "empfangen",
+  "empfängt",
+  "finde",
+  "finden",
+  "findet",
+  "frage",
+  "fragen",
+  "fragt",
+  "kenne",
+  "kennen",
+  "kennt",
+  "rufe",
+  "rufen",
+  "ruft",
+  "sehe",
+  "sehen",
+  "sieht",
+  "suche",
+  "suchen",
+  "sucht",
+  "treffe",
+  "treffen",
+  "trifft",
+  "unterstütze",
+  "unterstützen",
+  "unterstützt",
+  "vertrete",
+  "vertreten",
+  "vertritt",
+  "wähle",
+  "wählen",
+  "wählt"
+].join("|");
+const accusativeVerbPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:ich|du|er|sie|es|man|wir|ihr|Sie|jemand|niemand)\s+(?:${accusativeVerbContext})|es\s+gibt)(\s+)(${mapAlternation(accusativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+const predicateNominativePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:das|dies|er|sie|es|wer)\s+(?:ist|war|wird|bleibt))(\s+)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "giu"
+);
+
 function applyTokenCase(source: string, replacement: string): string {
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
@@ -184,21 +374,223 @@ function transformPattern(input: string, pattern: RegExp): TransformResult {
   return { text, replacements };
 }
 
+function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    ordinaryBinnenIPattern,
+    (match: string, determiner: string, whitespace: string, base: string) => {
+      const form = ordinaryMasculineDeterminers.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      if (!form) {
+        return match;
+      }
+      const noun = mapSingular(base, form.grammaticalCase);
+      if (!noun) {
+        return match;
+      }
+      replacements += 1;
+      return determiner + whitespace + noun;
+    }
+  );
+  return { text, replacements };
+}
+
+function transformPrepositionalFeminine(
+  input: string,
+  pattern: RegExp,
+  determinerMap: ReadonlyMap<string, string>,
+  grammaticalCase: GrammaticalCase
+): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (
+      match: string,
+      preposition: string,
+      firstWhitespace: string,
+      determiner: string,
+      secondWhitespace: string,
+      base: string
+    ) => {
+      const masculineDeterminer = determinerMap.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = mapSingular(base, grammaticalCase);
+      if (!masculineDeterminer || !noun) {
+        return match;
+      }
+      replacements += 1;
+      return (
+        preposition +
+        firstWhitespace +
+        applyTokenCase(determiner, masculineDeterminer) +
+        secondWhitespace +
+        noun
+      );
+    }
+  );
+  return { text, replacements };
+}
+
+function transformNominativeSentence(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    nominativeSentencePattern,
+    (
+      match: string,
+      prefix: string,
+      determiner: string,
+      whitespace: string,
+      base: string
+    ) => {
+      const masculineDeterminer = nominativeFeminineDeterminers.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = mapSingular(base, "nominative");
+      if (!masculineDeterminer || !noun) {
+        return match;
+      }
+      replacements += 1;
+      return (
+        prefix +
+        applyTokenCase(determiner, masculineDeterminer) +
+        whitespace +
+        noun
+      );
+    }
+  );
+  return { text, replacements };
+}
+
+function transformStandaloneNominative(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    standaloneNominativePattern,
+    (
+      match: string,
+      leadingWhitespace: string,
+      determiner: string,
+      whitespace: string,
+      base: string,
+      punctuation: string
+    ) => {
+      const masculineDeterminer = nominativeFeminineDeterminers.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = mapSingular(base, "nominative");
+      if (!masculineDeterminer || !noun) {
+        return match;
+      }
+      replacements += 1;
+      return (
+        leadingWhitespace +
+        applyTokenCase(determiner, masculineDeterminer) +
+        whitespace +
+        noun +
+        punctuation
+      );
+    }
+  );
+  return { text, replacements };
+}
+
+function transformVerbContext(
+  input: string,
+  pattern: RegExp,
+  determinerMap: ReadonlyMap<string, string>,
+  grammaticalCase: GrammaticalCase
+): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (
+      match: string,
+      prefix: string,
+      firstWhitespace: string,
+      determiner: string,
+      secondWhitespace: string,
+      base: string
+    ) => {
+      const masculineDeterminer = determinerMap.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = mapSingular(base, grammaticalCase);
+      if (!masculineDeterminer || !noun) {
+        return match;
+      }
+      replacements += 1;
+      return (
+        prefix +
+        firstWhitespace +
+        applyTokenCase(determiner, masculineDeterminer) +
+        secondWhitespace +
+        noun
+      );
+    }
+  );
+  return { text, replacements };
+}
+
 export const singularContextRule: Rule = {
   id: "singular.explicit-context",
   risk: "safe",
 
   apply(input) {
     const separatorResult = transformPattern(input, separatorSingularPattern);
-    const binnenIResult = transformPattern(
+    const markedBinnenIResult = transformPattern(
       separatorResult.text,
       binnenISingularPattern
     );
+    const accusativeResult = transformPrepositionalFeminine(
+      markedBinnenIResult.text,
+      accusativeFemininePattern,
+      accusativeFeminineDeterminers,
+      "accusative"
+    );
+    const dativeResult = transformPrepositionalFeminine(
+      accusativeResult.text,
+      dativeFemininePattern,
+      dativeFeminineDeterminers,
+      "dative"
+    );
+    const genitiveResult = transformPrepositionalFeminine(
+      dativeResult.text,
+      genitiveFemininePattern,
+      genitiveFeminineDeterminers,
+      "genitive"
+    );
+    const accusativeVerbResult = transformVerbContext(
+      genitiveResult.text,
+      accusativeVerbPattern,
+      accusativeFeminineDeterminers,
+      "accusative"
+    );
+    const predicateResult = transformVerbContext(
+      accusativeVerbResult.text,
+      predicateNominativePattern,
+      nominativeFeminineDeterminers,
+      "nominative"
+    );
+    const nominativeResult = transformNominativeSentence(predicateResult.text);
+    const standaloneResult = transformStandaloneNominative(nominativeResult.text);
+    const ordinaryResult = transformOrdinaryMasculineDeterminers(
+      standaloneResult.text
+    );
 
     return {
-      text: binnenIResult.text,
+      text: ordinaryResult.text,
       replacements:
-        separatorResult.replacements + binnenIResult.replacements
+        separatorResult.replacements +
+        markedBinnenIResult.replacements +
+        accusativeResult.replacements +
+        dativeResult.replacements +
+        genitiveResult.replacements +
+        accusativeVerbResult.replacements +
+        predicateResult.replacements +
+        nominativeResult.replacements +
+        standaloneResult.replacements +
+        ordinaryResult.replacements
     };
   }
 };
