@@ -51,17 +51,21 @@ Folgende Angaben können im Erweiterungsspeicher des Browsers gespeichert werden
 - Aktivierungsstatus der Erweiterung
 - aktivierte und deaktivierte Regelgruppen
 - persönliche Wort- und Phrasenausnahmen
+- eigene wörtliche Ersetzungen mit Ausgangs- und Zieltext
 - ausgeschlossene Domains
 - Einstellungen für Zitate und zugängliche Textattribute
 
 Diese Daten werden ausschließlich verwendet, um die vom Nutzer gewählte
-Konfiguration bereitzustellen.
+Konfiguration bereitzustellen. Eigene Ersetzungen werden nicht als reguläre
+Ausdrücke ausgeführt, nicht an einen Server übertragen und nicht automatisch aus
+Webseiteninhalten gesammelt.
 
 ## 4. Zweck der Verarbeitung
 
 Die lokale Verarbeitung dient ausschließlich dazu, die Darstellung
-unterstützter deutschsprachiger Webseitentexte nach den gewählten Regeln
-anzupassen und diese Änderungen beim Ausschalten wieder rückgängig zu machen.
+unterstützter deutschsprachiger Webseitentexte nach den gewählten Regeln und
+eigenen lokalen Ersetzungen anzupassen und diese Änderungen beim Ausschalten
+wieder rückgängig zu machen.
 
 Eine Verwendung für Werbung, Profilbildung, Marktanalyse, Nutzerbewertung oder
 andere sachfremde Zwecke findet nicht statt.
@@ -84,9 +88,9 @@ verarbeiteten Webseiteninhalte.
 
 ## 6. Lokale Speicherung und Speicherdauer
 
-Einstellungen, persönliche Ausnahmen und Domain-Ausschlüsse bleiben im lokalen
-Erweiterungsspeicher des Browsers, bis sie vom Nutzer geändert oder gelöscht
-werden oder die Erweiterung entfernt wird.
+Einstellungen, persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse
+bleiben im lokalen Erweiterungsspeicher des Browsers, bis sie vom Nutzer geändert
+oder gelöscht werden oder die Erweiterung entfernt wird.
 
 Webseitentexte und aufgerufene Adressen werden nicht als dauerhafte
 Datensammlung gespeichert.
@@ -102,7 +106,8 @@ verwendet, um den Browserverlauf zu erfassen oder Webseitendaten zu übertragen.
 ### Speicherberechtigung
 
 Die Speicherberechtigung wird benötigt, um Einstellungen, Regelgruppen,
-persönliche Ausnahmen und Domain-Ausschlüsse lokal im Browser zu speichern.
+persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse lokal im
+Browser zu speichern.
 
 ## 8. Kontrolle durch den Nutzer
 
@@ -112,6 +117,8 @@ Der Nutzer kann Sprachverstand jederzeit:
 - für einzelne Domains deaktivieren
 - über die Regelgruppen einschränken
 - durch persönliche Ausnahmen konfigurieren
+- durch eigene wörtliche Ersetzungen ergänzen
+- gespeicherte persönliche Einträge ändern oder löschen
 - aus dem Browser entfernen
 
 Beim Ausschalten werden die von Sprachverstand vorgenommenen Änderungen an der
