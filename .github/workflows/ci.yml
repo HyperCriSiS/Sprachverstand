@@ -13,67 +13,32 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
       - name: Repository auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Node.js einrichten
-        uses: actions/setup-node@v4
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Abhängigkeiten reproduzierbar installieren
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: TypeScript prüfen
         run: npm run typecheck
 
-      - name: Transformationskern testen
-        run: npm exec vitest run tests/transform-text.test.ts
-
-      - name: Textsicherheit testen
-        run: npm exec vitest run tests/text-safety.test.ts
-
-      - name: DOM und Wiederherstellung testen
-        run: npm exec vitest run tests/dom-processor.test.ts
-
-      - name: Einstellungen und Regelgruppen testen
-        run: npm exec vitest run tests/settings.test.ts
-
-      - name: Badge-Zähler testen
-        run: npm exec vitest run tests/badge.test.ts
-
-      - name: Gezielten Änderungsumfang testen
-        run: npm exec vitest run tests/dom-performance.test.ts
-
-      - name: Fehlertreffer-Regressionen
-        run: npm exec vitest run tests/regressions/known-false-positives.test.ts
-
-      - name: Sichere Separatorformen testen
-        run: npm exec vitest run tests/rules/known-plural-separators.test.ts
-
-      - name: Titelabkürzungen testen
-        run: npm exec vitest run tests/rules/title-abbreviations.test.ts
-
-      - name: Unmarkierte Singularformen testen
-        run: npm exec vitest run tests/rules/unmarked-singular.test.ts
-
-      - name: Geschlechtsneutrale Umschreibungen testen
-        run: npm exec vitest run tests/rules/neutral-person-terms.test.ts
-
-      - name: Kontextkatalog für Umschreibungen prüfen
-        run: npm exec vitest run tests/context-catalog.test.ts
-
-      - name: Stellenanzeigen-Zusätze testen
-        run: npm exec vitest run tests/rules/job-ad-suffixes.test.ts
-
-      - name: Neutrale Partizipformen testen
-        run: npm exec vitest run tests/rules/salutation-participles.test.ts
+      - name: Gesamte Testsuite ausführen
+        run: npm run test
 
       - name: Popup, Regelgruppen und Logo absichern
         shell: bash
@@ -90,27 +55,6 @@ jobs:
           done
           grep -q '"default_icon"' manifests/chromium.json
           grep -q '"default_icon"' manifests/firefox.json
-
-      - name: Flexionslexikon testen
-        run: npm exec vitest run tests/rules/mapped-plural-separators.test.ts
-
-      - name: Binnen-I testen
-        run: npm exec vitest run tests/rules/binnen-i.test.ts
-
-      - name: Singularkontext testen
-        run: npm exec vitest run tests/rules/singular-context.test.ts
-
-      - name: Singularsonderformen testen
-        run: npm exec vitest run tests/rules/special-singular-forms.test.ts
-
-      - name: Singular-Doppelformen testen
-        run: npm exec vitest run tests/rules/singular-double-forms.test.ts
-
-      - name: Pronomen und Possessivpaare testen
-        run: npm exec vitest run tests/rules/explicit-pronouns.test.ts
-
-      - name: Doppelnennungen testen
-        run: npm exec vitest run tests/rules/double-forms.test.ts
 
       - name: Browser-Builds erstellen
         run: npm run build
@@ -161,9 +105,10 @@ jobs:
           unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
 
       - name: Beta-Pakete hochladen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sprachverstand-beta-10-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14
+          compression-level: 0
