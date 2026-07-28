@@ -68,6 +68,17 @@ Quellen:
 | `Juden_Jüdinnen` | `Juden` |
 | `Gegner*innenschaft` | `Gegnerschaft` |
 
+### Live-Test
+
+Die Tabelle verwendet bewusst als Quellcode markierte Beispiele und wird deshalb
+nicht verändert. Der folgende Absatz ist normaler Seitentext. Bei aktiviertem
+Sprachverstand wird er direkt auf dieser GitHub-Seite umgewandelt, sofern die
+jeweils zuständige Regelgruppe eingeschaltet ist:
+
+Nutzer:innen, Mitarbeiter*innen, NutzerInnen, Nutzerinnen und Nutzer, jede:r
+Nutzer:in, Student*innen, Studierende, Arbeitnehmende, Juden_Jüdinnen und
+Gegner*innenschaft.
+
 Die Regeln berücksichtigen bekannte Flexionen und zusammengesetzte Wörter, etwa
 `Ärzt:innen → Ärzte`, `Nutzer:innenkonto → Nutzerkonto` oder
 `mit Ärztinnen und Ärzten → mit Ärzten`.
