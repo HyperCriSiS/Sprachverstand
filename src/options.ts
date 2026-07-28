@@ -89,7 +89,13 @@ const selectNoRulesButton =
   requiredElement<HTMLButtonElement>("#select-no-rules");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
-
+const expandAllSectionsButton =
+  requiredElement<HTMLButtonElement>("#expand-all-sections");
+const collapseAllSectionsButton =
+  requiredElement<HTMLButtonElement>("#collapse-all-sections");
+const settingsSections = [
+  ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
+];
 let activeTabId: number | undefined;
 let interactiveUpdateTimer: number | undefined;
 let statusTimer: number | undefined;
@@ -105,6 +111,20 @@ function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage
     typeof candidate.tabId === "number" &&
     typeof candidate.text === "string"
   );
+}
+
+function refreshSectionToggleButtons(): void {
+  const allOpen = settingsSections.every((section) => section.open);
+  const allClosed = settingsSections.every((section) => !section.open);
+  expandAllSectionsButton.disabled = allOpen;
+  collapseAllSectionsButton.disabled = allClosed;
+}
+
+function setAllSectionsOpen(open: boolean): void {
+  for (const section of settingsSections) {
+    section.open = open;
+  }
+  refreshSectionToggleButtons();
 }
 
 function createRuleGroupControls(): void {
@@ -549,6 +569,7 @@ function handleRuntimeMessage(message: unknown): void {
 
 async function start(): Promise<void> {
   createRuleGroupControls();
+  refreshSectionToggleButtons();
   render(await loadSettings());
   renderCustomReplacementFeedback();
   renderCustomReplacementPreview();
@@ -566,6 +587,16 @@ async function start(): Promise<void> {
   });
   form.addEventListener("input", scheduleInteractiveUpdate);
   form.addEventListener("change", scheduleInteractiveUpdate);
+
+  expandAllSectionsButton.addEventListener("click", () => {
+    setAllSectionsOpen(true);
+  });
+  collapseAllSectionsButton.addEventListener("click", () => {
+    setAllSectionsOpen(false);
+  });
+  for (const section of settingsSections) {
+    section.addEventListener("toggle", refreshSectionToggleButtons);
+  }
 
   selectAllRulesButton.addEventListener("click", () => {
     for (const input of ruleGroupInputs()) {

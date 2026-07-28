@@ -18,206 +18,224 @@
         </div>
       </header>
 
+      <div class="settings-toolbar" aria-label="Einstellungsbereiche steuern">
+        <span>Bereiche</span>
+        <div class="compact-actions">
+          <button id="expand-all-sections" type="button">Alle öffnen</button>
+          <button id="collapse-all-sections" type="button">Alle schließen</button>
+        </div>
+      </div>
+
       <form id="settings-form">
-        <section>
-          <h2>Allgemein</h2>
-          <label class="checkbox-row prominent-toggle">
-            <input id="enabled" type="checkbox">
-            <span>
-              <strong>Erweiterung aktivieren</strong>
-              <small>Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt.</small>
-            </span>
-          </label>
-          <div class="current-count" aria-live="polite">
-            <span>Korrekturen im aktuell aktiven Tab</span>
-            <output id="count">0</output>
+        <details class="settings-section" open>
+          <summary><h2>Allgemein</h2></summary>
+          <div class="settings-section-content">
+            <label class="checkbox-row prominent-toggle">
+              <input id="enabled" type="checkbox">
+              <span>
+                <strong>Erweiterung aktivieren</strong>
+                <small>Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt.</small>
+              </span>
+            </label>
+            <div class="current-count" aria-live="polite">
+              <span>Korrekturen im aktuell aktiven Tab</span>
+              <output id="count">0</output>
+            </div>
           </div>
-        </section>
+        </details>
 
-        <section>
-          <div class="section-heading">
-            <div>
-              <h2>Was soll korrigiert werden?</h2>
+        <details class="settings-section" open>
+          <summary><h2>Was soll korrigiert werden?</h2></summary>
+          <div class="settings-section-content">
+            <div class="section-heading">
               <p>Jede Regelgruppe ist einzeln wählbar. Ausdrücklich weibliche Bezeichnungen werden nicht pauschal verändert.</p>
+              <div class="compact-actions">
+                <button id="select-all-rules" type="button">Alle</button>
+                <button id="select-no-rules" type="button">Keine</button>
+              </div>
             </div>
-            <div class="compact-actions">
-              <button id="select-all-rules" type="button">Alle</button>
-              <button id="select-no-rules" type="button">Keine</button>
-            </div>
+            <div id="rule-groups" class="rule-groups"></div>
           </div>
-          <div id="rule-groups" class="rule-groups"></div>
-        </section>
+        </details>
 
-        <section>
-          <h2>Wo soll korrigiert werden?</h2>
-          <label class="checkbox-row">
-            <input id="process-accessible-attributes" type="checkbox">
-            <span>
-              <strong>Bildbeschreibungen und zugängliche Beschriftungen</strong>
-              <small>Verarbeitet ausschließlich <code>alt</code>, <code>aria-label</code>, <code>aria-description</code> und <code>title</code>.</small>
-            </span>
-          </label>
-          <label class="checkbox-row">
-            <input id="process-quoted-text" type="checkbox">
-            <span>
-              <strong>Text innerhalb von Anführungszeichen korrigieren</strong>
-              <small>Standardmäßig aktiv. Ausschalten schützt direkt zitierte Schreibweisen innerhalb desselben Textabschnitts.</small>
-            </span>
-          </label>
-        </section>
-
-        <section>
-          <div class="section-heading">
-            <div>
-              <h2>Browser-Synchronisierung</h2>
-              <p>Standardmäßig bleiben alle Einstellungen ausschließlich auf diesem Gerät. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen.</p>
-            </div>
-          </div>
-          <div id="sync-categories" class="sync-categories">
+        <details class="settings-section">
+          <summary><h2>Wo soll korrigiert werden?</h2></summary>
+          <div class="settings-section-content">
             <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="activation">
-              <span><strong>Aktivierungsstatus</strong><small>Synchronisiert, ob Sprachverstand ein- oder ausgeschaltet ist.</small></span>
+              <input id="process-accessible-attributes" type="checkbox">
+              <span>
+                <strong>Bildbeschreibungen und zugängliche Beschriftungen</strong>
+                <small>Verarbeitet ausschließlich <code>alt</code>, <code>aria-label</code>, <code>aria-description</code> und <code>title</code>.</small>
+              </span>
             </label>
             <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="rule-groups">
-              <span><strong>Regelgruppen</strong><small>Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen.</small></span>
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="excluded-domains">
-              <span><strong>Domain-Ausschlüsse</strong><small>Kann persönliche oder interne Domainnamen enthalten.</small></span>
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="text-options">
-              <span><strong>Zitat- und Attributoptionen</strong><small>Synchronisiert die Verarbeitung von Zitaten und zugänglichen Attributen.</small></span>
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="protected-terms">
-              <span><strong>Persönliche Ausnahmen</strong><small>Kann persönliche Begriffe oder vollständige Formulierungen enthalten.</small></span>
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" data-sync-category="custom-replacements">
-              <span><strong>Eigene Ersetzungen</strong><small>Kann persönliche Ausgangs- und Zieltexte enthalten.</small></span>
+              <input id="process-quoted-text" type="checkbox">
+              <span>
+                <strong>Text innerhalb von Anführungszeichen korrigieren</strong>
+                <small>Standardmäßig aktiv. Ausschalten schützt direkt zitierte Schreibweisen innerhalb desselben Textabschnitts.</small>
+              </span>
             </label>
           </div>
-          <small>
-            Alle Kategorien sind standardmäßig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, speichert der Browser auch diese Auswahl als Synchronisierungsinformation, damit weitere angemeldete Geräte dieselben Kategorien laden können. Nicht ausgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt.
-          </small>
-        </section>
+        </details>
 
-        <section>
-          <h2>Persönliche Ausnahmen</h2>
-          <label>
-            Wörter oder vollständige Phrasen nie verändern
-            <textarea
-              id="protected-terms"
-              rows="7"
-              spellcheck="false"
-              placeholder="Nutzer:innen&#10;Meine geschützte Phrase"
-            ></textarea>
+        <details class="settings-section">
+          <summary><h2>Persönliche Ausnahmen</h2></summary>
+          <div class="settings-section-content">
+            <label>
+              Wörter oder vollständige Phrasen nie verändern
+              <textarea
+                id="protected-terms"
+                rows="7"
+                spellcheck="false"
+                placeholder="Nutzer:innen&#10;Meine geschützte Phrase"
+              ></textarea>
+              <small>
+                Eine wörtliche Ausnahme pro Zeile, Groß-/Kleinschreibung wird ignoriert.
+                Keine regulären Ausdrücke oder Platzhalter. Ein einzelnes Wort schützt nicht automatisch längere Komposita.
+                Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
+              </small>
+            </label>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary><h2>Eigene Ersetzungen</h2></summary>
+          <div class="settings-section-content">
+            <label>
+              Literale Ersetzungen nach dem Schema <code>Ausgangstext =&gt; Ersetzung</code>
+              <textarea
+                id="custom-replacements"
+                rows="8"
+                spellcheck="false"
+                aria-describedby="custom-replacements-help custom-replacement-feedback"
+                placeholder="Meine Sonderform => Gewünschte Form&#10;Unnötiger Zusatz =>"
+              ></textarea>
+              <small id="custom-replacements-help">
+                Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt.
+                Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert.
+                Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
+              </small>
+            </label>
+
+            <div id="custom-replacement-feedback" class="diagnostics" aria-live="polite"></div>
+
+            <div class="preview-panel">
+              <div>
+                <h3>Vorschau</h3>
+                <p>Testet die gerade eingetragenen Ausnahmen, Ersetzungen und aktivierten Regelgruppen, ohne etwas zu speichern.</p>
+              </div>
+              <div class="preview-grid">
+                <label>
+                  Testtext
+                  <textarea
+                    id="custom-preview-input"
+                    rows="5"
+                    spellcheck="false"
+                    placeholder="Meine Sonderform und Nutzer:innen stehen hier."
+                  ></textarea>
+                </label>
+                <label>
+                  Ergebnis
+                  <textarea
+                    id="custom-preview-output"
+                    rows="5"
+                    readonly
+                    aria-live="polite"
+                  ></textarea>
+                </label>
+              </div>
+              <output id="custom-preview-count" class="preview-count" aria-live="polite">Noch kein Testtext eingegeben.</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary><h2>Ausgeschlossene Domains</h2></summary>
+          <div class="settings-section-content">
+            <label>
+              Sprachverstand auf diesen Webseiten vollständig deaktivieren
+              <textarea
+                id="excluded-domains"
+                rows="7"
+                spellcheck="false"
+                inputmode="url"
+                placeholder="example.org&#10;intranet.example.org"
+              ></textarea>
+              <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert.</small>
+            </label>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary><h2>Einstellungen sichern und übertragen</h2></summary>
+          <div class="settings-section-content">
+            <p>
+              Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
+              Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen,
+              persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung.
+            </p>
+            <div class="transfer-controls">
+              <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
+              <button id="import-personal-rules" type="button">Einstellungen aus JSON importieren</button>
+              <input
+                id="import-personal-rules-file"
+                type="file"
+                accept="application/json,.json"
+                hidden
+              >
+              <label class="import-mode">
+                Umgang mit vorhandenen persönlichen Listen
+                <select id="personal-rules-import-mode">
+                  <option value="keep-existing">Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten</option>
+                  <option value="prefer-imported">Importierte Einstellungen und importierte Ersetzungsziele übernehmen</option>
+                  <option value="replace">Alle Einstellungen und persönlichen Listen vollständig ersetzen</option>
+                </select>
+              </label>
+            </div>
             <small>
-              Eine wörtliche Ausnahme pro Zeile, Groß-/Kleinschreibung wird ignoriert.
-              Keine regulären Ausdrücke oder Platzhalter. Ein einzelnes Wort schützt nicht automatisch längere Komposita.
-              Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
+              Allgemeine Einstellungen aus der Sicherung werden bei jeder Auswahl in das Formular übernommen.
+              Die Auswahl bestimmt nur, wie bestehende persönliche Ausnahmen und eigene Ersetzungen mit den importierten Listen zusammengeführt werden.
+              Importdateien werden ausschließlich nach Deiner Dateiauswahl lokal gelesen. Der Import wird erst mit „Speichern“ aktiviert.
             </small>
-          </label>
-        </section>
+            <div id="import-summary" aria-live="polite"></div>
+          </div>
+        </details>
 
-        <section>
-          <h2>Eigene Ersetzungen</h2>
-          <label>
-            Literale Ersetzungen nach dem Schema <code>Ausgangstext =&gt; Ersetzung</code>
-            <textarea
-              id="custom-replacements"
-              rows="8"
-              spellcheck="false"
-              aria-describedby="custom-replacements-help custom-replacement-feedback"
-              placeholder="Meine Sonderform => Gewünschte Form&#10;Unnötiger Zusatz =>"
-            ></textarea>
-            <small id="custom-replacements-help">
-              Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt.
-              Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert.
-              Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
-            </small>
-          </label>
-
-          <div id="custom-replacement-feedback" class="diagnostics" aria-live="polite"></div>
-
-          <div class="preview-panel">
-            <div>
-              <h3>Vorschau</h3>
-              <p>Testet die gerade eingetragenen Ausnahmen, Ersetzungen und aktivierten Regelgruppen, ohne etwas zu speichern.</p>
-            </div>
-            <div class="preview-grid">
-              <label>
-                Testtext
-                <textarea
-                  id="custom-preview-input"
-                  rows="5"
-                  spellcheck="false"
-                  placeholder="Meine Sonderform und Nutzer:innen stehen hier."
-                ></textarea>
+        <details class="settings-section">
+          <summary><h2>Browser-Synchronisierung</h2></summary>
+          <div class="settings-section-content">
+            <p>Standardmäßig bleiben alle Einstellungen ausschließlich auf diesem Gerät. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen.</p>
+            <div id="sync-categories" class="sync-categories">
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="activation">
+                <span><strong>Aktivierungsstatus</strong><small>Synchronisiert, ob Sprachverstand ein- oder ausgeschaltet ist.</small></span>
               </label>
-              <label>
-                Ergebnis
-                <textarea
-                  id="custom-preview-output"
-                  rows="5"
-                  readonly
-                  aria-live="polite"
-                ></textarea>
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="rule-groups">
+                <span><strong>Regelgruppen</strong><small>Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="excluded-domains">
+                <span><strong>Domain-Ausschlüsse</strong><small>Kann persönliche oder interne Domainnamen enthalten.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="text-options">
+                <span><strong>Zitat- und Attributoptionen</strong><small>Synchronisiert die Verarbeitung von Zitaten und zugänglichen Attributen.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="protected-terms">
+                <span><strong>Persönliche Ausnahmen</strong><small>Kann persönliche Begriffe oder vollständige Formulierungen enthalten.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-sync-category="custom-replacements">
+                <span><strong>Eigene Ersetzungen</strong><small>Kann persönliche Ausgangs- und Zieltexte enthalten.</small></span>
               </label>
             </div>
-            <output id="custom-preview-count" class="preview-count" aria-live="polite">Noch kein Testtext eingegeben.</output>
+            <small>
+              Alle Kategorien sind standardmäßig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, speichert der Browser auch diese Auswahl als Synchronisierungsinformation, damit weitere angemeldete Geräte dieselben Kategorien laden können. Nicht ausgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt.
+            </small>
           </div>
-        </section>
-
-        <section>
-          <h2>Einstellungen sichern und übertragen</h2>
-          <p>
-            Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
-            Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen,
-            persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung.
-          </p>
-          <div class="transfer-controls">
-            <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
-            <button id="import-personal-rules" type="button">Einstellungen aus JSON importieren</button>
-            <input
-              id="import-personal-rules-file"
-              type="file"
-              accept="application/json,.json"
-              hidden
-            >
-            <label class="import-mode">
-              Umgang mit vorhandenen persönlichen Listen
-              <select id="personal-rules-import-mode">
-                <option value="keep-existing">Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten</option>
-                <option value="prefer-imported">Importierte Einstellungen und importierte Ersetzungsziele übernehmen</option>
-                <option value="replace">Alle Einstellungen und persönlichen Listen vollständig ersetzen</option>
-              </select>
-            </label>
-          </div>
-          <small>
-            Allgemeine Einstellungen aus der Sicherung werden bei jeder Auswahl in das Formular übernommen.
-            Die Auswahl bestimmt nur, wie bestehende persönliche Ausnahmen und eigene Ersetzungen mit den importierten Listen zusammengeführt werden.
-            Importdateien werden ausschließlich nach Deiner Dateiauswahl lokal gelesen. Der Import wird erst mit „Speichern“ aktiviert.
-          </small>
-          <div id="import-summary" aria-live="polite"></div>
-        </section>
-
-        <section>
-          <h2>Ausgeschlossene Domains</h2>
-          <label>
-            Sprachverstand auf diesen Webseiten vollständig deaktivieren
-            <textarea
-              id="excluded-domains"
-              rows="7"
-              spellcheck="false"
-              inputmode="url"
-              placeholder="example.org&#10;intranet.example.org"
-            ></textarea>
-            <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert.</small>
-          </label>
-        </section>
+        </details>
 
         <div class="actions">
           <button type="submit" class="primary">Speichern</button>
