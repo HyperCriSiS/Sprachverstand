@@ -1,21 +1,18 @@
-# Sprachverstand 0.5.4 – Beta 9
+# Sprachverstand 0.5.5 – Beta 10
 
-Beta 9 bündelt den aktuellen Stand für weitere Praxistests.
+Beta 10 korrigiert die Symbolauslieferung und ergänzt direkt prüfbare
+Live-Beispiele auf der GitHub-Startseite.
 
-## Änderungen seit Beta 6
+## Änderungen
 
-- Waterfox- und Firefox-Popup stabilisiert
-- beschädigte Symboldateien ersetzt und vollständige PNG-Prüfung in die CI aufgenommen
-- Popup verbreitert und durch kompakte Trennlinien übersichtlicher gestaltet
-- pro Regelgruppe nur noch ein Beispiel
-- ausgewählte substantivische Partizipformen ergänzt, darunter `Studierende`,
-  `Lesende` und `Arbeitnehmende`
-- weitere geprüfte Formen aus der UdK-Handreichung und dem Genderwörterbuch
-- `Juden_Jüdinnen`, `Jüd*innen` und `Jüdinnen und Juden` werden zu `Juden`
-- terminologische Schreibweisen wie `trans* Personen`, `inter* Personen`,
-  `Inter*feindlichkeit` und `Inter*diskriminierung` bleiben geschützt
-- öffentliche README, Datenschutzbeschreibung, Recherchequellen und Danksagung
-  überarbeitet
+- freigegebenes SV-Monogramm als statische PNG-Dateien in 32, 48 und 128 Pixeln
+- dasselbe Symbol in Browserleiste, Popup, Einstellungen und README
+- keine automatische Neugenerierung der Icons beim Build
+- vollständige Prüfung von PNG-Signatur, Blockgrenzen, CRC32, Abmessungen und
+  Dateiende vor der Veröffentlichung
+- direkt verarbeitbarer Live-Test unter der geschützten Vergleichstabelle der
+  README
+- aktualisierte Beta-Testanleitung
 
 ## Pakete
 
@@ -27,6 +24,8 @@ Beta 9 bündelt den aktuellen Stand für weitere Praxistests.
 
 ## Noch besonders zu testen
 
+- Sichtbarkeit und Schärfe des Symbols in Browserleiste, Popup und Einstellungen
+- README-Live-Test auf GitHub
 - Firefox für Android auf einem echten Gerät
 - Popup und Einstellungen auf mehreren Displaygrößen
 - Screenreader auf Desktop und Android
