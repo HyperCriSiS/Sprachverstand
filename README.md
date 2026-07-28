@@ -108,6 +108,9 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 - Korrekturzähler für den aktuellen Tab
 - persönliche Ausnahmen für Wörter und vollständige Phrasen
 - eigene literale Ersetzungen, getrennt von Ausnahmen und ohne Regex
+- Live-Vorschau für noch nicht gespeicherte persönliche Regeln
+- Konflikthinweise für Dubletten, Überschneidungen, Ersetzungsketten und blockierende Ausnahmen
+- versionierter JSON-Import und -Export persönlicher Ausnahmen und Ersetzungen
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
@@ -136,6 +139,13 @@ die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind
 case-sensitive, werden genau einmal ausgeführt und ausschließlich lokal
 gespeichert. Ausnahmen haben Vorrang.
 
+Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
+geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
+widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
+Überschneidungen und nicht ausgeführte Ersetzungsketten hin. Persönliche
+Ausnahmen und eigene Ersetzungen lassen sich als versionierte JSON-Datei sichern
+und mit einer ausdrücklich gewählten Konfliktstrategie wieder einlesen.
+
 ## Datenschutz
 
 Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
@@ -147,8 +157,9 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
 
 Persönliche Ausnahmen, eigene Ersetzungen und Einstellungen werden nur im
-Browser gespeichert. Die vollständigen Angaben stehen in der
-[Datenschutzerklärung](PRIVACY.md).
+Browser gespeichert. Import- und Exportdateien werden ausschließlich nach einer
+bewussten Nutzeraktion lokal gelesen oder erzeugt. Die vollständigen Angaben
+stehen in der [Datenschutzerklärung](PRIVACY.md).
 
 ## Unterstützte Browser
 
@@ -187,8 +198,10 @@ erstellt.
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das
 Verfahren zur Erweiterung und Absicherung des Flexionsbestands ist in
-[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Hinweise für Beiträge stehen
-in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Das JSON-Format für persönliche
+Regeln ist in
+[`docs/PERSONAL-RULES-FORMAT.md`](docs/PERSONAL-RULES-FORMAT.md) dokumentiert.
+Hinweise für Beiträge stehen in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Dank und Herkunft
 
