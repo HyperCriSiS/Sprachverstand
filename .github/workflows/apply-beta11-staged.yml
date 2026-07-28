@@ -1,0 +1,82 @@
+name: Apply staged Beta 11 patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-beta11-staged.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Entwicklungszweig auschecken
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Hauptzweig einbinden und Patch anwenden
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git merge --no-edit origin/main
+
+          cat .beta11.patch.part* | base64 --decode > /tmp/beta11.patch.gz
+          gzip -dc /tmp/beta11.patch.gz > /tmp/beta11-full.patch
+
+          python - <<'PY'
+          from pathlib import Path
+
+          source = Path('/tmp/beta11-full.patch').read_text()
+          sections = []
+          current = []
+          for line in source.splitlines(keepends=True):
+              if line.startswith('diff -ruN '):
+                  if current:
+                      sections.append(''.join(current))
+                  current = [line]
+              else:
+                  current.append(line)
+          if current:
+              sections.append(''.join(current))
+
+          excluded = (
+              'sprachverstand-work/repo/README.md',
+              'sprachverstand-work/repo/.github/workflows/ci.yml',
+              'sprachverstand-work/repo/.github/workflows/release.yml',
+          )
+          filtered = [
+              section
+              for section in sections
+              if not any(path in section.splitlines()[0] for path in excluded)
+          ]
+          Path('/tmp/beta11.patch').write_text(''.join(filtered))
+          PY
+
+          patch -p2 --forward --batch < /tmp/beta11.patch
+
+          rm -f .github/workflows/prepare-beta-10.yml
+          rm -f .github/workflows/apply-beta11-patch.yml
+          rm -f .github/workflows/apply-beta11-staged.yml
+          rm -f .beta11-patch-placeholder .beta11.patch.part*
+
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(l.packages?.[""]?.license!==p.license)throw new Error("package-lock license mismatch");'
+
+          git add -A
+          git commit -m "feat: complete beta 11 language coverage and licensing"
+          git push origin HEAD:dev
+          git push origin --delete temp/apply-beta11 || true
