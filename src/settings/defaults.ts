@@ -62,9 +62,23 @@ function stringArray(value: unknown): string[] {
 }
 
 function protectedTermArray(value: unknown): string[] {
-  return stringArray(value)
-    .filter((entry) => entry.length <= maximumProtectedTermLength)
-    .slice(0, maximumProtectedTerms);
+  const normalized = new Map<string, string>();
+
+  for (const entry of stringArray(value)) {
+    if (entry.length > maximumProtectedTermLength) {
+      continue;
+    }
+
+    const key = entry.toLocaleLowerCase("de-DE");
+    if (!normalized.has(key)) {
+      normalized.set(key, entry);
+    }
+    if (normalized.size >= maximumProtectedTerms) {
+      break;
+    }
+  }
+
+  return [...normalized.values()];
 }
 
 function customReplacementArray(value: unknown): CustomReplacement[] {
