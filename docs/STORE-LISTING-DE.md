@@ -22,8 +22,8 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 **Einzelzweck:**
 
 > Sprachverstand passt unterstützte gegenderte Schreibweisen in
-deutschsprachigen Webseitentexten lokal und nach konfigurierbaren Regeln an die
-persönlichen Lesegewohnheiten des Nutzers an.
+> deutschsprachigen Webseitentexten lokal und nach konfigurierbaren Regeln an die
+> persönlichen Lesegewohnheiten des Nutzers an.
 
 ## Firefox Add-ons
 
@@ -35,17 +35,21 @@ Sprachverstand passt die Darstellung deutschsprachiger Webseitentexte an Deine
 persönlichen Lesegewohnheiten an.
 
 Gegenderte Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“,
-Doppelnennungen und ausgewählte Partizipformen werden direkt im Browser nach
-kontrollierten Regeln angepasst.
+Doppelnennungen, substantivierte Adjektive und ausgewählte Partizipformen werden
+direkt im Browser nach kontrollierten Regeln angepasst.
 
 Beispiele:
 
 - Nutzer:innen → Nutzer
 - Mitarbeiter*innen → Mitarbeiter
 - NutzerInnen → Nutzer
+- NutzerIn → Nutzer
+- eine NutzerIn → ein Nutzer
 - Nutzerinnen und Nutzer → Nutzer
 - Student*innen → Studenten
 - Studierende → Studenten
+- Erwachsene:r → Erwachsener
+- Studentys → Studenten
 
 Die Webseite selbst und ihre Serverdaten bleiben unverändert. Sprachverstand
 verändert ausschließlich die lokale Darstellung im Browser. Beim Ausschalten
@@ -58,6 +62,7 @@ Funktionen:
 - einzeln aktivierbare Regelgruppen
 - Korrekturzähler für den aktuellen Tab
 - persönliche Ausnahmen für Wörter und vollständige Formulierungen
+- eigene wörtliche Ersetzungen, getrennt von Ausnahmen und ohne Regex
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
@@ -65,7 +70,8 @@ Funktionen:
 
 Sprachverstand arbeitet bewusst konservativ. Unbekannte oder mehrdeutige
 Schreibweisen bleiben unverändert, wenn keine ausreichend sichere Ersetzung
-möglich ist.
+möglich ist. Eigene Ersetzungen werden genau einmal und ausschließlich lokal
+ausgeführt; persönliche Ausnahmen haben Vorrang.
 
 Datenschutz:
 
@@ -74,7 +80,7 @@ Datenschutz:
 - keine Cloud und keine externe Sprach-API
 - kein Tracking und keine Telemetrie
 - keine Werbung und keine Nutzerprofile
-- Einstellungen und persönliche Ausnahmen bleiben im Browser
+- Einstellungen, Ausnahmen und eigene Ersetzungen bleiben im Browser
 
 Unterstützt werden Firefox für Desktop und Firefox für Android.
 
@@ -100,19 +106,24 @@ außerhalb der Erweiterung oder des lokalen Browsers.
 Sprachverstand passt gegenderte deutsche Webseitentexte lokal an Deine
 persönlichen Lesegewohnheiten an.
 
-Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“,
-Doppelnennungen und ausgewählte Partizipformen werden direkt im Browser nach
-kontrollierten Regeln angepasst.
+Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“, sichtbare
+Binnen-I-Singularformen, Doppelnennungen, substantivierte Adjektive und
+ausgewählte Partizipformen werden direkt im Browser nach kontrollierten Regeln
+angepasst.
 
 Beispiele:
 
 - Nutzer:innen → Nutzer
 - Mitarbeiter*innen → Mitarbeiter
 - NutzerInnen → Nutzer
+- NutzerIn → Nutzer
+- eine NutzerIn → ein Nutzer
 - Nutzerinnen und Nutzer → Nutzer
 - jede:r Nutzer:in → jeder Nutzer
 - Student*innen → Studenten
 - Studierende → Studenten
+- Erwachsene:r → Erwachsener
+- Studentys → Studenten
 
 Die aufgerufene Webseite und ihre Serverdaten werden nicht verändert.
 Sprachverstand passt ausschließlich die Darstellung auf Deinem Gerät an. Beim
@@ -126,6 +137,7 @@ Wichtige Funktionen:
 - einzeln aktivierbare Regelgruppen
 - Korrekturzähler für den aktuellen Tab
 - persönliche Wort- und Phrasenausnahmen
+- eigene wörtliche Ersetzungen ohne Regex
 - Ausschluss bestimmter Domains
 - optionaler Schutz zitierter Schreibweisen
 - optionale Verarbeitung zugänglicher Textattribute
@@ -144,14 +156,15 @@ keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
 ### Einzelzweck
 
 > Sprachverstand passt unterstützte gegenderte Schreibweisen in
-deutschsprachigen Webseitentexten lokal und nach konfigurierbaren Regeln an die
-persönlichen Lesegewohnheiten des Nutzers an.
+> deutschsprachigen Webseitentexten lokal und nach konfigurierbaren Regeln an die
+> persönlichen Lesegewohnheiten des Nutzers an.
 
 ### Begründung der Berechtigung `storage`
 
 > Die Speicherberechtigung wird ausschließlich benötigt, um die vom Nutzer
-> gewählten Einstellungen, aktivierten Regelgruppen, persönlichen Textausnahmen
-> und ausgeschlossenen Domains lokal im Browser zu speichern.
+> gewählten Einstellungen, aktivierten Regelgruppen, persönlichen Textausnahmen,
+> eigenen wörtlichen Ersetzungen und ausgeschlossenen Domains lokal im Browser
+> zu speichern.
 
 ### Begründung des Zugriffs auf alle Webseiten
 
@@ -183,9 +196,9 @@ persönlichen Lesegewohnheiten des Nutzers an.
 
 **Vom Nutzer bereitgestellte Einstellungen**
 
-> Regelgruppen, persönliche Textausnahmen und Domain-Ausschlüsse werden lokal im
-> Erweiterungsspeicher gespeichert und ausschließlich für die gewählte
-> Konfiguration verwendet.
+> Regelgruppen, persönliche Textausnahmen, eigene wörtliche Ersetzungen und
+> Domain-Ausschlüsse werden lokal im Erweiterungsspeicher gespeichert und
+> ausschließlich für die gewählte Konfiguration verwendet.
 
 ### Eingeschränkte Datennutzung
 
