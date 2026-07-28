@@ -78,6 +78,8 @@ describe("knownPluralSeparatorsRule", () => {
 describe("sourceAuditPluralRule", () => {
   it.each([
     ["Follower*innen", "Follower"],
+    ["Praktiker*innen", "Praktiker"],
+    ["Mediziner*innen", "Mediziner"],
     ["Proband:innen", "Probanden"],
     ["Kommunikator:innen", "Kommunikatoren"],
     ["Auditor_innen", "Auditoren"],

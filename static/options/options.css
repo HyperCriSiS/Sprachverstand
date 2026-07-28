@@ -366,3 +366,109 @@ small {
     gap: 0;
   }
 }
+
+
+/* Einstellungsbereiche */
+.settings-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.settings-toolbar > span {
+  font-weight: 700;
+}
+
+.settings-section {
+  display: block;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 12px;
+  overflow: clip;
+}
+
+.settings-section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.settings-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-section > summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  margin-right: 3px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 120ms ease;
+}
+
+.settings-section[open] > summary::after {
+  transform: rotate(225deg) translate(-2px, -2px);
+}
+
+.settings-section > summary:hover {
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.settings-section > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -3px;
+}
+
+.settings-section > summary h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.settings-section-content {
+  display: grid;
+  gap: 14px;
+  padding: 0 18px 18px;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.settings-section-content > :first-child {
+  margin-top: 16px;
+}
+
+.settings-section-content > p {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .settings-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-toolbar .compact-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-section > summary {
+    padding: 13px 14px;
+  }
+
+  .settings-section-content {
+    padding: 0 14px 14px;
+  }
+}
