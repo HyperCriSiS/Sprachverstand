@@ -1,14 +1,14 @@
-# Sprachverstand 0.5.4 – Beta 9 testen
+# Sprachverstand 0.5.5 – Beta 10 testen
 
-Beta 9 bündelt den aktuellen geprüften Stand: das kompakte Popup, das
-randlose SV-Symbol, die erweiterten Sprachregeln, die Waterfox-Korrekturen und
-die überarbeitete öffentliche Projektdokumentation.
+Beta 10 bündelt den aktuellen geprüften Stand mit den README-Live-Beispielen
+und dem freigegebenen SV-Monogramm. Die drei statischen PNG-Dateien werden beim
+Build unverändert übernommen und vor jedem Paketbau vollständig validiert.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.4-beta.9-chromium.zip`
-- `sprachverstand-0.5.4-beta.9-firefox.xpi`
-- `sprachverstand-0.5.4-beta.9-source.zip`
+- `sprachverstand-0.5.5-beta.10-chromium.zip`
+- `sprachverstand-0.5.5-beta.10-firefox.xpi`
+- `sprachverstand-0.5.5-beta.10-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -44,11 +44,20 @@ Prüfen:
 - Jede Regelgruppe zeigt nur einen Beispielausdruck.
 - Die Gruppen sind kompakt durch Trennlinien statt einzelner Karten getrennt.
 - Der Scrollbalken sitzt direkt am rechten Rand.
-- Das SV-Monogramm besitzt keinen dunklen dekorativen Außenrahmen und nutzt die
-  verfügbare Symbolfläche sichtbar besser aus.
+- Browserleiste, Popup, Einstellungsseite und README zeigen dasselbe freigegebene
+  SV-Monogramm: dunkelblaues, abgerundetes Quadrat mit weißem S und orangem V.
+- Das Motiv ist in 32, 48 und 128 Pixeln vollständig sichtbar und nicht
+  abgeschnitten.
 - Symbol, Popup und Einstellungsseite funktionieren im hellen und dunklen Modus.
 - Alle zwölf Regelgruppen lassen sich schalten.
 - Der Korrekturzähler folgt Änderungen ohne Neuladen.
+
+## README-Live-Test
+
+Die Vergleichstabelle auf der GitHub-Startseite bleibt absichtlich unverändert,
+weil ihre Beispiele als Quellcode markiert sind. Der darunterliegende
+**Live-Test** ist normaler Seitentext und muss bei aktiviertem Sprachverstand
+umgewandelt werden.
 
 ## Firefox für Android
 
