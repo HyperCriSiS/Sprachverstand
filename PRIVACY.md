@@ -62,19 +62,22 @@ Webseiteninhalten gesammelt.
 
 ### Import- und Exportdateien
 
-Auf ausdrückliche Anforderung kann Sprachverstand persönliche Ausnahmen und
-eigene Ersetzungen als JSON-Datei erzeugen. Diese Datei wird lokal im Browser
-erstellt und über die normale Downloadfunktion des Browsers gespeichert.
+Auf ausdrückliche Anforderung kann Sprachverstand den vollständigen aktuellen
+Einstellungsstand als JSON-Datei erzeugen. Enthalten sind Aktivierungsstatus,
+Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen, persönliche
+Ausnahmen und eigene Ersetzungen. Die Datei wird lokal im Browser erstellt und
+über die normale Downloadfunktion des Browsers gespeichert.
 
 Eine Importdatei wird nur nach einer bewussten Dateiauswahl lokal gelesen. Vor
 der Übernahme prüft Sprachverstand Dateiformat, Schemaversion, Größenlimits und
 die enthaltenen Einträge. Die Datei wird weder hochgeladen noch an den
-Entwickler oder andere Empfänger übertragen.
+Entwickler oder andere Empfänger übertragen. Der Import wird zunächst nur in das
+sichtbare Formular übernommen und erst durch den Nutzer mit **Speichern**
+aktiviert.
 
-Exportdateien können vom Nutzer selbst eingetragene Begriffe und Formulierungen
-enthalten. Für ihre Aufbewahrung, Weitergabe und Löschung ist der Nutzer selbst
-verantwortlich. Domains, Regelgruppen und sonstige Einstellungen sind in diesem
-Export absichtlich nicht enthalten.
+Exportdateien können selbst eingetragene Begriffe, Formulierungen und
+Domainnamen enthalten. Für ihre Aufbewahrung, Weitergabe und Löschung ist der
+Nutzer selbst verantwortlich.
 
 ## 4. Zweck der Verarbeitung
 
@@ -126,9 +129,9 @@ Die Speicherberechtigung wird benötigt, um Einstellungen, Regelgruppen,
 persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse lokal im
 Browser zu speichern.
 
-Für Import und Export wird keine zusätzliche Netzwerk- oder Dateisystemberechtigung
-angefordert. Der Zugriff auf eine Importdatei erfolgt ausschließlich über den
-vom Nutzer geöffneten Dateiauswahldialog.
+Für Import und Export wird keine zusätzliche Netzwerk- oder
+Dateisystemberechtigung angefordert. Der Zugriff auf eine Importdatei erfolgt
+ausschließlich über den vom Nutzer geöffneten Dateiauswahldialog.
 
 ## 8. Kontrolle durch den Nutzer
 
@@ -139,8 +142,8 @@ Der Nutzer kann Sprachverstand jederzeit:
 - über die Regelgruppen einschränken
 - durch persönliche Ausnahmen konfigurieren
 - durch eigene wörtliche Ersetzungen ergänzen
-- persönliche Einträge lokal exportieren und wieder importieren
-- gespeicherte persönliche Einträge ändern oder löschen
+- den vollständigen Einstellungsstand lokal exportieren und wieder importieren
+- gespeicherte Einstellungen und persönliche Einträge ändern oder löschen
 - aus dem Browser entfernen
 
 Beim Ausschalten werden die von Sprachverstand vorgenommenen Änderungen an der
