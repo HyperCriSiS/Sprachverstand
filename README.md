@@ -130,7 +130,8 @@ Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 - kein Tracking und keine Telemetrie
 - keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
 
-Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert.
+Persönliche Ausnahmen und Einstellungen werden nur im Browser gespeichert. Die
+vollständigen Angaben stehen in der [Datenschutzerklärung](PRIVACY.md).
 
 ## Unterstützte Browser
 
@@ -147,7 +148,9 @@ Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
 bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
 Performance- und Regressionstests abgesichert.
 
-Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase.
+Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase. Die
+versionierten deutschen Storetexte stehen in
+[`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
 
 ## Entwicklung
 
