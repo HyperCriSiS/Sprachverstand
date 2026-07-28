@@ -22,8 +22,12 @@
    Dokumentation, Testkatalog und Git-Historie geführt.
 8. **Attribute nur per Positivliste:** Verarbeitet werden ausschließlich `alt`,
    `aria-label`, `aria-description` und `title`.
-9. **Persönliche Daten bleiben lokal:** Ausnahmen und eigene Ersetzungen liegen
-   in `storage.local`; Seitentexte werden nicht gesammelt oder übertragen.
+9. **Persönliche Daten bleiben lokal:** Ausnahmen, eigene Ersetzungen und
+   Einstellungen liegen in `storage.local`; Seitentexte werden nicht gesammelt
+   oder übertragen.
+10. **Importdateien sind Daten, kein Code:** Einstellungssicherungen verwenden
+    ein versioniertes JSON-Schema. Regex, Skripte und unbekannte
+    Schemaversionen werden nicht ausgeführt oder stillschweigend übernommen.
 
 ## Datenfluss
 
@@ -52,6 +56,28 @@ verarbeitet. Danach beobachtet der `MutationObserver`:
 Andere Attribute wie `value`, `placeholder`, `data-*`, IDs und URLs werden weder
 gescannt noch beobachtet. Ignorierte, versteckte, editierbare und technische
 Bereiche bleiben ausgeschlossen.
+
+## Vorschau und Einstellungssicherung
+
+Die Vorschau der Einstellungsseite verwendet dieselbe Funktion `transformText`
+wie die Verarbeitung auf Webseiten. Sie berücksichtigt die aktuell im Formular
+gewählten Regelgruppen, persönlichen Ausnahmen, eigenen Ersetzungen und die
+Zitatoption. Dadurch existiert kein vereinfachter zweiter Transformationspfad.
+
+`src/settings/personal-rules.ts` enthält die DOM-unabhängige Logik für Parser,
+Konflikthinweise und die deterministische Zusammenführung persönlicher Listen.
+`src/settings/settings-backup.ts` kapselt das versionierte Austauschformat für
+den vollständigen Einstellungsstand.
+
+Eine Sicherung enthält Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse,
+Zitat- und Attributoptionen, persönliche Ausnahmen und eigene Ersetzungen. Der
+Import liest eine Datei ausschließlich nach einer Nutzeraktion und prüft
+Dateityp, Schemafassung, Feldtypen und Größenlimits. Er verändert zunächst nur
+das Formular. Erst das anschließende Speichern schreibt die Werte in
+`storage.local`.
+
+Das Schema ist in
+[`SETTINGS-BACKUP-FORMAT.md`](SETTINGS-BACKUP-FORMAT.md) dokumentiert.
 
 ## Rückgängigmachen
 
@@ -99,11 +125,11 @@ src/
 ├── browser/       Browser-API-Abstraktion und Badge-Hilfen
 ├── core/          Regel-Engine, Sicherheitslogik und DOM-Verarbeitung
 ├── rules/         unabhängige Sprachregeln und Flexionsbestände
-├── settings/      Speicherung und Domain-Logik
+├── settings/      Speicherung, persönliche Regeln und Sicherungsformat
 ├── content.ts     Einstieg auf Webseiten
 ├── background.ts  Tab-Zähler und Badge
 ├── popup.ts       schnelles Ein-/Ausschalten
-└── options.ts     dauerhafte Einstellungen
+└── options.ts     dauerhafte Einstellungen, Vorschau und Import/Export
 
 data/              kuratierte Kataloge und Regressionen
 static/legal/       lokale Lizenz- und Quelltexthinweise

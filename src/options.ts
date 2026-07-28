@@ -1,16 +1,33 @@
 import { getExtensionApi } from "./browser/api";
-import { ruleGroupDefinitions } from "./rules/catalog";
+import { transformText } from "./core/transform-text";
+import { defaultRules } from "./rules";
+import {
+  disabledRuleIdsForGroups,
+  ruleGroupDefinitions
+} from "./rules/catalog";
 import {
   currentSettingsRevision,
   defaultSettings,
-  maximumCustomReplacementSourceLength,
-  maximumCustomReplacementTargetLength,
   maximumCustomReplacements,
-  maximumProtectedTermLength,
-  maximumProtectedTerms,
-  type CustomReplacement,
   type Settings
 } from "./settings/defaults";
+import {
+  analyzeCustomReplacementConflicts,
+  formatCustomReplacementsText,
+  formatProtectedTermsText,
+  parseCustomReplacementsText,
+  parseProtectedTermsText,
+  type ReplacementNotice
+} from "./settings/personal-rules";
+import {
+  createSettingsBackupDocument,
+  maximumSettingsBackupImportBytes,
+  mergeImportedSettings,
+  parseSettingsBackupDocument,
+  stringifySettingsBackupDocument,
+  type SettingsBackupImportMode,
+  type SettingsImportResult
+} from "./settings/settings-backup";
 import { loadSettings, saveSettings } from "./settings/storage";
 
 interface CountUpdatedMessage {
@@ -41,6 +58,23 @@ const protectedTermsInput =
   requiredElement<HTMLTextAreaElement>("#protected-terms");
 const customReplacementsInput =
   requiredElement<HTMLTextAreaElement>("#custom-replacements");
+const customReplacementFeedback =
+  requiredElement<HTMLElement>("#custom-replacement-feedback");
+const customPreviewInput =
+  requiredElement<HTMLTextAreaElement>("#custom-preview-input");
+const customPreviewOutput =
+  requiredElement<HTMLTextAreaElement>("#custom-preview-output");
+const customPreviewCount =
+  requiredElement<HTMLOutputElement>("#custom-preview-count");
+const exportSettingsButton =
+  requiredElement<HTMLButtonElement>("#export-personal-rules");
+const importSettingsButton =
+  requiredElement<HTMLButtonElement>("#import-personal-rules");
+const importSettingsFile =
+  requiredElement<HTMLInputElement>("#import-personal-rules-file");
+const importModeSelect =
+  requiredElement<HTMLSelectElement>("#personal-rules-import-mode");
+const importSummary = requiredElement<HTMLElement>("#import-summary");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
 const selectAllRulesButton =
@@ -51,6 +85,8 @@ const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
 
 let activeTabId: number | undefined;
+let interactiveUpdateTimer: number | undefined;
+let statusTimer: number | undefined;
 
 function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
   if (!message || typeof message !== "object") {
@@ -102,15 +138,22 @@ function ruleGroupInputs(): HTMLInputElement[] {
   )];
 }
 
+function enabledRuleGroupIdsFromForm(): string[] {
+  return ruleGroupInputs()
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.ruleGroupId)
+    .filter((id): id is string => Boolean(id));
+}
+
 function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
-  protectedTermsInput.value = settings.protectedTerms.join("\n");
-  customReplacementsInput.value = settings.customReplacements
-    .map((entry) => `${entry.source} => ${entry.replacement}`)
-    .join("\n");
+  protectedTermsInput.value = formatProtectedTermsText(settings.protectedTerms);
+  customReplacementsInput.value = formatCustomReplacementsText(
+    settings.customReplacements
+  );
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
@@ -130,108 +173,161 @@ function readLines(value: string): string[] {
   ];
 }
 
-function readProtectedTerms(): string[] {
-  const terms = readLines(protectedTermsInput.value);
-
-  if (terms.length > maximumProtectedTerms) {
-    throw new Error(`Höchstens ${maximumProtectedTerms} Ausnahmen sind erlaubt.`);
-  }
-
-  const tooLong = terms.find(
-    (term) => term.length > maximumProtectedTermLength
-  );
-  if (tooLong) {
-    throw new Error(
-      `Eine Ausnahme darf höchstens ${maximumProtectedTermLength} Zeichen lang sein: ${tooLong}`
-    );
-  }
-
-  return terms;
-}
-
-function readCustomReplacements(): CustomReplacement[] {
-  const replacements = new Map<string, string>();
-  const lines = customReplacementsInput.value.split(/\r?\n/u);
-
-  for (const [index, rawLine] of lines.entries()) {
-    const line = rawLine.trim();
-    if (!line) {
-      continue;
-    }
-
-    const delimiterIndex = line.includes("=>")
-      ? line.indexOf("=>")
-      : line.indexOf("→");
-    if (delimiterIndex < 0) {
-      throw new Error(
-        `Zeile ${index + 1}: Eigene Ersetzungen müssen mit => oder → getrennt werden.`
-      );
-    }
-
-    const delimiterLength = line.startsWith("=>", delimiterIndex) ? 2 : 1;
-    const source = line.slice(0, delimiterIndex).trim();
-    const replacement = line.slice(delimiterIndex + delimiterLength).trim();
-
-    if (!source) {
-      throw new Error(`Zeile ${index + 1}: Der Ausgangstext darf nicht leer sein.`);
-    }
-    if (source.length > maximumCustomReplacementSourceLength) {
-      throw new Error(
-        `Zeile ${index + 1}: Der Ausgangstext darf höchstens ${maximumCustomReplacementSourceLength} Zeichen lang sein.`
-      );
-    }
-    if (replacement.length > maximumCustomReplacementTargetLength) {
-      throw new Error(
-        `Zeile ${index + 1}: Die Ersetzung darf höchstens ${maximumCustomReplacementTargetLength} Zeichen lang sein.`
-      );
-    }
-
-    const existing = replacements.get(source);
-    if (existing !== undefined && existing !== replacement) {
-      throw new Error(
-        `Zeile ${index + 1}: Für „${source}“ sind widersprüchliche Ersetzungen eingetragen.`
-      );
-    }
-    replacements.set(source, replacement);
-  }
-
-  if (replacements.size > maximumCustomReplacements) {
-    throw new Error(
-      `Höchstens ${maximumCustomReplacements} eigene Ersetzungen sind erlaubt.`
-    );
-  }
-
-  return [...replacements].map(([source, replacement]) => ({
-    source,
-    replacement
-  }));
-}
-
 function readForm(): Settings {
-  const enabledRuleGroupIds = ruleGroupInputs()
-    .filter((input) => input.checked)
-    .map((input) => input.dataset.ruleGroupId)
-    .filter((id): id is string => Boolean(id));
-
   return {
     settingsRevision: currentSettingsRevision,
     enabled: enabledInput.checked,
     excludedDomains: readLines(excludedDomainsInput.value),
-    enabledRuleGroupIds,
-    protectedTerms: readProtectedTerms(),
-    customReplacements: readCustomReplacements(),
+    enabledRuleGroupIds: enabledRuleGroupIdsFromForm(),
+    protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
+    customReplacements: parseCustomReplacementsText(
+      customReplacementsInput.value
+    ).replacements,
     processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processQuotedText: processQuotedTextInput.checked
   };
 }
 
-function showStatus(message: string, isError = false): void {
+function showStatus(
+  message: string,
+  isError = false,
+  duration = 5000
+): void {
+  if (statusTimer !== undefined) {
+    window.clearTimeout(statusTimer);
+  }
+
   statusOutput.textContent = message;
   statusOutput.classList.toggle("error", isError);
-  window.setTimeout(() => {
+  statusTimer = window.setTimeout(() => {
     statusOutput.textContent = "";
     statusOutput.classList.remove("error");
-  }, 4000);
+    statusTimer = undefined;
+  }, duration);
+}
+
+function createNoticeList(
+  notices: readonly ReplacementNotice[]
+): HTMLUListElement {
+  const list = document.createElement("ul");
+  const visibleNotices = notices.slice(0, 16);
+
+  for (const notice of visibleNotices) {
+    const item = document.createElement("li");
+    item.className = notice.severity;
+    item.textContent = notice.message;
+    list.append(item);
+  }
+
+  if (notices.length > visibleNotices.length) {
+    const item = document.createElement("li");
+    item.textContent = `${notices.length - visibleNotices.length} weitere Hinweise werden aus Platzgründen nicht angezeigt.`;
+    list.append(item);
+  }
+
+  return list;
+}
+
+function renderCustomReplacementFeedback(): void {
+  try {
+    const parsed = parseCustomReplacementsText(customReplacementsInput.value);
+    const protectedTerms = parseProtectedTermsText(protectedTermsInput.value);
+    const disabledRuleIds = disabledRuleIdsForGroups(
+      enabledRuleGroupIdsFromForm()
+    );
+    const notices = [
+      ...parsed.notices,
+      ...analyzeCustomReplacementConflicts(
+        parsed.replacements,
+        protectedTerms,
+        (source) =>
+          transformText(source, defaultRules, {
+            profile: "aggressive",
+            disabledRuleIds,
+            protectedTerms: [],
+            customReplacements: [],
+            processQuotedText: true
+          }).text
+      )
+    ];
+
+    const summary = document.createElement("p");
+    summary.className = "diagnostic-summary";
+    summary.textContent = `${parsed.replacements.length} von ${maximumCustomReplacements} möglichen Ersetzungen geprüft.`;
+
+    if (notices.length === 0) {
+      const success = document.createElement("p");
+      success.className = "diagnostic-success";
+      success.textContent = "Keine Konflikte oder auffälligen Überschneidungen erkannt.";
+      customReplacementFeedback.replaceChildren(summary, success);
+      customReplacementFeedback.className = "diagnostics success";
+      return;
+    }
+
+    customReplacementFeedback.replaceChildren(summary, createNoticeList(notices));
+    customReplacementFeedback.className = notices.some(
+      (notice) => notice.severity === "warning"
+    )
+      ? "diagnostics warning"
+      : "diagnostics info";
+  } catch (error) {
+    const message = document.createElement("p");
+    message.textContent =
+      error instanceof Error
+        ? error.message
+        : "Eigene Ersetzungen konnten nicht geprüft werden.";
+    customReplacementFeedback.replaceChildren(message);
+    customReplacementFeedback.className = "diagnostics error";
+  }
+}
+
+function renderCustomReplacementPreview(): void {
+  const input = customPreviewInput.value;
+  if (!input) {
+    customPreviewOutput.value = "";
+    customPreviewCount.textContent = "Noch kein Testtext eingegeben.";
+    customPreviewCount.classList.remove("error");
+    return;
+  }
+
+  try {
+    const settings = readForm();
+    const result = transformText(input, defaultRules, {
+      profile: "aggressive",
+      disabledRuleIds: disabledRuleIdsForGroups(
+        settings.enabledRuleGroupIds
+      ),
+      protectedTerms: settings.protectedTerms,
+      customReplacements: settings.customReplacements,
+      processQuotedText: settings.processQuotedText
+    });
+
+    customPreviewOutput.value = result.text;
+    customPreviewCount.textContent =
+      result.replacements === 0
+        ? "Keine Änderung im Testtext."
+        : `${result.replacements} ${result.replacements === 1 ? "Ersetzung" : "Ersetzungen"} im Testtext.`;
+    customPreviewCount.classList.remove("error");
+  } catch (error) {
+    customPreviewOutput.value = "";
+    customPreviewCount.textContent =
+      error instanceof Error
+        ? error.message
+        : "Die Vorschau konnte nicht erstellt werden.";
+    customPreviewCount.classList.add("error");
+  }
+}
+
+function scheduleInteractiveUpdate(): void {
+  if (interactiveUpdateTimer !== undefined) {
+    window.clearTimeout(interactiveUpdateTimer);
+  }
+
+  interactiveUpdateTimer = window.setTimeout(() => {
+    renderCustomReplacementFeedback();
+    renderCustomReplacementPreview();
+    interactiveUpdateTimer = undefined;
+  }, 120);
 }
 
 async function renderCurrentCount(): Promise<void> {
@@ -257,6 +353,7 @@ function refreshCountAfterChange(): void {
 async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
+    importSummary.replaceChildren();
     showStatus("Gespeichert – offene Seiten werden sofort neu verarbeitet.");
     refreshCountAfterChange();
   } catch (error) {
@@ -267,6 +364,126 @@ async function persist(): Promise<void> {
       true
     );
   }
+}
+
+function downloadTextFile(contents: string, filename: string): void {
+  const blob = new Blob([contents], {
+    type: "application/json;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.hidden = true;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportSettings(): void {
+  try {
+    const settings = readForm();
+    const exported = createSettingsBackupDocument(settings);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadTextFile(
+      stringifySettingsBackupDocument(exported),
+      `sprachverstand-einstellungen-${date}.json`
+    );
+    showStatus(
+      `Alle Einstellungen einschließlich ${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} eigener Ersetzungen exportiert.`
+    );
+  } catch (error) {
+    showStatus(
+      error instanceof Error
+        ? error.message
+        : "Die Einstellungen konnten nicht exportiert werden.",
+      true
+    );
+  }
+}
+
+function selectedImportMode(): SettingsBackupImportMode {
+  const value = importModeSelect.value;
+  if (
+    value === "keep-existing" ||
+    value === "prefer-imported" ||
+    value === "replace"
+  ) {
+    return value;
+  }
+  return "keep-existing";
+}
+
+function renderImportSummary(result: SettingsImportResult): void {
+  const generalSettings = document.createElement("p");
+  generalSettings.textContent =
+    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse sowie Zitat- und Attributoptionen wurden aus der Sicherung übernommen.";
+
+  const summary = document.createElement("p");
+  summary.textContent = [
+    `${result.addedProtectedTerms} Ausnahmen ergänzt`,
+    `${result.addedCustomReplacements} Ersetzungen ergänzt`,
+    `${result.replacedCustomReplacements} Ersetzungen überschrieben`,
+    `${result.skippedDuplicates} Dubletten übersprungen`
+  ].join(", ") + ".";
+
+  const reminder = document.createElement("p");
+  reminder.className = "import-reminder";
+  reminder.textContent = "Der Import ist vorbereitet, aber noch nicht gespeichert.";
+
+  if (result.conflicts.length === 0) {
+    importSummary.replaceChildren(generalSettings, summary, reminder);
+    importSummary.className = "import-summary";
+    return;
+  }
+
+  const heading = document.createElement("strong");
+  heading.textContent = `${result.conflicts.length} Zielkonflikte:`;
+  const list = document.createElement("ul");
+  for (const conflict of result.conflicts.slice(0, 12)) {
+    const item = document.createElement("li");
+    item.textContent = conflict;
+    list.append(item);
+  }
+  if (result.conflicts.length > 12) {
+    const item = document.createElement("li");
+    item.textContent = `${result.conflicts.length - 12} weitere Konflikte.`;
+    list.append(item);
+  }
+
+  importSummary.replaceChildren(
+    generalSettings,
+    summary,
+    heading,
+    list,
+    reminder
+  );
+  importSummary.className = "import-summary warning";
+}
+
+async function importSettings(file: File): Promise<void> {
+  if (file.size > maximumSettingsBackupImportBytes) {
+    throw new Error("Die Importdatei ist größer als 1 MB und wird nicht verarbeitet.");
+  }
+
+  const imported = parseSettingsBackupDocument(await file.text());
+  const mode = selectedImportMode();
+  const current = mode === "replace" ? defaultSettings : readForm();
+  const result = mergeImportedSettings(
+    current,
+    imported.settings,
+    mode
+  );
+
+  render(result.settings);
+  renderImportSummary(result);
+  scheduleInteractiveUpdate();
+  showStatus(
+    "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern.",
+    false,
+    8000
+  );
 }
 
 function handleRuntimeMessage(message: unknown): void {
@@ -281,6 +498,8 @@ function handleRuntimeMessage(message: unknown): void {
 async function start(): Promise<void> {
   createRuleGroupControls();
   render(await loadSettings());
+  renderCustomReplacementFeedback();
+  renderCustomReplacementPreview();
   await renderCurrentCount();
 
   const api = getExtensionApi();
@@ -293,21 +512,52 @@ async function start(): Promise<void> {
     event.preventDefault();
     void persist();
   });
+  form.addEventListener("input", scheduleInteractiveUpdate);
+  form.addEventListener("change", scheduleInteractiveUpdate);
 
   selectAllRulesButton.addEventListener("click", () => {
     for (const input of ruleGroupInputs()) {
       input.checked = true;
     }
+    scheduleInteractiveUpdate();
   });
 
   selectNoRulesButton.addEventListener("click", () => {
     for (const input of ruleGroupInputs()) {
       input.checked = false;
     }
+    scheduleInteractiveUpdate();
+  });
+
+  exportSettingsButton.addEventListener("click", exportSettings);
+  importSettingsButton.addEventListener("click", () => {
+    importSettingsFile.click();
+  });
+  importSettingsFile.addEventListener("change", () => {
+    const file = importSettingsFile.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    void importSettings(file)
+      .catch((error: unknown) => {
+        showStatus(
+          error instanceof Error
+            ? error.message
+            : "Die Einstellungen konnten nicht importiert werden.",
+          true,
+          8000
+        );
+      })
+      .finally(() => {
+        importSettingsFile.value = "";
+      });
   });
 
   resetButton.addEventListener("click", () => {
     render(defaultSettings);
+    importSummary.replaceChildren();
+    scheduleInteractiveUpdate();
     void saveSettings(defaultSettings).then(() => {
       showStatus("Auf sichere Standardeinstellungen zurückgesetzt.");
       refreshCountAfterChange();

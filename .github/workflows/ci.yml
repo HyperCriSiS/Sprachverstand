@@ -53,14 +53,22 @@ jobs:
           grep -q "min-height: 500px" static/popup/popup.css
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
+          ! grep -q '../legal/legal.html' static/popup/popup.html
           grep -q 'icons/icon48.png' static/options/options.html
-          grep -q '../legal/legal.html' static/popup/popup.html
+          grep -q 'id="custom-replacement-feedback"' static/options/options.html
+          grep -q 'id="custom-preview-input"' static/options/options.html
+          grep -q 'id="custom-preview-output"' static/options/options.html
+          grep -q 'id="export-personal-rules"' static/options/options.html
+          grep -q 'id="import-personal-rules"' static/options/options.html
           grep -q '../legal/legal.html' static/options/options.html
+          ! grep -q 'Freie Software unter starkem Copyleft' static/legal/legal.html
+          grep -q '<h1>Lizenz und Quelltext</h1>' static/legal/legal.html
           test -s LICENSE
           test -s TRADEMARKS.md
           test -s NOTICE
           test -s CONTRIBUTING.md
           test -s data/flexion-regression-cases.json
+          test -s docs/SETTINGS-BACKUP-FORMAT.md
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done

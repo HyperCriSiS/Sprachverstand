@@ -60,6 +60,25 @@ Konfiguration bereitzustellen. Eigene Ersetzungen werden nicht als reguläre
 Ausdrücke ausgeführt, nicht an einen Server übertragen und nicht automatisch aus
 Webseiteninhalten gesammelt.
 
+### Import- und Exportdateien
+
+Auf ausdrückliche Anforderung kann Sprachverstand den vollständigen aktuellen
+Einstellungsstand als JSON-Datei erzeugen. Enthalten sind Aktivierungsstatus,
+Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen, persönliche
+Ausnahmen und eigene Ersetzungen. Die Datei wird lokal im Browser erstellt und
+über die normale Downloadfunktion des Browsers gespeichert.
+
+Eine Importdatei wird nur nach einer bewussten Dateiauswahl lokal gelesen. Vor
+der Übernahme prüft Sprachverstand Dateiformat, Schemaversion, Größenlimits und
+die enthaltenen Einträge. Die Datei wird weder hochgeladen noch an den
+Entwickler oder andere Empfänger übertragen. Der Import wird zunächst nur in das
+sichtbare Formular übernommen und erst durch den Nutzer mit **Speichern**
+aktiviert.
+
+Exportdateien können selbst eingetragene Begriffe, Formulierungen und
+Domainnamen enthalten. Für ihre Aufbewahrung, Weitergabe und Löschung ist der
+Nutzer selbst verantwortlich.
+
 ## 4. Zweck der Verarbeitung
 
 Die lokale Verarbeitung dient ausschließlich dazu, die Darstellung
@@ -93,7 +112,8 @@ bleiben im lokalen Erweiterungsspeicher des Browsers, bis sie vom Nutzer geände
 oder gelöscht werden oder die Erweiterung entfernt wird.
 
 Webseitentexte und aufgerufene Adressen werden nicht als dauerhafte
-Datensammlung gespeichert.
+Datensammlung gespeichert. Exportierte JSON-Dateien liegen außerhalb des
+Erweiterungsspeichers und bleiben erhalten, bis der Nutzer sie selbst löscht.
 
 ## 7. Browserberechtigungen
 
@@ -109,6 +129,10 @@ Die Speicherberechtigung wird benötigt, um Einstellungen, Regelgruppen,
 persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse lokal im
 Browser zu speichern.
 
+Für Import und Export wird keine zusätzliche Netzwerk- oder
+Dateisystemberechtigung angefordert. Der Zugriff auf eine Importdatei erfolgt
+ausschließlich über den vom Nutzer geöffneten Dateiauswahldialog.
+
 ## 8. Kontrolle durch den Nutzer
 
 Der Nutzer kann Sprachverstand jederzeit:
@@ -118,7 +142,8 @@ Der Nutzer kann Sprachverstand jederzeit:
 - über die Regelgruppen einschränken
 - durch persönliche Ausnahmen konfigurieren
 - durch eigene wörtliche Ersetzungen ergänzen
-- gespeicherte persönliche Einträge ändern oder löschen
+- den vollständigen Einstellungsstand lokal exportieren und wieder importieren
+- gespeicherte Einstellungen und persönliche Einträge ändern oder löschen
 - aus dem Browser entfernen
 
 Beim Ausschalten werden die von Sprachverstand vorgenommenen Änderungen an der
