@@ -144,8 +144,7 @@ describe("sourceAuditSingularRule", () => {
     ["Kommunikator*in", "Kommunikator"],
     ["Köch*in", "Koch"],
     ["Arzt/in", "Arzt"],
-    ["Matros_in", "Matrose"],
-    ["LogopädIn", "Logopäde"]
+    ["Matros_in", "Matrose"]
   ])("normalisiert den quellengeprüften Singular %s", (input, expected) => {
     expect(sourceAuditSingularRule.apply(input)).toEqual({
       text: expected,
@@ -153,8 +152,9 @@ describe("sourceAuditSingularRule", () => {
     });
   });
 
-  it("verändert keine ausgeschriebenen Feminina oder unbekannten Markerformen", () => {
-    const input = "Followerin, Köchin und Fantasiefigur*in";
+  it("schützt normale Feminina, Binnen-I-Singularformen und unbekannte Markerformen", () => {
+    const input =
+      "Followerin, Köchin, eine FollowerIn, LogopädIn und Fantasiefigur*in";
     expect(sourceAuditSingularRule.apply(input)).toEqual({
       text: input,
       replacements: 0
