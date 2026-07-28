@@ -168,13 +168,6 @@ erstellt.
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert.
 
-## Entwicklungsmodell
-
-- `main` enthält den stabilen, geprüften Stand.
-- `dev` ist der gemeinsame Entwicklungszweig.
-- Separate Feature-Branches werden nur für größere, riskante oder parallel
-  bearbeitete Änderungen verwendet und nach dem Merge wieder gelöscht.
-
 ## Dank und Herkunft
 
 Bei der Entwicklung wurden öffentlich dokumentierte Anwendungsfälle,
