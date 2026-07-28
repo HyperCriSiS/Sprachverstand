@@ -5,6 +5,31 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.5.4 – Beta 9 (2026-07-28)
+
+### Hinzugefügt
+
+- Automatisierter GitHub-Prerelease mit geprüften Chromium-, Firefox- und
+  Quellcodepaketen sowie SHA-256-Prüfsummen.
+- Öffentliche Projektvorstellung mit Hinweisen zu Lesbarkeit, Datenschutz,
+  Recherchequellen und Danksagung.
+- Aktualisierte Roadmap und Beta-Testanleitung für die noch offenen Praxisprüfungen.
+
+### Geändert
+
+- Projektbeschreibung und Manifesttexte verwenden nun den Leitsatz
+  **„Macht Webseiten leichter lesbar.“**
+- Die Herkunftsdokumentation unterscheidet genauer zwischen übernommenem
+  Quelltext und öffentlich dokumentierten Sprachbeispielen, Flexionsfällen und
+  Fehlertreffern als Recherchebasis.
+
+### Teststand
+
+- Der reale Waterfox-Test und die daraus entstandenen Popup- und Icon-Korrekturen
+  sind berücksichtigt.
+- Offen bleiben insbesondere Firefox für Android auf echter Hardware,
+  Screenreader-Tests sowie weitere reale Webseiten und Framework-Anwendungen.
+
 ## 0.5.3 – Beta 8 (2026-07-27)
 
 ### Hinzugefügt
