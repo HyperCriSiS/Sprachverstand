@@ -134,14 +134,15 @@
         </section>
 
         <section>
-          <h2>Sichern und übertragen</h2>
+          <h2>Einstellungen sichern und übertragen</h2>
           <p>
-            Exportiert oder importiert ausschließlich persönliche Ausnahmen und eigene Ersetzungen.
-            Domains, Regelgruppen und andere Einstellungen sind absichtlich nicht enthalten.
+            Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
+            Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen,
+            persönliche Ausnahmen und eigene Ersetzungen.
           </p>
           <div class="transfer-controls">
-            <button id="export-personal-rules" type="button">Als JSON exportieren</button>
-            <button id="import-personal-rules" type="button">JSON importieren</button>
+            <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
+            <button id="import-personal-rules" type="button">Einstellungen aus JSON importieren</button>
             <input
               id="import-personal-rules-file"
               type="file"
@@ -149,16 +150,18 @@
               hidden
             >
             <label class="import-mode">
-              Konflikte beim Import
+              Umgang mit vorhandenen persönlichen Listen
               <select id="personal-rules-import-mode">
-                <option value="keep-existing">Vorhandene Ersetzungen behalten</option>
-                <option value="prefer-imported">Importierte Ersetzungen übernehmen</option>
-                <option value="replace">Beide Listen vollständig ersetzen</option>
+                <option value="keep-existing">Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten</option>
+                <option value="prefer-imported">Importierte Einstellungen und importierte Ersetzungsziele übernehmen</option>
+                <option value="replace">Alle Einstellungen und persönlichen Listen vollständig ersetzen</option>
               </select>
             </label>
           </div>
           <small>
-            Importdateien werden nur nach Deiner Auswahl lokal gelesen. Ein Import wird zunächst in das Formular übernommen und erst mit „Speichern“ aktiviert.
+            Allgemeine Einstellungen aus der Sicherung werden bei jeder Auswahl in das Formular übernommen.
+            Die Auswahl bestimmt nur, wie bestehende persönliche Ausnahmen und eigene Ersetzungen mit den importierten Listen zusammengeführt werden.
+            Importdateien werden ausschließlich nach Deiner Dateiauswahl lokal gelesen. Der Import wird erst mit „Speichern“ aktiviert.
           </small>
           <div id="import-summary" aria-live="polite"></div>
         </section>
