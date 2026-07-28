@@ -64,8 +64,8 @@ Funktionen:
 - persönliche Ausnahmen für Wörter und vollständige Formulierungen
 - eigene wörtliche Ersetzungen, getrennt von Ausnahmen und ohne Regex
 - Live-Vorschau und Konflikthinweise vor dem Speichern eigener Regeln
-- lokaler JSON-Import und -Export persönlicher Ausnahmen und Ersetzungen
-- drei wählbare Strategien für Zielkonflikte beim Import
+- lokaler JSON-Import und -Export des vollständigen Einstellungsstands
+- drei wählbare Strategien für persönliche Listen beim Import
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
@@ -144,8 +144,8 @@ Wichtige Funktionen:
 - persönliche Wort- und Phrasenausnahmen
 - eigene wörtliche Ersetzungen ohne Regex
 - Live-Vorschau und Konflikthinweise für eigene Regeln
-- lokaler JSON-Import und -Export persönlicher Einträge
-- ausdrücklich wählbare Importstrategie bei Zielkonflikten
+- lokaler JSON-Import und -Export aller Einstellungen
+- ausdrücklich wählbare Strategie für persönliche Listen beim Import
 - Ausschluss bestimmter Domains
 - optionaler Schutz zitierter Schreibweisen
 - optionale Verarbeitung zugänglicher Textattribute
@@ -184,12 +184,14 @@ Exportdateien werden lokal erzeugt.
 > diese Kernfunktion verwendet. Webseiteninhalte werden nicht übertragen oder
 > dauerhaft gespeichert.
 
-### Import und Export persönlicher Regeln
+### Import und Export der Einstellungen
 
-> Persönliche Ausnahmen und eigene Ersetzungen können auf ausdrückliche
-> Nutzeraktion als JSON-Datei lokal exportiert oder über den Dateiauswahldialog
-> lokal importiert werden. Hierfür wird keine zusätzliche Netzwerk- oder
-> Dateisystemberechtigung verwendet. Die Dateien werden nicht übertragen.
+> Der vollständige Einstellungsstand kann auf ausdrückliche Nutzeraktion als
+> JSON-Datei lokal exportiert oder über den Dateiauswahldialog lokal importiert
+> werden. Enthalten sind Aktivierung, Regelgruppen, Domain-Ausschlüsse, Zitat-
+> und Attributoptionen, persönliche Ausnahmen und eigene Ersetzungen. Hierfür
+> wird keine zusätzliche Netzwerk- oder Dateisystemberechtigung verwendet. Die
+> Dateien werden nicht übertragen.
 
 ### Remote-Code
 
@@ -216,8 +218,8 @@ Exportdateien werden lokal erzeugt.
 > Regelgruppen, persönliche Textausnahmen, eigene wörtliche Ersetzungen und
 > Domain-Ausschlüsse werden lokal im Erweiterungsspeicher gespeichert und
 > ausschließlich für die gewählte Konfiguration verwendet. Bei einem bewusst
-> ausgelösten Export werden nur persönliche Ausnahmen und eigene Ersetzungen in
-> eine lokale JSON-Datei geschrieben.
+> ausgelösten Export wird der vollständige Einstellungsstand in eine lokale
+> JSON-Datei geschrieben.
 
 ### Eingeschränkte Datennutzung
 
