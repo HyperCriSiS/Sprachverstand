@@ -15,10 +15,7 @@ body {
 main {
   width: min(840px, 100%);
   margin: 0 auto;
-  padding: max(24px, env(safe-area-inset-top))
-    max(16px, env(safe-area-inset-right))
-    max(32px, env(safe-area-inset-bottom))
-    max(16px, env(safe-area-inset-left));
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 
 .page-header {
@@ -33,12 +30,14 @@ main {
 
 .page-header h1,
 h2,
+h3,
 p {
   margin-top: 0;
 }
 
 .page-header p,
-.section-heading p {
+.section-heading p,
+.preview-panel p {
   opacity: 0.78;
 }
 
@@ -56,9 +55,17 @@ section {
   border-radius: 12px;
 }
 
-section h2 {
+section h2,
+section h3 {
   margin-bottom: 0;
+}
+
+section h2 {
   font-size: 18px;
+}
+
+section h3 {
+  font-size: 16px;
 }
 
 label {
@@ -106,17 +113,26 @@ input[type="checkbox"] {
 }
 
 textarea,
+select,
 button {
   font: inherit;
 }
 
-textarea {
+textarea,
+select {
   width: 100%;
-  min-height: 120px;
   padding: 12px;
   border-radius: 8px;
+}
+
+textarea {
+  min-height: 120px;
   resize: vertical;
   font-size: 16px;
+}
+
+textarea[readonly] {
+  background: color-mix(in srgb, currentColor 6%, Canvas);
 }
 
 button {
@@ -137,12 +153,14 @@ button {
   gap: 16px;
 }
 
-.section-heading p {
+.section-heading p,
+.preview-panel p {
   margin: 6px 0 0;
 }
 
 .compact-actions,
-.actions {
+.actions,
+.transfer-controls {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -190,12 +208,108 @@ small {
   opacity: 0.76;
 }
 
+.diagnostics,
+.import-summary {
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  font-size: 14px;
+}
+
+.diagnostics:empty,
+#import-summary:empty {
+  display: none;
+}
+
+.diagnostics p,
+.import-summary p {
+  margin: 0;
+}
+
+.diagnostics ul,
+.import-summary ul {
+  margin: 0;
+  padding-left: 21px;
+}
+
+.diagnostics li + li,
+.import-summary li + li {
+  margin-top: 4px;
+}
+
+.diagnostics.warning,
+.import-summary.warning,
+.diagnostics.error {
+  border-width: 2px;
+}
+
+.diagnostics.error,
+.diagnostic-success,
+.import-reminder {
+  font-weight: 700;
+}
+
+.preview-panel {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.preview-grid textarea {
+  min-height: 132px;
+}
+
+.preview-count {
+  min-height: 1.45em;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preview-count.error {
+  font-weight: 700;
+}
+
+.transfer-controls {
+  align-items: end;
+}
+
+.import-mode {
+  min-width: min(100%, 300px);
+  flex: 1 1 280px;
+  font-size: 14px;
+}
+
+.import-mode select {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
 #status {
   min-height: 1.5em;
 }
 
 #status.error {
   font-weight: 700;
+}
+
+.legal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 20px;
+  font-size: 13px;
+  opacity: 0.78;
 }
 
 @media (max-width: 600px) {
@@ -207,13 +321,20 @@ small {
     padding: 14px;
   }
 
-  .section-heading {
+  .section-heading,
+  .preview-grid {
     display: grid;
+    grid-template-columns: 1fr;
   }
 
   .compact-actions button,
-  .actions button {
+  .actions button,
+  .transfer-controls button {
     flex: 1 1 auto;
+  }
+
+  .import-mode {
+    flex-basis: 100%;
   }
 
   .actions {
@@ -226,14 +347,4 @@ small {
   #status {
     flex-basis: 100%;
   }
-}
-
-.legal-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px 16px;
-  margin-top: 20px;
-  font-size: 13px;
-  opacity: 0.78;
 }
