@@ -1,4 +1,4 @@
-name: Patch options accordion
+name: Normalize options accordion
 
 on:
   pull_request:
@@ -10,133 +10,22 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  normalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Styles, Steuerung und Regressionstests ergänzen
+      - name: Doppelte Patch-Blöcke bereinigen
         shell: python
         run: |
           from pathlib import Path
+          import re
 
-          css_path = Path("static/options/options.css")
-          css = css_path.read_text(encoding="utf-8")
-          marker = "/* Einstellungsbereiche */"
-          if marker not in css:
-              css += r'''
+          path = Path("src/options.ts")
+          text = path.read_text(encoding="utf-8")
 
-          /* Einstellungsbereiche */
-          .settings-toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-top: 22px;
-            padding: 10px 12px;
-            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-            border-radius: 10px;
-            background: color-mix(in srgb, currentColor 4%, transparent);
-          }
-
-          .settings-toolbar > span {
-            font-weight: 700;
-          }
-
-          .settings-section {
-            display: block;
-            border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
-            border-radius: 12px;
-            overflow: clip;
-          }
-
-          .settings-section > summary {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            min-height: 56px;
-            padding: 14px 18px;
-            cursor: pointer;
-            list-style: none;
-            user-select: none;
-          }
-
-          .settings-section > summary::-webkit-details-marker {
-            display: none;
-          }
-
-          .settings-section > summary::after {
-            content: "";
-            flex: 0 0 auto;
-            width: 9px;
-            height: 9px;
-            margin-right: 3px;
-            border-right: 2px solid currentColor;
-            border-bottom: 2px solid currentColor;
-            transform: rotate(45deg) translate(-2px, -2px);
-            transition: transform 120ms ease;
-          }
-
-          .settings-section[open] > summary::after {
-            transform: rotate(225deg) translate(-2px, -2px);
-          }
-
-          .settings-section > summary:hover {
-            background: color-mix(in srgb, currentColor 5%, transparent);
-          }
-
-          .settings-section > summary:focus-visible {
-            outline: 2px solid currentColor;
-            outline-offset: -3px;
-          }
-
-          .settings-section > summary h2 {
-            margin: 0;
-            font-size: 18px;
-          }
-
-          .settings-section-content {
-            display: grid;
-            gap: 14px;
-            padding: 0 18px 18px;
-            border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-          }
-
-          .settings-section-content > :first-child {
-            margin-top: 16px;
-          }
-
-          .settings-section-content > p {
-            margin-bottom: 0;
-          }
-
-          @media (max-width: 600px) {
-            .settings-toolbar {
-              align-items: stretch;
-              flex-direction: column;
-            }
-
-            .settings-toolbar .compact-actions {
-              display: grid;
-              grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .settings-section > summary {
-              padding: 13px 14px;
-            }
-
-            .settings-section-content {
-              padding: 0 14px 14px;
-            }
-          }
-          '''
-              css_path.write_text(css, encoding="utf-8")
-
-          options_path = Path("src/options.ts")
-          options = options_path.read_text(encoding="utf-8")
           declarations = '''const statusOutput = requiredElement<HTMLOutputElement>("#status");
           const expandAllSectionsButton =
             requiredElement<HTMLButtonElement>("#expand-all-sections");
@@ -144,10 +33,14 @@ jobs:
             requiredElement<HTMLButtonElement>("#collapse-all-sections");
           const settingsSections = [
             ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
-          ];'''
-          options = options.replace(
-              'const statusOutput = requiredElement<HTMLOutputElement>("#status");',
-              declarations
+          ];
+          '''
+          text = re.sub(
+              r'const statusOutput = requiredElement<HTMLOutputElement>\("#status"\);.*?(?=\nlet activeTabId)',
+              declarations.rstrip(),
+              text,
+              count=1,
+              flags=re.S
           )
 
           helpers = '''function refreshSectionToggleButtons(): void {
@@ -164,15 +57,13 @@ jobs:
             refreshSectionToggleButtons();
           }
 
-          function createRuleGroupControls(): void {'''
-          options = options.replace(
-              'function createRuleGroupControls(): void {',
-              helpers
-          )
-
-          options = options.replace(
-              '  createRuleGroupControls();\n  render(await loadSettings());',
-              '  createRuleGroupControls();\n  refreshSectionToggleButtons();\n  render(await loadSettings());'
+          '''
+          text = re.sub(
+              r'function refreshSectionToggleButtons\(\): void \{.*?(?=function createRuleGroupControls)',
+              helpers,
+              text,
+              count=1,
+              flags=re.S
           )
 
           listeners = '''  expandAllSectionsButton.addEventListener("click", () => {
@@ -186,29 +77,34 @@ jobs:
           }
 
           '''
-          options = options.replace(
-              '  selectAllRulesButton.addEventListener("click", () => {',
-              listeners + '  selectAllRulesButton.addEventListener("click", () => {'
+          text = re.sub(
+              r'  expandAllSectionsButton\.addEventListener\("click".*?(?=  selectAllRulesButton)',
+              listeners,
+              text,
+              count=1,
+              flags=re.S
           )
-          options_path.write_text(options, encoding="utf-8")
+          path.write_text(text, encoding="utf-8")
 
           tests_path = Path("tests/rules/known-plural-separators.test.ts")
           tests = tests_path.read_text(encoding="utf-8")
+          tests = re.sub(r'    \["(?:Praktiker|Mediziner)\*innen", "(?:Praktiker|Mediziner)"\],\n', '', tests)
           tests = tests.replace(
               '    ["Follower*innen", "Follower"],\n',
               '    ["Follower*innen", "Follower"],\n'
               '    ["Praktiker*innen", "Praktiker"],\n'
-              '    ["Mediziner*innen", "Mediziner"],\n'
+              '    ["Mediziner*innen", "Mediziner"],\n',
+              1
           )
           tests_path.write_text(tests, encoding="utf-8")
 
-      - name: Änderungen committen
+      - name: Bereinigung committen
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add static/options/options.css src/options.ts tests/rules/known-plural-separators.test.ts
+          git add src/options.ts tests/rules/known-plural-separators.test.ts
           git diff --cached --quiet && exit 0
-          git commit -m "ui: add collapsible settings controls"
+          git commit -m "fix: normalize options accordion patch"
           git push origin HEAD:${{ github.head_ref }}
