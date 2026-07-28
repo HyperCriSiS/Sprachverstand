@@ -143,11 +143,3 @@ button {
   cursor: pointer;
   touch-action: manipulation;
 }
-
-.legal-link {
-  display: block;
-  margin-top: 10px;
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.72;
-}
