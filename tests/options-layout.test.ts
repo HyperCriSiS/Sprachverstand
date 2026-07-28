@@ -1,10 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const html = readFileSync(
-  new URL("../static/options/options.html", import.meta.url),
-  "utf8"
-);
+const html = readFileSync("static/options/options.html", "utf8");
 
 describe("Einstellungsaufbau", () => {
   it("ordnet die Bereiche in der vorgesehenen Reihenfolge an", () => {
