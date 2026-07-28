@@ -9,6 +9,10 @@ import { neutralPersonTermsRule } from "./neutral-person-terms";
 import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
 import { singularDoubleFormsRule } from "./singular-double-forms";
+import {
+  sourceAuditPluralRule,
+  sourceAuditSingularRule
+} from "./source-audit-person-forms";
 import { specialGenderFormsRule } from "./special-gender-forms";
 import { specialSingularFormsRule } from "./special-singular-forms";
 import { substantivizedAdjectivesRule } from "./substantivized-adjectives";
@@ -20,6 +24,7 @@ export const defaultRules: readonly Rule[] = [
   specialSingularFormsRule,
   substantivizedAdjectivesRule,
   unmarkedSingularRule,
+  sourceAuditSingularRule,
   specialGenderFormsRule,
   singularDoubleFormsRule,
   explicitPronounsRule,
@@ -27,6 +32,7 @@ export const defaultRules: readonly Rule[] = [
   salutationParticiplesRule,
   neutralPersonTermsRule,
   doubleFormsRule,
+  sourceAuditPluralRule,
   knownPluralSeparatorsRule,
   mappedPluralSeparatorsRule,
   binnenIPluralRule,
