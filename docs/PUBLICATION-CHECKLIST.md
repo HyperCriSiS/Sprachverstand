@@ -6,12 +6,14 @@ Diese Schritte werden unmittelbar vor und nach dem Wechsel von **private** auf
 ## Vor dem Umschalten
 
 - [ ] `main` enthält ausschließlich vollständig geprüfte Änderungen
-- [ ] `main` und `dev` sind synchron
+- [ ] keine veralteten Arbeits-, Test- oder temporären Branches sind vorhanden
 - [ ] CI auf dem finalen Commit ist vollständig erfolgreich
 - [ ] Repository enthält keine `.env`-Dateien, Schlüssel, Tokens, Zugangsdaten oder lokalen Konfigurationen
 - [ ] Git-Historie, Pull Requests und Actions-Protokolle wurden auf sensible Inhalte geprüft
-- [ ] alte Actions-Artefakte enthalten keine privaten Dateien
-- [ ] README, Lizenz, `NOTICE`, `TRADEMARKS.md`, `SECURITY.md` und `CONTRIBUTING.md` sind aktuell
+- [ ] alte Workflow-Läufe und Actions-Artefakte enthalten keine privaten Dateien oder Geheimnisse
+- [ ] nur bewusst benötigte Releases und Tags bleiben sichtbar; überholte Beta-Prereleases sind entfernt oder ausdrücklich archiviert
+- [ ] Actions-Artefakte werden höchstens 14 Tage aufbewahrt
+- [ ] README, Changelog, Lizenz, `NOTICE`, `TRADEMARKS.md`, `SECURITY.md` und `CONTRIBUTING.md` sind aktuell
 - [ ] Datenschutzerklärung beschreibt lokale Speicherung und optionale Browser-Synchronisierung korrekt
 - [ ] Storetexte stimmen mit Berechtigungen und Datenflüssen überein
 - [ ] offene automatisierte Abhängigkeits-PRs sind bewertet
@@ -24,6 +26,8 @@ Diese Schritte werden unmittelbar vor und nach dem Wechsel von **private** auf
 - [ ] Pull Request vor Änderungen an `main` verlangen
 - [ ] erfolgreichen CI-Check verlangen
 - [ ] Force-Push und Löschen von `main` verbieten
+- [ ] automatische Löschung zusammengeführter Head-Branches aktivieren
+- [ ] Squash-Merge als bevorzugtes Mergeverfahren festlegen
 - [ ] Repository-Beschreibung, Website, Themen und Social Preview prüfen
 - [ ] Issue-Tracker und Security-Link von einem nicht angemeldeten Browser prüfen
 - [ ] README-Logo und alle öffentlichen Dokumentlinks prüfen
