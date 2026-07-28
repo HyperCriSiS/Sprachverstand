@@ -110,7 +110,7 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 - eigene literale Ersetzungen, getrennt von Ausnahmen und ohne Regex
 - Live-Vorschau für noch nicht gespeicherte persönliche Regeln
 - Konflikthinweise für Dubletten, Überschneidungen, Ersetzungsketten und blockierende Ausnahmen
-- versionierter JSON-Import und -Export persönlicher Ausnahmen und Ersetzungen
+- versionierter JSON-Import und -Export des vollständigen Einstellungsstands
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
@@ -142,9 +142,13 @@ gespeichert. Ausnahmen haben Vorrang.
 Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
 geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
 widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
-Überschneidungen und nicht ausgeführte Ersetzungsketten hin. Persönliche
-Ausnahmen und eigene Ersetzungen lassen sich als versionierte JSON-Datei sichern
-und mit einer ausdrücklich gewählten Konfliktstrategie wieder einlesen.
+Überschneidungen und nicht ausgeführte Ersetzungsketten hin.
+
+Der vollständige Einstellungsstand einschließlich Aktivierung, Regelgruppen,
+Domain-Ausschlüssen, Zitat- und Attributoptionen, Ausnahmen und eigenen
+Ersetzungen lässt sich als versionierte JSON-Datei sichern und wieder einlesen.
+Ein Import wird zunächst nur in das Formular übernommen und erst nach dem
+Speichern aktiv.
 
 ## Datenschutz
 
@@ -198,9 +202,9 @@ erstellt.
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das
 Verfahren zur Erweiterung und Absicherung des Flexionsbestands ist in
-[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Das JSON-Format für persönliche
-Regeln ist in
-[`docs/PERSONAL-RULES-FORMAT.md`](docs/PERSONAL-RULES-FORMAT.md) dokumentiert.
+[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Das JSON-Format der
+Einstellungssicherung ist in
+[`docs/SETTINGS-BACKUP-FORMAT.md`](docs/SETTINGS-BACKUP-FORMAT.md) dokumentiert.
 Hinweise für Beiträge stehen in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Dank und Herkunft
