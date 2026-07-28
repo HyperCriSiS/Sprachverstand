@@ -76,8 +76,9 @@ Vor dem Export einen eindeutig erkennbaren Teststand herstellen:
 Die Datei muss enthalten:
 
 - `format: "sprachverstand.settings-backup"`
-- `version: 1`
+- `version: 2`
 - einen gültigen ISO-Zeitstempel
+- `syncCategoryIds` mit ausschließlich bekannten Kategorien
 - Aktivierungsstatus
 - aktive Regelgruppen
 - Domain-Ausschlüsse
@@ -136,3 +137,17 @@ Folgende Dateien müssen ohne Teilübernahme abgewiesen werden:
   ist nicht vorhanden.
 - Die Formulierung **Freie Software unter starkem Copyleft** ist auf der
   Lizenzseite nicht vorhanden.
+
+
+## Optionale Browser-Synchronisierung
+
+- Nach einer frischen Installation sind alle sechs Schalter deaktiviert.
+- Der vollständige Stand liegt in `storage.local`.
+- Nur ausgewählte Kategorien erscheinen zusätzlich in getrennten `storage.sync`-Schlüsseln.
+- Abgewählte Kategorien werden aus `storage.sync` entfernt.
+- Die Schalterauswahl selbst bleibt lokal.
+- Zu große Kategorien werden mit einer verständlichen Meldung abgewiesen.
+
+## Strikte Ablehnung
+
+Testdateien mit unbekannten Feldern, zukünftiger Einstellungsrevision, ungültigen Domains, doppelten Ausgangstexten oder überzähligen Einträgen dürfen nicht teilweise übernommen werden.

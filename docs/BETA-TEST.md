@@ -1,17 +1,17 @@
-# Sprachverstand 0.6.0 – Beta 11 testen
+# Sprachverstand 0.6.1 – Beta 12 testen
 
-Beta 11 erweitert den Sprachkern deutlich, ergänzt eigene lokale Ersetzungen
-und führt die endgültige Open-Source-Lizenz ein. Die Regel-Engine bleibt
-lexikon- und testgestützt; breit abschneidende Rückfall-Regex werden weiterhin
-vermieden.
+Beta 12 prüft zusätzlich die standardmäßig lokale Speicherung, die fein gegliederte optionale Browser-Synchronisierung, den gehärteten Einstellungsimport und die unveränderliche Release-Erzeugung. Die sprachlichen Beta-11-Funktionen bleiben vollständig enthalten.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.6.0-beta.11-chromium.zip`
-- `sprachverstand-0.6.0-beta.11-firefox.xpi`
-- `sprachverstand-0.6.0-beta.11-source.zip`
+- `sprachverstand-0.6.1-beta.12-chromium.zip`
+- `sprachverstand-0.6.1-beta.12-firefox.xpi`
+- `sprachverstand-0.6.1-beta.12-source.zip`
 - `SHA256SUMS.txt`
+- `SOURCE_COMMIT.txt`
+- `SOURCE_COMMIT.txt`
 - `BETA-TEST.md`
+- `AMO-SOURCE-INSTRUCTIONS.md`
 
 ## Prüfsummen kontrollieren
 
@@ -51,10 +51,35 @@ Prüfen:
   SV-Monogramm.
 - Symbol ist in 32, 48 und 128 Pixeln vollständig sichtbar.
 - Korrekturzähler folgt Änderungen ohne Neuladen.
-- Der Link **Lizenz, Quelltext und Gewährleistung** öffnet die lokale
-  Rechtshinweisseite.
+- Der Link **Lizenz und Quelltext** befindet sich nur in den erweiterten Einstellungen und öffnet die lokale Rechtshinweisseite.
 - Rechtshinweisseite nennt `AGPL-3.0-only`, Quelltextadresse, fehlende
   Gewährleistung sowie die getrennte Behandlung von Name und Logo.
+
+
+## Speicherort und optionale Browser-Synchronisierung
+
+1. Erweiterung neu laden und prüfen, dass unter **Browser-Synchronisierung** alle sechs Kategorien deaktiviert sind.
+2. Einstellungen ändern und speichern. Im Browser-Speicher muss der vollständige Stand unter `storage.local` liegen; `storage.sync` bleibt leer.
+3. Nur **Aktivierungsstatus** und **Regelgruppen** auswählen und speichern. Nur diese beiden Kategorien dürfen zusätzlich in `storage.sync` erscheinen.
+4. **Persönliche Ausnahmen** auswählen, einen erkennbaren Testwert speichern und auf einem zweiten angemeldeten Testprofil prüfen.
+5. Die Kategorie wieder abwählen und speichern. Ihr Synchronisierungsschlüssel muss entfernt werden, der aktuelle Wert aber lokal erhalten bleiben.
+6. Eine sehr große Liste eigener Ersetzungen zur Synchronisierung auswählen. Bei Überschreitung des sicheren Limits muss eine verständliche Meldung erscheinen; unbeteiligte Kategorien bleiben lokal nutzbar.
+7. Prüfen, dass die Synchronisierungsauswahl selbst nicht auf ein zweites Gerät übertragen wird.
+
+## Vollständiger Export und strenger Import
+
+Der Export muss `format: "sprachverstand.settings-backup"`, `version: 2`, einen ISO-Zeitstempel, alle Einstellungen und `syncCategoryIds` enthalten.
+
+Folgende Dateien müssen vollständig abgewiesen werden:
+
+- unbekannte Backup-Version oder zukünftige `settingsRevision`
+- unbekannte Felder, Regelgruppen oder Synchronisierungskategorien
+- mehr als 100 Domains, Ausnahmen oder eigene Ersetzungen
+- leere, typwidrige oder zu lange Einträge
+- ungültige Domains und gleichwertige Domain-Dubletten
+- doppelte Ausgangstexte bei eigenen Ersetzungen
+
+Ein gültiger Import darf erst nach **Speichern** aktiv werden.
 
 ## Sichtbar markiertes Binnen-I im Singular
 
@@ -219,7 +244,7 @@ Testfolge:
 6. Zusätzlich `Nutzer:innen` als persönliche Ausnahme eintragen: Die Ausnahme
    muss Vorrang haben und den Text unverändert lassen.
 7. Eine leere Zielseite wie `Testzusatz =>` muss den Ausgangstext entfernen.
-8. Prüfen, dass die Einträge nur lokal gespeichert werden.
+8. Prüfen, dass die Einträge ohne ausgewählte Synchronisierung nur lokal gespeichert werden.
 
 Benutzerdefinierte Regex, Platzhalter und rekursive Ersetzungsketten werden
 absichtlich nicht unterstützt.

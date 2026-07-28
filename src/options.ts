@@ -9,7 +9,11 @@ import {
   currentSettingsRevision,
   defaultSettings,
   maximumCustomReplacements,
-  type Settings
+  maximumExcludedDomains,
+  normalizeExcludedDomain,
+  syncCategoryIds,
+  type Settings,
+  type SyncCategoryId
 } from "./settings/defaults";
 import {
   analyzeCustomReplacementConflicts,
@@ -75,6 +79,8 @@ const importSettingsFile =
 const importModeSelect =
   requiredElement<HTMLSelectElement>("#personal-rules-import-mode");
 const importSummary = requiredElement<HTMLElement>("#import-summary");
+const syncCategoriesContainer =
+  requiredElement<HTMLElement>("#sync-categories");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
 const selectAllRulesButton =
@@ -138,6 +144,22 @@ function ruleGroupInputs(): HTMLInputElement[] {
   )];
 }
 
+function syncCategoryInputs(): HTMLInputElement[] {
+  return [...syncCategoriesContainer.querySelectorAll<HTMLInputElement>(
+    "input[data-sync-category]"
+  )];
+}
+
+function syncCategoryIdsFromForm(): SyncCategoryId[] {
+  const known = new Set<string>(syncCategoryIds);
+  return syncCategoryInputs()
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.syncCategory)
+    .filter(
+      (id): id is SyncCategoryId => typeof id === "string" && known.has(id)
+    );
+}
+
 function enabledRuleGroupIdsFromForm(): string[] {
   return ruleGroupInputs()
     .filter((input) => input.checked)
@@ -156,6 +178,13 @@ function render(settings: Settings): void {
   );
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
+  const selectedSyncCategories = new Set(settings.syncCategoryIds);
+  for (const input of syncCategoryInputs()) {
+    input.checked = selectedSyncCategories.has(
+      input.dataset.syncCategory as SyncCategoryId
+    );
+  }
+
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
   for (const input of ruleGroupInputs()) {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
@@ -163,28 +192,51 @@ function render(settings: Settings): void {
 }
 
 function readLines(value: string): string[] {
-  return [
-    ...new Set(
-      value
-        .split(/\r?\n/u)
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-    )
-  ];
+  return value
+    .split(/\r?\n/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function readExcludedDomains(): string[] {
+  const entries = readLines(excludedDomainsInput.value);
+  if (entries.length > maximumExcludedDomains) {
+    throw new Error(
+      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
+    );
+  }
+
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of entries) {
+    const normalized = normalizeExcludedDomain(entry);
+    if (!normalized) {
+      throw new Error(`Der Domain-Ausschluss „${entry}“ ist ungültig.`);
+    }
+    if (seen.has(normalized)) {
+      throw new Error(
+        `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
+      );
+    }
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
 }
 
 function readForm(): Settings {
   return {
     settingsRevision: currentSettingsRevision,
     enabled: enabledInput.checked,
-    excludedDomains: readLines(excludedDomainsInput.value),
+    excludedDomains: readExcludedDomains(),
     enabledRuleGroupIds: enabledRuleGroupIdsFromForm(),
     protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
     customReplacements: parseCustomReplacementsText(
       customReplacementsInput.value
     ).replacements,
     processAccessibleAttributes: processAccessibleAttributesInput.checked,
-    processQuotedText: processQuotedTextInput.checked
+    processQuotedText: processQuotedTextInput.checked,
+    syncCategoryIds: syncCategoryIdsFromForm()
   };
 }
 
@@ -418,7 +470,7 @@ function selectedImportMode(): SettingsBackupImportMode {
 function renderImportSummary(result: SettingsImportResult): void {
   const generalSettings = document.createElement("p");
   generalSettings.textContent =
-    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse sowie Zitat- und Attributoptionen wurden aus der Sicherung übernommen.";
+    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
 
   const summary = document.createElement("p");
   summary.textContent = [

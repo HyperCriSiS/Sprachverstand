@@ -1,8 +1,30 @@
 node_modules/
 dist/
 coverage/
+artifacts/
 *.log
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# Lokale Konfiguration und Zugangsdaten
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Temporäre Patch- und Editorreste
+*.patch
+*.orig
+*.rej
+*.bak
+*.tmp
+*.swp

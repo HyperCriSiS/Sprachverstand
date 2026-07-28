@@ -1,36 +1,38 @@
 # Format der Einstellungssicherung
 
-Sprachverstand kann den vollständigen aktuellen Einstellungsstand als
-versionierte JSON-Datei exportieren und wieder importieren.
+Sprachverstand exportiert den vollständigen aktuellen Einstellungsstand als
+versionierte JSON-Datei und kann ihn lokal wieder einlesen.
 
-Enthalten sind:
+## Enthaltene Daten
 
 - Aktivierungsstatus
 - aktive Regelgruppen
-- ausgeschlossene Domains
+- Domain-Ausschlüsse
 - Verarbeitung von Zitaten und zugänglichen Attributen
 - persönliche Ausnahmen
 - eigene Ersetzungen
+- Auswahl der optionalen Browser-Synchronisierung
 
 ## Datenschutz
 
-Der Export wird lokal im Browser erzeugt. Eine Importdatei wird nur nach einer
-bewussten Dateiauswahl lokal gelesen. Es findet keine Übertragung an den
-Entwickler, einen Cloud-Dienst oder andere Empfänger statt.
+Export und Import finden ausschließlich nach einer bewussten Nutzeraktion im
+Browser statt. Die Datei wird nicht hochgeladen. Sie kann persönliche Begriffe,
+Formulierungen und Domainnamen enthalten und sollte nicht ungeprüft veröffentlicht
+werden.
 
-Die exportierte Datei kann persönliche Begriffe, Formulierungen und Domainnamen
-enthalten. Sie sollte deshalb wie eine andere persönliche Konfigurationsdatei
-behandelt und nicht ungeprüft veröffentlicht werden.
+Ein Import mit ausgewählten Synchronisierungskategorien überträgt noch nichts.
+Erst nach **Speichern** werden ausdrücklich ausgewählte Kategorien zusätzlich an
+`storage.sync` übergeben.
 
-## Aktuelles Schema
+## Schema 2
 
 ```json
 {
   "format": "sprachverstand.settings-backup",
-  "version": 1,
+  "version": 2,
   "exportedAt": "2026-07-28T18:30:00.000Z",
   "settings": {
-    "settingsRevision": 5,
+    "settingsRevision": 6,
     "enabled": true,
     "excludedDomains": [
       "example.org"
@@ -49,42 +51,52 @@ behandelt und nicht ungeprüft veröffentlicht werden.
       }
     ],
     "processAccessibleAttributes": true,
-    "processQuotedText": true
+    "processQuotedText": true,
+    "syncCategoryIds": [
+      "rule-groups"
+    ]
   }
 }
 ```
 
-- `format` kennzeichnet den Dateityp.
-- `version` ist die Schemafassung. Unbekannte zukünftige Fassungen werden nicht
-  stillschweigend eingelesen.
-- `exportedAt` enthält den Exportzeitpunkt im ISO-8601-Format.
-- `settingsRevision` beschreibt den internen Migrationsstand.
-- `enabledRuleGroupIds` enthält ausschließlich bekannte Regelgruppen.
-- `protectedTerms` und `customReplacements` enthalten die persönlichen Listen.
+### Synchronisierungskategorien
 
-Regex, Platzhalter, ausführbarer Code und rekursive Ersetzungsketten werden
-nicht unterstützt.
+Zulässig sind ausschließlich:
+
+- `activation`
+- `rule-groups`
+- `excluded-domains`
+- `text-options`
+- `protected-terms`
+- `custom-replacements`
+
+Eine leere Liste bedeutet, dass alle Daten ausschließlich lokal bleiben.
+
+## Strikte Prüfung
+
+Der Import wird vollständig abgewiesen bei:
+
+- fremdem Format oder unbekannter Schemaversion
+- zukünftiger unbekannter `settingsRevision`
+- unbekannten Feldern
+- unbekannten Regelgruppen oder Synchronisierungskategorien
+- falschen Feldtypen
+- leeren, überzähligen oder zu langen Einträgen
+- ungültigen oder gleichwertig doppelten Domains
+- doppelten Ausgangstexten eigener Ersetzungen
+- Dateien über 1 MB
+
+Es gibt keine stille Kürzung. Regex, Platzhalter, Skripte und ausführbarer Code
+sind nicht Teil des Formats.
 
 ## Importstrategien
 
-Allgemeine Einstellungen aus der Sicherung werden bei jeder Strategie in das
-Formular übernommen. Die Auswahl bestimmt, wie bereits vorhandene persönliche
-Listen behandelt werden:
+Allgemeine Einstellungen und die Synchronisierungsauswahl werden bei jeder
+Strategie in das Formular übernommen. Die Auswahl betrifft nur bereits vorhandene
+persönliche Listen:
 
-1. Vorhandene Ersetzungsziele behalten und abweichende Importziele nur melden.
-2. Importierte Ersetzungsziele bei identischem Ausgangstext übernehmen.
-3. Alle Einstellungen und beide persönlichen Listen vollständig ersetzen.
+1. vorhandene Ersetzungsziele behalten
+2. importierte Ersetzungsziele bevorzugen
+3. alle Einstellungen und persönlichen Listen vollständig ersetzen
 
-Ein Import verändert zunächst nur das sichtbare Formular. Er wird erst mit dem
-Knopf **Speichern** aktiviert. Dubletten, widersprüchliche Ziele, blockierende
-Ausnahmen, Ersetzungsketten, Überschneidungen und wirkungslose Einträge werden
-vorher angezeigt.
-
-## Sicherheitsgrenzen
-
-- Importdateien sind auf 1 MB begrenzt.
-- Dateityp, Schemafassung, Zeitstempel und Feldtypen werden geprüft.
-- Unbekannte Schemaversionen werden abgewiesen.
-- Persönliche Listen unterliegen denselben Anzahl- und Längenlimits wie bei der
-  direkten Eingabe.
-- Ein Import löst keine Netzwerkverbindung aus.
+Der Import wird erst mit **Speichern** aktiv.

@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Node.js einrichten und npm-Cache laden
         uses: actions/setup-node@v6
@@ -34,13 +36,34 @@ jobs:
       - name: Vollständige Prüfung ausführen
         run: npm run check
 
-      - name: Release-Pakete erstellen
+      - name: Release-Ziel festlegen und bestehende Tags ablehnen
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.11"
+          BETA="beta.12"
           TAG="v${VERSION}-${BETA}"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Der unveränderliche Tag ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
+            exit 1
+          fi
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Der Release ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
+            exit 1
+          fi
+
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "BETA=${BETA}" >> "$GITHUB_ENV"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+
+      - name: Release-Pakete erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p artifacts
 
           (
@@ -56,9 +79,11 @@ jobs:
           git archive \
             --format=zip \
             --output="artifacts/sprachverstand-${VERSION}-${BETA}-source.zip" \
-            HEAD
+            "$GITHUB_SHA"
 
           cp docs/BETA-TEST.md artifacts/
+          cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
@@ -66,6 +91,7 @@ jobs:
               "sprachverstand-${VERSION}-${BETA}-chromium.zip" \
               "sprachverstand-${VERSION}-${BETA}-firefox.xpi" \
               "sprachverstand-${VERSION}-${BETA}-source.zip" \
+              SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
@@ -74,27 +100,29 @@ jobs:
           unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi"
           unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
 
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "BETA=${BETA}" >> "$GITHUB_ENV"
-          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          if unzip -l "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" | grep -q 'META-INF/'; then
+            echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
+            exit 1
+          fi
 
-      - name: GitHub-Release veröffentlichen
+      - name: GitHub-Prerelease veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          gh release create "$TAG" \
+            artifacts/* \
+            --target "$GITHUB_SHA" \
+            --title "Sprachverstand ${VERSION} – Beta 12" \
+            --notes-file docs/RELEASE-NOTES.md \
+            --prerelease
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG existiert bereits; Dateien werden aktualisiert."
-            gh release upload "$TAG" artifacts/* --clobber
-          else
-            gh release create "$TAG" \
-              artifacts/* \
-              --target "$GITHUB_SHA" \
-              --title "Sprachverstand ${VERSION} – Beta 11" \
-              --notes-file docs/RELEASE-NOTES.md \
-              --prerelease
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
+            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, erwartet wurde ${GITHUB_SHA}."
+            exit 1
           fi
 
       - name: Veröffentlichung in der Roadmap vermerken
@@ -103,8 +131,8 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 11 veröffentlicht
+          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 12 veröffentlicht
 
-          Sprachverstand ${VERSION} Beta 11 wurde nach erfolgreicher vollständiger Prüfung veröffentlicht.
+          Sprachverstand ${VERSION} Beta 12 wurde nach erfolgreicher vollständiger Prüfung als unveränderlicher Release veröffentlicht.
 
           https://github.com/${REPOSITORY}/releases/tag/${TAG}"

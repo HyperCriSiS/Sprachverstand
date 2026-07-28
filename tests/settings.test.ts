@@ -10,6 +10,7 @@ import {
   defaultSettings,
   maximumCustomReplacementSourceLength,
   maximumCustomReplacements,
+  maximumExcludedDomains,
   maximumProtectedTermLength,
   maximumProtectedTerms,
   normalizeSettings
@@ -30,6 +31,7 @@ describe("Einstellungen", () => {
     );
     expect(defaultSettings.enabledRuleGroupIds).toContain("special-gender-forms");
     expect(defaultSettings.settingsRevision).toBe(currentSettingsRevision);
+    expect(defaultSettings.syncCategoryIds).toEqual([]);
   });
 
   it("migriert alte deaktivierte Regel-IDs auf verständliche Gruppen", () => {
@@ -118,6 +120,42 @@ describe("Einstellungen", () => {
     expect(settings.processQuotedText).toBe(false);
   });
 
+
+  it("normalisiert und begrenzt Domain-Ausschlüsse", () => {
+    const settings = normalizeSettings({
+      excludedDomains: [
+        "HTTPS://Example.ORG/path",
+        "*.example.org",
+        "localhost",
+        "ungültig",
+        ...Array.from(
+          { length: maximumExcludedDomains + 20 },
+          (_, index) => `host${index}.example.net`
+        )
+      ]
+    });
+
+    expect(settings.excludedDomains[0]).toBe("example.org");
+    expect(settings.excludedDomains).toContain("localhost");
+    expect(settings.excludedDomains).not.toContain("ungültig");
+    expect(settings.excludedDomains).toHaveLength(maximumExcludedDomains);
+  });
+
+  it("übernimmt nur bekannte Synchronisierungskategorien", () => {
+    const settings = normalizeSettings({
+      syncCategoryIds: [
+        "activation",
+        "protected-terms",
+        "unbekannt",
+        "activation"
+      ]
+    });
+
+    expect(settings.syncCategoryIds).toEqual([
+      "activation",
+      "protected-terms"
+    ]);
+  });
   it("ordnet jede produktive Regel genau einer sichtbaren Gruppe zu", () => {
     const catalogRuleIds = ruleGroupDefinitions.flatMap(
       (group) => group.ruleIds

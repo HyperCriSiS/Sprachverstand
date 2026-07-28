@@ -4,172 +4,175 @@
 
 ## 1. Geltungsbereich
 
-Diese Datenschutzerklärung beschreibt die lokale Datenverarbeitung durch die
+Diese Datenschutzerklärung beschreibt die Datenverarbeitung durch die
 Browser-Erweiterung **Sprachverstand** für Firefox und Chromium-basierte Browser.
-Für die Datenverarbeitung durch den verwendeten Browser, den jeweiligen
-Erweiterungs-Store und die Betreiber besuchter Webseiten gelten deren eigene
-Datenschutzbestimmungen.
+Für den verwendeten Browser, dessen optionalen Synchronisierungsdienst, den
+jeweiligen Erweiterungs-Store und besuchte Webseiten gelten zusätzlich die
+Datenschutzbestimmungen der jeweiligen Anbieter.
 
 ## 2. Grundprinzip
 
-Sprachverstand verarbeitet Webseitentexte ausschließlich lokal im Browser des
-Nutzers. Die Erweiterung besitzt keinen eigenen Serverdienst und verwendet keine
-externe Sprach-, Analyse- oder Cloud-API.
+Die Verarbeitung von Webseitentexten erfolgt ausschließlich innerhalb des
+Browsers. Sprachverstand besitzt keinen eigenen Serverdienst und verwendet keine
+externe Sprach-, Analyse- oder Cloud-API. Es gibt kein Tracking, keine
+Telemetrie, keine Werbung und keine Nutzerkonten des Projekts.
 
-Webseitentexte, aufgerufene Adressen, Einstellungen und Nutzungsdaten werden
-nicht an den Entwickler oder andere Empfänger übertragen.
+Alle Einstellungen werden standardmäßig ausschließlich in `storage.local` auf
+dem jeweiligen Gerät gespeichert. Eine zusätzliche Browser-Synchronisierung ist
+für jede Datenkategorie einzeln wählbar und standardmäßig vollständig
+deaktiviert.
 
-## 3. Lokal verarbeitete Daten
+## 3. Verarbeitete Daten
 
 ### Webseitentexte
 
-Sprachverstand liest sichtbare Texte auf aufgerufenen Webseiten, um unterstützte
+Sprachverstand liest sichtbare Texte auf geöffneten Webseiten, um unterstützte
 genderbezogene Schreibweisen zu erkennen und ihre lokale Darstellung nach den
-gewählten Regeln anzupassen.
+gewählten Regeln anzupassen. Optional können die Attribute `alt`, `aria-label`,
+`aria-description` und `title` verarbeitet werden.
 
-Optional können auch die zugänglichen Textattribute `alt`, `aria-label`,
-`aria-description` und `title` verarbeitet werden. Eingabefelder, Editoren,
-Quellcode, URLs und technische Daten werden von der regulären Textverarbeitung
-ausgenommen.
+Eingabefelder, Editoren, Quellcode, URLs und technische Daten sind von der
+regulären Textverarbeitung ausgeschlossen. Verarbeitete Webseiteninhalte werden
+weder dauerhaft gespeichert noch an den Entwickler, einen Synchronisierungsdienst
+oder andere Empfänger übertragen.
 
-Die verarbeiteten Inhalte werden nicht an einen Server übertragen und nicht als
-Kopie dauerhaft gespeichert.
+### Aktuelle Adresse und Domain
 
-### Adresse und Domain der aktuellen Webseite
+Die aktuelle Adresse beziehungsweise Domain wird im Browser verwendet, um die
+Erweiterung auszuführen, Domain-Ausschlüsse zu prüfen und den Korrekturzähler dem
+richtigen Tab zuzuordnen. Sprachverstand erstellt und speichert keinen
+Browserverlauf.
 
-Die Adresse beziehungsweise Domain der geöffneten Seite wird lokal verwendet,
-um die Erweiterung auf der Seite auszuführen, persönliche Domain-Ausschlüsse zu
-berücksichtigen und den Korrekturzähler dem aktuellen Tab zuzuordnen.
-
-Sprachverstand erstellt keinen Browserverlauf und überträgt keine aufgerufenen
-Adressen oder Domains.
+Ein vom Nutzer selbst eingetragener Domain-Ausschluss kann nur dann an den
+Synchronisierungsdienst des Browsers übertragen werden, wenn die Kategorie
+**Domain-Ausschlüsse** ausdrücklich zur Synchronisierung ausgewählt wurde.
 
 ### Einstellungen und persönliche Einträge
 
-Folgende Angaben können im Erweiterungsspeicher des Browsers gespeichert werden:
+Gespeichert werden können:
 
-- Aktivierungsstatus der Erweiterung
-- aktivierte und deaktivierte Regelgruppen
+- Aktivierungsstatus
+- aktivierte Regelgruppen
+- Domain-Ausschlüsse
+- Verarbeitung von Zitaten und zugänglichen Attributen
 - persönliche Wort- und Phrasenausnahmen
 - eigene wörtliche Ersetzungen mit Ausgangs- und Zieltext
-- ausgeschlossene Domains
-- Einstellungen für Zitate und zugängliche Textattribute
+- Auswahl, welche Kategorien zusätzlich synchronisiert werden
 
-Diese Daten werden ausschließlich verwendet, um die vom Nutzer gewählte
-Konfiguration bereitzustellen. Eigene Ersetzungen werden nicht als reguläre
-Ausdrücke ausgeführt, nicht an einen Server übertragen und nicht automatisch aus
-Webseiteninhalten gesammelt.
+Die vollständige Konfiguration wird immer lokal gespeichert. Sobald mindestens
+eine Kategorie aktiviert ist, wird die Synchronisierungsauswahl zusätzlich als
+technische Information an den Browser-Synchronisierungsdienst übergeben. Dadurch
+können weitere angemeldete Geräte dieselben Kategorien laden. Bei vollständig
+deaktivierter Synchronisierung enthält `storage.sync` nur die leere Auswahl und
+keine Einstellungskategorie.
 
-### Import- und Exportdateien
+## 4. Optionale Browser-Synchronisierung
 
-Auf ausdrückliche Anforderung kann Sprachverstand den vollständigen aktuellen
-Einstellungsstand als JSON-Datei erzeugen. Enthalten sind Aktivierungsstatus,
-Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen, persönliche
-Ausnahmen und eigene Ersetzungen. Die Datei wird lokal im Browser erstellt und
-über die normale Downloadfunktion des Browsers gespeichert.
+In den erweiterten Einstellungen kann für folgende Kategorien getrennt gewählt
+werden, ob sie zusätzlich über `storage.sync` synchronisiert werden:
 
-Eine Importdatei wird nur nach einer bewussten Dateiauswahl lokal gelesen. Vor
-der Übernahme prüft Sprachverstand Dateiformat, Schemaversion, Größenlimits und
-die enthaltenen Einträge. Die Datei wird weder hochgeladen noch an den
-Entwickler oder andere Empfänger übertragen. Der Import wird zunächst nur in das
-sichtbare Formular übernommen und erst durch den Nutzer mit **Speichern**
-aktiviert.
+- Aktivierungsstatus
+- Regelgruppen
+- Domain-Ausschlüsse
+- Zitat- und Attributoptionen
+- persönliche Ausnahmen
+- eigene Ersetzungen
 
-Exportdateien können selbst eingetragene Begriffe, Formulierungen und
-Domainnamen enthalten. Für ihre Aufbewahrung, Weitergabe und Löschung ist der
-Nutzer selbst verantwortlich.
+Ohne ausdrückliche Auswahl wird keine dieser Kategorien in `storage.sync`
+geschrieben. Abgewählte Kategorien werden aus dem Synchronisierungsspeicher der
+Erweiterung entfernt.
 
-## 4. Zweck der Verarbeitung
+Bei aktivierter Synchronisierung werden die ausgewählten Werte an den
+Synchronisierungsdienst des verwendeten Browsers übergeben. Abhängig vom Browser
+kann dies eine Verarbeitung durch Mozilla, Google oder einen anderen
+Browseranbieter und eine Übertragung auf weitere angemeldete Geräte umfassen.
+Sprachverstand hat keinen Zugriff auf das Browserkonto, empfängt diese Daten
+nicht und betreibt keinen eigenen Synchronisierungsdienst.
 
-Die lokale Verarbeitung dient ausschließlich dazu, die Darstellung
-unterstützter deutschsprachiger Webseitentexte nach den gewählten Regeln und
-eigenen lokalen Ersetzungen anzupassen und diese Änderungen beim Ausschalten
-wieder rückgängig zu machen.
+Persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse können private
+Begriffe oder interne Domainnamen enthalten. Diese Kategorien sollten nur
+synchronisiert werden, wenn der Nutzer der Verarbeitung durch seinen
+Browseranbieter zustimmt.
 
-Eine Verwendung für Werbung, Profilbildung, Marktanalyse, Nutzerbewertung oder
-andere sachfremde Zwecke findet nicht statt.
+Vor dem Schreiben prüft Sprachverstand konservative Größenlimits. Überschreitet
+eine Kategorie das sichere Limit des Synchronisierungsspeichers, wird sie nicht
+synchronisiert und eine verständliche Fehlermeldung angezeigt.
 
-## 5. Keine Übertragung oder Weitergabe
+## 5. Import und Export
 
-Sprachverstand überträgt keine durch die Erweiterung verarbeiteten Nutzerdaten
-an:
+Der vollständige Einstellungsstand kann nach einer bewussten Nutzeraktion als
+versionierte JSON-Datei lokal erzeugt werden. Enthalten sind alle Einstellungen,
+persönlichen Listen und die Synchronisierungsauswahl.
 
-- den Entwickler
-- Analyse- oder Telemetriedienste
-- Werbenetzwerke
-- Cloud- oder KI-Dienste
-- sonstige Dritte
+Importdateien werden nur nach einer bewussten Dateiauswahl lokal gelesen. Format,
+Schemaversion, Einstellungsrevision, Feldtypen, bekannte Kategorien, Anzahl und
+Länge der Einträge sowie Domainangaben werden vor der Übernahme geprüft. Ein
+Import verändert zunächst nur das sichtbare Formular und wird erst mit
+**Speichern** wirksam.
 
-Die Erweiterung legt keine Nutzerkonten an und setzt keine eigenen Cookies oder
-vergleichbaren Identifikatoren. Nutzerdaten werden nicht verkauft, vermietet
-oder veröffentlicht. Menschen erhalten keinen Zugriff auf die lokal
-verarbeiteten Webseiteninhalte.
+Import- und Exportdateien werden nicht hochgeladen. Sie können persönliche
+Begriffe, Formulierungen und Domainnamen enthalten und sollten entsprechend
+vertraulich behandelt werden.
 
-## 6. Lokale Speicherung und Speicherdauer
+## 6. Zweck und Rechtsgrundlage
 
-Einstellungen, persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse
-bleiben im lokalen Erweiterungsspeicher des Browsers, bis sie vom Nutzer geändert
-oder gelöscht werden oder die Erweiterung entfernt wird.
+Die Verarbeitung dient ausschließlich dazu, die lokale Darstellung
+unterstützter deutschsprachiger Webseitentexte nach der gewählten Konfiguration
+anzupassen und beim Ausschalten wiederherzustellen.
 
-Webseitentexte und aufgerufene Adressen werden nicht als dauerhafte
-Datensammlung gespeichert. Exportierte JSON-Dateien liegen außerhalb des
-Erweiterungsspeichers und bleiben erhalten, bis der Nutzer sie selbst löscht.
+Die Erweiterung verarbeitet keine Daten für Werbung, Profilbildung,
+Marktforschung, Nutzerbewertung oder andere sachfremde Zwecke. Die lokale
+Verarbeitung und eine freiwillig aktivierte Browser-Synchronisierung erfolgen
+auf Veranlassung des Nutzers.
 
-## 7. Browserberechtigungen
+## 7. Empfänger
 
-### Zugriff auf Webseiten
+Der Entwickler und die Mitwirkenden erhalten keine Webseitentexte,
+Browserverläufe, Einstellungen oder Nutzungsdaten.
 
-Der Zugriff auf aufgerufene Webseiten ist erforderlich, damit Sprachverstand
-deren sichtbare Texte lokal erkennen und anpassen kann. Der Zugriff wird nicht
-verwendet, um den Browserverlauf zu erfassen oder Webseitendaten zu übertragen.
+Nur bei ausdrücklich aktivierter Browser-Synchronisierung kann der jeweilige
+Browseranbieter Empfänger der ausgewählten Einstellungskategorien sein. Die
+weitere Verarbeitung richtet sich nach dessen Datenschutzbestimmungen und den
+Einstellungen des Browserkontos.
 
-### Speicherberechtigung
+## 8. Speicherdauer und Löschung
 
-Die Speicherberechtigung wird benötigt, um Einstellungen, Regelgruppen,
-persönliche Ausnahmen, eigene Ersetzungen und Domain-Ausschlüsse lokal im
-Browser zu speichern.
+Lokale Einstellungen bleiben gespeichert, bis sie geändert, zurückgesetzt oder
+die Erweiterung entfernt wird. Synchronisierte Kategorien bleiben nach Maßgabe
+des Browseranbieters gespeichert, bis die Kategorie abgewählt, die Daten dort
+gelöscht oder die Browser-Synchronisierung beendet wird.
 
-Für Import und Export wird keine zusätzliche Netzwerk- oder
-Dateisystemberechtigung angefordert. Der Zugriff auf eine Importdatei erfolgt
-ausschließlich über den vom Nutzer geöffneten Dateiauswahldialog.
+Abgewählte Kategorien entfernt Sprachverstand beim nächsten Speichern aus dem
+Synchronisierungsspeicher der Erweiterung. Exportierte JSON-Dateien liegen
+außerhalb der Erweiterung und müssen vom Nutzer selbst gelöscht werden.
 
-## 8. Kontrolle durch den Nutzer
+## 9. Berechtigungen
 
-Der Nutzer kann Sprachverstand jederzeit:
+Die Berechtigung `storage` wird benötigt, um lokale Einstellungen zu speichern
+und optional ausdrücklich ausgewählte Kategorien über die standardisierte
+Browser-Synchronisierung zu übertragen. Zusätzliche Netzwerk-, Download- oder
+Dateisystemberechtigungen werden dafür nicht angefordert.
 
-- global ein- oder ausschalten
-- für einzelne Domains deaktivieren
-- über die Regelgruppen einschränken
-- durch persönliche Ausnahmen konfigurieren
-- durch eigene wörtliche Ersetzungen ergänzen
-- den vollständigen Einstellungsstand lokal exportieren und wieder importieren
-- gespeicherte Einstellungen und persönliche Einträge ändern oder löschen
-- aus dem Browser entfernen
+Der Zugriff auf Webseiten dient ausschließlich der lokalen Kernfunktion. Es wird
+kein extern bereitgestellter Code geladen oder ausgeführt.
 
-Beim Ausschalten werden die von Sprachverstand vorgenommenen Änderungen an der
-aktuellen Darstellung rückgängig gemacht.
+## 10. Datenerfassung durch die Erweiterung
 
-## 9. Chrome Web Store – eingeschränkte Datennutzung
+Sprachverstand sammelt keine Daten für den Entwickler oder andere vom Projekt
+betriebene Dienste. Die Firefox-Angabe `data_collection_permissions.required:
+["none"]` bezieht sich auf diese fehlende Datenerfassung durch die Erweiterung.
+Eine vom Nutzer aktivierte Browser-Synchronisierung ist eine Funktion des
+verwendeten Browsers und wird in Abschnitt 4 gesondert beschrieben.
 
-Die Verwendung der durch Browserberechtigungen zugänglichen Informationen ist
-auf die in dieser Datenschutzerklärung beschriebene, für den Nutzer sichtbare
-Kernfunktion beschränkt.
+## 11. Änderungen
 
-Sprachverstand verwendet diese Informationen nicht für Werbung, Profilbildung,
-Kreditwürdigkeitsprüfungen oder andere sachfremde Zwecke und überträgt sie nicht
-an Dritte. Die Nutzung entspricht den Anforderungen zur eingeschränkten
-Datennutzung des Chrome Web Store.
+Diese Datenschutzerklärung wird angepasst, wenn sich Funktionen,
+Berechtigungen oder Datenflüsse ändern. Maßgeblich ist die mit der jeweiligen
+Version veröffentlichte Fassung.
 
-## 10. Änderungen dieser Datenschutzerklärung
+## 12. Kontakt
 
-Diese Datenschutzerklärung wird angepasst, wenn sich die Funktionen oder die
-Datenverarbeitung von Sprachverstand ändern. Eine künftige Einführung von
-Telemetrie, externen Diensten oder Datenübertragungen müsste vor ihrer Nutzung
-deutlich offengelegt und hier dokumentiert werden.
-
-## 11. Kontakt
-
-Fragen zum Datenschutz und zur Erweiterung können über den
-[Issue-Tracker des Projekts](https://github.com/HyperCriSiS/Sprachverstand/issues)
-gestellt werden. Keine Zugangsdaten, privaten Nachrichten oder persönlichen
-Webseiteninhalte in öffentlichen Issues veröffentlichen.
+Datenschutzfragen können über den
+[Issue-Tracker](https://github.com/HyperCriSiS/Sprachverstand/issues) gestellt
+werden. Sicherheitslücken und sensible Informationen dürfen nicht öffentlich
+gepostet werden; dafür gilt [`SECURITY.md`](SECURITY.md).

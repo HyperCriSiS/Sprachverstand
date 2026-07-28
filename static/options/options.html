@@ -67,6 +67,44 @@
         </section>
 
         <section>
+          <div class="section-heading">
+            <div>
+              <h2>Browser-Synchronisierung</h2>
+              <p>Standardmäßig bleiben alle Einstellungen ausschließlich auf diesem Gerät. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen.</p>
+            </div>
+          </div>
+          <div id="sync-categories" class="sync-categories">
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="activation">
+              <span><strong>Aktivierungsstatus</strong><small>Synchronisiert, ob Sprachverstand ein- oder ausgeschaltet ist.</small></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="rule-groups">
+              <span><strong>Regelgruppen</strong><small>Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen.</small></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="excluded-domains">
+              <span><strong>Domain-Ausschlüsse</strong><small>Kann persönliche oder interne Domainnamen enthalten.</small></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="text-options">
+              <span><strong>Zitat- und Attributoptionen</strong><small>Synchronisiert die Verarbeitung von Zitaten und zugänglichen Attributen.</small></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="protected-terms">
+              <span><strong>Persönliche Ausnahmen</strong><small>Kann persönliche Begriffe oder vollständige Formulierungen enthalten.</small></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" data-sync-category="custom-replacements">
+              <span><strong>Eigene Ersetzungen</strong><small>Kann persönliche Ausgangs- und Zieltexte enthalten.</small></span>
+            </label>
+          </div>
+          <small>
+            Alle Kategorien sind standardmäßig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, speichert der Browser auch diese Auswahl als Synchronisierungsinformation, damit weitere angemeldete Geräte dieselben Kategorien laden können. Nicht ausgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt.
+          </small>
+        </section>
+
+        <section>
           <h2>Persönliche Ausnahmen</h2>
           <label>
             Wörter oder vollständige Phrasen nie verändern
@@ -79,7 +117,7 @@
             <small>
               Eine wörtliche Ausnahme pro Zeile, Groß-/Kleinschreibung wird ignoriert.
               Keine regulären Ausdrücke oder Platzhalter. Ein einzelnes Wort schützt nicht automatisch längere Komposita.
-              Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste wird nur lokal im Browser gespeichert.
+              Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
             </small>
           </label>
         </section>
@@ -98,7 +136,7 @@
             <small id="custom-replacements-help">
               Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt.
               Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert.
-              Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt ausschließlich lokal im Browser.
+              Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert.
             </small>
           </label>
 
@@ -138,7 +176,7 @@
           <p>
             Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
             Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen,
-            persönliche Ausnahmen und eigene Ersetzungen.
+            persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung.
           </p>
           <div class="transfer-controls">
             <button id="export-personal-rules" type="button">Alle Einstellungen als JSON exportieren</button>
@@ -177,7 +215,7 @@
               inputmode="url"
               placeholder="example.org&#10;intranet.example.org"
             ></textarea>
-            <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst.</small>
+            <small>Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert.</small>
           </label>
         </section>
 
