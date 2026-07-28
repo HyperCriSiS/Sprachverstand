@@ -125,7 +125,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.8"
+          BETA="beta.9"
           mkdir -p artifacts
 
           (
@@ -162,7 +162,7 @@ jobs:
       - name: Beta-Pakete hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: sprachverstand-beta-8-${{ github.sha }}
+          name: sprachverstand-beta-9-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14

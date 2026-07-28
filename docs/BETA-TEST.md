@@ -1,14 +1,14 @@
-# Sprachverstand 0.5.3 – Beta 8 testen
+# Sprachverstand 0.5.4 – Beta 9 testen
 
-Diese Beta führt ein randloses, besser ausfüllendes SV-Symbol ein, verbreitert
-und verdichtet das Popup und ergänzt geprüfte Sprachformen aus der
-UdK-Handreichung sowie dem Genderwörterbuch.
+Beta 9 bündelt den aktuellen geprüften Stand: das kompakte Popup, das
+randlose SV-Symbol, die erweiterten Sprachregeln, die Waterfox-Korrekturen und
+die überarbeitete öffentliche Projektdokumentation.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.5.3-beta.8-chromium.zip`
-- `sprachverstand-0.5.3-beta.8-firefox.xpi`
-- `sprachverstand-0.5.3-beta.8-source.zip`
+- `sprachverstand-0.5.4-beta.9-chromium.zip`
+- `sprachverstand-0.5.4-beta.9-firefox.xpi`
+- `sprachverstand-0.5.4-beta.9-source.zip`
 - `SHA256SUMS.txt`
 
 ## Prüfsummen kontrollieren
@@ -66,7 +66,7 @@ npx web-ext run \
 Auf dem Gerät zusätzlich Touch-Bedienung, Scrollbarkeit, Safe Areas,
 Bildschirmtastatur und Optionsseite prüfen.
 
-## Neue Kernfälle
+## Kernfälle
 
 ```text
 Studierende                    → Studenten
@@ -80,6 +80,7 @@ mitarbeitende Personen         → mitarbeiter
 
 Juden_Jüdinnen                 → Juden
 Jüd*innen                      → Juden
+Jüdinnen und Juden             → Juden
 Gegner*innenschaft             → Gegnerschaft
 Professor*innenschaft          → Professorenschaft
 Verbündete_r                   → Verbündeter
