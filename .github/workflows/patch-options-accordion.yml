@@ -1,4 +1,4 @@
-name: Normalize options accordion
+name: Format options accordion
 
 on:
   pull_request:
@@ -10,14 +10,14 @@ permissions:
   contents: write
 
 jobs:
-  normalize:
+  format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Doppelte Patch-Blöcke bereinigen
+      - name: Akkordeon-Code einheitlich formatieren
         shell: python
         run: |
           from pathlib import Path
@@ -25,58 +25,21 @@ jobs:
 
           path = Path("src/options.ts")
           text = path.read_text(encoding="utf-8")
-
-          declarations = '''const statusOutput = requiredElement<HTMLOutputElement>("#status");
-          const expandAllSectionsButton =
-            requiredElement<HTMLButtonElement>("#expand-all-sections");
-          const collapseAllSectionsButton =
-            requiredElement<HTMLButtonElement>("#collapse-all-sections");
-          const settingsSections = [
-            ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
-          ];
-          '''
-          text = re.sub(
-              r'const statusOutput = requiredElement<HTMLOutputElement>\("#status"\);.*?(?=\nlet activeTabId)',
-              declarations.rstrip(),
-              text,
-              count=1,
-              flags=re.S
+          text = text.replace(
+              '  ];\nlet activeTabId',
+              '  ];\n\nlet activeTabId'
           )
-
-          helpers = '''function refreshSectionToggleButtons(): void {
-            const allOpen = settingsSections.every((section) => section.open);
-            const allClosed = settingsSections.every((section) => !section.open);
-            expandAllSectionsButton.disabled = allOpen;
-            collapseAllSectionsButton.disabled = allClosed;
-          }
-
-          function setAllSectionsOpen(open: boolean): void {
-            for (const section of settingsSections) {
-              section.open = open;
-            }
-            refreshSectionToggleButtons();
-          }
-
-          '''
-          text = re.sub(
-              r'function refreshSectionToggleButtons\(\): void \{.*?(?=function createRuleGroupControls)',
-              helpers,
-              text,
-              count=1,
-              flags=re.S
+          listeners = (
+              '  expandAllSectionsButton.addEventListener("click", () => {\n'
+              '    setAllSectionsOpen(true);\n'
+              '  });\n'
+              '  collapseAllSectionsButton.addEventListener("click", () => {\n'
+              '    setAllSectionsOpen(false);\n'
+              '  });\n'
+              '  for (const section of settingsSections) {\n'
+              '    section.addEventListener("toggle", refreshSectionToggleButtons);\n'
+              '  }\n\n'
           )
-
-          listeners = '''  expandAllSectionsButton.addEventListener("click", () => {
-            setAllSectionsOpen(true);
-          });
-          collapseAllSectionsButton.addEventListener("click", () => {
-            setAllSectionsOpen(false);
-          });
-          for (const section of settingsSections) {
-            section.addEventListener("toggle", refreshSectionToggleButtons);
-          }
-
-          '''
           text = re.sub(
               r'  expandAllSectionsButton\.addEventListener\("click".*?(?=  selectAllRulesButton)',
               listeners,
@@ -86,25 +49,13 @@ jobs:
           )
           path.write_text(text, encoding="utf-8")
 
-          tests_path = Path("tests/rules/known-plural-separators.test.ts")
-          tests = tests_path.read_text(encoding="utf-8")
-          tests = re.sub(r'    \["(?:Praktiker|Mediziner)\*innen", "(?:Praktiker|Mediziner)"\],\n', '', tests)
-          tests = tests.replace(
-              '    ["Follower*innen", "Follower"],\n',
-              '    ["Follower*innen", "Follower"],\n'
-              '    ["Praktiker*innen", "Praktiker"],\n'
-              '    ["Mediziner*innen", "Mediziner"],\n',
-              1
-          )
-          tests_path.write_text(tests, encoding="utf-8")
-
-      - name: Bereinigung committen
+      - name: Formatierung committen
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/options.ts tests/rules/known-plural-separators.test.ts
+          git add src/options.ts
           git diff --cached --quiet && exit 0
-          git commit -m "fix: normalize options accordion patch"
+          git commit -m "style: format options accordion controls"
           git push origin HEAD:${{ github.head_ref }}
