@@ -92,14 +92,75 @@
               id="custom-replacements"
               rows="8"
               spellcheck="false"
+              aria-describedby="custom-replacements-help custom-replacement-feedback"
               placeholder="Meine Sonderform => Gewünschte Form&#10;Unnötiger Zusatz =>"
             ></textarea>
-            <small>
+            <small id="custom-replacements-help">
               Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt.
               Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert.
               Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt ausschließlich lokal im Browser.
             </small>
           </label>
+
+          <div id="custom-replacement-feedback" class="diagnostics" aria-live="polite"></div>
+
+          <div class="preview-panel">
+            <div>
+              <h3>Vorschau</h3>
+              <p>Testet die gerade eingetragenen Ausnahmen, Ersetzungen und aktivierten Regelgruppen, ohne etwas zu speichern.</p>
+            </div>
+            <div class="preview-grid">
+              <label>
+                Testtext
+                <textarea
+                  id="custom-preview-input"
+                  rows="5"
+                  spellcheck="false"
+                  placeholder="Meine Sonderform und Nutzer:innen stehen hier."
+                ></textarea>
+              </label>
+              <label>
+                Ergebnis
+                <textarea
+                  id="custom-preview-output"
+                  rows="5"
+                  readonly
+                  aria-live="polite"
+                ></textarea>
+              </label>
+            </div>
+            <output id="custom-preview-count" class="preview-count" aria-live="polite">Noch kein Testtext eingegeben.</output>
+          </div>
+        </section>
+
+        <section>
+          <h2>Sichern und übertragen</h2>
+          <p>
+            Exportiert oder importiert ausschließlich persönliche Ausnahmen und eigene Ersetzungen.
+            Domains, Regelgruppen und andere Einstellungen sind absichtlich nicht enthalten.
+          </p>
+          <div class="transfer-controls">
+            <button id="export-personal-rules" type="button">Als JSON exportieren</button>
+            <button id="import-personal-rules" type="button">JSON importieren</button>
+            <input
+              id="import-personal-rules-file"
+              type="file"
+              accept="application/json,.json"
+              hidden
+            >
+            <label class="import-mode">
+              Konflikte beim Import
+              <select id="personal-rules-import-mode">
+                <option value="keep-existing">Vorhandene Ersetzungen behalten</option>
+                <option value="prefer-imported">Importierte Ersetzungen übernehmen</option>
+                <option value="replace">Beide Listen vollständig ersetzen</option>
+              </select>
+            </label>
+          </div>
+          <small>
+            Importdateien werden nur nach Deiner Auswahl lokal gelesen. Ein Import wird zunächst in das Formular übernommen und erst mit „Speichern“ aktiviert.
+          </small>
+          <div id="import-summary" aria-live="polite"></div>
         </section>
 
         <section>
