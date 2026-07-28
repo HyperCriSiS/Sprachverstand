@@ -5,6 +5,30 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.6.1 – Beta 12 (2026-07-28)
+
+### Hinzugefügt
+
+- Fein gegliederte optionale Browser-Synchronisierung für sechs Datenkategorien; standardmäßig ist keine Kategorie ausgewählt.
+- Die Synchronisierungsauswahl wird als eigener Metadatenschlüssel übertragen; ausgewählte Kategorien liegen zusätzlich in getrennten `storage.sync`-Schlüsseln.
+- Strikte Größenprüfung vor dem Synchronisieren.
+- Backup-Schema 2 mit Synchronisierungsauswahl und vollständiger Importvalidierung.
+- `SECURITY.md`, öffentliche Freigabecheckliste und reproduzierbare AMO-Build-Anleitung.
+
+### Geändert
+
+- Der vollständige Einstellungsstand wird immer in `storage.local` gespeichert.
+- Versionen in Paketdatei, Lockdatei und beiden Quell-Manifesten sind auf 0.6.1 vereinheitlicht.
+- Datenschutz-, Store-, Architektur- und Backup-Dokumentation beschreiben die optionale Browser-Synchronisierung.
+- Der Lizenzlink befindet sich nur noch in den erweiterten Einstellungen.
+
+### Sicherheit
+
+- Ungültige oder überlange Importdaten werden vollständig abgewiesen statt still gekürzt.
+- Zukünftige Einstellungsrevisionen sowie unbekannte Felder und Kategorien werden abgelehnt.
+- Domain-Ausschlüsse werden normalisiert, validiert, dedupliziert und begrenzt.
+- Vorhandene GitHub-Release-Tags und Releases werden nicht überschrieben; Tag und Pakete müssen denselben Commit repräsentieren.
+
 ## 0.6.0 – Beta 11 (2026-07-28)
 
 ### Hinzugefügt

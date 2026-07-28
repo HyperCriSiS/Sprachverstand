@@ -21,6 +21,7 @@ export interface StorageArea {
     keys?: string | readonly string[] | Record<string, unknown>
   ): Promise<Record<string, unknown>>;
   set(items: Record<string, unknown>): Promise<void>;
+  remove(keys: string | readonly string[]): Promise<void>;
 }
 
 export interface ExtensionApi {

@@ -25,6 +25,7 @@ function sampleSettings(overrides: Partial<Settings> = {}): Settings {
     ],
     processAccessibleAttributes: false,
     processQuotedText: false,
+    syncCategoryIds: ["activation", "protected-terms"],
     ...overrides
   };
 }
@@ -107,6 +108,7 @@ describe("Einstellungssicherung", () => {
       enabledRuleGroupIds: ["plural-separators"],
       processAccessibleAttributes: false,
       processQuotedText: false,
+    syncCategoryIds: ["activation", "protected-terms"],
       protectedTerms: ["Importiert"],
       customReplacements: [{ source: "A", replacement: "Neu" }]
     });
@@ -167,4 +169,82 @@ describe("Einstellungssicherung", () => {
       imported.customReplacements
     );
   });
+  it("weist zukünftige Einstellungsrevisionen zurück", () => {
+    const document = createSettingsBackupDocument(sampleSettings());
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({
+          ...document,
+          settings: {
+            ...document.settings,
+            settingsRevision: currentSettingsRevision + 1
+          }
+        })
+      )
+    ).toThrow(/neuer als die unterstützte Revision/u);
+  });
+
+  it("weist ungültige oder überlange persönliche Daten vollständig zurück", () => {
+    const document = createSettingsBackupDocument(sampleSettings());
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({
+          ...document,
+          settings: {
+            ...document.settings,
+            excludedDomains: ["keine gültige Domain"]
+          }
+        })
+      )
+    ).toThrow(/Domain-Ausschluss/u);
+
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({
+          ...document,
+          settings: {
+            ...document.settings,
+            protectedTerms: ["x".repeat(81)]
+          }
+        })
+      )
+    ).toThrow(/80 Zeichen/u);
+
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({
+          ...document,
+          settings: {
+            ...document.settings,
+            customReplacements: [
+              { source: "Doppelt", replacement: "A" },
+              { source: "Doppelt", replacement: "B" }
+            ]
+          }
+        })
+      )
+    ).toThrow(/mehrfach enthalten/u);
+  });
+
+  it("weist unbekannte Felder und Synchronisierungskategorien zurück", () => {
+    const document = createSettingsBackupDocument(sampleSettings());
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({ ...document, unbekannt: true })
+      )
+    ).toThrow(/unbekannte Felder/u);
+
+    expect(() =>
+      parseSettingsBackupDocument(
+        JSON.stringify({
+          ...document,
+          settings: {
+            ...document.settings,
+            syncCategoryIds: ["unbekannt"]
+          }
+        })
+      )
+    ).toThrow(/Synchronisierungskategorie/u);
+  });
+
 });

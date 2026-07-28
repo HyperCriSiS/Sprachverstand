@@ -1,20 +1,46 @@
-# Release-Checkliste Beta 11
+# Release-Checkliste Beta 12
 
-- [x] Versionsnummer auf 0.6.0 erhöht
-- [x] Beta-Bezeichnung auf beta.11 aktualisiert
-- [x] Sichtbar markierte Binnen-I-Singularformen erweitert
-- [x] Weitere flektierte Doppelnennungen ergänzt
-- [x] Substantivierte Adjektive lexikonbasiert umgesetzt
-- [x] Sonderformen `Rom*nja`, `Sinti*zze` und ausgewählte `-y`/`-ys`-Formen ergänzt
-- [x] Eigene Ersetzungen getrennt von Ausnahmen umgesetzt
-- [x] Kuratierten Flexions- und Negativfallkatalog ergänzt
-- [x] Flexionslexikon systematisch erweitert
-- [x] `AGPL-3.0-only`, `TRADEMARKS.md` und `NOTICE` integriert
-- [x] Rechtshinweise in beide Browserpakete aufgenommen
-- [x] README, Changelog, Release Notes und Testanleitung aktualisiert
-- [x] Chromium-, Firefox- und Quellcodepakete auf beta.11 umgestellt
-- [x] SHA-256-Prüfsummen und Archivtests vorgesehen
-- [x] Automatisierte vollständige Prüfung vor Veröffentlichung vorgesehen
-- [ ] Reale Praxistests nach Download des Releases
-- [ ] Firefox für Android auf echter Hardware prüfen
-- [ ] Screenreader- und große Seitentests abschließen
+## Version und Metadaten
+
+- [x] Version auf 0.6.1 erhöht
+- [x] Beta-Bezeichnung auf beta.12 aktualisiert
+- [x] Paketdatei, Lockdatei und beide Quell-Manifeste synchronisiert
+- [x] Changelog, Release Notes und Testanleitung aktualisiert
+
+## Einstellungen und Datenschutz
+
+- [x] Vollständiger Einstellungsstand wird standardmäßig in `storage.local` gespeichert
+- [x] Browser-Synchronisierung für jede Datenkategorie einzeln wählbar
+- [x] Alle Synchronisierungskategorien standardmäßig deaktiviert
+- [x] Synchronisierungsauswahl wird nur bei aktivierter Synchronisierung als eigener Metadatenschlüssel übertragen
+- [x] Größenprüfung vor dem Schreiben in `storage.sync`
+- [x] Vollständiger Export einschließlich Synchronisierungsauswahl
+- [x] Datenschutzerklärung und Storetexte an die optionale Synchronisierung angepasst
+
+## Importhärtung
+
+- [x] Backup-Schema auf Version 2 erhöht
+- [x] Unbekannte Felder und Kategorien werden abgewiesen
+- [x] Zukünftige Einstellungsrevisionen werden abgewiesen
+- [x] Anzahl, Länge und Typ aller persönlichen Einträge werden streng geprüft
+- [x] Domain-Ausschlüsse werden normalisiert, validiert und begrenzt
+- [x] Ungültige Dateien werden vollständig abgewiesen statt still gekürzt
+
+## Release-Sicherheit
+
+- [x] Bestehende Tags und Releases werden niemals überschrieben
+- [x] Release-Tag wird nach Veröffentlichung gegen den auslösenden Commit geprüft
+- [x] Quellarchiv wird ausdrücklich aus demselben Commit erzeugt
+- [x] `SOURCE_COMMIT.txt` dokumentiert den Build-Commit in jedem Artefakt
+- [x] `SOURCE_COMMIT.txt` dokumentiert den Build-Commit in jedem Artefakt
+- [x] Firefox-XPI wird vor der Mozilla-Einreichung auf fehlende Signaturdateien geprüft
+
+## Öffentliche Freigabe
+
+- [x] `SECURITY.md` ergänzt
+- [x] öffentliche Veröffentlichungscheckliste ergänzt
+- [x] reproduzierbare Mozilla-Build-Anleitung ergänzt
+- [x] Dokumentation auf veraltete Beta-11- und offene Statusangaben geprüft
+- [ ] GitHub Private Vulnerability Reporting nach dem Umschalten auf öffentlich aktivieren
+- [ ] Branch-Regeln für `main` nach dem Umschalten auf öffentlich aktivieren
+- [ ] Reale Geräte-, Screenreader-, Webseiten- und Belastungstests abschließen

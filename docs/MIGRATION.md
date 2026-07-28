@@ -70,14 +70,20 @@ Auch breite Schlussregeln, die beliebige Endungen `in` oder `innen` entfernen,
 werden verworfen. Sie würden unter anderem `Innen- und Außendienst`, `LinkedIn`
 und viele normale Wörter beschädigen.
 
-## Noch offen
+## Seit Beta 11 zusätzlich umgesetzt
+
+| Quelle | Fundstelle | Umsetzung |
+|---|---|---|
+| rggl #12 | `Jüdinnen und Juden` | explizite unregelmäßige Doppelform und Regressionen |
+| no-gender #20/#21 | substantivierte Adjektive | eigene lexikonbasierte Flexionslogik |
+| no-gender #18/#27 | `Studentys`, `Rom*nja`, `Sinti*zze` | exakte optionale Sonderformzuordnungen ohne breite Suffixregel |
+
+## Weiterhin bewusst offen
 
 | Quelle | Fundstelle | Status |
 |---|---|---|
-| rggl #12 | `Jüdinnen und Juden` | als explizite unregelmäßige Doppelform ergänzen |
-| no-gender #20/#21 | substantivierte Adjektive | eigene Flexionslogik erforderlich |
-| no-gender #18/#27 | `Studentys`, `Rom*nja`, `Sinti*zze` | kleine optionale Sonderregeln prüfen |
 | mehrere | sprachlich falsche oder abgeschnittene Formen wie `Zuhörer*inne` | keine allgemeine Rechtschreibkorrektur; nur bei belastbaren realen Mustern |
+| reale Webseiten | weitere Kontext- und Flexionsfundstellen | erst mit vollständigem Satz- und Seitenkontext aufnehmen |
 
 ## Qualitätsgrenzen
 

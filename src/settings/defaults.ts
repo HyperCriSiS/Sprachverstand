@@ -3,13 +3,27 @@ import {
   enabledGroupsFromLegacyDisabledRuleIds,
   normalizeEnabledRuleGroupIds
 } from "../rules/catalog";
+import { normalizeDomainPattern } from "./domain";
 
 export const maximumProtectedTerms = 100;
 export const maximumProtectedTermLength = 80;
 export const maximumCustomReplacements = 100;
 export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
-export const currentSettingsRevision = 5;
+export const maximumExcludedDomains = 100;
+export const maximumExcludedDomainLength = 253;
+export const currentSettingsRevision = 6;
+
+export const syncCategoryIds = [
+  "activation",
+  "rule-groups",
+  "excluded-domains",
+  "text-options",
+  "protected-terms",
+  "custom-replacements"
+] as const;
+
+export type SyncCategoryId = (typeof syncCategoryIds)[number];
 
 const introducedDefaultGroups = [
   { revision: 1, groupId: "salutation-participles" },
@@ -33,6 +47,7 @@ export interface Settings {
   readonly customReplacements: readonly CustomReplacement[];
   readonly processAccessibleAttributes: boolean;
   readonly processQuotedText: boolean;
+  readonly syncCategoryIds: readonly SyncCategoryId[];
 }
 
 export const defaultSettings: Settings = {
@@ -43,7 +58,8 @@ export const defaultSettings: Settings = {
   protectedTerms: [],
   customReplacements: [],
   processAccessibleAttributes: true,
-  processQuotedText: true
+  processQuotedText: true,
+  syncCategoryIds: []
 };
 
 function stringArray(value: unknown): string[] {
@@ -59,6 +75,60 @@ function stringArray(value: unknown): string[] {
         .filter(Boolean)
     )
   ];
+}
+
+export function isValidDomainPattern(value: string): boolean {
+  if (!value || value.length > maximumExcludedDomainLength) {
+    return false;
+  }
+
+  if (value === "localhost") {
+    return true;
+  }
+
+  if (/^\[[0-9a-f:.]+\]$/iu.test(value)) {
+    return true;
+  }
+
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/u.test(value)) {
+    return value.split(".").every((part) => Number(part) <= 255);
+  }
+
+  const labels = value.split(".");
+  return (
+    labels.length >= 2 &&
+    labels.every(
+      (label) =>
+        label.length >= 1 &&
+        label.length <= 63 &&
+        /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/iu.test(label)
+    )
+  );
+}
+
+export function normalizeExcludedDomain(input: string): string {
+  const normalized = normalizeDomainPattern(input);
+  return isValidDomainPattern(normalized) ? normalized : "";
+}
+
+function excludedDomainArray(value: unknown): string[] {
+  const domains: string[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of stringArray(value)) {
+    const normalized = normalizeExcludedDomain(entry);
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    domains.push(normalized);
+    if (domains.length >= maximumExcludedDomains) {
+      break;
+    }
+  }
+
+  return domains;
 }
 
 function protectedTermArray(value: unknown): string[] {
@@ -123,6 +193,13 @@ function customReplacementArray(value: unknown): CustomReplacement[] {
   }));
 }
 
+function syncCategoryArray(value: unknown): SyncCategoryId[] {
+  const valid = new Set<SyncCategoryId>(syncCategoryIds);
+  return stringArray(value).filter((entry): entry is SyncCategoryId =>
+    valid.has(entry as SyncCategoryId)
+  );
+}
+
 function storedRevision(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
     ? value
@@ -166,7 +243,7 @@ export function normalizeSettings(value: unknown): Settings {
       typeof input.enabled === "boolean"
         ? input.enabled
         : defaultSettings.enabled,
-    excludedDomains: stringArray(input.excludedDomains),
+    excludedDomains: excludedDomainArray(input.excludedDomains),
     enabledRuleGroupIds,
     protectedTerms: protectedTermArray(input.protectedTerms),
     customReplacements: customReplacementArray(input.customReplacements),
@@ -177,6 +254,7 @@ export function normalizeSettings(value: unknown): Settings {
     processQuotedText:
       typeof input.processQuotedText === "boolean"
         ? input.processQuotedText
-        : defaultSettings.processQuotedText
+        : defaultSettings.processQuotedText,
+    syncCategoryIds: syncCategoryArray(input.syncCategoryIds)
   };
 }

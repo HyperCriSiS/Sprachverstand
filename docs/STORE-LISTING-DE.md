@@ -17,7 +17,7 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 
 **Kurzbeschreibung:**
 
-> Passt gegenderte Schreibweisen lokal im Browser an persönliche Lesegewohnheiten an – ohne Cloud, Tracking oder Telemetrie.
+> Passt gegenderte Schreibweisen lokal im Browser an persönliche Lesegewohnheiten an – ohne Tracking, Telemetrie oder eigene Cloud.
 
 **Einzelzweck:**
 
@@ -65,25 +65,24 @@ Funktionen:
 - eigene wörtliche Ersetzungen, getrennt von Ausnahmen und ohne Regex
 - Live-Vorschau und Konflikthinweise vor dem Speichern eigener Regeln
 - lokaler JSON-Import und -Export des vollständigen Einstellungsstands
+- optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig deaktiviert
 - drei wählbare Strategien für persönliche Listen beim Import
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
 - Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
 
-Sprachverstand arbeitet bewusst konservativ. Unbekannte oder mehrdeutige
-Schreibweisen bleiben unverändert, wenn keine ausreichend sichere Ersetzung
-möglich ist. Eigene Ersetzungen werden genau einmal und ausschließlich lokal
-ausgeführt; persönliche Ausnahmen haben Vorrang.
+Sprachverstand arbeitet bewusst konservativ. Unbekannte oder mehrdeutige Schreibweisen bleiben unverändert, wenn keine ausreichend sichere Ersetzung möglich ist. Eigene Ersetzungen werden genau einmal ausgeführt; persönliche Ausnahmen haben Vorrang. Alle Einstellungen bleiben standardmäßig lokal. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen.
 
 Datenschutz:
 
-- Verarbeitung ausschließlich lokal im Browser
+- Textverarbeitung ausschließlich lokal im Browser
 - keine Übertragung von Webseitentexten oder aufgerufenen Adressen
-- keine Cloud und keine externe Sprach-API
+- keine eigene Cloud und keine externe Sprach-API
 - kein Tracking und keine Telemetrie
 - keine Werbung und keine Nutzerprofile
-- Einstellungen, Ausnahmen und eigene Ersetzungen bleiben im Browser
+- Einstellungen, Ausnahmen und eigene Ersetzungen bleiben standardmäßig lokal im Browser
+- optionale Synchronisierung nur für ausdrücklich ausgewählte Kategorien über den Browseranbieter
 - Importdateien werden nur nach bewusster Auswahl lokal gelesen
 - Exportdateien werden lokal erzeugt und nicht hochgeladen
 
@@ -99,8 +98,7 @@ Für `browser_specific_settings.gecko.data_collection_permissions` gilt:
 }
 ```
 
-Begründung: Sprachverstand sammelt oder überträgt keine Daten zur Verarbeitung
-außerhalb der Erweiterung oder des lokalen Browsers.
+Begründung: Sprachverstand sammelt keine Daten für den Entwickler oder einen vom Projekt betriebenen Dienst. Eine optionale, vom Nutzer kategorieweise aktivierte `storage.sync`-Synchronisierung wird ausschließlich durch den verwendeten Browserdienst ausgeführt und ist standardmäßig deaktiviert.
 
 ## Chrome Web Store
 
@@ -145,6 +143,7 @@ Wichtige Funktionen:
 - eigene wörtliche Ersetzungen ohne Regex
 - Live-Vorschau und Konflikthinweise für eigene Regeln
 - lokaler JSON-Import und -Export aller Einstellungen
+- optionale Browser-Synchronisierung pro Datenkategorie, standardmäßig deaktiviert
 - ausdrücklich wählbare Strategie für persönliche Listen beim Import
 - Ausschluss bestimmter Domains
 - optionaler Schutz zitierter Schreibweisen
@@ -154,12 +153,7 @@ Wichtige Funktionen:
 Sprachverstand arbeitet bewusst vorsichtig: Unbekannte oder mehrdeutige Formen
 werden lieber unverändert gelassen als möglicherweise falsch ersetzt.
 
-Die gesamte Textverarbeitung erfolgt lokal im Browser. Es werden keine
-Webseitentexte, Adressen, Einstellungen oder Nutzungsdaten an den Entwickler
-oder andere Anbieter übertragen. Sprachverstand verwendet keine Cloud-Dienste,
-keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
-Importdateien werden nur nach einer bewussten Dateiauswahl lokal gelesen;
-Exportdateien werden lokal erzeugt.
+Die gesamte Textverarbeitung erfolgt lokal im Browser. Webseitentexte, Browserverläufe und Nutzungsdaten werden nicht an den Entwickler übertragen. Sprachverstand verwendet keine eigene Cloud, keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung. Alle Einstellungen werden standardmäßig lokal gespeichert. Nur ausdrücklich ausgewählte Kategorien können zusätzlich über den Synchronisierungsdienst des Browseranbieters auf weitere angemeldete Geräte übertragen werden. Importdateien werden nur nach einer bewussten Dateiauswahl lokal gelesen; Exportdateien werden lokal erzeugt.
 
 ## Chrome Web Store – Datenschutzformular
 
@@ -171,10 +165,7 @@ Exportdateien werden lokal erzeugt.
 
 ### Begründung der Berechtigung `storage`
 
-> Die Speicherberechtigung wird ausschließlich benötigt, um die vom Nutzer
-> gewählten Einstellungen, aktivierten Regelgruppen, persönlichen Textausnahmen,
-> eigenen wörtlichen Ersetzungen und ausgeschlossenen Domains lokal im Browser
-> zu speichern.
+> Die Speicherberechtigung wird benötigt, um den vollständigen Einstellungsstand lokal im Browser zu speichern. Zusätzlich kann der Nutzer für Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Textoptionen, persönliche Ausnahmen und eigene Ersetzungen getrennt festlegen, ob die Kategorie über den standardisierten Synchronisierungsdienst des Browsers übertragen wird. Standardmäßig ist keine Kategorie ausgewählt.
 
 ### Begründung des Zugriffs auf alle Webseiten
 
@@ -215,16 +206,13 @@ Exportdateien werden lokal erzeugt.
 
 **Vom Nutzer bereitgestellte Einstellungen**
 
-> Regelgruppen, persönliche Textausnahmen, eigene wörtliche Ersetzungen und
-> Domain-Ausschlüsse werden lokal im Erweiterungsspeicher gespeichert und
-> ausschließlich für die gewählte Konfiguration verwendet. Bei einem bewusst
-> ausgelösten Export wird der vollständige Einstellungsstand in eine lokale
-> JSON-Datei geschrieben.
+> Regelgruppen, persönliche Textausnahmen, eigene wörtliche Ersetzungen und Domain-Ausschlüsse werden standardmäßig lokal im Erweiterungsspeicher gespeichert und ausschließlich für die gewählte Konfiguration verwendet. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Browser-Synchronisierungsdienst übertragen. Bei einem bewusst ausgelösten Export wird der vollständige Einstellungsstand einschließlich dieser Auswahl in eine lokale JSON-Datei geschrieben.
 
 ### Eingeschränkte Datennutzung
 
 - Die Datenverarbeitung ist auf die beschriebene Kernfunktion beschränkt.
-- Daten werden nicht verkauft oder an Dritte übertragen.
+- Daten werden nicht verkauft oder an den Entwickler beziehungsweise vom Projekt betriebene Dritte übertragen.
+- Bei freiwillig aktivierter Browser-Synchronisierung verarbeitet der Browseranbieter ausschließlich die ausgewählten Einstellungskategorien.
 - Daten werden nicht für Werbung oder Profilbildung verwendet.
 - Daten werden nicht für Kreditwürdigkeitsprüfungen oder Finanzzwecke verwendet.
 - Menschen erhalten keinen Zugriff auf die lokal verarbeiteten Webseiteninhalte.

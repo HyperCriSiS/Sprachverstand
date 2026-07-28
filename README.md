@@ -111,6 +111,7 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 - Live-Vorschau für noch nicht gespeicherte persönliche Regeln
 - Konflikthinweise für Dubletten, Überschneidungen, Ersetzungsketten und blockierende Ausnahmen
 - versionierter JSON-Import und -Export des vollständigen Einstellungsstands
+- optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig vollständig deaktiviert
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
 - optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
@@ -135,18 +136,14 @@ lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 
 In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
 literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und
-die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind
-case-sensitive, werden genau einmal ausgeführt und ausschließlich lokal
-gespeichert. Ausnahmen haben Vorrang.
+die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils getrennt gewählt werden, ob die Kategorie zusätzlich über den Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben Kategorien auf weiteren angemeldeten Geräten geladen werden können.
 
 Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
 geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
 widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
 Überschneidungen und nicht ausgeführte Ersetzungsketten hin.
 
-Der vollständige Einstellungsstand einschließlich Aktivierung, Regelgruppen,
-Domain-Ausschlüssen, Zitat- und Attributoptionen, Ausnahmen und eigenen
-Ersetzungen lässt sich als versionierte JSON-Datei sichern und wieder einlesen.
+Der vollständige Einstellungsstand einschließlich Aktivierung, Regelgruppen, Domain-Ausschlüssen, Zitat- und Attributoptionen, Ausnahmen, eigenen Ersetzungen und Synchronisierungsauswahl lässt sich als versionierte JSON-Datei sichern und wieder einlesen.
 Ein Import wird zunächst nur in das Formular übernommen und erst nach dem
 Speichern aktiv.
 
@@ -155,14 +152,12 @@ Speichern aktiv.
 Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
 
 - keine Übertragung von Seitentexten
-- kein Cloud-Dienst und keine externe Sprach-API
+- kein eigener Cloud-Dienst und keine externe Sprach-API
 - keine Analyse des Browserverlaufs
 - kein Tracking und keine Telemetrie
 - keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
 
-Persönliche Ausnahmen, eigene Ersetzungen und Einstellungen werden nur im
-Browser gespeichert. Import- und Exportdateien werden ausschließlich nach einer
-bewussten Nutzeraktion lokal gelesen oder erzeugt. Die vollständigen Angaben
+Alle Einstellungen werden standardmäßig lokal im Browser gespeichert. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über `storage.sync` an den Synchronisierungsdienst des verwendeten Browsers übergeben. Sprachverstand betreibt keinen eigenen Synchronisierungsserver und überträgt keine Webseitentexte oder Browserverläufe. Import- und Exportdateien werden ausschließlich nach einer bewussten Nutzeraktion lokal gelesen oder erzeugt. Die vollständigen Angaben
 stehen in der [Datenschutzerklärung](PRIVACY.md).
 
 ## Unterstützte Browser
