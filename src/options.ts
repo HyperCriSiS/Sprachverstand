@@ -13,19 +13,21 @@ import {
 } from "./settings/defaults";
 import {
   analyzeCustomReplacementConflicts,
-  createPersonalRulesDocument,
   formatCustomReplacementsText,
   formatProtectedTermsText,
-  maximumPersonalRulesImportBytes,
-  mergePersonalRules,
   parseCustomReplacementsText,
-  parsePersonalRulesDocument,
   parseProtectedTermsText,
-  stringifyPersonalRulesDocument,
-  type PersonalRulesImportMode,
-  type PersonalRulesMergeResult,
   type ReplacementNotice
 } from "./settings/personal-rules";
+import {
+  createSettingsBackupDocument,
+  maximumSettingsBackupImportBytes,
+  mergeImportedSettings,
+  parseSettingsBackupDocument,
+  stringifySettingsBackupDocument,
+  type SettingsBackupImportMode,
+  type SettingsImportResult
+} from "./settings/settings-backup";
 import { loadSettings, saveSettings } from "./settings/storage";
 
 interface CountUpdatedMessage {
@@ -64,11 +66,11 @@ const customPreviewOutput =
   requiredElement<HTMLTextAreaElement>("#custom-preview-output");
 const customPreviewCount =
   requiredElement<HTMLOutputElement>("#custom-preview-count");
-const exportPersonalRulesButton =
+const exportSettingsButton =
   requiredElement<HTMLButtonElement>("#export-personal-rules");
-const importPersonalRulesButton =
+const importSettingsButton =
   requiredElement<HTMLButtonElement>("#import-personal-rules");
-const importPersonalRulesFile =
+const importSettingsFile =
   requiredElement<HTMLInputElement>("#import-personal-rules-file");
 const importModeSelect =
   requiredElement<HTMLSelectElement>("#personal-rules-import-mode");
@@ -379,32 +381,29 @@ function downloadTextFile(contents: string, filename: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function exportPersonalRules(): void {
+function exportSettings(): void {
   try {
     const settings = readForm();
-    const exported = createPersonalRulesDocument({
-      protectedTerms: settings.protectedTerms,
-      customReplacements: settings.customReplacements
-    });
+    const exported = createSettingsBackupDocument(settings);
     const date = new Date().toISOString().slice(0, 10);
     downloadTextFile(
-      stringifyPersonalRulesDocument(exported),
-      `sprachverstand-persoenliche-regeln-${date}.json`
+      stringifySettingsBackupDocument(exported),
+      `sprachverstand-einstellungen-${date}.json`
     );
     showStatus(
-      `${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} Ersetzungen exportiert.`
+      `Alle Einstellungen einschließlich ${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} eigener Ersetzungen exportiert.`
     );
   } catch (error) {
     showStatus(
       error instanceof Error
         ? error.message
-        : "Die persönlichen Regeln konnten nicht exportiert werden.",
+        : "Die Einstellungen konnten nicht exportiert werden.",
       true
     );
   }
 }
 
-function selectedImportMode(): PersonalRulesImportMode {
+function selectedImportMode(): SettingsBackupImportMode {
   const value = importModeSelect.value;
   if (
     value === "keep-existing" ||
@@ -416,7 +415,11 @@ function selectedImportMode(): PersonalRulesImportMode {
   return "keep-existing";
 }
 
-function renderImportSummary(result: PersonalRulesMergeResult): void {
+function renderImportSummary(result: SettingsImportResult): void {
+  const generalSettings = document.createElement("p");
+  generalSettings.textContent =
+    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse sowie Zitat- und Attributoptionen wurden aus der Sicherung übernommen.";
+
   const summary = document.createElement("p");
   summary.textContent = [
     `${result.addedProtectedTerms} Ausnahmen ergänzt`,
@@ -430,7 +433,7 @@ function renderImportSummary(result: PersonalRulesMergeResult): void {
   reminder.textContent = "Der Import ist vorbereitet, aber noch nicht gespeichert.";
 
   if (result.conflicts.length === 0) {
-    importSummary.replaceChildren(summary, reminder);
+    importSummary.replaceChildren(generalSettings, summary, reminder);
     importSummary.className = "import-summary";
     return;
   }
@@ -449,35 +452,38 @@ function renderImportSummary(result: PersonalRulesMergeResult): void {
     list.append(item);
   }
 
-  importSummary.replaceChildren(summary, heading, list, reminder);
+  importSummary.replaceChildren(
+    generalSettings,
+    summary,
+    heading,
+    list,
+    reminder
+  );
   importSummary.className = "import-summary warning";
 }
 
-async function importPersonalRules(file: File): Promise<void> {
-  if (file.size > maximumPersonalRulesImportBytes) {
+async function importSettings(file: File): Promise<void> {
+  if (file.size > maximumSettingsBackupImportBytes) {
     throw new Error("Die Importdatei ist größer als 1 MB und wird nicht verarbeitet.");
   }
 
-  const imported = parsePersonalRulesDocument(await file.text());
-  const current = {
-    protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
-    customReplacements: parseCustomReplacementsText(
-      customReplacementsInput.value
-    ).replacements
-  };
-  const result = mergePersonalRules(
+  const imported = parseSettingsBackupDocument(await file.text());
+  const mode = selectedImportMode();
+  const current = mode === "replace" ? defaultSettings : readForm();
+  const result = mergeImportedSettings(
     current,
-    imported,
-    selectedImportMode()
+    imported.settings,
+    mode
   );
 
-  protectedTermsInput.value = formatProtectedTermsText(result.protectedTerms);
-  customReplacementsInput.value = formatCustomReplacementsText(
-    result.customReplacements
-  );
+  render(result.settings);
   renderImportSummary(result);
   scheduleInteractiveUpdate();
-  showStatus("Import geprüft und in das Formular übernommen. Zum Anwenden noch speichern.", false, 8000);
+  showStatus(
+    "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern.",
+    false,
+    8000
+  );
 }
 
 function handleRuntimeMessage(message: unknown): void {
@@ -523,28 +529,28 @@ async function start(): Promise<void> {
     scheduleInteractiveUpdate();
   });
 
-  exportPersonalRulesButton.addEventListener("click", exportPersonalRules);
-  importPersonalRulesButton.addEventListener("click", () => {
-    importPersonalRulesFile.click();
+  exportSettingsButton.addEventListener("click", exportSettings);
+  importSettingsButton.addEventListener("click", () => {
+    importSettingsFile.click();
   });
-  importPersonalRulesFile.addEventListener("change", () => {
-    const file = importPersonalRulesFile.files?.[0];
+  importSettingsFile.addEventListener("change", () => {
+    const file = importSettingsFile.files?.[0];
     if (!file) {
       return;
     }
 
-    void importPersonalRules(file)
+    void importSettings(file)
       .catch((error: unknown) => {
         showStatus(
           error instanceof Error
             ? error.message
-            : "Die persönlichen Regeln konnten nicht importiert werden.",
+            : "Die Einstellungen konnten nicht importiert werden.",
           true,
           8000
         );
       })
       .finally(() => {
-        importPersonalRulesFile.value = "";
+        importSettingsFile.value = "";
       });
   });
 
