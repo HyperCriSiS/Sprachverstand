@@ -5,6 +5,20 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.6.1 – RC2 (2026-07-29)
+
+### Korrigiert
+
+- **Speichern** und **Zurücksetzen** befinden sich nun oben in derselben Werkzeugleiste wie **Alle öffnen** und **Alle schließen**.
+- Die beiden Schaltergruppen sind auf Desktop-Breiten bündig ausgerichtet und werden auf schmalen Ansichten übersichtlich untereinander dargestellt.
+- Die bisherigen doppelten Speicher- und Rücksetzschalter am unteren Ende der Einstellungsseite wurden entfernt.
+- Ein Layouttest und zusätzliche CI-Prüfungen sichern die Position aller vier Schaltflächen ab.
+
+### Veröffentlichung
+
+- RC2 ersetzt RC1 als finalen Veröffentlichungskandidaten unter dem unveränderlichen Tag `v0.6.1-rc.2`.
+- Chromium-Paket, unsigniertes Firefox-XPI, Quellarchiv, Prüfsummen und `SOURCE_COMMIT.txt` werden erneut aus demselben finalen Commit erzeugt und geprüft.
+
 ## 0.6.1 – RC1 (2026-07-29)
 
 ### Geändert
