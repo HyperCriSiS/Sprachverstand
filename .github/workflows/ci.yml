@@ -58,6 +58,10 @@ jobs:
           grep -q 'icons/icon32.png' static/popup/popup.html
           ! grep -q '../legal/legal.html' static/popup/popup.html
           grep -q 'icons/icon48.png' static/options/options.html
+          grep -q 'id="save-settings"' static/options/options.html
+          grep -q 'id="reset"' static/options/options.html
+          grep -q 'id="expand-all-sections"' static/options/options.html
+          grep -q 'id="collapse-all-sections"' static/options/options.html
           grep -q 'id="custom-replacement-feedback"' static/options/options.html
           grep -q 'id="custom-preview-input"' static/options/options.html
           grep -q 'id="custom-preview-output"' static/options/options.html
@@ -97,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          PRERELEASE="rc.1"
+          PRERELEASE="rc.2"
           mkdir -p artifacts
 
           (
@@ -142,7 +146,7 @@ jobs:
       - name: RC-Pakete hochladen
         uses: actions/upload-artifact@v6
         with:
-          name: sprachverstand-rc-1-${{ github.sha }}
+          name: sprachverstand-rc-2-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14

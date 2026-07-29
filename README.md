@@ -138,6 +138,10 @@ In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
 literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und
 die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils getrennt gewählt werden, ob die Kategorie zusätzlich über den Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben Kategorien auf weiteren angemeldeten Geräten geladen werden können.
 
+**Speichern** und **Zurücksetzen** befinden sich oben in derselben Werkzeugleiste
+wie **Alle öffnen** und **Alle schließen**. Alle Einstellungsbereiche lassen sich
+einzeln oder gemeinsam öffnen und schließen.
+
 Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
 geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
 widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
@@ -171,7 +175,7 @@ ist deshalb kein Veröffentlichungsziel.
 
 ## Projektstatus
 
-Sprachverstand 0.6.1 RC1 ist der abschließend geprüfte
+Sprachverstand 0.6.1 RC2 ist der abschließend geprüfte
 Veröffentlichungskandidat für die öffentliche Freigabe des Repositorys und die
 Einreichung bei Firefox Add-ons. Die Regel-Engine ist bewusst konservativ
 aufgebaut und wird mit automatisierten Unit-, DOM-, Performance- und

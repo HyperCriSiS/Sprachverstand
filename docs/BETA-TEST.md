@@ -1,14 +1,14 @@
-# Sprachverstand 0.6.1 – RC1 testen
+# Sprachverstand 0.6.1 – RC2 testen
 
-RC1 ist der Veröffentlichungskandidat für die öffentliche Freigabe des Repositorys
-und die Einreichung bei Firefox Add-ons. Diese Anleitung bündelt die technischen,
-sprachlichen und manuellen Prüfungen des finalen Kandidaten.
+RC2 ist der korrigierte Veröffentlichungskandidat für die öffentliche Freigabe
+des Repositorys und die Einreichung bei Firefox Add-ons. Diese Anleitung bündelt
+die technischen, sprachlichen und manuellen Prüfungen des finalen Kandidaten.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.6.1-rc.1-chromium.zip`
-- `sprachverstand-0.6.1-rc.1-firefox.xpi`
-- `sprachverstand-0.6.1-rc.1-source.zip`
+- `sprachverstand-0.6.1-rc.2-chromium.zip`
+- `sprachverstand-0.6.1-rc.2-firefox.xpi`
+- `sprachverstand-0.6.1-rc.2-source.zip`
 - `SHA256SUMS.txt`
 - `SOURCE_COMMIT.txt`
 - `BETA-TEST.md`
@@ -23,8 +23,8 @@ sha256sum -c SHA256SUMS.txt
 Unter Windows können die Werte mit
 `Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
 
-Der Inhalt von `SOURCE_COMMIT.txt` muss mit dem Commit des RC1-Tags
-`v0.6.1-rc.1` übereinstimmen. Chromium-Paket, Firefox-XPI und Quellarchiv müssen
+Der Inhalt von `SOURCE_COMMIT.txt` muss mit dem Commit des RC2-Tags
+`v0.6.1-rc.2` übereinstimmen. Chromium-Paket, Firefox-XPI und Quellarchiv müssen
 aus diesem Commit stammen.
 
 ## Desktop installieren
@@ -64,6 +64,10 @@ Prüfen:
 
 ## Erweiterte Einstellungen
 
+- **Speichern** und **Zurücksetzen** stehen oben links in derselben Werkzeugleiste wie **Alle öffnen** und **Alle schließen** rechts.
+- Die beiden Schaltergruppen sind auf Desktop-Breiten horizontal bündig ausgerichtet.
+- Auf schmalen Ansichten werden die beiden Zweiergruppen übersichtlich untereinander dargestellt.
+- Am unteren Ende der Einstellungsseite befinden sich keine doppelten Speicher- oder Rücksetzschalter.
 - **Allgemein** und **Was soll korrigiert werden?** sind beim Öffnen ausgeklappt.
 - Alle anderen Bereiche sind zunächst eingeklappt.
 - **Alle öffnen** öffnet sämtliche Bereiche.

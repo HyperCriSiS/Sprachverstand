@@ -18,12 +18,18 @@
         </div>
       </header>
 
-      <div class="settings-toolbar" aria-label="Einstellungsbereiche steuern">
-        <span>Bereiche</span>
-        <div class="compact-actions">
+      <div class="settings-toolbar" aria-label="Einstellungen und Bereiche steuern">
+        <div class="compact-actions" aria-label="Einstellungen">
+          <button id="save-settings" type="submit" class="primary" form="settings-form">Speichern</button>
+          <button id="reset" type="button">Zurücksetzen</button>
+        </div>
+        <div class="compact-actions" aria-label="Einstellungsbereiche">
           <button id="expand-all-sections" type="button">Alle öffnen</button>
           <button id="collapse-all-sections" type="button">Alle schließen</button>
         </div>
+      </div>
+      <div class="settings-status-row">
+        <output id="status" form="settings-form" aria-live="polite"></output>
       </div>
 
       <form id="settings-form">
@@ -236,12 +242,6 @@
             </small>
           </div>
         </details>
-
-        <div class="actions">
-          <button type="submit" class="primary">Speichern</button>
-          <button id="reset" type="button">Zurücksetzen</button>
-          <output id="status" aria-live="polite"></output>
-        </div>
       </form>
 
       <footer class="legal-footer">
