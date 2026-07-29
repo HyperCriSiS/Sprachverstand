@@ -5,6 +5,26 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.6.1 – RC1 (2026-07-29)
+
+### Geändert
+
+- Alle Bereiche der erweiterten Einstellungen sind einzeln ein- und ausklappbar; globale Schalter öffnen oder schließen sämtliche Bereiche.
+- Die Einstellungsbereiche wurden neu geordnet. **Einstellungen sichern und übertragen** steht vorletzte Position, **Browser-Synchronisierung** an letzter Position.
+- Die Entwicklungsabhängigkeit `jsdom` wurde auf Version 30 aktualisiert.
+- Redundante versionsgebundene Beta-12-Dokumente wurden entfernt und die dauerhafte öffentliche Freigabecheckliste erweitert.
+
+### Korrigiert
+
+- Die Test- und Datenschutzdokumentation beschreibt nun präzise, wann die Synchronisierungsauswahl übertragen wird und wann eine leere Auswahl als Deaktivierungsmetadatum verbleibt.
+- Die RC-Testanleitung enthält `SOURCE_COMMIT.txt` nur einmal und verwendet die tatsächlichen RC1-Paketnamen.
+- Regressionstests sichern zusätzlich `Praktiker*innen` zu `Praktiker` und `Mediziner*innen` zu `Mediziner` ab.
+
+### Veröffentlichung
+
+- CI und Release-Workflow erzeugen unveränderliche RC1-Pakete unter dem Tag `v0.6.1-rc.1`.
+- Chromium-Paket, unsigniertes Firefox-XPI, Quellarchiv, Prüfsummen und `SOURCE_COMMIT.txt` werden erneut aus demselben finalen Commit erzeugt und geprüft.
+
 ## 0.6.1 – Beta 12 (2026-07-28)
 
 ### Hinzugefügt

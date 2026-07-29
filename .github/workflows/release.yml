@@ -1,4 +1,4 @@
-name: Beta-Release
+name: RC-Release
 
 on:
   push:
@@ -43,8 +43,9 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.12"
-          TAG="v${VERSION}-${BETA}"
+          PRERELEASE="rc.1"
+          PRERELEASE_TITLE="RC1"
+          TAG="v${VERSION}-${PRERELEASE}"
 
           if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
             echo "Der unveränderliche Tag ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
@@ -57,7 +58,8 @@ jobs:
           fi
 
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "BETA=${BETA}" >> "$GITHUB_ENV"
+          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_ENV"
+          echo "PRERELEASE_TITLE=${PRERELEASE_TITLE}" >> "$GITHUB_ENV"
           echo "TAG=${TAG}" >> "$GITHUB_ENV"
 
       - name: Release-Pakete erstellen
@@ -68,17 +70,17 @@ jobs:
 
           (
             cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" .
           )
 
           (
             cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" .
           )
 
           git archive \
             --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-${BETA}-source.zip" \
+            --output="artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
             "$GITHUB_SHA"
 
           cp docs/BETA-TEST.md artifacts/
@@ -88,19 +90,19 @@ jobs:
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${VERSION}-${BETA}-chromium.zip" \
-              "sprachverstand-${VERSION}-${BETA}-firefox.xpi" \
-              "sprachverstand-${VERSION}-${BETA}-source.zip" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip"
 
-          if unzip -l "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" | grep -q 'META-INF/'; then
+          if unzip -l "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
             exit 1
           fi
@@ -114,7 +116,7 @@ jobs:
           gh release create "$TAG" \
             artifacts/* \
             --target "$GITHUB_SHA" \
-            --title "Sprachverstand ${VERSION} – Beta 12" \
+            --title "Sprachverstand ${VERSION} – ${PRERELEASE_TITLE}" \
             --notes-file docs/RELEASE-NOTES.md \
             --prerelease
 
@@ -131,8 +133,8 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue comment 1 --repo "$REPOSITORY" --body "## Beta 12 veröffentlicht
+          gh issue comment 1 --repo "$REPOSITORY" --body "## ${PRERELEASE_TITLE} veröffentlicht
 
-          Sprachverstand ${VERSION} Beta 12 wurde nach erfolgreicher vollständiger Prüfung als unveränderlicher Release veröffentlicht.
+          Sprachverstand ${VERSION} ${PRERELEASE_TITLE} wurde nach erfolgreicher vollständiger Prüfung als unveränderlicher Release veröffentlicht.
 
           https://github.com/${REPOSITORY}/releases/tag/${TAG}"

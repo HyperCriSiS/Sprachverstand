@@ -92,27 +92,27 @@ jobs:
       - name: Firefox Desktop und Android linten
         run: npm run lint:firefox
 
-      - name: Beta-Pakete erstellen und prüfen
+      - name: RC-Pakete erstellen und prüfen
         shell: bash
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          BETA="beta.12"
+          PRERELEASE="rc.1"
           mkdir -p artifacts
 
           (
             cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" .
           )
 
           (
             cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" .
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" .
           )
 
           git archive \
             --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-${BETA}-source.zip" \
+            --output="artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
             HEAD
 
           cp docs/BETA-TEST.md artifacts/
@@ -122,27 +122,27 @@ jobs:
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${VERSION}-${BETA}-chromium.zip" \
-              "sprachverstand-${VERSION}-${BETA}-firefox.xpi" \
-              "sprachverstand-${VERSION}-${BETA}-source.zip" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" \
+              "sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${BETA}-source.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip"
 
-          if unzip -l "artifacts/sprachverstand-${VERSION}-${BETA}-firefox.xpi" | grep -q 'META-INF/'; then
+          if unzip -l "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das Firefox-XPI muss vor der Mozilla-Signierung unsigniert sein."
             exit 1
           fi
 
-      - name: Beta-Pakete hochladen
+      - name: RC-Pakete hochladen
         uses: actions/upload-artifact@v6
         with:
-          name: sprachverstand-beta-12-${{ github.sha }}
+          name: sprachverstand-rc-1-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 14

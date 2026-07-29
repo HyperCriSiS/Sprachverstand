@@ -171,12 +171,13 @@ ist deshalb kein Veröffentlichungsziel.
 
 ## Projektstatus
 
-Sprachverstand befindet sich in aktiver Beta-Entwicklung. Die Regel-Engine ist
-bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
-Performance- und Regressionstests abgesichert.
+Sprachverstand 0.6.1 RC1 ist der abschließend geprüfte
+Veröffentlichungskandidat für die öffentliche Freigabe des Repositorys und die
+Einreichung bei Firefox Add-ons. Die Regel-Engine ist bewusst konservativ
+aufgebaut und wird mit automatisierten Unit-, DOM-, Performance- und
+Regressionstests abgesichert.
 
-Store-Veröffentlichungen folgen nach Abschluss der öffentlichen Testphase. Die
-versionierten deutschen Storetexte stehen in
+Die versionierten deutschen Storetexte stehen in
 [`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
 
 ## Entwicklung

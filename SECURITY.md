@@ -2,7 +2,7 @@
 
 ## Unterstützte Versionen
 
-Sicherheitskorrekturen werden für die jeweils neueste veröffentlichte Beta- oder
+Sicherheitskorrekturen werden für die jeweils neueste veröffentlichte Vorab- oder
 Store-Version bereitgestellt. Ältere Vorabversionen erhalten grundsätzlich keine
 separaten Korrekturen.
 
