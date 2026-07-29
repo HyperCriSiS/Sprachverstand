@@ -1,6 +1,6 @@
 # Datenschutzerklärung für Sprachverstand
 
-**Stand: 28. Juli 2026**
+**Stand: 29. Juli 2026**
 
 ## 1. Geltungsbereich
 
@@ -62,9 +62,12 @@ Gespeichert werden können:
 Die vollständige Konfiguration wird immer lokal gespeichert. Sobald mindestens
 eine Kategorie aktiviert ist, wird die Synchronisierungsauswahl zusätzlich als
 technische Information an den Browser-Synchronisierungsdienst übergeben. Dadurch
-können weitere angemeldete Geräte dieselben Kategorien laden. Bei vollständig
-deaktivierter Synchronisierung enthält `storage.sync` nur die leere Auswahl und
-keine Einstellungskategorie.
+können weitere angemeldete Geräte dieselben Kategorien laden. Solange die
+Synchronisierung auf einem frischen Profil nie aktiviert wurde, legt
+Sprachverstand keine eigenen Einträge in `storage.sync` an. Werden nach vorheriger
+Nutzung alle Kategorien wieder deaktiviert, kann dort nur die leere Auswahl als
+Metadatum verbleiben; die zuvor synchronisierten Kategorieschlüssel werden
+entfernt. So können weitere Geräte die vollständige Deaktivierung übernehmen.
 
 ## 4. Optionale Browser-Synchronisierung
 
