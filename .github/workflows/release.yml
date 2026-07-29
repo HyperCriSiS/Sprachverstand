@@ -43,8 +43,8 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
-          PRERELEASE="rc.1"
-          PRERELEASE_TITLE="RC1"
+          PRERELEASE="rc.2"
+          PRERELEASE_TITLE="RC2"
           TAG="v${VERSION}-${PRERELEASE}"
 
           if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
