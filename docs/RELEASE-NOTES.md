@@ -1,7 +1,14 @@
-# Sprachverstand 0.6.1 – RC1
+# Sprachverstand 0.6.1 – RC2
 
-RC1 ist der abschließend geprüfte Veröffentlichungskandidat für die öffentliche
-Freigabe des Repositorys und die Einreichung bei Firefox Add-ons.
+RC2 ersetzt RC1 als abschließend geprüften Veröffentlichungskandidaten für die
+öffentliche Freigabe des Repositorys und die Einreichung bei Firefox Add-ons.
+
+## Korrektur gegenüber RC1
+
+- **Speichern** und **Zurücksetzen** befinden sich nun oben in derselben Werkzeugleiste wie **Alle öffnen** und **Alle schließen**.
+- Beide Schaltergruppen sind auf Desktop-Breiten bündig ausgerichtet und werden auf schmalen Ansichten übersichtlich untereinander angeordnet.
+- Die bisherige doppelte Platzierung am unteren Ende der Einstellungsseite wurde entfernt.
+- Ein eigener Layouttest schützt die Position der vier Schaltflächen vor Regressionen.
 
 ## Kernfunktionen
 
@@ -21,16 +28,6 @@ Freigabe des Repositorys und die Einreichung bei Firefox Add-ons.
 - Abgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt.
 - Vor dem Synchronisieren wird ein konservatives Byte-Limit pro Kategorie geprüft.
 
-## Änderungen seit Beta 12
-
-- Alle Bereiche der erweiterten Einstellungen sind einzeln ein- und ausklappbar.
-- Globale Schalter öffnen oder schließen sämtliche Einstellungsbereiche.
-- Die Reihenfolge der Einstellungsbereiche wurde überarbeitet; Sicherung und Übertragung stehen vor der Browser-Synchronisierung.
-- Regressionstests sichern zusätzlich `Praktiker*innen` → `Praktiker` und `Mediziner*innen` → `Mediziner` ab.
-- Die Entwicklungsabhängigkeit `jsdom` wurde auf Version 30 aktualisiert.
-- Redundante versionsgebundene Dokumente wurden entfernt und die öffentliche Freigabecheckliste dauerhaft ausgerichtet.
-- Die Testdokumentation zur optionalen Browser-Synchronisierung wurde an die tatsächliche Implementierung angeglichen.
-
 ## Sicherheit und Veröffentlichung
 
 - Ungültige oder überlange Importdaten werden vollständig abgewiesen.
@@ -42,9 +39,9 @@ Freigabe des Repositorys und die Einreichung bei Firefox Add-ons.
 
 ## Pakete
 
-- `sprachverstand-0.6.1-rc.1-chromium.zip`
-- `sprachverstand-0.6.1-rc.1-firefox.xpi` – unsigniertes AMO-Einreichungspaket
-- `sprachverstand-0.6.1-rc.1-source.zip`
+- `sprachverstand-0.6.1-rc.2-chromium.zip`
+- `sprachverstand-0.6.1-rc.2-firefox.xpi` – unsigniertes AMO-Einreichungspaket
+- `sprachverstand-0.6.1-rc.2-source.zip`
 - `SHA256SUMS.txt`
 - `SOURCE_COMMIT.txt`
 - `BETA-TEST.md`
