@@ -94,7 +94,7 @@ Sprachverstand erzeugten Wert entspricht.
 - `person-lexicon.ts`: Singular, Plural, oblique Formen, Genitiv, Komposita und unregelmäßige Flexionen
 - `substantivized-adjectives.ts`: geprüfte substantivierte Adjektive
 - `special-gender-forms.ts`: einzelne ausdrücklich zugeordnete Sonderformen
-- `data/flexion-regression-cases.json`: quellenbezogene Positiv- und Negativfälle
+- `data/flexion-regression-cases.json`: kuratierte Positiv- und Negativfälle
 
 Das Aufnahmeverfahren ist in [`LEXICON.md`](LEXICON.md) beschrieben.
 

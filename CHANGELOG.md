@@ -94,8 +94,8 @@ dokumentiert.
   `Lehrys`, `Kollegys` und `Mitarbeitys`.
 - Eigene literale Ersetzungen, vollständig getrennt von persönlichen Ausnahmen,
   lokal gespeichert, case-sensitive, nicht rekursiv und ohne Regex-Unterstützung.
-- Maschinenlesbarer Flexions- und Sonderformenkatalog mit quellenbezogenen
-  Positiv- und Negativregressionen.
+- Maschinenlesbarer Flexions- und Sonderformenkatalog mit Positiv- und
+  Negativregressionen.
 - Stark erweitertes Flexionslexikon für häufige schwache, regelmäßige und
   unregelmäßige Personenformen.
 - Lokale Lizenz- und Quelltextseite in der Erweiterung.
@@ -132,18 +132,14 @@ dokumentiert.
 
 - Automatisierter GitHub-Prerelease mit geprüften Chromium-, Firefox- und
   Quellcodepaketen sowie SHA-256-Prüfsummen.
-- Öffentliche Projektvorstellung mit Hinweisen zu Lesbarkeit, Datenschutz,
-  Recherchequellen und Danksagung.
+- Öffentliche Projektvorstellung mit Hinweisen zu Lesbarkeit, Datenschutz und
+  Danksagung.
 - Aktualisierte Roadmap und Beta-Testanleitung für die noch offenen Praxisprüfungen.
 
 ### Geändert
 
 - Projektbeschreibung und Manifesttexte verwenden nun den Leitsatz
   **„Macht Webseiten leichter lesbar.“**
-- Die Herkunftsdokumentation unterscheidet genauer zwischen übernommenem
-  Quelltext und öffentlich dokumentierten Sprachbeispielen, Flexionsfällen und
-  Fehlertreffern als Recherchebasis.
-
 ### Teststand
 
 - Der reale Waterfox-Test und die daraus entstandenen Popup- und Icon-Korrekturen

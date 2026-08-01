@@ -18,10 +18,9 @@ interface SupplementalForm {
 const locale = "de-DE";
 
 /*
- * Kuratierter Quellenabgleich, zuletzt erweitert 2026-08. Kandidaten aus
- * vollständigen Datensätzen werden nicht ungeprüft importiert. Aufgenommen
- * werden ausschließlich mehrfach bestätigte Formen, deren Singular und Plural
- * einzeln geprüft und ohne semantische Neuformulierung bestimmbar sind.
+ * Ergänzende Personenformen mit einzeln bestimmten Singular- und Pluralzielen.
+ * Aufgenommen werden ausschließlich morphologisch eindeutige Formen, die ohne
+ * semantische Neuformulierung umgewandelt werden können.
  */
 const unchangedForms = [
   "abenteurer",
@@ -527,8 +526,8 @@ const plusPluralPattern =
 const spacedBinnenIPluralPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)\s+I\s*nnen(?![\p{L}\p{M}])/gu;
 
-export const sourceAuditPluralRule: Rule = {
-  id: "plural.source-audit-forms",
+export const additionalPersonPluralRule: Rule = {
+  id: "plural.additional-person-forms",
   risk: "safe",
 
   apply(input) {
@@ -547,8 +546,8 @@ export const sourceAuditPluralRule: Rule = {
   }
 };
 
-export const sourceAuditSingularRule: Rule = {
-  id: "singular.source-audit-forms",
+export const additionalPersonSingularRule: Rule = {
+  id: "singular.additional-person-forms",
   risk: "contextual",
 
   apply(input) {

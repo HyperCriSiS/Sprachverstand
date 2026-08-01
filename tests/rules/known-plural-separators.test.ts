@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { knownPluralSeparatorsRule } from "../../src/rules/known-plural-separators";
 import {
-  sourceAuditPluralRule,
-  sourceAuditSingularRule
-} from "../../src/rules/source-audit-person-forms";
+  additionalPersonPluralRule,
+  additionalPersonSingularRule
+} from "../../src/rules/additional-person-forms";
 
 const validatedSupplementalForms = [
   { singular: "Abenteurer", plural: "Abenteurer" },
@@ -168,11 +168,11 @@ describe("knownPluralSeparatorsRule", () => {
   });
 });
 
-describe("sourceAuditPluralRule", () => {
+describe("additionalPersonPluralRule", () => {
   it.each(validatedSupplementalForms)(
     "normalisiert $singular als einzeln geprüften Plural",
     ({ singular, plural }) => {
-      expect(sourceAuditPluralRule.apply(`${singular}:innen`)).toEqual({
+      expect(additionalPersonPluralRule.apply(`${singular}:innen`)).toEqual({
         text: plural,
         replacements: 1
       });
@@ -192,8 +192,8 @@ describe("sourceAuditPluralRule", () => {
     ["Rezeptionist·innen", "Rezeptionisten"],
     ["Online-FollowerInnen", "Online-Follower"],
     ["Follower*innenzahl", "Followerzahl"]
-  ])("normalisiert den quellengeprüften Plural %s", (input, expected) => {
-    expect(sourceAuditPluralRule.apply(input)).toEqual({
+  ])("normalisiert den einzeln geprüften Plural %s", (input, expected) => {
+    expect(additionalPersonPluralRule.apply(input)).toEqual({
       text: expected,
       replacements: 1
     });
@@ -215,15 +215,15 @@ describe("sourceAuditPluralRule", () => {
       "Quereinsteiger, Rezeptionisten, Streamer, Tutoren, Überbringer, " +
       "Visionäre, Wikipedianer, Xylophonspieler, Youtuber und Zivilisten";
 
-    expect(sourceAuditPluralRule.apply(input)).toEqual({
+    expect(additionalPersonPluralRule.apply(input)).toEqual({
       text: expected,
       replacements: 26
     });
   });
 
-  it("verarbeitet sichtbar getrennte Lehrbeispiele der geprüften Quellen", () => {
+  it("verarbeitet sichtbar getrennte Schreibweisen", () => {
     expect(
-      sourceAuditPluralRule.apply(
+      additionalPersonPluralRule.apply(
         "Leser _ innen, Leser I nnen, Student + innen und Professor+innen"
       )
     ).toEqual({
@@ -235,18 +235,18 @@ describe("sourceAuditPluralRule", () => {
   it("lässt normale Wörter, Medio-Punkte und unbekannte Plusformen unverändert", () => {
     const input =
       "Followerinnen, kommunikatorisch, Geschlechts·merkmale und Zahl + innen";
-    expect(sourceAuditPluralRule.apply(input)).toEqual({
+    expect(additionalPersonPluralRule.apply(input)).toEqual({
       text: input,
       replacements: 0
     });
   });
 });
 
-describe("sourceAuditSingularRule", () => {
+describe("additionalPersonSingularRule", () => {
   it.each(validatedSupplementalForms)(
     "normalisiert $singular als einzeln geprüften Singular",
     ({ singular }) => {
-      expect(sourceAuditSingularRule.apply(`${singular}:in`)).toEqual({
+      expect(additionalPersonSingularRule.apply(`${singular}:in`)).toEqual({
         text: singular,
         replacements: 1
       });
@@ -256,7 +256,7 @@ describe("sourceAuditSingularRule", () => {
   it.each(validatedSupplementalForms)(
     "normalisiert $singular als einzeln geprüften Binnen-I-Singular",
     ({ singular }) => {
-      expect(sourceAuditSingularRule.apply(`${singular}In`)).toEqual({
+      expect(additionalPersonSingularRule.apply(`${singular}In`)).toEqual({
         text: singular,
         replacements: 1
       });
@@ -270,8 +270,8 @@ describe("sourceAuditSingularRule", () => {
     ["Köch*in", "Koch"],
     ["Arzt/in", "Arzt"],
     ["Matros_in", "Matrose"]
-  ])("normalisiert den quellengeprüften Singular %s", (input, expected) => {
-    expect(sourceAuditSingularRule.apply(input)).toEqual({
+  ])("normalisiert den einzeln geprüften Singular %s", (input, expected) => {
+    expect(additionalPersonSingularRule.apply(input)).toEqual({
       text: expected,
       replacements: 1
     });
@@ -280,7 +280,7 @@ describe("sourceAuditSingularRule", () => {
   it("schützt normale Feminina und unbekannte Markerformen", () => {
     const input =
       "Followerin, Köchin, Fantasiefigur*in und FantasiefigurIn";
-    expect(sourceAuditSingularRule.apply(input)).toEqual({
+    expect(additionalPersonSingularRule.apply(input)).toEqual({
       text: input,
       replacements: 0
     });
@@ -292,7 +292,7 @@ describe("sourceAuditSingularRule", () => {
     "eine:n neue VerteidigerIn",
     "die neue VerteidigerIn"
   ])("vermeidet eine grammatisch unvollständige Teilkorrektur bei %s", (input) => {
-    expect(sourceAuditSingularRule.apply(input)).toEqual({
+    expect(additionalPersonSingularRule.apply(input)).toEqual({
       text: input,
       replacements: 0
     });
@@ -303,8 +303,8 @@ describe("sourceAuditSingularRule", () => {
     ["Themenpat*in", "Themenpate"]
   ])("normalisiert das geprüfte Kompositum %s", (input, expected) => {
     const rule = input.includes("innenschaft")
-      ? sourceAuditPluralRule
-      : sourceAuditSingularRule;
+      ? additionalPersonPluralRule
+      : additionalPersonSingularRule;
     expect(rule.apply(input)).toEqual({
       text: expected,
       replacements: 1
