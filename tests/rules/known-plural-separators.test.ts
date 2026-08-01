@@ -5,6 +5,99 @@ import {
   sourceAuditSingularRule
 } from "../../src/rules/source-audit-person-forms";
 
+const validatedSupplementalForms = [
+  { singular: "Abenteurer", plural: "Abenteurer" },
+  { singular: "Alleinverdiener", plural: "Alleinverdiener" },
+  { singular: "Altenpfleger", plural: "Altenpfleger" },
+  { singular: "Amateur", plural: "Amateure" },
+  { singular: "Anforderer", plural: "Anforderer" },
+  { singular: "Anhänger", plural: "Anhänger" },
+  { singular: "Anteilseigner", plural: "Anteilseigner" },
+  { singular: "Antragsteller", plural: "Antragsteller" },
+  { singular: "Anwärter", plural: "Anwärter" },
+  { singular: "Auftragnehmer", plural: "Auftragnehmer" },
+  { singular: "Augenoptiker", plural: "Augenoptiker" },
+  { singular: "Ausländer", plural: "Ausländer" },
+  { singular: "Außenseiter", plural: "Außenseiter" },
+  { singular: "Aussteiger", plural: "Aussteiger" },
+  { singular: "Befrager", plural: "Befrager" },
+  { singular: "Befürworter", plural: "Befürworter" },
+  { singular: "Beisitzer", plural: "Beisitzer" },
+  { singular: "Berliner", plural: "Berliner" },
+  { singular: "Bestatter", plural: "Bestatter" },
+  { singular: "Betrüger", plural: "Betrüger" },
+  { singular: "Bewahrer", plural: "Bewahrer" },
+  { singular: "Bezieher", plural: "Bezieher" },
+  { singular: "Bieter", plural: "Bieter" },
+  { singular: "Botschafter", plural: "Botschafter" },
+  { singular: "Bürokrat", plural: "Bürokraten" },
+  { singular: "Chauffeur", plural: "Chauffeure" },
+  { singular: "Chemiker", plural: "Chemiker" },
+  { singular: "Coach", plural: "Coaches" },
+  { singular: "Dekan", plural: "Dekane" },
+  { singular: "Detektiv", plural: "Detektive" },
+  { singular: "Diabetiker", plural: "Diabetiker" },
+  { singular: "Dichter", plural: "Dichter" },
+  { singular: "Dieb", plural: "Diebe" },
+  { singular: "Doppelgänger", plural: "Doppelgänger" },
+  { singular: "Editor", plural: "Editoren" },
+  { singular: "Ehrenamtler", plural: "Ehrenamtler" },
+  { singular: "Einbrecher", plural: "Einbrecher" },
+  { singular: "Eigner", plural: "Eigner" },
+  { singular: "Einwohner", plural: "Einwohner" },
+  { singular: "Einzelgänger", plural: "Einzelgänger" },
+  { singular: "Elektriker", plural: "Elektriker" },
+  { singular: "Elektroniker", plural: "Elektroniker" },
+  { singular: "Erbauer", plural: "Erbauer" },
+  { singular: "Erblasser", plural: "Erblasser" },
+  { singular: "Favorit", plural: "Favoriten" },
+  { singular: "Fahrzeughalter", plural: "Fahrzeughalter" },
+  { singular: "Feind", plural: "Feinde" },
+  { singular: "Förster", plural: "Förster" },
+  { singular: "Fußgänger", plural: "Fußgänger" },
+  { singular: "Gesellschafter", plural: "Gesellschafter" },
+  { singular: "Gestalter", plural: "Gestalter" },
+  { singular: "Gläubiger", plural: "Gläubiger" },
+  { singular: "Herrscher", plural: "Herrscher" },
+  { singular: "Inspekteur", plural: "Inspekteure" },
+  { singular: "Kläger", plural: "Kläger" },
+  { singular: "Kontrahent", plural: "Kontrahenten" },
+  { singular: "Krankenpfleger", plural: "Krankenpfleger" },
+  { singular: "Kritiker", plural: "Kritiker" },
+  { singular: "Läufer", plural: "Läufer" },
+  { singular: "Masseur", plural: "Masseure" },
+  { singular: "Muslim", plural: "Muslime" },
+  { singular: "Nachahmer", plural: "Nachahmer" },
+  { singular: "Nachfolger", plural: "Nachfolger" },
+  { singular: "Peiniger", plural: "Peiniger" },
+  { singular: "Pfleger", plural: "Pfleger" },
+  { singular: "Prediger", plural: "Prediger" },
+  { singular: "Priester", plural: "Priester" },
+  { singular: "Rassist", plural: "Rassisten" },
+  { singular: "Schlepper", plural: "Schlepper" },
+  { singular: "Schmied", plural: "Schmiede" },
+  { singular: "Schulabbrecher", plural: "Schulabbrecher" },
+  { singular: "Schulabgänger", plural: "Schulabgänger" },
+  { singular: "Schuldner", plural: "Schuldner" },
+  { singular: "Seelsorger", plural: "Seelsorger" },
+  { singular: "Späher", plural: "Späher" },
+  { singular: "Spion", plural: "Spione" },
+  { singular: "Stakeholder", plural: "Stakeholder" },
+  { singular: "Steinmetz", plural: "Steinmetze" },
+  { singular: "Störer", plural: "Störer" },
+  { singular: "Supporter", plural: "Supporter" },
+  { singular: "Tänzer", plural: "Tänzer" },
+  { singular: "Tierschützer", plural: "Tierschützer" },
+  { singular: "Unterzeichner", plural: "Unterzeichner" },
+  { singular: "Urheber", plural: "Urheber" },
+  { singular: "Urlauber", plural: "Urlauber" },
+  { singular: "User", plural: "User" },
+  { singular: "Veganer", plural: "Veganer" },
+  { singular: "Vegetarier", plural: "Vegetarier" },
+  { singular: "Verbrecher", plural: "Verbrecher" },
+  { singular: "Verteidiger", plural: "Verteidiger" }
+] as const;
+
 describe("knownPluralSeparatorsRule", () => {
   it("entfernt verbreitete Separatoren bei sicheren Pluralformen", () => {
     const result = knownPluralSeparatorsRule.apply(
@@ -76,6 +169,16 @@ describe("knownPluralSeparatorsRule", () => {
 });
 
 describe("sourceAuditPluralRule", () => {
+  it.each(validatedSupplementalForms)(
+    "normalisiert $singular als einzeln geprüften Plural",
+    ({ singular, plural }) => {
+      expect(sourceAuditPluralRule.apply(`${singular}:innen`)).toEqual({
+        text: plural,
+        replacements: 1
+      });
+    }
+  );
+
   it.each([
     ["Follower*innen", "Follower"],
     ["Praktiker*innen", "Praktiker"],
@@ -140,6 +243,26 @@ describe("sourceAuditPluralRule", () => {
 });
 
 describe("sourceAuditSingularRule", () => {
+  it.each(validatedSupplementalForms)(
+    "normalisiert $singular als einzeln geprüften Singular",
+    ({ singular }) => {
+      expect(sourceAuditSingularRule.apply(`${singular}:in`)).toEqual({
+        text: singular,
+        replacements: 1
+      });
+    }
+  );
+
+  it.each(validatedSupplementalForms)(
+    "normalisiert $singular als einzeln geprüften Binnen-I-Singular",
+    ({ singular }) => {
+      expect(sourceAuditSingularRule.apply(`${singular}In`)).toEqual({
+        text: singular,
+        replacements: 1
+      });
+    }
+  );
+
   it.each([
     ["Follower*in", "Follower"],
     ["Proband:in", "Proband"],
@@ -154,12 +277,37 @@ describe("sourceAuditSingularRule", () => {
     });
   });
 
-  it("schützt normale Feminina, Binnen-I-Singularformen und unbekannte Markerformen", () => {
+  it("schützt normale Feminina und unbekannte Markerformen", () => {
     const input =
-      "Followerin, Köchin, eine FollowerIn, LogopädIn und Fantasiefigur*in";
+      "Followerin, Köchin, Fantasiefigur*in und FantasiefigurIn";
     expect(sourceAuditSingularRule.apply(input)).toEqual({
       text: input,
       replacements: 0
+    });
+  });
+
+  it.each([
+    "eine:n neue Verteidiger:in",
+    "die neue Verteidiger:in",
+    "eine:n neue VerteidigerIn",
+    "die neue VerteidigerIn"
+  ])("vermeidet eine grammatisch unvollständige Teilkorrektur bei %s", (input) => {
+    expect(sourceAuditSingularRule.apply(input)).toEqual({
+      text: input,
+      replacements: 0
+    });
+  });
+
+  it.each([
+    ["Pat*innenschaft", "Patenschaft"],
+    ["Themenpat*in", "Themenpate"]
+  ])("normalisiert das geprüfte Kompositum %s", (input, expected) => {
+    const rule = input.includes("innenschaft")
+      ? sourceAuditPluralRule
+      : sourceAuditSingularRule;
+    expect(rule.apply(input)).toEqual({
+      text: expected,
+      replacements: 1
     });
   });
 });

@@ -5,6 +5,22 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- 90 einzeln geprüfte Personenbezeichnungen mit sicheren Singular- und
+  Pluralzielen, darunter unveränderte Plurale, schwache Flexionen,
+  Sonderplurale und Binnen-I-Singularformen.
+- Sichere Artikel-Adjektiv-Ketten wie `der:die neue Lehrer:in`,
+  `den:die fleißige:n Schüler:in` und
+  `ein*e gut ausgebildete*r Jurist*in`.
+- Weitere explizite Formen wie `jene:r Nutzer:in`, `Arzt:Ärztin`,
+  `Kolleg:en:innen`, `Pat*innenschaft` und `Themenpat*in`.
+
+### Korrigiert
+
+- Unvollständige Teilkorrekturen hinter femininen oder markierten Artikeln
+  werden auch bei zwischengeschalteten Adjektiven verhindert.
+
 ## 0.6.1 – RC2 (2026-07-29)
 
 ### Korrigiert

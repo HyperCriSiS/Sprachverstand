@@ -5,6 +5,7 @@ describe("specialGenderFormsRule", () => {
   it.each([
     ["Rom*nja", "Roma"],
     ["Sinti*zze", "Sinti"],
+    ["Kolleg:en:innen", "Kollegen"],
     ["Studentys", "Studenten"],
     ["Lesys", "Leser"],
     ["Lehrys", "Lehrer"],
@@ -25,6 +26,7 @@ describe("specialGenderFormsRule", () => {
     "Sinti",
     "Romnja",
     "Sintizze",
+    "Kolleg:en",
     "Studenten",
     "Analyseys"
   ])("lässt %s unverändert", (input) => {

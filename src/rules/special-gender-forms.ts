@@ -8,6 +8,7 @@ const replacements = new Map<string, string>([
   ["sinti*zze", "sinti"],
   ["sinti:zze", "sinti"],
   ["sinti_zze", "sinti"],
+  ["kolleg:en:innen", "kollegen"],
   ["studentys", "studenten"],
   ["lesys", "leser"],
   ["lehrys", "lehrer"],

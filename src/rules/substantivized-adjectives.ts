@@ -128,6 +128,10 @@ addDeterminer("diese", "r", "dieser", "nominative", false);
 addDeterminer("diese", "n", "diesen", "accusative", false);
 addDeterminer("diese", "m", "diesem", "dative", false);
 addDeterminer("dieses", "dieser", "dieses", "genitive", false);
+addDeterminer("jene", "r", "jener", "nominative", false);
+addDeterminer("jene", "n", "jenen", "accusative", false);
+addDeterminer("jene", "m", "jenem", "dative", false);
+addDeterminer("jenes", "jener", "jenes", "genitive", false);
 
 function addPossessive(base: string, feminineBase = `${base}e`): void {
   addDeterminer(base, "e", base, "nominative", true);

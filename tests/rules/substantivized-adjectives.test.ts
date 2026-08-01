@@ -12,6 +12,7 @@ describe("substantivizedAdjectivesRule", () => {
     ["der:die Beschäftigte:r", "der Beschäftigte"],
     ["den:die Beschäftigte:n", "den Beschäftigten"],
     ["jede:r Volljährige:r", "jeder Volljährige"],
+    ["jene:r Volljährige:r", "jener Volljährige"],
     ["mein:e Angehörige:r", "mein Angehöriger"],
     ["Sachverständige:r", "Sachverständiger"],
     ["Vorgesetzte:r", "Vorgesetzter"],

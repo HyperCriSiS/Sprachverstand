@@ -1,6 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { mapKnownSingular } from "./known-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
+import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
 
 const locale = "de-DE";
 const markerPattern =
@@ -15,30 +16,6 @@ const additionalSingularForms = new Map<string, string>([
   ["jüd", "jude"],
   ["pat", "pate"],
   ["solist", "solist"]
-]);
-const ambiguousFeminineDeterminers = new Set([
-  "die",
-  "eine",
-  "einer",
-  "ihre",
-  "ihrer",
-  "jede",
-  "keine",
-  "keiner",
-  "meine",
-  "meiner",
-  "seine",
-  "seiner",
-  "deine",
-  "deiner",
-  "diese",
-  "dieser",
-  "unsere",
-  "unserer",
-  "eure",
-  "eurer",
-  "welche",
-  "welcher"
 ]);
 
 function applyTokenCase(source: string, replacement: string): string {
@@ -86,15 +63,6 @@ function transformMarkedAdjectives(input: string): TransformResult {
   return { text, replacements };
 }
 
-function hasAmbiguousFeminineDeterminer(input: string, index: number): boolean {
-  const prefix = input.slice(0, index);
-  const match = /([\p{L}\p{M}]+)\s+$/u.exec(prefix);
-  return Boolean(
-    match?.[1] &&
-      ambiguousFeminineDeterminers.has(match[1].toLocaleLowerCase(locale))
-  );
-}
-
 function transformMarkerPattern(
   input: string,
   pattern: RegExp,
@@ -106,7 +74,7 @@ function transformMarkerPattern(
     (match: string, base: string, offset: number, fullInput: string) => {
       if (
         protectAmbiguousDeterminer &&
-        hasAmbiguousFeminineDeterminer(fullInput, offset)
+        hasAmbiguousSingularDeterminer(fullInput, offset)
       ) {
         return match;
       }
@@ -133,7 +101,7 @@ export const unmarkedSingularRule: Rule = {
     const separatorResult = transformMarkerPattern(
       adjectiveResult.text,
       markerPattern,
-      false
+      true
     );
     const binnenIResult = transformMarkerPattern(
       separatorResult.text,
