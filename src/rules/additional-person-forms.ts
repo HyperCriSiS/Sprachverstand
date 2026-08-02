@@ -6,6 +6,7 @@ import {
 } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
+import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
 
 interface SupplementalForm {
   readonly stem: string;
@@ -17,47 +18,79 @@ interface SupplementalForm {
 const locale = "de-DE";
 
 /*
- * Quellenabgleich 2026-07:
- * - geschicktgendern.de, vollständige A-Z-Liste
- * - Schreibportal der Universität Leipzig
- * - Leitfaden der TU Dresden
- * - Hannover.de in Leichter Sprache
- *
- * Aufgenommen werden ausschließlich Formen, deren Rückführung auf die
- * generisch-maskuline Form ohne semantische Neuformulierung bestimmbar ist.
+ * Ergänzende Personenformen mit einzeln bestimmten Singular- und Pluralzielen.
+ * Aufgenommen werden ausschließlich morphologisch eindeutige Formen, die ohne
+ * semantische Neuformulierung umgewandelt werden können.
  */
 const unchangedForms = [
+  "abenteurer",
   "absender",
   "akademiker",
+  "alleinverdiener",
   "alkoholiker",
   "allergiker",
   "alleskönner",
   "analytiker",
+  "altenpfleger",
   "angler",
   "angreifer",
+  "anforderer",
+  "anhänger",
   "ankläger",
   "anleger",
   "anlieger",
   "anordner",
   "anrainer",
   "anrufer",
+  "anteilseigner",
+  "antragsteller",
+  "anwärter",
+  "auftragnehmer",
+  "augenoptiker",
+  "ausländer",
+  "außenseiter",
+  "aussteiger",
   "babysitter",
   "barkeeper",
+  "befrager",
+  "befürworter",
+  "beisitzer",
   "bergsteiger",
+  "berliner",
   "berichterstatter",
+  "bestatter",
   "betrachter",
+  "betrüger",
+  "bewahrer",
+  "bezieher",
+  "bieter",
+  "botschafter",
   "camper",
+  "chemiker",
   "coder",
+  "diabetiker",
+  "dichter",
   "designer",
   "developer",
   "dispatcher",
+  "doppelgänger",
+  "ehrenamtler",
+  "einbrecher",
+  "eigner",
+  "einwohner",
+  "einzelgänger",
+  "elektriker",
+  "elektroniker",
   "entdecker",
   "entscheider",
+  "erbauer",
+  "erblasser",
   "ermittler",
   "errichter",
   "ersteller",
   "erzähler",
   "erzeuger",
+  "fahrzeughalter",
   "fischer",
   "follower",
   "freelancer",
@@ -65,15 +98,21 @@ const unchangedForms = [
   "freikirchler",
   "fremdsprachler",
   "frühaufsteher",
+  "fußgänger",
+  "förster",
   "föjler",
   "fsjler",
   "gaffer",
   "gamer",
+  "gesellschafter",
+  "gestalter",
   "gärtner",
+  "gläubiger",
   "globetrotter",
   "grafiker",
   "gutachter",
   "hacker",
+  "herrscher",
   "historiker",
   "hörer",
   "hospizler",
@@ -90,11 +129,15 @@ const unchangedForms = [
   "keyplayer",
   "kletterer",
   "klimaschützer",
+  "kläger",
   "kommissionierer",
+  "krankenpfleger",
+  "kritiker",
   "kunstsammler",
   "layouter",
   "linkshänder",
   "literaturkritiker",
+  "läufer",
   "macher",
   "magier",
   "maler",
@@ -103,7 +146,9 @@ const unchangedForms = [
   "mediziner",
   "minijobber",
   "mörder",
+  "nachahmer",
   "nachfrager",
+  "nachfolger",
   "nachrücker",
   "nachtschwärmer",
   "nichtraucher",
@@ -111,11 +156,15 @@ const unchangedForms = [
   "pendler",
   "performer",
   "personaler",
+  "peiniger",
   "pfadfinder",
+  "pfleger",
   "pilger",
   "planer",
   "polsterer",
   "praktiker",
+  "prediger",
+  "priester",
   "proletarier",
   "querdenker",
   "quereinsteiger",
@@ -128,40 +177,59 @@ const unchangedForms = [
   "ruderer",
   "sammler",
   "sänger",
+  "schlepper",
   "schlichter",
+  "schulabbrecher",
+  "schulabgänger",
+  "schuldner",
   "schöpfer",
   "schreiber",
   "schuhmacher",
   "schuster",
   "schwätzer",
   "schwimmer",
+  "seelsorger",
   "segler",
   "sender",
   "siedler",
   "sieger",
   "skeptiker",
   "sparer",
+  "späher",
   "spaziergänger",
   "speaker",
   "spieler",
   "sportler",
+  "stakeholder",
   "stadtplaner",
+  "störer",
   "streamer",
+  "supporter",
+  "tänzer",
   "täter",
   "taucher",
   "teamplayer",
   "tester",
   "theoretiker",
+  "tierschützer",
   "töpfer",
   "torhüter",
   "träger",
   "trompeter",
   "tüftler",
   "überbringer",
+  "unterzeichner",
+  "urheber",
+  "urlauber",
+  "user",
+  "veganer",
+  "vegetarier",
+  "verbrecher",
   "verleger",
   "verleiher",
   "verlierer",
   "vermittler",
+  "verteidiger",
   "versender",
   "vertriebler",
   "verursacher",
@@ -261,15 +329,28 @@ const mappedForms: readonly SupplementalForm[] = [
   weak("supervisand"),
   weak("zivilist"),
   weak("ökonom"),
+  weak("bürokrat"),
+  weak("favorit"),
+  weak("kontrahent"),
+  weak("rassist"),
   regular("animateur", "animateure"),
+  regular("amateur", "amateure"),
   regular("archivar", "archivare"),
   regular("assessor", "assessoren"),
   regular("auditor", "auditoren"),
+  regular("chauffeur", "chauffeure"),
+  regular("coach", "coaches"),
+  regular("dekan", "dekane"),
+  regular("detektiv", "detektive"),
+  regular("dieb", "diebe"),
   regular("diktator", "diktatoren"),
+  regular("editor", "editoren"),
   regular("evaluator", "evaluatoren"),
+  regular("feind", "feinde"),
   regular("illustrator", "illustratoren"),
   regular("initiator", "initiatoren"),
   regular("installateur", "installateure"),
+  regular("inspekteur", "inspekteure"),
   regular("interakteur", "interakteure"),
   regular("jubilar", "jubilare"),
   regular("juror", "juroren"),
@@ -280,15 +361,20 @@ const mappedForms: readonly SupplementalForm[] = [
   regular("konstrukteur", "konstrukteure"),
   regular("kurator", "kuratoren"),
   regular("kurier", "kuriere"),
+  regular("masseur", "masseure"),
   regular("mediator", "mediatoren"),
   regular("monteur", "monteure"),
+  regular("muslim", "muslime"),
   regular("multiplikator", "multiplikatoren"),
   regular("operateur", "operateure"),
   regular("passagier", "passagiere"),
   regular("pionier", "pioniere"),
   regular("referendar", "referendare"),
   regular("reparateur", "reparateure"),
+  regular("schmied", "schmiede"),
   regular("spediteur", "spediteure"),
+  regular("spion", "spione"),
+  regular("steinmetz", "steinmetze"),
   regular("tutor", "tutoren"),
   regular("veterinär", "veterinäre"),
   regular("visionär", "visionäre"),
@@ -298,9 +384,11 @@ const mappedForms: readonly SupplementalForm[] = [
   regular("logopäd", "logopäden", "logopäde"),
   regular("matros", "matrosen", "matrose"),
   regular("noviz", "novizen", "novize"),
+  regular("pat", "paten", "pate", true),
   regular("schöff", "schöffen", "schöffe"),
   regular("schütz", "schützen", "schütze"),
-  regular("strateg", "strategen", "stratege")
+  regular("strateg", "strategen", "stratege"),
+  regular("themenpat", "themenpaten", "themenpate", true)
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
@@ -380,18 +468,34 @@ function mapAllSingular(base: string): string | undefined {
 function transformPattern(
   input: string,
   pattern: RegExp,
-  mapper: (base: string) => string | undefined
+  mapper: (base: string) => string | undefined,
+  protectAmbiguousDeterminer = false
 ): TransformResult {
   let replacements = 0;
-  const text = input.replace(pattern, (match: string, base: string) => {
-    const replacement = mapper(base);
-    if (replacement === undefined) {
-      return match;
-    }
+  const text = input.replace(
+    pattern,
+    (
+      match: string,
+      base: string,
+      offset: number,
+      fullInput: string
+    ) => {
+      if (
+        protectAmbiguousDeterminer &&
+        hasAmbiguousSingularDeterminer(fullInput, offset)
+      ) {
+        return match;
+      }
 
-    replacements += 1;
-    return replacement;
-  });
+      const replacement = mapper(base);
+      if (replacement === undefined) {
+        return match;
+      }
+
+      replacements += 1;
+      return replacement;
+    }
+  );
 
   return { text, replacements };
 }
@@ -411,6 +515,8 @@ function combine(input: string, transforms: readonly ((text: string) => Transfor
 
 const supplementalBinnenIPluralPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)Innen/gu;
+const supplementalBinnenISingularPattern =
+  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)In(?![\p{L}\p{M}])/gu;
 const supplementalSeparatorSingularPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])/giu;
 const spacedSeparatorPluralPattern =
@@ -420,8 +526,8 @@ const plusPluralPattern =
 const spacedBinnenIPluralPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)\s+I\s*nnen(?![\p{L}\p{M}])/gu;
 
-export const sourceAuditPluralRule: Rule = {
-  id: "plural.source-audit-forms",
+export const additionalPersonPluralRule: Rule = {
+  id: "plural.additional-person-forms",
   risk: "safe",
 
   apply(input) {
@@ -440,8 +546,8 @@ export const sourceAuditPluralRule: Rule = {
   }
 };
 
-export const sourceAuditSingularRule: Rule = {
-  id: "singular.source-audit-forms",
+export const additionalPersonSingularRule: Rule = {
+  id: "singular.additional-person-forms",
   risk: "contextual",
 
   apply(input) {
@@ -450,7 +556,15 @@ export const sourceAuditSingularRule: Rule = {
         transformPattern(
           text,
           supplementalSeparatorSingularPattern,
-          mapSupplementalSingular
+          mapSupplementalSingular,
+          true
+        ),
+      (text) =>
+        transformPattern(
+          text,
+          supplementalBinnenISingularPattern,
+          mapSupplementalSingular,
+          true
         )
     ]);
   }

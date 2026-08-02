@@ -17,7 +17,7 @@ interface DeterminerPair {
 
 const locale = "de-DE";
 const word = String.raw`[\p{L}\p{M}’'-]+`;
-const connector = String.raw`(?:\s*(?:/|&)\s*|\s+(?:und|oder|bzw\.|beziehungsweise)\s+)`;
+const connector = String.raw`(?:\s*(?:/|&|:)\s*|\s+(?:und|oder|bzw\.|beziehungsweise)\s+)`;
 const singularDoubleFormPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(${word})(${connector})(${word})(?![\p{L}\p{M}])`,
   "giu"

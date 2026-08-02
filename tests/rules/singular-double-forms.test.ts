@@ -4,8 +4,10 @@ import { singularDoubleFormsRule } from "../../src/rules/singular-double-forms";
 describe("singularDoubleFormsRule", () => {
   it.each([
     ["Kunde/Kundin", "Kunde"],
+    ["Kunde:Kundin", "Kunde"],
     ["Kundin / Kunde", "Kunde"],
     ["Arzt und Ärztin", "Arzt"],
+    ["Arzt:Ärztin", "Arzt"],
     ["Studentin oder Student", "Student"],
     ["Kollege bzw. Kollegin", "Kollege"],
     ["Nutzer & Nutzerin", "Nutzer"],

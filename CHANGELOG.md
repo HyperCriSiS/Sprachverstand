@@ -5,6 +5,22 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- 90 einzeln geprüfte Personenbezeichnungen mit sicheren Singular- und
+  Pluralzielen, darunter unveränderte Plurale, schwache Flexionen,
+  Sonderplurale und Binnen-I-Singularformen.
+- Sichere Artikel-Adjektiv-Ketten wie `der:die neue Lehrer:in`,
+  `den:die fleißige:n Schüler:in` und
+  `ein*e gut ausgebildete*r Jurist*in`.
+- Weitere explizite Formen wie `jene:r Nutzer:in`, `Arzt:Ärztin`,
+  `Kolleg:en:innen`, `Pat*innenschaft` und `Themenpat*in`.
+
+### Korrigiert
+
+- Unvollständige Teilkorrekturen hinter femininen oder markierten Artikeln
+  werden auch bei zwischengeschalteten Adjektiven verhindert.
+
 ## 0.6.1 – RC2 (2026-07-29)
 
 ### Korrigiert
@@ -78,8 +94,8 @@ dokumentiert.
   `Lehrys`, `Kollegys` und `Mitarbeitys`.
 - Eigene literale Ersetzungen, vollständig getrennt von persönlichen Ausnahmen,
   lokal gespeichert, case-sensitive, nicht rekursiv und ohne Regex-Unterstützung.
-- Maschinenlesbarer Flexions- und Sonderformenkatalog mit quellenbezogenen
-  Positiv- und Negativregressionen.
+- Maschinenlesbarer Flexions- und Sonderformenkatalog mit Positiv- und
+  Negativregressionen.
 - Stark erweitertes Flexionslexikon für häufige schwache, regelmäßige und
   unregelmäßige Personenformen.
 - Lokale Lizenz- und Quelltextseite in der Erweiterung.
@@ -116,18 +132,14 @@ dokumentiert.
 
 - Automatisierter GitHub-Prerelease mit geprüften Chromium-, Firefox- und
   Quellcodepaketen sowie SHA-256-Prüfsummen.
-- Öffentliche Projektvorstellung mit Hinweisen zu Lesbarkeit, Datenschutz,
-  Recherchequellen und Danksagung.
+- Öffentliche Projektvorstellung mit Hinweisen zu Lesbarkeit, Datenschutz und
+  Danksagung.
 - Aktualisierte Roadmap und Beta-Testanleitung für die noch offenen Praxisprüfungen.
 
 ### Geändert
 
 - Projektbeschreibung und Manifesttexte verwenden nun den Leitsatz
   **„Macht Webseiten leichter lesbar.“**
-- Die Herkunftsdokumentation unterscheidet genauer zwischen übernommenem
-  Quelltext und öffentlich dokumentierten Sprachbeispielen, Flexionsfällen und
-  Fehlertreffern als Recherchebasis.
-
 ### Teststand
 
 - Der reale Waterfox-Test und die daraus entstandenen Popup- und Icon-Korrekturen

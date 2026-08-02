@@ -82,6 +82,10 @@ addDeterminer("diese", "r", "dieser", "nominative");
 addDeterminer("diese", "n", "diesen", "accusative");
 addDeterminer("diese", "m", "diesem", "dative");
 addDeterminer("dieses", "dieser", "dieses", "genitive");
+addDeterminer("jene", "r", "jener", "nominative");
+addDeterminer("jene", "n", "jenen", "accusative");
+addDeterminer("jene", "m", "jenem", "dative");
+addDeterminer("jenes", "jener", "jenes", "genitive");
 
 addPossessiveDeterminers("mein");
 addPossessiveDeterminers("dein");
@@ -110,6 +114,16 @@ const separatorSingularPattern = new RegExp(
 );
 const binnenISingularPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
+  "gu"
+);
+const adjectiveModifiers = String.raw`(?:${nounBase}\s+){0,2}`;
+const adjectiveMarker = String.raw`[:*_\/·•.’‘]`;
+const attributiveSeparatorSingularPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${adjectiveModifiers})(${nounBase})(?:(${adjectiveMarker})([rnms]))?(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "giu"
+);
+const attributiveBinnenISingularPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${adjectiveModifiers})(${nounBase})(?:(${adjectiveMarker})([rnms]))?(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "gu"
 );
 
@@ -174,6 +188,14 @@ addOrdinaryDeterminerSet(
   "dieses",
   "diese",
   "dieser"
+);
+addOrdinaryDeterminerSet(
+  "jener",
+  "jenen",
+  "jenem",
+  "jenes",
+  "jene",
+  "jener"
 );
 addOrdinaryDeterminerSet("mein", "meinen", "meinem", "meines", "meine", "meiner");
 addOrdinaryDeterminerSet("dein", "deinen", "deinem", "deines", "deine", "deiner");
@@ -374,6 +396,99 @@ function transformPattern(input: string, pattern: RegExp): TransformResult {
   return { text, replacements };
 }
 
+const strongNominativeDeterminers = new Set([
+  "ein",
+  "kein",
+  "mein",
+  "dein",
+  "sein",
+  "ihr",
+  "unser",
+  "euer"
+]);
+
+function expectedAdjectiveEnding(
+  form: DeterminerForm
+): "e" | "en" | "er" {
+  if (form.grammaticalCase !== "nominative") {
+    return "en";
+  }
+
+  return strongNominativeDeterminers.has(form.masculine) ? "er" : "e";
+}
+
+function mapAttributiveAdjective(
+  adjective: string,
+  markerEnding: string | undefined,
+  expectedEnding: "e" | "en" | "er"
+): string | undefined {
+  const normalized = adjective.toLocaleLowerCase(locale);
+
+  if (!markerEnding) {
+    return normalized.endsWith(expectedEnding) ? adjective : undefined;
+  }
+
+  const normalizedMarkerEnding = markerEnding.toLocaleLowerCase(locale);
+  const expectedMarkerEnding = expectedEnding === "er" ? "r" : "n";
+  if (
+    expectedEnding === "e" ||
+    normalizedMarkerEnding !== expectedMarkerEnding ||
+    !normalized.endsWith("e")
+  ) {
+    return undefined;
+  }
+
+  return applyTokenCase(adjective, normalized + expectedMarkerEnding);
+}
+
+function transformAttributivePhrases(
+  input: string,
+  pattern: RegExp
+): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (
+      match: string,
+      determiner: string,
+      firstWhitespace: string,
+      modifiers: string,
+      adjective: string,
+      _marker: string | undefined,
+      markerEnding: string | undefined,
+      secondWhitespace: string,
+      base: string
+    ) => {
+      const form = determinerForms.get(determiner.toLocaleLowerCase(locale));
+      if (!form) {
+        return match;
+      }
+
+      const mappedAdjective = mapAttributiveAdjective(
+        adjective,
+        markerEnding,
+        expectedAdjectiveEnding(form)
+      );
+      const noun = mapSingular(base, form.grammaticalCase);
+      if (!mappedAdjective || !noun) {
+        return match;
+      }
+
+      replacements += 1;
+      return (
+        applyTokenCase(determiner, form.masculine) +
+        firstWhitespace +
+        modifiers +
+        mappedAdjective +
+        secondWhitespace +
+        noun
+      );
+    }
+  );
+
+  return { text, replacements };
+}
+
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -537,7 +652,18 @@ export const singularContextRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    const separatorResult = transformPattern(input, separatorSingularPattern);
+    const attributiveSeparatorResult = transformAttributivePhrases(
+      input,
+      attributiveSeparatorSingularPattern
+    );
+    const attributiveBinnenIResult = transformAttributivePhrases(
+      attributiveSeparatorResult.text,
+      attributiveBinnenISingularPattern
+    );
+    const separatorResult = transformPattern(
+      attributiveBinnenIResult.text,
+      separatorSingularPattern
+    );
     const markedBinnenIResult = transformPattern(
       separatorResult.text,
       binnenISingularPattern
@@ -581,6 +707,8 @@ export const singularContextRule: Rule = {
     return {
       text: ordinaryResult.text,
       replacements:
+        attributiveSeparatorResult.replacements +
+        attributiveBinnenIResult.replacements +
         separatorResult.replacements +
         markedBinnenIResult.replacements +
         accusativeResult.replacements +

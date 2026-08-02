@@ -31,6 +31,9 @@ describe("unmarkedSingularRule", () => {
   it.each([
     "Politikerinnen",
     "Vielleicht eine NutzerIn im Team",
+    "Vielleicht jene NutzerIn im Team",
+    "eine:n neue Lehrer:in",
+    "die neue Lehrer:in",
     "Hebamme:in",
     "Mutter:in",
     "Prof.in",

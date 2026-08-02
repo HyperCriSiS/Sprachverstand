@@ -22,6 +22,10 @@ describe("singularContextRule", () => {
     ["keine:m Kund:in", "keinem Kunden"],
     ["welche:r Kolleg:in", "welcher Kollege"],
     ["diese:n Pilot:in", "diesen Piloten"],
+    ["jene:r Nutzer:in", "jener Nutzer"],
+    ["jene:n Student:in", "jenen Studenten"],
+    ["jene:m Kund:in", "jenem Kunden"],
+    ["jenes:jener Bürger:in", "jenes Bürgers"],
     ["der:die NutzerIn", "der Nutzer"],
     ["jede:r Tierärzt:in", "jeder Tierarzt"],
     ["eine:n KoautorIn", "einen Koautor"],
@@ -41,6 +45,7 @@ describe("singularContextRule", () => {
     ["für eine ÄrztIn", "für einen Arzt"],
     ["wegen einer StudentIn", "wegen eines Studenten"],
     ["Eine NutzerIn arbeitet heute.", "Ein Nutzer arbeitet heute."],
+    ["Jene NutzerIn arbeitet heute.", "Jener Nutzer arbeitet heute."],
     ["eine NutzerIn", "ein Nutzer"],
     ["Ich sehe eine NutzerIn.", "Ich sehe einen Nutzer."],
     ["Wir suchen eine StudentIn.", "Wir suchen einen Studenten."],
@@ -48,6 +53,12 @@ describe("singularContextRule", () => {
     ["Das ist eine NutzerIn.", "Das ist ein Nutzer."],
     ["sein:ihr Nutzer:in", "sein Nutzer"],
     ["ihrem:seinem Student:in", "seinem Studenten"],
+    ["der:die neue Lehrer:in", "der neue Lehrer"],
+    ["den:die fleißige:n Schüler:in", "den fleißigen Schüler"],
+    ["ein*e gut ausgebildete*r Jurist*in", "ein gut ausgebildeter Jurist"],
+    ["eine:n neue:n Student:in", "einen neuen Studenten"],
+    ["dem:der neuen LehrerIn", "dem neuen Lehrer"],
+    ["des:der neuen Nutzer:in", "des neuen Nutzers"],
     ["JEDE:R NUTZER:IN", "JEDER NUTZER"],
     ["DES:DER NUTZER:IN", "DES NUTZERS"]
   ])("wandelt %s in %s um", (input, expected) => {
@@ -71,6 +82,7 @@ describe("singularContextRule", () => {
   it.each([
     "NutzerIn",
     "Vielleicht eine NutzerIn im Team",
+    "Vielleicht jene NutzerIn im Team",
     "jede:r Innenstadt",
     "ein:e Ausgabe",
     "eine:n Kundin",
@@ -78,7 +90,12 @@ describe("singularContextRule", () => {
     "mein:e Hebamme:in",
     "jede:r NutzerInnen",
     "jede:r Nutzer:innen",
-    "des:der Messebauer:in"
+    "des:der Messebauer:in",
+    "eine:n neue Lehrer:in",
+    "der:die neuen Lehrer:in",
+    "den:die fleißige:r Schüler:in",
+    "der:die neue Hebamme:in",
+    "der:die neue Lehrerin"
   ])("lässt den mehrdeutigen oder unbekannten Fall %s unverändert", (input) => {
     expect(singularContextRule.apply(input)).toEqual({
       text: input,

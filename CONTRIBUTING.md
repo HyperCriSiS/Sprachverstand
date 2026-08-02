@@ -28,9 +28,7 @@ Neue Sprachregeln benötigen:
 3. korrekte Flexion für die betroffenen Kasus und Numeri,
 4. Berücksichtigung von Großschreibung und Komposita,
 5. eine Einordnung in eine sichtbare Regelgruppe,
-6. automatisierte Tests,
-7. einen Quellenhinweis, wenn öffentlich dokumentierte Fundstellen oder
-   Wörterbuchangaben ausgewertet wurden.
+6. automatisierte Tests.
 
 Vollständige fremde Wörterbücher, Regelbestände, Regexsammlungen oder
 lizenzrechtlich unklare Datensätze dürfen nicht ohne vorherige Prüfung
