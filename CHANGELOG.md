@@ -3,7 +3,7 @@
 Alle wesentlichen Änderungen an Sprachverstand werden in dieser Datei
 dokumentiert.
 
-## Unveröffentlicht
+## 0.6.6 (2026-08-02)
 
 ### Hinzugefügt
 
@@ -19,7 +19,7 @@ dokumentiert.
 ### Korrigiert
 
 - Unvollständige Teilkorrekturen hinter femininen oder markierten Artikeln
-  werden auch bei zwischengeschalteten Adjektiven verhindert.
+  werden auch bei zwischengeschalteten Adjektiven verhindert.\n- Neue `v…`-Tags lösen automatisch einen vollständigen Release-Build mit\n  Chromium-ZIP, Firefox-XPI, Quellarchiv und Prüfsummen aus.
 
 ## 0.6.1 – RC2 (2026-07-29)
 
