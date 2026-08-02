@@ -1,20 +1,28 @@
-name: RC-Release
+name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing v-prefixed tag to publish"
+        required: true
+        type: string
 
 permissions:
   contents: write
-  issues: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: false
 
 env:
   CI: true
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:')
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +30,58 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Release-Ziel und Version aus Tag bestimmen
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$REQUESTED_TAG"
+
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
+            echo "Erwartet wird ein Tag wie v0.6.7 oder v0.6.8-rc.1."
+            exit 1
+          fi
+
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+
+          for VERSION_PART in "$MAJOR" "$MINOR" "$PATCH"; do
+            if [[ "$VERSION_PART" =~ ^0[0-9]+$ ]] || (( 10#$VERSION_PART > 65535 )); then
+              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}."
+              exit 1
+            fi
+          done
+
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          RELEASE_LABEL=${TAG#v}
+          ASSET_LABEL=${RELEASE_LABEL//\//-}
+
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          RELEASE_SHA=$(git rev-parse HEAD)
+
+          if [[ "$TAG_SHA" != "$RELEASE_SHA" ]]; then
+            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, ausgecheckt wurde ${RELEASE_SHA}."
+            exit 1
+          fi
+
+          if [[ "$TAG" == "v${VERSION}" ]]; then
+            IS_PRERELEASE=false
+          else
+            IS_PRERELEASE=true
+          fi
+
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "RELEASE_LABEL=${RELEASE_LABEL}" >> "$GITHUB_ENV"
+          echo "ASSET_LABEL=${ASSET_LABEL}" >> "$GITHUB_ENV"
+          echo "RELEASE_SHA=${RELEASE_SHA}" >> "$GITHUB_ENV"
+          echo "IS_PRERELEASE=${IS_PRERELEASE}" >> "$GITHUB_ENV"
 
       - name: Node.js einrichten und npm-Cache laden
         uses: actions/setup-node@v6
@@ -30,37 +90,50 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - name: Release-Version in Build-Dateien eintragen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+          RELEASE_VERSION="$VERSION" node <<'NODE'
+          const fs = require("node:fs");
+
+          for (const path of ["manifests/chromium.json", "manifests/firefox.json"]) {
+            const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+            manifest.version = process.env.RELEASE_VERSION;
+            fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+          }
+          NODE
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const expected = process.env.VERSION;
+          const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          const manifests = ["chromium", "firefox"].map((name) =>
+            JSON.parse(fs.readFileSync(`manifests/${name}.json`, "utf8"))
+          );
+
+          const versions = [
+            packageJson.version,
+            packageLock.version,
+            packageLock.packages?.[""]?.version,
+            ...manifests.map((manifest) => manifest.version)
+          ];
+
+          if (versions.some((version) => version !== expected)) {
+            throw new Error(`Release-Version wurde nicht konsistent auf ${expected} gesetzt: ${versions.join(", ")}`);
+          }
+          NODE
+
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Vollständige Prüfung ausführen
         run: npm run check
-
-      - name: Release-Ziel festlegen und bestehende Tags ablehnen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION=$(node -p "require('./package.json').version")
-          PRERELEASE="rc.2"
-          PRERELEASE_TITLE="RC2"
-          TAG="v${VERSION}-${PRERELEASE}"
-
-          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "Der unveränderliche Tag ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
-            exit 1
-          fi
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Der Release ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
-            exit 1
-          fi
-
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_ENV"
-          echo "PRERELEASE_TITLE=${PRERELEASE_TITLE}" >> "$GITHUB_ENV"
-          echo "TAG=${TAG}" >> "$GITHUB_ENV"
 
       - name: Release-Pakete erstellen
         shell: bash
@@ -70,71 +143,90 @@ jobs:
 
           (
             cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" .
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip" .
           )
 
           (
             cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" .
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
 
-          git archive \
-            --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
-            "$GITHUB_SHA"
+          SOURCE_DIR=$(mktemp -d)
+          git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
+          cp package.json package-lock.json "$SOURCE_DIR/"
+          cp manifests/chromium.json manifests/firefox.json "$SOURCE_DIR/manifests/"
+
+          (
+            cd "$SOURCE_DIR"
+            zip -qr "$GITHUB_WORKSPACE/artifacts/sprachverstand-${ASSET_LABEL}-source.zip" .
+          )
+
+          rm -rf "$SOURCE_DIR"
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
-          printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
+          printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" \
-              "sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" \
-              "sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
+              "sprachverstand-${ASSET_LABEL}-chromium.zip" \
+              "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
+              "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
 
-          if unzip -l "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" | grep -q 'META-INF/'; then
+          if unzip -l "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
             exit 1
           fi
 
-      - name: GitHub-Prerelease veröffentlichen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh release create "$TAG" \
-            artifacts/* \
-            --target "$GITHUB_SHA" \
-            --title "Sprachverstand ${VERSION} – ${PRERELEASE_TITLE}" \
-            --notes-file docs/RELEASE-NOTES.md \
-            --prerelease
-
-          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
-          TAG_SHA=$(git rev-list -n 1 "$TAG")
-          if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
-            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, erwartet wurde ${GITHUB_SHA}."
-            exit 1
-          fi
-
-      - name: Veröffentlichung in der Roadmap vermerken
+      - name: GitHub-Release veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue comment 1 --repo "$REPOSITORY" --body "## ${PRERELEASE_TITLE} veröffentlicht
+          set -euo pipefail
 
-          Sprachverstand ${VERSION} ${PRERELEASE_TITLE} wurde nach erfolgreicher vollständiger Prüfung als unveränderlicher Release veröffentlicht.
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --repo "$REPOSITORY" --clobber
 
-          https://github.com/${REPOSITORY}/releases/tag/${TAG}"
+            RELEASE_ID=$(gh release view "$TAG" --repo "$REPOSITORY" --json databaseId --jq '.databaseId')
+            if [[ "$IS_PRERELEASE" == "true" ]]; then
+              MAKE_LATEST=false
+            else
+              MAKE_LATEST=true
+            fi
+
+            gh api \
+              --method PATCH \
+              "repos/${REPOSITORY}/releases/${RELEASE_ID}" \
+              -f name="Sprachverstand ${RELEASE_LABEL}" \
+              -F prerelease="$IS_PRERELEASE" \
+              -f make_latest="$MAKE_LATEST" \
+              >/dev/null
+          else
+            RELEASE_ARGS=(
+              "$TAG"
+              artifacts/*
+              --repo "$REPOSITORY"
+              --verify-tag
+              --title "Sprachverstand ${RELEASE_LABEL}"
+              --generate-notes
+            )
+
+            if [[ "$IS_PRERELEASE" == "true" ]]; then
+              RELEASE_ARGS+=(--prerelease)
+            else
+              RELEASE_ARGS+=(--latest)
+            fi
+
+            gh release create "${RELEASE_ARGS[@]}"
+          fi
