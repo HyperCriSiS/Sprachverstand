@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
-      - name: Release-Ziel prüfen
+      - name: Release-Ziel und Version aus Tag bestimmen
         env:
           REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         shell: bash
@@ -40,18 +40,26 @@ jobs:
           set -euo pipefail
 
           TAG="$REQUESTED_TAG"
-          VERSION=$(node -p "require('./package.json').version")
 
-          if [[ "$TAG" == "v" || "$TAG" != v* ]]; then
-            echo "Der Release-Tag muss mit v beginnen und danach weitere Zeichen enthalten."
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
+            echo "Erwartet wird ein Tag wie v0.6.7 oder v0.6.8-rc.1."
             exit 1
           fi
 
-          if [[ "$TAG" != "v${VERSION}" && "$TAG" != "v${VERSION}-"* ]]; then
-            echo "Tag ${TAG} passt nicht zur Add-on-Version ${VERSION}."
-            echo "Erwartet wird v${VERSION} oder v${VERSION}-<Zusatz>."
-            exit 1
-          fi
+          MAJOR=${BASH_REMATCH[1]}
+          MINOR=${BASH_REMATCH[2]}
+          PATCH=${BASH_REMATCH[3]}
+
+          for VERSION_PART in "$MAJOR" "$MINOR" "$PATCH"; do
+            if [[ "$VERSION_PART" =~ ^0[0-9]+$ ]] || (( 10#$VERSION_PART > 65535 )); then
+              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}."
+              exit 1
+            fi
+          done
+
+          VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          RELEASE_LABEL=${TAG#v}
+          ASSET_LABEL=${RELEASE_LABEL//\//-}
 
           git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
@@ -61,9 +69,6 @@ jobs:
             echo "Tag ${TAG} zeigt auf ${TAG_SHA}, ausgecheckt wurde ${RELEASE_SHA}."
             exit 1
           fi
-
-          RELEASE_LABEL=${TAG#v}
-          ASSET_LABEL=${RELEASE_LABEL//\//-}
 
           if [[ "$TAG" == "v${VERSION}" ]]; then
             IS_PRERELEASE=false
@@ -84,6 +89,45 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: package-lock.json
+
+      - name: Release-Version in Build-Dateien eintragen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+          RELEASE_VERSION="$VERSION" node <<'NODE'
+          const fs = require("node:fs");
+
+          for (const path of ["manifests/chromium.json", "manifests/firefox.json"]) {
+            const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+            manifest.version = process.env.RELEASE_VERSION;
+            fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+          }
+          NODE
+
+          node - <<'NODE'
+          const fs = require("node:fs");
+
+          const expected = process.env.VERSION;
+          const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+          const manifests = ["chromium", "firefox"].map((name) =>
+            JSON.parse(fs.readFileSync(`manifests/${name}.json`, "utf8"))
+          );
+
+          const versions = [
+            packageJson.version,
+            packageLock.version,
+            packageLock.packages?.[""]?.version,
+            ...manifests.map((manifest) => manifest.version)
+          ];
+
+          if (versions.some((version) => version !== expected)) {
+            throw new Error(`Release-Version wurde nicht konsistent auf ${expected} gesetzt: ${versions.join(", ")}`);
+          }
+          NODE
 
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
@@ -107,10 +151,17 @@ jobs:
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
 
-          git archive \
-            --format=zip \
-            --output="artifacts/sprachverstand-${ASSET_LABEL}-source.zip" \
-            "$RELEASE_SHA"
+          SOURCE_DIR=$(mktemp -d)
+          git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
+          cp package.json package-lock.json "$SOURCE_DIR/"
+          cp manifests/chromium.json manifests/firefox.json "$SOURCE_DIR/manifests/"
+
+          (
+            cd "$SOURCE_DIR"
+            zip -qr "$GITHUB_WORKSPACE/artifacts/sprachverstand-${ASSET_LABEL}-source.zip" .
+          )
+
+          rm -rf "$SOURCE_DIR"
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
