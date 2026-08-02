@@ -1,20 +1,28 @@
-name: RC-Release
+name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing v-prefixed tag to publish"
+        required: true
+        type: string
 
 permissions:
   contents: write
-  issues: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: false
 
 env:
   CI: true
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release:')
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +30,53 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Release-Ziel prüfen
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="$REQUESTED_TAG"
+          VERSION=$(node -p "require('./package.json').version")
+
+          if [[ "$TAG" == "v" || "$TAG" != v* ]]; then
+            echo "Der Release-Tag muss mit v beginnen und danach weitere Zeichen enthalten."
+            exit 1
+          fi
+
+          if [[ "$TAG" != "v${VERSION}" && "$TAG" != "v${VERSION}-"* ]]; then
+            echo "Tag ${TAG} passt nicht zur Add-on-Version ${VERSION}."
+            echo "Erwartet wird v${VERSION} oder v${VERSION}-<Zusatz>."
+            exit 1
+          fi
+
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          RELEASE_SHA=$(git rev-parse HEAD)
+
+          if [[ "$TAG_SHA" != "$RELEASE_SHA" ]]; then
+            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, ausgecheckt wurde ${RELEASE_SHA}."
+            exit 1
+          fi
+
+          RELEASE_LABEL=${TAG#v}
+          ASSET_LABEL=${RELEASE_LABEL//\//-}
+
+          if [[ "$TAG" == "v${VERSION}" ]]; then
+            IS_PRERELEASE=false
+          else
+            IS_PRERELEASE=true
+          fi
+
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "RELEASE_LABEL=${RELEASE_LABEL}" >> "$GITHUB_ENV"
+          echo "ASSET_LABEL=${ASSET_LABEL}" >> "$GITHUB_ENV"
+          echo "RELEASE_SHA=${RELEASE_SHA}" >> "$GITHUB_ENV"
+          echo "IS_PRERELEASE=${IS_PRERELEASE}" >> "$GITHUB_ENV"
 
       - name: Node.js einrichten und npm-Cache laden
         uses: actions/setup-node@v6
@@ -36,32 +91,6 @@ jobs:
       - name: Vollständige Prüfung ausführen
         run: npm run check
 
-      - name: Release-Ziel festlegen und bestehende Tags ablehnen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION=$(node -p "require('./package.json').version")
-          PRERELEASE="rc.2"
-          PRERELEASE_TITLE="RC2"
-          TAG="v${VERSION}-${PRERELEASE}"
-
-          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "Der unveränderliche Tag ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
-            exit 1
-          fi
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Der Release ${TAG} existiert bereits. Ein bestehender Release wird nicht überschrieben."
-            exit 1
-          fi
-
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "PRERELEASE=${PRERELEASE}" >> "$GITHUB_ENV"
-          echo "PRERELEASE_TITLE=${PRERELEASE_TITLE}" >> "$GITHUB_ENV"
-          echo "TAG=${TAG}" >> "$GITHUB_ENV"
-
       - name: Release-Pakete erstellen
         shell: bash
         run: |
@@ -70,71 +99,83 @@ jobs:
 
           (
             cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" .
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip" .
           )
 
           (
             cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" .
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
 
           git archive \
             --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
-            "$GITHUB_SHA"
+            --output="artifacts/sprachverstand-${ASSET_LABEL}-source.zip" \
+            "$RELEASE_SHA"
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
-          printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
+          printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip" \
-              "sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" \
-              "sprachverstand-${VERSION}-${PRERELEASE}-source.zip" \
+              "sprachverstand-${ASSET_LABEL}-chromium.zip" \
+              "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
+              "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-source.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
 
-          if unzip -l "artifacts/sprachverstand-${VERSION}-${PRERELEASE}-firefox.xpi" | grep -q 'META-INF/'; then
+          if unzip -l "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
             exit 1
           fi
 
-      - name: GitHub-Prerelease veröffentlichen
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          gh release create "$TAG" \
-            artifacts/* \
-            --target "$GITHUB_SHA" \
-            --title "Sprachverstand ${VERSION} – ${PRERELEASE_TITLE}" \
-            --notes-file docs/RELEASE-NOTES.md \
-            --prerelease
-
-          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
-          TAG_SHA=$(git rev-list -n 1 "$TAG")
-          if [[ "$TAG_SHA" != "$GITHUB_SHA" ]]; then
-            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, erwartet wurde ${GITHUB_SHA}."
-            exit 1
-          fi
-
-      - name: Veröffentlichung in der Roadmap vermerken
+      - name: GitHub-Release veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue comment 1 --repo "$REPOSITORY" --body "## ${PRERELEASE_TITLE} veröffentlicht
+          set -euo pipefail
 
-          Sprachverstand ${VERSION} ${PRERELEASE_TITLE} wurde nach erfolgreicher vollständiger Prüfung als unveränderlicher Release veröffentlicht.
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/* --repo "$REPOSITORY" --clobber
 
-          https://github.com/${REPOSITORY}/releases/tag/${TAG}"
+            RELEASE_ID=$(gh release view "$TAG" --repo "$REPOSITORY" --json databaseId --jq '.databaseId')
+            if [[ "$IS_PRERELEASE" == "true" ]]; then
+              MAKE_LATEST=false
+            else
+              MAKE_LATEST=true
+            fi
+
+            gh api \
+              --method PATCH \
+              "repos/${REPOSITORY}/releases/${RELEASE_ID}" \
+              -f name="Sprachverstand ${RELEASE_LABEL}" \
+              -F prerelease="$IS_PRERELEASE" \
+              -f make_latest="$MAKE_LATEST" \
+              >/dev/null
+          else
+            RELEASE_ARGS=(
+              "$TAG"
+              artifacts/*
+              --repo "$REPOSITORY"
+              --verify-tag
+              --title "Sprachverstand ${RELEASE_LABEL}"
+              --generate-notes
+            )
+
+            if [[ "$IS_PRERELEASE" == "true" ]]; then
+              RELEASE_ARGS+=(--prerelease)
+            else
+              RELEASE_ARGS+=(--latest)
+            fi
+
+            gh release create "${RELEASE_ARGS[@]}"
+          fi
