@@ -1,6 +1,6 @@
 {
   "name": "sprachverstand",
-  "version": "0.6.1",
+  "version": "0.6.6",
   "private": true,
   "description": "Macht Webseiten leichter lesbar.",
   "type": "module",
