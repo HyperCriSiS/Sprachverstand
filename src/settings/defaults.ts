@@ -12,7 +12,7 @@ export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
 export const maximumExcludedDomains = 100;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 6;
+export const currentSettingsRevision = 7;
 
 export const syncCategoryIds = [
   "activation",
@@ -47,6 +47,7 @@ export interface Settings {
   readonly customReplacements: readonly CustomReplacement[];
   readonly processAccessibleAttributes: boolean;
   readonly processQuotedText: boolean;
+  readonly processSubtitles: boolean;
   readonly syncCategoryIds: readonly SyncCategoryId[];
 }
 
@@ -59,6 +60,7 @@ export const defaultSettings: Settings = {
   customReplacements: [],
   processAccessibleAttributes: true,
   processQuotedText: true,
+  processSubtitles: false,
   syncCategoryIds: []
 };
 
@@ -255,6 +257,10 @@ export function normalizeSettings(value: unknown): Settings {
       typeof input.processQuotedText === "boolean"
         ? input.processQuotedText
         : defaultSettings.processQuotedText,
+    processSubtitles:
+      typeof input.processSubtitles === "boolean"
+        ? input.processSubtitles
+        : defaultSettings.processSubtitles,
     syncCategoryIds: syncCategoryArray(input.syncCategoryIds)
   };
 }

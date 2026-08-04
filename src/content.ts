@@ -46,6 +46,7 @@ function applySettings(settings: Settings): void {
     customReplacements: settings.customReplacements,
     processAccessibleAttributes: settings.processAccessibleAttributes,
     processQuotedText: settings.processQuotedText,
+    processSubtitles: settings.processSubtitles,
     onReplacementCountChange: reportReplacementCount
   };
 

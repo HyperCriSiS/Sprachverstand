@@ -38,7 +38,8 @@ function synchronizedValue(
     case "text-options":
       return {
         processAccessibleAttributes: settings.processAccessibleAttributes,
-        processQuotedText: settings.processQuotedText
+        processQuotedText: settings.processQuotedText,
+        processSubtitles: settings.processSubtitles
       };
     case "protected-terms":
       return [...settings.protectedTerms];
@@ -73,7 +74,8 @@ function withSynchronizedValue(
       return normalizeSettings({
         ...settings,
         processAccessibleAttributes: input.processAccessibleAttributes,
-        processQuotedText: input.processQuotedText
+        processQuotedText: input.processQuotedText,
+        processSubtitles: input.processSubtitles
       });
     }
     case "protected-terms":

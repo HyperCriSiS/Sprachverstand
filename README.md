@@ -114,6 +114,8 @@ mehrdeutige Formen bleiben deshalb unangetastet.
 - optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig vollständig deaktiviert
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
+- optionale Untertitelkorrektur; standardmäßig werden erkannte
+  Untertitel-Overlays vollständig übersprungen
 - optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
   `aria-description` und `title`
 - Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
@@ -135,8 +137,18 @@ lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 - optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
 
 In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
-literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen und
-die Verarbeitung zugänglicher Attribute zur Verfügung. Eigene Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils getrennt gewählt werden, ob die Kategorie zusätzlich über den Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben Kategorien auf weiteren angemeldeten Geräten geladen werden können.
+literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen,
+die optionale Untertitelkorrektur und die Verarbeitung zugänglicher Attribute
+zur Verfügung. Die Untertitelkorrektur ist standardmäßig deaktiviert. Eigene
+Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und
+standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In
+einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen,
+Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils
+getrennt gewählt werden, ob die Kategorie zusätzlich über den
+Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist
+standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie
+aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben
+Kategorien auf weiteren angemeldeten Geräten geladen werden können.
 
 **Speichern** und **Zurücksetzen** befinden sich oben in derselben Werkzeugleiste
 wie **Alle öffnen** und **Alle schließen**. Alle Einstellungsbereiche lassen sich

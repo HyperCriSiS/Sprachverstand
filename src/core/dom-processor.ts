@@ -5,6 +5,10 @@ import {
   shouldProcessTextNode
 } from "./text-safety";
 import type { CustomReplacement } from "../settings/defaults";
+import {
+  isSubtitleContainer,
+  isSubtitleContent
+} from "./subtitles";
 import { transformText } from "./transform-text";
 
 export interface DomProcessorOptions {
@@ -15,6 +19,7 @@ export interface DomProcessorOptions {
   readonly customReplacements?: readonly CustomReplacement[];
   readonly processAccessibleAttributes?: boolean;
   readonly processQuotedText?: boolean;
+  readonly processSubtitles?: boolean;
   readonly onReplacementCountChange?: (count: number) => void;
 }
 
@@ -23,6 +28,7 @@ export interface StopOptions {
 }
 
 const leadingContextLimit = 120;
+const maximumSubtitleTransformCacheEntries = 256;
 const blockBoundaryTags = new Set([
   "ADDRESS",
   "ARTICLE",
@@ -65,6 +71,7 @@ interface ChangeRecord {
 export class DomProcessor {
   private observer: MutationObserver | undefined;
   private readonly pendingNodes = new Set<Node>();
+  private readonly pendingSubtitleTextNodes = new Set<Text>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
   private readonly attributeChanges = new Map<
@@ -72,6 +79,12 @@ export class DomProcessor {
     Map<string, ChangeRecord>
   >();
   private flushScheduled = false;
+  private subtitleFlushHandle: number | undefined;
+  private subtitleFlushUsesAnimationFrame = false;
+  private readonly subtitleTransformCache = new Map<
+    string,
+    ReturnType<typeof transformText>
+  >();
   private countNotificationScheduled = false;
   private running = false;
   private replacementCount = 0;
@@ -141,8 +154,11 @@ export class DomProcessor {
     this.observer?.disconnect();
     this.observer = undefined;
     this.pendingNodes.clear();
+    this.pendingSubtitleTextNodes.clear();
     this.pendingAttributes.clear();
     this.flushScheduled = false;
+    this.cancelSubtitleFlush();
+    this.subtitleTransformCache.clear();
 
     if (options.restore) {
       this.restoreAll();
@@ -159,6 +175,7 @@ export class DomProcessor {
     }
 
     this.options = options;
+    this.subtitleTransformCache.clear();
 
     if (wasRunning) {
       this.start();
@@ -192,6 +209,12 @@ export class DomProcessor {
   }
 
   public flush(): void {
+    this.flushRegularNodes();
+    this.cancelSubtitleFlush();
+    this.flushSubtitleNodes();
+  }
+
+  private flushRegularNodes(): void {
     if (!this.running) {
       return;
     }
@@ -213,13 +236,33 @@ export class DomProcessor {
     }
   }
 
+  private flushSubtitleNodes(): void {
+    if (!this.running) {
+      return;
+    }
+
+    const nodes = [...this.pendingSubtitleTextNodes];
+    this.pendingSubtitleTextNodes.clear();
+
+    for (const node of nodes) {
+      if (node.isConnected && isSubtitleContent(node)) {
+        this.processTextNode(node, true);
+      }
+    }
+  }
+
   public processRoot(root: Node): void {
     if (!this.running) {
       return;
     }
 
+    const skipSubtitles = this.options.processSubtitles !== true;
+    if (skipSubtitles && isSubtitleContent(root)) {
+      return;
+    }
+
     if (root.nodeType === Node.TEXT_NODE) {
-      this.processTextNode(root as Text);
+      this.processTextNode(root as Text, skipSubtitles ? false : undefined);
       return;
     }
 
@@ -233,13 +276,24 @@ export class DomProcessor {
     const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
     const walker = this.document.createTreeWalker(
       root,
-      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT,
+      skipSubtitles
+        ? {
+            acceptNode: (node) =>
+              node instanceof Element && isSubtitleContainer(node)
+                ? nodeFilter.FILTER_REJECT
+                : nodeFilter.FILTER_ACCEPT
+          }
+        : null
     );
 
     let currentNode = walker.nextNode();
     while (currentNode) {
       if (currentNode.nodeType === Node.TEXT_NODE) {
-        this.processTextNode(currentNode as Text);
+        this.processTextNode(
+          currentNode as Text,
+          skipSubtitles ? false : undefined
+        );
       } else if (
         currentNode instanceof Element &&
         this.options.processAccessibleAttributes !== false
@@ -256,8 +310,42 @@ export class DomProcessor {
       return;
     }
 
+    if (isSubtitleContent(node)) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const tracked = this.textChanges.get(node as Text);
+        if (tracked && (node as Text).data === tracked.transformed) {
+          return;
+        }
+      }
+
+      if (this.options.processSubtitles === true) {
+        this.queueSubtitleTextNodes(node);
+      }
+      return;
+    }
+
     this.pendingNodes.add(node);
     this.scheduleFlush();
+  }
+
+  private queueSubtitleTextNodes(root: Node): void {
+    if (root.nodeType === Node.TEXT_NODE) {
+      this.pendingSubtitleTextNodes.add(root as Text);
+      this.scheduleSubtitleFlush();
+      return;
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(root, nodeFilter.SHOW_TEXT);
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      this.pendingSubtitleTextNodes.add(currentNode as Text);
+      currentNode = walker.nextNode();
+    }
+
+    if (this.pendingSubtitleTextNodes.size > 0) {
+      this.scheduleSubtitleFlush();
+    }
   }
 
   private queueAttribute(element: Element, attributeName: string): void {
@@ -278,10 +366,52 @@ export class DomProcessor {
     }
 
     this.flushScheduled = true;
-    queueMicrotask(() => this.flush());
+    queueMicrotask(() => this.flushRegularNodes());
   }
 
-  private processTextNode(node: Text): void {
+  private scheduleSubtitleFlush(): void {
+    if (this.subtitleFlushHandle !== undefined) {
+      return;
+    }
+
+    const view = this.document.defaultView;
+    if (view && typeof view.requestAnimationFrame === "function") {
+      this.subtitleFlushUsesAnimationFrame = true;
+      this.subtitleFlushHandle = view.requestAnimationFrame(() => {
+        this.subtitleFlushHandle = undefined;
+        this.subtitleFlushUsesAnimationFrame = false;
+        this.flushSubtitleNodes();
+      });
+      return;
+    }
+
+    this.subtitleFlushUsesAnimationFrame = false;
+    this.subtitleFlushHandle = view?.setTimeout(() => {
+      this.subtitleFlushHandle = undefined;
+      this.flushSubtitleNodes();
+    }, 16) ?? window.setTimeout(() => {
+      this.subtitleFlushHandle = undefined;
+      this.flushSubtitleNodes();
+    }, 16);
+  }
+
+  private cancelSubtitleFlush(): void {
+    if (this.subtitleFlushHandle === undefined) {
+      return;
+    }
+
+    const view = this.document.defaultView;
+    if (this.subtitleFlushUsesAnimationFrame) {
+      view?.cancelAnimationFrame(this.subtitleFlushHandle);
+    } else {
+      view?.clearTimeout(this.subtitleFlushHandle);
+    }
+
+    this.subtitleFlushHandle = undefined;
+    this.subtitleFlushUsesAnimationFrame = false;
+  }
+
+  private processTextNode(node: Text, subtitleOverride?: boolean): void {
     const tracked = this.textChanges.get(node);
     if (tracked) {
       if (node.data === tracked.transformed) {
@@ -295,11 +425,18 @@ export class DomProcessor {
       return;
     }
 
+    const subtitle = subtitleOverride ?? isSubtitleContent(node);
+    if (subtitle && this.options.processSubtitles !== true) {
+      return;
+    }
+
     const original = node.data;
-    const leadingContext = this.needsLeadingContext(original)
+    const leadingContext = !subtitle && this.needsLeadingContext(original)
       ? this.collectLeadingContext(node)
       : undefined;
-    const result = this.transformValue(original, leadingContext);
+    const result = subtitle
+      ? this.transformSubtitleValue(original)
+      : this.transformValue(original, leadingContext);
     if (result.replacements === 0 || result.text === original) {
       return;
     }
@@ -323,8 +460,12 @@ export class DomProcessor {
     element: Element,
     attributeName: string
   ): void {
-    const tracked = this.attributeChanges.get(element)?.get(attributeName);
     const value = element.getAttribute(attributeName);
+    if (value === null || isSubtitleContent(element)) {
+      return;
+    }
+
+    const tracked = this.attributeChanges.get(element)?.get(attributeName);
 
     if (tracked) {
       if (value === tracked.transformed) {
@@ -335,7 +476,6 @@ export class DomProcessor {
     }
 
     if (
-      value === null ||
       !shouldProcessAccessibleAttribute(element, attributeName, value)
     ) {
       return;
@@ -375,6 +515,25 @@ export class DomProcessor {
     };
 
     return transformText(input, this.options.rules, transformOptions);
+  }
+
+  private transformSubtitleValue(input: string) {
+    const cached = this.subtitleTransformCache.get(input);
+    if (cached) {
+      return cached;
+    }
+
+    const result = this.transformValue(input);
+    if (
+      this.subtitleTransformCache.size >= maximumSubtitleTransformCacheEntries
+    ) {
+      const oldestKey = this.subtitleTransformCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.subtitleTransformCache.delete(oldestKey);
+      }
+    }
+    this.subtitleTransformCache.set(input, result);
+    return result;
   }
 
   private needsLeadingContext(input: string): boolean {

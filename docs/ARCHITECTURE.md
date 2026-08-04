@@ -12,6 +12,8 @@
 8. **Lokal als Standard:** Der vollständige Einstellungsstand liegt immer in `storage.local`.
 9. **Synchronisierung nur nach Auswahl:** Jede synchronisierbare Datenkategorie wird einzeln gewählt; standardmäßig ist keine ausgewählt.
 10. **Importdateien sind Daten, kein Code:** Regex, Skripte, unbekannte Felder und zukünftige Schema- oder Einstellungsrevisionen werden abgewiesen.
+11. **Untertitel sind opt-in:** Erkannte Untertitel-Overlays werden
+    standardmäßig bereits vor der Texttransformation verworfen.
 
 ## Datenfluss
 
@@ -35,6 +37,13 @@ Beim ersten Durchlauf werden sichtbare Textknoten und freigegebene Attribute
 verarbeitet. Danach beobachtet der `MutationObserver` neue Unterbäume,
 geänderte Textknoten und ausschließlich freigegebene Attribute. Eingaben,
 Editoren, Quellcode, URLs, IDs und technische Daten bleiben ausgeschlossen.
+
+Untertitel-Overlays werden zentral anhand konservativer Player-Merkmale erkannt.
+Ist ihre Verarbeitung deaktiviert, gelangen ihre Knoten nicht in die reguläre
+Warteschlange. Bei Aktivierung sammelt ein eigener Pfad schnelle Textänderungen
+bis zum nächsten Bild, verwirft überholte oder entfernte Knoten und verwendet
+einen begrenzten Ergebnis-Cache. Normale Webseitenknoten behalten den bisherigen
+Microtask-Pfad.
 
 ## Einstellungen und Speicherorte
 
@@ -68,7 +77,8 @@ Stand bewusst keine Migration aus dem früheren experimentellen Speicherschema.
 
 Die Vorschau verwendet dieselbe Funktion `transformText` wie Webseiten und
 berücksichtigt die im Formular gewählten Regelgruppen, Ausnahmen, Ersetzungen und
-die Zitatoption.
+die Zitatoption. Die Untertiteloption betrifft ausschließlich die
+DOM-Verarbeitung auf Webseiten.
 
 `src/settings/personal-rules.ts` enthält Parser, Konflikthinweise und die
 deterministische Zusammenführung persönlicher Listen.
