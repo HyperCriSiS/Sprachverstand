@@ -269,6 +269,71 @@ describe("DomProcessor", () => {
     );
   });
 
+  it("überspringt erkannte Untertitel standardmäßig, aber nicht den restlichen Player", () => {
+    document.body.innerHTML = `
+      <div class="html5-video-player">
+        <p class="video-description">Nutzer:innen in der Beschreibung</p>
+        <div class="ytp-caption-window-container">
+          <span class="ytp-caption-segment">Nutzer:innen im Untertitel</span>
+        </div>
+      </div>
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    expect(document.querySelector(".video-description")?.textContent).toBe(
+      "Nutzer in der Beschreibung"
+    );
+    expect(document.querySelector(".ytp-caption-segment")?.textContent).toBe(
+      "Nutzer:innen im Untertitel"
+    );
+  });
+
+  it("verwechselt normale Unterzeilen und Bildunterschriften nicht mit Video-Untertiteln", () => {
+    document.body.innerHTML = `
+      <h2 class="subtitle">Nutzer:innen in der Unterzeile</h2>
+      <figure>
+        <figcaption class="caption">Nutzer:innen in der Bildunterschrift</figcaption>
+      </figure>
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    expect(document.querySelector(".subtitle")?.textContent).toBe(
+      "Nutzer in der Unterzeile"
+    );
+    expect(document.querySelector("figcaption")?.textContent).toBe(
+      "Nutzer in der Bildunterschrift"
+    );
+  });
+
+  it("korrigiert Untertitel nur nach ausdrücklicher Aktivierung", () => {
+    document.body.innerHTML = `
+      <div class="player-timedtext">
+        <span>Nutzer:innen im Untertitel</span>
+      </div>
+    `;
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processSubtitles: true
+    });
+    processor.start();
+
+    expect(
+      document.querySelector(".player-timedtext")?.textContent?.trim()
+    ).toBe("Nutzer im Untertitel");
+  });
+
   it("verarbeitet Anreden auch über getrennte Inline-Textknoten", () => {
     document.body.innerHTML = `
       <p>Sehr geehrte <strong>Mitarbeitende</strong></p>

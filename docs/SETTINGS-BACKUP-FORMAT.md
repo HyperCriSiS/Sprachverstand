@@ -8,7 +8,7 @@ versionierte JSON-Datei und kann ihn lokal wieder einlesen.
 - Aktivierungsstatus
 - aktive Regelgruppen
 - Domain-Ausschlüsse
-- Verarbeitung von Zitaten und zugänglichen Attributen
+- Verarbeitung von Zitaten, Untertiteln und zugänglichen Attributen
 - persönliche Ausnahmen
 - eigene Ersetzungen
 - Auswahl der optionalen Browser-Synchronisierung
@@ -32,7 +32,7 @@ Erst nach **Speichern** werden ausdrücklich ausgewählte Kategorien zusätzlich
   "version": 2,
   "exportedAt": "2026-07-28T18:30:00.000Z",
   "settings": {
-    "settingsRevision": 6,
+    "settingsRevision": 7,
     "enabled": true,
     "excludedDomains": [
       "example.org"
@@ -52,6 +52,7 @@ Erst nach **Speichern** werden ausdrücklich ausgewählte Kategorien zusätzlich
     ],
     "processAccessibleAttributes": true,
     "processQuotedText": true,
+    "processSubtitles": false,
     "syncCategoryIds": [
       "rule-groups"
     ]
@@ -71,6 +72,9 @@ Zulässig sind ausschließlich:
 - `custom-replacements`
 
 Eine leere Liste bedeutet, dass alle Daten ausschließlich lokal bleiben.
+Die Kategorie `text-options` umfasst Zitate, Untertitel und zugängliche
+Attribute. Sicherungen aus Schema 2 ohne `processSubtitles` bleiben kompatibel;
+beim Import gilt dafür der sichere Standard `false`.
 
 ## Strikte Prüfung
 

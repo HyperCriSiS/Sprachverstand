@@ -1,6 +1,7 @@
 import { ruleGroupDefinitions } from "../rules/catalog";
 import {
   currentSettingsRevision,
+  defaultSettings,
   isValidDomainPattern,
   maximumCustomReplacementSourceLength,
   maximumCustomReplacementTargetLength,
@@ -273,6 +274,7 @@ function validateSettingsObject(value: unknown): Settings {
       "customReplacements",
       "processAccessibleAttributes",
       "processQuotedText",
+      "processSubtitles",
       "syncCategoryIds"
     ],
     "Die Einstellungssicherung"
@@ -300,6 +302,12 @@ function validateSettingsObject(value: unknown): Settings {
     input.processQuotedText,
     "Die Einstellung für Anführungszeichen"
   );
+  if (input.processSubtitles !== undefined) {
+    assertBoolean(
+      input.processSubtitles,
+      "Die Einstellung für Untertitel"
+    );
+  }
 
   return normalizeSettings({
     settingsRevision: input.settingsRevision,
@@ -310,6 +318,8 @@ function validateSettingsObject(value: unknown): Settings {
     customReplacements: validateCustomReplacements(input.customReplacements),
     processAccessibleAttributes: input.processAccessibleAttributes,
     processQuotedText: input.processQuotedText,
+    processSubtitles:
+      input.processSubtitles ?? defaultSettings.processSubtitles,
     syncCategoryIds: validateSyncCategoryIds(input.syncCategoryIds)
   });
 }

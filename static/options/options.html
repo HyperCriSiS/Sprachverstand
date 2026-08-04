@@ -81,6 +81,13 @@
                 <small>Standardmäßig aktiv. Ausschalten schützt direkt zitierte Schreibweisen innerhalb desselben Textabschnitts.</small>
               </span>
             </label>
+            <label class="checkbox-row">
+              <input id="process-subtitles" type="checkbox">
+              <span>
+                <strong>Untertitel korrigieren</strong>
+                <small>Standardmäßig aus. Erkannte Untertitel-Overlays werden sonst vollständig übersprungen; bei Aktivierung werden schnelle Änderungen gesammelt und nur einmal pro Bild verarbeitet.</small>
+              </span>
+            </label>
           </div>
         </details>
 
@@ -177,7 +184,7 @@
           <div class="settings-section-content">
             <p>
               Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
-              Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen,
+              Regelgruppen, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen,
               persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung.
             </p>
             <div class="transfer-controls">
@@ -226,7 +233,7 @@
               </label>
               <label class="checkbox-row">
                 <input type="checkbox" data-sync-category="text-options">
-                <span><strong>Zitat- und Attributoptionen</strong><small>Synchronisiert die Verarbeitung von Zitaten und zugänglichen Attributen.</small></span>
+                <span><strong>Text- und Medienoptionen</strong><small>Synchronisiert die Verarbeitung von Zitaten, Untertiteln und zugänglichen Attributen.</small></span>
               </label>
               <label class="checkbox-row">
                 <input type="checkbox" data-sync-category="protected-terms">

@@ -72,6 +72,7 @@ Prüfen:
 - Alle anderen Bereiche sind zunächst eingeklappt.
 - **Alle öffnen** öffnet sämtliche Bereiche.
 - **Alle schließen** schließt sämtliche Bereiche.
+- **Untertitel korrigieren** ist standardmäßig deaktiviert.
 - Die Reihenfolge lautet:
   1. Allgemein
   2. Was soll korrigiert werden?
@@ -197,13 +198,19 @@ DriveIn
 Paarungen unterschiedlicher Begriffe müssen unverändert bleiben, etwa
 `Nutzerinnen und Kunden` oder `Mütter und Väter`.
 
-## Wiederherstellung, Zitate und Attribute
+## Wiederherstellung, Zitate, Untertitel und Attribute
 
 - Jede Regelgruppe einzeln ausschalten. Nur ihre eigenen Änderungen dürfen zurückgesetzt werden.
 - Beim erneuten Einschalten müssen Texte ohne Neuladen wieder verarbeitet werden.
 - Beim globalen Ausschalten müssen alle Änderungen ohne Neuladen verschwinden.
 - Nach Deaktivierung der Zitatoption bleibt `„Mitarbeiter/-innen“` geschützt, während derselbe Ausdruck außerhalb des Zitats korrigiert wird.
 - Bei deaktivierter Attributoption dürfen `alt`, `aria-label`, `aria-description` und `title` nicht verändert werden; sichtbarer Text muss weiter funktionieren.
+- Auf YouTube ein Video mit Untertiteln abspielen. Bei deaktivierter
+  Untertiteloption müssen Untertitel unverändert bleiben und das Video flüssig
+  laufen, während Beschreibung und Kommentare weiter verarbeitet werden.
+- Die Untertiteloption aktivieren und eine Zeile mit `Nutzer:innen` testen. Die
+  Korrektur muss ohne sichtbares Stocken erfolgen. Schnelle wortweise Updates
+  dürfen nur den zuletzt sichtbaren Stand verarbeiten.
 - Eingabefelder, Editoren, Quellcode, URLs, IDs und technische Daten bleiben unberührt.
 
 ## README-Direkttest
@@ -225,7 +232,8 @@ npx web-ext run \
 ```
 
 Auf dem Gerät Touch-Bedienung, Scrollbarkeit, Safe Areas, Bildschirmtastatur,
-Popup, Optionsseite, eigene Ersetzungen, Synchronisierung und die lokale
+Popup, Optionsseite, Untertitel bei ein- und ausgeschalteter Option, eigene
+Ersetzungen, Synchronisierung und die lokale
 Rechtshinweisseite prüfen.
 
 ## Lokale Testseite

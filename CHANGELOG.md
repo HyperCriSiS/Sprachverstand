@@ -3,6 +3,20 @@
 Alle wesentlichen Änderungen an Sprachverstand werden in dieser Datei
 dokumentiert.
 
+## Unveröffentlicht
+
+### Hinzugefügt
+
+- Untertitel-Overlays werden zentral erkannt und standardmäßig von der
+  Verarbeitung ausgenommen. Eine neue, standardmäßig deaktivierte Option
+  erlaubt ihre gezielte Korrektur.
+
+### Leistung
+
+- Schnell wechselnde Untertitel werden pro Bild auf den zuletzt sichtbaren
+  Textstand reduziert. Identische Zeilen verwenden einen begrenzten Cache;
+  der normale Webseitenpfad bleibt unverändert.
+
 ## 0.6.6 (2026-08-02)
 
 ### Hinzugefügt

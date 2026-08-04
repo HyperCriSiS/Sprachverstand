@@ -31,6 +31,7 @@ describe("Einstellungen", () => {
     );
     expect(defaultSettings.enabledRuleGroupIds).toContain("special-gender-forms");
     expect(defaultSettings.settingsRevision).toBe(currentSettingsRevision);
+    expect(defaultSettings.processSubtitles).toBe(false);
     expect(defaultSettings.syncCategoryIds).toEqual([]);
   });
 
@@ -104,7 +105,8 @@ describe("Einstellungen", () => {
         )
       ],
       processAccessibleAttributes: false,
-      processQuotedText: false
+      processQuotedText: false,
+      processSubtitles: true
     });
 
     expect(settings.enabledRuleGroupIds).toEqual(["plural-separators"]);
@@ -118,6 +120,7 @@ describe("Einstellungen", () => {
     expect(settings.customReplacements.some((entry) => entry.source.startsWith("xxx"))).toBe(false);
     expect(settings.processAccessibleAttributes).toBe(false);
     expect(settings.processQuotedText).toBe(false);
+    expect(settings.processSubtitles).toBe(true);
   });
 
 

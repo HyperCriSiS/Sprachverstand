@@ -57,6 +57,8 @@ const processAccessibleAttributesInput =
   requiredElement<HTMLInputElement>("#process-accessible-attributes");
 const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
+const processSubtitlesInput =
+  requiredElement<HTMLInputElement>("#process-subtitles");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const protectedTermsInput =
   requiredElement<HTMLTextAreaElement>("#protected-terms");
@@ -192,6 +194,7 @@ function render(settings: Settings): void {
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
+  processSubtitlesInput.checked = settings.processSubtitles;
   protectedTermsInput.value = formatProtectedTermsText(settings.protectedTerms);
   customReplacementsInput.value = formatCustomReplacementsText(
     settings.customReplacements
@@ -256,6 +259,7 @@ function readForm(): Settings {
     ).replacements,
     processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processQuotedText: processQuotedTextInput.checked,
+    processSubtitles: processSubtitlesInput.checked,
     syncCategoryIds: syncCategoryIdsFromForm()
   };
 }
@@ -490,7 +494,7 @@ function selectedImportMode(): SettingsBackupImportMode {
 function renderImportSummary(result: SettingsImportResult): void {
   const generalSettings = document.createElement("p");
   generalSettings.textContent =
-    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Zitat- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
+    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
 
   const summary = document.createElement("p");
   summary.textContent = [
