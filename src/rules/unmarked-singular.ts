@@ -11,6 +11,8 @@ const binnenIMarkerPattern =
 const markedAdjectivePattern =
   /(?<![\p{L}\p{M}])(Verbündete)(?:[:*_\/·•.’‘])r(?![\p{L}\p{M}])/giu;
 const additionalSingularForms = new Map<string, string>([
+  ["content-creator", "content-creator"],
+  ["creator", "creator"],
   ["dirigent", "dirigent"],
   ["dozent", "dozent"],
   ["jüd", "jude"],
