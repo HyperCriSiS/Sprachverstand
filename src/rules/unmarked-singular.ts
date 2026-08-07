@@ -10,9 +10,8 @@ const binnenIMarkerPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)In(?![\p{L}\p{M}])/gu;
 const markedAdjectivePattern =
   /(?<![\p{L}\p{M}])(Verbündete)(?:[:*_\/·•.’‘])r(?![\p{L}\p{M}])/giu;
+const unchangedSingularForms = new Set(["content-creator", "creator"]);
 const additionalSingularForms = new Map<string, string>([
-  ["content-creator", "content-creator"],
-  ["creator", "creator"],
   ["dirigent", "dirigent"],
   ["dozent", "dozent"],
   ["jüd", "jude"],
@@ -41,9 +40,12 @@ function applyTokenCase(source: string, replacement: string): string {
 }
 
 function mapBase(base: string): string | undefined {
-  const additional = additionalSingularForms.get(
-    base.toLocaleLowerCase(locale)
-  );
+  const normalizedBase = base.toLocaleLowerCase(locale);
+  if (unchangedSingularForms.has(normalizedBase)) {
+    return base;
+  }
+
+  const additional = additionalSingularForms.get(normalizedBase);
 
   return (
     (additional ? applyTokenCase(base, additional) : undefined) ??
