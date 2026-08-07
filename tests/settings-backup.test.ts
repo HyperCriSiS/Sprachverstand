@@ -25,6 +25,7 @@ function sampleSettings(overrides: Partial<Settings> = {}): Settings {
     ],
     processAccessibleAttributes: false,
     processQuotedText: false,
+    processSubtitles: true,
     syncCategoryIds: ["activation", "protected-terms"],
     ...overrides
   };
@@ -99,6 +100,7 @@ describe("Einstellungssicherung", () => {
       enabledRuleGroupIds: ["plural-binnen-i"],
       processAccessibleAttributes: true,
       processQuotedText: true,
+      processSubtitles: false,
       protectedTerms: ["Vorhanden"],
       customReplacements: [{ source: "A", replacement: "Alt" }]
     });
@@ -108,7 +110,8 @@ describe("Einstellungssicherung", () => {
       enabledRuleGroupIds: ["plural-separators"],
       processAccessibleAttributes: false,
       processQuotedText: false,
-    syncCategoryIds: ["activation", "protected-terms"],
+      processSubtitles: true,
+      syncCategoryIds: ["activation", "protected-terms"],
       protectedTerms: ["Importiert"],
       customReplacements: [{ source: "A", replacement: "Neu" }]
     });
@@ -126,7 +129,23 @@ describe("Einstellungssicherung", () => {
       ]);
       expect(result.settings.processAccessibleAttributes).toBe(false);
       expect(result.settings.processQuotedText).toBe(false);
+      expect(result.settings.processSubtitles).toBe(true);
     }
+  });
+
+  it("übernimmt alte Sicherungen ohne Untertiteloption mit dem sicheren Standard", () => {
+    const document = createSettingsBackupDocument(sampleSettings());
+    const settingsWithoutSubtitleOption = { ...document.settings } as Record<
+      string,
+      unknown
+    >;
+    delete settingsWithoutSubtitleOption.processSubtitles;
+
+    const parsed = parseSettingsBackupDocument(
+      JSON.stringify({ ...document, settings: settingsWithoutSubtitleOption })
+    );
+
+    expect(parsed.settings.processSubtitles).toBe(false);
   });
 
   it("verwendet die gewählte Strategie nur für persönliche Listen", () => {

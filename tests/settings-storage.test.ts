@@ -117,6 +117,27 @@ describe("Einstellungsspeicher", () => {
     expect(sync.values.has("sync.excluded-domains")).toBe(false);
   });
 
+  it("synchronisiert die Untertiteloption zusammen mit den Textoptionen", async () => {
+    await saveSettings(
+      settings({
+        processAccessibleAttributes: false,
+        processQuotedText: false,
+        processSubtitles: true,
+        syncCategoryIds: ["text-options"]
+      })
+    );
+
+    expect(sync.values.get("sync.text-options")).toEqual({
+      processAccessibleAttributes: false,
+      processQuotedText: false,
+      processSubtitles: true
+    });
+
+    await local.set({ settings: defaultSettings });
+    const loaded = await loadSettings();
+    expect(loaded.processSubtitles).toBe(true);
+  });
+
   it("übernimmt die synchronisierte Auswahl und nur deren Werte auf einem weiteren Gerät", async () => {
     await local.set({
       settings: settings({

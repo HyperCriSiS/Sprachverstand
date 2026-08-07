@@ -69,6 +69,7 @@ Funktionen:
 - drei wählbare Strategien für persönliche Listen beim Import
 - Ausschluss einzelner Domains
 - optionaler Schutz von Texten in Anführungszeichen
+- optionale Korrektur erkannter Untertitel-Overlays; standardmäßig deaktiviert
 - optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
 - Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
 
@@ -147,6 +148,7 @@ Wichtige Funktionen:
 - ausdrücklich wählbare Strategie für persönliche Listen beim Import
 - Ausschluss bestimmter Domains
 - optionaler Schutz zitierter Schreibweisen
+- optionale Korrektur erkannter Untertitel-Overlays
 - optionale Verarbeitung zugänglicher Textattribute
 - Schutz von Eingabefeldern, Editoren, URLs und Quellcode
 
