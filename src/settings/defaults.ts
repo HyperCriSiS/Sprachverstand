@@ -12,7 +12,7 @@ export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
 export const maximumExcludedDomains = 100;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 7;
+export const currentSettingsRevision = 8;
 
 export const syncCategoryIds = [
   "activation",
@@ -24,6 +24,23 @@ export const syncCategoryIds = [
 ] as const;
 
 export type SyncCategoryId = (typeof syncCategoryIds)[number];
+
+export const popupSectionIds = [
+  "count",
+  "activation",
+  "rule-groups",
+  "text-options",
+  "open-options"
+] as const;
+
+export type PopupSectionId = (typeof popupSectionIds)[number];
+
+export const defaultVisiblePopupSectionIds: readonly PopupSectionId[] = [
+  "count",
+  "activation",
+  "rule-groups",
+  "open-options"
+];
 
 const introducedDefaultGroups = [
   { revision: 1, groupId: "salutation-participles" },
@@ -49,6 +66,7 @@ export interface Settings {
   readonly processQuotedText: boolean;
   readonly processSubtitles: boolean;
   readonly syncCategoryIds: readonly SyncCategoryId[];
+  readonly visiblePopupSectionIds?: readonly PopupSectionId[];
 }
 
 export const defaultSettings: Settings = {
@@ -61,7 +79,8 @@ export const defaultSettings: Settings = {
   processAccessibleAttributes: true,
   processQuotedText: true,
   processSubtitles: false,
-  syncCategoryIds: []
+  syncCategoryIds: [],
+  visiblePopupSectionIds: defaultVisiblePopupSectionIds
 };
 
 function stringArray(value: unknown): string[] {
@@ -202,6 +221,17 @@ function syncCategoryArray(value: unknown): SyncCategoryId[] {
   );
 }
 
+function popupSectionArray(value: unknown): PopupSectionId[] {
+  if (!Array.isArray(value)) {
+    return [...defaultVisiblePopupSectionIds];
+  }
+
+  const valid = new Set<PopupSectionId>(popupSectionIds);
+  return stringArray(value).filter((entry): entry is PopupSectionId =>
+    valid.has(entry as PopupSectionId)
+  );
+}
+
 function storedRevision(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
     ? value
@@ -261,6 +291,7 @@ export function normalizeSettings(value: unknown): Settings {
       typeof input.processSubtitles === "boolean"
         ? input.processSubtitles
         : defaultSettings.processSubtitles,
-    syncCategoryIds: syncCategoryArray(input.syncCategoryIds)
+    syncCategoryIds: syncCategoryArray(input.syncCategoryIds),
+    visiblePopupSectionIds: popupSectionArray(input.visiblePopupSectionIds)
   };
 }
