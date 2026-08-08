@@ -12,10 +12,7 @@
     <main>
       <header class="page-header">
         <img src="../icons/icon48.png" width="48" height="48" alt="">
-        <div>
-          <h1>Sprachverstand</h1>
-          <p>Regeln und Ausnahmen verständlich selbst festlegen.</p>
-        </div>
+        <h1>Sprachverstand</h1>
       </header>
 
       <div class="settings-toolbar" aria-label="Einstellungen und Bereiche steuern">
@@ -46,6 +43,35 @@
             <div class="current-count" aria-live="polite">
               <span>Korrekturen im aktuell aktiven Tab</span>
               <output id="count">0</output>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary><h2>Popup-Menü</h2></summary>
+          <div class="settings-section-content">
+            <p>Lege fest, welche Bedienelemente im Popup angezeigt werden.</p>
+            <div id="popup-sections" class="popup-section-options">
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="count">
+                <span><strong>Korrekturzähler</strong><small>Zeigt die Anzahl der Korrekturen auf der aktuellen Seite.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="activation">
+                <span><strong>Aktivierungsschalter</strong><small>Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="rule-groups">
+                <span><strong>Was soll korrigiert werden?</strong><small>Zeigt die Regelgruppen direkt im Popup.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="text-options">
+                <span><strong>Wo soll korrigiert werden?</strong><small>Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="open-options">
+                <span><strong>Schaltfläche für weitere Einstellungen</strong><small>Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite.</small></span>
+              </label>
             </div>
           </div>
         </details>
@@ -184,7 +210,7 @@
           <div class="settings-section-content">
             <p>
               Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung,
-              Regelgruppen, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen,
+              Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen,
               persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung.
             </p>
             <div class="transfer-controls">
