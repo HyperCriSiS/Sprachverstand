@@ -28,7 +28,8 @@ main {
     max(14px, env(safe-area-inset-left));
 }
 
-.popup-section[hidden] {
+.popup-section[hidden],
+.popup-rule[hidden] {
   display: none !important;
 }
 
@@ -107,21 +108,11 @@ input[type="checkbox"] {
 .popup-option-row {
   min-height: 36px;
   padding: 6px 0;
-  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-}
-
-.popup-option-row:nth-of-type(2) {
-  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
 .popup-rules {
   display: grid;
-  max-height: 300px;
   gap: 0;
-  margin-right: -14px;
-  padding-right: 14px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .popup-rule {
