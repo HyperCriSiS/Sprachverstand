@@ -40,10 +40,7 @@
                 <small>Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt.</small>
               </span>
             </label>
-            <div class="current-count" aria-live="polite">
-              <span>Korrekturen im aktuell aktiven Tab</span>
-              <output id="count">0</output>
-            </div>
+            <output id="count" hidden aria-hidden="true">0</output>
           </div>
         </details>
 
@@ -59,6 +56,14 @@
               <label class="checkbox-row">
                 <input type="checkbox" data-popup-section="activation">
                 <span><strong>Aktivierungsschalter</strong><small>Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="text-options">
+                <span><strong>Wo soll korrigiert werden?</strong><small>Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup.</small></span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" data-popup-section="open-options">
+                <span><strong>Schaltfläche für weitere Einstellungen</strong><small>Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite.</small></span>
               </label>
 
               <div class="popup-option-group">
@@ -128,15 +133,6 @@
                   </div>
                 </fieldset>
               </div>
-
-              <label class="checkbox-row">
-                <input type="checkbox" data-popup-section="text-options">
-                <span><strong>Wo soll korrigiert werden?</strong><small>Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup.</small></span>
-              </label>
-              <label class="checkbox-row">
-                <input type="checkbox" data-popup-section="open-options">
-                <span><strong>Schaltfläche für weitere Einstellungen</strong><small>Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite.</small></span>
-              </label>
             </div>
           </div>
         </details>
