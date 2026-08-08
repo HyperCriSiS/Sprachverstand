@@ -9,10 +9,10 @@ interface PaleMoonContentRuntime {
   getReplacementCount(): number;
 }
 
-interface PaleMoonContentGlobal extends typeof globalThis {
+type PaleMoonContentGlobal = typeof globalThis & {
   SprachverstandPaleMoonContent?: PaleMoonContentRuntime;
   __sprachverstandReportCount?: (count: number) => void;
-}
+};
 
 const runtimeGlobal = globalThis as PaleMoonContentGlobal;
 let processor: DomProcessor | undefined;
