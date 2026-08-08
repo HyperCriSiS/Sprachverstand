@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<overlay id="sprachverstand-browser-overlay"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/javascript"
+          src="chrome://sprachverstand/content/palemoon/controller.js"/>
+
+  <toolbarpalette id="BrowserToolbarPalette">
+    <toolbarbutton
+      id="sprachverstand-toolbar-button"
+      class="toolbarbutton-1 chromeclass-toolbar-additional"
+      label="Sprachverstand"
+      tooltiptext="Sprachverstand"
+      style="list-style-image: url('chrome://sprachverstand/content/icons/icon32.png');"
+      oncommand="SprachverstandPaleMoon.openPopup();"/>
+  </toolbarpalette>
+</overlay>
