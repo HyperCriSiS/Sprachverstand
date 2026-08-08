@@ -11,7 +11,9 @@ import {
   maximumCustomReplacements,
   maximumExcludedDomains,
   normalizeExcludedDomain,
+  popupSectionIds,
   syncCategoryIds,
+  type PopupSectionId,
   type Settings,
   type SyncCategoryId
 } from "./settings/defaults";
@@ -59,6 +61,8 @@ const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
+const popupSectionsContainer =
+  requiredElement<HTMLElement>("#popup-sections");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const protectedTermsInput =
   requiredElement<HTMLTextAreaElement>("#protected-terms");
@@ -166,6 +170,12 @@ function ruleGroupInputs(): HTMLInputElement[] {
   )];
 }
 
+function popupSectionInputs(): HTMLInputElement[] {
+  return [...popupSectionsContainer.querySelectorAll<HTMLInputElement>(
+    "input[data-popup-section]"
+  )];
+}
+
 function syncCategoryInputs(): HTMLInputElement[] {
   return [...syncCategoriesContainer.querySelectorAll<HTMLInputElement>(
     "input[data-sync-category]"
@@ -179,6 +189,16 @@ function syncCategoryIdsFromForm(): SyncCategoryId[] {
     .map((input) => input.dataset.syncCategory)
     .filter(
       (id): id is SyncCategoryId => typeof id === "string" && known.has(id)
+    );
+}
+
+function popupSectionIdsFromForm(): PopupSectionId[] {
+  const known = new Set<string>(popupSectionIds);
+  return popupSectionInputs()
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.popupSection)
+    .filter(
+      (id): id is PopupSectionId => typeof id === "string" && known.has(id)
     );
 }
 
@@ -200,6 +220,13 @@ function render(settings: Settings): void {
     settings.customReplacements
   );
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
+
+  const visiblePopupSections = new Set(settings.visiblePopupSectionIds ?? []);
+  for (const input of popupSectionInputs()) {
+    input.checked = visiblePopupSections.has(
+      input.dataset.popupSection as PopupSectionId
+    );
+  }
 
   const selectedSyncCategories = new Set(settings.syncCategoryIds);
   for (const input of syncCategoryInputs()) {
@@ -260,7 +287,8 @@ function readForm(): Settings {
     processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processQuotedText: processQuotedTextInput.checked,
     processSubtitles: processSubtitlesInput.checked,
-    syncCategoryIds: syncCategoryIdsFromForm()
+    syncCategoryIds: syncCategoryIdsFromForm(),
+    visiblePopupSectionIds: popupSectionIdsFromForm()
   };
 }
 
@@ -494,7 +522,7 @@ function selectedImportMode(): SettingsBackupImportMode {
 function renderImportSummary(result: SettingsImportResult): void {
   const generalSettings = document.createElement("p");
   generalSettings.textContent =
-    "Aktivierungsstatus, Regelgruppen, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
+    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
 
   const summary = document.createElement("p");
   summary.textContent = [
