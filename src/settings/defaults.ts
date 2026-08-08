@@ -66,7 +66,7 @@ export interface Settings {
   readonly processQuotedText: boolean;
   readonly processSubtitles: boolean;
   readonly syncCategoryIds: readonly SyncCategoryId[];
-  readonly visiblePopupSectionIds?: readonly PopupSectionId[];
+  readonly visiblePopupSectionIds: readonly PopupSectionId[];
 }
 
 export const defaultSettings: Settings = {
