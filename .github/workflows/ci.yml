@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, palemoon]
   pull_request:
     branches: [main, dev]
 
@@ -82,6 +82,12 @@ jobs:
           test -s docs/AMO-SOURCE-INSTRUCTIONS.md
           test -s docs/PUBLICATION-CHECKLIST.md
           test -s SECURITY.md
+          test -s legacy/palemoon/install.rdf
+          test -s legacy/palemoon/chrome.manifest
+          test -s legacy/palemoon/palemoon/browser-overlay.xul
+          test -s legacy/palemoon/palemoon/legacy-api.js
+          grep -q 'BrowserToolbarPalette' legacy/palemoon/palemoon/browser-overlay.xul
+          grep -q '__VERSION__' legacy/palemoon/install.rdf
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
@@ -90,6 +96,20 @@ jobs:
 
       - name: Browser-Builds erstellen
         run: npm run build
+
+      - name: Pale-Moon-Build prüfen
+        shell: bash
+        run: |
+          test -s dist/palemoon/install.rdf
+          test -s dist/palemoon/chrome.manifest
+          test -s dist/palemoon/palemoon/browser-overlay.xul
+          test -s dist/palemoon/palemoon/controller.js
+          test -s dist/palemoon/palemoon/content.js
+          test -s dist/palemoon/palemoon/legacy-api.js
+          ! grep -q '__VERSION__' dist/palemoon/install.rdf
+          grep -q '../palemoon/legacy-api.js' dist/palemoon/popup/popup.html
+          grep -q '../palemoon/legacy-api.js' dist/palemoon/options/options.html
+          test ! -e dist/palemoon/manifest.json
 
       - name: Erzeugte Logo-Dateien vollständig prüfen
         run: npm run validate:icons
@@ -114,6 +134,11 @@ jobs:
             zip -qr "../../artifacts/sprachverstand-${VERSION}-firefox.xpi" .
           )
 
+          (
+            cd dist/palemoon
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-palemoon.xpi" .
+          )
+
           git archive \
             --format=zip \
             --output="artifacts/sprachverstand-${VERSION}-source.zip" \
@@ -128,6 +153,7 @@ jobs:
             sha256sum \
               "sprachverstand-${VERSION}-chromium.zip" \
               "sprachverstand-${VERSION}-firefox.xpi" \
+              "sprachverstand-${VERSION}-palemoon.xpi" \
               "sprachverstand-${VERSION}-source.zip" \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
@@ -136,6 +162,7 @@ jobs:
 
           unzip -t "artifacts/sprachverstand-${VERSION}-chromium.zip"
           unzip -t "artifacts/sprachverstand-${VERSION}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${VERSION}-palemoon.xpi"
           unzip -t "artifacts/sprachverstand-${VERSION}-source.zip"
 
           if unzip -l "artifacts/sprachverstand-${VERSION}-firefox.xpi" | grep -q 'META-INF/'; then
