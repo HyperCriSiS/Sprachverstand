@@ -329,6 +329,42 @@ small {
   border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 }
 
+.popup-rule-visibility {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.popup-rule-visibility > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.popup-rule-visibility > div:first-child small {
+  display: block;
+}
+
+.popup-rule-visibility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 18px;
+}
+
+.popup-section-options .compact-popup-option {
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 0;
+  font-size: 14px;
+}
+
+.popup-section-options .compact-popup-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
 /* Einstellungsbereiche */
 .settings-toolbar {
   display: flex;
@@ -451,7 +487,8 @@ small {
   }
 
   .sync-categories,
-  .popup-section-options {
+  .popup-section-options,
+  .popup-rule-visibility-grid {
     grid-template-columns: 1fr;
     gap: 0;
   }
