@@ -11,7 +11,6 @@ html,
 body {
   width: 384px;
   min-width: 384px;
-  min-height: 500px;
   margin: 0;
   overflow-x: hidden;
 }
@@ -23,16 +22,20 @@ body {
 main {
   display: grid;
   gap: 10px;
-  min-height: 500px;
   padding: max(14px, env(safe-area-inset-top))
     max(14px, env(safe-area-inset-right))
     max(14px, env(safe-area-inset-bottom))
     max(14px, env(safe-area-inset-left));
 }
 
+.popup-section[hidden] {
+  display: none !important;
+}
+
 .brand-header,
 .switch-row,
-.count-row {
+.count-row,
+.popup-option-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -71,7 +74,8 @@ h2 {
   font-size: 12px;
 }
 
-.switch-row {
+.switch-row,
+.popup-option-row {
   font-size: 14px;
 }
 
@@ -89,10 +93,25 @@ input[type="checkbox"] {
   margin: 0;
 }
 
-.rules-panel {
+.rules-panel,
+.where-panel {
   display: grid;
   min-height: 0;
   gap: 6px;
+}
+
+.where-panel {
+  padding-top: 2px;
+}
+
+.popup-option-row {
+  min-height: 36px;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.popup-option-row:nth-of-type(2) {
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
 .popup-rules {
