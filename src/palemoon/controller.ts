@@ -94,31 +94,32 @@ interface PaleMoonBridge {
 interface PaleMoonWindow extends Window {
   readonly gBrowser?: PaleMoonGBrowser;
   SprachverstandPaleMoon?: PaleMoonBridge;
-  openDialog(
-    url: string,
-    name: string,
-    features: string
-  ): Window | null;
+  openDialog(url: string, name: string, features: string): Window | null;
 }
 
-const windowObject = window as PaleMoonWindow;
+interface PaleMoonChromeDocument extends Document {
+  persist(id: string, attribute: string): void;
+}
+
+const windowObject = window as unknown as PaleMoonWindow;
+const chromeDocument = document as PaleMoonChromeDocument;
 const importedServices = Components.utils.import(
   "resource://gre/modules/Services.jsm",
   {}
 ) as { readonly Services?: PaleMoonServices };
-const Services = importedServices.Services;
+const importedServiceValue = importedServices.Services;
 
-if (!Services) {
+if (!importedServiceValue) {
   throw new Error("Pale-Moon-Dienste konnten nicht geladen werden.");
 }
 
+const Services: PaleMoonServices = importedServiceValue;
 const settingsPreference = "extensions.sprachverstand.storage.local.settings";
 const toolbarInstalledPreference =
   "extensions.sprachverstand.palemoon.toolbarInstalled";
 const runtimeMessageTopic = "sprachverstand-palemoon-runtime-message";
 const toolbarButtonId = "sprachverstand-toolbar-button";
-const contentRuntimeUrl =
-  "chrome://sprachverstand/content/palemoon/content.js";
+const contentRuntimeUrl = "chrome://sprachverstand/content/palemoon/content.js";
 
 const sandboxesByDocument = new Map<Document, ContentSandbox>();
 const countsByTabId = new Map<number, number>();
@@ -231,7 +232,7 @@ function destroySandbox(documentToStop: Document, restore: boolean): void {
   try {
     sandbox.SprachverstandPaleMoonContent?.stop(restore);
   } catch {
-    // A document can already be tearing down during navigation.
+    // The document can already be tearing down during navigation.
   }
 
   sandboxesByDocument.delete(documentToStop);
@@ -269,8 +270,7 @@ function applySettingsToDocument(
 ): void {
   if (!shouldRun(documentToProcess, settings)) {
     destroySandbox(documentToProcess, true);
-    const browser = browserForDocument(documentToProcess);
-    if (browser) {
+    if (browserForDocument(documentToProcess)) {
       reportCount(documentToProcess, 0);
     }
     return;
@@ -299,7 +299,13 @@ function eventDocument(event: Event): Document | undefined {
   const candidate =
     (event as Event & { readonly originalTarget?: EventTarget | null })
       .originalTarget ?? event.target;
-  return candidate instanceof Document ? candidate : undefined;
+
+  if (!candidate || typeof candidate !== "object") {
+    return undefined;
+  }
+
+  const nodeType = (candidate as { readonly nodeType?: unknown }).nodeType;
+  return nodeType === 9 ? (candidate as unknown as Document) : undefined;
 }
 
 function handleDocumentLoaded(event: Event): void {
@@ -362,7 +368,7 @@ function ensureToolbarButtonInstalled(): void {
     const updatedSet =
       navigationBar.currentSet ?? navigationBar.getAttribute("currentset") ?? "";
     navigationBar.setAttribute("currentset", updatedSet);
-    document.persist("nav-bar", "currentset");
+    chromeDocument.persist("nav-bar", "currentset");
   }
 
   Services.prefs.setBoolPref(toolbarInstalledPreference, true);
