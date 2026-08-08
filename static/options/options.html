@@ -60,10 +60,75 @@
                 <input type="checkbox" data-popup-section="activation">
                 <span><strong>Aktivierungsschalter</strong><small>Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein.</small></span>
               </label>
-              <label class="checkbox-row">
-                <input type="checkbox" data-popup-section="rule-groups">
-                <span><strong>Was soll korrigiert werden?</strong><small>Zeigt die ausgewählten Regelgruppen direkt im Popup.</small></span>
-              </label>
+
+              <div class="popup-option-group">
+                <label class="checkbox-row popup-option-parent">
+                  <input type="checkbox" data-popup-section="rule-groups">
+                  <span><strong>Was soll korrigiert werden?</strong><small>Zeigt die ausgewählten Regelgruppen direkt im Popup.</small></span>
+                </label>
+                <fieldset class="popup-rule-visibility">
+                  <legend>Einzelne Regelgruppen im Popup</legend>
+                  <div class="popup-rule-visibility-grid">
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:plural-separators">
+                      <span>Genderzeichen im Plural</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:plural-binnen-i">
+                      <span>Binnen-I im Plural</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:plural-double-forms">
+                      <span>Doppelnennungen im Plural</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:singular-explicit-context">
+                      <span>Gegenderte Singularformen mit Artikel</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:unmarked-singular">
+                      <span>Sichtbar markierte Singularformen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:substantivized-adjectives">
+                      <span>Substantivierte Adjektive</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:special-gender-forms">
+                      <span>Weitere sichtbare Genderformen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:singular-double-forms">
+                      <span>Doppelnennungen im Singular</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:explicit-pronouns">
+                      <span>Explizite Pronomen- und Possessivpaare</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:natural-family-forms">
+                      <span>Künstlich gegenderte Familienformen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:title-abbreviations">
+                      <span>Gegenderte Titelabkürzungen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:salutation-participles">
+                      <span>Neutrale Partizipformen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:neutral-person-terms">
+                      <span>Kontextgebundene Umschreibungen</span>
+                    </label>
+                    <label class="checkbox-row compact-popup-option">
+                      <input type="checkbox" data-popup-section="rule-group:job-ad-suffixes">
+                      <span>Geschlechtszusätze in Stellenanzeigen</span>
+                    </label>
+                  </div>
+                </fieldset>
+              </div>
+
               <label class="checkbox-row">
                 <input type="checkbox" data-popup-section="text-options">
                 <span><strong>Wo soll korrigiert werden?</strong><small>Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup.</small></span>
@@ -72,71 +137,6 @@
                 <input type="checkbox" data-popup-section="open-options">
                 <span><strong>Schaltfläche für weitere Einstellungen</strong><small>Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite.</small></span>
               </label>
-
-              <div class="popup-rule-visibility">
-                <div>
-                  <strong>Im Popup sichtbare Regelgruppen</strong>
-                  <small>Wirkt, sobald „Was soll korrigiert werden?“ eingeblendet ist. Standardmäßig werden alle Gruppen angezeigt.</small>
-                </div>
-                <div class="popup-rule-visibility-grid">
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:plural-separators">
-                    <span>Genderzeichen im Plural</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:plural-binnen-i">
-                    <span>Binnen-I im Plural</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:plural-double-forms">
-                    <span>Doppelnennungen im Plural</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:singular-explicit-context">
-                    <span>Gegenderte Singularformen mit Artikel</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:unmarked-singular">
-                    <span>Sichtbar markierte Singularformen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:substantivized-adjectives">
-                    <span>Substantivierte Adjektive</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:special-gender-forms">
-                    <span>Weitere sichtbare Genderformen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:singular-double-forms">
-                    <span>Doppelnennungen im Singular</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:explicit-pronouns">
-                    <span>Explizite Pronomen- und Possessivpaare</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:natural-family-forms">
-                    <span>Künstlich gegenderte Familienformen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:title-abbreviations">
-                    <span>Gegenderte Titelabkürzungen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:salutation-participles">
-                    <span>Neutrale Partizipformen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:neutral-person-terms">
-                    <span>Kontextgebundene Umschreibungen</span>
-                  </label>
-                  <label class="checkbox-row compact-popup-option">
-                    <input type="checkbox" data-popup-section="rule-group:job-ad-suffixes">
-                    <span>Geschlechtszusätze in Stellenanzeigen</span>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
         </details>
