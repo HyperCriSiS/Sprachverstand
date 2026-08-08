@@ -77,12 +77,7 @@ for (const target of targets) {
       background: path.join(projectRoot, "src", "background.ts"),
       content: path.join(projectRoot, "src", "content.ts"),
       "popup/popup": path.join(projectRoot, "src", "popup.ts"),
-      "options/options": path.join(projectRoot, "src", "options.ts"),
-      "options/popup-layout": path.join(
-        projectRoot,
-        "src",
-        "options-popup-layout.ts"
-      )
+      "options/options": path.join(projectRoot, "src", "options.ts")
     },
     outdir: path.join(projectRoot, "dist", target),
     bundle: true,
