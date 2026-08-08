@@ -12,6 +12,7 @@
     "build": "node scripts/build.mjs",
     "build:chromium": "node scripts/build.mjs --target chromium",
     "build:firefox": "node scripts/build.mjs --target firefox",
+    "build:palemoon": "node scripts/build.mjs --target palemoon",
     "dev": "node scripts/build.mjs --target chromium --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
