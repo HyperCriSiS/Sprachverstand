@@ -1,7 +1,8 @@
 import {
   defaultEnabledRuleGroupIds,
   enabledGroupsFromLegacyDisabledRuleIds,
-  normalizeEnabledRuleGroupIds
+  normalizeEnabledRuleGroupIds,
+  ruleGroupDefinitions
 } from "../rules/catalog";
 import { normalizeDomainPattern } from "./domain";
 
@@ -12,7 +13,7 @@ export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
 export const maximumExcludedDomains = 100;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 8;
+export const currentSettingsRevision = 9;
 
 export const syncCategoryIds = [
   "activation",
@@ -25,7 +26,7 @@ export const syncCategoryIds = [
 
 export type SyncCategoryId = (typeof syncCategoryIds)[number];
 
-export const popupSectionIds = [
+const basePopupSectionIds = [
   "count",
   "activation",
   "rule-groups",
@@ -33,13 +34,31 @@ export const popupSectionIds = [
   "open-options"
 ] as const;
 
-export type PopupSectionId = (typeof popupSectionIds)[number];
+export type PopupRuleGroupSectionId = `rule-group:${string}`;
+export type PopupSectionId =
+  | (typeof basePopupSectionIds)[number]
+  | PopupRuleGroupSectionId;
+
+export function popupRuleGroupSectionId(
+  groupId: string
+): PopupRuleGroupSectionId {
+  return `rule-group:${groupId}`;
+}
+
+export const popupRuleGroupSectionIds: readonly PopupRuleGroupSectionId[] =
+  ruleGroupDefinitions.map((group) => popupRuleGroupSectionId(group.id));
+
+export const popupSectionIds: readonly PopupSectionId[] = [
+  ...basePopupSectionIds,
+  ...popupRuleGroupSectionIds
+];
 
 export const defaultVisiblePopupSectionIds: readonly PopupSectionId[] = [
   "count",
   "activation",
   "rule-groups",
-  "open-options"
+  "open-options",
+  ...popupRuleGroupSectionIds
 ];
 
 const introducedDefaultGroups = [
@@ -221,15 +240,28 @@ function syncCategoryArray(value: unknown): SyncCategoryId[] {
   );
 }
 
-function popupSectionArray(value: unknown): PopupSectionId[] {
+function popupSectionArray(
+  value: unknown,
+  fromRevision: number
+): PopupSectionId[] {
   if (!Array.isArray(value)) {
     return [...defaultVisiblePopupSectionIds];
   }
 
   const valid = new Set<PopupSectionId>(popupSectionIds);
-  return stringArray(value).filter((entry): entry is PopupSectionId =>
+  const selected = stringArray(value).filter((entry): entry is PopupSectionId =>
     valid.has(entry as PopupSectionId)
   );
+
+  if (fromRevision < 9) {
+    const migrated = new Set<PopupSectionId>(selected);
+    for (const sectionId of popupRuleGroupSectionIds) {
+      migrated.add(sectionId);
+    }
+    return [...migrated];
+  }
+
+  return selected;
 }
 
 function storedRevision(value: unknown): number {
@@ -292,6 +324,9 @@ export function normalizeSettings(value: unknown): Settings {
         ? input.processSubtitles
         : defaultSettings.processSubtitles,
     syncCategoryIds: syncCategoryArray(input.syncCategoryIds),
-    visiblePopupSectionIds: popupSectionArray(input.visiblePopupSectionIds)
+    visiblePopupSectionIds: popupSectionArray(
+      input.visiblePopupSectionIds,
+      revision
+    )
   };
 }

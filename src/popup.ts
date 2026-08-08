@@ -2,6 +2,7 @@ import { getExtensionApi } from "./browser/api";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
+  popupRuleGroupSectionId,
   type PopupSectionId,
   type Settings
 } from "./settings/defaults";
@@ -60,6 +61,7 @@ function createRuleGroupControls(): void {
   for (const group of ruleGroupDefinitions) {
     const label = document.createElement("label");
     label.className = "popup-rule";
+    label.dataset.popupRuleGroup = group.id;
 
     const input = document.createElement("input");
     input.type = "checkbox";
@@ -88,6 +90,12 @@ function ruleGroupInputs(): HTMLInputElement[] {
   )];
 }
 
+function popupRuleGroupRows(): HTMLElement[] {
+  return [...ruleGroupsContainer.querySelectorAll<HTMLElement>(
+    "[data-popup-rule-group]"
+  )];
+}
+
 function render(): void {
   enabledInput.checked = settings.enabled;
   stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
@@ -102,6 +110,11 @@ function render(): void {
   for (const section of popupSections) {
     const sectionId = section.dataset.popupSection as PopupSectionId | undefined;
     section.hidden = !sectionId || !visibleSections.has(sectionId);
+  }
+
+  for (const row of popupRuleGroupRows()) {
+    const groupId = row.dataset.popupRuleGroup;
+    row.hidden = !groupId || !visibleSections.has(popupRuleGroupSectionId(groupId));
   }
 
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
