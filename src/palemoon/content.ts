@@ -11,14 +11,17 @@ interface PaleMoonContentRuntime {
 
 type PaleMoonContentGlobal = typeof globalThis & {
   SprachverstandPaleMoonContent?: PaleMoonContentRuntime;
-  __sprachverstandReportCount?: (count: number) => void;
+  __sprachverstandReplacementCount?: number;
 };
 
 const runtimeGlobal = globalThis as PaleMoonContentGlobal;
 let processor: DomProcessor | undefined;
 
 function reportReplacementCount(count: number): void {
-  runtimeGlobal.__sprachverstandReportCount?.(count);
+  runtimeGlobal.__sprachverstandReplacementCount = Math.max(
+    0,
+    Math.trunc(count)
+  );
 }
 
 function optionsFor(settings: Settings) {
@@ -41,11 +44,13 @@ const runtime: PaleMoonContentRuntime = {
 
     if (processor) {
       processor.updateOptions(options);
+      reportReplacementCount(processor.getReplacementCount());
       return;
     }
 
     processor = new DomProcessor(document, options);
     processor.start();
+    reportReplacementCount(processor.getReplacementCount());
   },
 
   stop(restore = true) {
@@ -60,3 +65,4 @@ const runtime: PaleMoonContentRuntime = {
 };
 
 runtimeGlobal.SprachverstandPaleMoonContent = runtime;
+runtimeGlobal.__sprachverstandReplacementCount = 0;
