@@ -11,6 +11,12 @@
   auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
 </p>
 
+[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
+[![AMO Version](https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
+[![GitHub Release](https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release)](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
+[![CI](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/HyperCriSiS/Sprachverstand)](LICENSE)
+
 ## Was ist Sprachverstand?
 
 Sprachverstand verarbeitet den Text einer Webseite direkt im Browser. Formen wie
