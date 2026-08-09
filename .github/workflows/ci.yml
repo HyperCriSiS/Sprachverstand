@@ -81,13 +81,21 @@ jobs:
           test -s docs/SETTINGS-BACKUP-FORMAT.md
           test -s docs/AMO-SOURCE-INSTRUCTIONS.md
           test -s docs/PUBLICATION-CHECKLIST.md
+          test -s docs/PALEMOON-SUBMISSION.md
           test -s SECURITY.md
           test -s legacy/palemoon/install.rdf
           test -s legacy/palemoon/chrome.manifest
+          test -s legacy/palemoon/icon64.png.base64
           test -s legacy/palemoon/palemoon/browser-overlay.xul
+          test -s legacy/palemoon/palemoon/browser-overlay.css
+          test -s legacy/palemoon/palemoon/popup-panel.js
           test -s legacy/palemoon/palemoon/legacy-api.js
           grep -q 'BrowserToolbarPalette' legacy/palemoon/palemoon/browser-overlay.xul
+          grep -q 'SprachverstandPaleMoonUI.togglePopup' legacy/palemoon/palemoon/browser-overlay.xul
           grep -q '__VERSION__' legacy/palemoon/install.rdf
+          grep -q '<em:maxVersion>34.3.2</em:maxVersion>' legacy/palemoon/install.rdf
+          ! grep -q '<em:updateURL>' legacy/palemoon/install.rdf
+          ! grep -Eq '<em:maxVersion>[^<]*\*' legacy/palemoon/install.rdf
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
@@ -102,11 +110,17 @@ jobs:
         run: |
           test -s dist/palemoon/install.rdf
           test -s dist/palemoon/chrome.manifest
+          test -s dist/palemoon/icons/icon64.png
           test -s dist/palemoon/palemoon/browser-overlay.xul
+          test -s dist/palemoon/palemoon/browser-overlay.css
+          test -s dist/palemoon/palemoon/popup-panel.js
           test -s dist/palemoon/palemoon/controller.js
           test -s dist/palemoon/palemoon/content.js
           test -s dist/palemoon/palemoon/legacy-api.js
+          file dist/palemoon/icons/icon64.png | grep -q '64 x 64'
           ! grep -q '__VERSION__' dist/palemoon/install.rdf
+          grep -q '<em:maxVersion>34.3.2</em:maxVersion>' dist/palemoon/install.rdf
+          ! grep -q '<em:updateURL>' dist/palemoon/install.rdf
           grep -q '../palemoon/legacy-api.js' dist/palemoon/popup/popup.html
           grep -q '../palemoon/legacy-api.js' dist/palemoon/options/options.html
           test ! -e dist/palemoon/manifest.json
@@ -146,6 +160,8 @@ jobs:
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          cp docs/PALEMOON-SUBMISSION.md artifacts/
+          cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
           printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
@@ -155,6 +171,7 @@ jobs:
               "sprachverstand-${VERSION}-firefox.xpi" \
               "sprachverstand-${VERSION}-palemoon.xpi" \
               "sprachverstand-${VERSION}-source.zip" \
+              palemoon-icon64.png \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
