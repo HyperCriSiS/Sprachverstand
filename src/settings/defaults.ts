@@ -1,7 +1,8 @@
 import {
   defaultEnabledRuleGroupIds,
   enabledGroupsFromLegacyDisabledRuleIds,
-  normalizeEnabledRuleGroupIds
+  normalizeEnabledRuleGroupIds,
+  ruleGroupDefinitions
 } from "../rules/catalog";
 import { normalizeDomainPattern } from "./domain";
 
@@ -12,7 +13,7 @@ export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
 export const maximumExcludedDomains = 100;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 7;
+export const currentSettingsRevision = 9;
 
 export const syncCategoryIds = [
   "activation",
@@ -24,6 +25,41 @@ export const syncCategoryIds = [
 ] as const;
 
 export type SyncCategoryId = (typeof syncCategoryIds)[number];
+
+const basePopupSectionIds = [
+  "count",
+  "activation",
+  "rule-groups",
+  "text-options",
+  "open-options"
+] as const;
+
+export type PopupRuleGroupSectionId = `rule-group:${string}`;
+export type PopupSectionId =
+  | (typeof basePopupSectionIds)[number]
+  | PopupRuleGroupSectionId;
+
+export function popupRuleGroupSectionId(
+  groupId: string
+): PopupRuleGroupSectionId {
+  return `rule-group:${groupId}`;
+}
+
+export const popupRuleGroupSectionIds: readonly PopupRuleGroupSectionId[] =
+  ruleGroupDefinitions.map((group) => popupRuleGroupSectionId(group.id));
+
+export const popupSectionIds: readonly PopupSectionId[] = [
+  ...basePopupSectionIds,
+  ...popupRuleGroupSectionIds
+];
+
+export const defaultVisiblePopupSectionIds: readonly PopupSectionId[] = [
+  "count",
+  "activation",
+  "rule-groups",
+  "open-options",
+  ...popupRuleGroupSectionIds
+];
 
 const introducedDefaultGroups = [
   { revision: 1, groupId: "salutation-participles" },
@@ -49,6 +85,7 @@ export interface Settings {
   readonly processQuotedText: boolean;
   readonly processSubtitles: boolean;
   readonly syncCategoryIds: readonly SyncCategoryId[];
+  readonly visiblePopupSectionIds: readonly PopupSectionId[];
 }
 
 export const defaultSettings: Settings = {
@@ -61,7 +98,8 @@ export const defaultSettings: Settings = {
   processAccessibleAttributes: true,
   processQuotedText: true,
   processSubtitles: false,
-  syncCategoryIds: []
+  syncCategoryIds: [],
+  visiblePopupSectionIds: defaultVisiblePopupSectionIds
 };
 
 function stringArray(value: unknown): string[] {
@@ -202,6 +240,30 @@ function syncCategoryArray(value: unknown): SyncCategoryId[] {
   );
 }
 
+function popupSectionArray(
+  value: unknown,
+  fromRevision: number
+): PopupSectionId[] {
+  if (!Array.isArray(value)) {
+    return [...defaultVisiblePopupSectionIds];
+  }
+
+  const valid = new Set<PopupSectionId>(popupSectionIds);
+  const selected = stringArray(value).filter((entry): entry is PopupSectionId =>
+    valid.has(entry as PopupSectionId)
+  );
+
+  if (fromRevision < 9) {
+    const migrated = new Set<PopupSectionId>(selected);
+    for (const sectionId of popupRuleGroupSectionIds) {
+      migrated.add(sectionId);
+    }
+    return [...migrated];
+  }
+
+  return selected;
+}
+
 function storedRevision(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
     ? value
@@ -261,6 +323,10 @@ export function normalizeSettings(value: unknown): Settings {
       typeof input.processSubtitles === "boolean"
         ? input.processSubtitles
         : defaultSettings.processSubtitles,
-    syncCategoryIds: syncCategoryArray(input.syncCategoryIds)
+    syncCategoryIds: syncCategoryArray(input.syncCategoryIds),
+    visiblePopupSectionIds: popupSectionArray(
+      input.visiblePopupSectionIds,
+      revision
+    )
   };
 }

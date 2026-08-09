@@ -12,8 +12,10 @@ import {
   maximumProtectedTerms,
   normalizeExcludedDomain,
   normalizeSettings,
+  popupSectionIds,
   syncCategoryIds,
   type CustomReplacement,
+  type PopupSectionId,
   type Settings,
   type SyncCategoryId
 } from "./defaults";
@@ -178,6 +180,26 @@ function validateSyncCategoryIds(value: unknown): SyncCategoryId[] {
   return result;
 }
 
+function validatePopupSectionIds(value: unknown): PopupSectionId[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Die Popup-Anzeige muss eine Liste sein.");
+  }
+  const known = new Set<string>(popupSectionIds);
+  const result: PopupSectionId[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== "string" || !known.has(entry)) {
+      throw new Error(`Der Popup-Bereich „${String(entry)}“ ist unbekannt.`);
+    }
+    if (seen.has(entry)) {
+      throw new Error(`Der Popup-Bereich „${entry}“ ist doppelt enthalten.`);
+    }
+    seen.add(entry);
+    result.push(entry as PopupSectionId);
+  }
+  return result;
+}
+
 function validateProtectedTerms(value: unknown): string[] {
   if (!Array.isArray(value)) {
     throw new Error("Die persönlichen Ausnahmen müssen eine Liste sein.");
@@ -275,7 +297,8 @@ function validateSettingsObject(value: unknown): Settings {
       "processAccessibleAttributes",
       "processQuotedText",
       "processSubtitles",
-      "syncCategoryIds"
+      "syncCategoryIds",
+      "visiblePopupSectionIds"
     ],
     "Die Einstellungssicherung"
   );
@@ -320,7 +343,11 @@ function validateSettingsObject(value: unknown): Settings {
     processQuotedText: input.processQuotedText,
     processSubtitles:
       input.processSubtitles ?? defaultSettings.processSubtitles,
-    syncCategoryIds: validateSyncCategoryIds(input.syncCategoryIds)
+    syncCategoryIds: validateSyncCategoryIds(input.syncCategoryIds),
+    visiblePopupSectionIds:
+      input.visiblePopupSectionIds === undefined
+        ? defaultSettings.visiblePopupSectionIds
+        : validatePopupSectionIds(input.visiblePopupSectionIds)
   });
 }
 
@@ -341,7 +368,8 @@ export function createSettingsBackupDocument(
       customReplacements: normalized.customReplacements.map((entry) => ({
         ...entry
       })),
-      syncCategoryIds: [...normalized.syncCategoryIds]
+      syncCategoryIds: [...normalized.syncCategoryIds],
+      visiblePopupSectionIds: [...(normalized.visiblePopupSectionIds ?? [])]
     }
   };
 }

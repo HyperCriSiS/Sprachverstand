@@ -11,6 +11,7 @@ describe("Einstellungsaufbau", () => {
 
     expect(headings).toEqual([
       "Allgemein",
+      "Popup-Menü",
       "Was soll korrigiert werden?",
       "Wo soll korrigiert werden?",
       "Persönliche Ausnahmen",
@@ -24,7 +25,7 @@ describe("Einstellungsaufbau", () => {
   it("bietet globale Schalter und einzeln aufklappbare Bereiche", () => {
     expect(html).toContain('id="expand-all-sections"');
     expect(html).toContain('id="collapse-all-sections"');
-    expect(html.match(/<details class="settings-section"/gu)).toHaveLength(8);
+    expect(html.match(/<details class="settings-section"/gu)).toHaveLength(9);
     expect(html.match(/<details class="settings-section" open>/gu)).toHaveLength(2);
   });
 
@@ -43,5 +44,11 @@ describe("Einstellungsaufbau", () => {
       expect(buttonIndex).toBeLessThan(firstSectionStart);
     }
     expect(html).not.toContain('<div class="actions">');
+  });
+
+  it("zeigt im Seitenkopf nur Logo und Titel", () => {
+    const header = html.match(/<header class="page-header">([\s\S]*?)<\/header>/u)?.[1] ?? "";
+    expect(header).toContain("<h1>Sprachverstand</h1>");
+    expect(header).not.toContain("<p>");
   });
 });

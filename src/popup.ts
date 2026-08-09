@@ -1,6 +1,11 @@
 import { getExtensionApi } from "./browser/api";
 import { ruleGroupDefinitions } from "./rules/catalog";
-import type { Settings } from "./settings/defaults";
+import {
+  defaultVisiblePopupSectionIds,
+  popupRuleGroupSectionId,
+  type PopupSectionId,
+  type Settings
+} from "./settings/defaults";
 import { loadSettings, saveSettings } from "./settings/storage";
 
 interface CountUpdatedMessage {
@@ -23,7 +28,16 @@ const enabledInput = requiredElement<HTMLInputElement>("#enabled");
 const stateOutput = requiredElement<HTMLOutputElement>("#state");
 const countOutput = requiredElement<HTMLOutputElement>("#count");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
+const processAccessibleAttributesInput =
+  requiredElement<HTMLInputElement>("#process-accessible-attributes");
+const processQuotedTextInput =
+  requiredElement<HTMLInputElement>("#process-quoted-text");
+const processSubtitlesInput =
+  requiredElement<HTMLInputElement>("#process-subtitles");
 const optionsButton = requiredElement<HTMLButtonElement>("#open-options");
+const popupSections = [
+  ...document.querySelectorAll<HTMLElement>("[data-popup-section]")
+];
 
 let settings: Settings;
 let activeTabId: number | undefined;
@@ -47,6 +61,7 @@ function createRuleGroupControls(): void {
   for (const group of ruleGroupDefinitions) {
     const label = document.createElement("label");
     label.className = "popup-rule";
+    label.dataset.popupRuleGroup = group.id;
 
     const input = document.createElement("input");
     input.type = "checkbox";
@@ -75,9 +90,32 @@ function ruleGroupInputs(): HTMLInputElement[] {
   )];
 }
 
+function popupRuleGroupRows(): HTMLElement[] {
+  return [...ruleGroupsContainer.querySelectorAll<HTMLElement>(
+    "[data-popup-rule-group]"
+  )];
+}
+
 function render(): void {
   enabledInput.checked = settings.enabled;
   stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
+  processAccessibleAttributesInput.checked =
+    settings.processAccessibleAttributes;
+  processQuotedTextInput.checked = settings.processQuotedText;
+  processSubtitlesInput.checked = settings.processSubtitles;
+
+  const visibleSections = new Set<PopupSectionId>(
+    settings.visiblePopupSectionIds ?? defaultVisiblePopupSectionIds
+  );
+  for (const section of popupSections) {
+    const sectionId = section.dataset.popupSection as PopupSectionId | undefined;
+    section.hidden = !sectionId || !visibleSections.has(sectionId);
+  }
+
+  for (const row of popupRuleGroupRows()) {
+    const groupId = row.dataset.popupRuleGroup;
+    row.hidden = !groupId || !visibleSections.has(popupRuleGroupSectionId(groupId));
+  }
 
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
   for (const input of ruleGroupInputs()) {
@@ -143,6 +181,19 @@ async function persistRuleGroups(): Promise<void> {
   refreshCountAfterChange();
 }
 
+async function persistTextOptions(): Promise<void> {
+  settings = {
+    ...settings,
+    processAccessibleAttributes: processAccessibleAttributesInput.checked,
+    processQuotedText: processQuotedTextInput.checked,
+    processSubtitles: processSubtitlesInput.checked
+  };
+
+  await saveSettings(settings);
+  render();
+  refreshCountAfterChange();
+}
+
 function handleRuntimeMessage(message: unknown): void {
   if (
     isCountUpdatedMessage(message) &&
@@ -174,6 +225,16 @@ async function start(): Promise<void> {
       void persistRuleGroups();
     }
   });
+
+  for (const input of [
+    processAccessibleAttributesInput,
+    processQuotedTextInput,
+    processSubtitlesInput
+  ]) {
+    input.addEventListener("change", () => {
+      void persistTextOptions();
+    });
+  }
 
   optionsButton.addEventListener("click", () => {
     const open = async (): Promise<void> => {

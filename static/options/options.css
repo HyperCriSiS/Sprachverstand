@@ -21,11 +21,16 @@ main {
 .page-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
 }
 
 .page-header img {
   flex: 0 0 auto;
+}
+
+.page-header h1 {
+  margin: 0;
 }
 
 .page-header h1,
@@ -35,7 +40,6 @@ p {
   margin-top: 0;
 }
 
-.page-header p,
 .section-heading p,
 .preview-panel p {
   opacity: 0.78;
@@ -312,61 +316,64 @@ small {
   opacity: 0.78;
 }
 
-@media (max-width: 600px) {
-  main {
-    padding-top: max(16px, env(safe-area-inset-top));
-  }
-
-  section {
-    padding: 14px;
-  }
-
-  .section-heading,
-  .preview-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .compact-actions button,
-  .actions button,
-  .transfer-controls button {
-    flex: 1 1 auto;
-  }
-
-  .import-mode {
-    flex-basis: 100%;
-  }
-
-  .actions {
-    position: sticky;
-    bottom: 0;
-    padding: 12px 0 max(8px, env(safe-area-inset-bottom));
-    background: Canvas;
-  }
-
-  #status {
-    flex-basis: 100%;
-  }
-}
-
-.sync-categories {
+.sync-categories,
+.popup-section-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 18px;
 }
 
-.sync-categories .checkbox-row {
+.sync-categories .checkbox-row,
+.popup-section-options > .checkbox-row {
   padding: 10px 0;
   border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 }
 
-@media (max-width: 600px) {
-  .sync-categories {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
+.popup-option-group {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0;
+  padding: 2px 0 0;
+  border-bottom: 0;
 }
 
+.popup-option-parent {
+  padding: 10px 0 8px;
+}
+
+.popup-rule-visibility {
+  display: grid;
+  min-width: 0;
+  margin: 0 0 0 36px;
+  padding: 8px 0 2px 16px;
+  border: 0;
+  border-left: 2px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.popup-rule-visibility legend {
+  padding: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.popup-rule-visibility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 18px;
+}
+
+.popup-section-options .compact-popup-option {
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 0;
+  font-size: 14px;
+}
+
+.popup-section-options .compact-popup-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
 
 /* Einstellungsbereiche */
 .settings-toolbar {
@@ -454,6 +461,53 @@ small {
 }
 
 @media (max-width: 600px) {
+  main {
+    padding-top: max(16px, env(safe-area-inset-top));
+  }
+
+  section {
+    padding: 14px;
+  }
+
+  .section-heading,
+  .preview-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .compact-actions button,
+  .actions button,
+  .transfer-controls button {
+    flex: 1 1 auto;
+  }
+
+  .import-mode {
+    flex-basis: 100%;
+  }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 0 max(8px, env(safe-area-inset-bottom));
+    background: Canvas;
+  }
+
+  #status {
+    flex-basis: 100%;
+  }
+
+  .sync-categories,
+  .popup-section-options,
+  .popup-rule-visibility-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .popup-rule-visibility {
+    margin-left: 28px;
+    padding-left: 12px;
+  }
+
   .settings-toolbar {
     align-items: stretch;
     flex-direction: column;

@@ -162,10 +162,17 @@ export async function loadSettings(): Promise<Settings> {
 
 export async function saveSettings(settings: Settings): Promise<void> {
   const api = getExtensionApi();
-  const normalized = normalizeSettings(settings);
   const currentLocal = normalizeSettings(
     (await api.storage.local.get(localSettingsKey))[localSettingsKey]
   );
+  const normalizedInput = normalizeSettings(settings);
+  const normalized =
+    settings.visiblePopupSectionIds === undefined
+      ? {
+          ...normalizedInput,
+          visiblePopupSectionIds: currentLocal.visiblePopupSectionIds
+        }
+      : normalizedInput;
   const selected = new Set(normalized.syncCategoryIds);
   const synchronizationWasOrIsEnabled =
     currentLocal.syncCategoryIds.length > 0 || normalized.syncCategoryIds.length > 0;

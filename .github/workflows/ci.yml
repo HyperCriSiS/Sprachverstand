@@ -53,7 +53,7 @@ jobs:
           grep -q "width: 384px" static/popup/popup.css
           grep -q "min-width: 384px" static/popup/popup.css
           ! grep -Eq "[0-9](vw|vh)" static/popup/popup.css
-          grep -q "min-height: 500px" static/popup/popup.css
+          ! grep -q "min-height: 500px" static/popup/popup.css
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
           ! grep -q '../legal/legal.html' static/popup/popup.html
