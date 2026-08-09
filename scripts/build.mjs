@@ -50,7 +50,9 @@ async function injectPaleMoonCompatibilityScript(outputDirectory) {
 async function preparePaleMoonFiles(outputDirectory) {
   const legacyDirectory = path.join(projectRoot, "legacy", "palemoon");
   const paleMoonRuntimeDirectory = path.join(outputDirectory, "palemoon");
+  const paleMoonIconDirectory = path.join(outputDirectory, "icons");
   await mkdir(paleMoonRuntimeDirectory, { recursive: true });
+  await mkdir(paleMoonIconDirectory, { recursive: true });
 
   const installManifest = await readFile(
     path.join(legacyDirectory, "install.rdf"),
@@ -62,6 +64,15 @@ async function preparePaleMoonFiles(outputDirectory) {
     "utf8"
   );
 
+  const icon64Base64 = await readFile(
+    path.join(legacyDirectory, "icon64.png.base64"),
+    "utf8"
+  );
+  await writeFile(
+    path.join(paleMoonIconDirectory, "icon64.png"),
+    Buffer.from(icon64Base64.trim(), "base64")
+  );
+
   await Promise.all([
     cp(
       path.join(legacyDirectory, "chrome.manifest"),
@@ -70,6 +81,14 @@ async function preparePaleMoonFiles(outputDirectory) {
     cp(
       path.join(legacyDirectory, "palemoon", "browser-overlay.xul"),
       path.join(paleMoonRuntimeDirectory, "browser-overlay.xul")
+    ),
+    cp(
+      path.join(legacyDirectory, "palemoon", "browser-overlay.css"),
+      path.join(paleMoonRuntimeDirectory, "browser-overlay.css")
+    ),
+    cp(
+      path.join(legacyDirectory, "palemoon", "popup-panel.js"),
+      path.join(paleMoonRuntimeDirectory, "popup-panel.js")
     ),
     cp(
       path.join(legacyDirectory, "palemoon", "legacy-api.js"),
