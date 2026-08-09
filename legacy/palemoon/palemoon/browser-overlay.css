@@ -1,25 +1,12 @@
-#sprachverstand-toolbar-button {
-  list-style-image: url("chrome://sprachverstand/content/icons/icon32.png") !important;
-}
-
-#sprachverstand-toolbar-button .toolbarbutton-icon {
-  width: 16px !important;
-  height: 16px !important;
-  min-width: 16px !important;
-  min-height: 16px !important;
-  max-width: 16px !important;
-  max-height: 16px !important;
-}
-
 #sprachverstand-popup-panel {
   padding: 0;
+  margin: 0;
 }
 
 #sprachverstand-popup-browser {
-  width: 384px;
-  min-width: 384px;
-  height: 650px;
-  min-height: 650px;
+  width: 408px;
+  height: 600px;
   margin: 0;
   padding: 0;
+  border: 0;
 }
