@@ -13,6 +13,7 @@ declare const Components: {
         readonly wantXrays?: boolean;
       }
     ): Record<string, unknown>;
+    evalInSandbox(source: string, sandbox: Record<string, unknown>): unknown;
     nukeSandbox?(sandbox: Record<string, unknown>): void;
   };
 };
@@ -58,15 +59,8 @@ interface PrefObserver {
   observe(subject: unknown, topic: string, data: string): void;
 }
 
-interface PaleMoonContentRuntime {
-  apply(settings: Settings): void;
-  stop(restore?: boolean): void;
-  getReplacementCount(): number;
-}
-
 interface ContentSandbox extends Record<string, unknown> {
-  SprachverstandPaleMoonContent?: PaleMoonContentRuntime;
-  __sprachverstandReportCount?: (count: number) => void;
+  __sprachverstandCommandPayload?: string;
 }
 
 interface GetCountMessage {
@@ -124,6 +118,7 @@ const contentRuntimeUrl = "chrome://sprachverstand/content/palemoon/content.js";
 const sandboxesByDocument = new Map<Document, ContentSandbox>();
 const countsByTabId = new Map<number, number>();
 const tabIdsByBrowser = new WeakMap<PaleMoonBrowser, number>();
+const browsersByTabId = new Map<number, PaleMoonBrowser>();
 let nextTabId = 1;
 let inspectedTabId: number | undefined;
 let started = false;
@@ -174,6 +169,7 @@ function tabIdForBrowser(browser: PaleMoonBrowser): number {
   const created = nextTabId;
   nextTabId += 1;
   tabIdsByBrowser.set(browser, created);
+  browsersByTabId.set(created, browser);
   return created;
 }
 
@@ -223,6 +219,46 @@ function reportCount(documentToReport: Document, count: number): void {
   });
 }
 
+function evaluateInContentSandbox(
+  sandbox: ContentSandbox,
+  source: string
+): unknown {
+  return Components.utils.evalInSandbox(source, sandbox);
+}
+
+function sandboxHasRuntime(sandbox: ContentSandbox): boolean {
+  return (
+    evaluateInContentSandbox(
+      sandbox,
+      "Boolean(this.SprachverstandPaleMoonContent)"
+    ) === true
+  );
+}
+
+function replacementCountFromSandbox(sandbox: ContentSandbox): number {
+  try {
+    const value = evaluateInContentSandbox(
+      sandbox,
+      "this.SprachverstandPaleMoonContent ? this.SprachverstandPaleMoonContent.getReplacementCount() : 0"
+    );
+    return typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, Math.trunc(value))
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function refreshDocumentCount(documentToRefresh: Document): number {
+  const sandbox = sandboxesByDocument.get(documentToRefresh);
+  const count = sandbox ? replacementCountFromSandbox(sandbox) : 0;
+  const browser = browserForDocument(documentToRefresh);
+  if (browser) {
+    countsByTabId.set(tabIdForBrowser(browser), count);
+  }
+  return count;
+}
+
 function destroySandbox(documentToStop: Document, restore: boolean): void {
   const sandbox = sandboxesByDocument.get(documentToStop);
   if (!sandbox) {
@@ -230,7 +266,10 @@ function destroySandbox(documentToStop: Document, restore: boolean): void {
   }
 
   try {
-    sandbox.SprachverstandPaleMoonContent?.stop(restore);
+    evaluateInContentSandbox(
+      sandbox,
+      `if (this.SprachverstandPaleMoonContent) this.SprachverstandPaleMoonContent.stop(${restore ? "true" : "false"});`
+    );
   } catch {
     // The document can already be tearing down during navigation.
   }
@@ -250,12 +289,8 @@ function createSandbox(documentToProcess: Document): ContentSandbox | undefined 
     wantXrays: true
   }) as ContentSandbox;
 
-  sandbox.__sprachverstandReportCount = (count: number) => {
-    reportCount(documentToProcess, count);
-  };
-
   Services.scriptloader.loadSubScript(contentRuntimeUrl, sandbox, "UTF-8");
-  if (!sandbox.SprachverstandPaleMoonContent) {
+  if (!sandboxHasRuntime(sandbox)) {
     Components.utils.nukeSandbox?.(sandbox);
     throw new Error("Pale-Moon-Inhaltsruntime konnte nicht geladen werden.");
   }
@@ -279,7 +314,21 @@ function applySettingsToDocument(
   const sandbox =
     sandboxesByDocument.get(documentToProcess) ??
     createSandbox(documentToProcess);
-  sandbox?.SprachverstandPaleMoonContent?.apply(settings);
+  if (!sandbox) {
+    return;
+  }
+
+  sandbox.__sprachverstandCommandPayload = JSON.stringify(settings);
+  try {
+    evaluateInContentSandbox(
+      sandbox,
+      "this.SprachverstandPaleMoonContent.apply(JSON.parse(this.__sprachverstandCommandPayload));"
+    );
+  } finally {
+    delete sandbox.__sprachverstandCommandPayload;
+  }
+
+  reportCount(documentToProcess, replacementCountFromSandbox(sandbox));
 }
 
 function refreshOpenDocuments(): void {
@@ -322,6 +371,15 @@ function handlePageHide(event: Event): void {
   }
 }
 
+function handleTabSelect(): void {
+  const browser = windowObject.gBrowser?.selectedBrowser;
+  const contentDocument = browser?.contentDocument;
+  if (contentDocument) {
+    refreshDocumentCount(contentDocument);
+  }
+  updateToolbarTooltip();
+}
+
 function handleTabClose(event: Event): void {
   const tab = event.target as PaleMoonTab | null;
   const browser = tab?.linkedBrowser;
@@ -332,6 +390,7 @@ function handleTabClose(event: Event): void {
   const tabId = tabIdsByBrowser.get(browser);
   if (tabId !== undefined) {
     countsByTabId.delete(tabId);
+    browsersByTabId.delete(tabId);
     if (inspectedTabId === tabId) {
       inspectedTabId = undefined;
     }
@@ -375,6 +434,13 @@ function ensureToolbarButtonInstalled(): void {
 }
 
 function openPopup(): void {
+  const browser = windowObject.gBrowser?.selectedBrowser;
+  const contentDocument = browser?.contentDocument;
+  if (contentDocument) {
+    refreshDocumentCount(contentDocument);
+    updateToolbarTooltip();
+  }
+
   windowObject.openDialog(
     "chrome://sprachverstand/content/popup/popup.html",
     "sprachverstand-popup",
@@ -399,6 +465,13 @@ function countText(tabId?: number): string {
   if (resolvedTabId === undefined) {
     return "0";
   }
+
+  const browser = browsersByTabId.get(resolvedTabId);
+  const contentDocument = browser?.contentDocument;
+  if (contentDocument) {
+    refreshDocumentCount(contentDocument);
+  }
+
   return formatBadgeCount(countsByTabId.get(resolvedTabId) ?? 0) || "0";
 }
 
@@ -484,7 +557,7 @@ function shutdown(): void {
   windowObject.gBrowser?.removeEventListener("pagehide", handlePageHide, true);
   windowObject.gBrowser?.tabContainer?.removeEventListener(
     "TabSelect",
-    updateToolbarTooltip as EventListener
+    handleTabSelect as EventListener
   );
   windowObject.gBrowser?.tabContainer?.removeEventListener(
     "TabClose",
@@ -495,6 +568,7 @@ function shutdown(): void {
     destroySandbox(contentDocument, true);
   }
 
+  browsersByTabId.clear();
   delete windowObject.SprachverstandPaleMoon;
 }
 
@@ -514,7 +588,7 @@ function start(): void {
   windowObject.gBrowser.addEventListener("pagehide", handlePageHide, true);
   windowObject.gBrowser.tabContainer?.addEventListener(
     "TabSelect",
-    updateToolbarTooltip as EventListener
+    handleTabSelect as EventListener
   );
   windowObject.gBrowser.tabContainer?.addEventListener(
     "TabClose",
