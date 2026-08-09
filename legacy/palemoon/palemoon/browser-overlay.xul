@@ -1,8 +1,11 @@
 <?xml version="1.0"?>
+<?xml-stylesheet href="chrome://sprachverstand/content/palemoon/browser-overlay.css" type="text/css"?>
 <overlay id="sprachverstand-browser-overlay"
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <script type="application/javascript"
           src="chrome://sprachverstand/content/palemoon/controller.js"/>
+  <script type="application/javascript"
+          src="chrome://sprachverstand/content/palemoon/popup-panel.js"/>
 
   <toolbarpalette id="BrowserToolbarPalette">
     <toolbarbutton
@@ -10,7 +13,22 @@
       class="toolbarbutton-1 chromeclass-toolbar-additional"
       label="Sprachverstand"
       tooltiptext="Sprachverstand"
-      style="list-style-image: none; background-image: url('chrome://sprachverstand/content/icons/icon32.png'); background-repeat: no-repeat; background-position: center; background-size: 16px 16px;"
-      oncommand="SprachverstandPaleMoon.openPopup();"/>
+      oncommand="SprachverstandPaleMoonUI.togglePopup(this);"/>
   </toolbarpalette>
+
+  <popupset id="mainPopupSet">
+    <panel
+      id="sprachverstand-popup-panel"
+      type="arrow"
+      noautofocus="true"
+      consumeoutsideclicks="false"
+      onpopuphidden="SprachverstandPaleMoonUI.resetPopup();">
+      <browser
+        id="sprachverstand-popup-browser"
+        type="content"
+        flex="1"
+        disablehistory="true"
+        src="about:blank"/>
+    </panel>
+  </popupset>
 </overlay>
