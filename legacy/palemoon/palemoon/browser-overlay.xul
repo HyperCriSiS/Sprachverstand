@@ -10,7 +10,7 @@
       class="toolbarbutton-1 chromeclass-toolbar-additional"
       label="Sprachverstand"
       tooltiptext="Sprachverstand"
-      style="list-style-image: url('chrome://sprachverstand/content/icons/icon16.png');"
+      style="list-style-image: none; background-image: url('chrome://sprachverstand/content/icons/icon32.png'); background-repeat: no-repeat; background-position: center; background-size: 16px 16px;"
       oncommand="SprachverstandPaleMoon.openPopup();"/>
   </toolbarpalette>
 </overlay>
