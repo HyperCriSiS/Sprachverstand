@@ -9,14 +9,14 @@
     <em:description>Macht Webseiten leichter lesbar.</em:description>
     <em:creator>HyperCriSiS</em:creator>
     <em:homepageURL>https://github.com/HyperCriSiS/Sprachverstand</em:homepageURL>
-    <em:iconURL>chrome://sprachverstand/content/icons/icon48.png</em:iconURL>
+    <em:iconURL>chrome://sprachverstand/content/icons/icon64.png</em:iconURL>
     <em:optionsURL>chrome://sprachverstand/content/options/options.html</em:optionsURL>
 
     <em:targetApplication>
       <Description>
         <em:id>{8de7fcbb-c55c-4fbe-bfc5-fc555c87dbc4}</em:id>
         <em:minVersion>34.0.0</em:minVersion>
-        <em:maxVersion>34.*</em:maxVersion>
+        <em:maxVersion>34.3.2</em:maxVersion>
       </Description>
     </em:targetApplication>
   </Description>
