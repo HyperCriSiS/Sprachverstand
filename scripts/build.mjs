@@ -64,14 +64,16 @@ async function preparePaleMoonFiles(outputDirectory) {
     "utf8"
   );
 
-  const icon64Base64 = await readFile(
-    path.join(legacyDirectory, "icon64.png.base64"),
-    "utf8"
-  );
-  await writeFile(
-    path.join(paleMoonIconDirectory, "icon64.png"),
-    Buffer.from(icon64Base64.trim(), "base64")
-  );
+  for (const size of [16, 64]) {
+    const iconBase64 = await readFile(
+      path.join(legacyDirectory, `icon${size}.png.base64`),
+      "utf8"
+    );
+    await writeFile(
+      path.join(paleMoonIconDirectory, `icon${size}.png`),
+      Buffer.from(iconBase64.trim(), "base64")
+    );
+  }
 
   await Promise.all([
     cp(
