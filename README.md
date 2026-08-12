@@ -27,7 +27,7 @@ Die Webseite und ihre Serverdaten bleiben unverändert. Sprachverstand passt nur
 die lokale Darstellung im Browser an. Die Verarbeitung lässt sich jederzeit
 abschalten und wird ohne Neuladen rückgängig gemacht.
 
-Sprachverstand ist keine Vorgabe dafür, wie andere schreiben sollen. Es gibt
+Sprachverstand gibt
 Menschen die Kontrolle darüber zurück, wie Texte auf ihrem eigenen Gerät
 angezeigt und vorgelesen werden.
 
@@ -141,6 +141,7 @@ lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 - ausgewählte neutrale Partizipformen
 - optionale Umschreibungen
 - optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
+- Untertitel verarbeiten
 
 In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
 literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen,
