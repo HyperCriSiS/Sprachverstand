@@ -81,10 +81,43 @@
     return luminance !== null && luminance < 0.35;
   }
 
+  function ensurePaleMoonThemeStyles() {
+    if (!global.document || !global.document.documentElement) {
+      return;
+    }
+
+    var styleId = "sprachverstand-palemoon-theme";
+    if (global.document.getElementById(styleId)) {
+      return;
+    }
+
+    var style = global.document.createElement("style");
+    style.id = styleId;
+    style.textContent = [
+      ':root[data-palemoon-theme="light"] { color-scheme: light; background: #ffffff; color: #202124; }',
+      ':root[data-palemoon-theme="light"] body { background: #ffffff; color: #202124; }',
+      ':root[data-palemoon-theme="light"] button, :root[data-palemoon-theme="light"] select, :root[data-palemoon-theme="light"] textarea, :root[data-palemoon-theme="light"] input[type="text"], :root[data-palemoon-theme="light"] input[type="url"] { border: 1px solid #c9c9cf; background: #ffffff; color: #202124; }',
+      ':root[data-palemoon-theme="light"] a { color: #005fcc; }',
+      ':root[data-palemoon-theme="dark"] { color-scheme: dark; background: #1c1b22; color: #f2f2f4; }',
+      ':root[data-palemoon-theme="dark"] body { background: #1c1b22; color: #f2f2f4; }',
+      ':root[data-palemoon-theme="dark"] button, :root[data-palemoon-theme="dark"] select, :root[data-palemoon-theme="dark"] textarea, :root[data-palemoon-theme="dark"] input[type="text"], :root[data-palemoon-theme="dark"] input[type="url"] { border: 1px solid #55535f; background: #302f37; color: #f2f2f4; }',
+      ':root[data-palemoon-theme="dark"] button:hover { background: #3b3943; }',
+      ':root[data-palemoon-theme="dark"] a { color: #8ab4f8; }',
+      ':root[data-palemoon-theme="dark"] section, :root[data-palemoon-theme="dark"] .settings-section, :root[data-palemoon-theme="dark"] .settings-toolbar, :root[data-palemoon-theme="dark"] .diagnostics, :root[data-palemoon-theme="dark"] .import-summary { border-color: #55535f; }',
+      ':root[data-palemoon-theme="dark"] section, :root[data-palemoon-theme="dark"] .settings-section, :root[data-palemoon-theme="dark"] .settings-toolbar, :root[data-palemoon-theme="dark"] .diagnostics, :root[data-palemoon-theme="dark"] .import-summary, :root[data-palemoon-theme="dark"] textarea[readonly] { background: #27262d; }',
+      ':root[data-palemoon-theme="dark"] .settings-section > summary:hover { background: #3b3943; }',
+      ':root[data-palemoon-theme="dark"] .actions { background: #1c1b22; }'
+    ].join("\n");
+
+    global.document.documentElement.appendChild(style);
+  }
+
   function applyPaleMoonTheme() {
     if (!global.document || !global.document.documentElement) {
       return;
     }
+
+    ensurePaleMoonThemeStyles();
 
     var browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
     var theme = isDarkPaleMoonTheme(browserWindow) ? "dark" : "light";
