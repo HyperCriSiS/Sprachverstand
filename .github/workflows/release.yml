@@ -142,16 +142,6 @@ jobs:
           mkdir -p artifacts
 
           (
-            cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip" .
-          )
-
-          (
-            cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
-          )
-
-          (
             cd dist/palemoon
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
           )
@@ -168,17 +158,12 @@ jobs:
 
           rm -rf "$SOURCE_DIR"
 
-          cp docs/BETA-TEST.md artifacts/
-          cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
-          cp docs/PALEMOON-SUBMISSION.md artifacts/
           cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
           printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
-              "sprachverstand-${ASSET_LABEL}-chromium.zip" \
-              "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
               "sprachverstand-${ASSET_LABEL}-palemoon.xpi" \
               "sprachverstand-${ASSET_LABEL}-source.zip" \
               palemoon-icon64.png \
@@ -187,15 +172,8 @@ jobs:
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
-
-          if unzip -l "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
-            echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
-            exit 1
-          fi
 
       - name: GitHub-Release veröffentlichen
         env:
@@ -218,7 +196,7 @@ jobs:
             gh api \
               --method PATCH \
               "repos/${REPOSITORY}/releases/${RELEASE_ID}" \
-              -f name="Sprachverstand ${RELEASE_LABEL}" \
+              -f name="Sprachverstand ${VERSION} – Pale Moon" \
               -F prerelease="$IS_PRERELEASE" \
               -f make_latest="$MAKE_LATEST" \
               >/dev/null
@@ -228,7 +206,7 @@ jobs:
               artifacts/*
               --repo "$REPOSITORY"
               --verify-tag
-              --title "Sprachverstand ${RELEASE_LABEL}"
+              --title "Sprachverstand ${VERSION} – Pale Moon"
               --generate-notes
             )
 

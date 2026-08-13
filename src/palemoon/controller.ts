@@ -13,7 +13,13 @@ declare const Components: {
         readonly wantXrays?: boolean;
       }
     ): Record<string, unknown>;
-    evalInSandbox(source: string, sandbox: Record<string, unknown>): unknown;
+    evalInSandbox(
+      code: string,
+      sandbox: Record<string, unknown>,
+      version?: string,
+      filename?: string,
+      lineNumber?: number
+    ): unknown;
     nukeSandbox?(sandbox: Record<string, unknown>): void;
   };
 };
@@ -88,20 +94,16 @@ interface PaleMoonBridge {
 interface PaleMoonWindow extends Window {
   readonly gBrowser?: PaleMoonGBrowser;
   SprachverstandPaleMoon?: PaleMoonBridge;
-  openDialog(url: string, name: string, features: string): Window | null;
 }
 
-interface PaleMoonChromeDocument extends Document {
-  persist(id: string, attribute: string): void;
-}
-
-const windowObject = window as unknown as PaleMoonWindow;
-const chromeDocument = document as PaleMoonChromeDocument;
+const windowObject = window as PaleMoonWindow;
 const importedServices = Components.utils.import(
   "resource://gre/modules/Services.jsm",
   {}
-) as { readonly Services?: PaleMoonServices };
-const importedServiceValue = importedServices.Services;
+);
+const importedServiceValue = importedServices.Services as
+  | PaleMoonServices
+  | undefined;
 
 if (!importedServiceValue) {
   throw new Error("Pale-Moon-Dienste konnten nicht geladen werden.");
@@ -199,7 +201,7 @@ function updateToolbarTooltip(): void {
     "tooltiptext",
     text ? `Sprachverstand – ${text} Korrekturen` : "Sprachverstand"
   );
-  button.setAttribute("sprachverstand-count", text);
+  button.setAttribute("badge", text);
 }
 
 function reportCount(documentToReport: Document, count: number): void {
@@ -221,12 +223,18 @@ function reportCount(documentToReport: Document, count: number): void {
 
 function evaluateInContentSandbox(
   sandbox: ContentSandbox,
-  source: string
+  code: string
 ): unknown {
-  return Components.utils.evalInSandbox(source, sandbox);
+  return Components.utils.evalInSandbox(
+    code,
+    sandbox,
+    "ECMAv5",
+    contentRuntimeUrl,
+    1
+  );
 }
 
-function sandboxHasRuntime(sandbox: ContentSandbox): boolean {
+function hasContentRuntime(sandbox: ContentSandbox): boolean {
   return (
     evaluateInContentSandbox(
       sandbox,
@@ -268,10 +276,10 @@ function destroySandbox(documentToStop: Document, restore: boolean): void {
   try {
     evaluateInContentSandbox(
       sandbox,
-      `if (this.SprachverstandPaleMoonContent) this.SprachverstandPaleMoonContent.stop(${restore ? "true" : "false"});`
+      `this.SprachverstandPaleMoonContent && this.SprachverstandPaleMoonContent.stop(${restore ? "true" : "false"})`
     );
   } catch {
-    // The document can already be tearing down during navigation.
+    // A document can already be tearing down during navigation.
   }
 
   sandboxesByDocument.delete(documentToStop);
@@ -290,7 +298,7 @@ function createSandbox(documentToProcess: Document): ContentSandbox | undefined 
   }) as ContentSandbox;
 
   Services.scriptloader.loadSubScript(contentRuntimeUrl, sandbox, "UTF-8");
-  if (!sandboxHasRuntime(sandbox)) {
+  if (!hasContentRuntime(sandbox)) {
     Components.utils.nukeSandbox?.(sandbox);
     throw new Error("Pale-Moon-Inhaltsruntime konnte nicht geladen werden.");
   }
@@ -312,8 +320,7 @@ function applySettingsToDocument(
   }
 
   const sandbox =
-    sandboxesByDocument.get(documentToProcess) ??
-    createSandbox(documentToProcess);
+    sandboxesByDocument.get(documentToProcess) ?? createSandbox(documentToProcess);
   if (!sandbox) {
     return;
   }
@@ -322,7 +329,7 @@ function applySettingsToDocument(
   try {
     evaluateInContentSandbox(
       sandbox,
-      "this.SprachverstandPaleMoonContent.apply(JSON.parse(this.__sprachverstandCommandPayload));"
+      "this.SprachverstandPaleMoonContent.apply(JSON.parse(this.__sprachverstandCommandPayload))"
     );
   } finally {
     delete sandbox.__sprachverstandCommandPayload;
@@ -348,13 +355,7 @@ function eventDocument(event: Event): Document | undefined {
   const candidate =
     (event as Event & { readonly originalTarget?: EventTarget | null })
       .originalTarget ?? event.target;
-
-  if (!candidate || typeof candidate !== "object") {
-    return undefined;
-  }
-
-  const nodeType = (candidate as { readonly nodeType?: unknown }).nodeType;
-  return nodeType === 9 ? (candidate as unknown as Document) : undefined;
+  return candidate instanceof Document ? candidate : undefined;
 }
 
 function handleDocumentLoaded(event: Event): void {
@@ -409,6 +410,9 @@ function ensureToolbarButtonInstalled(): void {
     }
   }
 
+  const chromeDocument = document as Document & {
+    persist(id: string, attribute: string): void;
+  };
   const navigationBar = document.getElementById("nav-bar") as
     | (HTMLElement & {
         readonly currentSet?: string;
@@ -465,13 +469,6 @@ function countText(tabId?: number): string {
   if (resolvedTabId === undefined) {
     return "0";
   }
-
-  const browser = browsersByTabId.get(resolvedTabId);
-  const contentDocument = browser?.contentDocument;
-  if (contentDocument) {
-    refreshDocumentCount(contentDocument);
-  }
-
   return formatBadgeCount(countsByTabId.get(resolvedTabId) ?? 0) || "0";
 }
 
@@ -557,7 +554,7 @@ function shutdown(): void {
   windowObject.gBrowser?.removeEventListener("pagehide", handlePageHide, true);
   windowObject.gBrowser?.tabContainer?.removeEventListener(
     "TabSelect",
-    handleTabSelect as EventListener
+    handleTabSelect
   );
   windowObject.gBrowser?.tabContainer?.removeEventListener(
     "TabClose",
@@ -568,7 +565,6 @@ function shutdown(): void {
     destroySandbox(contentDocument, true);
   }
 
-  browsersByTabId.clear();
   delete windowObject.SprachverstandPaleMoon;
 }
 
@@ -588,7 +584,7 @@ function start(): void {
   windowObject.gBrowser.addEventListener("pagehide", handlePageHide, true);
   windowObject.gBrowser.tabContainer?.addEventListener(
     "TabSelect",
-    handleTabSelect as EventListener
+    handleTabSelect
   );
   windowObject.gBrowser.tabContainer?.addEventListener(
     "TabClose",

@@ -10,9 +10,10 @@
   <toolbarpalette id="BrowserToolbarPalette">
     <toolbarbutton
       id="sprachverstand-toolbar-button"
-      class="toolbarbutton-1 chromeclass-toolbar-additional"
+      class="toolbarbutton-1 chromeclass-toolbar-additional badged-button"
       label="Sprachverstand"
       tooltiptext="Sprachverstand"
+      badge=""
       style="list-style-image: url('chrome://sprachverstand/content/icons/icon16.png');"
       oncommand="SprachverstandPaleMoonUI.togglePopup(this);"/>
   </toolbarpalette>
