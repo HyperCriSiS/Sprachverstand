@@ -151,6 +151,11 @@ jobs:
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
 
+          (
+            cd dist/palemoon
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
+          )
+
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
@@ -165,6 +170,8 @@ jobs:
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          cp docs/PALEMOON-SUBMISSION.md artifacts/
+          cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
           printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
@@ -172,7 +179,9 @@ jobs:
             sha256sum \
               "sprachverstand-${ASSET_LABEL}-chromium.zip" \
               "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
+              "sprachverstand-${ASSET_LABEL}-palemoon.xpi" \
               "sprachverstand-${ASSET_LABEL}-source.zip" \
+              palemoon-icon64.png \
               SOURCE_COMMIT.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
@@ -180,6 +189,7 @@ jobs:
 
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
 
           if unzip -l "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
