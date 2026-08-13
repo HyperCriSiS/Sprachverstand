@@ -1,0 +1,112 @@
+name: Publish corrected Pale Moon release
+
+on:
+  push:
+    branches:
+      - palemoon
+
+permissions:
+  contents: write
+
+env:
+  TAG: v0.7.0-palemoon.2
+  VERSION: 0.7.0
+  ASSET_LABEL: 0.7.0-palemoon.2
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fixierten Release-Tag auschecken
+        uses: actions/checkout@v7
+        with:
+          ref: v0.7.0-palemoon.2
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Vollständige Prüfung ausführen
+        run: npm run check
+
+      - name: Pale-Moon-Regressionen zusätzlich prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -Fq 'Korrekturen im aktuell aktiven Tab' static/options/options.html
+          grep -Fq 'badged-button' legacy/palemoon/palemoon/browser-overlay.xul
+          grep -Fq 'badge=""' legacy/palemoon/palemoon/browser-overlay.xul
+          grep -Fq 'button.setAttribute("badge", text)' src/palemoon/controller.ts
+
+      - name: Pale-Moon-Release-Pakete erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          (
+            cd dist/palemoon
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
+          )
+
+          SOURCE_DIR=$(mktemp -d)
+          git archive "$TAG" | tar -x -C "$SOURCE_DIR"
+          (
+            cd "$SOURCE_DIR"
+            zip -qr "$GITHUB_WORKSPACE/artifacts/sprachverstand-${ASSET_LABEL}-source.zip" .
+          )
+          rm -rf "$SOURCE_DIR"
+
+          cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
+          git rev-parse "$TAG^{commit}" > artifacts/SOURCE_COMMIT.txt
+
+          (
+            cd artifacts
+            sha256sum \
+              "sprachverstand-${ASSET_LABEL}-palemoon.xpi" \
+              "sprachverstand-${ASSET_LABEL}-source.zip" \
+              palemoon-icon64.png \
+              SOURCE_COMMIT.txt \
+              > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+
+      - name: GitHub-Prerelease veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$TAG" --repo "$REPOSITORY" --yes
+          fi
+          gh release create "$TAG" artifacts/* \
+            --repo "$REPOSITORY" \
+            --verify-tag \
+            --title "Sprachverstand ${VERSION} – Pale Moon" \
+            --notes "Korrigierter Pale-Moon-Prerelease auf aktuellem dev-Basisstand. Entfernt den veralteten Einstellungszähler und stellt den Zähler-Badge am Toolbar-Icon wieder her." \
+            --prerelease
+
+      - name: Einmaligen Release-Workflow entfernen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin palemoon
+          git switch -C palemoon origin/palemoon
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/dispatch-palemoon-release.yml
+          git commit -m "ci: remove one-time Pale Moon release workflow"
+          git push origin HEAD:palemoon
