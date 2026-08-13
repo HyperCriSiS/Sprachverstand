@@ -12,6 +12,157 @@
   var storageListeners = [];
   var runtimeListeners = [];
 
+  var themeObserver = null;
+  var themeWindow = null;
+  var themeRefreshTimer = null;
+
+  function colorLuminance(color) {
+    if (!color || color === "transparent") {
+      return null;
+    }
+
+    var match = color.match(
+      /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([0-9.]+))?\s*\)/i
+    );
+    if (!match || (match[4] !== undefined && Number(match[4]) === 0)) {
+      return null;
+    }
+
+    function channel(value) {
+      var normalized = Number(value) / 255;
+      return normalized <= 0.04045
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    }
+
+    return (
+      0.2126 * channel(match[1]) +
+      0.7152 * channel(match[2]) +
+      0.0722 * channel(match[3])
+    );
+  }
+
+  function toolbarUsesBrightText(toolbar) {
+    if (!toolbar || !toolbar.hasAttribute("brighttext")) {
+      return false;
+    }
+
+    return toolbar.getAttribute("brighttext") !== "false";
+  }
+
+  function isDarkPaleMoonTheme(browserWindow) {
+    if (!browserWindow || !browserWindow.document) {
+      return false;
+    }
+
+    var browserDocument = browserWindow.document;
+    var navBar = browserDocument.getElementById("nav-bar");
+
+    if (toolbarUsesBrightText(navBar)) {
+      return true;
+    }
+
+    var brightToolbars = browserDocument.querySelectorAll("toolbar[brighttext]");
+    for (var index = 0; index < brightToolbars.length; index += 1) {
+      if (toolbarUsesBrightText(brightToolbars[index])) {
+        return true;
+      }
+    }
+
+    var colorTarget =
+      navBar || browserDocument.getElementById("main-window") || browserDocument.documentElement;
+    if (!colorTarget || typeof browserWindow.getComputedStyle !== "function") {
+      return false;
+    }
+
+    var luminance = colorLuminance(
+      browserWindow.getComputedStyle(colorTarget).backgroundColor
+    );
+    return luminance !== null && luminance < 0.35;
+  }
+
+  function applyPaleMoonTheme() {
+    if (!global.document || !global.document.documentElement) {
+      return;
+    }
+
+    var browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    var theme = isDarkPaleMoonTheme(browserWindow) ? "dark" : "light";
+    global.document.documentElement.setAttribute("data-palemoon-theme", theme);
+  }
+
+  function scheduleThemeRefresh() {
+    if (themeRefreshTimer !== null) {
+      global.clearTimeout(themeRefreshTimer);
+    }
+
+    themeRefreshTimer = global.setTimeout(function () {
+      themeRefreshTimer = null;
+      applyPaleMoonTheme();
+    }, 0);
+  }
+
+  function stopThemeSync() {
+    if (themeObserver) {
+      themeObserver.disconnect();
+      themeObserver = null;
+    }
+
+    if (themeWindow) {
+      themeWindow.removeEventListener("focus", scheduleThemeRefresh, false);
+      themeWindow = null;
+    }
+
+    if (themeRefreshTimer !== null) {
+      global.clearTimeout(themeRefreshTimer);
+      themeRefreshTimer = null;
+    }
+  }
+
+  function startThemeSync() {
+    stopThemeSync();
+
+    themeWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    applyPaleMoonTheme();
+
+    if (!themeWindow || !themeWindow.document) {
+      return;
+    }
+
+    themeWindow.addEventListener("focus", scheduleThemeRefresh, false);
+
+    if (typeof global.MutationObserver !== "function") {
+      return;
+    }
+
+    themeObserver = new global.MutationObserver(scheduleThemeRefresh);
+
+    var browserDocument = themeWindow.document;
+    var observedElements = [
+      browserDocument.getElementById("main-window"),
+      browserDocument.getElementById("nav-bar"),
+      browserDocument.getElementById("TabsToolbar"),
+      browserDocument.getElementById("PersonalToolbar")
+    ];
+
+    observedElements.forEach(function (element) {
+      if (!element) {
+        return;
+      }
+
+      themeObserver.observe(element, {
+        attributes: true,
+        attributeFilter: [
+          "brighttext",
+          "class",
+          "style",
+          "lwtheme",
+          "lwthemetextcolor"
+        ]
+      });
+    });
+  }
+
   function clone(value) {
     if (value === undefined) {
       return undefined;
@@ -167,12 +318,14 @@
 
   Services.obs.addObserver(storageObserver, STORAGE_TOPIC, false);
   Services.obs.addObserver(runtimeObserver, RUNTIME_TOPIC, false);
+  startThemeSync();
 
   global.addEventListener(
     "unload",
     function () {
       Services.obs.removeObserver(storageObserver, STORAGE_TOPIC);
       Services.obs.removeObserver(runtimeObserver, RUNTIME_TOPIC);
+      stopThemeSync();
       storageListeners.length = 0;
       runtimeListeners.length = 0;
     },
