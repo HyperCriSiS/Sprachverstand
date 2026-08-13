@@ -1,0 +1,123 @@
+name: Publish Pale Moon 0.7.0 palemoon.4
+
+on:
+  push:
+    branches: [palemoon]
+    paths:
+      - ".github/workflows/publish-palemoon-0.7.0-palemoon.4.yml"
+
+permissions:
+  contents: write
+
+env:
+  CI: true
+  TAG: v0.7.0-palemoon.4
+  VERSION: 0.7.0
+  ASSET_LABEL: 0.7.0-palemoon.4
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: palemoon
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Vollständige Prüfung ausführen
+        run: npm run check
+
+      - name: Pale-Moon-Theme-Integration zusätzlich prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'toolbar\[brighttext\]' legacy/palemoon/palemoon/legacy-api.js
+          grep -q 'data-palemoon-theme' legacy/palemoon/palemoon/legacy-api.js
+          grep -q 'MutationObserver' legacy/palemoon/palemoon/legacy-api.js
+          grep -q '#1c1b22' legacy/palemoon/palemoon/legacy-api.js
+          grep -q 'sprachverstand-palemoon-theme' dist/palemoon/palemoon/legacy-api.js
+
+      - name: Einmaligen Workflow entfernen und Release-Commit fixieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/publish-palemoon-0.7.0-palemoon.4.yml
+          git commit -m "ci: remove one-time Pale Moon 0.7.0 palemoon.4 publisher"
+          git push origin HEAD:palemoon
+          CLEAN_SHA=$(git rev-parse HEAD)
+          echo "CLEAN_SHA=${CLEAN_SHA}" >> "$GITHUB_ENV"
+
+      - name: Release-Tag setzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG existiert bereits."
+            exit 1
+          fi
+          git tag "$TAG" "$CLEAN_SHA"
+          git push origin "refs/tags/$TAG"
+
+      - name: Release-Pakete erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          (
+            cd dist/palemoon
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
+          )
+
+          SOURCE_DIR=$(mktemp -d)
+          git archive "$CLEAN_SHA" | tar -x -C "$SOURCE_DIR"
+          (
+            cd "$SOURCE_DIR"
+            zip -qr "$GITHUB_WORKSPACE/artifacts/sprachverstand-${ASSET_LABEL}-source.zip" .
+          )
+          rm -rf "$SOURCE_DIR"
+
+          cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
+          printf '%s\n' "$CLEAN_SHA" > artifacts/SOURCE_COMMIT.txt
+
+          (
+            cd artifacts
+            sha256sum \
+              "sprachverstand-${ASSET_LABEL}-palemoon.xpi" \
+              "sprachverstand-${ASSET_LABEL}-source.zip" \
+              palemoon-icon64.png \
+              SOURCE_COMMIT.txt \
+              > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+
+      - name: GitHub-Prerelease veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" artifacts/* \
+            --repo "$REPOSITORY" \
+            --verify-tag \
+            --prerelease \
+            --title "Sprachverstand ${VERSION} – Pale Moon" \
+            --notes "Pale-Moon-Prerelease mit automatischer Anpassung von Popup und Einstellungsseite an das aktive Browser-Theme. Dunkle Pale-Moon-Themes werden primär über brighttext erkannt, mit Helligkeits-Fallback; Persona-/Theme-Änderungen werden live übernommen. Enthält außerdem den zuvor wiederhergestellten Toolbar-Zähler als Badge."
