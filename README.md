@@ -11,11 +11,14 @@
   auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
 </p>
 
-[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![AMO Version](https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![GitHub Release](https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release)](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
-[![CI](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/HyperCriSiS/Sprachverstand)](LICENSE)
+
+<p align="center">
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>&nbsp;
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>&nbsp;
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml"><img src="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="License"></a>
+</p>
+
 
 ## Was ist Sprachverstand?
 
@@ -76,7 +79,6 @@ Quellen:
 | `Gegner*innenschaft` | `Gegnerschaft` |
 | `Erwachsene:r` | `Erwachsener` |
 | `Rom*nja` | `Roma` |
-| `Sinti*zze` | `Sinti` |
 | `Studentys` | `Studenten` |
 
 ### Direkt ausprobieren
