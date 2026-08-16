@@ -1,4 +1,4 @@
-import { DomProcessor } from "../core/dom-processor";
+import { PaleMoonDomProcessor } from "./dom-processor";
 import { defaultRules } from "../rules";
 import { disabledRuleIdsForGroups } from "../rules/catalog";
 import type { Settings } from "../settings/defaults";
@@ -15,7 +15,7 @@ type PaleMoonContentGlobal = typeof globalThis & {
 };
 
 const runtimeGlobal = globalThis as PaleMoonContentGlobal;
-let processor: DomProcessor | undefined;
+let processor: PaleMoonDomProcessor | undefined;
 
 function reportReplacementCount(count: number): void {
   runtimeGlobal.__sprachverstandReplacementCount = Math.max(
@@ -48,7 +48,7 @@ const runtime: PaleMoonContentRuntime = {
       return;
     }
 
-    processor = new DomProcessor(document, options);
+    processor = new PaleMoonDomProcessor(document, options);
     processor.start();
     reportReplacementCount(processor.getReplacementCount());
   },
