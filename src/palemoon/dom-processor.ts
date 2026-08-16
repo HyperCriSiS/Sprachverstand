@@ -38,6 +38,7 @@ export class PaleMoonDomProcessor extends DomProcessor {
 
   public stop(options: StopOptions = {}): void {
     this.cancelIncrementalInitialScan();
+    this.initialScanIntercepted = false;
     super.stop(options);
   }
 
