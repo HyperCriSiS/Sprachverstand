@@ -8,6 +8,7 @@
   if (locale === "de") return;
 
   const normalize = (value) => value.replace(/\s+/g, " ").trim();
+  const localizableAttributes = ["aria-label", "aria-description", "placeholder", "title"];
   const dynamicPatterns = [
     [/^(\d+) von (\d+) möglichen Ersetzungen geprüft\.$/, "replacementsChecked"],
     [/^(\d+) weitere Hinweise werden aus Platzgründen nicht angezeigt\.$/, "noticeMore"],
@@ -44,15 +45,6 @@
     }
   }
 
-  function localizeExplicitTree(root) {
-    if (root instanceof Element) localizeExplicit(root);
-    for (const element of root.querySelectorAll?.(
-      "[data-i18n], [data-i18n-aria-label], [data-i18n-aria-description], [data-i18n-placeholder], [data-i18n-title]"
-    ) ?? []) {
-      localizeExplicit(element);
-    }
-  }
-
   async function start() {
     const response = await fetch(api.runtime.getURL("_locales/de/messages.json"));
     if (!response.ok) return;
@@ -74,21 +66,43 @@
       return text;
     }
 
+    function translateValue(value) {
+      const normalized = normalize(value);
+      const key = keyByGermanMessage.get(normalized);
+      return key ? message(key) || value : translateDynamic(normalized);
+    }
+
     function translateTextNode(node) {
       const value = node.nodeValue;
       if (!value || !value.trim()) return;
       const leading = value.match(/^\s*/)?.[0] ?? "";
       const trailing = value.match(/\s*$/)?.[0] ?? "";
       const core = normalize(value);
-      const key = keyByGermanMessage.get(core);
-      const translated = key ? message(key) : translateDynamic(core);
+      const translated = translateValue(core);
       if (translated && translated !== core) {
         node.nodeValue = `${leading}${translated}${trailing}`;
       }
     }
 
+    function translateElement(element) {
+      localizeExplicit(element);
+
+      for (const attribute of localizableAttributes) {
+        const value = element.getAttribute?.(attribute);
+        if (!value) continue;
+        const translated = translateValue(value);
+        if (translated && translated !== value) {
+          element.setAttribute(attribute, translated);
+        }
+      }
+    }
+
     function translateTree(root) {
-      localizeExplicitTree(root);
+      if (root instanceof Element) translateElement(root);
+      for (const element of root.querySelectorAll?.("*") ?? []) {
+        translateElement(element);
+      }
+
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
       let node = walker.nextNode();
       while (node) {
@@ -103,7 +117,7 @@
       for (const record of records) {
         if (record.type === "characterData") translateTextNode(record.target);
         if (record.type === "attributes" && record.target instanceof Element) {
-          localizeExplicit(record.target);
+          translateElement(record.target);
         }
         for (const node of record.addedNodes) {
           if (node.nodeType === Node.TEXT_NODE) translateTextNode(node);
@@ -118,6 +132,7 @@
       characterData: true,
       attributes: true,
       attributeFilter: [
+        ...localizableAttributes,
         "data-i18n",
         "data-i18n-aria-label",
         "data-i18n-aria-description",
