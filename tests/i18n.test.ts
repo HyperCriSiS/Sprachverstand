@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+// @ts-expect-error jsdom is an existing test dependency without bundled TypeScript declarations.
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 
