@@ -25,7 +25,11 @@ const packageJson = JSON.parse(
 );
 
 async function injectLocalizationBootstrap(outputDirectory) {
-  for (const relativePath of ["popup/popup.html", "options/options.html"]) {
+  for (const relativePath of [
+    "popup/popup.html",
+    "options/options.html",
+    "legal/legal.html"
+  ]) {
     const htmlPath = path.join(outputDirectory, relativePath);
     let html = await readFile(htmlPath, "utf8");
     const marker = '<meta name="color-scheme" content="dark light">';

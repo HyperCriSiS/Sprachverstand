@@ -1,1 +1,518 @@
-{"extensionName":{"message":"Sprachverstand"},"extensionDescription":{"message":"Macht Webseiten leichter lesbar."},"active":{"message":"Aktiv"},"paused":{"message":"Pausiert"},"optionsTitle":{"message":"Sprachverstand – Einstellungen"},"save":{"message":"Speichern"},"reset":{"message":"Zurücksetzen"},"expandAll":{"message":"Alle öffnen"},"collapseAll":{"message":"Alle schließen"},"general":{"message":"Allgemein"},"enableExtension":{"message":"Erweiterung aktivieren"},"disableReverts":{"message":"Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt."},"popupMenu":{"message":"Popup-Menü"},"popupMenuDescription":{"message":"Lege fest, welche Bedienelemente im Popup angezeigt werden."},"correctionCounter":{"message":"Korrekturzähler"},"correctionCounterDescription":{"message":"Zeigt die Anzahl der Korrekturen auf der aktuellen Seite."},"activationToggle":{"message":"Aktivierungsschalter"},"activationToggleDescription":{"message":"Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein."},"whereCorrect":{"message":"Wo soll korrigiert werden?"},"whereCorrectPopupDescription":{"message":"Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup."},"moreSettingsButton":{"message":"Schaltfläche für weitere Einstellungen"},"moreSettingsButtonDescription":{"message":"Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite."},"whatCorrect":{"message":"Was soll korrigiert werden?"},"whatCorrectPopupDescription":{"message":"Zeigt die ausgewählten Regelgruppen direkt im Popup."},"individualRuleGroupsPopup":{"message":"Einzelne Regelgruppen im Popup"},"groupPluralSeparatorsLabel":{"message":"Genderzeichen im Plural"},"groupPluralBinnenILabel":{"message":"Binnen-I im Plural"},"groupPluralDoubleFormsLabel":{"message":"Doppelnennungen im Plural"},"groupSingularExplicitContextLabel":{"message":"Gegenderte Singularformen mit Artikel"},"groupUnmarkedSingularLabel":{"message":"Sichtbar markierte Singularformen"},"groupSubstantivizedAdjectivesLabel":{"message":"Substantivierte Adjektive"},"groupSpecialGenderFormsLabel":{"message":"Weitere sichtbare Genderformen"},"groupSingularDoubleFormsLabel":{"message":"Doppelnennungen im Singular"},"groupExplicitPronounsLabel":{"message":"Explizite Pronomen- und Possessivpaare"},"groupNaturalFamilyFormsLabel":{"message":"Künstlich gegenderte Familienformen"},"groupTitleAbbreviationsLabel":{"message":"Gegenderte Titelabkürzungen"},"groupSalutationParticiplesLabel":{"message":"Neutrale Partizipformen"},"groupNeutralPersonTermsLabel":{"message":"Kontextgebundene Umschreibungen"},"groupJobAdSuffixesLabel":{"message":"Geschlechtszusätze in Stellenanzeigen"},"ruleGroupsDescription":{"message":"Jede Regelgruppe ist einzeln wählbar. Ausdrücklich weibliche Bezeichnungen werden nicht pauschal verändert."},"all":{"message":"Alle"},"none":{"message":"Keine"},"accessibleAttributes":{"message":"Bildbeschreibungen und zugängliche Beschriftungen"},"processQuotedText":{"message":"Text innerhalb von Anführungszeichen korrigieren"},"processQuotedTextDescription":{"message":"Standardmäßig aktiv. Ausschalten schützt direkt zitierte Schreibweisen innerhalb desselben Textabschnitts."},"processSubtitles":{"message":"Untertitel korrigieren"},"processSubtitlesDescription":{"message":"Standardmäßig aus. Erkannte Untertitel-Overlays werden sonst vollständig übersprungen; bei Aktivierung werden schnelle Änderungen gesammelt und nur einmal pro Bild verarbeitet."},"personalExceptions":{"message":"Persönliche Ausnahmen"},"customReplacements":{"message":"Eigene Ersetzungen"},"sourceToReplacement":{"message":"Ausgangstext => Ersetzung"},"preview":{"message":"Vorschau"},"previewDescription":{"message":"Testet die gerade eingetragenen Ausnahmen, Ersetzungen und aktivierten Regelgruppen, ohne etwas zu speichern."},"noPreviewText":{"message":"Noch kein Testtext eingegeben."},"excludedDomains":{"message":"Ausgeschlossene Domains"},"excludedDomainsDescription":{"message":"Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert."},"backupTransfer":{"message":"Einstellungen sichern und übertragen"},"exportSettings":{"message":"Alle Einstellungen als JSON exportieren"},"importSettings":{"message":"Einstellungen aus JSON importieren"},"importKeepExisting":{"message":"Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten"},"importPreferImported":{"message":"Importierte Einstellungen und importierte Ersetzungsziele übernehmen"},"importReplace":{"message":"Alle Einstellungen und persönlichen Listen vollständig ersetzen"},"browserSync":{"message":"Browser-Synchronisierung"},"browserSyncDescription":{"message":"Standardmäßig bleiben alle Einstellungen ausschließlich auf diesem Gerät. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen."},"syncActivation":{"message":"Aktivierungsstatus"},"syncActivationDescription":{"message":"Synchronisiert, ob Sprachverstand ein- oder ausgeschaltet ist."},"syncRuleGroups":{"message":"Regelgruppen"},"syncRuleGroupsDescription":{"message":"Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen."},"syncExcludedDomains":{"message":"Domain-Ausschlüsse"},"syncExcludedDomainsDescription":{"message":"Kann persönliche oder interne Domainnamen enthalten."},"syncTextMedia":{"message":"Text- und Medienoptionen"},"syncTextMediaDescription":{"message":"Synchronisiert die Verarbeitung von Zitaten, Untertiteln und zugänglichen Attributen."},"syncPersonalExceptionsDescription":{"message":"Kann persönliche Begriffe oder vollständige Formulierungen enthalten."},"syncCustomReplacementsDescription":{"message":"Kann persönliche Ausgangs- und Zieltexte enthalten."},"reportProblems":{"message":"Probleme melden"},"licenseSource":{"message":"Lizenz und Quelltext"},"correctionsOnPage":{"message":"Korrekturen auf dieser Seite"},"extensionActive":{"message":"Erweiterung aktiv"},"imageDescriptionsLabels":{"message":"Bildbeschreibungen und Beschriftungen"},"quotedText":{"message":"Text in Anführungszeichen"},"subtitles":{"message":"Untertitel"},"exceptionsMoreSettings":{"message":"Ausnahmen und weitere Einstellungen"},"settingsToolbarAria":{"message":"Einstellungen und Bereiche steuern"},"settingsAria":{"message":"Einstellungen"},"settingsSectionsAria":{"message":"Einstellungsbereiche"},"customReplacementsPlaceholder":{"message":"Meine Sonderform => Gewünschte Form\nUnnötiger Zusatz =>"},"previewPlaceholder":{"message":"Meine Sonderform und Nutzer:innen stehen hier."},"protectedTermsPlaceholder":{"message":"Nutzer:innen\nMeine geschützte Phrase"},"excludedDomainsPlaceholder":{"message":"example.org\nintranet.example.org"},"rule_plural_separators_description":{"message":"Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen einschließlich einzeln geprüfter Sonderformen."},"rule_plural_binnen_i_description":{"message":"Großes I innerhalb bekannter Personenbezeichnungen."},"rule_plural_double_forms_description":{"message":"Weibliche und männliche Pluralform werden zu einer gemeinsamen Form zusammengeführt."},"rule_singular_explicit_context_description":{"message":"Eindeutig markierte Artikel, Determinierer und Possessivartikel einschließlich Kasusflexion."},"rule_unmarked_singular_description":{"message":"Genderzeichen und Binnen-I werden bei bekannten und einzeln geprüften Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt."},"rule_substantivized_adjectives_description":{"message":"Sichtbar markierte Formen wie Erwachsene:r und Beschäftigte:n werden lexikonbasiert flektiert."},"rule_special_gender_forms_description":{"message":"Einzeln geprüfte Sonderformen wie Rom*nja, Sinti*zze und Studentys."},"rule_singular_double_forms_description":{"message":"Explizit genannte weibliche und männliche Singularform derselben Personenbezeichnung."},"rule_explicit_pronouns_description":{"message":"Nur sichtbar gegenderte Paarformen; normale weibliche Pronomen bleiben unverändert."},"rule_natural_family_forms_description":{"message":"Natürlich feminine Familienwörter behalten ihr grammatisches Geschlecht."},"rule_title_abbreviations_description":{"message":"Schreibt Prof.in und Dr.in je nach Kontext aus oder führt sie auf den normalen Titel zurück."},"rule_salutation_participles_description":{"message":"Ersetzt ausgewählte Personenbezeichnungen wie Studierende, Lesende und Arbeitnehmende; eindeutige Anreden werden weiterhin vollständig erkannt."},"rule_neutral_person_terms_description":{"message":"Ersetzt nur einzeln geprüfte Umschreibungen und feste Wendungen. Weitere Kontexte werden im Projektkatalog gesammelt."},"rule_job_ad_suffixes_description":{"message":"Entfernt verbreitete Zusätze wie (m/w/d)."},"noticeMore":{"message":"$COUNT$ weitere Hinweise werden aus Platzgründen nicht angezeigt.","placeholders":{"count":{"content":"$1"}}},"replacementsChecked":{"message":"$COUNT$ von $MAX$ möglichen Ersetzungen geprüft.","placeholders":{"count":{"content":"$1"},"max":{"content":"$2"}}},"noConflicts":{"message":"Keine Konflikte oder auffälligen Überschneidungen erkannt."},"customCheckFailed":{"message":"Eigene Ersetzungen konnten nicht geprüft werden."},"previewNoChange":{"message":"Keine Änderung im Testtext."},"previewOneReplacement":{"message":"$COUNT$ Ersetzung im Testtext.","placeholders":{"count":{"content":"$1"}}},"previewManyReplacements":{"message":"$COUNT$ Ersetzungen im Testtext.","placeholders":{"count":{"content":"$1"}}},"previewFailed":{"message":"Die Vorschau konnte nicht erstellt werden."},"saved":{"message":"Gespeichert – offene Seiten werden sofort neu verarbeitet."},"saveFailed":{"message":"Einstellungen konnten nicht gespeichert werden."},"resetDone":{"message":"Auf sichere Standardeinstellungen zurückgesetzt."},"importTooLarge":{"message":"Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."},"importPrepared":{"message":"Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."},"importFailed":{"message":"Die Einstellungen konnten nicht importiert werden."}}
+{
+  "extensionName": {
+    "message": "Sprachverstand"
+  },
+  "extensionDescription": {
+    "message": "Macht Webseiten leichter lesbar."
+  },
+  "active": {
+    "message": "Aktiv"
+  },
+  "paused": {
+    "message": "Pausiert"
+  },
+  "optionsTitle": {
+    "message": "Sprachverstand – Einstellungen"
+  },
+  "save": {
+    "message": "Speichern"
+  },
+  "reset": {
+    "message": "Zurücksetzen"
+  },
+  "expandAll": {
+    "message": "Alle öffnen"
+  },
+  "collapseAll": {
+    "message": "Alle schließen"
+  },
+  "general": {
+    "message": "Allgemein"
+  },
+  "enableExtension": {
+    "message": "Erweiterung aktivieren"
+  },
+  "disableReverts": {
+    "message": "Beim Abschalten werden die Änderungen auf offenen Seiten sofort zurückgesetzt."
+  },
+  "popupMenu": {
+    "message": "Popup-Menü"
+  },
+  "popupMenuDescription": {
+    "message": "Lege fest, welche Bedienelemente im Popup angezeigt werden."
+  },
+  "correctionCounter": {
+    "message": "Korrekturzähler"
+  },
+  "correctionCounterDescription": {
+    "message": "Zeigt die Anzahl der Korrekturen auf der aktuellen Seite."
+  },
+  "activationToggle": {
+    "message": "Aktivierungsschalter"
+  },
+  "activationToggleDescription": {
+    "message": "Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein."
+  },
+  "whereCorrect": {
+    "message": "Wo soll korrigiert werden?"
+  },
+  "whereCorrectPopupDescription": {
+    "message": "Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup."
+  },
+  "moreSettingsButton": {
+    "message": "Schaltfläche für weitere Einstellungen"
+  },
+  "moreSettingsButtonDescription": {
+    "message": "Zeigt die Schaltfläche zum Öffnen dieser Einstellungsseite."
+  },
+  "whatCorrect": {
+    "message": "Was soll korrigiert werden?"
+  },
+  "whatCorrectPopupDescription": {
+    "message": "Zeigt die ausgewählten Regelgruppen direkt im Popup."
+  },
+  "individualRuleGroupsPopup": {
+    "message": "Einzelne Regelgruppen im Popup"
+  },
+  "groupPluralSeparatorsLabel": {
+    "message": "Genderzeichen im Plural"
+  },
+  "groupPluralBinnenILabel": {
+    "message": "Binnen-I im Plural"
+  },
+  "groupPluralDoubleFormsLabel": {
+    "message": "Doppelnennungen im Plural"
+  },
+  "groupSingularExplicitContextLabel": {
+    "message": "Gegenderte Singularformen mit Artikel"
+  },
+  "groupUnmarkedSingularLabel": {
+    "message": "Sichtbar markierte Singularformen"
+  },
+  "groupSubstantivizedAdjectivesLabel": {
+    "message": "Substantivierte Adjektive"
+  },
+  "groupSpecialGenderFormsLabel": {
+    "message": "Weitere sichtbare Genderformen"
+  },
+  "groupSingularDoubleFormsLabel": {
+    "message": "Doppelnennungen im Singular"
+  },
+  "groupExplicitPronounsLabel": {
+    "message": "Explizite Pronomen- und Possessivpaare"
+  },
+  "groupNaturalFamilyFormsLabel": {
+    "message": "Künstlich gegenderte Familienformen"
+  },
+  "groupTitleAbbreviationsLabel": {
+    "message": "Gegenderte Titelabkürzungen"
+  },
+  "groupSalutationParticiplesLabel": {
+    "message": "Neutrale Partizipformen"
+  },
+  "groupNeutralPersonTermsLabel": {
+    "message": "Kontextgebundene Umschreibungen"
+  },
+  "groupJobAdSuffixesLabel": {
+    "message": "Geschlechtszusätze in Stellenanzeigen"
+  },
+  "ruleGroupsDescription": {
+    "message": "Jede Regelgruppe ist einzeln wählbar. Ausdrücklich weibliche Bezeichnungen werden nicht pauschal verändert."
+  },
+  "all": {
+    "message": "Alle"
+  },
+  "none": {
+    "message": "Keine"
+  },
+  "accessibleAttributes": {
+    "message": "Bildbeschreibungen und zugängliche Beschriftungen"
+  },
+  "processQuotedText": {
+    "message": "Text innerhalb von Anführungszeichen korrigieren"
+  },
+  "processQuotedTextDescription": {
+    "message": "Standardmäßig aktiv. Ausschalten schützt direkt zitierte Schreibweisen innerhalb desselben Textabschnitts."
+  },
+  "processSubtitles": {
+    "message": "Untertitel korrigieren"
+  },
+  "processSubtitlesDescription": {
+    "message": "Standardmäßig aus. Erkannte Untertitel-Overlays werden sonst vollständig übersprungen; bei Aktivierung werden schnelle Änderungen gesammelt und nur einmal pro Bild verarbeitet."
+  },
+  "personalExceptions": {
+    "message": "Persönliche Ausnahmen"
+  },
+  "customReplacements": {
+    "message": "Eigene Ersetzungen"
+  },
+  "sourceToReplacement": {
+    "message": "Ausgangstext => Ersetzung"
+  },
+  "preview": {
+    "message": "Vorschau"
+  },
+  "previewDescription": {
+    "message": "Testet die gerade eingetragenen Ausnahmen, Ersetzungen und aktivierten Regelgruppen, ohne etwas zu speichern."
+  },
+  "noPreviewText": {
+    "message": "Noch kein Testtext eingegeben."
+  },
+  "excludedDomains": {
+    "message": "Ausgeschlossene Domains"
+  },
+  "excludedDomainsDescription": {
+    "message": "Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert."
+  },
+  "backupTransfer": {
+    "message": "Einstellungen sichern und übertragen"
+  },
+  "exportSettings": {
+    "message": "Alle Einstellungen als JSON exportieren"
+  },
+  "importSettings": {
+    "message": "Einstellungen aus JSON importieren"
+  },
+  "importKeepExisting": {
+    "message": "Importierte Einstellungen übernehmen, vorhandene Ersetzungsziele behalten"
+  },
+  "importPreferImported": {
+    "message": "Importierte Einstellungen und importierte Ersetzungsziele übernehmen"
+  },
+  "importReplace": {
+    "message": "Alle Einstellungen und persönlichen Listen vollständig ersetzen"
+  },
+  "browserSync": {
+    "message": "Browser-Synchronisierung"
+  },
+  "browserSyncDescription": {
+    "message": "Standardmäßig bleiben alle Einstellungen ausschließlich auf diesem Gerät. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen."
+  },
+  "syncActivation": {
+    "message": "Aktivierungsstatus"
+  },
+  "syncActivationDescription": {
+    "message": "Synchronisiert, ob Sprachverstand ein- oder ausgeschaltet ist."
+  },
+  "syncRuleGroups": {
+    "message": "Regelgruppen"
+  },
+  "syncRuleGroupsDescription": {
+    "message": "Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen."
+  },
+  "syncExcludedDomains": {
+    "message": "Domain-Ausschlüsse"
+  },
+  "syncExcludedDomainsDescription": {
+    "message": "Kann persönliche oder interne Domainnamen enthalten."
+  },
+  "syncTextMedia": {
+    "message": "Text- und Medienoptionen"
+  },
+  "syncTextMediaDescription": {
+    "message": "Synchronisiert die Verarbeitung von Zitaten, Untertiteln und zugänglichen Attributen."
+  },
+  "syncPersonalExceptionsDescription": {
+    "message": "Kann persönliche Begriffe oder vollständige Formulierungen enthalten."
+  },
+  "syncCustomReplacementsDescription": {
+    "message": "Kann persönliche Ausgangs- und Zieltexte enthalten."
+  },
+  "reportProblems": {
+    "message": "Probleme melden"
+  },
+  "licenseSource": {
+    "message": "Lizenz und Quelltext"
+  },
+  "correctionsOnPage": {
+    "message": "Korrekturen auf dieser Seite"
+  },
+  "extensionActive": {
+    "message": "Erweiterung aktiv"
+  },
+  "imageDescriptionsLabels": {
+    "message": "Bildbeschreibungen und Beschriftungen"
+  },
+  "quotedText": {
+    "message": "Text in Anführungszeichen"
+  },
+  "subtitles": {
+    "message": "Untertitel"
+  },
+  "exceptionsMoreSettings": {
+    "message": "Ausnahmen und weitere Einstellungen"
+  },
+  "settingsToolbarAria": {
+    "message": "Einstellungen und Bereiche steuern"
+  },
+  "settingsAria": {
+    "message": "Einstellungen"
+  },
+  "settingsSectionsAria": {
+    "message": "Einstellungsbereiche"
+  },
+  "customReplacementsPlaceholder": {
+    "message": "Meine Sonderform => Gewünschte Form\nUnnötiger Zusatz =>"
+  },
+  "previewPlaceholder": {
+    "message": "Meine Sonderform und Nutzer:innen stehen hier."
+  },
+  "protectedTermsPlaceholder": {
+    "message": "Nutzer:innen\nMeine geschützte Phrase"
+  },
+  "excludedDomainsPlaceholder": {
+    "message": "example.org\nintranet.example.org"
+  },
+  "rule_plural_separators_description": {
+    "message": "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen einschließlich einzeln geprüfter Sonderformen."
+  },
+  "rule_plural_binnen_i_description": {
+    "message": "Großes I innerhalb bekannter Personenbezeichnungen."
+  },
+  "rule_plural_double_forms_description": {
+    "message": "Weibliche und männliche Pluralform werden zu einer gemeinsamen Form zusammengeführt."
+  },
+  "rule_singular_explicit_context_description": {
+    "message": "Eindeutig markierte Artikel, Determinierer und Possessivartikel einschließlich Kasusflexion."
+  },
+  "rule_unmarked_singular_description": {
+    "message": "Genderzeichen und Binnen-I werden bei bekannten und einzeln geprüften Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt."
+  },
+  "rule_substantivized_adjectives_description": {
+    "message": "Sichtbar markierte Formen wie Erwachsene:r und Beschäftigte:n werden lexikonbasiert flektiert."
+  },
+  "rule_special_gender_forms_description": {
+    "message": "Einzeln geprüfte Sonderformen wie Rom*nja, Sinti*zze und Studentys."
+  },
+  "rule_singular_double_forms_description": {
+    "message": "Explizit genannte weibliche und männliche Singularform derselben Personenbezeichnung."
+  },
+  "rule_explicit_pronouns_description": {
+    "message": "Nur sichtbar gegenderte Paarformen; normale weibliche Pronomen bleiben unverändert."
+  },
+  "rule_natural_family_forms_description": {
+    "message": "Natürlich feminine Familienwörter behalten ihr grammatisches Geschlecht."
+  },
+  "rule_title_abbreviations_description": {
+    "message": "Schreibt Prof.in und Dr.in je nach Kontext aus oder führt sie auf den normalen Titel zurück."
+  },
+  "rule_salutation_participles_description": {
+    "message": "Ersetzt ausgewählte Personenbezeichnungen wie Studierende, Lesende und Arbeitnehmende; eindeutige Anreden werden weiterhin vollständig erkannt."
+  },
+  "rule_neutral_person_terms_description": {
+    "message": "Ersetzt nur einzeln geprüfte Umschreibungen und feste Wendungen. Weitere Kontexte werden im Projektkatalog gesammelt."
+  },
+  "rule_job_ad_suffixes_description": {
+    "message": "Entfernt verbreitete Zusätze wie (m/w/d)."
+  },
+  "noticeMore": {
+    "message": "$COUNT$ weitere Hinweise werden aus Platzgründen nicht angezeigt.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "replacementsChecked": {
+    "message": "$COUNT$ von $MAX$ möglichen Ersetzungen geprüft.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "noConflicts": {
+    "message": "Keine Konflikte oder auffälligen Überschneidungen erkannt."
+  },
+  "customCheckFailed": {
+    "message": "Eigene Ersetzungen konnten nicht geprüft werden."
+  },
+  "previewNoChange": {
+    "message": "Keine Änderung im Testtext."
+  },
+  "previewOneReplacement": {
+    "message": "$COUNT$ Ersetzung im Testtext.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewManyReplacements": {
+    "message": "$COUNT$ Ersetzungen im Testtext.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewFailed": {
+    "message": "Die Vorschau konnte nicht erstellt werden."
+  },
+  "saved": {
+    "message": "Gespeichert – offene Seiten werden sofort neu verarbeitet."
+  },
+  "saveFailed": {
+    "message": "Einstellungen konnten nicht gespeichert werden."
+  },
+  "resetDone": {
+    "message": "Auf sichere Standardeinstellungen zurückgesetzt."
+  },
+  "importTooLarge": {
+    "message": "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
+  },
+  "importPrepared": {
+    "message": "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
+  },
+  "importFailed": {
+    "message": "Die Einstellungen konnten nicht importiert werden."
+  },
+  "accessibleAttributesTechnicalPrefix": {
+    "message": "Verarbeitet ausschließlich"
+  },
+  "and": {
+    "message": "und"
+  },
+  "protectedTermsLabel": {
+    "message": "Wörter oder vollständige Phrasen nie verändern"
+  },
+  "protectedTermsDescription": {
+    "message": "Eine wörtliche Ausnahme pro Zeile, Groß-/Kleinschreibung wird ignoriert. Keine regulären Ausdrücke oder Platzhalter. Ein einzelnes Wort schützt nicht automatisch längere Komposita. Maximal 100 Einträge mit jeweils 80 Zeichen. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert."
+  },
+  "customReplacementsLabel": {
+    "message": "Literale Ersetzungen nach dem Schema"
+  },
+  "customReplacementsDescription": {
+    "message": "Eine Ersetzung pro Zeile. Groß-/Kleinschreibung wird beachtet; reguläre Ausdrücke und Platzhalter sind nicht erlaubt. Die Ersetzung wird genau einmal ausgeführt und anschließend nicht erneut durch Regeln oder andere eigene Ersetzungen verändert. Ein leerer Zieltext entfernt die Fundstelle. Persönliche Ausnahmen haben Vorrang. Die Liste bleibt standardmäßig lokal und wird nur bei ausdrücklicher Auswahl zusätzlich synchronisiert."
+  },
+  "testText": {
+    "message": "Testtext"
+  },
+  "result": {
+    "message": "Ergebnis"
+  },
+  "excludedDomainsLabel": {
+    "message": "Sprachverstand auf diesen Webseiten vollständig deaktivieren"
+  },
+  "backupTransferDescription": {
+    "message": "Exportiert den vollständigen aktuellen Einstellungsstand: Aktivierung, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen, persönliche Ausnahmen, eigene Ersetzungen und die Auswahl der optionalen Browser-Synchronisierung."
+  },
+  "importModeLabel": {
+    "message": "Umgang mit vorhandenen persönlichen Listen"
+  },
+  "importDescription": {
+    "message": "Allgemeine Einstellungen aus der Sicherung werden bei jeder Auswahl in das Formular übernommen. Die Auswahl bestimmt nur, wie bestehende persönliche Ausnahmen und eigene Ersetzungen mit den importierten Listen zusammengeführt werden. Importdateien werden ausschließlich nach Deiner Dateiauswahl lokal gelesen. Der Import wird erst mit „Speichern“ aktiviert."
+  },
+  "browserSyncFootnote": {
+    "message": "Alle Kategorien sind standardmäßig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, speichert der Browser auch diese Auswahl als Synchronisierungsinformation, damit weitere angemeldete Geräte dieselben Kategorien laden können. Nicht ausgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt."
+  },
+  "copyright": {
+    "message": "Copyright © 2026 HyperCriSiS und Mitwirkende"
+  },
+  "legalTitle": {
+    "message": "Sprachverstand – Lizenz und Quelltext"
+  },
+  "licenseHeading": {
+    "message": "Lizenz"
+  },
+  "licenseIntroPrefix": {
+    "message": "Copyright © 2026 HyperCriSiS und Mitwirkende. Der Quelltext von Sprachverstand steht ausschließlich unter der GNU Affero General Public License Version 3"
+  },
+  "licenseTerms": {
+    "message": "Das Programm darf unter den Bedingungen dieser Lizenz verwendet, untersucht, verändert und weitergegeben werden. Bei einer veränderten und weitergegebenen Fassung gelten insbesondere die Pflichten zur Bereitstellung des entsprechenden Quelltexts und zur Beibehaltung der Lizenzbedingungen."
+  },
+  "fullLicense": {
+    "message": "Vollständige Lizenz"
+  },
+  "trademarkPolicy": {
+    "message": "Namens- und Logorichtlinie"
+  },
+  "legalNotices": {
+    "message": "Rechtliche Hinweise"
+  },
+  "sourceHeading": {
+    "message": "Quelltext"
+  },
+  "sourceDescription": {
+    "message": "Der vollständige bevorzugte Quelltext einschließlich Build- und Testskripten ist im offiziellen Projektarchiv verfügbar."
+  },
+  "openSourceRepo": {
+    "message": "Offizielles Quelltext-Repository öffnen"
+  },
+  "warrantyHeading": {
+    "message": "Keine Gewährleistung"
+  },
+  "warrantyDescription": {
+    "message": "Das Programm wird ohne Gewährleistung bereitgestellt, soweit dies gesetzlich zulässig ist. Insbesondere besteht keine Zusicherung der Marktgängigkeit oder Eignung für einen bestimmten Zweck. Maßgeblich sind die Abschnitte 15 und 16 der AGPL."
+  },
+  "nameLogoHeading": {
+    "message": "Name und Logo"
+  },
+  "nameLogoDescription": {
+    "message": "Die Softwarelizenz gewährt keine Rechte am Namen „Sprachverstand“, am SV-Logo oder an anderen Herkunftskennzeichen. Veränderte Fassungen müssen klar als inoffiziell erkennbar sein und einen unterscheidbaren Namen sowie ein anderes Produktlogo verwenden."
+  },
+  "maxExcludedDomains": {
+    "message": "Es sind höchstens $COUNT$ Domain-Ausschlüsse möglich.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "invalidExcludedDomain": {
+    "message": "Der Domain-Ausschluss „$ENTRY$“ ist ungültig.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateExcludedDomain": {
+    "message": "Der Domain-Ausschluss „$ENTRY$“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsExported": {
+    "message": "Alle Einstellungen einschließlich $EXCEPTIONS$ Ausnahmen und $REPLACEMENTS$ eigener Ersetzungen exportiert.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "replacements": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingsExportFailed": {
+    "message": "Die Einstellungen konnten nicht exportiert werden."
+  },
+  "importGeneralSettingsRestored": {
+    "message": "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen."
+  },
+  "importSummary": {
+    "message": "$EXCEPTIONS$ Ausnahmen ergänzt, $ADDED$ Ersetzungen ergänzt, $REPLACED$ Ersetzungen überschrieben, $SKIPPED$ Dubletten übersprungen.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "added": {
+        "content": "$2"
+      },
+      "replaced": {
+        "content": "$3"
+      },
+      "skipped": {
+        "content": "$4"
+      }
+    }
+  },
+  "importPreparedNotSaved": {
+    "message": "Der Import ist vorbereitet, aber noch nicht gespeichert."
+  }
+}

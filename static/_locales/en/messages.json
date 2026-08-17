@@ -1,1 +1,518 @@
-{"extensionName":{"message":"Sprachverstand"},"extensionDescription":{"message":"Makes German websites easier to read by normalizing selected gendered forms."},"active":{"message":"Active"},"paused":{"message":"Paused"},"optionsTitle":{"message":"Sprachverstand – Settings"},"save":{"message":"Save"},"reset":{"message":"Reset"},"expandAll":{"message":"Expand all"},"collapseAll":{"message":"Collapse all"},"general":{"message":"General"},"enableExtension":{"message":"Enable extension"},"disableReverts":{"message":"When disabled, changes on open pages are reverted immediately."},"popupMenu":{"message":"Popup menu"},"popupMenuDescription":{"message":"Choose which controls are shown in the popup."},"correctionCounter":{"message":"Correction counter"},"correctionCounterDescription":{"message":"Shows the number of corrections on the current page."},"activationToggle":{"message":"Activation toggle"},"activationToggleDescription":{"message":"Shows the switch for enabling or disabling the extension."},"whereCorrect":{"message":"Where should corrections be applied?"},"whereCorrectPopupDescription":{"message":"Shows options for accessible labels, quoted text, and subtitles directly in the popup."},"moreSettingsButton":{"message":"More settings button"},"moreSettingsButtonDescription":{"message":"Shows the button for opening this settings page."},"whatCorrect":{"message":"What should be corrected?"},"whatCorrectPopupDescription":{"message":"Shows the selected rule groups directly in the popup."},"individualRuleGroupsPopup":{"message":"Individual rule groups in the popup"},"groupPluralSeparatorsLabel":{"message":"Gender markers in plural forms"},"groupPluralBinnenILabel":{"message":"Binnen-I in plural forms"},"groupPluralDoubleFormsLabel":{"message":"Double forms in the plural"},"groupSingularExplicitContextLabel":{"message":"Gendered singular forms with articles"},"groupUnmarkedSingularLabel":{"message":"Visibly marked singular forms"},"groupSubstantivizedAdjectivesLabel":{"message":"Nominalized adjectives"},"groupSpecialGenderFormsLabel":{"message":"Other visible gender forms"},"groupSingularDoubleFormsLabel":{"message":"Double forms in the singular"},"groupExplicitPronounsLabel":{"message":"Explicit pronoun and possessive pairs"},"groupNaturalFamilyFormsLabel":{"message":"Artificially gendered family terms"},"groupTitleAbbreviationsLabel":{"message":"Gendered title abbreviations"},"groupSalutationParticiplesLabel":{"message":"Neutral participle forms"},"groupNeutralPersonTermsLabel":{"message":"Context-dependent paraphrases"},"groupJobAdSuffixesLabel":{"message":"Gender suffixes in job ads"},"ruleGroupsDescription":{"message":"Each rule group can be selected individually. Explicitly female terms are not changed across the board."},"all":{"message":"All"},"none":{"message":"None"},"accessibleAttributes":{"message":"Image descriptions and accessible labels"},"processQuotedText":{"message":"Correct text inside quotation marks"},"processQuotedTextDescription":{"message":"Enabled by default. Disabling it protects directly quoted spellings within the same text segment."},"processSubtitles":{"message":"Correct subtitles"},"processSubtitlesDescription":{"message":"Disabled by default. Detected subtitle overlays are otherwise skipped completely; when enabled, rapid changes are batched and processed only once per frame."},"personalExceptions":{"message":"Personal exceptions"},"customReplacements":{"message":"Custom replacements"},"sourceToReplacement":{"message":"Source text => replacement"},"preview":{"message":"Preview"},"previewDescription":{"message":"Tests the current exceptions, replacements, and enabled rule groups without saving anything."},"noPreviewText":{"message":"No test text entered yet."},"excludedDomains":{"message":"Excluded domains"},"excludedDomainsDescription":{"message":"One domain per line. Subdomains are included. Up to 100 valid domains; entries are normalized to host names."},"backupTransfer":{"message":"Back up and transfer settings"},"exportSettings":{"message":"Export all settings as JSON"},"importSettings":{"message":"Import settings from JSON"},"importKeepExisting":{"message":"Apply imported settings, keep existing replacement targets"},"importPreferImported":{"message":"Apply imported settings and imported replacement targets"},"importReplace":{"message":"Completely replace all settings and personal lists"},"browserSync":{"message":"Browser synchronization"},"browserSyncDescription":{"message":"By default, all settings remain only on this device. Only explicitly selected categories are additionally transferred through the browser synchronization service."},"syncActivation":{"message":"Activation status"},"syncActivationDescription":{"message":"Synchronizes whether Sprachverstand is enabled or disabled."},"syncRuleGroups":{"message":"Rule groups"},"syncRuleGroupsDescription":{"message":"Synchronizes the selection of enabled and disabled rule groups."},"syncExcludedDomains":{"message":"Domain exclusions"},"syncExcludedDomainsDescription":{"message":"May contain personal or internal domain names."},"syncTextMedia":{"message":"Text and media options"},"syncTextMediaDescription":{"message":"Synchronizes processing of quotations, subtitles, and accessible attributes."},"syncPersonalExceptionsDescription":{"message":"May contain personal terms or complete phrases."},"syncCustomReplacementsDescription":{"message":"May contain personal source and target texts."},"reportProblems":{"message":"Report problems"},"licenseSource":{"message":"License and source code"},"correctionsOnPage":{"message":"Corrections on this page"},"extensionActive":{"message":"Extension enabled"},"imageDescriptionsLabels":{"message":"Image descriptions and labels"},"quotedText":{"message":"Text in quotation marks"},"subtitles":{"message":"Subtitles"},"exceptionsMoreSettings":{"message":"Exceptions and more settings"},"settingsToolbarAria":{"message":"Control settings and sections"},"settingsAria":{"message":"Settings"},"settingsSectionsAria":{"message":"Settings sections"},"customReplacementsPlaceholder":{"message":"My special form => Desired form\nUnnecessary suffix =>"},"previewPlaceholder":{"message":"My special form and Nutzer:innen appear here."},"protectedTermsPlaceholder":{"message":"Nutzer:innen\nMy protected phrase"},"excludedDomainsPlaceholder":{"message":"example.org\nintranet.example.org"},"rule_plural_separators_description":{"message":"Colon, asterisk, underscore, slash, period, and typographic separators, including individually reviewed special forms."},"rule_plural_binnen_i_description":{"message":"Capital I inside known person terms."},"rule_plural_double_forms_description":{"message":"Female and male plural forms are merged into one common form."},"rule_singular_explicit_context_description":{"message":"Clearly marked articles, determiners, and possessives, including case inflection."},"rule_unmarked_singular_description":{"message":"Gender markers and Binnen-I are normalized for known and individually reviewed person terms; ambiguous article contexts remain protected."},"rule_substantivized_adjectives_description":{"message":"Visibly marked forms such as Erwachsene:r and Beschäftigte:n are inflected using a lexicon."},"rule_special_gender_forms_description":{"message":"Individually reviewed special forms such as Rom*nja, Sinti*zze, and Studentys."},"rule_singular_double_forms_description":{"message":"Explicitly stated female and male singular forms of the same person term."},"rule_explicit_pronouns_description":{"message":"Only visibly gendered paired forms; ordinary female pronouns remain unchanged."},"rule_natural_family_forms_description":{"message":"Naturally feminine family terms retain their grammatical gender."},"rule_title_abbreviations_description":{"message":"Expands Prof.in and Dr.in depending on context or reduces them to the conventional title."},"rule_salutation_participles_description":{"message":"Replaces selected person terms such as Studierende, Lesende, and Arbeitnehmende; unambiguous salutations remain fully recognized."},"rule_neutral_person_terms_description":{"message":"Replaces only individually reviewed paraphrases and fixed expressions. Additional contexts are collected in the project catalog."},"rule_job_ad_suffixes_description":{"message":"Removes common suffixes such as (m/w/d)."},"noticeMore":{"message":"$COUNT$ more notices are not shown due to space limits.","placeholders":{"count":{"content":"$1"}}},"replacementsChecked":{"message":"$COUNT$ of $MAX$ possible replacements checked.","placeholders":{"count":{"content":"$1"},"max":{"content":"$2"}}},"noConflicts":{"message":"No conflicts or suspicious overlaps detected."},"customCheckFailed":{"message":"Custom replacements could not be checked."},"previewNoChange":{"message":"No change in the test text."},"previewOneReplacement":{"message":"$COUNT$ replacement in the test text.","placeholders":{"count":{"content":"$1"}}},"previewManyReplacements":{"message":"$COUNT$ replacements in the test text.","placeholders":{"count":{"content":"$1"}}},"previewFailed":{"message":"The preview could not be created."},"saved":{"message":"Saved – open pages are reprocessed immediately."},"saveFailed":{"message":"Settings could not be saved."},"resetDone":{"message":"Reset to safe defaults."},"importTooLarge":{"message":"The import file is larger than 1 MB and will not be processed."},"importPrepared":{"message":"Settings backup checked and loaded into the form. Save to apply it."},"importFailed":{"message":"Settings could not be imported."}}
+{
+  "extensionName": {
+    "message": "Sprachverstand"
+  },
+  "extensionDescription": {
+    "message": "Makes German websites easier to read by normalizing selected gendered forms."
+  },
+  "active": {
+    "message": "Active"
+  },
+  "paused": {
+    "message": "Paused"
+  },
+  "optionsTitle": {
+    "message": "Sprachverstand – Settings"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "reset": {
+    "message": "Reset"
+  },
+  "expandAll": {
+    "message": "Expand all"
+  },
+  "collapseAll": {
+    "message": "Collapse all"
+  },
+  "general": {
+    "message": "General"
+  },
+  "enableExtension": {
+    "message": "Enable extension"
+  },
+  "disableReverts": {
+    "message": "When disabled, changes on open pages are reverted immediately."
+  },
+  "popupMenu": {
+    "message": "Popup menu"
+  },
+  "popupMenuDescription": {
+    "message": "Choose which controls are shown in the popup."
+  },
+  "correctionCounter": {
+    "message": "Correction counter"
+  },
+  "correctionCounterDescription": {
+    "message": "Shows the number of corrections on the current page."
+  },
+  "activationToggle": {
+    "message": "Activation toggle"
+  },
+  "activationToggleDescription": {
+    "message": "Shows the switch for enabling or disabling the extension."
+  },
+  "whereCorrect": {
+    "message": "Where should corrections be applied?"
+  },
+  "whereCorrectPopupDescription": {
+    "message": "Shows options for accessible labels, quoted text, and subtitles directly in the popup."
+  },
+  "moreSettingsButton": {
+    "message": "More settings button"
+  },
+  "moreSettingsButtonDescription": {
+    "message": "Shows the button for opening this settings page."
+  },
+  "whatCorrect": {
+    "message": "What should be corrected?"
+  },
+  "whatCorrectPopupDescription": {
+    "message": "Shows the selected rule groups directly in the popup."
+  },
+  "individualRuleGroupsPopup": {
+    "message": "Individual rule groups in the popup"
+  },
+  "groupPluralSeparatorsLabel": {
+    "message": "Gender markers in plural forms"
+  },
+  "groupPluralBinnenILabel": {
+    "message": "Binnen-I in plural forms"
+  },
+  "groupPluralDoubleFormsLabel": {
+    "message": "Double forms in the plural"
+  },
+  "groupSingularExplicitContextLabel": {
+    "message": "Gendered singular forms with articles"
+  },
+  "groupUnmarkedSingularLabel": {
+    "message": "Visibly marked singular forms"
+  },
+  "groupSubstantivizedAdjectivesLabel": {
+    "message": "Nominalized adjectives"
+  },
+  "groupSpecialGenderFormsLabel": {
+    "message": "Other visible gender forms"
+  },
+  "groupSingularDoubleFormsLabel": {
+    "message": "Double forms in the singular"
+  },
+  "groupExplicitPronounsLabel": {
+    "message": "Explicit pronoun and possessive pairs"
+  },
+  "groupNaturalFamilyFormsLabel": {
+    "message": "Artificially gendered family terms"
+  },
+  "groupTitleAbbreviationsLabel": {
+    "message": "Gendered title abbreviations"
+  },
+  "groupSalutationParticiplesLabel": {
+    "message": "Neutral participle forms"
+  },
+  "groupNeutralPersonTermsLabel": {
+    "message": "Context-dependent paraphrases"
+  },
+  "groupJobAdSuffixesLabel": {
+    "message": "Gender suffixes in job ads"
+  },
+  "ruleGroupsDescription": {
+    "message": "Each rule group can be selected individually. Explicitly female terms are not changed across the board."
+  },
+  "all": {
+    "message": "All"
+  },
+  "none": {
+    "message": "None"
+  },
+  "accessibleAttributes": {
+    "message": "Image descriptions and accessible labels"
+  },
+  "processQuotedText": {
+    "message": "Correct text inside quotation marks"
+  },
+  "processQuotedTextDescription": {
+    "message": "Enabled by default. Disabling it protects directly quoted spellings within the same text segment."
+  },
+  "processSubtitles": {
+    "message": "Correct subtitles"
+  },
+  "processSubtitlesDescription": {
+    "message": "Disabled by default. Detected subtitle overlays are otherwise skipped completely; when enabled, rapid changes are batched and processed only once per frame."
+  },
+  "personalExceptions": {
+    "message": "Personal exceptions"
+  },
+  "customReplacements": {
+    "message": "Custom replacements"
+  },
+  "sourceToReplacement": {
+    "message": "Source text => replacement"
+  },
+  "preview": {
+    "message": "Preview"
+  },
+  "previewDescription": {
+    "message": "Tests the current exceptions, replacements, and enabled rule groups without saving anything."
+  },
+  "noPreviewText": {
+    "message": "No test text entered yet."
+  },
+  "excludedDomains": {
+    "message": "Excluded domains"
+  },
+  "excludedDomainsDescription": {
+    "message": "One domain per line. Subdomains are included. Up to 100 valid domains; entries are normalized to host names."
+  },
+  "backupTransfer": {
+    "message": "Back up and transfer settings"
+  },
+  "exportSettings": {
+    "message": "Export all settings as JSON"
+  },
+  "importSettings": {
+    "message": "Import settings from JSON"
+  },
+  "importKeepExisting": {
+    "message": "Apply imported settings, keep existing replacement targets"
+  },
+  "importPreferImported": {
+    "message": "Apply imported settings and imported replacement targets"
+  },
+  "importReplace": {
+    "message": "Completely replace all settings and personal lists"
+  },
+  "browserSync": {
+    "message": "Browser synchronization"
+  },
+  "browserSyncDescription": {
+    "message": "By default, all settings remain only on this device. Only explicitly selected categories are additionally transferred through the browser synchronization service."
+  },
+  "syncActivation": {
+    "message": "Activation status"
+  },
+  "syncActivationDescription": {
+    "message": "Synchronizes whether Sprachverstand is enabled or disabled."
+  },
+  "syncRuleGroups": {
+    "message": "Rule groups"
+  },
+  "syncRuleGroupsDescription": {
+    "message": "Synchronizes the selection of enabled and disabled rule groups."
+  },
+  "syncExcludedDomains": {
+    "message": "Domain exclusions"
+  },
+  "syncExcludedDomainsDescription": {
+    "message": "May contain personal or internal domain names."
+  },
+  "syncTextMedia": {
+    "message": "Text and media options"
+  },
+  "syncTextMediaDescription": {
+    "message": "Synchronizes processing of quotations, subtitles, and accessible attributes."
+  },
+  "syncPersonalExceptionsDescription": {
+    "message": "May contain personal terms or complete phrases."
+  },
+  "syncCustomReplacementsDescription": {
+    "message": "May contain personal source and target texts."
+  },
+  "reportProblems": {
+    "message": "Report problems"
+  },
+  "licenseSource": {
+    "message": "License and source code"
+  },
+  "correctionsOnPage": {
+    "message": "Corrections on this page"
+  },
+  "extensionActive": {
+    "message": "Extension enabled"
+  },
+  "imageDescriptionsLabels": {
+    "message": "Image descriptions and labels"
+  },
+  "quotedText": {
+    "message": "Text in quotation marks"
+  },
+  "subtitles": {
+    "message": "Subtitles"
+  },
+  "exceptionsMoreSettings": {
+    "message": "Exceptions and more settings"
+  },
+  "settingsToolbarAria": {
+    "message": "Control settings and sections"
+  },
+  "settingsAria": {
+    "message": "Settings"
+  },
+  "settingsSectionsAria": {
+    "message": "Settings sections"
+  },
+  "customReplacementsPlaceholder": {
+    "message": "My special form => Desired form\nUnnecessary suffix =>"
+  },
+  "previewPlaceholder": {
+    "message": "My special form and Nutzer:innen appear here."
+  },
+  "protectedTermsPlaceholder": {
+    "message": "Nutzer:innen\nMy protected phrase"
+  },
+  "excludedDomainsPlaceholder": {
+    "message": "example.org\nintranet.example.org"
+  },
+  "rule_plural_separators_description": {
+    "message": "Colon, asterisk, underscore, slash, period, and typographic separators, including individually reviewed special forms."
+  },
+  "rule_plural_binnen_i_description": {
+    "message": "Capital I inside known person terms."
+  },
+  "rule_plural_double_forms_description": {
+    "message": "Female and male plural forms are merged into one common form."
+  },
+  "rule_singular_explicit_context_description": {
+    "message": "Clearly marked articles, determiners, and possessives, including case inflection."
+  },
+  "rule_unmarked_singular_description": {
+    "message": "Gender markers and Binnen-I are normalized for known and individually reviewed person terms; ambiguous article contexts remain protected."
+  },
+  "rule_substantivized_adjectives_description": {
+    "message": "Visibly marked forms such as Erwachsene:r and Beschäftigte:n are inflected using a lexicon."
+  },
+  "rule_special_gender_forms_description": {
+    "message": "Individually reviewed special forms such as Rom*nja, Sinti*zze, and Studentys."
+  },
+  "rule_singular_double_forms_description": {
+    "message": "Explicitly stated female and male singular forms of the same person term."
+  },
+  "rule_explicit_pronouns_description": {
+    "message": "Only visibly gendered paired forms; ordinary female pronouns remain unchanged."
+  },
+  "rule_natural_family_forms_description": {
+    "message": "Naturally feminine family terms retain their grammatical gender."
+  },
+  "rule_title_abbreviations_description": {
+    "message": "Expands Prof.in and Dr.in depending on context or reduces them to the conventional title."
+  },
+  "rule_salutation_participles_description": {
+    "message": "Replaces selected person terms such as Studierende, Lesende, and Arbeitnehmende; unambiguous salutations remain fully recognized."
+  },
+  "rule_neutral_person_terms_description": {
+    "message": "Replaces only individually reviewed paraphrases and fixed expressions. Additional contexts are collected in the project catalog."
+  },
+  "rule_job_ad_suffixes_description": {
+    "message": "Removes common suffixes such as (m/w/d)."
+  },
+  "noticeMore": {
+    "message": "$COUNT$ more notices are not shown due to space limits.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "replacementsChecked": {
+    "message": "$COUNT$ of $MAX$ possible replacements checked.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "noConflicts": {
+    "message": "No conflicts or suspicious overlaps detected."
+  },
+  "customCheckFailed": {
+    "message": "Custom replacements could not be checked."
+  },
+  "previewNoChange": {
+    "message": "No change in the test text."
+  },
+  "previewOneReplacement": {
+    "message": "$COUNT$ replacement in the test text.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewManyReplacements": {
+    "message": "$COUNT$ replacements in the test text.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewFailed": {
+    "message": "The preview could not be created."
+  },
+  "saved": {
+    "message": "Saved – open pages are reprocessed immediately."
+  },
+  "saveFailed": {
+    "message": "Settings could not be saved."
+  },
+  "resetDone": {
+    "message": "Reset to safe defaults."
+  },
+  "importTooLarge": {
+    "message": "The import file is larger than 1 MB and will not be processed."
+  },
+  "importPrepared": {
+    "message": "Settings backup checked and loaded into the form. Save to apply it."
+  },
+  "importFailed": {
+    "message": "Settings could not be imported."
+  },
+  "accessibleAttributesTechnicalPrefix": {
+    "message": "Processes only"
+  },
+  "and": {
+    "message": "and"
+  },
+  "protectedTermsLabel": {
+    "message": "Words or complete phrases that must never be changed"
+  },
+  "protectedTermsDescription": {
+    "message": "One literal exception per line; letter case is ignored. Regular expressions and placeholders are not supported. Protecting a single word does not automatically protect longer compound words. Up to 100 entries with 80 characters each. The list stays local by default and is synchronized only when explicitly selected."
+  },
+  "customReplacementsLabel": {
+    "message": "Literal replacements using the format"
+  },
+  "customReplacementsDescription": {
+    "message": "One replacement per line. Letter case is respected; regular expressions and placeholders are not supported. Each replacement is applied exactly once and is not processed again by rules or other custom replacements. An empty target removes the match. Personal exceptions take priority. The list stays local by default and is synchronized only when explicitly selected."
+  },
+  "testText": {
+    "message": "Test text"
+  },
+  "result": {
+    "message": "Result"
+  },
+  "excludedDomainsLabel": {
+    "message": "Disable Sprachverstand completely on these websites"
+  },
+  "backupTransferDescription": {
+    "message": "Exports the complete current settings state: activation, rule groups, popup display, domain exclusions, quotation, subtitle and attribute options, personal exceptions, custom replacements, and the optional browser synchronization selection."
+  },
+  "importModeLabel": {
+    "message": "How to handle existing personal lists"
+  },
+  "importDescription": {
+    "message": "General settings from the backup are always loaded into the form. This selection only determines how existing personal exceptions and custom replacements are combined with the imported lists. Import files are read locally only after you select a file. The import is not applied until you click “Save”."
+  },
+  "browserSyncFootnote": {
+    "message": "All categories are disabled by default. As soon as at least one category is enabled, the browser also stores this selection as synchronization information so other signed-in devices can load the same categories. Unselected categories are removed from synchronization storage."
+  },
+  "copyright": {
+    "message": "Copyright © 2026 HyperCriSiS and contributors"
+  },
+  "legalTitle": {
+    "message": "Sprachverstand – License and source code"
+  },
+  "licenseHeading": {
+    "message": "License"
+  },
+  "licenseIntroPrefix": {
+    "message": "Copyright © 2026 HyperCriSiS and contributors. The source code of Sprachverstand is licensed exclusively under the GNU Affero General Public License Version 3"
+  },
+  "licenseTerms": {
+    "message": "The program may be used, studied, modified, and redistributed under the terms of this license. Modified and redistributed versions are, in particular, subject to the obligations to provide the corresponding source code and to retain the license terms."
+  },
+  "fullLicense": {
+    "message": "Full license text"
+  },
+  "trademarkPolicy": {
+    "message": "Name and logo policy"
+  },
+  "legalNotices": {
+    "message": "Legal notices"
+  },
+  "sourceHeading": {
+    "message": "Source code"
+  },
+  "sourceDescription": {
+    "message": "The complete preferred source code, including build and test scripts, is available in the official project repository."
+  },
+  "openSourceRepo": {
+    "message": "Open the official source repository"
+  },
+  "warrantyHeading": {
+    "message": "No warranty"
+  },
+  "warrantyDescription": {
+    "message": "The program is provided without warranty to the extent permitted by law. In particular, there is no warranty of merchantability or fitness for a particular purpose. Sections 15 and 16 of the AGPL govern."
+  },
+  "nameLogoHeading": {
+    "message": "Name and logo"
+  },
+  "nameLogoDescription": {
+    "message": "The software license grants no rights to the name “Sprachverstand”, the SV logo, or other source-identifying marks. Modified versions must be clearly identifiable as unofficial and must use a distinguishable name and a different product logo."
+  },
+  "maxExcludedDomains": {
+    "message": "At most $COUNT$ domain exclusions are allowed.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "invalidExcludedDomain": {
+    "message": "The domain exclusion “$ENTRY$” is invalid.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateExcludedDomain": {
+    "message": "The domain exclusion “$ENTRY$” is included more than once or in an equivalent spelling.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsExported": {
+    "message": "Exported all settings, including $EXCEPTIONS$ exceptions and $REPLACEMENTS$ custom replacements.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "replacements": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingsExportFailed": {
+    "message": "Settings could not be exported."
+  },
+  "importGeneralSettingsRestored": {
+    "message": "Activation status, rule groups, popup display, domain exclusions, quotation, subtitle and attribute options, and the optional browser synchronization selection were loaded from the backup."
+  },
+  "importSummary": {
+    "message": "Exceptions added: $EXCEPTIONS$; replacements added: $ADDED$; replacements overwritten: $REPLACED$; duplicates skipped: $SKIPPED$.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "added": {
+        "content": "$2"
+      },
+      "replaced": {
+        "content": "$3"
+      },
+      "skipped": {
+        "content": "$4"
+      }
+    }
+  },
+  "importPreparedNotSaved": {
+    "message": "The import is prepared but has not been saved yet."
+  }
+}
