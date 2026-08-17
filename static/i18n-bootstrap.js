@@ -3,23 +3,54 @@
   if (!api?.i18n || !api?.runtime) return;
 
   const uiLanguage = api.i18n.getUILanguage?.() || "de";
-  document.documentElement.lang = uiLanguage.split("-")[0] || "de";
-  if (uiLanguage.toLowerCase().startsWith("de")) return;
+  const locale = uiLanguage.toLowerCase().startsWith("en") ? "en" : "de";
+  document.documentElement.lang = locale;
+  if (locale === "de") return;
 
+  const normalize = (value) => value.replace(/\s+/g, " ").trim();
   const dynamicPatterns = [
     [/^(\d+) von (\d+) möglichen Ersetzungen geprüft\.$/, "replacementsChecked"],
     [/^(\d+) weitere Hinweise werden aus Platzgründen nicht angezeigt\.$/, "noticeMore"],
     [/^(\d+) Ersetzung im Testtext\.$/, "previewOneReplacement"],
-    [/^(\d+) Ersetzungen im Testtext\.$/, "previewManyReplacements"]
+    [/^(\d+) Ersetzungen im Testtext\.$/, "previewManyReplacements"],
+    [/^Es sind höchstens (\d+) Domain-Ausschlüsse möglich\.$/, "maxExcludedDomains"],
+    [/^Der Domain-Ausschluss „(.+)“ ist ungültig\.$/, "invalidExcludedDomain"],
+    [/^Der Domain-Ausschluss „(.+)“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten\.$/, "duplicateExcludedDomain"],
+    [/^Alle Einstellungen einschließlich (\d+) Ausnahmen und (\d+) eigener Ersetzungen exportiert\.$/, "settingsExported"],
+    [/^(\d+) Ausnahmen ergänzt, (\d+) Ersetzungen ergänzt, (\d+) Ersetzungen überschrieben, (\d+) Dubletten übersprungen\.$/, "importSummary"]
   ];
 
-  function translatedDynamic(text) {
-    for (const [pattern, key] of dynamicPatterns) {
-      const match = text.match(pattern);
-      if (!match) continue;
-      return api.i18n.getMessage(key, match.slice(1)) || text;
+  function message(key, substitutions) {
+    return api.i18n.getMessage(key, substitutions) || "";
+  }
+
+  function localizeExplicit(element) {
+    const textKey = element.dataset?.i18n;
+    if (textKey) {
+      const translated = message(textKey);
+      if (translated) element.textContent = translated;
     }
-    return text;
+
+    for (const [attribute, dataKey] of [
+      ["aria-label", "i18nAriaLabel"],
+      ["aria-description", "i18nAriaDescription"],
+      ["placeholder", "i18nPlaceholder"],
+      ["title", "i18nTitle"]
+    ]) {
+      const key = element.dataset?.[dataKey];
+      if (!key) continue;
+      const translated = message(key);
+      if (translated) element.setAttribute(attribute, translated);
+    }
+  }
+
+  function localizeExplicitTree(root) {
+    if (root instanceof Element) localizeExplicit(root);
+    for (const element of root.querySelectorAll?.(
+      "[data-i18n], [data-i18n-aria-label], [data-i18n-aria-description], [data-i18n-placeholder], [data-i18n-title]"
+    ) ?? []) {
+      localizeExplicit(element);
+    }
   }
 
   async function start() {
@@ -27,16 +58,20 @@
     if (!response.ok) return;
     const german = await response.json();
     const keyByGermanMessage = new Map();
+
     for (const [key, entry] of Object.entries(german)) {
       if (typeof entry?.message === "string" && !entry.message.includes("$")) {
-        keyByGermanMessage.set(entry.message, key);
+        keyByGermanMessage.set(normalize(entry.message), key);
       }
     }
 
-    function translateExact(text) {
-      const key = keyByGermanMessage.get(text);
-      if (key) return api.i18n.getMessage(key) || text;
-      return translatedDynamic(text);
+    function translateDynamic(text) {
+      for (const [pattern, key] of dynamicPatterns) {
+        const match = text.match(pattern);
+        if (!match) continue;
+        return message(key, match.slice(1)) || text;
+      }
+      return text;
     }
 
     function translateTextNode(node) {
@@ -44,35 +79,35 @@
       if (!value || !value.trim()) return;
       const leading = value.match(/^\s*/)?.[0] ?? "";
       const trailing = value.match(/\s*$/)?.[0] ?? "";
-      const core = value.slice(leading.length, value.length - trailing.length);
-      const translated = translateExact(core);
-      if (translated !== core) node.nodeValue = `${leading}${translated}${trailing}`;
-    }
-
-    function translateElement(element) {
-      for (const attr of ["aria-label", "aria-description", "placeholder", "title"]) {
-        const value = element.getAttribute?.(attr);
-        if (!value) continue;
-        const translated = translateExact(value);
-        if (translated !== value) element.setAttribute(attr, translated);
-      }
-      for (const child of element.childNodes ?? []) {
-        if (child.nodeType === Node.TEXT_NODE) translateTextNode(child);
-        else if (child.nodeType === Node.ELEMENT_NODE) translateElement(child);
+      const core = normalize(value);
+      const key = keyByGermanMessage.get(core);
+      const translated = key ? message(key) : translateDynamic(core);
+      if (translated && translated !== core) {
+        node.nodeValue = `${leading}${translated}${trailing}`;
       }
     }
 
-    translateElement(document.documentElement);
+    function translateTree(root) {
+      localizeExplicitTree(root);
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      while (node) {
+        translateTextNode(node);
+        node = walker.nextNode();
+      }
+    }
+
+    translateTree(document.documentElement);
 
     const observer = new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === "characterData") translateTextNode(record.target);
         if (record.type === "attributes" && record.target instanceof Element) {
-          translateElement(record.target);
+          localizeExplicit(record.target);
         }
         for (const node of record.addedNodes) {
           if (node.nodeType === Node.TEXT_NODE) translateTextNode(node);
-          else if (node.nodeType === Node.ELEMENT_NODE) translateElement(node);
+          else if (node.nodeType === Node.ELEMENT_NODE) translateTree(node);
         }
       }
     });
@@ -82,7 +117,13 @@
       childList: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ["aria-label", "aria-description", "placeholder", "title"]
+      attributeFilter: [
+        "data-i18n",
+        "data-i18n-aria-label",
+        "data-i18n-aria-description",
+        "data-i18n-placeholder",
+        "data-i18n-title"
+      ]
     });
   }
 
