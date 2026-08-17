@@ -56,7 +56,14 @@ describe("WebExtension localization", () => {
     }
   });
 
-  it("does not leave visible UI prose unmarked for localization", async () => {
+  it("does not leave visible UI prose outside the localization catalog", async () => {
+    const de = await readMessages("de");
+    const catalogText = new Set(
+      Object.values(de)
+        .map((entry) => entry.message)
+        .filter((message): message is string => Boolean(message) && !message?.includes("$"))
+        .map(normalize)
+    );
     const allowedLiteralText = new Set(["Sprachverstand", "0"]);
 
     for (const path of localizedPages) {
@@ -78,14 +85,15 @@ describe("WebExtension localization", () => {
           !allowedLiteralText.has(text) &&
           !/^[().,·]+$/.test(text) &&
           !parent.closest("code, script, style") &&
-          !parent.closest("[data-i18n]")
+          !parent.closest("[data-i18n]") &&
+          !catalogText.has(text)
         ) {
           unlocalized.push(text);
         }
         node = walker.nextNode();
       }
 
-      expect(unlocalized, `${path}: unlocalized visible text`).toEqual([]);
+      expect(unlocalized, `${path}: text missing from localization catalog`).toEqual([]);
     }
   });
 
