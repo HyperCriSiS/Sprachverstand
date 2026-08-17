@@ -88,7 +88,7 @@ Die Vergleichstabelle bleibt absichtlich unverändert, weil ihre Beispiele als
 Quellcode formatiert sind. Der folgende Text ist normaler Seiteninhalt und wird
 bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
 
-> Unsere Mitarbeiter*innen begrüßen neue Nutzer:innen und Student*innen.
+> Unsere Mitarbeiter\*innen begrüßen neue Nutzer:innen und Student\*innen.
 > Jede:r Nutzer:in erhält ein eigenes Nutzer:innenkonto. Studierende und
 > Arbeitnehmende finden dort weitere Informationen.
 
