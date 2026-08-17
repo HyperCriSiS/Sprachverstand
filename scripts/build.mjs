@@ -24,6 +24,19 @@ const packageJson = JSON.parse(
   await readFile(path.join(projectRoot, "package.json"), "utf8")
 );
 
+async function injectLocalizationBootstrap(outputDirectory) {
+  for (const relativePath of ["popup/popup.html", "options/options.html"]) {
+    const htmlPath = path.join(outputDirectory, relativePath);
+    let html = await readFile(htmlPath, "utf8");
+    const marker = '<meta name="color-scheme" content="dark light">';
+    html = html.replace(
+      marker,
+      `${marker}\n    <script src="../i18n-bootstrap.js" defer></script>`
+    );
+    await writeFile(htmlPath, html, "utf8");
+  }
+}
+
 async function prepareStaticFiles(target) {
   const outputDirectory = path.join(projectRoot, "dist", target);
   await mkdir(outputDirectory, { recursive: true });
@@ -33,6 +46,8 @@ async function prepareStaticFiles(target) {
     outputDirectory,
     { recursive: true }
   );
+
+  await injectLocalizationBootstrap(outputDirectory);
 
   const legalDirectory = path.join(outputDirectory, "legal");
   await mkdir(legalDirectory, { recursive: true });
