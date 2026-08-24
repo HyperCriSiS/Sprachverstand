@@ -14,9 +14,15 @@ const operaManifest = JSON.parse(readFileSync("manifests/opera.json", "utf8"));
 const firefoxManifest = JSON.parse(
   readFileSync("manifests/firefox.json", "utf8")
 );
+const compatibilityBrowsers = JSON.parse(
+  readFileSync("config/browser-compatibility.json", "utf8")
+) as Array<{
+  readonly name: string;
+  readonly family: "chromium" | "gecko";
+  readonly target: "chromium" | "firefox";
+}>;
 const buildScript = readFileSync("scripts/build.mjs", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
-const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
 
 describe("Browser-Ziele", () => {
   it("baut Chromium, Edge, Opera und Firefox als explizite Ziele", () => {
@@ -51,10 +57,19 @@ describe("Browser-Ziele", () => {
     expect(firefoxManifest.background).toEqual({ scripts: ["background.js"] });
   });
 
-  it("packt Edge und Opera sowohl in CI als auch in Releases", () => {
+  it("ordnet Browser ohne eigenen Release ihrem gemeinsamen Basis-Build zu", () => {
+    expect(compatibilityBrowsers).toEqual([
+      { name: "Brave", family: "chromium", target: "chromium" },
+      { name: "Vivaldi", family: "chromium", target: "chromium" },
+      { name: "Arc", family: "chromium", target: "chromium" },
+      { name: "LibreWolf", family: "gecko", target: "firefox" },
+      { name: "Zen Browser", family: "gecko", target: "firefox" },
+      { name: "Floorp", family: "gecko", target: "firefox" }
+    ]);
+  });
+
+  it("packt Edge und Opera im Release-Workflow", () => {
     for (const target of ["edge", "opera"]) {
-      expect(ciWorkflow).toContain(`dist/${target}`);
-      expect(ciWorkflow).toContain(`-${target}.zip`);
       expect(releaseWorkflow).toContain(`dist/${target}`);
       expect(releaseWorkflow).toContain(`-${target}.zip`);
     }
