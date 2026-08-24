@@ -10,6 +10,11 @@ import {
   isSubtitleContent
 } from "./subtitles";
 import { transformText } from "./transform-text";
+import {
+  aggregateReplacementSummaries,
+  summarizeReplacement,
+  type ReplacementSummaryEntry
+} from "./replacement-summary";
 
 export interface DomProcessorOptions {
   readonly rules: readonly Rule[];
@@ -20,7 +25,10 @@ export interface DomProcessorOptions {
   readonly processAccessibleAttributes?: boolean;
   readonly processQuotedText?: boolean;
   readonly processSubtitles?: boolean;
-  readonly onReplacementCountChange?: (count: number) => void;
+  readonly onReplacementCountChange?: (
+    count: number,
+    replacements: readonly ReplacementSummaryEntry[]
+  ) => void;
 }
 
 export interface StopOptions {
@@ -184,6 +192,36 @@ export class DomProcessor {
 
   public getReplacementCount(): number {
     return this.replacementCount;
+  }
+
+  public getReplacementSummary(): ReplacementSummaryEntry[] {
+    const summaries: ReplacementSummaryEntry[] = [];
+
+    for (const change of this.textChanges.values()) {
+      const summary = summarizeReplacement(
+        change.original,
+        change.transformed,
+        change.replacements
+      );
+      if (summary) {
+        summaries.push(summary);
+      }
+    }
+
+    for (const changes of this.attributeChanges.values()) {
+      for (const change of changes.values()) {
+        const summary = summarizeReplacement(
+          change.original,
+          change.transformed,
+          change.replacements
+        );
+        if (summary) {
+          summaries.push(summary);
+        }
+      }
+    }
+
+    return aggregateReplacementSummaries(summaries);
   }
 
   public restoreAll(): void {
@@ -683,7 +721,10 @@ export class DomProcessor {
     this.countNotificationScheduled = true;
     queueMicrotask(() => {
       this.countNotificationScheduled = false;
-      this.options.onReplacementCountChange?.(this.replacementCount);
+      this.options.onReplacementCountChange?.(
+        this.replacementCount,
+        this.getReplacementSummary()
+      );
     });
   }
 }
