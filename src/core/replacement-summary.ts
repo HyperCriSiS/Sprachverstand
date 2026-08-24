@@ -5,6 +5,7 @@ export interface ReplacementSummaryEntry {
 }
 
 const wordLikeCharacter = /[\p{L}\p{M}\p{N}’'_-]/u;
+const nonWhitespaceTokenPattern = /\S+/gu;
 
 function trimSharedContext(
   original: string,
@@ -58,24 +59,70 @@ function trimSharedContext(
   return { original: original.trim(), replacement: transformed.trim() };
 }
 
-export function summarizeReplacement(
+function tokenValues(input: string): string[] {
+  return input.match(nonWhitespaceTokenPattern) ?? [];
+}
+
+function positionAlignedChanges(
+  original: string,
+  transformed: string
+): { original: string; replacement: string }[] | undefined {
+  const originalTokens = tokenValues(original);
+  const transformedTokens = tokenValues(transformed);
+  if (originalTokens.length !== transformedTokens.length) {
+    return undefined;
+  }
+
+  const changes: { original: string; replacement: string }[] = [];
+  for (let index = 0; index < originalTokens.length; index += 1) {
+    const originalToken = originalTokens[index] ?? "";
+    const transformedToken = transformedTokens[index] ?? "";
+    if (originalToken === transformedToken) {
+      continue;
+    }
+    changes.push(trimSharedContext(originalToken, transformedToken));
+  }
+  return changes;
+}
+
+function summarizeChangePairs(
   original: string,
   transformed: string,
-  count: number
-): ReplacementSummaryEntry | undefined {
-  if (count <= 0 || original === transformed) {
-    return undefined;
+  replacements: number
+): ReplacementSummaryEntry[] {
+  const aligned = positionAlignedChanges(original, transformed);
+  if (aligned && aligned.length > 0 && aligned.length <= replacements) {
+    const entries = aligned.map((pair) => ({ ...pair, count: 1 }));
+    if (replacements > entries.length) {
+      const last = entries.at(-1);
+      if (last) {
+        entries[entries.length - 1] = {
+          ...last,
+          count: last.count + replacements - entries.length
+        };
+      }
+    }
+    return entries.filter(
+      (entry) => entry.original && entry.original !== entry.replacement
+    );
   }
 
   const pair = trimSharedContext(original, transformed);
   if (!pair.original || pair.original === pair.replacement) {
-    return undefined;
+    return [];
   }
+  return [{ ...pair, count: replacements }];
+}
 
-  return {
-    ...pair,
-    count
-  };
+export function summarizeReplacements(
+  original: string,
+  transformed: string,
+  count: number
+): ReplacementSummaryEntry[] {
+  if (count <= 0 || original === transformed) {
+    return [];
+  }
+  return summarizeChangePairs(original, transformed, count);
 }
 
 export function aggregateReplacementSummaries(

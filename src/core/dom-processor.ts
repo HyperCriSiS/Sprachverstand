@@ -12,7 +12,7 @@ import {
 import { transformText } from "./transform-text";
 import {
   aggregateReplacementSummaries,
-  summarizeReplacement,
+  summarizeReplacements,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
 
@@ -198,26 +198,24 @@ export class DomProcessor {
     const summaries: ReplacementSummaryEntry[] = [];
 
     for (const change of this.textChanges.values()) {
-      const summary = summarizeReplacement(
-        change.original,
-        change.transformed,
-        change.replacements
+      summaries.push(
+        ...summarizeReplacements(
+          change.original,
+          change.transformed,
+          change.replacements
+        )
       );
-      if (summary) {
-        summaries.push(summary);
-      }
     }
 
     for (const changes of this.attributeChanges.values()) {
       for (const change of changes.values()) {
-        const summary = summarizeReplacement(
-          change.original,
-          change.transformed,
-          change.replacements
+        summaries.push(
+          ...summarizeReplacements(
+            change.original,
+            change.transformed,
+            change.replacements
+          )
         );
-        if (summary) {
-          summaries.push(summary);
-        }
       }
     }
 
