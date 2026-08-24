@@ -19,7 +19,6 @@ const excludedTags = new Set([
   "INPUT",
   "SELECT",
   "OPTION",
-  "BUTTON",
   "CODE",
   "PRE",
   "KBD",

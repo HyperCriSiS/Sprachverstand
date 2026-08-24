@@ -64,7 +64,42 @@ describe("DomProcessor", () => {
     expect(button?.getAttribute("aria-description")).toBe("Nutzer verwalten");
     expect(button?.getAttribute("title")).toBe("Nutzer auswählen");
     expect(button?.getAttribute("data-label")).toBe("Nutzer:innen");
-    expect(button?.textContent).toBe("Nutzer:innen");
+    expect(button?.textContent).toBe("Nutzer");
+  });
+
+  it("korrigiert Accordion-Schaltflächen ohne deren Verhalten zu verändern", () => {
+    document.body.innerHTML = `
+      <button type="button" aria-expanded="false">
+        <span>Wie bewerten Nutzer:innen das Unternehmen?</span>
+        <svg aria-hidden="true"></svg>
+      </button>
+    `;
+
+    const button = document.querySelector("button") as HTMLButtonElement;
+    let clicks = 0;
+    button.addEventListener("click", () => {
+      clicks += 1;
+      button.setAttribute(
+        "aria-expanded",
+        button.getAttribute("aria-expanded") === "true" ? "false" : "true"
+      );
+    });
+
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    expect(button.textContent?.trim()).toBe(
+      "Wie bewerten Nutzer das Unternehmen?"
+    );
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+
+    button.click();
+
+    expect(clicks).toBe(1);
+    expect(button.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("schützt ignorierte, versteckte, editierbare und technische Attribute", () => {
