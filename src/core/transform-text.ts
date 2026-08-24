@@ -238,7 +238,7 @@ function applyRulesOutsideQuotes(
   return { text, replacements };
 }
 
-export function transformText(
+function transformTextCore(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions
@@ -262,4 +262,95 @@ export function transformText(
         protectedPattern,
         options.leadingContext
       );
+}
+
+const softHyphen = "\u00ad";
+const softHyphenTokenPattern = /\S*\u00ad\S*/gu;
+const softHyphenContextLimit = 120;
+
+function isInsideQuotedRange(input: string, index: number): boolean {
+  for (const [opening, closing] of pairedQuotes) {
+    let searchFrom = 0;
+    while (searchFrom < index) {
+      const openingIndex = input.indexOf(opening, searchFrom);
+      if (openingIndex < 0 || openingIndex >= index) {
+        break;
+      }
+
+      const closingIndex = input.indexOf(closing, openingIndex + 1);
+      if (closingIndex < 0) {
+        break;
+      }
+      if (index > openingIndex && index < closingIndex) {
+        return true;
+      }
+      searchFrom = closingIndex + 1;
+    }
+  }
+
+  return false;
+}
+
+function transformSoftHyphenTokens(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): TransformResult {
+  if (!input.includes(softHyphen)) {
+    return { text: input, replacements: 0 };
+  }
+
+  let cursor = 0;
+  let text = "";
+  let replacements = 0;
+
+  for (const match of input.matchAll(softHyphenTokenPattern)) {
+    const index = match.index;
+    const originalToken = match[0];
+    if (
+      options.processQuotedText === false &&
+      isInsideQuotedRange(input, index)
+    ) {
+      text += input.slice(cursor, index) + originalToken;
+      cursor = index + originalToken.length;
+      continue;
+    }
+
+    const normalizedToken = originalToken.replaceAll(softHyphen, "");
+    const precedingContext = `${options.leadingContext ?? ""}${input.slice(0, index)}`
+      .replaceAll(softHyphen, "")
+      .slice(-softHyphenContextLimit);
+    const tokenOptions: TransformOptions = {
+      ...options,
+      ...(precedingContext ? { leadingContext: precedingContext } : {})
+    };
+    const result = transformTextCore(normalizedToken, rules, tokenOptions);
+
+    text += input.slice(cursor, index);
+    if (result.replacements > 0 && result.text !== normalizedToken) {
+      text += result.text;
+      replacements += result.replacements;
+    } else {
+      // Ohne tatsächliche Ersetzung bleibt die typografische Trennung bytegenau erhalten.
+      text += originalToken;
+    }
+    cursor = index + originalToken.length;
+  }
+
+  text += input.slice(cursor);
+  return { text, replacements };
+}
+
+export function transformText(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): TransformResult {
+  const regular = transformTextCore(input, rules, options);
+  const softHyphenResult = transformSoftHyphenTokens(regular.text, rules, options);
+
+  return {
+    text: softHyphenResult.text,
+    replacements: regular.replacements + softHyphenResult.replacements
+  };
 }

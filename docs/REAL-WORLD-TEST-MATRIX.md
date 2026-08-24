@@ -1,6 +1,6 @@
 # Reale Webseiten – Testmatrix
 
-Stand: 24. August 2026
+Stand: 25. August 2026
 
 Diese Matrix ergänzt die deterministischen Vitest- und Fixture-Tests um reale
 Webseiten. Die Seiten wurden so gewählt, dass sie unterschiedliche Risiken der
@@ -39,7 +39,7 @@ Vergleich mit einem Lauf derselben Seite ohne Erweiterung aussagekräftiger.
 | 7 | `https://www.youtube.com/results?search_query=Mitarbeiter%3Ainnen` | sehr viele Mutation-Updates, SPA-Navigation, Video-Untertitel | ohne Neuladen zwischen Suche und Video navigieren; Beschreibung und Kommentare verarbeiten; Untertitel standardmäßig auslassen und optional ohne Stocken korrigieren | niedrig bis mittel |
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
-| 10 | `https://www.tagesschau.de/` | große Nachrichtenseite, viele Teaser, Bilder, Lazy Loading und laufend wechselnder Inhalt | initiale und beim Scrollen nachgeladene Texte verarbeiten; Links, Bilder und Navigation funktionsfähig; keine wachsende Mutation-Schleife oder auffällige CPU-Last | hoch |
+| 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
 
 ## Automatisierbare Aussagen
 
