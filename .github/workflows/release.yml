@@ -145,7 +145,7 @@ jobs:
           RELEASE_VERSION="$VERSION" node <<'NODE'
           const fs = require("node:fs");
 
-          for (const path of ["manifests/chromium.json", "manifests/firefox.json"]) {
+          for (const path of ["manifests/chromium.json", "manifests/edge.json", "manifests/opera.json", "manifests/firefox.json"]) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
             manifest.version = process.env.RELEASE_VERSION;
             fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -158,7 +158,7 @@ jobs:
           const expected = process.env.VERSION;
           const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          const manifests = ["chromium", "firefox"].map((name) =>
+          const manifests = ["chromium", "edge", "opera", "firefox"].map((name) =>
             JSON.parse(fs.readFileSync(`manifests/${name}.json`, "utf8"))
           );
 
@@ -192,6 +192,16 @@ jobs:
           )
 
           (
+            cd dist/edge
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-edge.zip" .
+          )
+
+          (
+            cd dist/opera
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-opera.zip" .
+          )
+
+          (
             cd dist/firefox
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
@@ -199,7 +209,7 @@ jobs:
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
-          cp manifests/chromium.json manifests/firefox.json "$SOURCE_DIR/manifests/"
+          cp manifests/chromium.json manifests/edge.json manifests/opera.json manifests/firefox.json "$SOURCE_DIR/manifests/"
 
           (
             cd "$SOURCE_DIR"
@@ -210,12 +220,16 @@ jobs:
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          cp docs/EDGE-SUBMISSION.md artifacts/
+          cp docs/OPERA-SUBMISSION.md artifacts/
           printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
               "sprachverstand-${ASSET_LABEL}-chromium.zip" \
+              "sprachverstand-${ASSET_LABEL}-edge.zip" \
+              "sprachverstand-${ASSET_LABEL}-opera.zip" \
               "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
               "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
@@ -224,6 +238,8 @@ jobs:
           )
 
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-edge.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-opera.zip"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
 

@@ -11,14 +11,17 @@
     "clean": "node scripts/build.mjs --clean",
     "build": "node scripts/build.mjs",
     "build:chromium": "node scripts/build.mjs --target chromium",
+    "build:edge": "node scripts/build.mjs --target edge",
+    "build:opera": "node scripts/build.mjs --target opera",
     "build:firefox": "node scripts/build.mjs --target firefox",
     "dev": "node scripts/build.mjs --target chromium --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run audit:public && npm run typecheck && npm run test && npm run build && npm run validate:icons && npm run lint:firefox",
+    "check": "npm run audit:public && npm run typecheck && npm run test && npm run build && npm run validate:icons && npm run validate:browsers && npm run lint:firefox",
     "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
     "validate:icons": "node scripts/validate-icons.mjs",
+    "validate:browsers": "node scripts/validate-browser-targets.mjs",
     "audit:public": "node scripts/audit-publication.mjs"
   },
   "devDependencies": {

@@ -36,7 +36,7 @@ jobs:
 
       - name: Paket- und Lizenzmetadaten prüfen
         run: |
-          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
       - name: Öffentliche Freigabe auf Geheimnisse und temporäre Dateien prüfen
         run: npm run audit:public
@@ -85,14 +85,18 @@ jobs:
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
-          grep -q '"default_icon"' manifests/chromium.json
-          grep -q '"default_icon"' manifests/firefox.json
+          for target in chromium edge opera firefox; do
+            grep -q '"default_icon"' "manifests/${target}.json"
+          done
 
       - name: Browser-Builds erstellen
         run: npm run build
 
       - name: Erzeugte Logo-Dateien vollständig prüfen
         run: npm run validate:icons
+
+      - name: Browser-Ziele und gemeinsame Chromium-Payload prüfen
+        run: npm run validate:browsers
 
       - name: Firefox Desktop und Android linten
         run: npm run lint:firefox
@@ -110,6 +114,16 @@ jobs:
           )
 
           (
+            cd dist/edge
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-edge.zip" .
+          )
+
+          (
+            cd dist/opera
+            zip -qr "../../artifacts/sprachverstand-${VERSION}-opera.zip" .
+          )
+
+          (
             cd dist/firefox
             zip -qr "../../artifacts/sprachverstand-${VERSION}-firefox.xpi" .
           )
@@ -121,12 +135,16 @@ jobs:
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          cp docs/EDGE-SUBMISSION.md artifacts/
+          cp docs/OPERA-SUBMISSION.md artifacts/
           printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
               "sprachverstand-${VERSION}-chromium.zip" \
+              "sprachverstand-${VERSION}-edge.zip" \
+              "sprachverstand-${VERSION}-opera.zip" \
               "sprachverstand-${VERSION}-firefox.xpi" \
               "sprachverstand-${VERSION}-source.zip" \
               SOURCE_COMMIT.txt \
@@ -135,6 +153,8 @@ jobs:
           )
 
           unzip -t "artifacts/sprachverstand-${VERSION}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-edge.zip"
+          unzip -t "artifacts/sprachverstand-${VERSION}-opera.zip"
           unzip -t "artifacts/sprachverstand-${VERSION}-firefox.xpi"
           unzip -t "artifacts/sprachverstand-${VERSION}-source.zip"
 
