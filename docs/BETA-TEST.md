@@ -1,18 +1,22 @@
-# Sprachverstand 0.6.1 – RC2 testen
+# Sprachverstand – Prerelease testen
 
-RC2 ist der korrigierte Veröffentlichungskandidat für die öffentliche Freigabe
-des Repositorys und die Einreichung bei Firefox Add-ons. Diese Anleitung bündelt
-die technischen, sprachlichen und manuellen Prüfungen des finalen Kandidaten.
+Diese Anleitung bündelt die technischen, sprachlichen und manuellen Prüfungen
+für Release Candidates und andere Prereleases. Maßgeblich ist immer der Tag,
+aus dem die beigefügten Pakete gebaut wurden.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-0.6.1-rc.2-chromium.zip`
-- `sprachverstand-0.6.1-rc.2-firefox.xpi`
-- `sprachverstand-0.6.1-rc.2-source.zip`
+- `sprachverstand-<release>-chromium.zip`
+- `sprachverstand-<release>-edge.zip`
+- `sprachverstand-<release>-opera.zip`
+- `sprachverstand-<release>-firefox.xpi`
+- `sprachverstand-<release>-source.zip`
 - `SHA256SUMS.txt`
 - `SOURCE_COMMIT.txt`
 - `BETA-TEST.md`
 - `AMO-SOURCE-INSTRUCTIONS.md`
+- `EDGE-SUBMISSION.md`
+- `OPERA-SUBMISSION.md`
 
 ## Prüfsummen und Commit kontrollieren
 
@@ -23,9 +27,9 @@ sha256sum -c SHA256SUMS.txt
 Unter Windows können die Werte mit
 `Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
 
-Der Inhalt von `SOURCE_COMMIT.txt` muss mit dem Commit des RC2-Tags
-`v0.6.1-rc.2` übereinstimmen. Chromium-Paket, Firefox-XPI und Quellarchiv müssen
-aus diesem Commit stammen.
+Der Inhalt von `SOURCE_COMMIT.txt` muss mit dem Commit des getesteten Tags
+übereinstimmen. Chromium-, Edge-, Opera-, Firefox- und Quellpaket müssen aus
+diesem Commit stammen.
 
 ## Desktop installieren
 
@@ -36,6 +40,26 @@ aus diesem Commit stammen.
 3. Entwicklermodus aktivieren.
 4. **Entpackte Erweiterung laden** wählen.
 5. Den entpackten Ordner auswählen.
+
+### Microsoft Edge
+
+1. Edge-ZIP entpacken.
+2. `edge://extensions` öffnen.
+3. Entwicklermodus aktivieren.
+4. **Entpackt laden** wählen.
+5. Den entpackten Edge-Ordner auswählen.
+
+### Opera
+
+1. Opera-ZIP entpacken.
+2. `opera:extensions` öffnen.
+3. Entwicklermodus aktivieren.
+4. **Load unpacked extension** wählen.
+5. Den entpackten Opera-Ordner auswählen.
+
+Für Opera zusätzlich mindestens einen Test mit gedrosselter Verbindung
+durchführen. Vor der Store-Einreichung gelten außerdem die Prüfungen aus
+[`OPERA-SUBMISSION.md`](OPERA-SUBMISSION.md).
 
 ### Firefox und Waterfox
 
