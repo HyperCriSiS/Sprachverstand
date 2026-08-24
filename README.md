@@ -186,18 +186,20 @@ stehen in der [Datenschutzerklärung](PRIVACY.md).
 
 - Firefox für Desktop
 - Firefox für Android
-- Chromium-basierte Desktop-Browser
+- Google Chrome und andere Chromium-basierte Desktop-Browser
+- Microsoft Edge mit eigenem Store- und Release-Paket
+- Opera mit eigenem Store- und Release-Paket
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
-ist deshalb kein Veröffentlichungsziel.
+ist deshalb kein Veröffentlichungsziel. Brave und Vivaldi können weiterhin den
+Chromium-Build beziehungsweise die Veröffentlichung im Chrome Web Store nutzen.
 
 ## Projektstatus
 
-Sprachverstand 0.6.1 RC2 ist der abschließend geprüfte
-Veröffentlichungskandidat für die öffentliche Freigabe des Repositorys und die
-Einreichung bei Firefox Add-ons. Die Regel-Engine ist bewusst konservativ
-aufgebaut und wird mit automatisierten Unit-, DOM-, Performance- und
-Regressionstests abgesichert.
+Sprachverstand wird parallel für Firefox, Chromium, Microsoft Edge und Opera
+gebaut. Die Regel-Engine ist bewusst konservativ aufgebaut und wird mit
+automatisierten Unit-, DOM-, Performance-, Browserziel- und Regressionstests
+abgesichert.
 
 Die versionierten deutschen Storetexte stehen in
 [`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
@@ -214,8 +216,10 @@ npm install
 npm run check
 ```
 
-Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
-erstellt.
+Browser-Builds werden anschließend unter `dist/chromium/`, `dist/edge/`,
+`dist/opera/` und `dist/firefox/` erstellt. Edge und Opera verwenden bewusst
+dieselbe geprüfte Chromium-Payload; die CI kontrolliert deren Bytegleichheit
+außerhalb des Manifests.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das

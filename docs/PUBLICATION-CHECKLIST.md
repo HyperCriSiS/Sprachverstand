@@ -48,3 +48,27 @@ Diese Schritte werden unmittelbar vor und nach dem Wechsel von **private** auf
 - [ ] Datenschutzformular an die optionale Browser-Synchronisierung anpassen
 - [ ] Berechtigung `storage` und Zugriff auf Webseiten begründen
 - [ ] Screenshots aus der finalen Version verwenden
+
+## Vor Microsoft Edge Add-ons
+
+- [ ] Edge-ZIP aus demselben finalen Commit verwenden
+- [ ] `EDGE-SUBMISSION.md` vollständig abarbeiten
+- [ ] Manifest V3 und Service Worker im Paket kontrollieren
+- [ ] Berechtigung `storage` und Zugriff auf Webseiten im Datenschutzformular begründen
+- [ ] Remote-Code mit **Nein** deklarieren
+- [ ] deutsche und englische Storetexte eintragen
+- [ ] höchstens sieben Suchbegriffe pro Sprache eintragen
+- [ ] aktuelle Screenshots in 640×480 oder 1280×800 Pixel verwenden
+- [ ] Zertifizierungshinweise mit reproduzierbarem README-Test eintragen
+
+## Vor Opera Add-ons
+
+- [ ] Opera-ZIP aus demselben finalen Commit verwenden
+- [ ] `OPERA-SUBMISSION.md` vollständig abarbeiten
+- [ ] entpacktes Paket in aktuellem Opera Stable testen
+- [ ] mindestens Windows oder macOS gegenprüfen
+- [ ] Test mit gedrosselter Verbindung durchführen
+- [ ] Kategorie **Barrierefreiheit** wählen
+- [ ] deutsche und englische Storetexte eintragen
+- [ ] Screenshots bevorzugt in 612×408 Pixel erstellen und 800×600 nicht überschreiten
+- [ ] Support-, Datenschutz- und Lizenzangaben kontrollieren

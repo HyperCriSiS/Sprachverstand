@@ -11,7 +11,7 @@ const requestedTarget =
 const watch = argumentsSet.has("--watch");
 const cleanOnly = argumentsSet.has("--clean");
 
-const supportedTargets = ["chromium", "firefox"];
+const supportedTargets = ["chromium", "edge", "opera", "firefox"];
 const targets = requestedTarget ? [requestedTarget] : supportedTargets;
 
 for (const target of targets) {
