@@ -246,17 +246,15 @@ Danach `http://127.0.0.1:8080/tests/manual/beta-fixture.html` öffnen.
 
 ## Reale Seiten und Last
 
-Besonders wichtig sind:
+Die konkrete Referenzliste mit zehn Seiten, ihren unterschiedlichen
+Schwierigkeitsgraden, Prüfkriterien und dem sinnvollen Automatisierungsgrad steht
+in [`REAL-WORLD-TEST-MATRIX.md`](REAL-WORLD-TEST-MATRIX.md). Sie deckt unter
+anderem sehr große DOMs, viele Ersetzungen, Single-Page-Anwendungen, Formulare,
+Accordion-Schaltflächen, Medienseiten, Untertitel, Quellcodebereiche und Lazy
+Loading ab.
 
-- DHL-Anmeldung
-- ARD und andere Mediatheken
-- rebuy und weitere Single-Page-Anwendungen
-- große Nachrichtenseiten
-- React-, Angular- und Vue-Anwendungen
-- Firefox für Android
-- Screenreader-Test der zugänglichen Attribute
-- CPU- und Speicherverhalten bei dynamisch nachgeladenen Inhalten
-
-Eine Fehlermeldung sollte Browser, Version, Betriebssystem, Adresse, Ausgangstext,
-Ergebnis, Erwartung, aktive Regelgruppen und reproduzierbare Schritte enthalten.
-Keine Zugangsdaten oder privaten Inhalte mitsenden.
+Live-Seiten sollen zusätzliche Integrations- und Lastsignale liefern, aber die
+Pull-Request-CI nicht blockieren. Eine Fehlermeldung sollte Browser, Version,
+Betriebssystem, Adresse, Ausgangstext, Ergebnis, Erwartung, aktive Regelgruppen
+und reproduzierbare Schritte enthalten. Keine Zugangsdaten oder privaten Inhalte
+mitsenden.
