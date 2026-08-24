@@ -514,5 +514,32 @@
   },
   "importPreparedNotSaved": {
     "message": "The import is prepared but has not been saved yet."
+  },
+  "currentPage": {
+    "message": "This page"
+  },
+  "corrections": {
+    "message": "corrections"
+  },
+  "show": {
+    "message": "Show"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "changes": {
+    "message": "Changes"
+  },
+  "differentReplacements": {
+    "message": "different replacements"
+  },
+  "replacementsOnPage": {
+    "message": "Replacements on this page"
+  },
+  "noReplacementsOnPage": {
+    "message": "No replacements on this page yet."
+  },
+  "replacementOverviewMemoryNotice": {
+    "message": "The overview is kept only in memory for the current tab and is rebuilt when the page is closed or reloaded."
   }
 }

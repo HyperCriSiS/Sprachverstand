@@ -514,5 +514,32 @@
   },
   "importPreparedNotSaved": {
     "message": "Der Import ist vorbereitet, aber noch nicht gespeichert."
+  },
+  "currentPage": {
+    "message": "Diese Seite"
+  },
+  "corrections": {
+    "message": "Korrekturen"
+  },
+  "show": {
+    "message": "Anzeigen"
+  },
+  "back": {
+    "message": "Zurück"
+  },
+  "changes": {
+    "message": "Änderungen"
+  },
+  "differentReplacements": {
+    "message": "unterschiedliche Ersetzungen"
+  },
+  "replacementsOnPage": {
+    "message": "Ersetzungen auf dieser Seite"
+  },
+  "noReplacementsOnPage": {
+    "message": "Noch keine Ersetzungen auf dieser Seite."
+  },
+  "replacementOverviewMemoryNotice": {
+    "message": "Die Übersicht wird nur für den aktuellen Tab im Arbeitsspeicher gehalten und beim Schließen oder Neuladen der Seite neu aufgebaut."
   }
 }
