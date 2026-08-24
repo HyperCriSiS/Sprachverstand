@@ -129,6 +129,14 @@ h2 {
   font-weight: 650;
 }
 
+.chevron-next::before {
+  content: "›";
+}
+
+.chevron-back::before {
+  content: "‹";
+}
+
 .switch-row,
 .popup-option-row {
   justify-content: space-between;
