@@ -19,6 +19,7 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Repository auschecken
@@ -38,16 +39,10 @@ jobs:
         run: |
           node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
-      - name: Öffentliche Freigabe auf Geheimnisse und temporäre Dateien prüfen
-        run: npm run audit:public
+      - name: Qualitäts-, Build- und Browserprüfungen ausführen
+        run: npm run check
 
-      - name: TypeScript prüfen
-        run: npm run typecheck
-
-      - name: Gesamte Testsuite ausführen
-        run: npm run test
-
-      - name: Oberfläche, Regelgruppen und Rechtshinweise absichern
+      - name: Oberfläche und Rechtshinweise absichern
         shell: bash
         run: |
           grep -q "width: 384px" static/popup/popup.css
@@ -89,49 +84,27 @@ jobs:
             grep -q '"default_icon"' "manifests/${target}.json"
           done
 
-      - name: Browser-Builds erstellen
-        run: npm run build
-
-      - name: Erzeugte Logo-Dateien vollständig prüfen
-        run: npm run validate:icons
-
-      - name: Browser-Ziele und gemeinsame Chromium-Payload prüfen
-        run: npm run validate:browsers
-
-      - name: Firefox Desktop und Android linten
-        run: npm run lint:firefox
-
-      - name: Release-Pakete erstellen und prüfen
+      - name: Release-Pakete für Branch-Push erstellen und prüfen
+        if: ${{ github.event_name == 'push' }}
         shell: bash
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
           mkdir -p artifacts
 
-          (
-            cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-chromium.zip" .
-          )
-
-          (
-            cd dist/edge
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-edge.zip" .
-          )
-
-          (
-            cd dist/opera
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-opera.zip" .
-          )
+          for target in chromium edge opera; do
+            (
+              cd "dist/${target}"
+              zip -qr "../../artifacts/sprachverstand-${VERSION}-${target}.zip" .
+            )
+          done
 
           (
             cd dist/firefox
             zip -qr "../../artifacts/sprachverstand-${VERSION}-firefox.xpi" .
           )
 
-          git archive \
-            --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-source.zip" \
-            HEAD
+          git archive --format=zip --output="artifacts/sprachverstand-${VERSION}-source.zip" HEAD
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
@@ -152,22 +125,21 @@ jobs:
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${VERSION}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-edge.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-opera.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-source.zip"
+          for archive in artifacts/*.zip artifacts/*.xpi; do
+            unzip -t "$archive"
+          done
 
           if unzip -l "artifacts/sprachverstand-${VERSION}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das Firefox-XPI muss vor der Mozilla-Signierung unsigniert sein."
             exit 1
           fi
 
-      - name: Geprüfte Pakete hochladen
+      - name: Geprüfte Pakete für Branch-Push hochladen
+        if: ${{ github.event_name == 'push' }}
         uses: actions/upload-artifact@v7
         with:
           name: sprachverstand-ci-${{ github.sha }}
           path: artifacts/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
           compression-level: 0

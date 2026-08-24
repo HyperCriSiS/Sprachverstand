@@ -1,0 +1,8 @@
+[
+  { "name": "Brave", "family": "chromium", "target": "chromium" },
+  { "name": "Vivaldi", "family": "chromium", "target": "chromium" },
+  { "name": "Arc", "family": "chromium", "target": "chromium" },
+  { "name": "LibreWolf", "family": "gecko", "target": "firefox" },
+  { "name": "Zen Browser", "family": "gecko", "target": "firefox" },
+  { "name": "Floorp", "family": "gecko", "target": "firefox" }
+]

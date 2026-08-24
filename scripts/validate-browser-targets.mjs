@@ -9,6 +9,12 @@ const allTargets = [...chromiumTargets, "firefox"];
 const packageJson = JSON.parse(
   await readFile(path.join(projectRoot, "package.json"), "utf8")
 );
+const compatibilityBrowsers = JSON.parse(
+  await readFile(
+    path.join(projectRoot, "config", "browser-compatibility.json"),
+    "utf8"
+  )
+);
 
 const requiredFiles = [
   "background.js",
@@ -94,6 +100,29 @@ function validateCommonManifest(target, manifest) {
   );
 }
 
+function validateChromiumManifest(target, manifest) {
+  assert(
+    manifest.background?.service_worker === "background.js",
+    `${target}: Manifest-V3-Service-Worker fehlt.`
+  );
+  assert(
+    !("browser_specific_settings" in manifest),
+    `${target}: Firefox-spezifische Einstellungen dürfen nicht enthalten sein.`
+  );
+}
+
+function validateGeckoManifest(target, manifest) {
+  assert(
+    Array.isArray(manifest.background?.scripts) &&
+      manifest.background.scripts.includes("background.js"),
+    `${target}: Gecko-Hintergrundskript fehlt.`
+  );
+  assert(
+    "browser_specific_settings" in manifest,
+    `${target}: Gecko-spezifische Einstellungen fehlen.`
+  );
+}
+
 const manifests = new Map();
 
 for (const target of allTargets) {
@@ -114,27 +143,10 @@ for (const target of allTargets) {
 }
 
 for (const target of chromiumTargets) {
-  const manifest = manifests.get(target);
-  assert(
-    manifest.background?.service_worker === "background.js",
-    `${target}: Manifest-V3-Service-Worker fehlt.`
-  );
-  assert(
-    !("browser_specific_settings" in manifest),
-    `${target}: Firefox-spezifische Einstellungen dürfen nicht enthalten sein.`
-  );
+  validateChromiumManifest(target, manifests.get(target));
 }
 
-const firefoxManifest = manifests.get("firefox");
-assert(
-  Array.isArray(firefoxManifest.background?.scripts) &&
-    firefoxManifest.background.scripts.includes("background.js"),
-  "firefox: Hintergrundskript fehlt."
-);
-assert(
-  "browser_specific_settings" in firefoxManifest,
-  "firefox: Gecko-spezifische Einstellungen fehlen."
-);
+validateGeckoManifest("firefox", manifests.get("firefox"));
 
 const referenceDirectory = path.join(projectRoot, "dist", "chromium");
 const referenceFiles = (await listFiles(referenceDirectory)).filter(
@@ -165,6 +177,48 @@ for (const target of ["edge", "opera"]) {
   }
 }
 
+for (const browser of compatibilityBrowsers) {
+  assert(
+    browser && typeof browser.name === "string" && browser.name.length > 0,
+    "Kompatibilitätsbrowser ohne gültigen Namen gefunden."
+  );
+  assert(
+    browser.family === "chromium" || browser.family === "gecko",
+    `${browser.name}: unbekannte Browserfamilie ${browser.family}.`
+  );
+  assert(
+    browser.target === "chromium" || browser.target === "firefox",
+    `${browser.name}: nur chromium oder firefox sind als gemeinsamer Basis-Build zulässig.`
+  );
+
+  const manifest = manifests.get(browser.target);
+  assert(manifest, `${browser.name}: Basis-Build ${browser.target} fehlt.`);
+  validateCommonManifest(browser.name, manifest);
+
+  if (browser.family === "chromium") {
+    assert(
+      browser.target === "chromium",
+      `${browser.name}: Chromium-Browser muss den Chromium-Build verwenden.`
+    );
+    validateChromiumManifest(browser.name, manifest);
+  } else {
+    assert(
+      browser.target === "firefox",
+      `${browser.name}: Gecko-Browser muss den Firefox-Build verwenden.`
+    );
+    validateGeckoManifest(browser.name, manifest);
+  }
+}
+
+const browserNachFamilie = Object.groupBy(
+  compatibilityBrowsers,
+  (browser) => browser.family
+);
+
+console.log("Browser-Ziele geprüft: Chromium, Microsoft Edge, Opera und Firefox.");
 console.log(
-  "Browser-Ziele geprüft: Chromium, Microsoft Edge, Opera und Firefox."
+  `Chromium-Kompatibilität geprüft: ${browserNachFamilie.chromium.map((browser) => browser.name).join(", ")}.`
+);
+console.log(
+  `Gecko-Kompatibilität geprüft: ${browserNachFamilie.gecko.map((browser) => browser.name).join(", ")}.`
 );
