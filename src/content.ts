@@ -19,14 +19,22 @@ function shouldRun(settings: Settings): boolean {
   );
 }
 
-function reportReplacementCount(count: number): void {
+function reportReplacementState(
+  count: number,
+  replacements: readonly {
+    readonly original: string;
+    readonly replacement: string;
+    readonly count: number;
+  }[] = []
+): void {
   void getExtensionApi()
     .runtime.sendMessage({
-      type: "sprachverstand.replacement-count",
-      count
+      type: "sprachverstand.replacement-state",
+      count,
+      replacements
     })
     .catch(() => {
-      // The background context can be unavailable briefly during extension reloads.
+      // Der Hintergrundkontext kann während eines Erweiterungs-Reloads kurz fehlen.
     });
 }
 
@@ -34,7 +42,7 @@ function applySettings(settings: Settings): void {
   if (!shouldRun(settings)) {
     processor?.stop({ restore: true });
     processor = undefined;
-    reportReplacementCount(0);
+    reportReplacementState(0);
     return;
   }
 
@@ -47,7 +55,7 @@ function applySettings(settings: Settings): void {
     processAccessibleAttributes: settings.processAccessibleAttributes,
     processQuotedText: settings.processQuotedText,
     processSubtitles: settings.processSubtitles,
-    onReplacementCountChange: reportReplacementCount
+    onReplacementCountChange: reportReplacementState
   };
 
   if (processor) {
@@ -60,7 +68,7 @@ function applySettings(settings: Settings): void {
 }
 
 async function start(): Promise<void> {
-  reportReplacementCount(0);
+  reportReplacementState(0);
   applySettings(await loadSettings());
   subscribeToSettings(applySettings);
 }
