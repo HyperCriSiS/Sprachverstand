@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import * as ts from "typescript";
 
 const projectRoot = process.cwd();
 const chromiumTargets = ["chromium", "edge", "opera"];
@@ -123,6 +124,29 @@ function validateGeckoManifest(target, manifest) {
   );
 }
 
+async function getExtensionApiNamespaces() {
+  const apiPath = path.join(projectRoot, "src", "browser", "api.ts");
+  const sourceText = await readFile(apiPath, "utf8");
+  const sourceFile = ts.createSourceFile(
+    apiPath,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  const extensionApi = sourceFile.statements.find(
+    (statement) =>
+      ts.isInterfaceDeclaration(statement) && statement.name.text === "ExtensionApi"
+  );
+
+  assert(extensionApi, "ExtensionApi-Schnittstelle für den Orion-Vertrag fehlt.");
+
+  return extensionApi.members
+    .filter((member) => ts.isPropertySignature(member) && member.name)
+    .map((member) => member.name.getText(sourceFile).replaceAll(/["']/g, ""))
+    .sort();
+}
+
 const manifests = new Map();
 
 for (const target of allTargets) {
@@ -177,13 +201,15 @@ for (const target of ["edge", "opera"]) {
   }
 }
 
+const extensionApiNamespaces = await getExtensionApiNamespaces();
+
 for (const browser of compatibilityBrowsers) {
   assert(
     browser && typeof browser.name === "string" && browser.name.length > 0,
     "Kompatibilitätsbrowser ohne gültigen Namen gefunden."
   );
   assert(
-    browser.family === "chromium" || browser.family === "gecko",
+    ["chromium", "gecko", "webextension"].includes(browser.family),
     `${browser.name}: unbekannte Browserfamilie ${browser.family}.`
   );
   assert(
@@ -201,13 +227,37 @@ for (const browser of compatibilityBrowsers) {
       `${browser.name}: Chromium-Browser muss den Chromium-Build verwenden.`
     );
     validateChromiumManifest(browser.name, manifest);
-  } else {
+    continue;
+  }
+
+  if (browser.family === "gecko") {
     assert(
       browser.target === "firefox",
       `${browser.name}: Gecko-Browser muss den Firefox-Build verwenden.`
     );
     validateGeckoManifest(browser.name, manifest);
+    continue;
   }
+
+  assert(
+    browser.name === "Orion" && browser.target === "chromium",
+    `${browser.name}: unbekannter WebExtension-Sonderfall.`
+  );
+  assert(
+    browser.support === "experimental",
+    "Orion muss wegen der unvollständigen WebExtension-Implementierung als experimentell markiert bleiben."
+  );
+  assert(
+    JSON.stringify([...browser.reviewedApiNamespaces].sort()) ===
+      JSON.stringify(extensionApiNamespaces),
+    `Orion: Die verwendete WebExtension-API-Oberfläche hat sich geändert (${extensionApiNamespaces.join(", ")}). Kompatibilität erneut prüfen.`
+  );
+  assert(
+    Array.isArray(browser.knownPartialApis) &&
+      browser.knownPartialApis.includes("storage.sync"),
+    "Orion: die bekannte Einschränkung bei storage.sync muss dokumentiert bleiben."
+  );
+  validateChromiumManifest(browser.name, manifest);
 }
 
 const browserNachFamilie = Object.groupBy(
@@ -221,4 +271,7 @@ console.log(
 );
 console.log(
   `Gecko-Kompatibilität geprüft: ${browserNachFamilie.gecko.map((browser) => browser.name).join(", ")}.`
+);
+console.log(
+  `WebExtension-Sonderfälle geprüft: ${browserNachFamilie.webextension.map((browser) => `${browser.name} (${browser.support})`).join(", ")}.`
 );

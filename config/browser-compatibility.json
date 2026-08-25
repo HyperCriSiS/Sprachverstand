@@ -1,8 +1,22 @@
 [
+  { "name": "Chromium", "family": "chromium", "target": "chromium" },
   { "name": "Brave", "family": "chromium", "target": "chromium" },
   { "name": "Vivaldi", "family": "chromium", "target": "chromium" },
   { "name": "Arc", "family": "chromium", "target": "chromium" },
+  { "name": "Thorium", "family": "chromium", "target": "chromium" },
+  { "name": "Ungoogled Chromium", "family": "chromium", "target": "chromium" },
+  { "name": "Waterfox", "family": "gecko", "target": "firefox" },
   { "name": "LibreWolf", "family": "gecko", "target": "firefox" },
   { "name": "Zen Browser", "family": "gecko", "target": "firefox" },
-  { "name": "Floorp", "family": "gecko", "target": "firefox" }
+  { "name": "Floorp", "family": "gecko", "target": "firefox" },
+  { "name": "FireDragon", "family": "gecko", "target": "firefox" },
+  { "name": "Midori", "family": "gecko", "target": "firefox" },
+  {
+    "name": "Orion",
+    "family": "webextension",
+    "target": "chromium",
+    "support": "experimental",
+    "reviewedApiNamespaces": ["storage", "runtime", "action", "tabs"],
+    "knownPartialApis": ["storage.sync"]
+  }
 ]
