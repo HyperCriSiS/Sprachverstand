@@ -11,7 +11,7 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 - [x] Deutsch als Referenz mit exakt 161 Nachrichten festschreiben.
 - [x] Vollständigkeit, identische Keys und Platzhalter automatisiert validieren.
 - [x] RTL-Unterstützung für Arabisch, Persisch und Hebräisch berücksichtigen.
-- [ ] Locale-Matrix von 50 auf 51 Sprachen erweitern und Amharisch ergänzen.
+- [x] Locale-Matrix von 50 auf 51 Sprachen erweitern und Amharisch ergänzen.
 - [ ] Alle 51 Locale-Dateien vollständig erstellen.
 - [ ] Alle UI-Texte konsequent über i18n-Keys anbinden; verbleibende hart codierte Oberflächentexte entfernen.
 - [ ] Vollständigen `npm run check` auf der 51-Sprachen-Matrix grün bekommen.
@@ -32,14 +32,14 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `da` | Dansk |
 | [x] | `sv` | Svenska |
 | [x] | `no` | Norsk |
-| [ ] | `fi` | Suomi |
-| [ ] | `cs` | Čeština |
-| [ ] | `sk` | Slovenčina |
-| [ ] | `hr` | Hrvatski |
-| [ ] | `sl` | Slovenščina |
-| [ ] | `sr` | Српски |
-| [ ] | `hu` | Magyar |
-| [ ] | `ro` | Română |
+| [x] | `fi` | Suomi |
+| [x] | `cs` | Čeština |
+| [x] | `sk` | Slovenčina |
+| [x] | `hr` | Hrvatski |
+| [x] | `sl` | Slovenščina |
+| [x] | `sr` | Српски |
+| [x] | `hu` | Magyar |
+| [x] | `ro` | Română |
 | [ ] | `bg` | Български |
 | [ ] | `ru` | Русский |
 | [ ] | `uk` | Українська |
