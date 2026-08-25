@@ -29,7 +29,7 @@ async function readMessages(locale) {
 }
 
 assert(Array.isArray(configuredLocales), "config/locales.json muss eine Liste sein.");
-assert(configuredLocales.length === 50, `Erwartet werden exakt 50 Locales, gefunden: ${configuredLocales.length}.`);
+assert(configuredLocales.length === 51, `Erwartet werden exakt 51 Locales, gefunden: ${configuredLocales.length}.`);
 
 const configuredCodes = configuredLocales.map((locale) => locale.code);
 assert(new Set(configuredCodes).size === configuredCodes.length, "Locale-Codes müssen eindeutig sein.");
