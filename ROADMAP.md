@@ -40,9 +40,9 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `sr` | Српски |
 | [x] | `hu` | Magyar |
 | [x] | `ro` | Română |
-| [ ] | `bg` | Български |
-| [ ] | `ru` | Русский |
-| [ ] | `uk` | Українська |
+| [x] | `bg` | Български |
+| [x] | `ru` | Русский |
+| [x] | `uk` | Українська |
 | [ ] | `el` | Ελληνικά |
 | [ ] | `tr` | Türkçe |
 | [ ] | `ca` | Català |
