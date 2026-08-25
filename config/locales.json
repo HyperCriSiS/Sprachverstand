@@ -140,6 +140,11 @@
     "direction": "ltr"
   },
   {
+    "code": "am",
+    "name": "አማርኛ",
+    "direction": "ltr"
+  },
+  {
     "code": "ar",
     "name": "العربية",
     "direction": "rtl"
