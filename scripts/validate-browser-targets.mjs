@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import * as ts from "typescript";
+import * as typescriptModule from "typescript";
+
+const ts = typescriptModule.default ?? typescriptModule;
 
 const projectRoot = process.cwd();
 const chromiumTargets = ["chromium", "edge", "opera"];
