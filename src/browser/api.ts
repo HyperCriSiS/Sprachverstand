@@ -45,6 +45,7 @@ export interface ExtensionApi {
   };
   readonly runtime: {
     openOptionsPage(): Promise<void> | void;
+    getURL(path: string): string;
     sendMessage(message: unknown): Promise<unknown>;
     readonly onMessage: {
       addListener(listener: MessageListener): void;
@@ -63,6 +64,10 @@ export interface ExtensionApi {
     }): Promise<void> | void;
   };
   readonly tabs: {
+    create(createProperties: {
+      readonly url: string;
+      readonly active?: boolean;
+    }): Promise<ExtensionTab>;
     query(queryInfo: {
       readonly active: boolean;
       readonly currentWindow: boolean;

@@ -1,4 +1,5 @@
 import { getExtensionApi } from "./browser/api";
+import { openOptionsPageInForeground } from "./browser/options";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
@@ -348,7 +349,7 @@ async function start(): Promise<void> {
           tabId: activeTabId
         });
       }
-      await api.runtime.openOptionsPage();
+      await openOptionsPageInForeground(api);
     };
     void open();
   });
