@@ -186,20 +186,36 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
 
+          PACKAGE_ASSETS=(
+            "sprachverstand-${ASSET_LABEL}-chromium.zip"
+            "sprachverstand-${ASSET_LABEL}-firefox.xpi"
+            "sprachverstand-${ASSET_LABEL}-source.zip"
+          )
+
           (
             cd dist/chromium
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip" .
           )
 
-          (
-            cd dist/edge
-            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-edge.zip" .
-          )
+          if diff -qr dist/chromium dist/edge >/dev/null; then
+            echo "Edge-Build ist vollständig identisch mit Chromium; kein redundantes Edge-Paket wird erzeugt."
+          else
+            (
+              cd dist/edge
+              zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-edge.zip" .
+            )
+            PACKAGE_ASSETS+=("sprachverstand-${ASSET_LABEL}-edge.zip")
+          fi
 
-          (
-            cd dist/opera
-            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-opera.zip" .
-          )
+          if diff -qr dist/chromium dist/opera >/dev/null; then
+            echo "Opera-Build ist vollständig identisch mit Chromium; kein redundantes Opera-Paket wird erzeugt."
+          else
+            (
+              cd dist/opera
+              zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-opera.zip" .
+            )
+            PACKAGE_ASSETS+=("sprachverstand-${ASSET_LABEL}-opera.zip")
+          fi
 
           (
             cd dist/firefox
@@ -226,22 +242,13 @@ jobs:
 
           (
             cd artifacts
-            sha256sum \
-              "sprachverstand-${ASSET_LABEL}-chromium.zip" \
-              "sprachverstand-${ASSET_LABEL}-edge.zip" \
-              "sprachverstand-${ASSET_LABEL}-opera.zip" \
-              "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
-              "sprachverstand-${ASSET_LABEL}-source.zip" \
-              SOURCE_COMMIT.txt \
-              > SHA256SUMS.txt
+            sha256sum "${PACKAGE_ASSETS[@]}" SOURCE_COMMIT.txt > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-edge.zip"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-opera.zip"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+          for ARCHIVE in "${PACKAGE_ASSETS[@]}"; do
+            unzip -t "artifacts/${ARCHIVE}"
+          done
 
           if unzip -l "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
             echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."

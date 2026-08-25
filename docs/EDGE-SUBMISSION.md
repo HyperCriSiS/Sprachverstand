@@ -3,8 +3,11 @@
 **Stand: 25. August 2026**
 
 Diese Datei ist die operative Checkliste für die erste Veröffentlichung von
-Sprachverstand bei Microsoft Edge Add-ons. Das einzureichende Paket wird vom
-Release-Workflow als `sprachverstand-<release>-edge.zip` erzeugt.
+Sprachverstand bei Microsoft Edge Add-ons. Solange der Edge-Build vollständig
+mit dem Chromium-Build übereinstimmt, wird für beide das gemeinsame Paket
+`sprachverstand-<release>-chromium.zip` verwendet. Erst bei einer tatsächlichen
+Abweichung erzeugt der Release-Workflow automatisch ein eigenes
+`sprachverstand-<release>-edge.zip`.
 
 Offizielle Referenzen:
 
@@ -22,10 +25,9 @@ Offizielle Referenzen:
 - kein Remote-Code
 - kein Tracking und keine Telemetrie
 - deutsche und englische Lokalisierung im Paket
-- eigenes Edge-Artefakt, obwohl der ausführbare Inhalt bewusst mit dem
-  Chromium-Build übereinstimmt
-- CI prüft, dass Edge und Chromium außerhalb von `manifest.json` bytegleich
-  gebaut werden
+- eigener Edge-Build und eigene Edge-Prüfung bleiben erhalten
+- der Release-Workflow vergleicht Edge und Chromium vollständig und veröffentlicht
+  nur dann ein separates Edge-Paket, wenn sich die Builds tatsächlich unterscheiden
 
 Die Edge-Dokumentation verlangt für neue Erweiterungen Manifest V3. Das
 Partner Center akzeptiert das Erweiterungspaket als ZIP-Datei.
@@ -43,144 +45,161 @@ angebotene entsprechende Accessibility-Kategorie.
 
 **Datenschutz:** https://github.com/HyperCriSiS/Sprachverstand/blob/main/PRIVACY.md
 
-**Ausgereifte Inhalte:** Nein.
+**Quellcode:** https://github.com/HyperCriSiS/Sprachverstand
 
-### Deutsch – Kurzbeschreibung
+**Lizenz:** AGPL-3.0-or-later
 
-> Passt gegenderte Schreibweisen lokal im Browser an persönliche Lesegewohnheiten an – ohne Tracking, Telemetrie oder eigene Cloud.
+## Kurzbeschreibung – Deutsch
 
-### Deutsch – Beschreibung
+> Entfernt typische Gender-Sonderformen aus Webseiten und stellt lesbare deutsche
+> Formulierungen direkt im Browser wieder her.
 
-Sprachverstand passt gegenderte deutsche Webseitentexte lokal an persönliche
-Lesegewohnheiten an.
+## Beschreibung – Deutsch
 
-Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“,
-Doppelnennungen, substantivierte Adjektive und ausgewählte Partizipformen werden
-direkt im Browser nach kontrollierten Regeln angepasst. Regelgruppen lassen sich
-einzeln aktivieren oder deaktivieren.
+> Sprachverstand verarbeitet den Text einer Webseite direkt im Browser und passt
+> typische gegenderte Schreibweisen nach kontrollierten Regeln an. Dazu gehören
+> Formen mit Doppelpunkt, Sternchen, Unterstrich und Binnen-I, Doppelnennungen sowie
+> ausgewählte Partizipformen.
+>
+> Beispiele:
+>
+> - Nutzer:innen → Nutzer
+> - Mitarbeiter*innen → Mitarbeiter
+> - NutzerInnen → Nutzer
+> - Nutzerinnen und Nutzer → Nutzer
+>
+> Auch dynamisch nachgeladene Inhalte können verarbeitet werden. Untertitel in
+> Videos lassen sich optional berücksichtigen, sofern sie als Text im Browser
+> vorliegen und nicht fest in das Video eingebrannt sind.
+>
+> Sprachverstand arbeitet vollständig lokal. Es werden keine Webseitentexte an
+> externe Server übertragen und keine Nutzungsdaten gesammelt.
+>
+> Da die deutsche Sprache viele Sonderfälle besitzt, arbeitet Sprachverstand
+> bewusst konservativ. Unsichere Fälle werden eher unverändert gelassen als
+> möglicherweise falsch ersetzt. Eigene geschützte Begriffe und persönliche Regeln
+> können ergänzt werden.
 
-Die aufgerufene Webseite und ihre Serverdaten werden nicht verändert.
-Sprachverstand passt ausschließlich die lokale Darstellung auf dem eigenen Gerät
-an. Beim Ausschalten werden die vorgenommenen Änderungen ohne Neuladen
-zurückgesetzt.
+## Short description – English
 
-Zusätzlich bietet Sprachverstand persönliche Ausnahmen, eigene wörtliche
-Ersetzungen, Live-Vorschau und Konflikthinweise, JSON-Import und -Export,
-optionale Browser-Synchronisierung pro Datenkategorie, Domain-Ausschlüsse,
-optionale Untertitelkorrektur und die optionale Verarbeitung zugänglicher
-Textattribute.
+> Replaces common German gender-style spellings on websites with readable forms,
+> directly and locally in the browser.
 
-Die gesamte Textverarbeitung erfolgt lokal im Browser. Webseitentexte,
-Browserverläufe und Nutzungsdaten werden nicht an den Entwickler übertragen.
-Sprachverstand verwendet keine eigene Cloud, keine externe Sprach-API, kein
-Tracking, keine Telemetrie und keine Werbung.
+## Description – English
 
-### Englisch – Kurzbeschreibung
-
-> Normalizes selected gendered forms in German website text locally in your browser, with configurable rules and no tracking or telemetry.
-
-### Englisch – Beschreibung
-
-Sprachverstand makes German websites easier to read by normalizing selected
-gendered forms directly in the browser. It can help readers who prefer
-conventional grammatical forms and people learning German who find forms such as
-the gender colon, gender asterisk, Binnen-I or double forms harder to parse.
-
-Rule groups can be enabled or disabled separately. Personal exceptions, literal
-custom replacements, JSON backup and restore, optional per-category browser
-synchronization, domain exclusions, optional subtitle handling and accessible
-text attributes are included.
-
-All website-text processing happens locally. Sprachverstand does not send
-website text, browsing history or usage data to the developer and does not use
-an external language service, tracking, telemetry or advertising.
+> Sprachverstand processes webpage text directly in the browser and adjusts common
+> German gender-style spellings using controlled rules. Supported patterns include
+> forms using colons, asterisks, underscores and Binnen-I, paired gender forms, and
+> selected participle constructions.
+>
+> Examples:
+>
+> - Nutzer:innen → Nutzer
+> - Mitarbeiter*innen → Mitarbeiter
+> - NutzerInnen → Nutzer
+> - Nutzerinnen und Nutzer → Nutzer
+>
+> Dynamically loaded content can also be processed. Video subtitles can optionally
+> be handled when they are exposed as text by the webpage and are not burned into
+> the video itself.
+>
+> Sprachverstand works entirely locally. Website text is not sent to external
+> servers and no usage data is collected.
+>
+> German contains many linguistic edge cases, so Sprachverstand intentionally uses
+> conservative rules. Ambiguous cases are preferably left unchanged rather than
+> replaced incorrectly. Protected terms and personal replacement rules can be
+> configured by the user.
 
 ## Suchbegriffe
 
-Microsoft erlaubt derzeit bis zu sieben Suchbegriffe mit zusammen höchstens
-21 Wörtern; jeder Suchbegriff darf höchstens 30 Zeichen haben.
+Das Partner Center erlaubt bis zu sieben Suchbegriffe mit jeweils höchstens
+30 Zeichen. Empfohlene Reihenfolge:
 
-### Deutsch
-
-1. `Gendern`
-2. `Entgendern`
-3. `Gendersprache`
-4. `Gendersternchen`
-5. `Gender-Doppelpunkt`
+1. `entgendern`
+2. `Genderzeichen entfernen`
+3. `Gendersternchen entfernen`
+4. `Gender Doppelpunkt`
+5. `Binnen I`
 6. `deutsche Sprache`
-7. `Lesbarkeit`
+7. `Text normalisieren`
 
-### Englisch
+Die Suchbegriffe sollen das tatsächliche Verhalten beschreiben und keine nicht
+vorhandenen Funktionen versprechen.
 
-1. `German gender language`
-2. `German readability`
-3. `gender star`
-4. `gender colon`
-5. `German text`
-6. `accessibility`
-7. `reading aid`
+## Berechtigungsbegründung
 
-## Datenschutzformular
+### `storage`
 
-### Einzelner Zweck
+Deutsch:
 
-> Sprachverstand passt unterstützte gegenderte Schreibweisen in deutschsprachigen
-> Webseitentexten lokal und nach konfigurierbaren Regeln an die persönlichen
-> Lesegewohnheiten des Nutzers an.
+> Wird ausschließlich benötigt, um die vom Nutzer gewählten Einstellungen,
+> geschützten Begriffe, persönliche Regeln und seitenbezogene Konfiguration lokal
+> im Browser zu speichern.
 
-### Berechtigung `storage`
+Englisch:
 
-> Die Speicherberechtigung wird benötigt, um den Einstellungsstand lokal im
-> Browser zu speichern. Optional kann der Nutzer einzelne Kategorien über den
-> standardisierten Synchronisierungsdienst des Browsers synchronisieren.
-> Standardmäßig ist keine Synchronisierungskategorie aktiviert.
+> Used only to store the user's selected settings, protected terms, personal rules,
+> and site-specific configuration locally in the browser.
 
 ### Zugriff auf Webseiten
 
-> Sprachverstand muss den sichtbaren Text der vom Nutzer aufgerufenen Webseiten
-> lesen und lokal verändern können, um unterstützte Schreibweisen zu erkennen und
-> ihre Darstellung anzupassen. Webseiteninhalte werden nicht an den Entwickler
-> übertragen und nicht dauerhaft gespeichert.
+Deutsch:
 
-### Remote-Code
+> Sprachverstand muss den sichtbaren Text geöffneter Webseiten lesen und lokal
+> verändern können. Dieser Zugriff ist die Kernfunktion der Erweiterung. Die
+> verarbeiteten Inhalte verlassen den Browser nicht.
 
-**Antwort:** Nein.
+Englisch:
 
-> Der gesamte ausführbare Code ist im Erweiterungspaket enthalten. Es werden
-> keine extern gehosteten Skripte oder andere ausführbare Codebestandteile
-> nachgeladen.
+> Sprachverstand needs access to visible text on opened webpages in order to process
+> and locally modify it. This access is the core function of the extension. The
+> processed content never leaves the browser.
 
-### Datennutzung
+## Datenschutzangaben
 
-- Webseitentext wird nur lokal und flüchtig verarbeitet.
-- Die aktuelle Domain wird lokal für Domain-Ausschlüsse und Tab-Zuordnung
-  verwendet.
-- Einstellungen bleiben standardmäßig lokal.
-- Nur ausdrücklich ausgewählte Einstellungskategorien können über den
-  Synchronisierungsdienst des Browsers übertragen werden.
-- Keine Daten werden an den Entwickler verkauft oder für Werbung,
-  Profilbildung, Kreditwürdigkeit oder andere fremde Zwecke verwendet.
+Für die Datenschutzfragen im Partner Center:
+
+- keine personenbezogenen Daten gesammelt
+- keine personenbezogenen Daten verkauft
+- keine Nutzungsanalyse
+- keine Telemetrie
+- keine Werbung
+- kein Tracking
+- keine Übertragung des verarbeiteten Webseiteninhalts
+- Einstellungen verbleiben im lokalen Erweiterungsspeicher
+
+Falls das Partner Center nach einer Datenschutzrichtlinie fragt, auf
+`PRIVACY.md` verweisen. Die Antworten im Formular dürfen keine weitergehenden
+Versprechen enthalten als die tatsächlich veröffentlichte Datenschutzrichtlinie.
 
 ## Zertifizierungshinweise
 
-Diesen Text in das Feld für Zertifizierungshinweise übernehmen:
+Falls ein Freitextfeld für Reviewer vorhanden ist, kann folgender Text verwendet
+werden:
 
-> Sprachverstand benötigt kein Testkonto und keine Anmeldung. Nach der
-> Installation kann die Erweiterung auf jeder deutschsprachigen Webseite getestet
-> werden. Ein reproduzierbarer Test steht im öffentlichen Repository:
-> https://github.com/HyperCriSiS/Sprachverstand
->
-> Im Abschnitt „Direkt ausprobieren“ steht normaler Webseitentext mit
-> „Mitarbeiter*innen“, „Nutzer:innen“, „Student*innen“, „Jede:r Nutzer:in“,
-> „Studierende“ und „Arbeitnehmende“. Bei aktivierter Erweiterung werden die
-> unterstützten Formen lokal angepasst. Das Popup zeigt die Anzahl der
-> Korrekturen; über „Anzeigen“ kann die temporäre Übersicht der tatsächlich
-> vorgenommenen Ersetzungen geöffnet werden.
->
-> Die Verarbeitung erfolgt ausschließlich lokal. Es gibt keinen Remote-Code,
-> keine externe Sprach-API, kein Tracking und keine Telemetrie. `storage` wird
-> für Einstellungen und die optional vom Nutzer aktivierbare
-> Browser-Synchronisierung verwendet.
+> Sprachverstand processes visible webpage text locally in the browser. No page
+> content or usage data is transmitted to external services. The `storage`
+> permission stores only local extension settings. To test the main function, open
+> a German webpage containing forms such as `Nutzer:innen` or use the example in the
+> GitHub README. The popup allows individual rule groups to be enabled or disabled,
+> and the extension can be paused at any time.
+
+## Test vor Store-Upload
+
+Nach dem Entpacken des Release-Pakets:
+
+1. `edge://extensions` öffnen.
+2. Entwicklermodus aktivieren.
+3. **Entpackte Erweiterung laden** wählen.
+4. den entpackten Ordner auswählen.
+5. README-Testtext und mehrere reale Webseiten testen.
+6. Popup öffnen und Korrekturzähler sowie Detailansicht prüfen.
+7. Optionsseite öffnen und Regelgruppen umschalten.
+8. Erweiterung deaktivieren und prüfen, dass die vorgenommenen Änderungen
+   wiederhergestellt werden.
+
+Die manuelle Real-World-Matrix steht in `docs/REAL-WORLD-TEST-MATRIX.md`.
 
 ## Store-Grafiken
 
@@ -197,7 +216,8 @@ Für den Edge-Eintrag vorbereiten:
 
 ## Vor der Einreichung
 
-- [ ] neuestes `sprachverstand-<release>-edge.zip` verwenden
+- [ ] `sprachverstand-<release>-edge.zip` verwenden, falls im Release vorhanden;
+  andernfalls das gemeinsame `sprachverstand-<release>-chromium.zip` verwenden
 - [ ] SHA256 mit `SHA256SUMS.txt` prüfen
 - [ ] Paket in Microsoft Edge über `edge://extensions` als entpackte Erweiterung testen
 - [ ] Popup, Detailansicht, Optionsseite und Wiederherstellung beim Ausschalten testen
