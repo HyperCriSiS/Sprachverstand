@@ -2,9 +2,6 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import * as typescriptModule from "typescript";
-
-const ts = typescriptModule.default ?? typescriptModule;
 
 const projectRoot = process.cwd();
 const chromiumTargets = ["chromium", "edge", "opera"];
@@ -129,24 +126,52 @@ function validateGeckoManifest(target, manifest) {
 async function getExtensionApiNamespaces() {
   const apiPath = path.join(projectRoot, "src", "browser", "api.ts");
   const sourceText = await readFile(apiPath, "utf8");
-  const sourceFile = ts.createSourceFile(
-    apiPath,
-    sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
-  const extensionApi = sourceFile.statements.find(
-    (statement) =>
-      ts.isInterfaceDeclaration(statement) && statement.name.text === "ExtensionApi"
-  );
+  const interfaceMarker = "export interface ExtensionApi";
+  const interfaceStart = sourceText.indexOf(interfaceMarker);
 
-  assert(extensionApi, "ExtensionApi-Schnittstelle für den Orion-Vertrag fehlt.");
+  assert(interfaceStart >= 0, "ExtensionApi-Schnittstelle für den Orion-Vertrag fehlt.");
 
-  return extensionApi.members
-    .filter((member) => ts.isPropertySignature(member) && member.name)
-    .map((member) => member.name.getText(sourceFile).replaceAll(/["']/g, ""))
-    .sort();
+  const openBrace = sourceText.indexOf("{", interfaceStart);
+  assert(openBrace >= 0, "ExtensionApi-Schnittstelle ist nicht lesbar.");
+
+  let depth = 0;
+  let closeBrace = -1;
+  for (let index = openBrace; index < sourceText.length; index += 1) {
+    if (sourceText[index] === "{") {
+      depth += 1;
+    } else if (sourceText[index] === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        closeBrace = index;
+        break;
+      }
+    }
+  }
+
+  assert(closeBrace >= 0, "ExtensionApi-Schnittstelle ist nicht abgeschlossen.");
+
+  const interfaceBody = sourceText.slice(openBrace + 1, closeBrace);
+  const namespaces = [];
+  let bodyDepth = 0;
+
+  for (const line of interfaceBody.split("\n")) {
+    if (bodyDepth === 0) {
+      const match = line.match(/^\s*readonly\s+([A-Za-z_$][\w$]*)\??\s*:/);
+      if (match) {
+        namespaces.push(match[1]);
+      }
+    }
+
+    for (const character of line) {
+      if (character === "{") {
+        bodyDepth += 1;
+      } else if (character === "}") {
+        bodyDepth -= 1;
+      }
+    }
+  }
+
+  return namespaces.sort();
 }
 
 const manifests = new Map();
