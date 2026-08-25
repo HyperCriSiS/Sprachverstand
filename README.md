@@ -13,14 +13,18 @@
 
 <div align="center">
 
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="Lizenz"></a>
+</p>
+
 <h3>Gecko</h3>
 
 <p>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Firefox-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox"></a>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/LibreWolf-00ACFF?logo=librewolf&logoColor=white" alt="LibreWolf"></a>
-  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Zen%20Browser-111111?logo=zenbrowser&logoColor=white" alt="Zen Browser"></a>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Floorp-58A6FF?logo=floorp&logoColor=white" alt="Floorp"></a>
-  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version" alt="AMO Version"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Zen%20Browser-111111?logo=zenbrowser&logoColor=white" alt="Zen Browser"></a>
 </p>
 
 <p>
@@ -51,11 +55,6 @@
 
 <p>
   <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml?query=branch%3Apalemoon"><img src="https://img.shields.io/github/check-runs/HyperCriSiS/Sprachverstand/palemoon?nameFilter=check&label=Goanna%20CI&logo=githubactions&logoColor=white" alt="Goanna CI"></a>
-</p>
-
-<p>
-  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="Lizenz"></a>
 </p>
 
 </div>
@@ -118,187 +117,3 @@ Quellen:
 | `Arbeitnehmende` | `Arbeitnehmer` |
 | `Gegner*innenschaft` | `Gegnerschaft` |
 | `Erwachsene:r` | `Erwachsener` |
-| `Rom*nja` | `Roma` |
-| `Sinti*zze` | `Sinti` |
-| `Studentys` | `Studenten` |
-
-### Direkt ausprobieren
-
-Die Vergleichstabelle bleibt absichtlich unverändert, weil ihre Beispiele als
-Quellcode formatiert sind. Der folgende Text ist normaler Seiteninhalt und wird
-bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
-
-> Unsere Mitarbeiter*innen begrüßen neue Nutzer:innen und Student*innen.
-> Jede:r Nutzer:in erhält ein eigenes Nutzer:innenkonto. Studierende und
-> Arbeitnehmende finden dort weitere Informationen.
-
-### Grenzen und Sicherheit
-
-Sprachverstand berücksichtigt bekannte Flexionen, zusammengesetzte Wörter,
-markierte Binnen-I-Singularformen und ausgewählte substantivierte Adjektive.
-Bei Formen wie `eine NutzerIn` wird der Kasus aus sicheren Satz-, Verb- oder
-Präpositionskontexten bestimmt. Reicht der Kontext nicht aus, bleibt die Phrase
-unangetastet statt einen grammatisch falschen Artikel zu erzeugen.
-
-Ausdrücklich weibliche Formen wie `Politikerinnen` oder `Professorin` bleiben
-unverändert. Terminologische Schreibweisen wie `trans* Personen`,
-`inter* Personen`, `Inter*feindlichkeit` und `Inter*diskriminierung` werden
-nicht als Genderendung behandelt.
-
-Eine ausgelassene Ersetzung ist besser als eine falsche. Unbekannte oder
-mehrdeutige Formen bleiben deshalb unangetastet.
-
-## Funktionen
-
-- Verarbeitung direkt beim Laden der Webseite
-- dynamisch nachgeladene Inhalte werden unmittelbar korrigiert
-- vollständige Wiederherstellung beim Ausschalten, ohne Aktualisierung der Seite
-- einzeln aktivierbare Regelgruppen
-- Korrekturzähler für den aktuellen Tab
-- persönliche Ausnahmen für Wörter und vollständige Phrasen
-- eigene literale Ersetzungen, getrennt von Ausnahmen und ohne Regex
-- Live-Vorschau für noch nicht gespeicherte persönliche Regeln
-- Konflikthinweise für Dubletten, Überschneidungen, Ersetzungsketten und blockierende Ausnahmen
-- versionierter JSON-Import und -Export des vollständigen Einstellungsstands
-- optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig vollständig deaktiviert
-- Ausschluss einzelner Domains
-- optionaler Schutz von Texten in Anführungszeichen
-- optionale Untertitelkorrektur; standardmäßig werden erkannte
-  Untertitel-Overlays vollständig übersprungen
-- optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
-  `aria-description` und `title`
-- Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
-
-## Einstellungen
-
-Im Popup kann Sprachverstand global ein- und ausgeschaltet werden. Außerdem
-lassen sich die Regelgruppen einzeln steuern, beispielsweise:
-
-- Genderzeichen und Binnen-I
-- Doppelnennungen
-- Singularformen mit oder ohne Artikel
-- substantivierte Adjektive
-- weitere sichtbare Sonderformen
-- Pronomen- und Possessivpaare
-- Titelabkürzungen
-- ausgewählte neutrale Partizipformen
-- optionale Umschreibungen
-- optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
-
-In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
-literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen,
-die optionale Untertitelkorrektur und die Verarbeitung zugänglicher Attribute
-zur Verfügung. Die Untertitelkorrektur ist standardmäßig deaktiviert. Eigene
-Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und
-standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In
-einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen,
-Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils
-getrennt gewählt werden, ob die Kategorie zusätzlich über den
-Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist
-standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie
-aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben
-Kategorien auf weiteren angemeldeten Geräten geladen werden können.
-
-**Speichern** und **Zurücksetzen** befinden sich oben in derselben Werkzeugleiste
-wie **Alle öffnen** und **Alle schließen**. Alle Einstellungsbereiche lassen sich
-einzeln oder gemeinsam öffnen und schließen.
-
-Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
-geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
-widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
-Überschneidungen und nicht ausgeführte Ersetzungsketten hin.
-
-Der vollständige Einstellungsstand einschließlich Aktivierung, Regelgruppen, Domain-Ausschlüssen, Zitat- und Attributoptionen, Ausnahmen, eigenen Ersetzungen und Synchronisierungsauswahl lässt sich als versionierte JSON-Datei sichern und wieder einlesen.
-Ein Import wird zunächst nur in das Formular übernommen und erst nach dem
-Speichern aktiv.
-
-## Datenschutz
-
-Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
-
-- keine Übertragung von Seitentexten
-- kein eigener Cloud-Dienst und keine externe Sprach-API
-- keine Analyse des Browserverlaufs
-- kein Tracking und keine Telemetrie
-- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
-
-Alle Einstellungen werden standardmäßig lokal im Browser gespeichert. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über `storage.sync` an den Synchronisierungsdienst des verwendeten Browsers übergeben. Sprachverstand betreibt keinen eigenen Synchronisierungsserver und überträgt keine Webseitentexte oder Browserverläufe. Import- und Exportdateien werden ausschließlich nach einer bewussten Nutzeraktion lokal gelesen oder erzeugt. Die vollständigen Angaben
-stehen in der [Datenschutzerklärung](PRIVACY.md).
-
-## Unterstützte Browser
-
-Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
-
-- **Gecko:** Firefox für Desktop und Android; der Firefox-Build wird außerdem für LibreWolf, Zen Browser und Floorp geprüft.
-- **Blink / Chromium:** Google Chrome, Chromium, Microsoft Edge und Opera sowie die kompatiblen Browser Brave, Vivaldi und Arc.
-- **Goanna:** Pale Moon über einen separat gepflegten Port auf dem Branch `palemoon`.
-
-Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
-ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen
-den geprüften Basis-Build ihrer jeweiligen Engine.
-
-## Projektstatus
-
-Sprachverstand wird für Gecko, Blink/Chromium und Goanna getrennt geprüft.
-Die README zeigt deshalb für jede Engine einen eigenen CI-Status. Die Regel-Engine
-ist bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
-Performance-, Browserziel- und Regressionstests abgesichert.
-
-Die versionierten deutschen Storetexte stehen in
-[`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
-
-## Entwicklung
-
-Voraussetzungen:
-
-- Node.js 24 oder neuer
-- npm
-
-```bash
-npm install
-npm run check
-```
-
-Browser-Builds werden anschließend unter `dist/chromium/`, `dist/edge/`,
-`dist/opera/` und `dist/firefox/` erstellt. Edge und Opera verwenden bewusst
-dieselbe geprüfte Chromium-Payload; die CI kontrolliert deren Bytegleichheit
-außerhalb des Manifests.
-
-Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
-und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das
-Verfahren zur Erweiterung und Absicherung des Flexionsbestands ist in
-[`docs/LEXICON.md`](docs/LEXICON.md) beschrieben. Das JSON-Format der
-Einstellungssicherung ist in
-[`docs/SETTINGS-BACKUP-FORMAT.md`](docs/SETTINGS-BACKUP-FORMAT.md) dokumentiert.
-Hinweise für Beiträge stehen in [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
-## Dank und Herkunft
-
-Bei der Entwicklung wurden öffentlich dokumentierte Anwendungsfälle,
-Grenzfälle und Erfahrungen anderer Projekte berücksichtigt. Unser Dank gilt den
-Entwicklern und Mitwirkenden von:
-
-- [gendersprache-korrigieren](https://github.com/brilliance-richter-huh/gendersprache-korrigieren)
-- [no-gender](https://github.com/sternth/no-gender)
-- [rggl](https://github.com/motsiw/rggl)
-
-Sprachverstand ist eine eigenständige Neuimplementierung. Es wurden keine
-Codebestandteile oder fremden Regexketten übernommen. Details zur fachlichen
-Abgrenzung stehen in [`UPSTREAMS.md`](UPSTREAMS.md).
-
-## Lizenz
-
-Der Quelltext steht unter der **GNU Affero General Public License Version 3,
-ausschließlich Version 3** (`AGPL-3.0-only`). Die vollständigen Bedingungen
-stehen in [`LICENSE`](LICENSE).
-
-Veränderte und weitergegebene Fassungen müssen die Copyleft-Bedingungen der
-AGPL einhalten. Bei einer veränderten netzwerkfähigen Fassung muss der
-entsprechende Quelltext auch den über das Netzwerk interagierenden Nutzern
-angeboten werden.
-
-Der Name **Sprachverstand**, das SV-Logo und andere Herkunftskennzeichen werden
-nicht durch die Softwarelizenz freigegeben. Regeln für offizielle Pakete,
-Namensnennung und Forks stehen in [`TRADEMARKS.md`](TRADEMARKS.md). Das Programm
-wird ohne Gewährleistung bereitgestellt; Einzelheiten stehen in
-[`NOTICE`](NOTICE) und `LICENSE`.
