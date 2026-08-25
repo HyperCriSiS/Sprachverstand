@@ -18,11 +18,19 @@ const compatibilityBrowsers = JSON.parse(
   readFileSync("config/browser-compatibility.json", "utf8")
 ) as Array<{
   readonly name: string;
-  readonly family: "chromium" | "gecko";
+  readonly family: "chromium" | "gecko" | "webextension";
   readonly target: "chromium" | "firefox";
+  readonly support?: "experimental";
+  readonly reviewedApiNamespaces?: readonly string[];
+  readonly knownPartialApis?: readonly string[];
 }>;
 const buildScript = readFileSync("scripts/build.mjs", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
+
+const standardCompatibilityBrowsers = compatibilityBrowsers.filter(
+  (browser) => browser.family !== "webextension"
+);
+const orion = compatibilityBrowsers.find((browser) => browser.name === "Orion");
 
 describe("Browser-Ziele", () => {
   it("baut Chromium, Edge, Opera und Firefox als explizite Ziele", () => {
@@ -58,14 +66,34 @@ describe("Browser-Ziele", () => {
   });
 
   it("ordnet Browser ohne eigenen Release ihrem gemeinsamen Basis-Build zu", () => {
-    expect(compatibilityBrowsers).toEqual([
+    expect(standardCompatibilityBrowsers).toEqual([
+      { name: "Chromium", family: "chromium", target: "chromium" },
       { name: "Brave", family: "chromium", target: "chromium" },
       { name: "Vivaldi", family: "chromium", target: "chromium" },
       { name: "Arc", family: "chromium", target: "chromium" },
+      { name: "Thorium", family: "chromium", target: "chromium" },
+      { name: "Ungoogled Chromium", family: "chromium", target: "chromium" },
+      { name: "Waterfox", family: "gecko", target: "firefox" },
       { name: "LibreWolf", family: "gecko", target: "firefox" },
       { name: "Zen Browser", family: "gecko", target: "firefox" },
-      { name: "Floorp", family: "gecko", target: "firefox" }
+      { name: "Floorp", family: "gecko", target: "firefox" },
+      { name: "FireDragon", family: "gecko", target: "firefox" },
+      { name: "Midori", family: "gecko", target: "firefox" }
     ]);
+  });
+
+  it("führt Orion als experimentellen WebExtension-Sonderfall ohne eigenen Build", () => {
+    expect(orion).toEqual({
+      name: "Orion",
+      family: "webextension",
+      target: "chromium",
+      support: "experimental",
+      reviewedApiNamespaces: ["storage", "runtime", "action", "tabs"],
+      knownPartialApis: ["storage.sync"]
+    });
+    expect(buildScript).not.toContain('"orion"');
+    expect(packageJson.scripts["build:orion"]).toBeUndefined();
+    expect(releaseWorkflow.toLowerCase()).not.toContain("orion");
   });
 
   it("packt Edge und Opera im Release-Workflow", () => {
