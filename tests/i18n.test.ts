@@ -5,6 +5,13 @@ import { describe, expect, it } from "vitest";
 
 interface LocaleMessage {
   readonly message?: string;
+  readonly placeholders?: Readonly<Record<string, { readonly content?: string }>>;
+}
+
+interface LocaleDefinition {
+  readonly code: string;
+  readonly name: string;
+  readonly direction: "ltr" | "rtl";
 }
 
 async function readMessages(locale: string): Promise<Record<string, LocaleMessage>> {
@@ -32,17 +39,38 @@ function normalize(value: string): string {
 }
 
 describe("WebExtension localization", () => {
-  it("keeps German and English locale keys aligned", async () => {
-    const [de, en] = await Promise.all([readMessages("de"), readMessages("en")]);
-    expect(Object.keys(en).sort()).toEqual(Object.keys(de).sort());
-    for (const key of Object.keys(de)) {
-      expect(de[key]?.message, `missing German message: ${key}`).toBeTruthy();
-      expect(en[key]?.message, `missing English message: ${key}`).toBeTruthy();
+  it("hält alle 50 Locales vollständig und platzhalterkompatibel", async () => {
+    const locales = JSON.parse(
+      await readFile("config/locales.json", "utf8")
+    ) as LocaleDefinition[];
+    expect(locales).toHaveLength(50);
+    expect(
+      locales
+        .filter((locale) => locale.direction === "rtl")
+        .map((locale) => locale.code)
+        .sort()
+    ).toEqual(["ar", "fa", "he"]);
+
+    const de = await readMessages("de");
+    const referenceKeys = Object.keys(de).sort();
+    for (const locale of locales) {
+      const messages = await readMessages(locale.code);
+      expect(Object.keys(messages).sort(), locale.code).toEqual(referenceKeys);
+      for (const key of referenceKeys) {
+        expect(
+          messages[key]?.message,
+          `${locale.code}: missing message ${key}`
+        ).toBeTruthy();
+        expect(
+          messages[key]?.placeholders ?? {},
+          `${locale.code}: placeholder metadata ${key}`
+        ).toEqual(de[key]?.placeholders ?? {});
+      }
     }
   });
 
   it("references only existing localization keys in extension pages", async () => {
-    const [de, en] = await Promise.all([readMessages("de"), readMessages("en")]);
+    const de = await readMessages("de");
 
     for (const path of localizedPages) {
       const dom = new JSDOM(await readFile(path, "utf8"));
@@ -51,7 +79,6 @@ describe("WebExtension localization", () => {
           const key = element.getAttribute(attribute);
           if (!key) continue;
           expect(de[key]?.message, `${path}: missing German key ${key}`).toBeTruthy();
-          expect(en[key]?.message, `${path}: missing English key ${key}`).toBeTruthy();
         }
       }
     }
@@ -62,7 +89,10 @@ describe("WebExtension localization", () => {
     const catalogText = new Set(
       Object.values(de)
         .map((entry) => entry.message)
-        .filter((message): message is string => Boolean(message) && !message?.includes("$"))
+        .filter(
+          (message): message is string =>
+            Boolean(message) && !message?.includes("$")
+        )
         .map(normalize)
     );
     const allowedLiteralText = new Set(["Sprachverstand", "0"]);
@@ -94,7 +124,10 @@ describe("WebExtension localization", () => {
         node = walker.nextNode();
       }
 
-      expect(unlocalized, `${path}: text missing from localization catalog`).toEqual([]);
+      expect(
+        unlocalized,
+        `${path}: text missing from localization catalog`
+      ).toEqual([]);
     }
   });
 
@@ -119,6 +152,7 @@ describe("WebExtension localization", () => {
     expect(buildScript).toContain("options/options.html");
     expect(buildScript).toContain("legal/legal.html");
     expect(bootstrap).toContain("getUILanguage");
+    expect(bootstrap).toContain("rtlLanguages");
     expect(bootstrap).toContain("data-i18n");
     expect(bootstrap).toContain("_locales/de/messages.json");
     expect(bootstrap).toContain("settingsExported");

@@ -3,9 +3,11 @@
   if (!api?.i18n || !api?.runtime) return;
 
   const uiLanguage = api.i18n.getUILanguage?.() || "de";
-  const locale = uiLanguage.toLowerCase().startsWith("en") ? "en" : "de";
-  document.documentElement.lang = locale;
-  if (locale === "de") return;
+  const normalizedLanguage = uiLanguage.replace(/_/g, "-");
+  const baseLanguage = normalizedLanguage.toLowerCase().split("-")[0];
+  const rtlLanguages = new Set(["ar", "fa", "he"]);
+  document.documentElement.lang = normalizedLanguage;
+  document.documentElement.dir = rtlLanguages.has(baseLanguage) ? "rtl" : "ltr";
 
   const normalize = (value) => value.replace(/\s+/g, " ").trim();
   const localizableAttributes = ["aria-label", "aria-description", "placeholder", "title"];
