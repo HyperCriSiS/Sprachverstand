@@ -43,11 +43,11 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `bg` | Български |
 | [x] | `ru` | Русский |
 | [x] | `uk` | Українська |
-| [ ] | `el` | Ελληνικά |
-| [ ] | `tr` | Türkçe |
-| [ ] | `ca` | Català |
-| [ ] | `et` | Eesti |
-| [ ] | `lt` | Lietuvių |
+| [x] | `el` | Ελληνικά |
+| [x] | `tr` | Türkçe |
+| [x] | `ca` | Català |
+| [x] | `et` | Eesti |
+| [x] | `lt` | Lietuvių |
 | [ ] | `am` | አማርኛ |
 | [ ] | `ar` | العربية |
 | [ ] | `bn` | বাংলা |
