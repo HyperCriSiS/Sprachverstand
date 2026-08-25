@@ -22,7 +22,9 @@
     "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
     "validate:icons": "node scripts/validate-icons.mjs",
     "validate:browsers": "node scripts/validate-browser-targets.mjs",
-    "audit:public": "node scripts/audit-publication.mjs"
+    "audit:public": "node scripts/audit-publication.mjs",
+    "validate:browsers:gecko": "node scripts/validate-browser-targets.mjs --family gecko",
+    "validate:browsers:chromium": "node scripts/validate-browser-targets.mjs --family chromium"
   },
   "devDependencies": {
     "esbuild": "0.28.1",

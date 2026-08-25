@@ -11,11 +11,54 @@
   auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
 </p>
 
-[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![AMO Version](https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![GitHub Release](https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release)](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
-[![CI](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/HyperCriSiS/Sprachverstand)](LICENSE)
+<div align="center">
+
+<h3>Gecko</h3>
+
+<p>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Firefox-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/LibreWolf-00ACFF?logo=librewolf&logoColor=white" alt="LibreWolf"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Zen%20Browser-111111?logo=zenbrowser&logoColor=white" alt="Zen Browser"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Floorp-58A6FF?logo=floorp&logoColor=white" alt="Floorp"></a>
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version" alt="AMO Version"></a>
+</p>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/check-runs/HyperCriSiS/Sprachverstand/main?nameFilter=Gecko%20CI&label=Gecko%20CI&logo=githubactions&logoColor=white" alt="Gecko CI"></a>
+</p>
+
+<h3>Blink / Chromium</h3>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Google%20Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Google Chrome"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Chromium-4285F4?logo=chromium&logoColor=white" alt="Chromium"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Brave-FB542B?logo=brave&logoColor=white" alt="Brave"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Vivaldi-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi"></a>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Arc-FCBFBD?logo=arc&logoColor=black" alt="Arc"></a>
+</p>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/check-runs/HyperCriSiS/Sprachverstand/main?nameFilter=Chromium%20CI&label=Chromium%20CI&logo=githubactions&logoColor=white" alt="Chromium CI"></a>
+</p>
+
+<h3>Goanna</h3>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Pale%20Moon-8A9BB8" alt="Pale Moon"></a>
+</p>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml?query=branch%3Apalemoon"><img src="https://img.shields.io/github/check-runs/HyperCriSiS/Sprachverstand/palemoon?nameFilter=check&label=Goanna%20CI&logo=githubactions&logoColor=white" alt="Goanna CI"></a>
+</p>
+
+<p>
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="Lizenz"></a>
+</p>
+
+</div>
 
 ## Was ist Sprachverstand?
 
@@ -184,22 +227,22 @@ stehen in der [Datenschutzerklärung](PRIVACY.md).
 
 ## Unterstützte Browser
 
-- Firefox für Desktop
-- Firefox für Android
-- Google Chrome und andere Chromium-basierte Desktop-Browser
-- Microsoft Edge mit eigenem Store- und Release-Paket
-- Opera mit eigenem Store- und Release-Paket
+Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
+
+- **Gecko:** Firefox für Desktop und Android; der Firefox-Build wird außerdem für LibreWolf, Zen Browser und Floorp geprüft.
+- **Blink / Chromium:** Google Chrome, Chromium, Microsoft Edge und Opera sowie die kompatiblen Browser Brave, Vivaldi und Arc.
+- **Goanna:** Pale Moon über einen separat gepflegten Port auf dem Branch `palemoon`.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
-ist deshalb kein Veröffentlichungsziel. Brave und Vivaldi können weiterhin den
-Chromium-Build beziehungsweise die Veröffentlichung im Chrome Web Store nutzen.
+ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen
+den geprüften Basis-Build ihrer jeweiligen Engine.
 
 ## Projektstatus
 
-Sprachverstand wird parallel für Firefox, Chromium, Microsoft Edge und Opera
-gebaut. Die Regel-Engine ist bewusst konservativ aufgebaut und wird mit
-automatisierten Unit-, DOM-, Performance-, Browserziel- und Regressionstests
-abgesichert.
+Sprachverstand wird für Gecko, Blink/Chromium und Goanna getrennt geprüft.
+Die README zeigt deshalb für jede Engine einen eigenen CI-Status. Die Regel-Engine
+ist bewusst konservativ aufgebaut und wird mit automatisierten Unit-, DOM-,
+Performance-, Browserziel- und Regressionstests abgesichert.
 
 Die versionierten deutschen Storetexte stehen in
 [`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
