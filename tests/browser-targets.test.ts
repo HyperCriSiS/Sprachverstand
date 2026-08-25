@@ -37,6 +37,9 @@ describe("Browser-Ziele", () => {
     expect(packageJson.scripts["build:opera"]).toBe(
       "node scripts/build.mjs --target opera"
     );
+    expect(packageJson.scripts["build:chromium-family"]).toBe(
+      "node scripts/build.mjs --targets chromium,edge,opera"
+    );
   });
 
   it("hält Edge und Opera auf derselben minimalen Chromium-Berechtigungsbasis", () => {
@@ -89,6 +92,7 @@ describe("Browser-Ziele", () => {
     expect(ciWorkflow).toContain("name: check");
     expect(ciWorkflow).toContain("npm run validate:browsers:gecko");
     expect(ciWorkflow).toContain("npm run validate:browsers:chromium");
+    expect(ciWorkflow).toContain("npm run build:chromium-family");
   });
 
   it("gliedert die README-Badges nach Engine und zeigt je Engine einen CI-Status", () => {

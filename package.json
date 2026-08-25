@@ -13,6 +13,7 @@
     "build:chromium": "node scripts/build.mjs --target chromium",
     "build:edge": "node scripts/build.mjs --target edge",
     "build:opera": "node scripts/build.mjs --target opera",
+    "build:chromium-family": "node scripts/build.mjs --targets chromium,edge,opera",
     "build:firefox": "node scripts/build.mjs --target firefox",
     "dev": "node scripts/build.mjs --target chromium --watch",
     "typecheck": "tsc --noEmit",

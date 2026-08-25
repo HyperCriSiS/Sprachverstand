@@ -6,13 +6,27 @@ import process from "node:process";
 const projectRoot = process.cwd();
 const argumentsSet = new Set(process.argv.slice(2));
 const targetArgumentIndex = process.argv.indexOf("--target");
+const targetsArgumentIndex = process.argv.indexOf("--targets");
 const requestedTarget =
   targetArgumentIndex >= 0 ? process.argv[targetArgumentIndex + 1] : undefined;
+const requestedTargets =
+  targetsArgumentIndex >= 0
+    ? process.argv[targetsArgumentIndex + 1]?.split(",").filter(Boolean)
+    : undefined;
 const watch = argumentsSet.has("--watch");
 const cleanOnly = argumentsSet.has("--clean");
 
 const supportedTargets = ["chromium", "edge", "opera", "firefox"];
-const targets = requestedTarget ? [requestedTarget] : supportedTargets;
+
+if (requestedTarget && requestedTargets) {
+  throw new Error("--target und --targets dürfen nicht gleichzeitig verwendet werden.");
+}
+
+const targets = requestedTarget
+  ? [requestedTarget]
+  : requestedTargets?.length
+    ? requestedTargets
+    : supportedTargets;
 
 for (const target of targets) {
   if (!supportedTargets.includes(target)) {
@@ -119,6 +133,8 @@ for (const target of targets) {
 }
 
 if (watch) {
-  console.log(`Beobachte Änderungen für: ${targets.join(", ")}`);
-  await new Promise(() => {});
+  process.on("SIGINT", async () => {
+    await Promise.all(buildContexts.map((buildContext) => buildContext.dispose()));
+    process.exit(0);
+  });
 }

@@ -158,10 +158,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Chromium-, Edge- und Opera-Builds erstellen
-        run: |
-          npm run build:chromium
-          npm run build:edge
-          npm run build:opera
+        run: npm run build:chromium-family
 
       - name: Chromium-Builds und Kompatibilität prüfen
         run: npm run validate:browsers:chromium
