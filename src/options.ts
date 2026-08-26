@@ -1,4 +1,5 @@
 import { getExtensionApi } from "./browser/api";
+import { t } from "./i18n";
 import { transformText } from "./core/transform-text";
 import { defaultRules } from "./rules";
 import {
@@ -89,22 +90,24 @@ const syncCategoriesContainer =
   requiredElement<HTMLElement>("#sync-categories");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
-const selectAllRulesButton =
-  requiredElement<HTMLButtonElement>("#select-all-rules");
-const selectNoRulesButton =
-  requiredElement<HTMLButtonElement>("#select-no-rules");
+const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
-const statusOutput = requiredElement<HTMLOutputElement>("#status");
 const expandAllSectionsButton =
   requiredElement<HTMLButtonElement>("#expand-all-sections");
 const collapseAllSectionsButton =
   requiredElement<HTMLButtonElement>("#collapse-all-sections");
+const selectAllRulesButton =
+  requiredElement<HTMLButtonElement>("#select-all-rules");
+const selectNoRulesButton =
+  requiredElement<HTMLButtonElement>("#select-no-rules");
+const statusOutput = requiredElement<HTMLOutputElement>("#status");
 const settingsSections = [
   ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
 ];
-let activeTabId: number | undefined;
-let interactiveUpdateTimer: number | undefined;
+
 let statusTimer: number | undefined;
+let interactiveUpdateTimer: number | undefined;
+let activeTabId: number | undefined;
 
 function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
   if (!message || typeof message !== "object") {
@@ -120,10 +123,12 @@ function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage
 }
 
 function refreshSectionToggleButtons(): void {
-  const allOpen = settingsSections.every((section) => section.open);
-  const allClosed = settingsSections.every((section) => !section.open);
-  expandAllSectionsButton.disabled = allOpen;
-  collapseAllSectionsButton.disabled = allClosed;
+  expandAllSectionsButton.disabled = settingsSections.every(
+    (section) => section.open
+  );
+  collapseAllSectionsButton.disabled = settingsSections.every(
+    (section) => !section.open
+  );
 }
 
 function setAllSectionsOpen(open: boolean): void {
@@ -148,10 +153,10 @@ function createRuleGroupControls(): void {
     content.className = "rule-card-content";
 
     const title = document.createElement("strong");
-    title.textContent = group.label;
+    title.textContent = t(group.labelKey, undefined, group.label);
 
     const description = document.createElement("span");
-    description.textContent = group.description;
+    description.textContent = t(group.descriptionKey, undefined, group.description);
 
     const example = document.createElement("code");
     example.textContent = group.example;
@@ -182,37 +187,30 @@ function syncCategoryInputs(): HTMLInputElement[] {
   )];
 }
 
-function syncCategoryIdsFromForm(): SyncCategoryId[] {
-  const known = new Set<string>(syncCategoryIds);
-  return syncCategoryInputs()
-    .filter((input) => input.checked)
-    .map((input) => input.dataset.syncCategory)
-    .filter(
-      (id): id is SyncCategoryId => typeof id === "string" && known.has(id)
-    );
-}
-
-function popupSectionIdsFromForm(): PopupSectionId[] {
-  const known = new Set<string>(popupSectionIds);
-  return popupSectionInputs()
-    .filter((input) => input.checked)
-    .map((input) => input.dataset.popupSection)
-    .filter(
-      (id): id is PopupSectionId => typeof id === "string" && known.has(id)
-    );
-}
-
 function enabledRuleGroupIdsFromForm(): string[] {
   return ruleGroupInputs()
     .filter((input) => input.checked)
-    .map((input) => input.dataset.ruleGroupId)
-    .filter((id): id is string => Boolean(id));
+    .map((input) => input.dataset.ruleGroupId ?? "")
+    .filter(Boolean);
+}
+
+function popupSectionIdsFromForm(): PopupSectionId[] {
+  return popupSectionInputs()
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.popupSection as PopupSectionId)
+    .filter((sectionId) => popupSectionIds.includes(sectionId));
+}
+
+function syncCategoryIdsFromForm(): SyncCategoryId[] {
+  return syncCategoryInputs()
+    .filter((input) => input.checked)
+    .map((input) => input.dataset.syncCategory as SyncCategoryId)
+    .filter((categoryId) => syncCategoryIds.includes(categoryId));
 }
 
 function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
-  processAccessibleAttributesInput.checked =
-    settings.processAccessibleAttributes;
+  processAccessibleAttributesInput.checked = settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
   processSubtitlesInput.checked = settings.processSubtitles;
   protectedTermsInput.value = formatProtectedTermsText(settings.protectedTerms);
@@ -221,23 +219,21 @@ function render(settings: Settings): void {
   );
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
-  const visiblePopupSections = new Set(settings.visiblePopupSectionIds ?? []);
-  for (const input of popupSectionInputs()) {
-    input.checked = visiblePopupSections.has(
-      input.dataset.popupSection as PopupSectionId
-    );
-  }
-
-  const selectedSyncCategories = new Set(settings.syncCategoryIds);
-  for (const input of syncCategoryInputs()) {
-    input.checked = selectedSyncCategories.has(
-      input.dataset.syncCategory as SyncCategoryId
-    );
-  }
-
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
   for (const input of ruleGroupInputs()) {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
+  }
+
+  const visiblePopupSections = new Set(settings.visiblePopupSectionIds);
+  for (const input of popupSectionInputs()) {
+    const sectionId = input.dataset.popupSection as PopupSectionId | undefined;
+    input.checked = Boolean(sectionId && visiblePopupSections.has(sectionId));
+  }
+
+  const enabledSyncCategories = new Set(settings.syncCategoryIds);
+  for (const input of syncCategoryInputs()) {
+    const categoryId = input.dataset.syncCategory as SyncCategoryId | undefined;
+    input.checked = Boolean(categoryId && enabledSyncCategories.has(categoryId));
   }
 }
 
@@ -252,7 +248,11 @@ function readExcludedDomains(): string[] {
   const entries = readLines(excludedDomainsInput.value);
   if (entries.length > maximumExcludedDomains) {
     throw new Error(
-      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
+      t(
+        "maxExcludedDomains",
+        [String(maximumExcludedDomains)],
+        `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
+      )
     );
   }
 
@@ -261,11 +261,21 @@ function readExcludedDomains(): string[] {
   for (const entry of entries) {
     const normalized = normalizeExcludedDomain(entry);
     if (!normalized) {
-      throw new Error(`Der Domain-Ausschluss „${entry}“ ist ungültig.`);
+      throw new Error(
+        t(
+          "invalidExcludedDomain",
+          [entry],
+          `Der Domain-Ausschluss „${entry}“ ist ungültig.`
+        )
+      );
     }
     if (seen.has(normalized)) {
       throw new Error(
-        `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
+        t(
+          "duplicateExcludedDomain",
+          [entry],
+          `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
+        )
       );
     }
     seen.add(normalized);
@@ -325,7 +335,12 @@ function createNoticeList(
 
   if (notices.length > visibleNotices.length) {
     const item = document.createElement("li");
-    item.textContent = `${notices.length - visibleNotices.length} weitere Hinweise werden aus Platzgründen nicht angezeigt.`;
+    const remaining = notices.length - visibleNotices.length;
+    item.textContent = t(
+      "noticeMore",
+      [String(remaining)],
+      `${remaining} weitere Hinweise werden aus Platzgründen nicht angezeigt.`
+    );
     list.append(item);
   }
 
@@ -357,12 +372,20 @@ function renderCustomReplacementFeedback(): void {
 
     const summary = document.createElement("p");
     summary.className = "diagnostic-summary";
-    summary.textContent = `${parsed.replacements.length} von ${maximumCustomReplacements} möglichen Ersetzungen geprüft.`;
+    summary.textContent = t(
+      "replacementsChecked",
+      [String(parsed.replacements.length), String(maximumCustomReplacements)],
+      `${parsed.replacements.length} von ${maximumCustomReplacements} möglichen Ersetzungen geprüft.`
+    );
 
     if (notices.length === 0) {
       const success = document.createElement("p");
       success.className = "diagnostic-success";
-      success.textContent = "Keine Konflikte oder auffälligen Überschneidungen erkannt.";
+      success.textContent = t(
+        "noConflicts",
+        undefined,
+        "Keine Konflikte oder auffälligen Überschneidungen erkannt."
+      );
       customReplacementFeedback.replaceChildren(summary, success);
       customReplacementFeedback.className = "diagnostics success";
       return;
@@ -379,7 +402,11 @@ function renderCustomReplacementFeedback(): void {
     message.textContent =
       error instanceof Error
         ? error.message
-        : "Eigene Ersetzungen konnten nicht geprüft werden.";
+        : t(
+            "customCheckFailed",
+            undefined,
+            "Eigene Ersetzungen konnten nicht geprüft werden."
+          );
     customReplacementFeedback.replaceChildren(message);
     customReplacementFeedback.className = "diagnostics error";
   }
@@ -389,7 +416,11 @@ function renderCustomReplacementPreview(): void {
   const input = customPreviewInput.value;
   if (!input) {
     customPreviewOutput.value = "";
-    customPreviewCount.textContent = "Noch kein Testtext eingegeben.";
+    customPreviewCount.textContent = t(
+      "noPreviewText",
+      undefined,
+      "Noch kein Testtext eingegeben."
+    );
     customPreviewCount.classList.remove("error");
     return;
   }
@@ -409,15 +440,29 @@ function renderCustomReplacementPreview(): void {
     customPreviewOutput.value = result.text;
     customPreviewCount.textContent =
       result.replacements === 0
-        ? "Keine Änderung im Testtext."
-        : `${result.replacements} ${result.replacements === 1 ? "Ersetzung" : "Ersetzungen"} im Testtext.`;
+        ? t("previewNoChange", undefined, "Keine Änderung im Testtext.")
+        : result.replacements === 1
+          ? t(
+              "previewOneReplacement",
+              [String(result.replacements)],
+              "1 Ersetzung im Testtext."
+            )
+          : t(
+              "previewManyReplacements",
+              [String(result.replacements)],
+              `${result.replacements} Ersetzungen im Testtext.`
+            );
     customPreviewCount.classList.remove("error");
   } catch (error) {
     customPreviewOutput.value = "";
     customPreviewCount.textContent =
       error instanceof Error
         ? error.message
-        : "Die Vorschau konnte nicht erstellt werden.";
+        : t(
+            "previewFailed",
+            undefined,
+            "Die Vorschau konnte nicht erstellt werden."
+          );
     customPreviewCount.classList.add("error");
   }
 }
@@ -458,13 +503,23 @@ async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
     importSummary.replaceChildren();
-    showStatus("Gespeichert – offene Seiten werden sofort neu verarbeitet.");
+    showStatus(
+      t(
+        "saved",
+        undefined,
+        "Gespeichert – offene Seiten werden sofort neu verarbeitet."
+      )
+    );
     refreshCountAfterChange();
   } catch (error) {
     showStatus(
       error instanceof Error
         ? error.message
-        : "Einstellungen konnten nicht gespeichert werden.",
+        : t(
+            "saveFailed",
+            undefined,
+            "Einstellungen konnten nicht gespeichert werden."
+          ),
       true
     );
   }
@@ -495,13 +550,24 @@ function exportSettings(): void {
       `sprachverstand-einstellungen-${date}.json`
     );
     showStatus(
-      `Alle Einstellungen einschließlich ${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} eigener Ersetzungen exportiert.`
+      t(
+        "settingsExported",
+        [
+          String(settings.protectedTerms.length),
+          String(settings.customReplacements.length)
+        ],
+        `Alle Einstellungen einschließlich ${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} eigener Ersetzungen exportiert.`
+      )
     );
   } catch (error) {
     showStatus(
       error instanceof Error
         ? error.message
-        : "Die Einstellungen konnten nicht exportiert werden.",
+        : t(
+            "settingsExportFailed",
+            undefined,
+            "Die Einstellungen konnten nicht exportiert werden."
+          ),
       true
     );
   }
@@ -521,20 +587,36 @@ function selectedImportMode(): SettingsBackupImportMode {
 
 function renderImportSummary(result: SettingsImportResult): void {
   const generalSettings = document.createElement("p");
-  generalSettings.textContent =
-    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
+  generalSettings.textContent = t(
+    "importGeneralSettingsRestored",
+    undefined,
+    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen."
+  );
 
   const summary = document.createElement("p");
-  summary.textContent = [
-    `${result.addedProtectedTerms} Ausnahmen ergänzt`,
-    `${result.addedCustomReplacements} Ersetzungen ergänzt`,
-    `${result.replacedCustomReplacements} Ersetzungen überschrieben`,
-    `${result.skippedDuplicates} Dubletten übersprungen`
-  ].join(", ") + ".";
+  summary.textContent = t(
+    "importSummary",
+    [
+      String(result.addedProtectedTerms),
+      String(result.addedCustomReplacements),
+      String(result.replacedCustomReplacements),
+      String(result.skippedDuplicates)
+    ],
+    [
+      `${result.addedProtectedTerms} Ausnahmen ergänzt`,
+      `${result.addedCustomReplacements} Ersetzungen ergänzt`,
+      `${result.replacedCustomReplacements} Ersetzungen überschrieben`,
+      `${result.skippedDuplicates} Dubletten übersprungen`
+    ].join(", ") + "."
+  );
 
   const reminder = document.createElement("p");
   reminder.className = "import-reminder";
-  reminder.textContent = "Der Import ist vorbereitet, aber noch nicht gespeichert.";
+  reminder.textContent = t(
+    "importPreparedNotSaved",
+    undefined,
+    "Der Import ist vorbereitet, aber noch nicht gespeichert."
+  );
 
   if (result.conflicts.length === 0) {
     importSummary.replaceChildren(generalSettings, summary, reminder);
@@ -568,7 +650,13 @@ function renderImportSummary(result: SettingsImportResult): void {
 
 async function importSettings(file: File): Promise<void> {
   if (file.size > maximumSettingsBackupImportBytes) {
-    throw new Error("Die Importdatei ist größer als 1 MB und wird nicht verarbeitet.");
+    throw new Error(
+      t(
+        "importTooLarge",
+        undefined,
+        "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
+      )
+    );
   }
 
   const imported = parseSettingsBackupDocument(await file.text());
@@ -584,7 +672,11 @@ async function importSettings(file: File): Promise<void> {
   renderImportSummary(result);
   scheduleInteractiveUpdate();
   showStatus(
-    "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern.",
+    t(
+      "importPrepared",
+      undefined,
+      "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
+    ),
     false,
     8000
   );
@@ -659,7 +751,11 @@ async function start(): Promise<void> {
         showStatus(
           error instanceof Error
             ? error.message
-            : "Die Einstellungen konnten nicht importiert werden.",
+            : t(
+                "importFailed",
+                undefined,
+                "Die Einstellungen konnten nicht importiert werden."
+              ),
           true,
           8000
         );
@@ -674,7 +770,13 @@ async function start(): Promise<void> {
     importSummary.replaceChildren();
     scheduleInteractiveUpdate();
     void saveSettings(defaultSettings).then(() => {
-      showStatus("Auf sichere Standardeinstellungen zurückgesetzt.");
+      showStatus(
+        t(
+          "resetDone",
+          undefined,
+          "Auf sichere Standardeinstellungen zurückgesetzt."
+        )
+      );
       refreshCountAfterChange();
     });
   });
