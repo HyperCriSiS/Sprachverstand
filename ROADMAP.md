@@ -48,12 +48,12 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `ca` | Català |
 | [x] | `et` | Eesti |
 | [x] | `lt` | Lietuvių |
-| [ ] | `am` | አማርኛ |
-| [ ] | `ar` | العربية |
-| [ ] | `bn` | বাংলা |
-| [ ] | `fa` | فارسی |
-| [ ] | `fil` | Filipino |
-| [ ] | `gu` | ગુજરાતી |
+| [x] | `am` | አማርኛ |
+| [x] | `ar` | العربية |
+| [x] | `bn` | বাংলা |
+| [x] | `fa` | فارسی |
+| [x] | `fil` | Filipino |
+| [x] | `gu` | ગુજરાતી |
 | [ ] | `he` | עברית |
 | [ ] | `hi` | हिन्दी |
 | [ ] | `id` | Bahasa Indonesia |
