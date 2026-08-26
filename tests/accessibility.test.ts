@@ -5,13 +5,26 @@ async function readStaticPage(name: "popup" | "options"): Promise<string> {
   return readFile(`static/${name}/${name}.html`, "utf8");
 }
 
+function hasTagWithAttributes(
+  html: string,
+  tagName: string,
+  attributes: Record<string, string>
+): boolean {
+  const tags = html.match(new RegExp(`<${tagName}\\b[^>]*>`, "gu")) ?? [];
+  return tags.some((tag) =>
+    Object.entries(attributes).every(([name, value]) =>
+      tag.includes(`${name}="${value}"`)
+    )
+  );
+}
+
 describe("accessibility preflight", () => {
   it("keeps a single primary heading and a declared document language", async () => {
     for (const page of ["popup", "options"] as const) {
       const html = await readStaticPage(page);
       expect(html).toMatch(/<html\s+lang="de">/);
       expect((html.match(/<h1\b/g) ?? []).length).toBe(1);
-      expect(html).toContain('<meta name="viewport"');
+      expect(hasTagWithAttributes(html, "meta", { name: "viewport" })).toBe(true);
     }
   });
 
@@ -22,9 +35,26 @@ describe("accessibility preflight", () => {
     ]);
 
     expect(popup).toContain('aria-live="polite"');
-    expect(options).toContain('id="status" form="settings-form" aria-live="polite"');
-    expect(options).toContain('id="custom-replacement-feedback" class="diagnostics" aria-live="polite"');
-    expect(options).toContain('id="import-summary" aria-live="polite"');
+    expect(
+      hasTagWithAttributes(options, "output", {
+        id: "status",
+        form: "settings-form",
+        "aria-live": "polite"
+      })
+    ).toBe(true);
+    expect(
+      hasTagWithAttributes(options, "div", {
+        id: "custom-replacement-feedback",
+        class: "diagnostics",
+        "aria-live": "polite"
+      })
+    ).toBe(true);
+    expect(
+      hasTagWithAttributes(options, "div", {
+        id: "import-summary",
+        "aria-live": "polite"
+      })
+    ).toBe(true);
   });
 
   it("keeps static checkbox controls inside labels", async () => {
