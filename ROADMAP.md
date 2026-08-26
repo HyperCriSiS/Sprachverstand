@@ -12,7 +12,7 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 - [x] Vollständigkeit, identische Keys und Platzhalter automatisiert validieren.
 - [x] RTL-Unterstützung für Arabisch, Persisch und Hebräisch berücksichtigen.
 - [x] Locale-Matrix von 50 auf 51 Sprachen erweitern und Amharisch ergänzen.
-- [ ] Alle 51 Locale-Dateien vollständig erstellen.
+- [x] Alle 51 Locale-Dateien vollständig erstellen.
 - [ ] Alle UI-Texte konsequent über i18n-Keys anbinden; verbleibende hart codierte Oberflächentexte entfernen.
 - [ ] Vollständigen `npm run check` auf der 51-Sprachen-Matrix grün bekommen.
 
@@ -61,16 +61,16 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `kn` | ಕನ್ನಡ |
 | [x] | `ko` | 한국어 |
 | [x] | `lv` | Latviešu |
-| [ ] | `ml` | മലയാളം |
-| [ ] | `mr` | मराठी |
-| [ ] | `ms` | Bahasa Melayu |
-| [ ] | `sw` | Kiswahili |
-| [ ] | `ta` | தமிழ் |
-| [ ] | `te` | తెలుగు |
-| [ ] | `th` | ไทย |
-| [ ] | `vi` | Tiếng Việt |
-| [ ] | `zh_CN` | 简体中文 |
-| [ ] | `zh_TW` | 繁體中文 |
+| [x] | `ml` | മലയാളം |
+| [x] | `mr` | मराठी |
+| [x] | `ms` | Bahasa Melayu |
+| [x] | `sw` | Kiswahili |
+| [x] | `ta` | தமிழ் |
+| [x] | `te` | తెలుగు |
+| [x] | `th` | ไทย |
+| [x] | `vi` | Tiếng Việt |
+| [x] | `zh_CN` | 简体中文 |
+| [x] | `zh_TW` | 繁體中文 |
 
 ### Store-Lokalisierung
 
