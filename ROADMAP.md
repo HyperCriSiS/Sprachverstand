@@ -54,9 +54,9 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `fa` | فارسی |
 | [x] | `fil` | Filipino |
 | [x] | `gu` | ગુજરાતી |
-| [ ] | `he` | עברית |
-| [ ] | `hi` | हिन्दी |
-| [ ] | `id` | Bahasa Indonesia |
+| [x] | `he` | עברית |
+| [x] | `hi` | हिन्दी |
+| [x] | `id` | Bahasa Indonesia |
 | [ ] | `ja` | 日本語 |
 | [ ] | `kn` | ಕನ್ನಡ |
 | [ ] | `ko` | 한국어 |
