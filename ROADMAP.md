@@ -57,10 +57,10 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 | [x] | `he` | עברית |
 | [x] | `hi` | हिन्दी |
 | [x] | `id` | Bahasa Indonesia |
-| [ ] | `ja` | 日本語 |
-| [ ] | `kn` | ಕನ್ನಡ |
-| [ ] | `ko` | 한국어 |
-| [ ] | `lv` | Latviešu |
+| [x] | `ja` | 日本語 |
+| [x] | `kn` | ಕನ್ನಡ |
+| [x] | `ko` | 한국어 |
+| [x] | `lv` | Latviešu |
 | [ ] | `ml` | മലയാളം |
 | [ ] | `mr` | मराठी |
 | [ ] | `ms` | Bahasa Melayu |
