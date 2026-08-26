@@ -39,11 +39,11 @@ function normalize(value: string): string {
 }
 
 describe("WebExtension localization", () => {
-  it("hält alle 50 Locales vollständig und platzhalterkompatibel", async () => {
+  it("hält alle 51 Locales vollständig und platzhalterkompatibel", async () => {
     const locales = JSON.parse(
       await readFile("config/locales.json", "utf8")
     ) as LocaleDefinition[];
-    expect(locales).toHaveLength(50);
+    expect(locales).toHaveLength(51);
     expect(
       locales
         .filter((locale) => locale.direction === "rtl")
