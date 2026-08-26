@@ -131,6 +131,34 @@ describe("WebExtension localization", () => {
     }
   });
 
+  it("localizes dynamic standard text directly by message key", async () => {
+    const [popupSource, optionsSource, catalogSource] = await Promise.all([
+      readFile("src/popup.ts", "utf8"),
+      readFile("src/options.ts", "utf8"),
+      readFile("src/rules/catalog.ts", "utf8")
+    ]);
+
+    expect(popupSource).toContain('t("active"');
+    expect(popupSource).toContain('t("paused"');
+    expect(popupSource).toContain("group.labelKey");
+    expect(optionsSource).toContain("group.labelKey");
+    expect(optionsSource).toContain("group.descriptionKey");
+    for (const key of [
+      "maxExcludedDomains",
+      "noticeMore",
+      "replacementsChecked",
+      "previewNoChange",
+      "saved",
+      "settingsExported",
+      "importSummary",
+      "resetDone"
+    ]) {
+      expect(optionsSource, `missing dynamic i18n key ${key}`).toContain(`"${key}"`);
+    }
+    expect(catalogSource).toContain("labelKey");
+    expect(catalogSource).toContain("descriptionKey");
+  });
+
   it("localizes both manifests", async () => {
     for (const target of ["firefox", "chromium"]) {
       const manifest = JSON.parse(
@@ -154,8 +182,8 @@ describe("WebExtension localization", () => {
     expect(bootstrap).toContain("getUILanguage");
     expect(bootstrap).toContain("rtlLanguages");
     expect(bootstrap).toContain("data-i18n");
-    expect(bootstrap).toContain("_locales/de/messages.json");
-    expect(bootstrap).toContain("settingsExported");
-    expect(bootstrap).toContain("importSummary");
+    expect(bootstrap).not.toContain("_locales/de/messages.json");
+    expect(bootstrap).not.toContain("dynamicPatterns");
+    expect(bootstrap).not.toContain("keyByGermanMessage");
   });
 });
