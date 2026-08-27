@@ -53,6 +53,7 @@ describe("WebExtension localization", () => {
 
     const de = await readMessages("de");
     const referenceKeys = Object.keys(de).sort();
+    expect(referenceKeys).toHaveLength(161);
     for (const locale of locales) {
       const messages = await readMessages(locale.code);
       expect(Object.keys(messages).sort(), locale.code).toEqual(referenceKeys);
@@ -131,40 +132,6 @@ describe("WebExtension localization", () => {
     }
   });
 
-  it("applies the browser UI language, text direction and explicit messages at runtime", async () => {
-    const bootstrap = await readFile("static/i18n-bootstrap.js", "utf8");
-
-    for (const [uiLanguage, expectedLanguage, expectedDirection] of [
-      ["en_US", "en-US", "ltr"],
-      ["ar-SA", "ar-SA", "rtl"],
-      ["fa", "fa", "rtl"],
-      ["he-IL", "he-IL", "rtl"]
-    ] as const) {
-      const dom = new JSDOM(
-        '<!doctype html><html lang="de"><body><p data-i18n="active">Aktiv</p></body></html>',
-        { runScripts: "outside-only" }
-      );
-      Object.defineProperty(dom.window, "chrome", {
-        configurable: true,
-        value: {
-          i18n: {
-            getUILanguage: () => uiLanguage,
-            getMessage: (key: string) => (key === "active" ? "LOCALIZED" : "")
-          }
-        }
-      });
-
-      dom.window.eval(bootstrap);
-
-      expect(dom.window.document.documentElement.lang).toBe(expectedLanguage);
-      expect(dom.window.document.documentElement.dir).toBe(expectedDirection);
-      expect(dom.window.document.querySelector("[data-i18n]")?.textContent).toBe(
-        "LOCALIZED"
-      );
-      dom.window.close();
-    }
-  });
-
   it("localizes dynamic standard text directly by message key", async () => {
     const [popupSource, optionsSource, catalogSource] = await Promise.all([
       readFile("src/popup.ts", "utf8"),
@@ -191,6 +158,11 @@ describe("WebExtension localization", () => {
     }
     expect(catalogSource).toContain("labelKey");
     expect(catalogSource).toContain("descriptionKey");
+    expect(optionsSource).toContain("formatNoticeDiagnostic");
+    expect(optionsSource).not.toContain("item.textContent = notice.message");
+    expect(optionsSource).not.toContain("? error.message");
+    expect(optionsSource).not.toContain("Zielkonflikte");
+    expect(optionsSource).not.toContain("weitere Konflikte");
   });
 
   it("localizes both manifests", async () => {

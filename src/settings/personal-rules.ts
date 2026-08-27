@@ -39,6 +39,7 @@ export interface ReplacementNotice {
     | "overlap"
     | "built-in-overlap";
   readonly message: string;
+  readonly parts: readonly string[];
 }
 
 export interface ParsedCustomReplacements {
@@ -235,7 +236,8 @@ export function parseCustomReplacementsText(
       notices.push({
         severity: "info",
         code: "duplicate",
-        message: `„${source}“ ist in Zeile ${existing.line} und ${lineNumber} identisch doppelt eingetragen.`
+        message: `„${source}“ ist in Zeile ${existing.line} und ${lineNumber} identisch doppelt eingetragen.`,
+        parts: [source, String(existing.line), String(lineNumber)]
       });
       continue;
     }
@@ -288,21 +290,24 @@ export function analyzeCustomReplacementConflicts(
       addNotice({
         severity: "warning",
         code: "no-op",
-        message: `„${entry.source}“ wird durch denselben Text ersetzt und hat daher keine Wirkung.`
+        message: `„${entry.source}“ wird durch denselben Text ersetzt und hat daher keine Wirkung.`,
+        parts: [entry.source]
       });
     }
     if (entry.replacement === "") {
       addNotice({
         severity: "info",
         code: "deletion",
-        message: `„${entry.source}“ wird vollständig entfernt.`
+        message: `„${entry.source}“ wird vollständig entfernt.`,
+        parts: [entry.source]
       });
     }
     if (protectedKeys.has(normalizedCaseKey(entry.source))) {
       addNotice({
         severity: "warning",
         code: "protected",
-        message: `„${entry.source}“ ist zugleich eine persönliche Ausnahme. Die Ausnahme hat Vorrang und blockiert diese Ersetzung.`
+        message: `„${entry.source}“ ist zugleich eine persönliche Ausnahme. Die Ausnahme hat Vorrang und blockiert diese Ersetzung.`,
+        parts: [entry.source]
       });
     }
 
@@ -311,7 +316,8 @@ export function analyzeCustomReplacementConflicts(
       addNotice({
         severity: "info",
         code: "built-in-overlap",
-        message: `„${entry.source}“ würde eingebaut zu „${builtInResult}“ geändert. Die eigene Ersetzung hat Vorrang.`
+        message: `„${entry.source}“ würde eingebaut zu „${builtInResult}“ geändert. Die eigene Ersetzung hat Vorrang.`,
+        parts: [entry.source, builtInResult]
       });
     }
   }
@@ -338,7 +344,8 @@ export function analyzeCustomReplacementConflicts(
         addNotice({
           severity: "warning",
           code: "case-variant",
-          message: `„${left.source}“ und „${right.source}“ unterscheiden sich nur in der Groß-/Kleinschreibung. Eigene Ersetzungen beachten diese Unterscheidung.`
+          message: `„${left.source}“ und „${right.source}“ unterscheiden sich nur in der Groß-/Kleinschreibung. Eigene Ersetzungen beachten diese Unterscheidung.`,
+          parts: [left.source, right.source]
         });
         continue;
       }
@@ -350,7 +357,8 @@ export function analyzeCustomReplacementConflicts(
         addNotice({
           severity: "info",
           code: "overlap",
-          message: `Die Ausgangstexte „${left.source}“ und „${right.source}“ überlappen. Die längere Fundstelle wird zuerst geprüft.`
+          message: `Die Ausgangstexte „${left.source}“ und „${right.source}“ überlappen. Die längere Fundstelle wird zuerst geprüft.`,
+          parts: [left.source, right.source]
         });
       }
     }
@@ -366,7 +374,8 @@ export function analyzeCustomReplacementConflicts(
       addNotice({
         severity: "warning",
         code: "chain",
-        message: `„${entry.source}“ wird zu „${entry.replacement}“, das zugleich Ausgangstext einer weiteren Ersetzung ist. Ersetzungsketten werden absichtlich nicht weiter ausgeführt.`
+        message: `„${entry.source}“ wird zu „${entry.replacement}“, das zugleich Ausgangstext einer weiteren Ersetzung ist. Ersetzungsketten werden absichtlich nicht weiter ausgeführt.`,
+        parts: [entry.source, entry.replacement]
       });
     }
   }
@@ -503,7 +512,7 @@ export function mergePersonalRules(
     }
 
     conflicts.push(
-      `„${entry.source}“: vorhanden „${existingReplacement}“, importiert „${entry.replacement}“`
+      `„${entry.source}“: „${existingReplacement}“ ↔ „${entry.replacement}“`
     );
     if (mode === "prefer-imported") {
       customReplacements.set(entry.source, entry.replacement);

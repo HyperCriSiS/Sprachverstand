@@ -27,6 +27,7 @@ describe("Persönliche Regeln", () => {
       { source: "Zusatz", replacement: "" }
     ]);
     expect(result.notices[0]?.code).toBe("duplicate");
+    expect(result.notices[0]?.parts).toEqual(["Sonderform", "1", "3"]);
     expect(formatCustomReplacementsText(result.replacements)).toBe(
       "Sonderform => Ziel\nZusatz => "
     );
@@ -111,7 +112,7 @@ describe("Persönliche Regeln", () => {
       { source: "A", replacement: "Alt" },
       { source: "B", replacement: "Ziel" }
     ]);
-    expect(keep.conflicts).toHaveLength(1);
+    expect(keep.conflicts).toEqual(["„A“: „Alt“ ↔ „Neu“"]);
 
     const prefer = mergePersonalRules(existing, imported, "prefer-imported");
     expect(prefer.customReplacements[0]).toEqual({

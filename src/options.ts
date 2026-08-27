@@ -109,6 +109,29 @@ let statusTimer: number | undefined;
 let interactiveUpdateTimer: number | undefined;
 let activeTabId: number | undefined;
 
+class LocalizedUiError extends Error {}
+
+function localizedUiError(
+  key: string,
+  substitutions: string | readonly string[] | undefined,
+  fallback: string
+): LocalizedUiError {
+  return new LocalizedUiError(t(key, substitutions, fallback));
+}
+
+function visibleErrorMessage(
+  error: unknown,
+  key: string,
+  fallback: string
+): string {
+  if (error instanceof LocalizedUiError) {
+    return error.message;
+  }
+
+  console.error(error);
+  return t(key, undefined, fallback);
+}
+
 function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
   if (!message || typeof message !== "object") {
     return false;
@@ -247,12 +270,10 @@ function readLines(value: string): string[] {
 function readExcludedDomains(): string[] {
   const entries = readLines(excludedDomainsInput.value);
   if (entries.length > maximumExcludedDomains) {
-    throw new Error(
-      t(
-        "maxExcludedDomains",
-        [String(maximumExcludedDomains)],
-        `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
-      )
+    throw localizedUiError(
+      "maxExcludedDomains",
+      [String(maximumExcludedDomains)],
+      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
     );
   }
 
@@ -261,21 +282,17 @@ function readExcludedDomains(): string[] {
   for (const entry of entries) {
     const normalized = normalizeExcludedDomain(entry);
     if (!normalized) {
-      throw new Error(
-        t(
-          "invalidExcludedDomain",
-          [entry],
-          `Der Domain-Ausschluss „${entry}“ ist ungültig.`
-        )
+      throw localizedUiError(
+        "invalidExcludedDomain",
+        [entry],
+        `Der Domain-Ausschluss „${entry}“ ist ungültig.`
       );
     }
     if (seen.has(normalized)) {
-      throw new Error(
-        t(
-          "duplicateExcludedDomain",
-          [entry],
-          `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
-        )
+      throw localizedUiError(
+        "duplicateExcludedDomain",
+        [entry],
+        `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
       );
     }
     seen.add(normalized);
@@ -320,6 +337,29 @@ function showStatus(
   }, duration);
 }
 
+function formatNoticeDiagnostic(notice: ReplacementNotice): string {
+  const [first = "", second = "", third = ""] = notice.parts;
+
+  switch (notice.code) {
+    case "duplicate":
+      return `„${first}“ ×2 (#${second}, #${third})`;
+    case "no-op":
+      return `„${first}“ → =`;
+    case "deletion":
+      return `„${first}“ → ∅`;
+    case "protected":
+      return `⛔ „${first}“`;
+    case "built-in-overlap":
+      return `„${first}“ ⇢ „${second}“`;
+    case "case-variant":
+      return `Aa ↔ aA · „${first}“ ↔ „${second}“`;
+    case "overlap":
+      return `„${first}“ ∩ „${second}“`;
+    case "chain":
+      return `„${first}“ → „${second}“ → …`;
+  }
+}
+
 function createNoticeList(
   notices: readonly ReplacementNotice[]
 ): HTMLUListElement {
@@ -329,7 +369,8 @@ function createNoticeList(
   for (const notice of visibleNotices) {
     const item = document.createElement("li");
     item.className = notice.severity;
-    item.textContent = notice.message;
+    item.dataset.diagnosticCode = notice.code;
+    item.textContent = formatNoticeDiagnostic(notice);
     list.append(item);
   }
 
@@ -399,14 +440,11 @@ function renderCustomReplacementFeedback(): void {
       : "diagnostics info";
   } catch (error) {
     const message = document.createElement("p");
-    message.textContent =
-      error instanceof Error
-        ? error.message
-        : t(
-            "customCheckFailed",
-            undefined,
-            "Eigene Ersetzungen konnten nicht geprüft werden."
-          );
+    message.textContent = visibleErrorMessage(
+      error,
+      "customCheckFailed",
+      "Eigene Ersetzungen konnten nicht geprüft werden."
+    );
     customReplacementFeedback.replaceChildren(message);
     customReplacementFeedback.className = "diagnostics error";
   }
@@ -455,14 +493,11 @@ function renderCustomReplacementPreview(): void {
     customPreviewCount.classList.remove("error");
   } catch (error) {
     customPreviewOutput.value = "";
-    customPreviewCount.textContent =
-      error instanceof Error
-        ? error.message
-        : t(
-            "previewFailed",
-            undefined,
-            "Die Vorschau konnte nicht erstellt werden."
-          );
+    customPreviewCount.textContent = visibleErrorMessage(
+      error,
+      "previewFailed",
+      "Die Vorschau konnte nicht erstellt werden."
+    );
     customPreviewCount.classList.add("error");
   }
 }
@@ -513,13 +548,11 @@ async function persist(): Promise<void> {
     refreshCountAfterChange();
   } catch (error) {
     showStatus(
-      error instanceof Error
-        ? error.message
-        : t(
-            "saveFailed",
-            undefined,
-            "Einstellungen konnten nicht gespeichert werden."
-          ),
+      visibleErrorMessage(
+        error,
+        "saveFailed",
+        "Einstellungen konnten nicht gespeichert werden."
+      ),
       true
     );
   }
@@ -561,13 +594,11 @@ function exportSettings(): void {
     );
   } catch (error) {
     showStatus(
-      error instanceof Error
-        ? error.message
-        : t(
-            "settingsExportFailed",
-            undefined,
-            "Die Einstellungen konnten nicht exportiert werden."
-          ),
+      visibleErrorMessage(
+        error,
+        "settingsExportFailed",
+        "Die Einstellungen konnten nicht exportiert werden."
+      ),
       true
     );
   }
@@ -625,7 +656,7 @@ function renderImportSummary(result: SettingsImportResult): void {
   }
 
   const heading = document.createElement("strong");
-  heading.textContent = `${result.conflicts.length} Zielkonflikte:`;
+  heading.textContent = `⚠ ${result.conflicts.length}`;
   const list = document.createElement("ul");
   for (const conflict of result.conflicts.slice(0, 12)) {
     const item = document.createElement("li");
@@ -634,7 +665,7 @@ function renderImportSummary(result: SettingsImportResult): void {
   }
   if (result.conflicts.length > 12) {
     const item = document.createElement("li");
-    item.textContent = `${result.conflicts.length - 12} weitere Konflikte.`;
+    item.textContent = `… +${result.conflicts.length - 12}`;
     list.append(item);
   }
 
@@ -650,12 +681,10 @@ function renderImportSummary(result: SettingsImportResult): void {
 
 async function importSettings(file: File): Promise<void> {
   if (file.size > maximumSettingsBackupImportBytes) {
-    throw new Error(
-      t(
-        "importTooLarge",
-        undefined,
-        "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
-      )
+    throw localizedUiError(
+      "importTooLarge",
+      undefined,
+      "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
     );
   }
 
@@ -749,13 +778,11 @@ async function start(): Promise<void> {
     void importSettings(file)
       .catch((error: unknown) => {
         showStatus(
-          error instanceof Error
-            ? error.message
-            : t(
-                "importFailed",
-                undefined,
-                "Die Einstellungen konnten nicht importiert werden."
-              ),
+          visibleErrorMessage(
+            error,
+            "importFailed",
+            "Die Einstellungen konnten nicht importiert werden."
+          ),
           true,
           8000
         );
