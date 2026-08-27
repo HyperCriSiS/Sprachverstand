@@ -13,8 +13,8 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 - [x] RTL-Unterstützung für Arabisch, Persisch und Hebräisch berücksichtigen.
 - [x] Locale-Matrix von 50 auf 51 Sprachen erweitern und Amharisch ergänzen.
 - [x] Alle 51 Locale-Dateien vollständig erstellen.
-- [ ] Alle UI-Texte konsequent über i18n-Keys anbinden; verbleibende hart codierte Oberflächentexte entfernen.
-- [ ] Vollständigen `npm run check` auf der 51-Sprachen-Matrix grün bekommen.
+- [x] Alle UI-Texte konsequent über i18n-Keys anbinden; verbleibende hart codierte Oberflächentexte entfernen.
+- [x] Vollständigen `npm run check` auf der 51-Sprachen-Matrix grün bekommen.
 
 ### UI-Lokalisierungen
 
