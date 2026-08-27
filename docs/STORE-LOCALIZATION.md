@@ -32,3 +32,16 @@ Der Produktname **Sprachverstand** wird in keiner Sprache übersetzt. Alle Store
 - dass keine HTML-Tags in die Storebeschreibung geraten.
 
 Nach Abschluss der Übersetzungsphase verlangt der Validator exakt 51 Vollbeschreibungen. Die Dateimenge unter `store/listings/` muss exakt der Locale-Matrix aus `config/locales.json` entsprechen; fehlende oder zusätzliche Listing-Dateien führen zu einem Fehler.
+
+## Plattform-Ausgaben
+
+`npm run store:generate` erzeugt reproduzierbare Arbeitsdateien unter `store/generated/`:
+
+- AMO-Metadaten für die aktuell von AMO unterstützte Schnittmenge der Sprachverstand-Locales,
+- eine Chrome-Dashboard-Arbeitsdatei für alle 51 Locales,
+- eine Edge-Arbeitsdatei für alle 51 Locales,
+- eine Opera-Arbeitsdatei für alle 51 Locales.
+
+Die erzeugten Dateien sind keine zusätzlichen Quellen. Änderungen werden ausschließlich in `_locales` und `store/listings` gepflegt und danach neu erzeugt.
+
+Details stehen in `docs/STORE-EXPORTS.md`. Die Chrome-Web-Store-API-V2-Hilfe ist in `docs/CHROME-WEB-STORE-API.md` dokumentiert.

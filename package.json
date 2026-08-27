@@ -18,13 +18,18 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run audit:public && npm run typecheck && npm run test && npm run build && npm run validate:icons && npm run validate:locales && npm run validate:store && npm run validate:browsers && npm run lint:firefox",
+    "check": "npm run audit:public && npm run typecheck && npm run test && npm run build && npm run validate:icons && npm run validate:locales && npm run validate:store && npm run validate:store-exports && npm run validate:browsers && npm run lint:firefox",
     "lint:firefox": "web-ext lint --source-dir dist/firefox --warnings-as-errors",
     "validate:icons": "node scripts/validate-icons.mjs",
     "validate:browsers": "node scripts/validate-browser-targets.mjs",
     "audit:public": "node scripts/audit-publication.mjs",
     "validate:locales": "node scripts/validate-locales.mjs",
-    "validate:store": "node scripts/validate-store-listings.mjs"
+    "validate:store": "node scripts/validate-store-listings.mjs",
+    "store:generate": "node scripts/generate-store-metadata.mjs",
+    "validate:store-exports": "node scripts/generate-store-metadata.mjs --check",
+    "cws:status": "node scripts/chrome-web-store-v2.mjs status",
+    "cws:upload": "node scripts/chrome-web-store-v2.mjs upload",
+    "cws:publish": "node scripts/chrome-web-store-v2.mjs publish"
   },
   "devDependencies": {
     "esbuild": "0.28.1",
