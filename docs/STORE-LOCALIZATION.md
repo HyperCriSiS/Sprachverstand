@@ -31,4 +31,4 @@ Der Produktname **Sprachverstand** wird in keiner Sprache übersetzt. Alle Store
 - gemeinsame deutsche Beispiel- und Technikmarker,
 - dass keine HTML-Tags in die Storebeschreibung geraten.
 
-Während der Übersetzungsphase dürfen Vollbeschreibungen schrittweise ergänzt werden. Der Validator meldet deshalb den aktuellen Stand als `X/51`, ohne fehlende Vollbeschreibungen vor Abschluss der Roadmap als Fehler zu behandeln.
+Nach Abschluss der Übersetzungsphase verlangt der Validator exakt 51 Vollbeschreibungen. Die Dateimenge unter `store/listings/` muss exakt der Locale-Matrix aus `config/locales.json` entsprechen; fehlende oder zusätzliche Listing-Dateien führen zu einem Fehler.

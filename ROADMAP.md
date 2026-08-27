@@ -75,7 +75,7 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 ### Store-Lokalisierung
 
 - [x] Für jede der 51 Sprachen eine store-taugliche Kurzbeschreibung aus `extensionDescription` pflegen.
-- [ ] Für jede der 51 Sprachen einen vollständigen Store-Beschreibungstext im Repository pflegen. Fortschritt: 9/51 (`de`, `en`, `es`, `fr`, `it`, `nl`, `pl`, `pt_BR`, `pt_PT`).
+- [x] Für jede der 51 Sprachen einen vollständigen Store-Beschreibungstext im Repository pflegen. Fortschritt: 51/51.
 - [x] Chrome Web Store: globale Screenshots weiterverwenden; lokalisierte Screenshots nur bei messbarem Bedarf.
 - [ ] Chrome Web Store: lokale Langbeschreibungen für alle unterstützten Locales im Developer Dashboard hinterlegen.
 - [ ] Chrome Web Store API V2 für Paket-Upload, Status und Veröffentlichung vorbereiten; Listing-Metadaten bleiben Dashboard-Aufgabe.

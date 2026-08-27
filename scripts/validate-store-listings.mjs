@@ -49,6 +49,21 @@ for (const locale of locales) {
 const listingFiles = (await readdir(listingsDirectory))
   .filter((name) => name.endsWith(".json"))
   .sort();
+const expectedListingFiles = locales
+  .map((locale) => `${locale.code}.json`)
+  .sort();
+
+if (JSON.stringify(listingFiles) !== JSON.stringify(expectedListingFiles)) {
+  const expected = new Set(expectedListingFiles);
+  const actual = new Set(listingFiles);
+  const missing = expectedListingFiles.filter((name) => !actual.has(name));
+  const extra = listingFiles.filter((name) => !expected.has(name));
+  fail(
+    `Vollbeschreibungen müssen exakt die 51 konfigurierten Locales abdecken. Fehlend: ${
+      missing.join(", ") || "keine"
+    }; zusätzlich: ${extra.join(", ") || "keine"}.`
+  );
+}
 
 for (const filename of listingFiles) {
   const localeCode = filename.slice(0, -".json".length);
@@ -86,5 +101,5 @@ for (const filename of listingFiles) {
 }
 
 console.log(
-  `Store-Lokalisierung geprüft: 51/51 Kurzbeschreibungen, ${listingFiles.length}/51 Vollbeschreibungen.`
+  `Store-Lokalisierung geprüft: 51/51 Kurzbeschreibungen und 51/51 Vollbeschreibungen.`
 );
