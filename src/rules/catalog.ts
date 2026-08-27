@@ -1,7 +1,9 @@
 export interface RuleGroupDefinition {
   readonly id: string;
   readonly label: string;
+  readonly labelKey: string;
   readonly description: string;
+  readonly descriptionKey: string;
   readonly example: string;
   readonly ruleIds: readonly string[];
   readonly defaultEnabled: boolean;
@@ -11,8 +13,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "plural-separators",
     label: "Genderzeichen im Plural",
+    labelKey: "groupPluralSeparatorsLabel",
     description:
       "Doppelpunkt, Sternchen, Unterstrich, Schrägstrich, Punkt und typografische Trennzeichen einschließlich einzeln geprüfter Sonderformen.",
+    descriptionKey: "rule_plural_separators_description",
     example: "Nutzer:innen → Nutzer",
     ruleIds: [
       "plural.known-separator-innen",
@@ -24,7 +28,9 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "plural-binnen-i",
     label: "Binnen-I im Plural",
+    labelKey: "groupPluralBinnenILabel",
     description: "Großes I innerhalb bekannter Personenbezeichnungen.",
+    descriptionKey: "rule_plural_binnen_i_description",
     example: "NutzerInnen → Nutzer",
     ruleIds: ["plural.binnen-i"],
     defaultEnabled: true
@@ -32,8 +38,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "plural-double-forms",
     label: "Doppelnennungen im Plural",
+    labelKey: "groupPluralDoubleFormsLabel",
     description:
       "Weibliche und männliche Pluralform werden zu einer gemeinsamen Form zusammengeführt.",
+    descriptionKey: "rule_plural_double_forms_description",
     example: "Nutzerinnen und Nutzer → Nutzer",
     ruleIds: ["plural.double-forms"],
     defaultEnabled: true
@@ -41,8 +49,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "singular-explicit-context",
     label: "Gegenderte Singularformen mit Artikel",
+    labelKey: "groupSingularExplicitContextLabel",
     description:
       "Eindeutig markierte Artikel, Determinierer und Possessivartikel einschließlich Kasusflexion.",
+    descriptionKey: "rule_singular_explicit_context_description",
     example: "jede:r Nutzer:in → jeder Nutzer",
     ruleIds: ["singular.explicit-context"],
     defaultEnabled: true
@@ -50,8 +60,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "unmarked-singular",
     label: "Sichtbar markierte Singularformen",
+    labelKey: "groupUnmarkedSingularLabel",
     description:
       "Genderzeichen und Binnen-I werden bei bekannten und einzeln geprüften Personenbezeichnungen normalisiert; mehrdeutige Artikelkontexte bleiben geschützt.",
+    descriptionKey: "rule_unmarked_singular_description",
     example: "NutzerIn → Nutzer",
     ruleIds: [
       "singular.unmarked-marker",
@@ -62,8 +74,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "substantivized-adjectives",
     label: "Substantivierte Adjektive",
+    labelKey: "groupSubstantivizedAdjectivesLabel",
     description:
       "Sichtbar markierte Formen wie Erwachsene:r und Beschäftigte:n werden lexikonbasiert flektiert.",
+    descriptionKey: "rule_substantivized_adjectives_description",
     example: "Erwachsene:r → Erwachsener",
     ruleIds: ["adjective.substantivized-markers"],
     defaultEnabled: true
@@ -71,8 +85,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "special-gender-forms",
     label: "Weitere sichtbare Genderformen",
+    labelKey: "groupSpecialGenderFormsLabel",
     description:
       "Einzeln geprüfte Sonderformen wie Rom*nja, Sinti*zze und Studentys.",
+    descriptionKey: "rule_special_gender_forms_description",
     example: "Studentys → Studenten",
     ruleIds: ["special.visible-gender-forms"],
     defaultEnabled: true
@@ -80,8 +96,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "singular-double-forms",
     label: "Doppelnennungen im Singular",
+    labelKey: "groupSingularDoubleFormsLabel",
     description:
       "Explizit genannte weibliche und männliche Singularform derselben Personenbezeichnung.",
+    descriptionKey: "rule_singular_double_forms_description",
     example: "Kunde/Kundin → Kunde",
     ruleIds: ["singular.explicit-double-form"],
     defaultEnabled: true
@@ -89,8 +107,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "explicit-pronouns",
     label: "Explizite Pronomen- und Possessivpaare",
+    labelKey: "groupExplicitPronounsLabel",
     description:
       "Nur sichtbar gegenderte Paarformen; normale weibliche Pronomen bleiben unverändert.",
+    descriptionKey: "rule_explicit_pronouns_description",
     example: "er:sie → er",
     ruleIds: ["pronoun.explicit-pairs"],
     defaultEnabled: true
@@ -98,8 +118,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "natural-family-forms",
     label: "Künstlich gegenderte Familienformen",
+    labelKey: "groupNaturalFamilyFormsLabel",
     description:
       "Natürlich feminine Familienwörter behalten ihr grammatisches Geschlecht.",
+    descriptionKey: "rule_natural_family_forms_description",
     example: "Mutter:in → Mutter",
     ruleIds: ["singular.natural-family-forms"],
     defaultEnabled: true
@@ -107,8 +129,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "title-abbreviations",
     label: "Gegenderte Titelabkürzungen",
+    labelKey: "groupTitleAbbreviationsLabel",
     description:
       "Schreibt Prof.in und Dr.in je nach Kontext aus oder führt sie auf den normalen Titel zurück.",
+    descriptionKey: "rule_title_abbreviations_description",
     example: "Prof.in Anna Müller → Prof. Anna Müller",
     ruleIds: ["title.gendered-abbreviations"],
     defaultEnabled: true
@@ -116,8 +140,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "salutation-participles",
     label: "Neutrale Partizipformen",
+    labelKey: "groupSalutationParticiplesLabel",
     description:
       "Ersetzt ausgewählte Personenbezeichnungen wie Studierende, Lesende und Arbeitnehmende; eindeutige Anreden werden weiterhin vollständig erkannt.",
+    descriptionKey: "rule_salutation_participles_description",
     example: "Studierende → Studenten",
     ruleIds: ["salutation.participial-forms"],
     defaultEnabled: true
@@ -125,8 +151,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "neutral-person-terms",
     label: "Kontextgebundene Umschreibungen",
+    labelKey: "groupNeutralPersonTermsLabel",
     description:
       "Ersetzt nur einzeln geprüfte Umschreibungen und feste Wendungen. Weitere Kontexte werden im Projektkatalog gesammelt.",
+    descriptionKey: "rule_neutral_person_terms_description",
     example: "Benutzungshandbuch → Benutzerhandbuch",
     ruleIds: ["neutral.person-terms"],
     defaultEnabled: false
@@ -134,8 +162,10 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
   {
     id: "job-ad-suffixes",
     label: "Geschlechtszusätze in Stellenanzeigen",
+    labelKey: "groupJobAdSuffixesLabel",
     description:
       "Entfernt verbreitete Zusätze wie (m/w/d).",
+    descriptionKey: "rule_job_ad_suffixes_description",
     example: "Erzieher (m/w/d) → Erzieher",
     ruleIds: ["job-ad.gender-suffixes"],
     defaultEnabled: false

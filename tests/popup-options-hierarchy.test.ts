@@ -12,7 +12,7 @@ describe("Popup-Konfiguration", () => {
     )?.[1] ?? "";
 
     expect(group).toContain('data-popup-section="rule-groups"');
-    expect(group).toContain("<legend>Einzelne Regelgruppen im Popup</legend>");
+    expect(group).toMatch(/<legend\b[^>]*>Einzelne Regelgruppen im Popup<\/legend>/u);
 
     for (const ruleGroup of ruleGroupDefinitions) {
       expect(group).toContain(

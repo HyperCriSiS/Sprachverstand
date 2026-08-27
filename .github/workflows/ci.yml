@@ -67,7 +67,8 @@ jobs:
           grep -q 'data-sync-category="custom-replacements"' static/options/options.html
           grep -q '../legal/legal.html' static/options/options.html
           ! grep -q 'Freie Software unter starkem Copyleft' static/legal/legal.html
-          grep -q '<h1>Sprachverstand – Lizenz und Quelltext</h1>' static/legal/legal.html
+          grep -q 'data-i18n="legalTitle"' static/legal/legal.html
+          grep -q 'Sprachverstand – Lizenz und Quelltext</h1>' static/legal/legal.html
           test -s LICENSE
           test -s TRADEMARKS.md
           test -s NOTICE
