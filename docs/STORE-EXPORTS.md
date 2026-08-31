@@ -20,6 +20,7 @@ Erzeugt werden:
 
 - `amo-metadata.json`
 - `chrome-dashboard.csv`
+- `chrome-dashboard.html`
 - `edge-worklist.csv`
 - `opera-worklist.csv`
 
@@ -73,6 +74,17 @@ Da für Opera kein verlässliches offizielles Massenimportformat vorausgesetzt w
 
 ## Chrome Web Store
 
-`chrome-dashboard.csv` enthält alle 51 Kurz- und Vollbeschreibungen für die manuelle Pflege der lokalisierten Store-Einträge.
+`chrome-dashboard.csv` enthält alle 51 Kurz- und Vollbeschreibungen als tabellarische Übertragungshilfe.
+
+`chrome-dashboard.html` ist für die eigentliche manuelle Pflege komfortabler. Die Datei kann nach `npm run store:generate` direkt lokal im Browser geöffnet werden und bietet:
+
+- Suche nach Sprache oder Locale-Code,
+- eine eigene Karte für jede der 51 Sprachen,
+- Kopierbuttons für Kurz- und Langbeschreibung,
+- Zeichenanzeige für die Kurzbeschreibung,
+- RTL-Darstellung für Arabisch, Persisch und Hebräisch,
+- eine lokale Erledigt-Markierung mit Fortschrittszähler.
+
+Die Fortschrittsmarkierungen werden ausschließlich im lokalen Browser gespeichert und nicht an Sprachverstand oder einen externen Dienst übertragen.
 
 Paket-Upload, Status und Veröffentlichung werden separat über `scripts/chrome-web-store-v2.mjs` vorbereitet. Langbeschreibungen und weitere Listing-Metadaten bleiben im Developer Dashboard.
