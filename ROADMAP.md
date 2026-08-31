@@ -88,6 +88,6 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 
 - [x] PR für den vollständigen i18n-Ausbau erstellen.
 - [x] CI vollständig grün.
-- [ ] Nach `dev` mergen.
-- [ ] Abschließende `dev`-CI prüfen.
-- [ ] Danach neuen Prerelease mit 51 Locales erstellen.
+- [x] Nach `dev` mergen.
+- [x] Abschließende `dev`-CI prüfen.
+- [x] Danach neuen Prerelease mit 51 Locales erstellen.
