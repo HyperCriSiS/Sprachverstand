@@ -1,12 +1,13 @@
 # Reale Webseiten – Testmatrix
 
-Stand: 25. August 2026
+Stand: 1. September 2026
 
-Diese Matrix ergänzt die deterministischen Vitest- und Fixture-Tests um reale
-Webseiten. Die Seiten wurden so gewählt, dass sie unterschiedliche Risiken der
-DOM-Verarbeitung abdecken. Live-Webseiten ändern sich ohne Vorankündigung;
-deshalb sind diese Tests als zusätzliche Integrations- und Lasttests gedacht und
-sollen normale Pull-Request-Tests nicht blockieren.
+Diese Matrix ergänzt die deterministischen Vitest-, Fixture- und echten
+Browser-Smoke-Tests um reale externe Webseiten. Die Seiten wurden so gewählt,
+dass sie unterschiedliche Risiken der DOM-Verarbeitung abdecken. Live-Webseiten
+ändern sich ohne Vorankündigung; deshalb sind diese Tests als zusätzliche
+Integrations- und Lasttests gedacht und sollen normale Pull-Request-Tests nicht
+blockieren.
 
 ## Zielbild
 
@@ -25,6 +26,26 @@ Für jeden Lauf werden mindestens folgende Werte erfasst:
 
 Absolute Zeitgrenzen sind bei Live-Seiten ungeeignet. Für Leistungstests ist der
 Vergleich mit einem Lauf derselben Seite ohne Erweiterung aussagekräftiger.
+
+## Automatische echte Browser-Smoke-Tests
+
+Die Required-CI führt inzwischen für beide modernen Engine-Familien einen echten
+Browser-Smoke-Test gegen `tests/browser/extension-smoke.html` aus:
+
+- **Chromium:** der entpackte Chromium-Build wird in echtem Chromium über
+  ChromeDriver geladen.
+- **Gecko:** der Firefox-Build wird als temporäres XPI über Geckodriver in echtem
+  Firefox installiert.
+- Beide Läufe prüfen statischen und dynamisch nachgeladenen Text, ein
+  zugängliches `aria-label` sowie den Schutz von `code` und `input`.
+- Die Testseite wird von einem lokalen HTTP-Server ausgeliefert. Die Required-CI
+  hängt damit weder von externem Netzwerkzugriff noch vom aktuellen Zustand
+  fremder Webseiten ab.
+
+Diese Smoke-Tests beantworten die grundlegende Integrationsfrage, ob der erzeugte
+Build in den realen Browsern geladen wird und die zentralen DOM-Invarianten hält.
+Sie ersetzen nicht die folgende externe Real-World-Matrix, die komplexe
+Webanwendungen, große DOMs und seitenbezogene Interaktionen abdeckt.
 
 ## Die zehn Referenzseiten
 
@@ -72,7 +93,7 @@ Für sprachliche Korrektheit bleiben die lokalen Regressionstests maßgeblich. N
 Fehler aus Live-Seiten werden zuerst als minimiertes HTML-Beispiel oder als
 isolierter String in die deterministische Testsuite übernommen.
 
-## Empfohlener Aufbau der späteren Live-Automatisierung
+## Aufbau der externen Live-Automatisierung
 
 - Chromium mit der entpackten Erweiterung in einem persistenten Browser-Kontext
   starten.
