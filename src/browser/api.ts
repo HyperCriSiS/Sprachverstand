@@ -81,6 +81,20 @@ export interface ExtensionApi {
       readonly currentWindow: boolean;
     }): Promise<ExtensionTab[]>;
     sendMessage(tabId: number, message: unknown): Promise<unknown>;
+    readonly onUpdated: {
+      addListener(
+        listener: (
+          tabId: number,
+          changeInfo: { readonly status?: "loading" | "complete" }
+        ) => void
+      ): void;
+      removeListener(
+        listener: (
+          tabId: number,
+          changeInfo: { readonly status?: "loading" | "complete" }
+        ) => void
+      ): void;
+    };
     readonly onRemoved: {
       addListener(listener: (tabId: number) => void): void;
       removeListener(listener: (tabId: number) => void): void;
