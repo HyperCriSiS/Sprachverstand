@@ -1,4 +1,5 @@
 import { getExtensionApi } from "./browser/api";
+import { t } from "./i18n";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
@@ -8,10 +9,24 @@ import {
 } from "./settings/defaults";
 import { loadSettings, saveSettings } from "./settings/storage";
 
-interface CountUpdatedMessage {
-  readonly type: "sprachverstand.count-updated";
+interface ReplacementSummaryEntry {
+  readonly original: string;
+  readonly replacement: string;
+  readonly count: number;
+}
+
+interface StateUpdatedMessage {
+  readonly type: "sprachverstand.state-updated";
   readonly tabId: number;
   readonly text: string;
+  readonly count: number;
+  readonly replacements: readonly ReplacementSummaryEntry[];
+}
+
+interface ReplacementStateResponse {
+  readonly text?: unknown;
+  readonly count?: unknown;
+  readonly replacements?: unknown;
 }
 
 function requiredElement<T extends HTMLElement>(selector: string): T {
@@ -27,6 +42,17 @@ function requiredElement<T extends HTMLElement>(selector: string): T {
 const enabledInput = requiredElement<HTMLInputElement>("#enabled");
 const stateOutput = requiredElement<HTMLOutputElement>("#state");
 const countOutput = requiredElement<HTMLOutputElement>("#count");
+const detailsCountOutput = requiredElement<HTMLOutputElement>("#details-count");
+const detailsUniqueCountOutput =
+  requiredElement<HTMLOutputElement>("#details-unique-count");
+const replacementList = requiredElement<HTMLUListElement>("#replacement-list");
+const replacementEmpty = requiredElement<HTMLElement>("#replacement-empty");
+const mainView = requiredElement<HTMLElement>("#main-view");
+const detailsView = requiredElement<HTMLElement>("#details-view");
+const openReplacementsButton =
+  requiredElement<HTMLButtonElement>("#open-replacements");
+const closeReplacementsButton =
+  requiredElement<HTMLButtonElement>("#close-replacements");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const processAccessibleAttributesInput =
   requiredElement<HTMLInputElement>("#process-accessible-attributes");
@@ -41,17 +67,37 @@ const popupSections = [
 
 let settings: Settings;
 let activeTabId: number | undefined;
+let currentCount = 0;
+let currentReplacements: readonly ReplacementSummaryEntry[] = [];
 
-function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
+function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<ReplacementSummaryEntry>;
+  return (
+    typeof candidate.original === "string" &&
+    typeof candidate.replacement === "string" &&
+    typeof candidate.count === "number" &&
+    Number.isFinite(candidate.count) &&
+    candidate.count > 0
+  );
+}
+
+function isStateUpdatedMessage(message: unknown): message is StateUpdatedMessage {
   if (!message || typeof message !== "object") {
     return false;
   }
 
-  const candidate = message as Partial<CountUpdatedMessage>;
+  const candidate = message as Partial<StateUpdatedMessage>;
   return (
-    candidate.type === "sprachverstand.count-updated" &&
+    candidate.type === "sprachverstand.state-updated" &&
     typeof candidate.tabId === "number" &&
-    typeof candidate.text === "string"
+    typeof candidate.text === "string" &&
+    typeof candidate.count === "number" &&
+    Array.isArray(candidate.replacements) &&
+    candidate.replacements.every(isReplacementSummaryEntry)
   );
 }
 
@@ -71,7 +117,7 @@ function createRuleGroupControls(): void {
     content.className = "popup-rule-content";
 
     const title = document.createElement("strong");
-    title.textContent = group.label;
+    title.textContent = t(group.labelKey, undefined, group.label);
 
     const example = document.createElement("code");
     example.textContent = group.example;
@@ -96,9 +142,46 @@ function popupRuleGroupRows(): HTMLElement[] {
   )];
 }
 
+function renderReplacementDetails(): void {
+  countOutput.textContent = String(currentCount);
+  detailsCountOutput.textContent = String(currentCount);
+  detailsUniqueCountOutput.textContent = String(currentReplacements.length);
+  replacementEmpty.hidden = currentReplacements.length !== 0;
+
+  const fragment = document.createDocumentFragment();
+  for (const entry of currentReplacements) {
+    const item = document.createElement("li");
+    item.className = "replacement-item";
+
+    const original = document.createElement("span");
+    original.className = "replacement-original";
+    original.textContent = entry.original;
+
+    const arrow = document.createElement("span");
+    arrow.className = "replacement-arrow";
+    arrow.textContent = "→";
+    arrow.setAttribute("aria-hidden", "true");
+
+    const replacement = document.createElement("span");
+    replacement.className = "replacement-target";
+    replacement.textContent = entry.replacement || "∅";
+
+    const times = document.createElement("span");
+    times.className = "replacement-times";
+    times.textContent = `× ${entry.count}`;
+
+    item.append(original, arrow, replacement, times);
+    fragment.append(item);
+  }
+
+  replacementList.replaceChildren(fragment);
+}
+
 function render(): void {
   enabledInput.checked = settings.enabled;
-  stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
+  stateOutput.textContent = settings.enabled
+    ? t("active", undefined, "Aktiv")
+    : t("paused", undefined, "Pausiert");
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
@@ -130,85 +213,49 @@ async function resolveActiveTabId(): Promise<number | undefined> {
   return activeTabId;
 }
 
-async function renderCurrentCount(): Promise<void> {
+function normalizeReplacementState(
+  value: ReplacementStateResponse | undefined
+): {
+  readonly count: number;
+  readonly replacements: readonly ReplacementSummaryEntry[];
+} {
+  const replacements = Array.isArray(value?.replacements)
+    ? value.replacements.filter(isReplacementSummaryEntry)
+    : [];
+  const count =
+    typeof value?.count === "number" && Number.isFinite(value.count)
+      ? Math.max(0, value.count)
+      : replacements.reduce((total, entry) => total + entry.count, 0);
+  return { count, replacements };
+}
+
+async function refreshReplacementState(): Promise<void> {
   const api = getExtensionApi();
-  const tabId = activeTabId ?? (await resolveActiveTabId());
-
-  if (tabId === undefined) {
-    countOutput.textContent = "0";
-    return;
-  }
-
   const response = (await api.runtime.sendMessage({
-    type: "sprachverstand.get-count",
-    tabId
-  })) as { readonly text?: unknown } | undefined;
-
-  countOutput.textContent =
-    typeof response?.text === "string" ? response.text : "0";
-}
-
-function refreshCountAfterChange(): void {
-  for (const delay of [0, 60, 180, 400]) {
-    window.setTimeout(() => {
-      void renderCurrentCount();
-    }, delay);
-  }
-}
-
-async function persistEnabled(): Promise<void> {
-  settings = {
-    ...settings,
-    enabled: enabledInput.checked
-  };
-
-  await saveSettings(settings);
-  render();
-  refreshCountAfterChange();
-}
-
-async function persistRuleGroups(): Promise<void> {
-  settings = {
-    ...settings,
-    enabledRuleGroupIds: ruleGroupInputs()
-      .filter((input) => input.checked)
-      .map((input) => input.dataset.ruleGroupId)
-      .filter((id): id is string => Boolean(id))
-  };
-
-  await saveSettings(settings);
-  render();
-  refreshCountAfterChange();
-}
-
-async function persistTextOptions(): Promise<void> {
-  settings = {
-    ...settings,
-    processAccessibleAttributes: processAccessibleAttributesInput.checked,
-    processQuotedText: processQuotedTextInput.checked,
-    processSubtitles: processSubtitlesInput.checked
-  };
-
-  await saveSettings(settings);
-  render();
-  refreshCountAfterChange();
+    type: "sprachverstand.get-inspected-count"
+  })) as ReplacementStateResponse | undefined;
+  const normalized = normalizeReplacementState(response);
+  currentCount = normalized.count;
+  currentReplacements = normalized.replacements;
+  renderReplacementDetails();
 }
 
 function handleRuntimeMessage(message: unknown): void {
-  if (
-    isCountUpdatedMessage(message) &&
-    message.tabId === activeTabId
-  ) {
-    countOutput.textContent = message.text || "0";
+  if (!isStateUpdatedMessage(message) || message.tabId !== activeTabId) {
+    return;
   }
+
+  currentCount = Math.max(0, message.count);
+  currentReplacements = message.replacements;
+  renderReplacementDetails();
 }
 
 async function start(): Promise<void> {
   createRuleGroupControls();
   settings = await loadSettings();
-  render();
   await resolveActiveTabId();
-  await renderCurrentCount();
+  render();
+  await refreshReplacementState();
 
   const api = getExtensionApi();
   api.runtime.onMessage.addListener(handleRuntimeMessage);
@@ -217,36 +264,68 @@ async function start(): Promise<void> {
   });
 
   enabledInput.addEventListener("change", () => {
-    void persistEnabled();
+    settings = { ...settings, enabled: enabledInput.checked };
+    void saveSettings(settings);
+    render();
   });
 
-  ruleGroupsContainer.addEventListener("change", (event) => {
-    if (event.target instanceof HTMLInputElement) {
-      void persistRuleGroups();
-    }
-  });
-
-  for (const input of [
-    processAccessibleAttributesInput,
-    processQuotedTextInput,
-    processSubtitlesInput
-  ]) {
+  for (const input of ruleGroupInputs()) {
     input.addEventListener("change", () => {
-      void persistTextOptions();
+      const enabledGroups = new Set(settings.enabledRuleGroupIds);
+      const groupId = input.dataset.ruleGroupId;
+      if (!groupId) {
+        return;
+      }
+      if (input.checked) {
+        enabledGroups.add(groupId);
+      } else {
+        enabledGroups.delete(groupId);
+      }
+      settings = {
+        ...settings,
+        enabledRuleGroupIds: ruleGroupDefinitions
+          .map((group) => group.id)
+          .filter((id) => enabledGroups.has(id))
+      };
+      void saveSettings(settings);
     });
   }
 
-  optionsButton.addEventListener("click", () => {
-    const open = async (): Promise<void> => {
-      if (activeTabId !== undefined) {
-        await api.runtime.sendMessage({
-          type: "sprachverstand.set-inspected-tab",
-          tabId: activeTabId
-        });
-      }
-      await api.runtime.openOptionsPage();
+  processAccessibleAttributesInput.addEventListener("change", () => {
+    settings = {
+      ...settings,
+      processAccessibleAttributes: processAccessibleAttributesInput.checked
     };
-    void open();
+    void saveSettings(settings);
+  });
+
+  processQuotedTextInput.addEventListener("change", () => {
+    settings = {
+      ...settings,
+      processQuotedText: processQuotedTextInput.checked
+    };
+    void saveSettings(settings);
+  });
+
+  processSubtitlesInput.addEventListener("change", () => {
+    settings = {
+      ...settings,
+      processSubtitles: processSubtitlesInput.checked
+    };
+    void saveSettings(settings);
+  });
+
+  openReplacementsButton.addEventListener("click", () => {
+    mainView.hidden = true;
+    detailsView.hidden = false;
+  });
+  closeReplacementsButton.addEventListener("click", () => {
+    detailsView.hidden = true;
+    mainView.hidden = false;
+  });
+
+  optionsButton.addEventListener("click", () => {
+    void api.runtime.openOptionsPage();
   });
 }
 

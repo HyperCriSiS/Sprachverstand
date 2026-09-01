@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Sprachverstand",
-  "version": "0.6.6",
-  "description": "Macht Webseiten leichter lesbar.",
+  "name": "__MSG_extensionName__",
+  "version": "0.7.0",
+  "description": "__MSG_extensionDescription__",
   "permissions": [
     "storage"
   ],
   "action": {
-    "default_title": "Sprachverstand",
+    "default_title": "__MSG_extensionName__",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "32": "icons/icon32.png",
@@ -54,5 +54,6 @@
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "default_locale": "de"
 }

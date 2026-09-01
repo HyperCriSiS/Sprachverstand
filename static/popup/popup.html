@@ -1,55 +1,72 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="de">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark light">
-    <title>Sprachverstand</title>
-    <link rel="stylesheet" href="popup.css">
-    <script src="popup.js" defer></script>
-  </head>
-  <body>
-    <main>
-      <header class="brand-header">
-        <img src="../icons/icon32.png" width="32" height="32" alt="">
-        <div>
-          <h1>Sprachverstand</h1>
-          <output id="state"></output>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="dark light" name="color-scheme"/>
+<title data-i18n="extensionName">Sprachverstand</title>
+<link href="popup.css" rel="stylesheet"/>
+<script defer="" src="popup.js"></script>
+</head>
+<body>
+<main>
+<section class="popup-view" id="main-view">
+<header class="brand-header">
+<div class="brand-lockup">
+<img alt="" height="32" src="../icons/icon32.png" width="32"/>
+<h1 data-i18n="extensionName">Sprachverstand</h1>
+</div>
+<output class="status-badge" id="state"></output>
+</header>
+<button aria-controls="details-view" class="page-summary popup-section" data-popup-section="count" id="open-replacements" type="button">
+<span class="page-summary-copy">
+<span class="section-kicker" data-i18n="currentPage">Diese Seite</span>
+<strong><output id="count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>
+</span>
+<span class="page-summary-action"><span data-i18n="show">Anzeigen</span> <span aria-hidden="true" class="chevron-next"></span></span>
+</button>
+<label class="switch-row popup-section" data-popup-section="activation">
+<span data-i18n="extensionActive">Erweiterung aktiv</span>
+<input id="enabled" type="checkbox"/>
+</label>
+<section class="rules-panel popup-section" data-popup-section="rule-groups">
+<h2 data-i18n="whatCorrect">Was soll korrigiert werden?</h2>
+<div class="popup-rules" id="rule-groups"></div>
+</section>
+<section class="where-panel popup-section" data-popup-section="text-options">
+<h2 data-i18n="whereCorrect">Wo soll korrigiert werden?</h2>
+<label class="popup-option-row">
+<span data-i18n="imageDescriptionsLabels">Bildbeschreibungen und Beschriftungen</span>
+<input id="process-accessible-attributes" type="checkbox"/>
+</label>
+<label class="popup-option-row">
+<span data-i18n="quotedText">Text in Anführungszeichen</span>
+<input id="process-quoted-text" type="checkbox"/>
+</label>
+<label class="popup-option-row">
+<span data-i18n="subtitles">Untertitel</span>
+<input id="process-subtitles" type="checkbox"/>
+</label>
+</section>
+<button class="popup-section" data-i18n="exceptionsMoreSettings" data-popup-section="open-options" id="open-options" type="button">Ausnahmen und weitere Einstellungen</button>
+</section>
+<section aria-labelledby="details-title" class="popup-view" hidden="" id="details-view">
+<header class="details-header">
+<button aria-controls="main-view" class="back-button" id="close-replacements" type="button"><span aria-hidden="true" class="chevron-back"></span><span data-i18n="back">Zurück</span></button>
+<h2 data-i18n="changes" id="details-title">Änderungen</h2>
+</header>
+<div aria-live="polite" class="details-summary">
+<strong><output id="details-count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>
+<span aria-hidden="true">·</span>
+<span><output id="details-unique-count">0</output> <span data-i18n="differentReplacements">unterschiedliche Ersetzungen</span></span>
+</div>
+<div class="replacement-empty" data-i18n="noReplacementsOnPage" hidden="" id="replacement-empty">
+          Noch keine Ersetzungen auf dieser Seite.
         </div>
-      </header>
-
-      <div class="count-row popup-section" data-popup-section="count" aria-live="polite">
-        <span>Korrekturen auf dieser Seite</span>
-        <output id="count">0</output>
-      </div>
-
-      <label class="switch-row popup-section" data-popup-section="activation">
-        <span>Erweiterung aktiv</span>
-        <input id="enabled" type="checkbox">
-      </label>
-
-      <section class="rules-panel popup-section" data-popup-section="rule-groups">
-        <h2>Was soll korrigiert werden?</h2>
-        <div id="rule-groups" class="popup-rules"></div>
-      </section>
-
-      <section class="where-panel popup-section" data-popup-section="text-options">
-        <h2>Wo soll korrigiert werden?</h2>
-        <label class="popup-option-row">
-          <span>Bildbeschreibungen und Beschriftungen</span>
-          <input id="process-accessible-attributes" type="checkbox">
-        </label>
-        <label class="popup-option-row">
-          <span>Text in Anführungszeichen</span>
-          <input id="process-quoted-text" type="checkbox">
-        </label>
-        <label class="popup-option-row">
-          <span>Untertitel</span>
-          <input id="process-subtitles" type="checkbox">
-        </label>
-      </section>
-
-      <button id="open-options" class="popup-section" data-popup-section="open-options" type="button">Ausnahmen und weitere Einstellungen</button>
-    </main>
-  </body>
+<ul aria-label="Ersetzungen auf dieser Seite" class="replacement-list" data-i18n-aria-label="replacementsOnPage" id="replacement-list"></ul>
+<p class="details-note" data-i18n="replacementOverviewMemoryNotice">Die Übersicht wird nur für den aktuellen Tab im Arbeitsspeicher gehalten und beim Schließen oder Neuladen der Seite neu aufgebaut.</p>
+</section>
+</main>
+</body>
 </html>

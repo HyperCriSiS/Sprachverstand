@@ -19,6 +19,7 @@ env:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Repository auschecken
@@ -36,18 +37,12 @@ jobs:
 
       - name: Paket- und Lizenzmetadaten prüfen
         run: |
-          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
-      - name: Öffentliche Freigabe auf Geheimnisse und temporäre Dateien prüfen
-        run: npm run audit:public
+      - name: Qualitäts-, Build- und Browserprüfungen ausführen
+        run: npm run check
 
-      - name: TypeScript prüfen
-        run: npm run typecheck
-
-      - name: Gesamte Testsuite ausführen
-        run: npm run test
-
-      - name: Oberfläche, Regelgruppen und Rechtshinweise absichern
+      - name: Oberfläche und Rechtshinweise absichern
         shell: bash
         run: |
           grep -q "width: 384px" static/popup/popup.css
@@ -72,7 +67,8 @@ jobs:
           grep -q 'data-sync-category="custom-replacements"' static/options/options.html
           grep -q '../legal/legal.html' static/options/options.html
           ! grep -q 'Freie Software unter starkem Copyleft' static/legal/legal.html
-          grep -q '<h1>Sprachverstand – Lizenz und Quelltext</h1>' static/legal/legal.html
+          grep -q 'data-i18n="legalTitle"' static/legal/legal.html
+          grep -q 'Sprachverstand – Lizenz und Quelltext</h1>' static/legal/legal.html
           test -s LICENSE
           test -s TRADEMARKS.md
           test -s NOTICE
@@ -85,69 +81,6 @@ jobs:
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
-          grep -q '"default_icon"' manifests/chromium.json
-          grep -q '"default_icon"' manifests/firefox.json
-
-      - name: Browser-Builds erstellen
-        run: npm run build
-
-      - name: Erzeugte Logo-Dateien vollständig prüfen
-        run: npm run validate:icons
-
-      - name: Firefox Desktop und Android linten
-        run: npm run lint:firefox
-
-      - name: Release-Pakete erstellen und prüfen
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION=$(node -p "require('./package.json').version")
-          mkdir -p artifacts
-
-          (
-            cd dist/chromium
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-chromium.zip" .
-          )
-
-          (
-            cd dist/firefox
-            zip -qr "../../artifacts/sprachverstand-${VERSION}-firefox.xpi" .
-          )
-
-          git archive \
-            --format=zip \
-            --output="artifacts/sprachverstand-${VERSION}-source.zip" \
-            HEAD
-
-          cp docs/BETA-TEST.md artifacts/
-          cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
-          printf '%s\n' "$GITHUB_SHA" > artifacts/SOURCE_COMMIT.txt
-
-          (
-            cd artifacts
-            sha256sum \
-              "sprachverstand-${VERSION}-chromium.zip" \
-              "sprachverstand-${VERSION}-firefox.xpi" \
-              "sprachverstand-${VERSION}-source.zip" \
-              SOURCE_COMMIT.txt \
-              > SHA256SUMS.txt
-            sha256sum -c SHA256SUMS.txt
-          )
-
-          unzip -t "artifacts/sprachverstand-${VERSION}-chromium.zip"
-          unzip -t "artifacts/sprachverstand-${VERSION}-firefox.xpi"
-          unzip -t "artifacts/sprachverstand-${VERSION}-source.zip"
-
-          if unzip -l "artifacts/sprachverstand-${VERSION}-firefox.xpi" | grep -q 'META-INF/'; then
-            echo "Das Firefox-XPI muss vor der Mozilla-Signierung unsigniert sein."
-            exit 1
-          fi
-
-      - name: Geprüfte Pakete hochladen
-        uses: actions/upload-artifact@v7
-        with:
-          name: sprachverstand-ci-${{ github.sha }}
-          path: artifacts/
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 0
+          for target in chromium edge opera firefox; do
+            grep -q '"default_icon"' "manifests/${target}.json"
+          done

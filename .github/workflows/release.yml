@@ -6,9 +6,22 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Existing v-prefixed tag to publish"
+      mode:
+        description: "Release-Aktion"
         required: true
+        default: "publish-existing-tag"
+        type: choice
+        options:
+          - "publish-existing-tag"
+          - "create-tag"
+      tag:
+        description: "v-präfixierter Release-Tag"
+        required: true
+        type: string
+      target_ref:
+        description: "Quell-Ref für einen neuen Tag"
+        required: false
+        default: "dev"
         type: string
 
 permissions:
@@ -22,7 +35,39 @@ env:
   CI: true
 
 jobs:
+  create_tag:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'create-tag' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Quellstand auschecken
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.target_ref }}
+
+      - name: Release-Tag erstellen
+        env:
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
+            echo "Erwartet wird ein Tag wie v0.6.7 oder v0.6.8-rc.1."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Der Tag ${TAG} existiert bereits. Für einen erneuten Veröffentlichungsversuch den Modus publish-existing-tag verwenden."
+            exit 1
+          fi
+
+          git tag "$TAG"
+          git push origin "refs/tags/${TAG}"
+
   release:
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'create-tag') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -100,7 +145,7 @@ jobs:
           RELEASE_VERSION="$VERSION" node <<'NODE'
           const fs = require("node:fs");
 
-          for (const path of ["manifests/chromium.json", "manifests/firefox.json"]) {
+          for (const path of ["manifests/chromium.json", "manifests/edge.json", "manifests/opera.json", "manifests/firefox.json"]) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
             manifest.version = process.env.RELEASE_VERSION;
             fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -113,7 +158,7 @@ jobs:
           const expected = process.env.VERSION;
           const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          const manifests = ["chromium", "firefox"].map((name) =>
+          const manifests = ["chromium", "edge", "opera", "firefox"].map((name) =>
             JSON.parse(fs.readFileSync(`manifests/${name}.json`, "utf8"))
           );
 
@@ -147,6 +192,16 @@ jobs:
           )
 
           (
+            cd dist/edge
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-edge.zip" .
+          )
+
+          (
+            cd dist/opera
+            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-opera.zip" .
+          )
+
+          (
             cd dist/firefox
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
@@ -154,7 +209,7 @@ jobs:
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
-          cp manifests/chromium.json manifests/firefox.json "$SOURCE_DIR/manifests/"
+          cp manifests/chromium.json manifests/edge.json manifests/opera.json manifests/firefox.json "$SOURCE_DIR/manifests/"
 
           (
             cd "$SOURCE_DIR"
@@ -165,12 +220,16 @@ jobs:
 
           cp docs/BETA-TEST.md artifacts/
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
+          cp docs/EDGE-SUBMISSION.md artifacts/
+          cp docs/OPERA-SUBMISSION.md artifacts/
           printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
             sha256sum \
               "sprachverstand-${ASSET_LABEL}-chromium.zip" \
+              "sprachverstand-${ASSET_LABEL}-edge.zip" \
+              "sprachverstand-${ASSET_LABEL}-opera.zip" \
               "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
               "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
@@ -179,6 +238,8 @@ jobs:
           )
 
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-chromium.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-edge.zip"
+          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-opera.zip"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi"
           unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
 

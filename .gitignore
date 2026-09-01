@@ -28,3 +28,6 @@ id_ed25519
 *.bak
 *.tmp
 *.swp
+
+# Reproduzierbar erzeugte Store-Arbeitsdateien
+store/generated/
