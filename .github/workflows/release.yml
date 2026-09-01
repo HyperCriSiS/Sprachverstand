@@ -21,7 +21,7 @@ on:
       target_ref:
         description: "Quell-Ref für einen neuen Tag"
         required: false
-        default: "dev"
+        default: "main"
         type: string
 
 permissions:
@@ -67,7 +67,8 @@ jobs:
           git push origin "refs/tags/${TAG}"
 
   release:
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'create-tag') }}
+    needs: create_tag
+    if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'publish-existing-tag' || (inputs.mode == 'create-tag' && needs.create_tag.result == 'success')))) }}
     runs-on: ubuntu-latest
 
     steps:

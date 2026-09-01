@@ -108,6 +108,25 @@ describe("Browser-Ziele", () => {
     }
   });
 
+  it("verwendet main als Standardquelle für manuell erzeugte Release-Tags", () => {
+    expect(releaseWorkflow).toMatch(
+      /target_ref:[\s\S]*?default: ["']main["']/
+    );
+    expect(releaseWorkflow).not.toMatch(
+      /target_ref:[\s\S]*?default: ["']dev["']/
+    );
+  });
+
+  it("veröffentlicht einen im Workflow erzeugten Tag noch im selben Lauf", () => {
+    expect(releaseWorkflow).toContain("needs: create_tag");
+    expect(releaseWorkflow).toContain(
+      "inputs.mode == 'create-tag' && needs.create_tag.result == 'success'"
+    );
+    expect(releaseWorkflow).not.toContain(
+      "inputs.mode != 'create-tag'"
+    );
+  });
+
   it("prüft Gecko und Chromium getrennt und behält den erforderlichen Gesamtstatus", () => {
     expect(packageJson.scripts["validate:browsers:gecko"]).toBe(
       "node scripts/validate-browser-targets.mjs --family gecko"
