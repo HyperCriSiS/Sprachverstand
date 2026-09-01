@@ -68,6 +68,31 @@ Dieser Befehl führt aus:
 
 Es gibt keine automatisch generierten oder ausgelassenen proprietären
 Quellbestandteile. Das eingereichte Quellarchiv ist der bevorzugte Quelltext im
-Sinne der AGPL-3.0-only. Die zusätzlich ausgelieferte Datei
-`SOURCE_COMMIT.txt` enthält den Git-Commit, aus dem XPI und Quellarchiv erzeugt
-wurden.
+Sinne der AGPL-3.0-only.
+
+## Provenienz des Release-Quellarchivs
+
+Das Release-Quellarchiv beginnt mit `git archive` des in `SOURCE_COMMIT.txt`
+genannten Commits. Die eigentlichen Quelldateien stammen damit aus genau diesem
+Git-Baum. Damit die aus dem Release-Tag abgeleitete Versionsnummer ohne einen
+zusätzlichen Vorbereitungsschritt reproduziert werden kann, ersetzt der
+Release-Workflow anschließend ausschließlich die Versionsfelder in diesen sechs
+bereits vorhandenen Dateien durch die Release-Version:
+
+- `package.json`
+- `package-lock.json`
+- `manifests/chromium.json`
+- `manifests/edge.json`
+- `manifests/opera.json`
+- `manifests/firefox.json`
+
+Zusätzlich werden zwei reine Provenienzdateien in das Quellarchiv aufgenommen:
+
+- `SOURCE_COMMIT.txt` – exakter Git-Commit des Ausgangsbaums
+- `RELEASE_PROVENANCE.txt` – Tag, Commit, Build-Version und die oben beschriebene
+  Release-Vorbereitung
+
+Andere Quelldateien werden vor dem Packen nicht verändert. Deshalb kann das bei
+Mozilla eingereichte Source-ZIP direkt mit `npm ci` und `npm run build:firefox`
+gebaut werden, auch wenn die Versionsfelder des rohen Git-Tags von der
+Release-Version abweichen.

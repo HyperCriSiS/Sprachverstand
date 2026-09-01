@@ -207,10 +207,33 @@ jobs:
             zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
           )
 
+          printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
+          cat > artifacts/RELEASE_PROVENANCE.txt <<EOF
+          Sprachverstand Release-Provenienz
+          Tag: ${TAG}
+          Quell-Commit: ${RELEASE_SHA}
+          Build-Version: ${VERSION}
+
+          Das Source-ZIP beginnt mit dem unveränderten Git-Baum des Quell-Commits.
+          Für den releasefertigen Build werden ausschließlich die Versionsfelder
+          in den folgenden sechs bereits vorhandenen Dateien auf ${VERSION} gesetzt:
+          - package.json
+          - package-lock.json
+          - manifests/chromium.json
+          - manifests/edge.json
+          - manifests/opera.json
+          - manifests/firefox.json
+
+          Zusätzlich werden SOURCE_COMMIT.txt und RELEASE_PROVENANCE.txt als
+          Provenienzmetadaten in das Source-ZIP aufgenommen. Sonstige Quelldateien
+          werden vor dem Packen nicht verändert.
+          EOF
+
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
           cp manifests/chromium.json manifests/edge.json manifests/opera.json manifests/firefox.json "$SOURCE_DIR/manifests/"
+          cp artifacts/SOURCE_COMMIT.txt artifacts/RELEASE_PROVENANCE.txt "$SOURCE_DIR/"
 
           (
             cd "$SOURCE_DIR"
@@ -223,7 +246,6 @@ jobs:
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
           cp docs/EDGE-SUBMISSION.md artifacts/
           cp docs/OPERA-SUBMISSION.md artifacts/
-          printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
 
           (
             cd artifacts
@@ -234,6 +256,7 @@ jobs:
               "sprachverstand-${ASSET_LABEL}-firefox.xpi" \
               "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
+              RELEASE_PROVENANCE.txt \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
