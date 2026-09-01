@@ -13,23 +13,25 @@ import {
   maximumCustomReplacements,
   maximumExcludedDomains,
   normalizeExcludedDomain,
-  popupSectionDefinitions,
-  popupRuleGroupSectionId,
+  popupSectionIds,
+  syncCategoryIds,
+  type PopupSectionId,
   type Settings,
-  type SyncCategory
+  type SyncCategoryId
 } from "./settings/defaults";
 import {
-  analyzePersonalRules,
-  normalizeCustomReplacementKey,
-  normalizeProtectedTerm,
-  type CustomReplacement
+  analyzeCustomReplacementConflicts,
+  formatCustomReplacementsText,
+  formatProtectedTermsText,
+  parseCustomReplacementsText,
+  parseProtectedTermsText,
+  type ReplacementNotice
 } from "./settings/personal-rules";
 import {
   createSettingsBackupDocument,
-  createSettingsBackupFileName,
+  maximumSettingsBackupImportBytes,
+  mergeImportedSettings,
   parseSettingsBackupDocument,
-  settingsBackupAccept,
-  settingsBackupExtension,
   stringifySettingsBackupDocument,
   type SettingsBackupImportMode,
   type SettingsImportResult
@@ -58,24 +60,19 @@ function requiredElement<T extends HTMLElement>(selector: string): T {
 
 const form = requiredElement<HTMLFormElement>("#settings-form");
 const enabledInput = requiredElement<HTMLInputElement>("#enabled");
-const processQuotedTextInput =
-  requiredElement<HTMLInputElement>("#process-quoted-text");
+const countOutput = requiredElement<HTMLOutputElement>("#count");
 const processAccessibleAttributesInput =
   requiredElement<HTMLInputElement>("#process-accessible-attributes");
+const processQuotedTextInput =
+  requiredElement<HTMLInputElement>("#process-quoted-text");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
-const customProtectedTermsInput =
-  requiredElement<HTMLTextAreaElement>("#custom-protected-terms");
-const customReplacementSourceInput =
-  requiredElement<HTMLInputElement>("#custom-replacement-source");
-const customReplacementTargetInput =
-  requiredElement<HTMLInputElement>("#custom-replacement-target");
-const addCustomReplacementButton =
-  requiredElement<HTMLButtonElement>("#add-custom-replacement");
+const protectedTermsInput =
+  requiredElement<HTMLTextAreaElement>("#protected-terms");
+const customReplacementsInput =
+  requiredElement<HTMLTextAreaElement>("#custom-replacements");
 const customReplacementFeedback =
   requiredElement<HTMLElement>("#custom-replacement-feedback");
-const customReplacementList =
-  requiredElement<HTMLElement>("#custom-replacement-list");
 const customPreviewInput =
   requiredElement<HTMLTextAreaElement>("#custom-preview-input");
 const customPreviewOutput =
@@ -84,21 +81,20 @@ const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
 const popupSectionsContainer = requiredElement<HTMLElement>("#popup-sections");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
-const countOutput = requiredElement<HTMLOutputElement>("#count");
+const syncCategoriesContainer =
+  requiredElement<HTMLElement>("#sync-categories");
+const exportSettingsButton =
+  requiredElement<HTMLButtonElement>("#export-personal-rules");
+const importSettingsButton =
+  requiredElement<HTMLButtonElement>("#import-personal-rules");
+const importSettingsInput =
+  requiredElement<HTMLInputElement>("#import-personal-rules-input");
 const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const expandAllSectionsButton =
   requiredElement<HTMLButtonElement>("#expand-all-sections");
 const collapseAllSectionsButton =
   requiredElement<HTMLButtonElement>("#collapse-all-sections");
-const exportPersonalRulesButton =
-  requiredElement<HTMLButtonElement>("#export-personal-rules");
-const importPersonalRulesButton =
-  requiredElement<HTMLButtonElement>("#import-personal-rules");
-const importPersonalRulesInput =
-  requiredElement<HTMLInputElement>("#import-personal-rules-input");
-const syncCategoriesContainer =
-  requiredElement<HTMLElement>("#sync-categories");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
 const settingsSections = [
   ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
@@ -120,15 +116,15 @@ function localizedUiError(
 
 function formatUiError(
   error: unknown,
-  fallbackKey: string,
-  fallbackText: string
+  key: string,
+  fallback: string
 ): string {
   if (error instanceof LocalizedUiError) {
     return error.message;
   }
 
   console.error(error);
-  return t(fallbackKey, undefined, fallbackText);
+  return t(key, undefined, fallback);
 }
 
 function isStateUpdatedMessage(message: unknown): message is StateUpdatedMessage {
@@ -199,27 +195,23 @@ function createRuleGroupControls(): void {
 function createPopupSectionControls(): void {
   const fragment = document.createDocumentFragment();
 
-  for (const section of popupSectionDefinitions) {
+  for (const sectionId of popupSectionIds) {
     const label = document.createElement("label");
     label.className = "setting-row";
 
     const input = document.createElement("input");
     input.type = "checkbox";
-    input.dataset.popupSectionId = section.id;
+    input.dataset.popupSectionId = sectionId;
 
     const content = document.createElement("span");
     content.className = "setting-row-content";
 
     const title = document.createElement("strong");
-    title.textContent = t(section.labelKey, undefined, section.label);
+    title.textContent = popupSectionLabel(sectionId);
 
     const description = document.createElement("span");
     description.className = "setting-description";
-    description.textContent = t(
-      section.descriptionKey,
-      undefined,
-      section.description
-    );
+    description.textContent = popupSectionDescription(sectionId);
 
     content.append(title, description);
     label.append(input, content);
@@ -229,73 +221,75 @@ function createPopupSectionControls(): void {
   popupSectionsContainer.replaceChildren(fragment);
 }
 
-function createSyncCategoryControls(): void {
-  const categories: readonly {
-    readonly id: SyncCategory;
-    readonly labelKey: string;
-    readonly label: string;
-    readonly descriptionKey: string;
-    readonly description: string;
-  }[] = [
-    {
-      id: "general",
-      labelKey: "syncGeneralLabel",
-      label: "Allgemeine Einstellungen",
-      descriptionKey: "syncGeneralDescription",
-      description: "Aktivierung und ausgeschlossene Domains"
-    },
-    {
-      id: "rule-groups",
-      labelKey: "syncRuleGroupsLabel",
-      label: "Regelgruppen",
-      descriptionKey: "syncRuleGroupsDescription",
-      description: "Auswahl der aktiven Ersetzungsregeln"
-    },
-    {
-      id: "text-options",
-      labelKey: "syncTextOptionsLabel",
-      label: "Textoptionen",
-      descriptionKey: "syncTextOptionsDescription",
-      description: "Zitate, zugängliche Attribute und Untertitel"
-    },
-    {
-      id: "protected-terms",
-      labelKey: "syncProtectedTermsLabel",
-      label: "Ausnahmen",
-      descriptionKey: "syncProtectedTermsDescription",
-      description: "Eigene geschützte Wörter und Phrasen"
-    },
-    {
-      id: "custom-replacements",
-      labelKey: "syncCustomReplacementsLabel",
-      label: "Eigene Ersetzungen",
-      descriptionKey: "syncCustomReplacementsDescription",
-      description: "Eigene literale Ersetzungen"
-    }
-  ];
+function popupSectionLabel(sectionId: PopupSectionId): string {
+  const ruleGroupId = sectionId.startsWith("rule-group:")
+    ? sectionId.slice("rule-group:".length)
+    : undefined;
+  if (ruleGroupId) {
+    const group = ruleGroupDefinitions.find((candidate) => candidate.id === ruleGroupId);
+    return group ? t(group.labelKey, undefined, group.label) : ruleGroupId;
+  }
 
+  const labels: Record<Exclude<PopupSectionId, `rule-group:${string}`>, string> = {
+    "active-state": t("popupSectionActiveState", undefined, "Status"),
+    "correction-count": t("popupSectionCorrectionCount", undefined, "Korrekturzähler"),
+    "text-options": t("popupSectionTextOptions", undefined, "Textoptionen")
+  };
+  return labels[sectionId as keyof typeof labels] ?? sectionId;
+}
+
+function popupSectionDescription(sectionId: PopupSectionId): string {
+  if (sectionId.startsWith("rule-group:")) {
+    return t(
+      "popupSectionRuleGroupDescription",
+      undefined,
+      "Regelgruppe im Popup ein- und ausblenden."
+    );
+  }
+
+  const descriptions: Record<
+    Exclude<PopupSectionId, `rule-group:${string}`>,
+    string
+  > = {
+    "active-state": t(
+      "popupSectionActiveStateDescription",
+      undefined,
+      "Globalen Aktivierungsschalter im Popup anzeigen."
+    ),
+    "correction-count": t(
+      "popupSectionCorrectionCountDescription",
+      undefined,
+      "Korrekturzähler und Detailansicht im Popup anzeigen."
+    ),
+    "text-options": t(
+      "popupSectionTextOptionsDescription",
+      undefined,
+      "Optionen für zugängliche Attribute, Zitate und Untertitel anzeigen."
+    )
+  };
+  return descriptions[sectionId as keyof typeof descriptions] ?? sectionId;
+}
+
+function createSyncCategoryControls(): void {
   const fragment = document.createDocumentFragment();
-  for (const category of categories) {
+
+  for (const categoryId of syncCategoryIds) {
     const label = document.createElement("label");
     label.className = "setting-row";
 
     const input = document.createElement("input");
     input.type = "checkbox";
-    input.dataset.syncCategory = category.id;
+    input.dataset.syncCategory = categoryId;
 
     const content = document.createElement("span");
     content.className = "setting-row-content";
 
     const title = document.createElement("strong");
-    title.textContent = t(category.labelKey, undefined, category.label);
+    title.textContent = syncCategoryLabel(categoryId);
 
     const description = document.createElement("span");
     description.className = "setting-description";
-    description.textContent = t(
-      category.descriptionKey,
-      undefined,
-      category.description
-    );
+    description.textContent = syncCategoryDescription(categoryId);
 
     content.append(title, description);
     label.append(input, content);
@@ -303,6 +297,62 @@ function createSyncCategoryControls(): void {
   }
 
   syncCategoriesContainer.replaceChildren(fragment);
+}
+
+function syncCategoryLabel(categoryId: SyncCategoryId): string {
+  const labels: Record<SyncCategoryId, string> = {
+    enabled: t("syncCategoryEnabled", undefined, "Aktivierung"),
+    "rule-groups": t("syncCategoryRuleGroups", undefined, "Regelgruppen"),
+    "excluded-domains": t(
+      "syncCategoryExcludedDomains",
+      undefined,
+      "Domain-Ausschlüsse"
+    ),
+    "text-options": t("syncCategoryTextOptions", undefined, "Textoptionen"),
+    "protected-terms": t("syncCategoryProtectedTerms", undefined, "Ausnahmen"),
+    "custom-replacements": t(
+      "syncCategoryCustomReplacements",
+      undefined,
+      "Eigene Ersetzungen"
+    )
+  };
+  return labels[categoryId];
+}
+
+function syncCategoryDescription(categoryId: SyncCategoryId): string {
+  const descriptions: Record<SyncCategoryId, string> = {
+    enabled: t(
+      "syncCategoryEnabledDescription",
+      undefined,
+      "Globalen Aktivierungsstatus zusätzlich über den Browser synchronisieren."
+    ),
+    "rule-groups": t(
+      "syncCategoryRuleGroupsDescription",
+      undefined,
+      "Auswahl der aktiven Regelgruppen synchronisieren."
+    ),
+    "excluded-domains": t(
+      "syncCategoryExcludedDomainsDescription",
+      undefined,
+      "Liste ausgeschlossener Domains synchronisieren."
+    ),
+    "text-options": t(
+      "syncCategoryTextOptionsDescription",
+      undefined,
+      "Optionen für zugängliche Attribute, Zitate und Untertitel synchronisieren."
+    ),
+    "protected-terms": t(
+      "syncCategoryProtectedTermsDescription",
+      undefined,
+      "Persönliche Ausnahmen synchronisieren."
+    ),
+    "custom-replacements": t(
+      "syncCategoryCustomReplacementsDescription",
+      undefined,
+      "Eigene literale Ersetzungen synchronisieren."
+    )
+  };
+  return descriptions[categoryId];
 }
 
 function popupSectionInputs(): HTMLInputElement[] {
@@ -325,6 +375,46 @@ function syncCategoryInputs(): HTMLInputElement[] {
   )];
 }
 
+function parseExcludedDomains(value: string): string[] {
+  const seen = new Set<string>();
+  const domains: string[] = [];
+
+  for (const rawLine of value.split(/\r?\n/u)) {
+    const domain = normalizeExcludedDomain(rawLine);
+    if (!domain || seen.has(domain)) {
+      continue;
+    }
+    seen.add(domain);
+    domains.push(domain);
+  }
+
+  if (domains.length > maximumExcludedDomains) {
+    throw localizedUiError(
+      "excludedDomainsLimitExceeded",
+      String(maximumExcludedDomains),
+      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
+    );
+  }
+
+  return domains;
+}
+
+function readProtectedTerms(): string[] {
+  return parseProtectedTermsText(protectedTermsInput.value);
+}
+
+function readCustomReplacements() {
+  const replacements = parseCustomReplacementsText(customReplacementsInput.value);
+  if (replacements.length > maximumCustomReplacements) {
+    throw localizedUiError(
+      "customReplacementLimitExceeded",
+      String(maximumCustomReplacements),
+      `Es sind höchstens ${maximumCustomReplacements} eigene Ersetzungen möglich.`
+    );
+  }
+  return replacements;
+}
+
 function currentEnabledRuleGroups(): string[] {
   return ruleGroupInputs()
     .filter((input) => input.checked)
@@ -332,252 +422,151 @@ function currentEnabledRuleGroups(): string[] {
     .filter((id): id is string => Boolean(id));
 }
 
-function currentVisiblePopupSections(): string[] {
+function currentVisiblePopupSections(): PopupSectionId[] {
   return popupSectionInputs()
     .filter((input) => input.checked)
     .map((input) => input.dataset.popupSectionId)
-    .filter((id): id is string => Boolean(id));
+    .filter((id): id is PopupSectionId =>
+      popupSectionIds.includes(id as PopupSectionId)
+    );
 }
 
-function currentSyncCategories(): SyncCategory[] {
+function currentSyncCategories(): SyncCategoryId[] {
   return syncCategoryInputs()
     .filter((input) => input.checked)
     .map((input) => input.dataset.syncCategory)
-    .filter((id): id is SyncCategory => Boolean(id));
+    .filter((id): id is SyncCategoryId =>
+      syncCategoryIds.includes(id as SyncCategoryId)
+    );
 }
 
-function parseProtectedTerms(value: string): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-
-  for (const rawLine of value.split(/\r?\n/u)) {
-    const term = normalizeProtectedTerm(rawLine);
-    if (!term || seen.has(term)) {
-      continue;
-    }
-
-    seen.add(term);
-    normalized.push(term);
-  }
-
-  return normalized;
-}
-
-function parseExcludedDomains(value: string): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-
-  for (const rawLine of value.split(/\r?\n/u)) {
-    const domain = normalizeExcludedDomain(rawLine);
-    if (!domain || seen.has(domain)) {
-      continue;
-    }
-
-    seen.add(domain);
-    normalized.push(domain);
-  }
-
-  return normalized.slice(0, maximumExcludedDomains);
-}
-
-function readCustomReplacementsFromUi(): CustomReplacement[] {
-  return [...customReplacementList.querySelectorAll<HTMLElement>(
-    "[data-custom-replacement-key]"
-  )].map((item) => ({
-    source: item.dataset.customReplacementKey ?? "",
-    target: item.dataset.customReplacementValue ?? ""
-  }));
-}
-
-function createCustomReplacementRow(
-  replacement: CustomReplacement
-): HTMLDivElement {
-  const row = document.createElement("div");
-  row.className = "custom-replacement-row";
-  row.dataset.customReplacementKey = replacement.source;
-  row.dataset.customReplacementValue = replacement.target;
-
-  const source = document.createElement("code");
-  source.textContent = replacement.source;
-
-  const arrow = document.createElement("span");
-  arrow.className = "custom-replacement-arrow";
-  arrow.textContent = "→";
-  arrow.setAttribute("aria-hidden", "true");
-
-  const target = document.createElement("code");
-  target.textContent = replacement.target || "∅";
-
-  const removeButton = document.createElement("button");
-  removeButton.type = "button";
-  removeButton.className = "secondary small-button";
-  removeButton.textContent = t("remove", undefined, "Entfernen");
-  removeButton.addEventListener("click", () => {
-    row.remove();
-    renderCustomReplacementFeedback();
-    renderCustomReplacementPreview();
-  });
-
-  row.append(source, arrow, target, removeButton);
-  return row;
-}
-
-function renderCustomReplacements(
-  replacements: readonly CustomReplacement[]
-): void {
-  customReplacementList.replaceChildren(
-    ...replacements.map(createCustomReplacementRow)
-  );
-}
-
-function renderPopupSections(settings: Settings): void {
-  const visibleSections = new Set(settings.visiblePopupSectionIds);
-  for (const input of popupSectionInputs()) {
-    input.checked = visibleSections.has(input.dataset.popupSectionId ?? "");
-  }
+function readForm(): Settings {
+  return {
+    settingsRevision: currentSettingsRevision,
+    enabled: enabledInput.checked,
+    enabledRuleGroupIds: currentEnabledRuleGroups(),
+    processAccessibleAttributes: processAccessibleAttributesInput.checked,
+    processQuotedText: processQuotedTextInput.checked,
+    processSubtitles: processSubtitlesInput.checked,
+    protectedTerms: readProtectedTerms(),
+    customReplacements: readCustomReplacements(),
+    excludedDomains: parseExcludedDomains(excludedDomainsInput.value),
+    visiblePopupSectionIds: currentVisiblePopupSections(),
+    syncCategoryIds: currentSyncCategories()
+  };
 }
 
 function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
+  processAccessibleAttributesInput.checked = settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
-  processAccessibleAttributesInput.checked =
-    settings.processAccessibleAttributes;
   processSubtitlesInput.checked = settings.processSubtitles;
-  customProtectedTermsInput.value = settings.customProtectedTerms.join("\n");
+  protectedTermsInput.value = formatProtectedTermsText(settings.protectedTerms);
+  customReplacementsInput.value = formatCustomReplacementsText(
+    settings.customReplacements
+  );
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
-  const enabledGroups = new Set(settings.enabledRuleGroupIds);
+  const enabledRuleGroups = new Set(settings.enabledRuleGroupIds);
   for (const input of ruleGroupInputs()) {
-    input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
+    input.checked = enabledRuleGroups.has(input.dataset.ruleGroupId ?? "");
   }
 
-  renderPopupSections(settings);
-  renderCustomReplacements(settings.customReplacements);
-
-  const syncCategories = new Set(settings.syncCategories);
-  for (const input of syncCategoryInputs()) {
-    const category = input.dataset.syncCategory as SyncCategory | undefined;
-    input.checked = Boolean(category && syncCategories.has(category));
-  }
-}
-
-function readForm(): Settings {
-  const selectedPopupSections = new Set(currentVisiblePopupSections());
-  for (const group of ruleGroupDefinitions) {
-    const sectionId = popupRuleGroupSectionId(group.id);
-    const input = ruleGroupInputs().find(
-      (candidate) => candidate.dataset.ruleGroupId === group.id
+  const visiblePopupSections = new Set(settings.visiblePopupSectionIds);
+  for (const input of popupSectionInputs()) {
+    input.checked = visiblePopupSections.has(
+      input.dataset.popupSectionId as PopupSectionId
     );
-    if (input?.checked) {
-      selectedPopupSections.add(sectionId);
-    }
   }
 
-  return {
-    ...defaultSettings,
-    settingsRevision: currentSettingsRevision,
-    enabled: enabledInput.checked,
-    processQuotedText: processQuotedTextInput.checked,
-    processAccessibleAttributes: processAccessibleAttributesInput.checked,
-    processSubtitles: processSubtitlesInput.checked,
-    customProtectedTerms: parseProtectedTerms(customProtectedTermsInput.value),
-    customReplacements: readCustomReplacementsFromUi(),
-    excludedDomains: parseExcludedDomains(excludedDomainsInput.value),
-    disabledRuleIds: disabledRuleIdsForGroups(
-      currentEnabledRuleGroups()
-    ),
-    enabledRuleGroupIds: currentEnabledRuleGroups(),
-    visiblePopupSectionIds: [...selectedPopupSections],
-    syncCategories: currentSyncCategories()
-  };
+  const selectedSyncCategories = new Set(settings.syncCategoryIds);
+  for (const input of syncCategoryInputs()) {
+    input.checked = selectedSyncCategories.has(
+      input.dataset.syncCategory as SyncCategoryId
+    );
+  }
 }
 
 function createDraftSettings(): Settings {
-  return readForm();
+  try {
+    return readForm();
+  } catch {
+    return {
+      ...defaultSettings,
+      enabled: enabledInput.checked,
+      enabledRuleGroupIds: currentEnabledRuleGroups(),
+      processAccessibleAttributes: processAccessibleAttributesInput.checked,
+      processQuotedText: processQuotedTextInput.checked,
+      processSubtitles: processSubtitlesInput.checked,
+      protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
+      customReplacements: parseCustomReplacementsText(
+        customReplacementsInput.value
+      ),
+      excludedDomains: defaultSettings.excludedDomains,
+      visiblePopupSectionIds: currentVisiblePopupSections(),
+      syncCategoryIds: currentSyncCategories()
+    };
+  }
 }
 
-function createDraftAnalysis() {
-  return analyzePersonalRules(
-    createDraftSettings().customProtectedTerms,
-    createDraftSettings().customReplacements
+function formatReplacementNotice(notice: ReplacementNotice): string {
+  if (notice.type === "duplicate-source") {
+    return t(
+      "customReplacementDuplicateFeedback",
+      notice.source,
+      `Doppelte Ersetzung für „${notice.source}“. Es wird nur der erste Eintrag gespeichert.`
+    );
+  }
+  if (notice.type === "conflicting-target") {
+    return t(
+      "customReplacementConflictFeedback",
+      [notice.source, notice.targets.join(", ")],
+      `Widersprüchliche Ziele für „${notice.source}“: ${notice.targets.join(", ")}.`
+    );
+  }
+  if (notice.type === "case-variant") {
+    return t(
+      "customReplacementCaseVariantFeedback",
+      notice.variants.join(", "),
+      `Groß-/Kleinschreibungsvarianten erkannt: ${notice.variants.join(", ")}. Eigene Ersetzungen sind case-sensitive.`
+    );
+  }
+  if (notice.type === "overlap") {
+    return t(
+      "customReplacementOverlapFeedback",
+      [notice.shorter, notice.longer],
+      `„${notice.shorter}“ liegt in „${notice.longer}“. Die längere Ersetzung wird zuerst ausgeführt.`
+    );
+  }
+  if (notice.type === "chain") {
+    return t(
+      "customReplacementChainFeedback",
+      [notice.source, notice.target, notice.nextTarget],
+      `„${notice.source}“ → „${notice.target}“ → „${notice.nextTarget}“ bildet eine Ersetzungskette. Eigene Ersetzungen werden absichtlich nur einmal ausgeführt.`
+    );
+  }
+  if (notice.type === "blocked") {
+    return t(
+      "customReplacementBlockedFeedback",
+      [notice.source, notice.protectedTerm],
+      `„${notice.source}“ wird von der Ausnahme „${notice.protectedTerm}“ geschützt und deshalb nicht ersetzt.`
+    );
+  }
+  return t(
+    "customReplacementIneffectiveFeedback",
+    notice.source,
+    `„${notice.source}“ ersetzt sich selbst und hat daher keine Wirkung.`
   );
 }
 
 function renderCustomReplacementFeedback(): void {
-  const analysis = createDraftAnalysis();
-  const feedback = new Set<string>();
+  const draft = createDraftSettings();
+  const notices = analyzeCustomReplacementConflicts(
+    draft.protectedTerms,
+    draft.customReplacements
+  );
 
-  for (const duplicate of analysis.duplicateSources) {
-    feedback.add(
-      t(
-        "customReplacementDuplicateFeedback",
-        [duplicate],
-        `Doppelte Ersetzung für „${duplicate}“. Es wird nur der erste Eintrag gespeichert.`
-      )
-    );
-  }
-
-  for (const conflict of analysis.conflictingTargets) {
-    feedback.add(
-      t(
-        "customReplacementConflictFeedback",
-        [conflict.source, conflict.targets.join(", ")],
-        `Widersprüchliche Ziele für „${conflict.source}“: ${conflict.targets.join(", ")}.`
-      )
-    );
-  }
-
-  for (const variant of analysis.caseVariants) {
-    feedback.add(
-      t(
-        "customReplacementCaseVariantFeedback",
-        [variant.join(", ")],
-        `Groß-/Kleinschreibungsvarianten erkannt: ${variant.join(", ")}. Eigene Ersetzungen sind case-sensitive.`
-      )
-    );
-  }
-
-  for (const overlap of analysis.overlappingSources) {
-    feedback.add(
-      t(
-        "customReplacementOverlapFeedback",
-        [overlap.shorter, overlap.longer],
-        `„${overlap.shorter}“ liegt in „${overlap.longer}“. Die längere Ersetzung wird zuerst ausgeführt.`
-      )
-    );
-  }
-
-  for (const chain of analysis.chainedReplacements) {
-    feedback.add(
-      t(
-        "customReplacementChainFeedback",
-        [chain.source, chain.target, chain.nextTarget],
-        `„${chain.source}“ → „${chain.target}“ → „${chain.nextTarget}“ bildet eine Ersetzungskette. Eigene Ersetzungen werden absichtlich nur einmal ausgeführt.`
-      )
-    );
-  }
-
-  for (const blocked of analysis.blockedReplacements) {
-    feedback.add(
-      t(
-        "customReplacementBlockedFeedback",
-        [blocked.source, blocked.protectedTerm],
-        `„${blocked.source}“ wird von der Ausnahme „${blocked.protectedTerm}“ geschützt und deshalb nicht ersetzt.`
-      )
-    );
-  }
-
-  for (const ineffective of analysis.ineffectiveReplacements) {
-    feedback.add(
-      t(
-        "customReplacementIneffectiveFeedback",
-        [ineffective],
-        `„${ineffective}“ ersetzt sich selbst und hat daher keine Wirkung.`
-      )
-    );
-  }
-
-  if (feedback.size === 0) {
+  if (notices.length === 0) {
     customReplacementFeedback.textContent = t(
       "customReplacementNoConflicts",
       undefined,
@@ -587,7 +576,9 @@ function renderCustomReplacementFeedback(): void {
     return;
   }
 
-  customReplacementFeedback.textContent = [...feedback].join(" ");
+  customReplacementFeedback.textContent = notices
+    .map(formatReplacementNotice)
+    .join(" ");
   customReplacementFeedback.classList.add("warning");
 }
 
@@ -599,14 +590,15 @@ function renderCustomReplacementPreview(): void {
     return;
   }
 
-  const transformed = transformText(previewText, defaultRules, {
-    disabledRuleIds: new Set(draft.disabledRuleIds),
-    enabledRuleGroupIds: draft.enabledRuleGroupIds,
+  const enabledGroupIds = new Set(draft.enabledRuleGroupIds);
+  const preview = transformText(previewText, defaultRules, {
+    disabledRuleIds: disabledRuleIdsForGroups(draft.enabledRuleGroupIds),
+    skipRule: (rule) => !enabledGroupIds.has(rule.groupId),
     processQuotedText: draft.processQuotedText,
-    customProtectedTerms: draft.customProtectedTerms,
+    protectedTerms: draft.protectedTerms,
     customReplacements: draft.customReplacements
   });
-  customPreviewOutput.textContent = transformed;
+  customPreviewOutput.textContent = preview.text;
 }
 
 function scheduleInteractiveUpdate(): void {
@@ -648,20 +640,10 @@ function refreshCountAfterChange(): void {
 async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
-    showStatus(
-      t("saved", undefined, "Gespeichert."),
-      true
-    );
+    showStatus(t("saved", undefined, "Gespeichert."), true);
     refreshCountAfterChange();
   } catch (error) {
-    showStatus(
-      formatUiError(
-        error,
-        "saveFailed",
-        "Speichern fehlgeschlagen."
-      ),
-      false
-    );
+    showStatus(formatUiError(error, "saveFailed", "Speichern fehlgeschlagen."), false);
   }
 }
 
@@ -679,11 +661,7 @@ function resetToDefaults(): void {
   );
 }
 
-function showStatus(
-  message: string,
-  success: boolean,
-  timeoutMs = 3000
-): void {
+function showStatus(message: string, success: boolean, timeoutMs = 3000): void {
   statusOutput.textContent = message;
   statusOutput.classList.toggle("success", success);
   statusOutput.classList.toggle("error", !success);
@@ -699,56 +677,6 @@ function showStatus(
   }, timeoutMs);
 }
 
-function addCustomReplacement(): void {
-  const source = normalizeCustomReplacementKey(customReplacementSourceInput.value);
-  const target = customReplacementTargetInput.value;
-
-  if (!source) {
-    showStatus(
-      t(
-        "customReplacementSourceRequired",
-        undefined,
-        "Bitte zuerst einen Ausgangstext eingeben."
-      ),
-      false
-    );
-    return;
-  }
-
-  const current = readCustomReplacementsFromUi();
-  if (current.length >= maximumCustomReplacements) {
-    showStatus(
-      t(
-        "customReplacementLimitReached",
-        [String(maximumCustomReplacements)],
-        `Es können höchstens ${maximumCustomReplacements} eigene Ersetzungen gespeichert werden.`
-      ),
-      false
-    );
-    return;
-  }
-
-  if (current.some((replacement) => replacement.source === source)) {
-    showStatus(
-      t(
-        "customReplacementSourceExists",
-        [source],
-        `Für „${source}“ gibt es bereits eine Ersetzung.`
-      ),
-      false
-    );
-    return;
-  }
-
-  customReplacementList.append(
-    createCustomReplacementRow({ source, target })
-  );
-  customReplacementSourceInput.value = "";
-  customReplacementTargetInput.value = "";
-  renderCustomReplacementFeedback();
-  renderCustomReplacementPreview();
-}
-
 function downloadJsonFile(fileName: string, content: string): void {
   const blob = new Blob([content], { type: "application/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -761,13 +689,14 @@ function downloadJsonFile(fileName: string, content: string): void {
   URL.revokeObjectURL(url);
 }
 
-async function exportSettingsBackup(): Promise<void> {
+function createBackupFileName(): string {
+  return `sprachverstand-settings-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function exportSettingsBackup(): void {
   try {
-    const settings = readForm();
-    downloadJsonFile(
-      createSettingsBackupFileName(),
-      stringifySettingsBackupDocument(createSettingsBackupDocument(settings))
-    );
+    const document = createSettingsBackupDocument(readForm());
+    downloadJsonFile(createBackupFileName(), stringifySettingsBackupDocument(document));
     showStatus(
       t(
         "settingsBackupExported",
@@ -788,14 +717,23 @@ async function exportSettingsBackup(): Promise<void> {
   }
 }
 
-async function importSettingsBackup(
-  file: File,
-  mode: SettingsBackupImportMode
-): Promise<void> {
+async function readImportFile(file: File): Promise<string> {
+  if (file.size > maximumSettingsBackupImportBytes) {
+    throw localizedUiError(
+      "settingsBackupImportTooLarge",
+      String(Math.floor(maximumSettingsBackupImportBytes / 1024)),
+      "Die Sicherungsdatei ist zu groß."
+    );
+  }
+  return file.text();
+}
+
+async function importSettingsBackup(file: File): Promise<void> {
   try {
-    const parsed = parseSettingsBackupDocument(await file.text(), mode);
-    applyImportedSettings(parsed);
-    showStatus(importStatusMessage(parsed), true, 8000);
+    const document = parseSettingsBackupDocument(await readImportFile(file));
+    const mode: SettingsBackupImportMode = "replace";
+    const result = mergeImportedSettings(readForm(), document.settings, mode);
+    applyImportedSettings(result);
   } catch (error) {
     showStatus(
       formatUiError(
@@ -807,31 +745,47 @@ async function importSettingsBackup(
       8000
     );
   } finally {
-    importPersonalRulesInput.value = "";
+    importSettingsInput.value = "";
   }
 }
 
 function importStatusMessage(result: SettingsImportResult): string {
-  if (result.warnings.length > 0) {
-    return result.warnings.join(" ");
+  const messages: string[] = [];
+  if (result.conflicts.length > 0) {
+    messages.push(
+      t(
+        "settingsBackupImportConflicts",
+        String(result.conflicts.length),
+        `${result.conflicts.length} Konflikte wurden zugunsten der importierten Werte aufgelöst.`
+      )
+    );
   }
-
-  return t(
-    "settingsBackupImportReady",
-    undefined,
-    "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
-  );
+  if (result.skippedDuplicates > 0) {
+    messages.push(
+      t(
+        "settingsBackupImportDuplicates",
+        String(result.skippedDuplicates),
+        `${result.skippedDuplicates} bereits vorhandene Einträge wurden nicht doppelt hinzugefügt.`
+      )
+    );
+  }
+  if (messages.length === 0) {
+    messages.push(
+      t(
+        "settingsBackupImportReady",
+        undefined,
+        "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
+      )
+    );
+  }
+  return messages.join(" ");
 }
 
 function applyImportedSettings(result: SettingsImportResult): void {
   render(result.settings);
   renderCustomReplacementFeedback();
   renderCustomReplacementPreview();
-  showStatus(
-    importStatusMessage(result),
-    false,
-    8000
-  );
+  showStatus(importStatusMessage(result), false, 8000);
 }
 
 function handleRuntimeMessage(message: unknown): void {
@@ -846,8 +800,6 @@ function handleRuntimeMessage(message: unknown): void {
 async function start(): Promise<void> {
   activeTabId = parseOptionsPageTabId(window.location.search);
   createRuleGroupControls();
-  createPopupSectionControls();
-  createSyncCategoryControls();
   refreshSectionToggleButtons();
   render(await loadSettings());
   renderCustomReplacementFeedback();
@@ -879,17 +831,12 @@ async function start(): Promise<void> {
   for (const section of settingsSections) {
     section.addEventListener("toggle", refreshSectionToggleButtons);
   }
-  addCustomReplacementButton.addEventListener("click", addCustomReplacement);
-  exportPersonalRulesButton.addEventListener("click", () => {
-    void exportSettingsBackup();
-  });
-  importPersonalRulesButton.addEventListener("click", () => {
-    importPersonalRulesInput.click();
-  });
-  importPersonalRulesInput.addEventListener("change", () => {
-    const file = importPersonalRulesInput.files?.[0];
+  exportSettingsButton.addEventListener("click", exportSettingsBackup);
+  importSettingsButton.addEventListener("click", () => importSettingsInput.click());
+  importSettingsInput.addEventListener("change", () => {
+    const file = importSettingsInput.files?.[0];
     if (file) {
-      void importSettingsBackup(file, "replace");
+      void importSettingsBackup(file);
     }
   });
 }
