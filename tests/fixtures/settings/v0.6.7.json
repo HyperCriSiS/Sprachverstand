@@ -1,0 +1,20 @@
+{
+  "settingsRevision": 6,
+  "enabled": false,
+  "excludedDomains": ["Example.org", "localhost"],
+  "enabledRuleGroupIds": [
+    "plural-separators",
+    "unmarked-singular",
+    "special-gender-forms"
+  ],
+  "protectedTerms": ["Nutzer:innen", "trans* Personen"],
+  "customReplacements": [
+    {
+      "source": "Teilnehmende",
+      "replacement": "Teilnehmer"
+    }
+  ],
+  "processAccessibleAttributes": false,
+  "processQuotedText": true,
+  "syncCategoryIds": ["activation", "protected-terms"]
+}
