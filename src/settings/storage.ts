@@ -9,6 +9,7 @@ import {
 const localSettingsKey = "settings";
 const syncSelectionKey = "sync.selection";
 const maximumSyncItemBytes = 7500;
+const settingsRetryDelaysMs = [100, 500, 1500] as const;
 
 const syncStorageKeys: Record<SyncCategoryId, string> = {
   activation: "sync.activation",
@@ -160,6 +161,31 @@ export async function loadSettings(): Promise<Settings> {
   return settings;
 }
 
+function waitForRetry(delayMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    globalThis.setTimeout(resolve, delayMs);
+  });
+}
+
+export async function loadSettingsWithRetry(): Promise<Settings> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= settingsRetryDelaysMs.length; attempt += 1) {
+    try {
+      return await loadSettings();
+    } catch (error) {
+      lastError = error;
+      const delayMs = settingsRetryDelaysMs[attempt];
+      if (delayMs === undefined) {
+        break;
+      }
+      await waitForRetry(delayMs);
+    }
+  }
+
+  throw lastError;
+}
+
 export async function saveSettings(settings: Settings): Promise<void> {
   const api = getExtensionApi();
   const currentLocal = normalizeSettings(
@@ -238,7 +264,14 @@ export function subscribeToSettings(
       return;
     }
 
-    void loadSettings().then(listener);
+    void loadSettingsWithRetry()
+      .then(listener)
+      .catch((error: unknown) => {
+        console.error(
+          "Einstellungen konnten nach einer Speicheränderung nicht neu geladen werden.",
+          error
+        );
+      });
   };
 
   api.storage.onChanged.addListener(handleChange);
