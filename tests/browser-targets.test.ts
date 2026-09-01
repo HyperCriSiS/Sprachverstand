@@ -88,7 +88,7 @@ describe("Browser-Ziele", () => {
       family: "webextension",
       target: "chromium",
       support: "experimental",
-      reviewedApiNamespaces: ["storage", "runtime", "action", "tabs"],
+      reviewedApiNamespaces: ["storage", "runtime", "action", "tabs", "i18n"],
       knownPartialApis: ["storage.sync"]
     });
     expect(buildScript).not.toContain('"orion"');

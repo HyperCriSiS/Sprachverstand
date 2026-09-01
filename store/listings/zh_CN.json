@@ -1,0 +1,5 @@
+{
+  "locale": "zh_CN",
+  "name": "Sprachverstand",
+  "description": "Sprachverstand 通过在浏览器中直接按照保守、可配置的规则规范选定的德语性别化写法，让德语网站更容易阅读。该扩展不会翻译网站，也不会修改服务器端数据。\n\n示例：\n- Nutzer:innen → Nutzer\n- Mitarbeiter*innen → Mitarbeiter\n- NutzerInnen → Nutzer\n- NutzerIn → Nutzer\n- Nutzerinnen und Nutzer → Nutzer\n- Student*innen → Studenten\n- Studierende → Studenten\n- Erwachsene:r → Erwachsener\n\n主要功能：\n- 可单独选择的规则组\n- 处理普通内容和动态加载的网站内容\n- 当前标签页的修正计数器\n- 针对单词和完整短语的个人例外\n- 不使用正则表达式的字面自定义替换\n- 自定义规则的实时预览和冲突提示\n- 整套设置状态的本地 JSON 导入和导出\n- 按数据类别进行可选的浏览器同步，默认关闭\n- 域名排除\n- 可选保护引用文本\n- 可选处理检测到的字幕覆盖层\n- 可选处理 alt、aria-label、aria-description 和 title\n- 保护输入框、编辑器、源代码、URL 和技术数据\n\nSprachverstand 有意优先采用保守处理。若没有足够可靠的替换方式，未知或含义不明确的形式将保持不变。停用扩展后，已打开页面中的修改会恢复，无需重新加载页面。\n\n隐私：\n- 网站文本完全在浏览器本地处理\n- 网站文本和访问过的地址不会发送给开发者\n- 不使用专有云服务，也不使用外部语言 API\n- 无跟踪、遥测、广告或用户画像\n- 设置默认保存在本地\n- 可选同步仅使用浏览器提供商的同步服务，并且只同步用户明确选择的数据类别\n- 导入文件只有在用户明确选择后才会在本地读取；导出文件也在本地创建\n\nSprachverstand 适用于阅读德语网站，并希望根据个人阅读偏好在本地调整选定性别化写法的用户。"
+}

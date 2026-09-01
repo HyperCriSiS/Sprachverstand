@@ -25,6 +25,13 @@ export interface StorageArea {
 }
 
 export interface ExtensionApi {
+  readonly i18n: {
+    getMessage(
+      messageName: string,
+      substitutions?: string | readonly string[]
+    ): string;
+    getUILanguage(): string;
+  };
   readonly storage: {
     readonly sync: StorageArea;
     readonly local: StorageArea;

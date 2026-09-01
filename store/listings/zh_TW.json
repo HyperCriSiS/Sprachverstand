@@ -1,0 +1,5 @@
+{
+  "locale": "zh_TW",
+  "name": "Sprachverstand",
+  "description": "Sprachverstand 透過在瀏覽器中直接依照保守且可設定的規則，正規化選定的德語性別化寫法，讓德語網站更容易閱讀。這個擴充功能不會翻譯網站，也不會修改伺服器端資料。\n\n範例：\n- Nutzer:innen → Nutzer\n- Mitarbeiter*innen → Mitarbeiter\n- NutzerInnen → Nutzer\n- NutzerIn → Nutzer\n- Nutzerinnen und Nutzer → Nutzer\n- Student*innen → Studenten\n- Studierende → Studenten\n- Erwachsene:r → Erwachsener\n\n主要功能：\n- 可個別選擇的規則群組\n- 處理一般內容與動態載入的網站內容\n- 目前分頁的修正次數計數器\n- 針對單字與完整片語的個人例外\n- 不使用正規表示式的字面自訂替換\n- 自訂規則的即時預覽與衝突提示\n- 完整設定狀態的本機 JSON 匯入與匯出\n- 依資料類別進行可選的瀏覽器同步，預設關閉\n- 網域排除\n- 可選保護引用文字\n- 可選處理偵測到的字幕覆蓋層\n- 可選處理 alt、aria-label、aria-description 與 title\n- 保護輸入欄位、編輯器、原始碼、URL 與技術資料\n\nSprachverstand 有意優先採用保守處理。如果沒有足夠可靠的替換方式，未知或語意不明的形式會保持不變。停用擴充功能後，已開啟頁面中的修改會還原，不需要重新載入頁面。\n\n隱私：\n- 網站文字完全在瀏覽器本機處理\n- 網站文字與造訪過的位址不會傳送給開發者\n- 不使用專有雲端服務，也不使用外部語言 API\n- 沒有追蹤、遙測、廣告或使用者剖析\n- 設定預設保留在本機\n- 可選同步只使用瀏覽器供應商的同步服務，且只同步使用者明確選擇的資料類別\n- 匯入檔案只有在使用者明確選擇後才會於本機讀取；匯出檔案也會在本機建立\n\nSprachverstand 適合閱讀德語網站，並希望依照自己的閱讀偏好在本機調整選定性別化寫法的使用者。"
+}

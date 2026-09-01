@@ -6,7 +6,7 @@ const html = readFileSync("static/options/options.html", "utf8");
 describe("Einstellungsaufbau", () => {
   it("ordnet die Bereiche in der vorgesehenen Reihenfolge an", () => {
     const headings = [
-      ...html.matchAll(/<summary><h2>([^<]+)<\/h2><\/summary>/gu)
+      ...html.matchAll(/<summary>\s*<h2\b[^>]*>([^<]+)<\/h2>\s*<\/summary>/gu)
     ].map((match) => match[1]);
 
     expect(headings).toEqual([
@@ -25,8 +25,10 @@ describe("Einstellungsaufbau", () => {
   it("bietet globale Schalter und einzeln aufklappbare Bereiche", () => {
     expect(html).toContain('id="expand-all-sections"');
     expect(html).toContain('id="collapse-all-sections"');
-    expect(html.match(/<details class="settings-section"/gu)).toHaveLength(9);
-    expect(html.match(/<details class="settings-section" open>/gu)).toHaveLength(2);
+    expect(html.match(/<details\b[^>]*class="settings-section"[^>]*>/gu)).toHaveLength(9);
+    expect(
+      html.match(/<details\b(?=[^>]*class="settings-section")(?=[^>]*\bopen(?:="")?)[^>]*>/gu)
+    ).toHaveLength(2);
   });
 
   it("ordnet Speichern und Zurücksetzen bündig vor den Bereichsschaltern an", () => {
@@ -48,7 +50,7 @@ describe("Einstellungsaufbau", () => {
 
   it("zeigt im Seitenkopf nur Logo und Titel", () => {
     const header = html.match(/<header class="page-header">([\s\S]*?)<\/header>/u)?.[1] ?? "";
-    expect(header).toContain("<h1>Sprachverstand</h1>");
+    expect(header).toMatch(/<h1\b[^>]*>Sprachverstand<\/h1>/u);
     expect(header).not.toContain("<p>");
   });
 });

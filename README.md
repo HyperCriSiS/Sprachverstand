@@ -11,11 +11,15 @@
   auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
 </p>
 
-[![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![AMO Version](https://img.shields.io/amo/v/sprachverstand?label=AMO%20Version)](https://addons.mozilla.org/firefox/addon/sprachverstand/)
-[![GitHub Release](https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release)](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
-[![CI](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/HyperCriSiS/Sprachverstand)](LICENSE)
+
+<p align="center">
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Firefox-Add--on-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox Add-on"></a>&nbsp;
+  <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Chrome-Web%20Store-4285F4?logo=googlechrome&logoColor=white" alt="Chrome Web Store"></a>&nbsp;
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>&nbsp;
+  <a href="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml"><img src="https://github.com/HyperCriSiS/Sprachverstand/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>&nbsp;
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="License"></a>
+</p>
+
 
 ## Was ist Sprachverstand?
 
@@ -27,7 +31,7 @@ Die Webseite und ihre Serverdaten bleiben unverändert. Sprachverstand passt nur
 die lokale Darstellung im Browser an. Die Verarbeitung lässt sich jederzeit
 abschalten und wird ohne Neuladen rückgängig gemacht.
 
-Sprachverstand ist keine Vorgabe dafür, wie andere schreiben sollen. Es gibt
+Sprachverstand gibt
 Menschen die Kontrolle darüber zurück, wie Texte auf ihrem eigenen Gerät
 angezeigt und vorgelesen werden.
 
@@ -76,7 +80,6 @@ Quellen:
 | `Gegner*innenschaft` | `Gegnerschaft` |
 | `Erwachsene:r` | `Erwachsener` |
 | `Rom*nja` | `Roma` |
-| `Sinti*zze` | `Sinti` |
 | `Studentys` | `Studenten` |
 
 ### Direkt ausprobieren
@@ -85,7 +88,7 @@ Die Vergleichstabelle bleibt absichtlich unverändert, weil ihre Beispiele als
 Quellcode formatiert sind. Der folgende Text ist normaler Seiteninhalt und wird
 bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
 
-> Unsere Mitarbeiter*innen begrüßen neue Nutzer:innen und Student*innen.
+> Unsere Mitarbeiter\*innen begrüßen neue Nutzer:innen und Student\*innen.
 > Jede:r Nutzer:in erhält ein eigenes Nutzer:innenkonto. Studierende und
 > Arbeitnehmende finden dort weitere Informationen.
 
@@ -141,6 +144,7 @@ lassen sich die Regelgruppen einzeln steuern, beispielsweise:
 - ausgewählte neutrale Partizipformen
 - optionale Umschreibungen
 - optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
+- Untertitel verarbeiten
 
 In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
 literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen,

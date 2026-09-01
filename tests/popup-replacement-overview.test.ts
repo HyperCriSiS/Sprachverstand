@@ -7,7 +7,7 @@ const popupCss = readFileSync("static/popup/popup.css", "utf8");
 describe("Popup-Ersetzungsübersicht", () => {
   it("hält Marke links und Status getrennt rechts im Kopf", () => {
     expect(popupHtml).toContain('class="brand-lockup"');
-    expect(popupHtml).toContain('id="state" class="status-badge"');
+    expect(popupHtml).toMatch(/<output\b(?=[^>]*id="state")(?=[^>]*class="status-badge")[^>]*>/u);
     expect(popupCss).toMatch(/\.brand-header\s*\{[\s\S]*?justify-content:\s*space-between/u);
     expect(popupCss).toMatch(/\.brand-lockup\s*\{[\s\S]*?justify-content:\s*flex-start/u);
   });
