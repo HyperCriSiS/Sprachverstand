@@ -226,6 +226,21 @@ async function updateTabState(
   await notifyStateUpdate(tabId, state);
 }
 
+async function resetTabState(tabId: number): Promise<void> {
+  statesByTab.delete(tabId);
+
+  try {
+    await api.action.setBadgeText({ text: "", tabId });
+  } catch {
+    // Der Tab kann zwischen Navigationsereignis und Badge-Update verschwunden sein.
+  }
+
+  await notifyStateUpdate(tabId, {
+    count: 0,
+    replacements: []
+  });
+}
+
 async function getCountState(tabId: number): Promise<{
   readonly tabId: number;
   readonly text: string;
@@ -315,6 +330,12 @@ api.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   return undefined;
+});
+
+api.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === "loading") {
+    void resetTabState(tabId);
+  }
 });
 
 api.tabs.onRemoved.addListener((tabId) => {
