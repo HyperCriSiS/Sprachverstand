@@ -28,15 +28,6 @@ interface GetReplacementStateMessage {
   readonly tabId: number;
 }
 
-interface SetInspectedTabMessage {
-  readonly type: "sprachverstand.set-inspected-tab";
-  readonly tabId: number;
-}
-
-interface GetInspectedCountMessage {
-  readonly type: "sprachverstand.get-inspected-count";
-}
-
 interface CachedReplacementState {
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
@@ -44,8 +35,6 @@ interface CachedReplacementState {
 
 const api = getExtensionApi();
 const statesByTab = new Map<number, CachedReplacementState>();
-let inspectedTabId: number | undefined;
-let lastCountedTabId: number | undefined;
 
 function normalizedReplacementEntries(
   entries: readonly unknown[]
@@ -156,31 +145,6 @@ function isGetReplacementStateMessage(
   );
 }
 
-function isSetInspectedTabMessage(
-  message: unknown
-): message is SetInspectedTabMessage {
-  if (!message || typeof message !== "object") {
-    return false;
-  }
-
-  const candidate = message as Partial<SetInspectedTabMessage>;
-  return (
-    candidate.type === "sprachverstand.set-inspected-tab" &&
-    typeof candidate.tabId === "number"
-  );
-}
-
-function isGetInspectedCountMessage(
-  message: unknown
-): message is GetInspectedCountMessage {
-  return (
-    Boolean(message) &&
-    typeof message === "object" &&
-    (message as Partial<GetInspectedCountMessage>).type ===
-      "sprachverstand.get-inspected-count"
-  );
-}
-
 async function readLiveReplacementState(
   tabId: number
 ): Promise<CachedReplacementState | undefined> {
@@ -220,7 +184,6 @@ async function updateTabState(
   state: CachedReplacementState
 ): Promise<void> {
   statesByTab.set(tabId, state);
-  lastCountedTabId = tabId;
 
   await Promise.all([
     api.action.setBadgeBackgroundColor({
@@ -261,26 +224,6 @@ api.runtime.onMessage.addListener(async (message, sender) => {
       replacements: statesByTab.get(tabId)?.replacements ?? []
     });
     return undefined;
-  }
-
-  if (isSetInspectedTabMessage(message)) {
-    inspectedTabId = message.tabId;
-    return undefined;
-  }
-
-  if (isGetInspectedCountMessage(message)) {
-    const tabId = inspectedTabId ?? lastCountedTabId;
-    if (tabId === undefined) {
-      return { text: "0" };
-    }
-
-    const cached = statesByTab.get(tabId);
-    if (cached) {
-      return { tabId, text: formatBadgeCount(cached.count) || "0" };
-    }
-
-    const badgeText = await api.action.getBadgeText({ tabId });
-    return { tabId, text: badgeText || "0" };
   }
 
   if (isGetReplacementStateMessage(message)) {
@@ -326,10 +269,4 @@ api.runtime.onMessage.addListener(async (message, sender) => {
 
 api.tabs.onRemoved.addListener((tabId) => {
   statesByTab.delete(tabId);
-  if (inspectedTabId === tabId) {
-    inspectedTabId = undefined;
-  }
-  if (lastCountedTabId === tabId) {
-    lastCountedTabId = undefined;
-  }
 });

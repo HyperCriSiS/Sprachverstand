@@ -1,4 +1,5 @@
 import { getExtensionApi } from "./browser/api";
+import { parseOptionsPageTabId } from "./browser/options";
 import { t } from "./i18n";
 import { transformText } from "./core/transform-text";
 import { defaultRules } from "./rules";
@@ -12,35 +13,37 @@ import {
   maximumCustomReplacements,
   maximumExcludedDomains,
   normalizeExcludedDomain,
-  popupSectionIds,
-  syncCategoryIds,
-  type PopupSectionId,
+  popupSectionDefinitions,
+  popupRuleGroupSectionId,
   type Settings,
-  type SyncCategoryId
+  type SyncCategory
 } from "./settings/defaults";
 import {
-  analyzeCustomReplacementConflicts,
-  formatCustomReplacementsText,
-  formatProtectedTermsText,
-  parseCustomReplacementsText,
-  parseProtectedTermsText,
-  type ReplacementNotice
+  analyzePersonalRules,
+  normalizeCustomReplacementKey,
+  normalizeProtectedTerm,
+  type CustomReplacement
 } from "./settings/personal-rules";
 import {
   createSettingsBackupDocument,
-  maximumSettingsBackupImportBytes,
-  mergeImportedSettings,
+  createSettingsBackupFileName,
   parseSettingsBackupDocument,
+  settingsBackupAccept,
+  settingsBackupExtension,
   stringifySettingsBackupDocument,
   type SettingsBackupImportMode,
   type SettingsImportResult
 } from "./settings/settings-backup";
 import { loadSettings, saveSettings } from "./settings/storage";
 
-interface CountUpdatedMessage {
-  readonly type: "sprachverstand.count-updated";
+interface StateUpdatedMessage {
+  readonly type: "sprachverstand.state-updated";
   readonly tabId: number;
   readonly text: string;
+}
+
+interface ReplacementStateResponse {
+  readonly text?: unknown;
 }
 
 function requiredElement<T extends HTMLElement>(selector: string): T {
@@ -55,51 +58,47 @@ function requiredElement<T extends HTMLElement>(selector: string): T {
 
 const form = requiredElement<HTMLFormElement>("#settings-form");
 const enabledInput = requiredElement<HTMLInputElement>("#enabled");
-const countOutput = requiredElement<HTMLOutputElement>("#count");
-const processAccessibleAttributesInput =
-  requiredElement<HTMLInputElement>("#process-accessible-attributes");
 const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
+const processAccessibleAttributesInput =
+  requiredElement<HTMLInputElement>("#process-accessible-attributes");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
-const popupSectionsContainer =
-  requiredElement<HTMLElement>("#popup-sections");
-const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
-const protectedTermsInput =
-  requiredElement<HTMLTextAreaElement>("#protected-terms");
-const customReplacementsInput =
-  requiredElement<HTMLTextAreaElement>("#custom-replacements");
+const customProtectedTermsInput =
+  requiredElement<HTMLTextAreaElement>("#custom-protected-terms");
+const customReplacementSourceInput =
+  requiredElement<HTMLInputElement>("#custom-replacement-source");
+const customReplacementTargetInput =
+  requiredElement<HTMLInputElement>("#custom-replacement-target");
+const addCustomReplacementButton =
+  requiredElement<HTMLButtonElement>("#add-custom-replacement");
 const customReplacementFeedback =
   requiredElement<HTMLElement>("#custom-replacement-feedback");
+const customReplacementList =
+  requiredElement<HTMLElement>("#custom-replacement-list");
 const customPreviewInput =
   requiredElement<HTMLTextAreaElement>("#custom-preview-input");
 const customPreviewOutput =
-  requiredElement<HTMLTextAreaElement>("#custom-preview-output");
-const customPreviewCount =
-  requiredElement<HTMLOutputElement>("#custom-preview-count");
-const exportSettingsButton =
-  requiredElement<HTMLButtonElement>("#export-personal-rules");
-const importSettingsButton =
-  requiredElement<HTMLButtonElement>("#import-personal-rules");
-const importSettingsFile =
-  requiredElement<HTMLInputElement>("#import-personal-rules-file");
-const importModeSelect =
-  requiredElement<HTMLSelectElement>("#personal-rules-import-mode");
-const importSummary = requiredElement<HTMLElement>("#import-summary");
-const syncCategoriesContainer =
-  requiredElement<HTMLElement>("#sync-categories");
+  requiredElement<HTMLOutputElement>("#custom-preview-output");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
+const popupSectionsContainer = requiredElement<HTMLElement>("#popup-sections");
+const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
+const countOutput = requiredElement<HTMLOutputElement>("#count");
 const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const expandAllSectionsButton =
   requiredElement<HTMLButtonElement>("#expand-all-sections");
 const collapseAllSectionsButton =
   requiredElement<HTMLButtonElement>("#collapse-all-sections");
-const selectAllRulesButton =
-  requiredElement<HTMLButtonElement>("#select-all-rules");
-const selectNoRulesButton =
-  requiredElement<HTMLButtonElement>("#select-no-rules");
+const exportPersonalRulesButton =
+  requiredElement<HTMLButtonElement>("#export-personal-rules");
+const importPersonalRulesButton =
+  requiredElement<HTMLButtonElement>("#import-personal-rules");
+const importPersonalRulesInput =
+  requiredElement<HTMLInputElement>("#import-personal-rules-input");
+const syncCategoriesContainer =
+  requiredElement<HTMLElement>("#sync-categories");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
 const settingsSections = [
   ...document.querySelectorAll<HTMLDetailsElement>("details.settings-section")
@@ -119,27 +118,27 @@ function localizedUiError(
   return new LocalizedUiError(t(key, substitutions, fallback));
 }
 
-function visibleErrorMessage(
+function formatUiError(
   error: unknown,
-  key: string,
-  fallback: string
+  fallbackKey: string,
+  fallbackText: string
 ): string {
   if (error instanceof LocalizedUiError) {
     return error.message;
   }
 
   console.error(error);
-  return t(key, undefined, fallback);
+  return t(fallbackKey, undefined, fallbackText);
 }
 
-function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
+function isStateUpdatedMessage(message: unknown): message is StateUpdatedMessage {
   if (!message || typeof message !== "object") {
     return false;
   }
 
-  const candidate = message as Partial<CountUpdatedMessage>;
+  const candidate = message as Partial<StateUpdatedMessage>;
   return (
-    candidate.type === "sprachverstand.count-updated" &&
+    candidate.type === "sprachverstand.state-updated" &&
     typeof candidate.tabId === "number" &&
     typeof candidate.text === "string"
   );
@@ -166,20 +165,25 @@ function createRuleGroupControls(): void {
 
   for (const group of ruleGroupDefinitions) {
     const label = document.createElement("label");
-    label.className = "rule-card";
+    label.className = "setting-row";
 
     const input = document.createElement("input");
     input.type = "checkbox";
     input.dataset.ruleGroupId = group.id;
 
     const content = document.createElement("span");
-    content.className = "rule-card-content";
+    content.className = "setting-row-content";
 
     const title = document.createElement("strong");
     title.textContent = t(group.labelKey, undefined, group.label);
 
     const description = document.createElement("span");
-    description.textContent = t(group.descriptionKey, undefined, group.description);
+    description.className = "setting-description";
+    description.textContent = t(
+      group.descriptionKey,
+      undefined,
+      group.description
+    );
 
     const example = document.createElement("code");
     example.textContent = group.example;
@@ -192,15 +196,126 @@ function createRuleGroupControls(): void {
   ruleGroupsContainer.replaceChildren(fragment);
 }
 
-function ruleGroupInputs(): HTMLInputElement[] {
-  return [...ruleGroupsContainer.querySelectorAll<HTMLInputElement>(
-    "input[data-rule-group-id]"
-  )];
+function createPopupSectionControls(): void {
+  const fragment = document.createDocumentFragment();
+
+  for (const section of popupSectionDefinitions) {
+    const label = document.createElement("label");
+    label.className = "setting-row";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.dataset.popupSectionId = section.id;
+
+    const content = document.createElement("span");
+    content.className = "setting-row-content";
+
+    const title = document.createElement("strong");
+    title.textContent = t(section.labelKey, undefined, section.label);
+
+    const description = document.createElement("span");
+    description.className = "setting-description";
+    description.textContent = t(
+      section.descriptionKey,
+      undefined,
+      section.description
+    );
+
+    content.append(title, description);
+    label.append(input, content);
+    fragment.append(label);
+  }
+
+  popupSectionsContainer.replaceChildren(fragment);
+}
+
+function createSyncCategoryControls(): void {
+  const categories: readonly {
+    readonly id: SyncCategory;
+    readonly labelKey: string;
+    readonly label: string;
+    readonly descriptionKey: string;
+    readonly description: string;
+  }[] = [
+    {
+      id: "general",
+      labelKey: "syncGeneralLabel",
+      label: "Allgemeine Einstellungen",
+      descriptionKey: "syncGeneralDescription",
+      description: "Aktivierung und ausgeschlossene Domains"
+    },
+    {
+      id: "rule-groups",
+      labelKey: "syncRuleGroupsLabel",
+      label: "Regelgruppen",
+      descriptionKey: "syncRuleGroupsDescription",
+      description: "Auswahl der aktiven Ersetzungsregeln"
+    },
+    {
+      id: "text-options",
+      labelKey: "syncTextOptionsLabel",
+      label: "Textoptionen",
+      descriptionKey: "syncTextOptionsDescription",
+      description: "Zitate, zugängliche Attribute und Untertitel"
+    },
+    {
+      id: "protected-terms",
+      labelKey: "syncProtectedTermsLabel",
+      label: "Ausnahmen",
+      descriptionKey: "syncProtectedTermsDescription",
+      description: "Eigene geschützte Wörter und Phrasen"
+    },
+    {
+      id: "custom-replacements",
+      labelKey: "syncCustomReplacementsLabel",
+      label: "Eigene Ersetzungen",
+      descriptionKey: "syncCustomReplacementsDescription",
+      description: "Eigene literale Ersetzungen"
+    }
+  ];
+
+  const fragment = document.createDocumentFragment();
+  for (const category of categories) {
+    const label = document.createElement("label");
+    label.className = "setting-row";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.dataset.syncCategory = category.id;
+
+    const content = document.createElement("span");
+    content.className = "setting-row-content";
+
+    const title = document.createElement("strong");
+    title.textContent = t(category.labelKey, undefined, category.label);
+
+    const description = document.createElement("span");
+    description.className = "setting-description";
+    description.textContent = t(
+      category.descriptionKey,
+      undefined,
+      category.description
+    );
+
+    content.append(title, description);
+    label.append(input, content);
+    fragment.append(label);
+  }
+
+  syncCategoriesContainer.replaceChildren(fragment);
 }
 
 function popupSectionInputs(): HTMLInputElement[] {
-  return [...popupSectionsContainer.querySelectorAll<HTMLInputElement>(
-    "input[data-popup-section]"
+  return [
+    ...popupSectionsContainer.querySelectorAll<HTMLInputElement>(
+      "input[data-popup-section-id]"
+    )
+  ];
+}
+
+function ruleGroupInputs(): HTMLInputElement[] {
+  return [...ruleGroupsContainer.querySelectorAll<HTMLInputElement>(
+    "input[data-rule-group-id]"
   )];
 }
 
@@ -210,36 +325,125 @@ function syncCategoryInputs(): HTMLInputElement[] {
   )];
 }
 
-function enabledRuleGroupIdsFromForm(): string[] {
+function currentEnabledRuleGroups(): string[] {
   return ruleGroupInputs()
     .filter((input) => input.checked)
-    .map((input) => input.dataset.ruleGroupId ?? "")
-    .filter(Boolean);
+    .map((input) => input.dataset.ruleGroupId)
+    .filter((id): id is string => Boolean(id));
 }
 
-function popupSectionIdsFromForm(): PopupSectionId[] {
+function currentVisiblePopupSections(): string[] {
   return popupSectionInputs()
     .filter((input) => input.checked)
-    .map((input) => input.dataset.popupSection as PopupSectionId)
-    .filter((sectionId) => popupSectionIds.includes(sectionId));
+    .map((input) => input.dataset.popupSectionId)
+    .filter((id): id is string => Boolean(id));
 }
 
-function syncCategoryIdsFromForm(): SyncCategoryId[] {
+function currentSyncCategories(): SyncCategory[] {
   return syncCategoryInputs()
     .filter((input) => input.checked)
-    .map((input) => input.dataset.syncCategory as SyncCategoryId)
-    .filter((categoryId) => syncCategoryIds.includes(categoryId));
+    .map((input) => input.dataset.syncCategory)
+    .filter((id): id is SyncCategory => Boolean(id));
+}
+
+function parseProtectedTerms(value: string): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const rawLine of value.split(/\r?\n/u)) {
+    const term = normalizeProtectedTerm(rawLine);
+    if (!term || seen.has(term)) {
+      continue;
+    }
+
+    seen.add(term);
+    normalized.push(term);
+  }
+
+  return normalized;
+}
+
+function parseExcludedDomains(value: string): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+
+  for (const rawLine of value.split(/\r?\n/u)) {
+    const domain = normalizeExcludedDomain(rawLine);
+    if (!domain || seen.has(domain)) {
+      continue;
+    }
+
+    seen.add(domain);
+    normalized.push(domain);
+  }
+
+  return normalized.slice(0, maximumExcludedDomains);
+}
+
+function readCustomReplacementsFromUi(): CustomReplacement[] {
+  return [...customReplacementList.querySelectorAll<HTMLElement>(
+    "[data-custom-replacement-key]"
+  )].map((item) => ({
+    source: item.dataset.customReplacementKey ?? "",
+    target: item.dataset.customReplacementValue ?? ""
+  }));
+}
+
+function createCustomReplacementRow(
+  replacement: CustomReplacement
+): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = "custom-replacement-row";
+  row.dataset.customReplacementKey = replacement.source;
+  row.dataset.customReplacementValue = replacement.target;
+
+  const source = document.createElement("code");
+  source.textContent = replacement.source;
+
+  const arrow = document.createElement("span");
+  arrow.className = "custom-replacement-arrow";
+  arrow.textContent = "→";
+  arrow.setAttribute("aria-hidden", "true");
+
+  const target = document.createElement("code");
+  target.textContent = replacement.target || "∅";
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "secondary small-button";
+  removeButton.textContent = t("remove", undefined, "Entfernen");
+  removeButton.addEventListener("click", () => {
+    row.remove();
+    renderCustomReplacementFeedback();
+    renderCustomReplacementPreview();
+  });
+
+  row.append(source, arrow, target, removeButton);
+  return row;
+}
+
+function renderCustomReplacements(
+  replacements: readonly CustomReplacement[]
+): void {
+  customReplacementList.replaceChildren(
+    ...replacements.map(createCustomReplacementRow)
+  );
+}
+
+function renderPopupSections(settings: Settings): void {
+  const visibleSections = new Set(settings.visiblePopupSectionIds);
+  for (const input of popupSectionInputs()) {
+    input.checked = visibleSections.has(input.dataset.popupSectionId ?? "");
+  }
 }
 
 function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
-  processAccessibleAttributesInput.checked = settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
+  processAccessibleAttributesInput.checked =
+    settings.processAccessibleAttributes;
   processSubtitlesInput.checked = settings.processSubtitles;
-  protectedTermsInput.value = formatProtectedTermsText(settings.protectedTerms);
-  customReplacementsInput.value = formatCustomReplacementsText(
-    settings.customReplacements
-  );
+  customProtectedTermsInput.value = settings.customProtectedTerms.join("\n");
   excludedDomainsInput.value = settings.excludedDomains.join("\n");
 
   const enabledGroups = new Set(settings.enabledRuleGroupIds);
@@ -247,259 +451,162 @@ function render(settings: Settings): void {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
   }
 
-  const visiblePopupSections = new Set(settings.visiblePopupSectionIds);
-  for (const input of popupSectionInputs()) {
-    const sectionId = input.dataset.popupSection as PopupSectionId | undefined;
-    input.checked = Boolean(sectionId && visiblePopupSections.has(sectionId));
-  }
+  renderPopupSections(settings);
+  renderCustomReplacements(settings.customReplacements);
 
-  const enabledSyncCategories = new Set(settings.syncCategoryIds);
+  const syncCategories = new Set(settings.syncCategories);
   for (const input of syncCategoryInputs()) {
-    const categoryId = input.dataset.syncCategory as SyncCategoryId | undefined;
-    input.checked = Boolean(categoryId && enabledSyncCategories.has(categoryId));
+    const category = input.dataset.syncCategory as SyncCategory | undefined;
+    input.checked = Boolean(category && syncCategories.has(category));
   }
-}
-
-function readLines(value: string): string[] {
-  return value
-    .split(/\r?\n/u)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
-function readExcludedDomains(): string[] {
-  const entries = readLines(excludedDomainsInput.value);
-  if (entries.length > maximumExcludedDomains) {
-    throw localizedUiError(
-      "maxExcludedDomains",
-      [String(maximumExcludedDomains)],
-      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
-    );
-  }
-
-  const result: string[] = [];
-  const seen = new Set<string>();
-  for (const entry of entries) {
-    const normalized = normalizeExcludedDomain(entry);
-    if (!normalized) {
-      throw localizedUiError(
-        "invalidExcludedDomain",
-        [entry],
-        `Der Domain-Ausschluss „${entry}“ ist ungültig.`
-      );
-    }
-    if (seen.has(normalized)) {
-      throw localizedUiError(
-        "duplicateExcludedDomain",
-        [entry],
-        `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
-      );
-    }
-    seen.add(normalized);
-    result.push(normalized);
-  }
-  return result;
 }
 
 function readForm(): Settings {
+  const selectedPopupSections = new Set(currentVisiblePopupSections());
+  for (const group of ruleGroupDefinitions) {
+    const sectionId = popupRuleGroupSectionId(group.id);
+    const input = ruleGroupInputs().find(
+      (candidate) => candidate.dataset.ruleGroupId === group.id
+    );
+    if (input?.checked) {
+      selectedPopupSections.add(sectionId);
+    }
+  }
+
   return {
+    ...defaultSettings,
     settingsRevision: currentSettingsRevision,
     enabled: enabledInput.checked,
-    excludedDomains: readExcludedDomains(),
-    enabledRuleGroupIds: enabledRuleGroupIdsFromForm(),
-    protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
-    customReplacements: parseCustomReplacementsText(
-      customReplacementsInput.value
-    ).replacements,
-    processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processQuotedText: processQuotedTextInput.checked,
+    processAccessibleAttributes: processAccessibleAttributesInput.checked,
     processSubtitles: processSubtitlesInput.checked,
-    syncCategoryIds: syncCategoryIdsFromForm(),
-    visiblePopupSectionIds: popupSectionIdsFromForm()
+    customProtectedTerms: parseProtectedTerms(customProtectedTermsInput.value),
+    customReplacements: readCustomReplacementsFromUi(),
+    excludedDomains: parseExcludedDomains(excludedDomainsInput.value),
+    disabledRuleIds: disabledRuleIdsForGroups(
+      currentEnabledRuleGroups()
+    ),
+    enabledRuleGroupIds: currentEnabledRuleGroups(),
+    visiblePopupSectionIds: [...selectedPopupSections],
+    syncCategories: currentSyncCategories()
   };
 }
 
-function showStatus(
-  message: string,
-  isError = false,
-  duration = 5000
-): void {
-  if (statusTimer !== undefined) {
-    window.clearTimeout(statusTimer);
-  }
-
-  statusOutput.textContent = message;
-  statusOutput.classList.toggle("error", isError);
-  statusTimer = window.setTimeout(() => {
-    statusOutput.textContent = "";
-    statusOutput.classList.remove("error");
-    statusTimer = undefined;
-  }, duration);
+function createDraftSettings(): Settings {
+  return readForm();
 }
 
-function formatNoticeDiagnostic(notice: ReplacementNotice): string {
-  const [first = "", second = "", third = ""] = notice.parts;
-
-  switch (notice.code) {
-    case "duplicate":
-      return `„${first}“ ×2 (#${second}, #${third})`;
-    case "no-op":
-      return `„${first}“ → =`;
-    case "deletion":
-      return `„${first}“ → ∅`;
-    case "protected":
-      return `⛔ „${first}“`;
-    case "built-in-overlap":
-      return `„${first}“ ⇢ „${second}“`;
-    case "case-variant":
-      return `Aa ↔ aA · „${first}“ ↔ „${second}“`;
-    case "overlap":
-      return `„${first}“ ∩ „${second}“`;
-    case "chain":
-      return `„${first}“ → „${second}“ → …`;
-  }
-}
-
-function createNoticeList(
-  notices: readonly ReplacementNotice[]
-): HTMLUListElement {
-  const list = document.createElement("ul");
-  const visibleNotices = notices.slice(0, 16);
-
-  for (const notice of visibleNotices) {
-    const item = document.createElement("li");
-    item.className = notice.severity;
-    item.dataset.diagnosticCode = notice.code;
-    item.textContent = formatNoticeDiagnostic(notice);
-    list.append(item);
-  }
-
-  if (notices.length > visibleNotices.length) {
-    const item = document.createElement("li");
-    const remaining = notices.length - visibleNotices.length;
-    item.textContent = t(
-      "noticeMore",
-      [String(remaining)],
-      `${remaining} weitere Hinweise werden aus Platzgründen nicht angezeigt.`
-    );
-    list.append(item);
-  }
-
-  return list;
+function createDraftAnalysis() {
+  return analyzePersonalRules(
+    createDraftSettings().customProtectedTerms,
+    createDraftSettings().customReplacements
+  );
 }
 
 function renderCustomReplacementFeedback(): void {
-  try {
-    const parsed = parseCustomReplacementsText(customReplacementsInput.value);
-    const protectedTerms = parseProtectedTermsText(protectedTermsInput.value);
-    const disabledRuleIds = disabledRuleIdsForGroups(
-      enabledRuleGroupIdsFromForm()
-    );
-    const notices = [
-      ...parsed.notices,
-      ...analyzeCustomReplacementConflicts(
-        parsed.replacements,
-        protectedTerms,
-        (source) =>
-          transformText(source, defaultRules, {
-            profile: "aggressive",
-            disabledRuleIds,
-            protectedTerms: [],
-            customReplacements: [],
-            processQuotedText: true
-          }).text
+  const analysis = createDraftAnalysis();
+  const feedback = new Set<string>();
+
+  for (const duplicate of analysis.duplicateSources) {
+    feedback.add(
+      t(
+        "customReplacementDuplicateFeedback",
+        [duplicate],
+        `Doppelte Ersetzung für „${duplicate}“. Es wird nur der erste Eintrag gespeichert.`
       )
-    ];
-
-    const summary = document.createElement("p");
-    summary.className = "diagnostic-summary";
-    summary.textContent = t(
-      "replacementsChecked",
-      [String(parsed.replacements.length), String(maximumCustomReplacements)],
-      `${parsed.replacements.length} von ${maximumCustomReplacements} möglichen Ersetzungen geprüft.`
     );
-
-    if (notices.length === 0) {
-      const success = document.createElement("p");
-      success.className = "diagnostic-success";
-      success.textContent = t(
-        "noConflicts",
-        undefined,
-        "Keine Konflikte oder auffälligen Überschneidungen erkannt."
-      );
-      customReplacementFeedback.replaceChildren(summary, success);
-      customReplacementFeedback.className = "diagnostics success";
-      return;
-    }
-
-    customReplacementFeedback.replaceChildren(summary, createNoticeList(notices));
-    customReplacementFeedback.className = notices.some(
-      (notice) => notice.severity === "warning"
-    )
-      ? "diagnostics warning"
-      : "diagnostics info";
-  } catch (error) {
-    const message = document.createElement("p");
-    message.textContent = visibleErrorMessage(
-      error,
-      "customCheckFailed",
-      "Eigene Ersetzungen konnten nicht geprüft werden."
-    );
-    customReplacementFeedback.replaceChildren(message);
-    customReplacementFeedback.className = "diagnostics error";
   }
-}
 
-function renderCustomReplacementPreview(): void {
-  const input = customPreviewInput.value;
-  if (!input) {
-    customPreviewOutput.value = "";
-    customPreviewCount.textContent = t(
-      "noPreviewText",
-      undefined,
-      "Noch kein Testtext eingegeben."
+  for (const conflict of analysis.conflictingTargets) {
+    feedback.add(
+      t(
+        "customReplacementConflictFeedback",
+        [conflict.source, conflict.targets.join(", ")],
+        `Widersprüchliche Ziele für „${conflict.source}“: ${conflict.targets.join(", ")}.`
+      )
     );
-    customPreviewCount.classList.remove("error");
+  }
+
+  for (const variant of analysis.caseVariants) {
+    feedback.add(
+      t(
+        "customReplacementCaseVariantFeedback",
+        [variant.join(", ")],
+        `Groß-/Kleinschreibungsvarianten erkannt: ${variant.join(", ")}. Eigene Ersetzungen sind case-sensitive.`
+      )
+    );
+  }
+
+  for (const overlap of analysis.overlappingSources) {
+    feedback.add(
+      t(
+        "customReplacementOverlapFeedback",
+        [overlap.shorter, overlap.longer],
+        `„${overlap.shorter}“ liegt in „${overlap.longer}“. Die längere Ersetzung wird zuerst ausgeführt.`
+      )
+    );
+  }
+
+  for (const chain of analysis.chainedReplacements) {
+    feedback.add(
+      t(
+        "customReplacementChainFeedback",
+        [chain.source, chain.target, chain.nextTarget],
+        `„${chain.source}“ → „${chain.target}“ → „${chain.nextTarget}“ bildet eine Ersetzungskette. Eigene Ersetzungen werden absichtlich nur einmal ausgeführt.`
+      )
+    );
+  }
+
+  for (const blocked of analysis.blockedReplacements) {
+    feedback.add(
+      t(
+        "customReplacementBlockedFeedback",
+        [blocked.source, blocked.protectedTerm],
+        `„${blocked.source}“ wird von der Ausnahme „${blocked.protectedTerm}“ geschützt und deshalb nicht ersetzt.`
+      )
+    );
+  }
+
+  for (const ineffective of analysis.ineffectiveReplacements) {
+    feedback.add(
+      t(
+        "customReplacementIneffectiveFeedback",
+        [ineffective],
+        `„${ineffective}“ ersetzt sich selbst und hat daher keine Wirkung.`
+      )
+    );
+  }
+
+  if (feedback.size === 0) {
+    customReplacementFeedback.textContent = t(
+      "customReplacementNoConflicts",
+      undefined,
+      "Keine offensichtlichen Konflikte in den aktuellen persönlichen Regeln."
+    );
+    customReplacementFeedback.classList.remove("warning");
     return;
   }
 
-  try {
-    const settings = readForm();
-    const result = transformText(input, defaultRules, {
-      profile: "aggressive",
-      disabledRuleIds: disabledRuleIdsForGroups(
-        settings.enabledRuleGroupIds
-      ),
-      protectedTerms: settings.protectedTerms,
-      customReplacements: settings.customReplacements,
-      processQuotedText: settings.processQuotedText
-    });
+  customReplacementFeedback.textContent = [...feedback].join(" ");
+  customReplacementFeedback.classList.add("warning");
+}
 
-    customPreviewOutput.value = result.text;
-    customPreviewCount.textContent =
-      result.replacements === 0
-        ? t("previewNoChange", undefined, "Keine Änderung im Testtext.")
-        : result.replacements === 1
-          ? t(
-              "previewOneReplacement",
-              [String(result.replacements)],
-              "1 Ersetzung im Testtext."
-            )
-          : t(
-              "previewManyReplacements",
-              [String(result.replacements)],
-              `${result.replacements} Ersetzungen im Testtext.`
-            );
-    customPreviewCount.classList.remove("error");
-  } catch (error) {
-    customPreviewOutput.value = "";
-    customPreviewCount.textContent = visibleErrorMessage(
-      error,
-      "previewFailed",
-      "Die Vorschau konnte nicht erstellt werden."
-    );
-    customPreviewCount.classList.add("error");
+function renderCustomReplacementPreview(): void {
+  const draft = createDraftSettings();
+  const previewText = customPreviewInput.value;
+  if (!previewText) {
+    customPreviewOutput.textContent = "";
+    return;
   }
+
+  const transformed = transformText(previewText, defaultRules, {
+    disabledRuleIds: new Set(draft.disabledRuleIds),
+    enabledRuleGroupIds: draft.enabledRuleGroupIds,
+    processQuotedText: draft.processQuotedText,
+    customProtectedTerms: draft.customProtectedTerms,
+    customReplacements: draft.customReplacements
+  });
+  customPreviewOutput.textContent = transformed;
 }
 
 function scheduleInteractiveUpdate(): void {
@@ -515,13 +622,17 @@ function scheduleInteractiveUpdate(): void {
 }
 
 async function renderCurrentCount(): Promise<void> {
+  if (activeTabId === undefined) {
+    countOutput.textContent = "0";
+    return;
+  }
+
   const api = getExtensionApi();
   const response = (await api.runtime.sendMessage({
-    type: "sprachverstand.get-inspected-count"
-  })) as { readonly tabId?: unknown; readonly text?: unknown } | undefined;
+    type: "sprachverstand.get-replacement-state",
+    tabId: activeTabId
+  })) as ReplacementStateResponse | undefined;
 
-  activeTabId =
-    typeof response?.tabId === "number" ? response.tabId : activeTabId;
   countOutput.textContent =
     typeof response?.text === "string" ? response.text : "0";
 }
@@ -537,175 +648,187 @@ function refreshCountAfterChange(): void {
 async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
-    importSummary.replaceChildren();
     showStatus(
-      t(
-        "saved",
-        undefined,
-        "Gespeichert – offene Seiten werden sofort neu verarbeitet."
-      )
+      t("saved", undefined, "Gespeichert."),
+      true
     );
     refreshCountAfterChange();
   } catch (error) {
     showStatus(
-      visibleErrorMessage(
+      formatUiError(
         error,
         "saveFailed",
-        "Einstellungen konnten nicht gespeichert werden."
+        "Speichern fehlgeschlagen."
       ),
-      true
+      false
     );
   }
 }
 
-function downloadTextFile(contents: string, filename: string): void {
-  const blob = new Blob([contents], {
-    type: "application/json;charset=utf-8"
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.hidden = true;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+function resetToDefaults(): void {
+  render(defaultSettings);
+  renderCustomReplacementFeedback();
+  renderCustomReplacementPreview();
+  showStatus(
+    t(
+      "resetPreview",
+      undefined,
+      "Standardwerte geladen. Zum Anwenden noch speichern."
+    ),
+    false
+  );
 }
 
-function exportSettings(): void {
-  try {
-    const settings = readForm();
-    const exported = createSettingsBackupDocument(settings);
-    const date = new Date().toISOString().slice(0, 10);
-    downloadTextFile(
-      stringifySettingsBackupDocument(exported),
-      `sprachverstand-einstellungen-${date}.json`
-    );
+function showStatus(
+  message: string,
+  success: boolean,
+  timeoutMs = 3000
+): void {
+  statusOutput.textContent = message;
+  statusOutput.classList.toggle("success", success);
+  statusOutput.classList.toggle("error", !success);
+
+  if (statusTimer !== undefined) {
+    window.clearTimeout(statusTimer);
+  }
+
+  statusTimer = window.setTimeout(() => {
+    statusOutput.textContent = "";
+    statusOutput.classList.remove("success", "error");
+    statusTimer = undefined;
+  }, timeoutMs);
+}
+
+function addCustomReplacement(): void {
+  const source = normalizeCustomReplacementKey(customReplacementSourceInput.value);
+  const target = customReplacementTargetInput.value;
+
+  if (!source) {
     showStatus(
       t(
-        "settingsExported",
-        [
-          String(settings.protectedTerms.length),
-          String(settings.customReplacements.length)
-        ],
-        `Alle Einstellungen einschließlich ${settings.protectedTerms.length} Ausnahmen und ${settings.customReplacements.length} eigener Ersetzungen exportiert.`
-      )
-    );
-  } catch (error) {
-    showStatus(
-      visibleErrorMessage(
-        error,
-        "settingsExportFailed",
-        "Die Einstellungen konnten nicht exportiert werden."
+        "customReplacementSourceRequired",
+        undefined,
+        "Bitte zuerst einen Ausgangstext eingeben."
       ),
-      true
+      false
     );
-  }
-}
-
-function selectedImportMode(): SettingsBackupImportMode {
-  const value = importModeSelect.value;
-  if (
-    value === "keep-existing" ||
-    value === "prefer-imported" ||
-    value === "replace"
-  ) {
-    return value;
-  }
-  return "keep-existing";
-}
-
-function renderImportSummary(result: SettingsImportResult): void {
-  const generalSettings = document.createElement("p");
-  generalSettings.textContent = t(
-    "importGeneralSettingsRestored",
-    undefined,
-    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen."
-  );
-
-  const summary = document.createElement("p");
-  summary.textContent = t(
-    "importSummary",
-    [
-      String(result.addedProtectedTerms),
-      String(result.addedCustomReplacements),
-      String(result.replacedCustomReplacements),
-      String(result.skippedDuplicates)
-    ],
-    [
-      `${result.addedProtectedTerms} Ausnahmen ergänzt`,
-      `${result.addedCustomReplacements} Ersetzungen ergänzt`,
-      `${result.replacedCustomReplacements} Ersetzungen überschrieben`,
-      `${result.skippedDuplicates} Dubletten übersprungen`
-    ].join(", ") + "."
-  );
-
-  const reminder = document.createElement("p");
-  reminder.className = "import-reminder";
-  reminder.textContent = t(
-    "importPreparedNotSaved",
-    undefined,
-    "Der Import ist vorbereitet, aber noch nicht gespeichert."
-  );
-
-  if (result.conflicts.length === 0) {
-    importSummary.replaceChildren(generalSettings, summary, reminder);
-    importSummary.className = "import-summary";
     return;
   }
 
-  const heading = document.createElement("strong");
-  heading.textContent = `⚠ ${result.conflicts.length}`;
-  const list = document.createElement("ul");
-  for (const conflict of result.conflicts.slice(0, 12)) {
-    const item = document.createElement("li");
-    item.textContent = conflict;
-    list.append(item);
-  }
-  if (result.conflicts.length > 12) {
-    const item = document.createElement("li");
-    item.textContent = `… +${result.conflicts.length - 12}`;
-    list.append(item);
+  const current = readCustomReplacementsFromUi();
+  if (current.length >= maximumCustomReplacements) {
+    showStatus(
+      t(
+        "customReplacementLimitReached",
+        [String(maximumCustomReplacements)],
+        `Es können höchstens ${maximumCustomReplacements} eigene Ersetzungen gespeichert werden.`
+      ),
+      false
+    );
+    return;
   }
 
-  importSummary.replaceChildren(
-    generalSettings,
-    summary,
-    heading,
-    list,
-    reminder
+  if (current.some((replacement) => replacement.source === source)) {
+    showStatus(
+      t(
+        "customReplacementSourceExists",
+        [source],
+        `Für „${source}“ gibt es bereits eine Ersetzung.`
+      ),
+      false
+    );
+    return;
+  }
+
+  customReplacementList.append(
+    createCustomReplacementRow({ source, target })
   );
-  importSummary.className = "import-summary warning";
+  customReplacementSourceInput.value = "";
+  customReplacementTargetInput.value = "";
+  renderCustomReplacementFeedback();
+  renderCustomReplacementPreview();
 }
 
-async function importSettings(file: File): Promise<void> {
-  if (file.size > maximumSettingsBackupImportBytes) {
-    throw localizedUiError(
-      "importTooLarge",
-      undefined,
-      "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
+function downloadJsonFile(fileName: string, content: string): void {
+  const blob = new Blob([content], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function exportSettingsBackup(): Promise<void> {
+  try {
+    const settings = readForm();
+    downloadJsonFile(
+      createSettingsBackupFileName(),
+      stringifySettingsBackupDocument(createSettingsBackupDocument(settings))
+    );
+    showStatus(
+      t(
+        "settingsBackupExported",
+        undefined,
+        "Einstellungssicherung exportiert."
+      ),
+      true
+    );
+  } catch (error) {
+    showStatus(
+      formatUiError(
+        error,
+        "settingsBackupExportFailed",
+        "Einstellungssicherung konnte nicht exportiert werden."
+      ),
+      false
     );
   }
+}
 
-  const imported = parseSettingsBackupDocument(await file.text());
-  const mode = selectedImportMode();
-  const current = mode === "replace" ? defaultSettings : readForm();
-  const result = mergeImportedSettings(
-    current,
-    imported.settings,
-    mode
+async function importSettingsBackup(
+  file: File,
+  mode: SettingsBackupImportMode
+): Promise<void> {
+  try {
+    const parsed = parseSettingsBackupDocument(await file.text(), mode);
+    applyImportedSettings(parsed);
+    showStatus(importStatusMessage(parsed), true, 8000);
+  } catch (error) {
+    showStatus(
+      formatUiError(
+        error,
+        "settingsBackupImportFailed",
+        "Einstellungssicherung konnte nicht importiert werden."
+      ),
+      false,
+      8000
+    );
+  } finally {
+    importPersonalRulesInput.value = "";
+  }
+}
+
+function importStatusMessage(result: SettingsImportResult): string {
+  if (result.warnings.length > 0) {
+    return result.warnings.join(" ");
+  }
+
+  return t(
+    "settingsBackupImportReady",
+    undefined,
+    "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
   );
+}
 
+function applyImportedSettings(result: SettingsImportResult): void {
   render(result.settings);
-  renderImportSummary(result);
-  scheduleInteractiveUpdate();
+  renderCustomReplacementFeedback();
+  renderCustomReplacementPreview();
   showStatus(
-    t(
-      "importPrepared",
-      undefined,
-      "Einstellungssicherung geprüft und in das Formular übernommen. Zum Anwenden noch speichern."
-    ),
+    importStatusMessage(result),
     false,
     8000
   );
@@ -713,7 +836,7 @@ async function importSettings(file: File): Promise<void> {
 
 function handleRuntimeMessage(message: unknown): void {
   if (
-    isCountUpdatedMessage(message) &&
+    isStateUpdatedMessage(message) &&
     message.tabId === activeTabId
   ) {
     countOutput.textContent = message.text || "0";
@@ -721,7 +844,10 @@ function handleRuntimeMessage(message: unknown): void {
 }
 
 async function start(): Promise<void> {
+  activeTabId = parseOptionsPageTabId(window.location.search);
   createRuleGroupControls();
+  createPopupSectionControls();
+  createSyncCategoryControls();
   refreshSectionToggleButtons();
   render(await loadSettings());
   renderCustomReplacementFeedback();
@@ -740,7 +866,10 @@ async function start(): Promise<void> {
   });
   form.addEventListener("input", scheduleInteractiveUpdate);
   form.addEventListener("change", scheduleInteractiveUpdate);
-
+  saveButton.addEventListener("click", () => {
+    void persist();
+  });
+  resetButton.addEventListener("click", resetToDefaults);
   expandAllSectionsButton.addEventListener("click", () => {
     setAllSectionsOpen(true);
   });
@@ -750,62 +879,18 @@ async function start(): Promise<void> {
   for (const section of settingsSections) {
     section.addEventListener("toggle", refreshSectionToggleButtons);
   }
-
-  selectAllRulesButton.addEventListener("click", () => {
-    for (const input of ruleGroupInputs()) {
-      input.checked = true;
+  addCustomReplacementButton.addEventListener("click", addCustomReplacement);
+  exportPersonalRulesButton.addEventListener("click", () => {
+    void exportSettingsBackup();
+  });
+  importPersonalRulesButton.addEventListener("click", () => {
+    importPersonalRulesInput.click();
+  });
+  importPersonalRulesInput.addEventListener("change", () => {
+    const file = importPersonalRulesInput.files?.[0];
+    if (file) {
+      void importSettingsBackup(file, "replace");
     }
-    scheduleInteractiveUpdate();
-  });
-
-  selectNoRulesButton.addEventListener("click", () => {
-    for (const input of ruleGroupInputs()) {
-      input.checked = false;
-    }
-    scheduleInteractiveUpdate();
-  });
-
-  exportSettingsButton.addEventListener("click", exportSettings);
-  importSettingsButton.addEventListener("click", () => {
-    importSettingsFile.click();
-  });
-  importSettingsFile.addEventListener("change", () => {
-    const file = importSettingsFile.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    void importSettings(file)
-      .catch((error: unknown) => {
-        showStatus(
-          visibleErrorMessage(
-            error,
-            "importFailed",
-            "Die Einstellungen konnten nicht importiert werden."
-          ),
-          true,
-          8000
-        );
-      })
-      .finally(() => {
-        importSettingsFile.value = "";
-      });
-  });
-
-  resetButton.addEventListener("click", () => {
-    render(defaultSettings);
-    importSummary.replaceChildren();
-    scheduleInteractiveUpdate();
-    void saveSettings(defaultSettings).then(() => {
-      showStatus(
-        t(
-          "resetDone",
-          undefined,
-          "Auf sichere Standardeinstellungen zurückgesetzt."
-        )
-      );
-      refreshCountAfterChange();
-    });
   });
 }
 

@@ -334,7 +334,7 @@ async function start(): Promise<void> {
   });
 
   optionsButton.addEventListener("click", () => {
-    void openOptionsPageInForeground(api);
+    void openOptionsPageInForeground(api, activeTabId);
   });
 }
 
