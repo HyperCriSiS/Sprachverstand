@@ -36,6 +36,10 @@
     "cws:upload": "node scripts/chrome-web-store-v2.mjs upload",
     "cws:publish": "node scripts/chrome-web-store-v2.mjs publish"
   },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true
+  },
   "devDependencies": {
     "esbuild": "0.28.2",
     "jsdom": "30.0.1",
