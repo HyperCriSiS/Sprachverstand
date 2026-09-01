@@ -9,6 +9,7 @@ export interface ExtensionTab {
 
 export interface MessageSender {
   readonly tab?: ExtensionTab;
+  readonly url?: string;
 }
 
 export type MessageListener = (
