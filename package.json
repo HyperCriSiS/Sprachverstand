@@ -27,6 +27,8 @@
     "validate:store": "node scripts/validate-store-listings.mjs",
     "store:generate": "node scripts/generate-store-metadata.mjs && node scripts/generate-chrome-dashboard.mjs",
     "validate:store-exports": "node scripts/generate-store-metadata.mjs --check && node scripts/generate-chrome-dashboard.mjs --check",
+    "amo:status": "node scripts/amo-v5.mjs status",
+    "amo:update-listing": "npm run store:generate && node scripts/amo-v5.mjs update-listing",
     "cws:status": "node scripts/chrome-web-store-v2.mjs status",
     "cws:upload": "node scripts/chrome-web-store-v2.mjs upload",
     "cws:publish": "node scripts/chrome-web-store-v2.mjs publish"
