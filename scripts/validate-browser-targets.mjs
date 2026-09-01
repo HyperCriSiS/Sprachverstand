@@ -5,7 +5,25 @@ import process from "node:process";
 
 const projectRoot = process.cwd();
 const chromiumTargets = ["chromium", "edge", "opera"];
-const allTargets = [...chromiumTargets, "firefox"];
+const geckoTargets = ["firefox"];
+const allTargets = [...chromiumTargets, ...geckoTargets];
+const supportedFamilies = new Set(["all", "chromium", "gecko"]);
+const familyArgumentIndex = process.argv.indexOf("--family");
+const selectedFamily =
+  familyArgumentIndex >= 0 ? process.argv[familyArgumentIndex + 1] : "all";
+
+if (!supportedFamilies.has(selectedFamily)) {
+  throw new Error(
+    `Unbekannte Browserfamilie: ${selectedFamily ?? "(fehlt)"}. Erwartet: all, chromium oder gecko.`
+  );
+}
+
+const selectedTargets =
+  selectedFamily === "chromium"
+    ? chromiumTargets
+    : selectedFamily === "gecko"
+      ? geckoTargets
+      : allTargets;
 const packageJson = JSON.parse(
   await readFile(path.join(projectRoot, "package.json"), "utf8")
 );
@@ -176,7 +194,7 @@ async function getExtensionApiNamespaces() {
 
 const manifests = new Map();
 
-for (const target of allTargets) {
+for (const target of selectedTargets) {
   const outputDirectory = path.join(projectRoot, "dist", target);
   const manifestPath = path.join(outputDirectory, "manifest.json");
   assert(await fileExists(manifestPath), `${target}: dist/${target}/manifest.json fehlt.`);
@@ -193,44 +211,54 @@ for (const target of allTargets) {
   }
 }
 
-for (const target of chromiumTargets) {
-  validateChromiumManifest(target, manifests.get(target));
-}
+if (selectedFamily !== "gecko") {
+  for (const target of chromiumTargets) {
+    validateChromiumManifest(target, manifests.get(target));
+  }
 
-validateGeckoManifest("firefox", manifests.get("firefox"));
-
-const referenceDirectory = path.join(projectRoot, "dist", "chromium");
-const referenceFiles = (await listFiles(referenceDirectory)).filter(
-  (relativePath) => relativePath !== "manifest.json"
-);
-
-for (const target of ["edge", "opera"]) {
-  const targetDirectory = path.join(projectRoot, "dist", target);
-  const targetFiles = (await listFiles(targetDirectory)).filter(
+  const referenceDirectory = path.join(projectRoot, "dist", "chromium");
+  const referenceFiles = (await listFiles(referenceDirectory)).filter(
     (relativePath) => relativePath !== "manifest.json"
   );
 
-  assert(
-    JSON.stringify(targetFiles) === JSON.stringify(referenceFiles),
-    `${target}: Dateiliste weicht vom Chromium-Build ab.`
-  );
-
-  for (const relativePath of referenceFiles) {
-    const [referenceDigest, targetDigest] = await Promise.all([
-      digest(path.join(referenceDirectory, relativePath)),
-      digest(path.join(targetDirectory, relativePath))
-    ]);
+  for (const target of ["edge", "opera"]) {
+    const targetDirectory = path.join(projectRoot, "dist", target);
+    const targetFiles = (await listFiles(targetDirectory)).filter(
+      (relativePath) => relativePath !== "manifest.json"
+    );
 
     assert(
-      referenceDigest === targetDigest,
-      `${target}: ${relativePath} weicht unerwartet vom Chromium-Build ab.`
+      JSON.stringify(targetFiles) === JSON.stringify(referenceFiles),
+      `${target}: Dateiliste weicht vom Chromium-Build ab.`
     );
+
+    for (const relativePath of referenceFiles) {
+      const [referenceDigest, targetDigest] = await Promise.all([
+        digest(path.join(referenceDirectory, relativePath)),
+        digest(path.join(targetDirectory, relativePath))
+      ]);
+
+      assert(
+        referenceDigest === targetDigest,
+        `${target}: ${relativePath} weicht unerwartet vom Chromium-Build ab.`
+      );
+    }
   }
+}
+
+if (selectedFamily !== "chromium") {
+  validateGeckoManifest("firefox", manifests.get("firefox"));
 }
 
 const extensionApiNamespaces = await getExtensionApiNamespaces();
 
-for (const browser of compatibilityBrowsers) {
+const selectedCompatibilityBrowsers = compatibilityBrowsers.filter(
+  (browser) =>
+    selectedFamily === "all" ||
+    browser.family === selectedFamily
+);
+
+for (const browser of selectedCompatibilityBrowsers) {
   assert(
     browser && typeof browser.name === "string" && browser.name.length > 0,
     "Kompatibilitätsbrowser ohne gültigen Namen gefunden."
@@ -292,13 +320,22 @@ const browserNachFamilie = Object.groupBy(
   (browser) => browser.family
 );
 
-console.log("Browser-Ziele geprüft: Chromium, Microsoft Edge, Opera und Firefox.");
-console.log(
-  `Chromium-Kompatibilität geprüft: ${browserNachFamilie.chromium.map((browser) => browser.name).join(", ")}.`
-);
-console.log(
-  `Gecko-Kompatibilität geprüft: ${browserNachFamilie.gecko.map((browser) => browser.name).join(", ")}.`
-);
-console.log(
-  `WebExtension-Sonderfälle geprüft: ${browserNachFamilie.webextension.map((browser) => `${browser.name} (${browser.support})`).join(", ")}.`
-);
+if (selectedFamily !== "gecko") {
+  console.log("Chromium-Ziele geprüft: Chromium, Microsoft Edge und Opera.");
+  console.log(
+    `Chromium-Kompatibilität geprüft: ${browserNachFamilie.chromium.map((browser) => browser.name).join(", ")}.`
+  );
+}
+
+if (selectedFamily !== "chromium") {
+  console.log("Gecko-Ziel geprüft: Firefox.");
+  console.log(
+    `Gecko-Kompatibilität geprüft: ${browserNachFamilie.gecko.map((browser) => browser.name).join(", ")}.`
+  );
+}
+
+if (selectedFamily === "all") {
+  console.log(
+    `WebExtension-Sonderfälle geprüft: ${browserNachFamilie.webextension.map((browser) => `${browser.name} (${browser.support})`).join(", ")}.`
+  );
+}
