@@ -26,6 +26,8 @@ const compatibilityBrowsers = JSON.parse(
 }>;
 const buildScript = readFileSync("scripts/build.mjs", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
+const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
+const readme = readFileSync("README.md", "utf8");
 
 const standardCompatibilityBrowsers = compatibilityBrowsers.filter(
   (browser) => browser.family !== "webextension"
@@ -42,6 +44,9 @@ describe("Browser-Ziele", () => {
     );
     expect(packageJson.scripts["build:opera"]).toBe(
       "node scripts/build.mjs --target opera"
+    );
+    expect(packageJson.scripts["build:chromium-family"]).toBe(
+      "node scripts/build.mjs --targets chromium,edge,opera"
     );
   });
 
@@ -100,6 +105,48 @@ describe("Browser-Ziele", () => {
     for (const target of ["edge", "opera"]) {
       expect(releaseWorkflow).toContain(`dist/${target}`);
       expect(releaseWorkflow).toContain(`-${target}.zip`);
+    }
+  });
+
+  it("prüft Gecko und Chromium getrennt und behält den erforderlichen Gesamtstatus", () => {
+    expect(packageJson.scripts["validate:browsers:gecko"]).toBe(
+      "node scripts/validate-browser-targets.mjs --family gecko"
+    );
+    expect(packageJson.scripts["validate:browsers:chromium"]).toBe(
+      "node scripts/validate-browser-targets.mjs --family chromium"
+    );
+    expect(ciWorkflow).toContain("name: Gecko CI");
+    expect(ciWorkflow).toContain("name: Chromium CI");
+    expect(ciWorkflow).toContain("name: check");
+    expect(ciWorkflow).toContain("npm run validate:browsers:gecko");
+    expect(ciWorkflow).toContain("npm run validate:browsers:chromium");
+    expect(ciWorkflow).toContain("npm run build:chromium-family");
+    expect(ciWorkflow).not.toContain("branches: [main, dev]");
+  });
+
+  it("gliedert die README-Badges nach Engine und zeigt je Engine einen CI-Status", () => {
+    expect(readme).toContain("<h3>Gecko</h3>");
+    expect(readme).toContain("<h3>Blink / Chromium</h3>");
+    expect(readme).toContain("<h3>Goanna</h3>");
+    expect(readme).toContain("nameFilter=Gecko%20CI&label=Gecko%20CI");
+    expect(readme).toContain("nameFilter=Chromium%20CI&label=Chromium%20CI");
+    expect(readme).toContain("nameFilter=check&label=Goanna%20CI");
+    for (const browser of [
+      "Firefox",
+      "Waterfox",
+      "LibreWolf",
+      "Zen Browser",
+      "Floorp",
+      "Google Chrome",
+      "Chromium",
+      "Microsoft Edge",
+      "Opera",
+      "Brave",
+      "Vivaldi",
+      "Arc",
+      "Pale Moon"
+    ]) {
+      expect(readme).toContain(`alt="${browser}"`);
     }
   });
 });
