@@ -1,4 +1,5 @@
 import { getExtensionApi } from "./browser/api";
+import { openOptionsPageInForeground } from "./browser/options";
 import { t } from "./i18n";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
@@ -325,7 +326,7 @@ async function start(): Promise<void> {
   });
 
   optionsButton.addEventListener("click", () => {
-    void api.runtime.openOptionsPage();
+    void openOptionsPageInForeground(api);
   });
 }
 
