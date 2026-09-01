@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev, palemoon]
+    branches: [palemoon]
   pull_request:
-    branches: [main, dev]
+    branches: [palemoon]
 
 permissions:
   contents: read
