@@ -1,17 +1,26 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionApi, StorageChange } from "../src/browser/api";
 import { defaultSettings, type Settings } from "../src/settings/defaults";
-import { loadSettings, saveSettings } from "../src/settings/storage";
+import {
+  loadSettings,
+  loadSettingsWithRetry,
+  saveSettings,
+  subscribeToSettings
+} from "../src/settings/storage";
 
 class MemoryStorageArea {
   readonly values = new Map<string, unknown>();
   failReads = false;
+  remainingReadFailures = 0;
   failWrites = false;
 
   async get(
     keys?: string | readonly string[] | Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    if (this.failReads) {
+    if (this.failReads || this.remainingReadFailures > 0) {
+      if (this.remainingReadFailures > 0) {
+        this.remainingReadFailures -= 1;
+      }
       throw new Error("Speicher nicht verfügbar");
     }
 
@@ -53,35 +62,42 @@ function settings(overrides: Partial<Settings> = {}): Settings {
   return { ...defaultSettings, ...overrides };
 }
 
+type StorageListener = (
+  changes: Record<string, StorageChange>,
+  areaName: string
+) => void;
+
 let local: MemoryStorageArea;
 let sync: MemoryStorageArea;
+let storageListeners: Set<StorageListener>;
 
 beforeEach(() => {
   local = new MemoryStorageArea();
   sync = new MemoryStorageArea();
-  const listeners = new Set<(
-    changes: Record<string, StorageChange>,
-    areaName: string
-  ) => void>();
+  storageListeners = new Set<StorageListener>();
   const api = {
     storage: {
       local,
       sync,
       onChanged: {
         addListener: (
-          listener: typeof listeners extends Set<infer T> ? T : never
+          listener: StorageListener
         ) => {
-          listeners.add(listener);
+          storageListeners.add(listener);
         },
         removeListener: (
-          listener: typeof listeners extends Set<infer T> ? T : never
+          listener: StorageListener
         ) => {
-          listeners.delete(listener);
+          storageListeners.delete(listener);
         }
       }
     }
   } as unknown as ExtensionApi;
   (globalThis as typeof globalThis & { browser?: ExtensionApi }).browser = api;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("Einstellungsspeicher", () => {
@@ -212,5 +228,46 @@ describe("Einstellungsspeicher", () => {
       )
     ).rejects.toThrow(/sichere Limit/u);
     expect(local.values.size).toBe(0);
+  });
+
+  it("erholt sich beim Laden von transienten lokalen Speicherfehlern", async () => {
+    vi.useFakeTimers();
+    const value = settings({
+      enabled: false,
+      protectedTerms: ["Nach Retry"]
+    });
+    local.values.set("settings", value);
+    local.remainingReadFailures = 2;
+
+    const loading = loadSettingsWithRetry();
+    await vi.runAllTimersAsync();
+
+    await expect(loading).resolves.toEqual(value);
+    expect(local.remainingReadFailures).toBe(0);
+  });
+
+  it("lädt nach einer Speicheränderung auch nach einem transienten Fehler neu", async () => {
+    vi.useFakeTimers();
+    const listener = vi.fn();
+    const unsubscribe = subscribeToSettings(listener);
+    const value = settings({
+      enabled: false,
+      protectedTerms: ["Aktualisiert"]
+    });
+    local.values.set("settings", value);
+    local.remainingReadFailures = 1;
+
+    for (const storageListener of storageListeners) {
+      storageListener(
+        { settings: { newValue: value } },
+        "local"
+      );
+    }
+
+    await vi.runAllTimersAsync();
+
+    expect(listener).toHaveBeenCalledWith(value);
+    unsubscribe();
+    expect(storageListeners.size).toBe(0);
   });
 });
