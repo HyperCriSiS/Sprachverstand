@@ -48,22 +48,38 @@ let inspectedTabId: number | undefined;
 let lastCountedTabId: number | undefined;
 
 function normalizedReplacementEntries(
-  entries: readonly ReplacementSummaryEntry[]
+  entries: readonly unknown[]
 ): ReplacementSummaryEntry[] {
-  return entries
-    .filter(
-      (entry) =>
-        typeof entry.original === "string" &&
-        typeof entry.replacement === "string" &&
-        Number.isFinite(entry.count) &&
-        entry.count > 0
-    )
-    .map((entry) => ({
-      original: entry.original,
-      replacement: entry.replacement,
-      count: Math.max(1, Math.trunc(entry.count))
-    }))
-    .slice(0, 250);
+  const normalized: ReplacementSummaryEntry[] = [];
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const candidate = entry as Partial<ReplacementSummaryEntry>;
+    if (
+      typeof candidate.original !== "string" ||
+      typeof candidate.replacement !== "string" ||
+      typeof candidate.count !== "number" ||
+      !Number.isFinite(candidate.count) ||
+      candidate.count <= 0
+    ) {
+      continue;
+    }
+
+    normalized.push({
+      original: candidate.original,
+      replacement: candidate.replacement,
+      count: Math.max(1, Math.trunc(candidate.count))
+    });
+
+    if (normalized.length >= 250) {
+      break;
+    }
+  }
+
+  return normalized;
 }
 
 async function notifyStateUpdate(
@@ -165,6 +181,40 @@ function isGetInspectedCountMessage(
   );
 }
 
+async function readLiveReplacementState(
+  tabId: number
+): Promise<CachedReplacementState | undefined> {
+  try {
+    const response = await api.tabs.sendMessage(tabId, {
+      type: "sprachverstand.get-current-replacement-state"
+    });
+
+    if (!response || typeof response !== "object") {
+      return undefined;
+    }
+
+    const candidate = response as {
+      readonly count?: unknown;
+      readonly replacements?: unknown;
+    };
+    if (
+      typeof candidate.count !== "number" ||
+      !Number.isFinite(candidate.count) ||
+      !Array.isArray(candidate.replacements)
+    ) {
+      return undefined;
+    }
+
+    return {
+      count: Math.max(0, Math.trunc(candidate.count)),
+      replacements: normalizedReplacementEntries(candidate.replacements)
+    };
+  } catch {
+    // Auf internen Browserseiten oder vor dem Content-Script gibt es keinen Empfänger.
+    return undefined;
+  }
+}
+
 async function updateTabState(
   tabId: number,
   state: CachedReplacementState
@@ -234,6 +284,16 @@ api.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   if (isGetReplacementStateMessage(message)) {
+    const live = await readLiveReplacementState(message.tabId);
+    if (live) {
+      statesByTab.set(message.tabId, live);
+      return {
+        text: formatBadgeCount(live.count) || "0",
+        count: live.count,
+        replacements: live.replacements
+      };
+    }
+
     const cached = statesByTab.get(message.tabId);
     if (cached) {
       return {

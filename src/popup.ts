@@ -231,9 +231,17 @@ function normalizeReplacementState(
 }
 
 async function refreshReplacementState(): Promise<void> {
+  if (activeTabId === undefined) {
+    currentCount = 0;
+    currentReplacements = [];
+    renderReplacementDetails();
+    return;
+  }
+
   const api = getExtensionApi();
   const response = (await api.runtime.sendMessage({
-    type: "sprachverstand.get-inspected-count"
+    type: "sprachverstand.get-replacement-state",
+    tabId: activeTabId
   })) as ReplacementStateResponse | undefined;
   const normalized = normalizeReplacementState(response);
   currentCount = normalized.count;

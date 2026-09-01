@@ -11,6 +11,21 @@ import {
 
 let processor: DomProcessor | undefined;
 
+interface GetCurrentReplacementStateMessage {
+  readonly type: "sprachverstand.get-current-replacement-state";
+}
+
+function isGetCurrentReplacementStateMessage(
+  message: unknown
+): message is GetCurrentReplacementStateMessage {
+  return (
+    Boolean(message) &&
+    typeof message === "object" &&
+    (message as Partial<GetCurrentReplacementStateMessage>).type ===
+      "sprachverstand.get-current-replacement-state"
+  );
+}
+
 function shouldRun(settings: Settings): boolean {
   return (
     settings.enabled &&
@@ -72,6 +87,17 @@ async function start(): Promise<void> {
   applySettings(await loadSettings());
   subscribeToSettings(applySettings);
 }
+
+getExtensionApi().runtime.onMessage.addListener((message) => {
+  if (!isGetCurrentReplacementStateMessage(message)) {
+    return undefined;
+  }
+
+  return {
+    count: processor?.getReplacementCount() ?? 0,
+    replacements: processor?.getReplacementSummary() ?? []
+  };
+});
 
 void start().catch((error: unknown) => {
   console.error("Sprachverstand konnte nicht gestartet werden.", error);
