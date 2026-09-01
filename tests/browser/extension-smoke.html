@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Sprachverstand Browser-Smoke-Test</title>
+</head>
+<body>
+  <p id="static-target">Nutzer:innen</p>
+  <code id="protected-code">Nutzer:innen</code>
+  <label>
+    Geschütztes Eingabefeld
+    <input id="protected-input" value="Nutzer:innen">
+  </label>
+  <button id="accessible-target" type="button" aria-label="Nutzer:innen">
+    Zugängliches Attribut
+  </button>
+  <div id="dynamic-target"></div>
+
+  <script>
+    window.setTimeout(() => {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = "Nutzer:innen";
+      document.querySelector("#dynamic-target").append(paragraph);
+    }, 100);
+  </script>
+</body>
+</html>
