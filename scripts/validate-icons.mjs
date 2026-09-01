@@ -91,7 +91,12 @@ function validatePng(buffer, expectedSize, filePath) {
 
 const directories = process.argv.slice(2);
 if (directories.length === 0) {
-  directories.push("dist/chromium/icons", "dist/firefox/icons");
+  directories.push(
+    "dist/chromium/icons",
+    "dist/edge/icons",
+    "dist/opera/icons",
+    "dist/firefox/icons"
+  );
 }
 
 for (const directory of directories) {
