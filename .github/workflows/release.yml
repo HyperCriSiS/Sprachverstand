@@ -21,7 +21,7 @@ on:
       target_ref:
         description: "Quell-Ref für einen neuen Tag"
         required: false
-        default: "dev"
+        default: "main"
         type: string
 
 permissions:
