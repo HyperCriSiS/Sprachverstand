@@ -8,8 +8,14 @@ afterEach(() => {
 });
 
 describe("Hintergrundzustand der Ersetzungsübersicht", () => {
-  it("fragt den angegebenen Tab live ab und normalisiert dessen Zustand", async () => {
+  it("fragt den angegebenen Tab live ab und verwirft dessen Zustand bei Navigation", async () => {
     let messageListener: MessageListener | undefined;
+    let updatedListener:
+      | ((
+          tabId: number,
+          changeInfo: { readonly status?: "loading" | "complete" }
+        ) => void)
+      | undefined;
     const sendTabMessage = vi.fn(async () => ({
       count: 2,
       replacements: [
@@ -18,6 +24,8 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
         { original: "ungültig", replacement: "", count: Number.NaN }
       ]
     }));
+    const setBadgeText = vi.fn(async () => undefined);
+    const sendRuntimeMessage = vi.fn(async () => undefined);
 
     vi.stubGlobal("browser", {
       i18n: {
@@ -35,7 +43,7 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
       runtime: {
         openOptionsPage: vi.fn(),
         getURL: vi.fn((path: string) => path),
-        sendMessage: vi.fn(async () => undefined),
+        sendMessage: sendRuntimeMessage,
         onMessage: {
           addListener: vi.fn((listener: MessageListener) => {
             messageListener = listener;
@@ -44,7 +52,7 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
         }
       },
       action: {
-        setBadgeText: vi.fn(async () => undefined),
+        setBadgeText,
         getBadgeText: vi.fn(async () => "0"),
         setBadgeBackgroundColor: vi.fn(async () => undefined)
       },
@@ -52,6 +60,12 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
         create: vi.fn(async () => ({ id: 1 })),
         query: vi.fn(async () => []),
         sendMessage: sendTabMessage,
+        onUpdated: {
+          addListener: vi.fn((listener) => {
+            updatedListener = listener;
+          }),
+          removeListener: vi.fn()
+        },
         onRemoved: {
           addListener: vi.fn(),
           removeListener: vi.fn()
@@ -77,5 +91,19 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
         { original: "Nutzer:innen", replacement: "Nutzer", count: 2 }
       ]
     });
+
+    expect(updatedListener).toBeDefined();
+    updatedListener?.(37, { status: "loading" });
+    await vi.waitFor(() => {
+      expect(setBadgeText).toHaveBeenCalledWith({ text: "", tabId: 37 });
+    });
+    expect(sendRuntimeMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "sprachverstand.state-updated",
+        tabId: 37,
+        count: 0,
+        replacements: []
+      })
+    );
   });
 });
