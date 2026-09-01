@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
-    branches: [main, dev]
+    branches: [main]
 
 permissions:
   contents: read
@@ -17,7 +17,8 @@ env:
   CI: true
 
 jobs:
-  check:
+  core:
+    name: Kernprüfung
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -39,8 +40,20 @@ jobs:
         run: |
           node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
-      - name: Qualitäts-, Build- und Browserprüfungen ausführen
-        run: npm run check
+      - name: Öffentliche Freigabe prüfen
+        run: npm run audit:public
+
+      - name: TypeScript prüfen
+        run: npm run typecheck
+
+      - name: Gesamte Testsuite ausführen
+        run: npm run test
+
+      - name: Lokalisierungen und Store-Metadaten prüfen
+        run: |
+          npm run validate:locales
+          npm run validate:store
+          npm run validate:store-exports
 
       - name: Oberfläche und Rechtshinweise absichern
         shell: bash
@@ -84,3 +97,92 @@ jobs:
           for target in chromium edge opera firefox; do
             grep -q '"default_icon"' "manifests/${target}.json"
           done
+
+  gecko:
+    name: Gecko CI
+    needs: core
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Fehlgeschlagene Kernprüfung übernehmen
+        if: ${{ needs.core.result != 'success' }}
+        run: |
+          echo "Die gemeinsame Kernprüfung war nicht erfolgreich."
+          exit 1
+
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Firefox-Build erstellen
+        run: npm run build:firefox
+
+      - name: Gecko-Build und Kompatibilität prüfen
+        run: npm run validate:browsers:gecko
+
+      - name: Gecko-Icons vollständig prüfen
+        run: node scripts/validate-icons.mjs dist/firefox/icons
+
+      - name: Firefox Desktop und Android linten
+        run: npm run lint:firefox
+
+  chromium:
+    name: Chromium CI
+    needs: core
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Fehlgeschlagene Kernprüfung übernehmen
+        if: ${{ needs.core.result != 'success' }}
+        run: |
+          echo "Die gemeinsame Kernprüfung war nicht erfolgreich."
+          exit 1
+
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Chromium-, Edge- und Opera-Builds erstellen
+        run: npm run build:chromium-family
+
+      - name: Chromium-Builds und Kompatibilität prüfen
+        run: npm run validate:browsers:chromium
+
+      - name: Chromium-Icons vollständig prüfen
+        run: node scripts/validate-icons.mjs dist/chromium/icons dist/edge/icons dist/opera/icons
+
+  check:
+    name: check
+    needs: [core, gecko, chromium]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Erforderlichen Gesamtstatus setzen
+        run: |
+          test "${{ needs.core.result }}" = "success"
+          test "${{ needs.gecko.result }}" = "success"
+          test "${{ needs.chromium.result }}" = "success"
