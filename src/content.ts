@@ -5,7 +5,7 @@ import { disabledRuleIdsForGroups } from "./rules/catalog";
 import { isDomainExcluded } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
 import {
-  loadSettings,
+  loadSettingsWithRetry,
   subscribeToSettings
 } from "./settings/storage";
 
@@ -84,7 +84,7 @@ function applySettings(settings: Settings): void {
 
 async function start(): Promise<void> {
   reportReplacementState(0);
-  applySettings(await loadSettings());
+  applySettings(await loadSettingsWithRetry());
   subscribeToSettings(applySettings);
 }
 
