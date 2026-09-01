@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 const popupHtml = readFileSync("static/popup/popup.html", "utf8");
 const popupCss = readFileSync("static/popup/popup.css", "utf8");
+const popupSource = readFileSync("src/popup.ts", "utf8");
+const contentSource = readFileSync("src/content.ts", "utf8");
 
 describe("Popup-Ersetzungsübersicht", () => {
   it("hält Marke links und Status getrennt rechts im Kopf", () => {
@@ -19,6 +21,16 @@ describe("Popup-Ersetzungsübersicht", () => {
     expect(popupHtml).toContain('id="close-replacements"');
     expect(popupHtml).toContain("Diese Seite");
     expect(popupHtml).toContain("unterschiedliche Ersetzungen");
+  });
+
+  it("lädt die Detaildaten gezielt für den aktiven Tab", () => {
+    expect(popupSource).toContain('type: "sprachverstand.get-replacement-state"');
+    expect(popupSource).toContain("tabId: activeTabId");
+    expect(popupSource).not.toContain('type: "sprachverstand.get-inspected-count"');
+    expect(contentSource).toContain(
+      'type: "sprachverstand.get-current-replacement-state"'
+    );
+    expect(contentSource).toContain("processor?.getReplacementSummary() ?? []");
   });
 
   it("trennt den Zurück-Pfeil sichtbar vom Text", () => {
