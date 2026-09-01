@@ -20,4 +20,9 @@ describe("Popup-Ersetzungsübersicht", () => {
     expect(popupHtml).toContain("Diese Seite");
     expect(popupHtml).toContain("unterschiedliche Ersetzungen");
   });
+
+  it("trennt den Zurück-Pfeil sichtbar vom Text", () => {
+    expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?display:\s*inline-flex/u);
+    expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?gap:\s*4px/u);
+  });
 });
