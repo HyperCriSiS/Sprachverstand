@@ -81,7 +81,8 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 - [x] Chrome Web Store API V2 für Paket-Upload, Status und Veröffentlichung vorbereiten; Listing-Metadaten bleiben Dashboard-Aufgabe.
 - [x] Microsoft Edge Add-ons: lokalisierte Store-Texte und wiederverwendete Bildassets vorbereiten.
 - [x] Opera Add-ons: lokalisierte Store-Texte soweit vom Store unterstützt vorbereiten.
-- [x] Firefox AMO: lokalisierte Metadaten strukturiert aus dem Repository bereitstellen.
+- [x] Firefox AMO: eigene, geprüfte Store-Texte für 29 Quellsprachen bereitstellen und auf 34 produktive AMO-Listing-Locales abbilden.
+- [ ] Firefox AMO: 34 lokalisierte Kurz- und Langbeschreibungen per AMO-v5-API in das bestehende Live-Listing einspielen.
 - [x] Store-Texte mit einer gemeinsamen deutschen Referenz und konsistenter Funktionsbeschreibung absichern.
 
 ### Abschluss

@@ -71,3 +71,9 @@ Quellbestandteile. Das eingereichte Quellarchiv ist der bevorzugte Quelltext im
 Sinne der AGPL-3.0-only. Die zusätzlich ausgelieferte Datei
 `SOURCE_COMMIT.txt` enthält den Git-Commit, aus dem XPI und Quellarchiv erzeugt
 wurden.
+
+## AMO-Store-Metadaten
+
+Die Store-Texte für Firefox werden getrennt von den allgemeinen Store-Beschreibungen unter `store/amo-listings/` gepflegt. `npm run store:generate` erzeugt daraus 34 produktive AMO-Lokalisierungen in `store/generated/amo-metadata.json`.
+
+Der öffentliche Listing-Status kann mit `npm run amo:status` geprüft werden. Für ein Update des bestehenden Listings wird `npm run amo:update-listing` verwendet. Dazu sind die persönlichen AMO-API-Zugangsdaten ausschließlich als Umgebungsvariablen `AMO_API_KEY` und `AMO_API_SECRET` zu setzen. Diese Zugangsdaten gehören niemals in das Quellarchiv oder Repository.
