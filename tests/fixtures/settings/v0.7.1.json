@@ -1,0 +1,19 @@
+{
+  "settingsRevision": 9,
+  "enabled": true,
+  "excludedDomains": ["example.net"],
+  "enabledRuleGroupIds": ["plural-separators"],
+  "protectedTerms": [],
+  "customReplacements": [],
+  "processAccessibleAttributes": false,
+  "processQuotedText": false,
+  "processSubtitles": false,
+  "syncCategoryIds": [],
+  "visiblePopupSectionIds": [
+    "count",
+    "activation",
+    "rule-groups",
+    "rule-group:plural-separators",
+    "open-options"
+  ]
+}
