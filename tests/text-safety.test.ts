@@ -35,6 +35,17 @@ describe("shouldProcessTextNode", () => {
     expect(shouldProcessTextNode(node)).toBe(true);
   });
 
+  it("akzeptiert sichtbaren Text in Schaltflächen", () => {
+    document.body.innerHTML = `
+      <button type="button">
+        <span>Hallo Nutzer:innen</span>
+      </button>
+    `;
+    const node = document.querySelector("span")?.firstChild as Text;
+
+    expect(shouldProcessTextNode(node)).toBe(true);
+  });
+
   it("ignoriert Eingaben, Code und Editoren", () => {
     document.body.innerHTML = `
       <input value="Nutzer:innen">
