@@ -14,20 +14,15 @@ const modernReleaseVersionFiles = [
 ] as const;
 
 describe("Release-Provenienz", () => {
-  it("legt Commit und Release-Provenienz dem Source-ZIP bei", () => {
+  it("hält Provenienz intern und veröffentlicht keine Provenienzdateien", () => {
     expect(releaseWorkflow).toContain(
       `printf '%s\\n' "$RELEASE_SHA" > artifacts/internal/SOURCE_COMMIT.txt`
     );
-    expect(releaseWorkflow).toContain(
-      "> artifacts/public/RELEASE_PROVENANCE.txt"
-    );
-    expect(releaseWorkflow).toContain(
+    expect(releaseWorkflow).not.toContain("artifacts/public/RELEASE_PROVENANCE.txt");
+    expect(releaseWorkflow).not.toContain("RELEASE_PROVENANCE.txt");
+    expect(releaseWorkflow).not.toContain(
       'cp artifacts/internal/SOURCE_COMMIT.txt "$SOURCE_DIR/"'
     );
-    expect(releaseWorkflow).toContain(
-      'cp artifacts/public/RELEASE_PROVENANCE.txt "$SOURCE_DIR/"'
-    );
-    expect(releaseWorkflow).toContain("artifacts/public/RELEASE_PROVENANCE.txt");
   });
 
   it("dokumentiert vollständig die sechs modernen release-spezifisch vorbereiteten Dateien", () => {

@@ -113,14 +113,14 @@ jobs:
 
           for VERSION_PART in "$MAJOR" "$MINOR" "$PATCH"; do
             if [[ "$VERSION_PART" =~ ^0[0-9]+$ ]] || (( 10#$VERSION_PART > 65535 )); then
-              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}."
+              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}"
               exit 1
             fi
           done
 
           VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          RELEASE_LABEL=${TAG#v}
-          ASSET_LABEL=${RELEASE_LABEL//\//-}
+          RELEASE_LABEL="${TAG#v}"
+          ASSET_LABEL="$RELEASE_LABEL"
 
           if [[ "$TAG" =~ -palemoon\.[0-9]+$ ]]; then
             PRODUCT_LINE=palemoon
@@ -136,25 +136,22 @@ jobs:
           fi
 
           if [[ "$PRODUCT_LINE" == "palemoon" && ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-palemoon\.[0-9]+$ ]]; then
-            echo "Ungültiges Pale-Moon-Tag-Schema."
+            echo "Ungültiger Pale-Moon-Tag: ${TAG}"
             exit 1
           fi
 
-          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}" "refs/heads/${SOURCE_BRANCH}:refs/remotes/origin/${SOURCE_BRANCH}"
-          TAG_SHA=$(git rev-list -n 1 "$TAG")
-          RELEASE_SHA=$(git rev-parse HEAD)
+          git fetch --no-tags origin "+refs/heads/${SOURCE_BRANCH}:refs/remotes/origin/${SOURCE_BRANCH}"
+          SOURCE_SHA=$(git rev-parse "refs/remotes/origin/${SOURCE_BRANCH}")
+          TAG_SHA=$(git rev-parse HEAD)
 
-          if [[ "$TAG_SHA" != "$RELEASE_SHA" ]]; then
-            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, ausgecheckt wurde ${RELEASE_SHA}."
+          if [[ "$TAG_SHA" != "$SOURCE_SHA" ]]; then
+            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, erwartet wird aktueller ${SOURCE_BRANCH}-Stand ${SOURCE_SHA}."
             exit 1
           fi
 
-          if ! git merge-base --is-ancestor "$TAG_SHA" "origin/${SOURCE_BRANCH}"; then
-            echo "Tag ${TAG} stammt nicht aus der vorgesehenen Produktlinie ${SOURCE_BRANCH}."
-            exit 1
-          fi
-
-          if [[ "$PRODUCT_LINE" == "modern" && "$TAG" == "v${VERSION}" ]]; then
+          if [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+            IS_PRERELEASE=false
+          elif [[ "$TAG" == "v${VERSION}" ]]; then
             IS_PRERELEASE=false
           else
             IS_PRERELEASE=true
@@ -164,12 +161,12 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "RELEASE_LABEL=${RELEASE_LABEL}" >> "$GITHUB_ENV"
           echo "ASSET_LABEL=${ASSET_LABEL}" >> "$GITHUB_ENV"
-          echo "RELEASE_SHA=${RELEASE_SHA}" >> "$GITHUB_ENV"
           echo "PRODUCT_LINE=${PRODUCT_LINE}" >> "$GITHUB_ENV"
           echo "SOURCE_BRANCH=${SOURCE_BRANCH}" >> "$GITHUB_ENV"
+          echo "RELEASE_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
           echo "IS_PRERELEASE=${IS_PRERELEASE}" >> "$GITHUB_ENV"
 
-      - name: Node.js einrichten und npm-Cache laden
+      - name: Node einrichten
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -295,31 +292,13 @@ jobs:
 
           printf '%s\n' "$RELEASE_SHA" > artifacts/internal/SOURCE_COMMIT.txt
 
-          {
-            echo "Sprachverstand Release-Provenienz"
-            echo "Tag: ${TAG}"
-            echo "Produktlinie: ${PRODUCT_LINE}"
-            echo "Quell-Branch: ${SOURCE_BRANCH}"
-            echo "Quell-Commit: ${RELEASE_SHA}"
-            echo "Build-Version: ${VERSION}"
-            echo
-            echo "Das Source-ZIP beginnt mit dem unveränderten Git-Baum des Quell-Commits."
-            echo "Vor dem Packen werden ausschließlich die Versionsfelder dieser Dateien angepasst:"
-            printf -- '- %s\n' "${VERSION_FILES[@]}"
-            echo
-            echo "SOURCE_COMMIT.txt und RELEASE_PROVENANCE.txt werden als Provenienzmetadaten ergänzt."
-          } > artifacts/public/RELEASE_PROVENANCE.txt
-
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
-          mkdir -p "$SOURCE_DIR/manifests"
-          for path in "${VERSION_FILES[@]:2}"; do
-            cp "$path" "$SOURCE_DIR/$path"
+          for VERSION_FILE in "${VERSION_FILES[@]:2}"; do
+            mkdir -p "$SOURCE_DIR/$(dirname "$VERSION_FILE")"
+            cp "$VERSION_FILE" "$SOURCE_DIR/$VERSION_FILE"
           done
-          cp artifacts/internal/SOURCE_COMMIT.txt "$SOURCE_DIR/"
-          cp artifacts/public/RELEASE_PROVENANCE.txt "$SOURCE_DIR/"
-
           (
             cd "$SOURCE_DIR"
             zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip" .
@@ -398,6 +377,8 @@ jobs:
 
             if [[ "$IS_PRERELEASE" == "true" ]]; then
               RELEASE_ARGS+=(--prerelease)
+            elif [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+              RELEASE_ARGS+=(--latest=false)
             else
               RELEASE_ARGS+=(--latest)
             fi
