@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "slug": "kununu-deutsche-post",
+    "url": "https://www.kununu.com/de/deutsche-post",
+    "focus": "Dynamische Komponenten und Accordion-Inhalte"
+  },
+  {
+    "id": 2,
+    "slug": "stepstone-jobs",
+    "url": "https://www.stepstone.de/jobs/",
+    "focus": "Große dynamische Jobsuche mit Filtern und Formularen"
+  },
+  {
+    "id": 3,
+    "slug": "rebuy-verkaufen",
+    "url": "https://www.rebuy.de/verkaufen",
+    "focus": "SPA mit vielen Genderformen, Buttons und Eingaben"
+  },
+  {
+    "id": 4,
+    "slug": "arbeitsagentur-jobsuche",
+    "url": "https://www.arbeitsagentur.de/jobsuche/",
+    "focus": "Komplexe Anwendung mit Suche und dynamischen Ergebnissen"
+  },
+  {
+    "id": 5,
+    "slug": "dhl-kundenkonto",
+    "url": "https://www.dhl.de/de/privatkunden/hilfe-kundenservice/kundenkonto.html",
+    "focus": "Sensible Kontooberfläche mit Buttons und Eingabebereichen"
+  },
+  {
+    "id": 6,
+    "slug": "ardmediathek-untertitel",
+    "url": "https://www.ardmediathek.de/untertitel",
+    "focus": "Medienportal, clientseitige Navigation und Untertitel"
+  },
+  {
+    "id": 7,
+    "slug": "youtube-suche",
+    "url": "https://www.youtube.com/results?search_query=Mitarbeiter%3Ainnen",
+    "focus": "Viele Mutation-Updates, SPA-Navigation und Videooberfläche"
+  },
+  {
+    "id": 8,
+    "slug": "github-sprachverstand",
+    "url": "https://github.com/HyperCriSiS/Sprachverstand",
+    "focus": "Normaler Text direkt neben geschützten Codebereichen"
+  },
+  {
+    "id": 9,
+    "slug": "wikipedia-nvidia-gpus",
+    "url": "https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units",
+    "focus": "Sehr große Seite mit Tabellen und vielen DOM-Knoten"
+  },
+  {
+    "id": 10,
+    "slug": "taz-soft-hyphen",
+    "url": "https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/",
+    "focus": "Redaktioneller Text mit Soft-Hyphens in gegenderten Wörtern"
+  }
+]

@@ -1,6 +1,6 @@
 # Reale Webseiten – Testmatrix
 
-Stand: 1. September 2026
+Stand: 2. September 2026
 
 Diese Matrix ergänzt die deterministischen Vitest-, Fixture- und echten
 Browser-Smoke-Tests um reale externe Webseiten. Die Seiten wurden so gewählt,
@@ -16,13 +16,14 @@ Für jeden Lauf werden mindestens folgende Werte erfasst:
 - Browser, Browser-Version, Betriebssystem und Sprachverstand-Commit
 - URL und Zeitpunkt des Tests
 - Ladezeit bis `DOMContentLoaded` und bis zum Ende der Beobachtungsphase
-- Zahl der von Sprachverstand erfassten Ersetzungen
 - verbleibende offensichtliche Kandidaten wie `:innen`, `*innen`, `_innen` und
   Binnen-I-Schreibweisen im sichtbaren Text
 - JavaScript-Fehler und nicht abgefangene Promise-Fehler
 - Long Tasks beziehungsweise auffällige Blockaden des Hauptthreads
 - Zustand geschützter Bereiche vor und nach dem Lauf
 - Ergebnis der seitenbezogenen Interaktionsprobe
+- soweit aus dem jeweiligen Browserpfad zuverlässig verfügbar: die von
+  Sprachverstand gemeldete Ersetzungszahl
 
 Absolute Zeitgrenzen sind bei Live-Seiten ungeeignet. Für Leistungstests ist der
 Vergleich mit einem Lauf derselben Seite ohne Erweiterung aussagekräftiger.
@@ -75,8 +76,8 @@ Ein Browser-Test kann für diese Seiten sinnvoll und reproduzierbar prüfen:
 5. Dynamisch hinzugefügte Inhalte werden nachträglich verarbeitet.
 6. Bekannte Restmuster werden nach einer Beobachtungszeit gesammelt und als
    Diagnose ausgegeben.
-7. Die Zahl der Ersetzungen und Performance-Metriken werden als JSON- oder
-   HTML-Artefakt gespeichert.
+7. Performance-Metriken und – in Browserpfaden mit zuverlässig zugänglichem
+   Erweiterungszähler – die Ersetzungszahl werden als Artefakt gespeichert.
 8. Ein kleiner Satz stabiler Interaktionen wie Accordion öffnen, scrollen oder
    einen Filter umschalten funktioniert weiterhin.
 
@@ -95,14 +96,13 @@ isolierter String in die deterministische Testsuite übernommen.
 
 ## Aufbau der externen Live-Automatisierung
 
-- Chromium mit der entpackten Erweiterung in einem persistenten Browser-Kontext
-  starten.
+- Chromium mit der entpackten Erweiterung in einem isolierten Browser-Kontext
+  starten; Baseline und Erweiterungslauf verwenden jeweils eine frische Sitzung.
 - Jeden Test einmal ohne und einmal mit Sprachverstand ausführen.
 - Feste Beobachtungsfenster statt `networkidle` verwenden, weil viele Seiten
   dauerhaft Netzwerkverbindungen offen halten.
 - Cookie-Banner nur mit seitenbezogenen, defensiven Helfern bedienen.
-- Screenshots, Konsole, Restmuster, Ersetzungszahl und Performance-Daten als
-  Artefakt sichern.
+- Screenshots, Konsole, Restmuster und Performance-Daten als Artefakt sichern.
 - Live-Tests ausschließlich manuell oder zeitgesteuert ausführen und nicht als
   zwingende Pull-Request-Prüfung konfigurieren.
 - Bei einer Abweichung zuerst feststellen, ob die Webseite geändert wurde. Erst
@@ -110,3 +110,45 @@ isolierter String in die deterministische Testsuite übernommen.
 
 Damit liefern reale Webseiten brauchbare Warnsignale, ohne dass Änderungen fremder
 Webseiten die normale CI unzuverlässig machen.
+
+## Manueller Live-Lauf
+
+Die oben beschriebene externe Automatisierung ist als eigener, nicht erforderlicher
+GitHub-Actions-Workflow umgesetzt. Sie wird ausschließlich über
+`workflow_dispatch` gestartet und beeinflusst weder Pull Requests noch normale
+Pushes. Optional kann über den Workflow-Eingabewert `site` eine einzelne
+Seiten-ID, ein Slug oder eine kommagetrennte Auswahl ausgeführt werden.
+
+Vor jedem externen Lauf wird zuerst der deterministische lokale Chromium-Smoke-Test
+ausgeführt. Erst wenn damit bewiesen ist, dass der aktuelle Build tatsächlich als
+Erweiterung geladen wurde, startet die Live-Matrix. Jede ausgewählte Referenzseite
+wird danach einmal ohne und einmal mit Sprachverstand in einer frischen
+Chromium-Sitzung geöffnet.
+
+Der Runner schreibt `artifacts/real-world/report.json` und Screenshots für beide
+Varianten. Der Report enthält insbesondere DOM- und Textknotenzahl,
+Navigationstiming, Restmuster, Long Tasks, nach Start der Messung beobachtete
+JavaScript- und Promise-Fehler sowie ausschließlich Hashes und Anzahlen
+geschützter `input`-, `textarea`-, `contenteditable`-, `code`- und `pre`-Bereiche.
+Rohinhalte dieser geschützten Bereiche werden nicht in den Report übernommen.
+
+Die erste Automatisierungsstufe liest den Badge-/Background-Zähler absichtlich
+noch nicht als angebliche Seitenmetrik aus: Aus dem normalen Webseitenkontext ist
+dieser Erweiterungszustand über WebDriver nicht robust und browserübergreifend
+zugänglich. Als reproduzierbare automatische Vergleichsgrößen dienen deshalb
+Restmuster und die Differenzen zwischen Baseline und Erweiterungslauf. Der
+Ersetzungszähler bleibt Bestandteil der manuellen seitenbezogenen Prüfung, bis ein
+stabiler Erweiterungs-Kontext dafür automatisiert adressiert werden kann.
+
+Einzelne nicht erreichbare oder durch Bot-Schutz veränderte Live-Seiten werden als
+Diagnosefehler im Artefakt festgehalten, machen den Runner aber nicht automatisch
+unbrauchbar. Der Lauf schlägt auf Runner-Ebene nur fehl, wenn keine einzige
+ausgewählte Seite erfolgreich mit der Erweiterung geprüft werden konnte. Dadurch
+bleibt die Live-Matrix ein Warn- und Untersuchungsinstrument und wird nicht zu
+einer flüchtigen Freigabesperre.
+
+Lokal kann die Konfiguration ohne Netzwerkzugriff mit
+`npm run validate:real-world` geprüft werden. Ein tatsächlicher Live-Lauf erfolgt
+nach vorhandenem Chromium-Build mit `npm run test:real-world`; über
+`-- --site 8,9` lassen sich beispielsweise nur GitHub und die große
+Wikipedia-Referenzseite auswählen.
