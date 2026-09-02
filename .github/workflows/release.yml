@@ -181,6 +181,14 @@ jobs:
       - name: Vollständige Prüfung ausführen
         run: npm run check
 
+      - name: Store-Metadaten für die Release-Version erzeugen
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/store-release-notes.mjs --release-version "$VERSION"
+          node scripts/generate-store-metadata.mjs --release-version "$VERSION"
+          node scripts/generate-chrome-dashboard.mjs --release-version "$VERSION"
+
       - name: Release-Pakete erstellen
         shell: bash
         run: |
@@ -246,6 +254,12 @@ jobs:
           cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/
           cp docs/EDGE-SUBMISSION.md artifacts/
           cp docs/OPERA-SUBMISSION.md artifacts/
+          cp store/generated/amo-metadata.json artifacts/
+          cp store/generated/amo-release-notes.json artifacts/
+          cp store/generated/chrome-dashboard.csv artifacts/
+          cp store/generated/chrome-dashboard.html artifacts/
+          cp store/generated/edge-worklist.csv artifacts/
+          cp store/generated/opera-worklist.csv artifacts/
 
           (
             cd artifacts
@@ -257,6 +271,12 @@ jobs:
               "sprachverstand-${ASSET_LABEL}-source.zip" \
               SOURCE_COMMIT.txt \
               RELEASE_PROVENANCE.txt \
+              amo-metadata.json \
+              amo-release-notes.json \
+              chrome-dashboard.csv \
+              chrome-dashboard.html \
+              edge-worklist.csv \
+              opera-worklist.csv \
               > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
