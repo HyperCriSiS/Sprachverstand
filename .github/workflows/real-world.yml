@@ -1,0 +1,71 @@
+name: Reale Webseiten
+
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Optional: Seiten-ID oder Slug, mehrere durch Komma getrennt"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-world-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+
+jobs:
+  live:
+    name: Chromium Live-Matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Chromium-Build erstellen
+        run: npm run build:chromium
+
+      - name: Erweiterung lokal im echten Chromium beweisen
+        run: npm run test:browser:chromium
+
+      - name: Reale Webseiten diagnostisch prüfen
+        env:
+          SITE_FILTER: ${{ inputs.site }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --output artifacts/real-world/report.json
+            --screenshots artifacts/real-world/screenshots
+          )
+          if [[ -n "$SITE_FILTER" ]]; then
+            ARGS+=(--site "$SITE_FILTER")
+          fi
+          npm run test:real-world -- "${ARGS[@]}"
+
+      - name: Live-Report und Screenshots hochladen
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sprachverstand-real-world-${{ github.sha }}
+          path: artifacts/real-world/
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 6

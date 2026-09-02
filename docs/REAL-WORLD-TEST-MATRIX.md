@@ -110,3 +110,37 @@ isolierter String in die deterministische Testsuite übernommen.
 
 Damit liefern reale Webseiten brauchbare Warnsignale, ohne dass Änderungen fremder
 Webseiten die normale CI unzuverlässig machen.
+
+## Manueller Live-Lauf
+
+Die oben beschriebene externe Automatisierung ist als eigener, nicht erforderlicher
+GitHub-Actions-Workflow umgesetzt. Sie wird ausschließlich über
+`workflow_dispatch` gestartet und beeinflusst weder Pull Requests noch normale
+Pushes. Optional kann über den Workflow-Eingabewert `site` eine einzelne
+Seiten-ID, ein Slug oder eine kommagetrennte Auswahl ausgeführt werden.
+
+Vor jedem externen Lauf wird zuerst der deterministische lokale Chromium-Smoke-Test
+ausgeführt. Erst wenn damit bewiesen ist, dass der aktuelle Build tatsächlich als
+Erweiterung geladen wurde, startet die Live-Matrix. Jede ausgewählte Referenzseite
+wird danach einmal ohne und einmal mit Sprachverstand in einer frischen
+Chromium-Sitzung geöffnet.
+
+Der Runner schreibt `artifacts/real-world/report.json` und Screenshots für beide
+Varianten. Der Report enthält insbesondere DOM- und Textknotenzahl,
+Navigationstiming, Restmuster, Long Tasks, nach Start der Messung beobachtete
+JavaScript- und Promise-Fehler sowie ausschließlich Hashes und Anzahlen
+geschützter `input`-, `textarea`-, `contenteditable`-, `code`- und `pre`-Bereiche.
+Rohinhalte dieser geschützten Bereiche werden nicht in den Report übernommen.
+
+Einzelne nicht erreichbare oder durch Bot-Schutz veränderte Live-Seiten werden als
+Diagnosefehler im Artefakt festgehalten, machen den Runner aber nicht automatisch
+unbrauchbar. Der Lauf schlägt auf Runner-Ebene nur fehl, wenn keine einzige
+ausgewählte Seite erfolgreich mit der Erweiterung geprüft werden konnte. Dadurch
+bleibt die Live-Matrix ein Warn- und Untersuchungsinstrument und wird nicht zu
+einer flüchtigen Freigabesperre.
+
+Lokal kann die Konfiguration ohne Netzwerkzugriff mit
+`npm run validate:real-world` geprüft werden. Ein tatsächlicher Live-Lauf erfolgt
+nach vorhandenem Chromium-Build mit `npm run test:real-world`; über
+`-- --site 8,9` lassen sich beispielsweise nur GitHub und die große
+Wikipedia-Referenzseite auswählen.
