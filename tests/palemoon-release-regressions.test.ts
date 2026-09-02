@@ -41,12 +41,18 @@ describe("Pale-Moon-Port Regressionen", () => {
     );
   });
 
-  it("kann einen Pale-Moon-Release niemals als Latest markieren", () => {
+  it("veröffentlicht Pale Moon normal, aber niemals als Latest", () => {
+    expect(releaseWorkflow).toMatch(
+      /if \[\[ "\$PRODUCT_LINE" == "palemoon" \]\]; then[\s\S]*?IS_PRERELEASE=false/
+    );
     expect(releaseWorkflow).toMatch(
       /if \[\[ "\$PRODUCT_LINE" == "palemoon" \]\]; then[\s\S]*?MAKE_LATEST=false/
     );
-    expect(releaseWorkflow).toMatch(
-      /if \[\[ "\$PRODUCT_LINE" == "modern" && "\$TAG" == "v\$\{VERSION\}" \]\]; then[\s\S]*?IS_PRERELEASE=false[\s\S]*?else[\s\S]*?IS_PRERELEASE=true/
-    );
+    expect(releaseWorkflow).toContain("RELEASE_ARGS+=(--latest=false)");
+  });
+
+  it("veröffentlicht keine Release-Provenienz als öffentliches Asset", () => {
+    expect(releaseWorkflow).not.toContain("RELEASE_PROVENANCE.txt");
+    expect(releaseWorkflow).toContain("artifacts/internal/SOURCE_COMMIT.txt");
   });
 });
