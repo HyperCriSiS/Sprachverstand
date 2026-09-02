@@ -353,7 +353,7 @@ jobs:
         with:
           name: release-internal-${{ env.ASSET_LABEL }}-${{ env.PRODUCT_LINE }}
           path: artifacts/internal/
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: error
 
       - name: GitHub-Release veröffentlichen
