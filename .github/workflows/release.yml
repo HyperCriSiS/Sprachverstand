@@ -154,7 +154,9 @@ jobs:
             exit 1
           fi
 
-          if [[ "$PRODUCT_LINE" == "modern" && "$TAG" == "v${VERSION}" ]]; then
+          if [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+            IS_PRERELEASE=false
+          elif [[ "$TAG" == "v${VERSION}" ]]; then
             IS_PRERELEASE=false
           else
             IS_PRERELEASE=true
@@ -295,21 +297,6 @@ jobs:
 
           printf '%s\n' "$RELEASE_SHA" > artifacts/internal/SOURCE_COMMIT.txt
 
-          {
-            echo "Sprachverstand Release-Provenienz"
-            echo "Tag: ${TAG}"
-            echo "Produktlinie: ${PRODUCT_LINE}"
-            echo "Quell-Branch: ${SOURCE_BRANCH}"
-            echo "Quell-Commit: ${RELEASE_SHA}"
-            echo "Build-Version: ${VERSION}"
-            echo
-            echo "Das Source-ZIP beginnt mit dem unveränderten Git-Baum des Quell-Commits."
-            echo "Vor dem Packen werden ausschließlich die Versionsfelder dieser Dateien angepasst:"
-            printf -- '- %s\n' "${VERSION_FILES[@]}"
-            echo
-            echo "SOURCE_COMMIT.txt und RELEASE_PROVENANCE.txt werden als Provenienzmetadaten ergänzt."
-          } > artifacts/public/RELEASE_PROVENANCE.txt
-
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
@@ -317,9 +304,6 @@ jobs:
           for path in "${VERSION_FILES[@]:2}"; do
             cp "$path" "$SOURCE_DIR/$path"
           done
-          cp artifacts/internal/SOURCE_COMMIT.txt "$SOURCE_DIR/"
-          cp artifacts/public/RELEASE_PROVENANCE.txt "$SOURCE_DIR/"
-
           (
             cd "$SOURCE_DIR"
             zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip" .
@@ -398,6 +382,8 @@ jobs:
 
             if [[ "$IS_PRERELEASE" == "true" ]]; then
               RELEASE_ARGS+=(--prerelease)
+            elif [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+              RELEASE_ARGS+=(--latest=false)
             else
               RELEASE_ARGS+=(--latest)
             fi
