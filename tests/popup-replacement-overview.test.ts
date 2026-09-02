@@ -33,7 +33,10 @@ describe("Popup-Ersetzungsübersicht", () => {
     expect(contentSource).toContain("processor?.getReplacementSummary() ?? []");
   });
 
-  it("trennt den Zurück-Pfeil sichtbar vom Text", () => {
+  it("verwendet für Anzeigen und Zurück denselben Pfeilabstand", () => {
+    expect(popupCss).toMatch(
+      /\.page-summary-action\s*\{[\s\S]*?display:\s*inline-flex;[\s\S]*?gap:\s*4px/u
+    );
     expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?display:\s*inline-flex/u);
     expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?gap:\s*4px/u);
   });

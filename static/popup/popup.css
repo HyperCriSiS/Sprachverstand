@@ -125,6 +125,9 @@ h2 {
 }
 
 .page-summary-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex: 0 0 auto;
   font-weight: 650;
 }
