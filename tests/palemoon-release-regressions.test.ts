@@ -27,4 +27,26 @@ describe("Pale-Moon-Port Regressionen", () => {
       "cp docs/PALEMOON-SUBMISSION.md artifacts/"
     );
   });
+
+  it("bindet Pale-Moon-Releases an die gemeinsame Produktlinienlogik", () => {
+    expect(releaseWorkflow).toMatch(
+      /product_line:[\s\S]*?options:[\s\S]*?- "modern"[\s\S]*?- "palemoon"/
+    );
+    expect(releaseWorkflow).toContain(
+      "ref: ${{ inputs.product_line == 'palemoon' && 'palemoon' || 'main' }}"
+    );
+    expect(releaseWorkflow).toContain("SOURCE_BRANCH=palemoon");
+    expect(releaseWorkflow).toContain(
+      "Pale-Moon-Releases müssen das Schema vX.Y.Z-palemoon.N verwenden."
+    );
+  });
+
+  it("kann einen Pale-Moon-Release niemals als Latest markieren", () => {
+    expect(releaseWorkflow).toMatch(
+      /if \[\[ "\$PRODUCT_LINE" == "palemoon" \]\]; then[\s\S]*?MAKE_LATEST=false/
+    );
+    expect(releaseWorkflow).toMatch(
+      /if \[\[ "\$PRODUCT_LINE" == "modern" && "\$TAG" == "v\$\{VERSION\}" \]\]; then[\s\S]*?IS_PRERELEASE=false[\s\S]*?else[\s\S]*?IS_PRERELEASE=true/
+    );
+  });
 });
