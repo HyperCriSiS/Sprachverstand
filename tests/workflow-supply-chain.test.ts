@@ -14,6 +14,14 @@ const expectedActionRefs = new Set([
   "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020"
 ]);
 
+function requiredActionRef(match: RegExpMatchArray, path: string): string {
+  const actionRef = match[1];
+  if (!actionRef) {
+    throw new Error(`${path}: Action-Referenz konnte nicht gelesen werden.`);
+  }
+  return actionRef;
+}
+
 describe("GitHub-Actions-Supply-Chain", () => {
   it("pinnt jede verwendete Action auf einen vollständigen Commit-SHA", () => {
     let actionCount = 0;
@@ -27,7 +35,7 @@ describe("GitHub-Actions-Supply-Chain", () => {
         }
 
         actionCount += 1;
-        const actionRef = match[1];
+        const actionRef = requiredActionRef(match, path);
         const separatorIndex = actionRef.lastIndexOf("@");
         expect(separatorIndex, `${path}: Action ohne Referenz`).toBeGreaterThan(0);
         expect(
@@ -43,9 +51,9 @@ describe("GitHub-Actions-Supply-Chain", () => {
   it("verwendet nur die ausdrücklich geprüften offiziellen Actions", () => {
     const actualRefs = new Set<string>();
 
-    for (const { source } of workflows) {
+    for (const { path, source } of workflows) {
       for (const match of source.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/gmu)) {
-        actualRefs.add(match[1]);
+        actualRefs.add(requiredActionRef(match, path));
       }
     }
 
