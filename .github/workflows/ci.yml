@@ -46,6 +46,14 @@ jobs:
       - name: TypeScript prüfen
         run: npm run typecheck
 
+      - name: Popup-Zähler und Ersetzungsübersicht gezielt prüfen
+        run: >-
+          npm run test --
+          tests/popup-runtime-state.test.ts
+          tests/popup-replacement-overview.test.ts
+          tests/background-replacement-state.test.ts
+          tests/popup-layout.test.ts
+
       - name: Gesamte Testsuite ausführen
         run: npm run test
 
