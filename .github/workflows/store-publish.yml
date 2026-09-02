@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Stabiler Release-Tag, z. B. v0.7.2"
+        description: "Stabiler moderner Release-Tag, z. B. v0.7.2"
         required: true
         type: string
       target:
@@ -24,6 +24,10 @@ on:
         options:
           - "validate"
           - "submit"
+      approval:
+        description: "Für submit exakt: STORE-SUBMIT:<Tag>:<Ziel>"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -38,19 +42,22 @@ jobs:
     outputs:
       version: ${{ steps.release.outputs.version }}
       asset_label: ${{ steps.release.outputs.asset_label }}
-      stable: ${{ steps.release.outputs.stable }}
+      release_sha: ${{ steps.release.outputs.release_sha }}
 
     steps:
-      - name: Release-Tag auschecken
+      - name: Vertrauenswürdigen Publisher-Code aus main auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          ref: ${{ inputs.tag }}
+          ref: main
 
-      - name: Release-Version prüfen
+      - name: Release, Produktlinie und explizite Freigabe prüfen
         id: release
         env:
+          APPROVAL: ${{ inputs.approval }}
+          MODE: ${{ inputs.mode }}
           TAG: ${{ inputs.tag }}
+          TARGET: ${{ inputs.target }}
         shell: bash
         run: |
           set -euo pipefail
@@ -60,43 +67,37 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
-            echo "Erwartet wird ein Tag wie v0.7.2 oder v0.7.2-rc.1."
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Store-Einreichungen sind nur für stabile moderne Tags wie v0.7.2 erlaubt."
             exit 1
           fi
 
           VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-          if [[ "$TAG" == "v${VERSION}" ]]; then
-            STABLE=true
-          else
-            STABLE=false
+
+          if [[ "$MODE" == "submit" ]]; then
+            EXPECTED_APPROVAL="STORE-SUBMIT:${TAG}:${TARGET}"
+            if [[ "$APPROVAL" != "$EXPECTED_APPROVAL" ]]; then
+              echo "Keine explizite Store-Freigabe für genau diesen Tag und dieses Ziel."
+              echo "Erwartete Bestätigung: ${EXPECTED_APPROVAL}"
+              exit 1
+            fi
+          fi
+
+          git fetch --force origin \
+            "refs/tags/${TAG}:refs/tags/${TAG}" \
+            "refs/heads/main:refs/remotes/origin/main"
+          RELEASE_SHA=$(git rev-list -n 1 "$TAG")
+
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "Der Release-Tag stammt nicht aus der modernen main-Produktlinie."
+            exit 1
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "asset_label=${TAG#v}" >> "$GITHUB_OUTPUT"
-          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
 
-          if [[ "${{ inputs.mode }}" == "submit" && "$STABLE" != "true" ]]; then
-            echo "Store-Einreichungen sind nur für stabile Tags ohne RC-/Beta-Suffix erlaubt."
-            exit 1
-          fi
-
-      - name: Node.js einrichten
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Abhängigkeiten installieren
-        run: npm ci --prefer-offline --no-audit --no-fund
-
-      - name: Store-Release-Notes prüfen
-        env:
-          VERSION: ${{ steps.release.outputs.version }}
-        run: node scripts/store-release-notes.mjs --check --release-version "$VERSION"
-
-      - name: GitHub-Release-Artefakte prüfen
+      - name: GitHub-Release-Artefakte laden und prüfen
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
@@ -109,6 +110,20 @@ jobs:
           test -s SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
 
+      - name: Releasegebundene Store-Notes-Daten prüfen
+        env:
+          ASSET_LABEL: ${{ steps.release.outputs.asset_label }}
+          VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_ZIP="artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+          NOTES_PATH="store/release-notes/${VERSION}.json"
+          test -s "$SOURCE_ZIP"
+          unzip -p "$SOURCE_ZIP" "$NOTES_PATH" > /tmp/release-notes.json
+          test -s /tmp/release-notes.json
+          node -e 'const fs=require("node:fs"); const data=JSON.parse(fs.readFileSync("/tmp/release-notes.json","utf8")); if(data.version!==process.env.VERSION) throw new Error("Release-Notes-Version stimmt nicht mit Tag überein.");'
+
   amo:
     if: ${{ inputs.mode == 'submit' && (inputs.target == 'amo' || inputs.target == 'both') }}
     needs: prepare
@@ -116,7 +131,7 @@ jobs:
     environment: store-production
 
     steps:
-      - name: Vertrauenswürdigen Publisher-Code auschecken
+      - name: Vertrauenswürdigen Publisher-Code aus main auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
@@ -131,15 +146,31 @@ jobs:
       - name: Abhängigkeiten installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
-      - name: Release-Artefakte laden
+      - name: Release-Artefakte laden und prüfen
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p artifacts
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir artifacts
           cd artifacts
           sha256sum -c SHA256SUMS.txt
+
+      - name: AMO-Release-Notes aus releasegebundenen Daten erzeugen
+        env:
+          ASSET_LABEL: ${{ needs.prepare.outputs.asset_label }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_ZIP="artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+          NOTES_PATH="store/release-notes/${VERSION}.json"
+          mkdir -p "store/release-notes"
+          unzip -p "$SOURCE_ZIP" "$NOTES_PATH" > "store/release-notes/${VERSION}.json"
+          node scripts/store-release-notes.mjs --release-version "$VERSION"
+          test -s store/generated/amo-release-notes.json
 
       - name: Mozilla-Zugangsdaten prüfen
         env:
@@ -168,7 +199,7 @@ jobs:
             "artifacts/sprachverstand-${ASSET_LABEL}-firefox.xpi" \
             "artifacts/sprachverstand-${ASSET_LABEL}-source.zip" \
             "$VERSION" \
-            "artifacts/amo-release-notes.json"
+            "store/generated/amo-release-notes.json"
 
   chrome:
     if: ${{ inputs.mode == 'submit' && (inputs.target == 'chrome' || inputs.target == 'both') }}
@@ -180,7 +211,7 @@ jobs:
       id-token: write
 
     steps:
-      - name: Vertrauenswürdigen Publisher-Code auschecken
+      - name: Vertrauenswürdigen Publisher-Code aus main auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
@@ -210,11 +241,13 @@ jobs:
           access_token_lifetime: 900s
           access_token_scopes: https://www.googleapis.com/auth/chromewebstore
 
-      - name: Chromium-Release-Artefakt laden
+      - name: Chromium-Release-Artefakt laden und prüfen
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p artifacts
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir artifacts
           cd artifacts

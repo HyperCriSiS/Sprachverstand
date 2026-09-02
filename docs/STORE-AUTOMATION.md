@@ -16,7 +16,7 @@ Jede Release-Datei enthält exakt die 51 Store-Locales. Aus dieser Quelle erzeug
 - Chrome-Dashboard-Texte für 51 Locales mit einem Abschnitt „Neu in …“ vor der normalen Beschreibung,
 - Edge-/Opera-Arbeitslisten.
 
-Der Release-Workflow erzeugt diese Dateien für die Version des Tags und hängt sie als prüfsummenabgesicherte GitHub-Release-Artefakte an. Fehlen Release-Notes für eine stabile Version, darf der Release nicht erfolgreich durchlaufen.
+Der Release-Workflow erzeugt diese Dateien für die Version des Tags, veröffentlicht sie aber nicht als normale GitHub-Release-Downloads. Öffentliche Releases enthalten nur die eigentlichen Distributionspakete, Source-ZIP, Prüfsummen und Provenienz. Store-Arbeitsdateien, Dashboard-Texte und Submission-Hilfen werden getrennt als kurzlebiges GitHub-Actions-Artefakt abgelegt. Fehlen Release-Notes für eine stabile moderne Version, darf der Release nicht erfolgreich durchlaufen.
 
 Die Store-Notes sind bewusst nicht identisch mit dem automatisch erzeugten GitHub-Changelog: Sie enthalten nur nutzerrelevante Änderungen und keine internen CI-, Dependabot- oder Infrastrukturdetails.
 
@@ -31,9 +31,9 @@ Empfohlene Einstellungen unter **Settings → Environments → store-production*
 3. AMO-Zugangsdaten nur als Environment-Secrets speichern, niemals als Repository-Datei.
 4. Nicht geheime IDs als Environment-Variablen speichern.
 
-Der Workflow `.github/workflows/store-publish.yml` darf nur von `main` gestartet werden. Die Jobs mit Store-Zugriff checken ebenfalls ausschließlich `main` aus. Die eigentlichen Browserpakete und Release-Notes werden dagegen aus dem ausgewählten, bereits veröffentlichten GitHub-Release geladen und anhand von `SHA256SUMS.txt` geprüft. Dadurch werden Store-Secrets nicht an Code aus einem beliebigen Tag weitergereicht.
+Der Workflow `.github/workflows/store-publish.yml` darf nur von `main` gestartet werden. Die Jobs mit Store-Zugriff checken ebenfalls ausschließlich `main` aus. Die eigentlichen Browserpakete und das Source-ZIP werden aus dem ausgewählten, bereits veröffentlichten GitHub-Release geladen und anhand von `SHA256SUMS.txt` geprüft. Die releasegebundenen Store-Notes-Daten werden aus diesem geprüften Source-ZIP extrahiert; daraus erzeugt ausschließlich der vertrauenswürdige Publisher-Code von `main` die AMO-Payload. Dadurch werden Store-Secrets nicht an Code aus einem beliebigen Tag weitergereicht.
 
-Store-Einreichungen akzeptieren nur stabile Tags wie `v0.7.2`. RC-/Beta-Tags werden im `submit`-Modus abgewiesen.
+Store-Einreichungen akzeptieren nur stabile moderne Tags wie `v0.7.2`. RC-/Beta- und Pale-Moon-Tags werden im `submit`-Modus abgewiesen. Zusätzlich muss für jeden echten Submit die Bestätigung `STORE-SUBMIT:<Tag>:<Ziel>` exakt eingegeben werden. Eine frühere Freigabe, ein vorhandenes Secret oder ein bereits erzeugter GitHub-Release gelten ausdrücklich nicht als Store-Freigabe.
 
 ## Mozilla Add-ons (AMO)
 
@@ -61,7 +61,7 @@ Der Workflow erledigt bei `target=amo` und `mode=submit`:
 5. Erkannte XPI-Version gegen den Release-Tag prüfen.
 6. Neue AMO-Version anlegen und das reproduzierbare Source-ZIP mitsenden.
 7. `AGPL-3.0-only` als Lizenz setzen.
-8. Die 29 lokalisierten Release-Notes aus dem GitHub-Release-Artefakt per Version-PATCH setzen.
+8. Die releasegebundenen Notes-Daten aus dem SHA-geprüften Source-ZIP lesen, daraus mit vertrauenswürdigem `main`-Code die 29 lokalisierten Release-Notes erzeugen und per Version-PATCH setzen.
 
 Lokale Diagnosebefehle:
 
@@ -85,7 +85,8 @@ Für Google werden bewusst **keine langfristigen JSON-Service-Account-Keys** in 
 2. **Chrome Web Store API** aktivieren. Für WIF außerdem die von Google vorausgesetzten IAM-/Security-Token-Service-/Service-Account-Credentials-APIs aktivieren.
 3. Ein dediziertes Service Account anlegen. Für den Chrome Web Store selbst braucht es zunächst keine allgemeine Projektrolle.
 4. Im **Chrome Web Store Developer Dashboard → Account** die E-Mail dieses Service Accounts zum Publisher-Konto hinzufügen. Google erlaubt derzeit nur ein Service Account pro Publisher-Konto.
-5. Einen Workload Identity Pool und einen OIDC-Provider für GitHub anlegen. Issuer: `https://token.actions.githubusercontent.com/`
+5. Einen Workload Identity Pool und einen OIDC-Provider für GitHub anlegen. Issuer:
+   `https://token.actions.githubusercontent.com/`
 6. Mindestens folgende Claims mappen:
    - `google.subject=assertion.sub`
    - `attribute.repository_id=assertion.repository_id`
@@ -152,6 +153,6 @@ Unter **Actions → Store Publish → Run workflow**:
 2. stabilen Tag eintragen, z. B. `v0.7.2`.
 3. `target`: `amo`, `chrome` oder `both`.
 4. zuerst `mode=validate` ausführen. Dabei werden Release-Notes und Release-Artefakte geprüft, ohne Store-Zugangsdaten zu verwenden.
-5. danach `mode=submit` starten. Erst die Store-Jobs referenzieren `store-production` und erhalten nach dessen Schutzregeln Zugriff auf AMO-Secrets beziehungsweise Google OIDC.
+5. danach `mode=submit` auswählen und im Feld `approval` exakt `STORE-SUBMIT:<Tag>:<Ziel>` eintragen, zum Beispiel `STORE-SUBMIT:v0.7.2:both`. Erst danach können die Store-Jobs `store-production` referenzieren und nach dessen Schutzregeln Zugriff auf AMO-Secrets beziehungsweise Google OIDC erhalten.
 
-Die Store-Einreichung bleibt absichtlich ein separater, geschützter Schritt nach dem GitHub-Release. Dadurch führt ein normaler Tag oder GitHub-Release nicht unbeaufsichtigt zu einer externen Store-Veröffentlichung. Wenn dieser Ablauf einmal mit echten Zugangsdaten bewiesen ist, kann eine spätere Roadmap-Stufe stabile Releases automatisch in diesen geschützten Store-Pfad weiterreichen.
+Die Store-Einreichung bleibt absichtlich ein separater, geschützter Schritt nach dem GitHub-Release. Dadurch führt ein normaler Tag oder GitHub-Release niemals unbeaufsichtigt zu einer externen Store-Einreichung. Auch künftig darf dieser Submit-Schritt nicht automatisch aus einem Release heraus ausgelöst werden: Jede Einreichung benötigt eine neue explizite Freigabe für den konkreten Tag und das konkrete Store-Ziel.

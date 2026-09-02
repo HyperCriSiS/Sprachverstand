@@ -37,15 +37,19 @@ describe("Store-Release-Automatisierung", () => {
     }
   });
 
-  it("trennt Validierung von geschützter Store-Einreichung", () => {
+  it("trennt Validierung von explizit freigegebener Store-Einreichung", () => {
     expect(storeWorkflow).toContain("mode:");
     expect(storeWorkflow).toContain('"validate"');
     expect(storeWorkflow).toContain('"submit"');
     expect(storeWorkflow).toContain("environment: store-production");
     expect(storeWorkflow).toContain("refs/heads/main");
     expect(storeWorkflow).toContain("ref: main");
+    expect(storeWorkflow).toContain("STORE-SUBMIT:${TAG}:${TARGET}");
     expect(storeWorkflow).toContain(
-      "Store-Einreichungen sind nur für stabile Tags"
+      "Keine explizite Store-Freigabe für genau diesen Tag und dieses Ziel."
+    );
+    expect(storeWorkflow).toContain(
+      "Store-Einreichungen sind nur für stabile moderne Tags"
     );
   });
 
@@ -53,11 +57,26 @@ describe("Store-Release-Automatisierung", () => {
     expect(storeWorkflow).toContain("secrets.AMO_API_KEY");
     expect(storeWorkflow).toContain("secrets.AMO_API_SECRET");
     expect(storeWorkflow).toContain("vars.AMO_ADDON_ID");
-    expect(storeWorkflow).toContain("artifacts/amo-release-notes.json");
+    expect(storeWorkflow).toContain("store/generated/amo-release-notes.json");
     expect(amoScript).toContain("exp: issuedAt + 60");
     expect(amoScript).toContain("randomUUID()");
     expect(amoScript).toContain('Authorization", `JWT ${createJwt()}`');
     expect(amoScript).toContain('case "notes"');
+  });
+
+  it("erzeugt AMO-Notes aus den releasegebundenen Daten des geprüften Source-ZIPs", () => {
+    expect(storeWorkflow).toContain(
+      'SOURCE_ZIP="artifacts/sprachverstand-${ASSET_LABEL}-source.zip"'
+    );
+    expect(storeWorkflow).toContain(
+      'NOTES_PATH="store/release-notes/${VERSION}.json"'
+    );
+    expect(storeWorkflow).toContain(
+      'unzip -p "$SOURCE_ZIP" "$NOTES_PATH"'
+    );
+    expect(storeWorkflow).toContain(
+      'node scripts/store-release-notes.mjs --release-version "$VERSION"'
+    );
   });
 
   it("bezieht für Google nur ein kurzlebiges OIDC/WIF-Access-Token", () => {
@@ -84,10 +103,12 @@ describe("Store-Release-Automatisierung", () => {
     expect(chromeScript).toContain(":setPublishedDeployPercentage");
   });
 
-  it("erzeugt Store-Metadaten als Teil des GitHub-Releases", () => {
-    expect(releaseWorkflow).toContain(
-      'scripts/store-release-notes.mjs --release-version "$VERSION"'
-    );
+  it("hält Store-Arbeitsdateien aus öffentlichen GitHub-Releases heraus", () => {
+    expect(releaseWorkflow).toContain("artifacts/public");
+    expect(releaseWorkflow).toContain("artifacts/internal");
+    expect(releaseWorkflow).toContain("artifacts/public/*");
+    expect(releaseWorkflow).not.toContain("gh release upload \"$TAG\" artifacts/*");
+    expect(releaseWorkflow).toContain("actions/upload-artifact@");
     expect(releaseWorkflow).toContain("amo-release-notes.json");
     expect(releaseWorkflow).toContain("chrome-dashboard.html");
     expect(releaseWorkflow).toContain("SHA256SUMS.txt");
