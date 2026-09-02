@@ -88,6 +88,21 @@ describe("Popup-Anzeige", () => {
     expect(popupHtml).toContain('id="process-subtitles"');
   });
 
+  it("nutzt auf Touch-Geräten die volle Viewport-Breite ohne Überlauf", () => {
+    const bodyBlock =
+      popupCss.match(/body\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
+    const touchBlock =
+      popupCss.match(
+        /@media \(hover: none\) and \(pointer: coarse\)\s*\{[\s\S]*?body\s*\{([\s\S]*?)\}/u
+      )?.[1] ?? "";
+
+    expect(bodyBlock).toContain("width: 384px");
+    expect(bodyBlock).toContain("max-width: 100vw");
+    expect(bodyBlock).not.toContain("min-width: 384px");
+    expect(touchBlock).toContain("width: 100vw");
+    expect(popupCss).not.toMatch(/html,\s*body\s*\{[\s\S]*?width:\s*384px/u);
+  });
+
   it("verwendet nur den äußeren Popup-Scrollbereich", () => {
     const popupRulesBlock =
       popupCss.match(/\.popup-rules\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
