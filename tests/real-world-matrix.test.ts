@@ -48,6 +48,16 @@ describe("Real-World-Browsermatrix", () => {
     expect(workflow).toContain("npm run test:real-world");
   });
 
+  it("macht die wichtigsten Live-Messwerte ohne Artefakt-Download sichtbar", () => {
+    expect(workflow).toContain("Live-Ergebnisse kompakt ausgeben");
+    expect(workflow).toContain("REAL-WORLD");
+    expect(workflow).toContain("GITHUB_STEP_SUMMARY");
+    expect(workflow).toContain("remainingPatterns=");
+    expect(workflow).toContain("longTaskDeltaMs=");
+    expect(workflow).toContain("javascriptErrors=");
+    expect(workflow).toContain("unhandledRejections=");
+  });
+
   it("erfasst Baseline und Erweiterung statt absolute Live-Grenzwerte zu erzwingen", () => {
     expect(runner).toContain('runSiteMode(site, "baseline")');
     expect(runner).toContain('runSiteMode(site, "extension")');

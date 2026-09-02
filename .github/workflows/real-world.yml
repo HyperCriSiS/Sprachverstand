@@ -60,6 +60,98 @@ jobs:
           fi
           npm run test:real-world -- "${ARGS[@]}"
 
+      - name: Live-Ergebnisse kompakt ausgeben
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [[ ! -s artifacts/real-world/report.json ]]; then
+            echo "::warning title=Kein Live-Report::Es wurde kein auswertbarer Real-World-Report erzeugt."
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const report = JSON.parse(
+            fs.readFileSync("artifacts/real-world/report.json", "utf8")
+          );
+          const summary = [
+            "## Real-World-Browsermatrix",
+            "",
+            `Commit: \`${report.commit || "unbekannt"}\``,
+            "",
+            "| Seite | Baseline | Erweiterung | Δ Laufzeit | Δ Long Tasks | Restmuster | JS/Promise | Geschützte Bereiche |",
+            "|---|---:|---:|---:|---:|---:|---:|---|"
+          ];
+
+          for (const result of report.results || []) {
+            const baseline = result.baseline || {};
+            const extension = result.extension || {};
+            const comparison = result.comparison || {};
+            const patterns = Array.isArray(extension.snapshot?.remainingPatterns)
+              ? extension.snapshot.remainingPatterns.reduce(
+                  (sum, entry) => sum + Number(entry.count || 0),
+                  0
+                )
+              : undefined;
+            const javascriptErrors = Array.isArray(extension.snapshot?.javascriptErrors)
+              ? extension.snapshot.javascriptErrors.length
+              : 0;
+            const rejections = Array.isArray(extension.snapshot?.unhandledRejections)
+              ? extension.snapshot.unhandledRejections.length
+              : 0;
+            const protectedBefore = extension.protectedBefore || {};
+            const protectedAfter = extension.protectedAfter || {};
+            const protectedKeys = new Set([
+              ...Object.keys(protectedBefore),
+              ...Object.keys(protectedAfter)
+            ]);
+            const changedProtected = [...protectedKeys].filter(
+              (key) =>
+                JSON.stringify(protectedBefore[key]) !==
+                JSON.stringify(protectedAfter[key])
+            );
+            const elapsedDelta = Number.isFinite(comparison.elapsedDeltaMs)
+              ? `${Math.round(comparison.elapsedDeltaMs)} ms`
+              : "–";
+            const longTaskDelta = Number.isFinite(comparison.totalLongTaskDeltaMs)
+              ? `${Math.round(comparison.totalLongTaskDeltaMs)} ms`
+              : "–";
+            const protectedLabel =
+              extension.status !== "ok"
+                ? "nicht messbar"
+                : changedProtected.length === 0
+                  ? "stabil"
+                  : `geändert: ${changedProtected.join(", ")}`;
+
+            console.log(
+              [
+                "REAL-WORLD",
+                result.slug,
+                `baseline=${baseline.status || "unbekannt"}`,
+                `extension=${extension.status || "unbekannt"}`,
+                `elapsedDeltaMs=${comparison.elapsedDeltaMs ?? "n/a"}`,
+                `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
+                `remainingPatterns=${patterns ?? "n/a"}`,
+                `javascriptErrors=${javascriptErrors}`,
+                `unhandledRejections=${rejections}`,
+                `protected=${protectedLabel}`
+              ].join(" ")
+            );
+
+            summary.push(
+              `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`
+            );
+          }
+
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            fs.appendFileSync(
+              process.env.GITHUB_STEP_SUMMARY,
+              `${summary.join("\n")}\n`
+            );
+          }
+          NODE
+
       - name: Live-Report und Screenshots hochladen
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
