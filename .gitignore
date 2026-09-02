@@ -31,3 +31,6 @@ id_ed25519
 
 # Reproduzierbar erzeugte Store-Arbeitsdateien
 store/generated/
+
+# Temporäre Google-OIDC-Zugangsdaten (falls lokal erzeugt)
+gha-creds-*.json
