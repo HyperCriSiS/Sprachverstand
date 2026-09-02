@@ -1,53 +1,67 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
-import { knownPluralSeparatorsRule } from "../src/rules/known-plural-separators";
+import { createRegexRule } from "../src/core/rule";
+import { salutationParticiplesRule } from "../src/rules/salutation-participles";
 
-function flushDom(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
+const rule = createRegexRule({
+  id: "test.separator",
+  risk: "safe",
+  pattern: /Nutzer:innen/gu,
+  replace: () => "Nutzer"
+});
+
+let processor: DomProcessor | undefined;
 
 afterEach(() => {
+  processor?.stop();
+  processor = undefined;
   document.body.innerHTML = "";
-  vi.restoreAllMocks();
 });
 
 describe("DomProcessor", () => {
   it("verarbeitet normale Textknoten und schützt sensible Bereiche", () => {
     document.body.innerHTML = `
-      <p id="normal">Hallo Nutzer:innen</p>
-      <code id="code">Nutzer:innen</code>
-      <textarea id="textarea">Nutzer:innen</textarea>
-      <div id="editor" contenteditable="true">Nutzer:innen</div>
-      <div id="ignored" data-sprachverstand-ignore>Nutzer:innen</div>
+      <p>Nutzer:innen lesen.</p>
+      <code>Nutzer:innen</code>
+      <div contenteditable="true">Nutzer:innen</div>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    expect(document.querySelector("#normal")?.textContent).toBe("Hallo Nutzer");
-    expect(document.querySelector("#code")?.textContent).toBe("Nutzer:innen");
-    expect(document.querySelector("#textarea")?.textContent).toBe("Nutzer:innen");
-    expect(document.querySelector("#editor")?.textContent).toBe("Nutzer:innen");
-    expect(document.querySelector("#ignored")?.textContent).toBe("Nutzer:innen");
+    expect(document.querySelector("p")?.textContent).toBe("Nutzer lesen.");
+    expect(document.querySelector("code")?.textContent).toBe("Nutzer:innen");
+    expect(
+      document.querySelector("[contenteditable]")?.textContent
+    ).toBe("Nutzer:innen");
   });
 
   it("verarbeitet ausschließlich freigegebene zugängliche Attribute", () => {
     document.body.innerHTML = `
-      <img id="image" alt="Nutzer:innen im Bild" aria-label="Nutzer:innen" title="Nutzer:innen" data-label="Nutzer:innen">
-      <button id="button" aria-description="Nutzer:innen auswählen" title="Nutzer:innen auswählen" data-label="Nutzer:innen">Nutzer:innen</button>
+      <img alt="Nutzer:innen im Team">
+      <button
+        aria-label="Nutzer:innen öffnen"
+        aria-description="Nutzer:innen verwalten"
+        title="Nutzer:innen auswählen"
+        data-label="Nutzer:innen"
+      >Nutzer:innen</button>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    const image = document.querySelector("#image");
-    const button = document.querySelector("#button");
+    const image = document.querySelector("img");
+    const button = document.querySelector("button");
 
-    expect(image?.getAttribute("alt")).toBe("Nutzer im Bild");
-    expect(image?.getAttribute("aria-label")).toBe("Nutzer");
-    expect(image?.getAttribute("title")).toBe("Nutzer");
-    expect(image?.getAttribute("data-label")).toBe("Nutzer:innen");
-    expect(button?.getAttribute("aria-description")).toBe("Nutzer auswählen");
+    expect(image?.getAttribute("alt")).toBe("Nutzer im Team");
+    expect(button?.getAttribute("aria-label")).toBe("Nutzer öffnen");
+    expect(button?.getAttribute("aria-description")).toBe("Nutzer verwalten");
     expect(button?.getAttribute("title")).toBe("Nutzer auswählen");
     expect(button?.getAttribute("data-label")).toBe("Nutzer:innen");
     expect(button?.textContent).toBe("Nutzer");
@@ -55,220 +69,285 @@ describe("DomProcessor", () => {
 
   it("schützt ignorierte, versteckte, editierbare und technische Attribute", () => {
     document.body.innerHTML = `
-      <img id="technical" alt="https://example.org/Nutzer:innen">
-      <div id="ignored" data-sprachverstand-ignore aria-label="Nutzer:innen"></div>
-      <div id="hidden" aria-hidden="true" title="Nutzer:innen"></div>
-      <div id="editor" contenteditable="true" aria-label="Nutzer:innen"></div>
-      <code id="code" title="Nutzer:innen"></code>
+      <div data-sprachverstand-ignore aria-label="Nutzer:innen"></div>
+      <div aria-hidden="true" title="Nutzer:innen"></div>
+      <div contenteditable="true" aria-description="Nutzer:innen"></div>
+      <code title="Nutzer:innen"></code>
+      <img alt="https://example.test/Nutzer:innen">
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    expect(document.querySelector("#technical")?.getAttribute("alt")).toBe(
-      "https://example.org/Nutzer:innen"
-    );
-    expect(document.querySelector("#ignored")?.getAttribute("aria-label")).toBe(
+    expect(
+      document.querySelector("[data-sprachverstand-ignore]")?.getAttribute(
+        "aria-label"
+      )
+    ).toBe("Nutzer:innen");
+    expect(document.querySelector("[aria-hidden]")?.getAttribute("title")).toBe(
       "Nutzer:innen"
     );
-    expect(document.querySelector("#hidden")?.getAttribute("title")).toBe(
+    expect(
+      document.querySelector("[contenteditable]")?.getAttribute(
+        "aria-description"
+      )
+    ).toBe("Nutzer:innen");
+    expect(document.querySelector("code")?.getAttribute("title")).toBe(
       "Nutzer:innen"
     );
-    expect(document.querySelector("#editor")?.getAttribute("aria-label")).toBe(
-      "Nutzer:innen"
-    );
-    expect(document.querySelector("#code")?.getAttribute("title")).toBe(
-      "Nutzer:innen"
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "https://example.test/Nutzer:innen"
     );
   });
 
   it("verarbeitet dynamisch hinzugefügte Inhalte und Attribute", async () => {
-    document.body.innerHTML = `<div id="host"></div>`;
-
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
     const paragraph = document.createElement("p");
     paragraph.textContent = "Neue Nutzer:innen";
-    paragraph.setAttribute("aria-label", "Neue Nutzer:innen");
-    document.querySelector("#host")?.append(paragraph);
+    paragraph.setAttribute("title", "Nutzer:innen anzeigen");
+    document.body.append(paragraph);
 
-    await flushDom();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    processor.flush();
 
     expect(paragraph.textContent).toBe("Neue Nutzer");
-    expect(paragraph.getAttribute("aria-label")).toBe("Neue Nutzer");
+    expect(paragraph.getAttribute("title")).toBe("Nutzer anzeigen");
   });
 
   it("reagiert auf geänderte bestehende Textknoten", async () => {
-    document.body.innerHTML = `<p id="target">Neutral</p>`;
+    const paragraph = document.createElement("p");
+    paragraph.textContent = "Unverändert";
+    document.body.append(paragraph);
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    const target = document.querySelector("#target")?.firstChild as Text;
-    target.data = "Nutzer:innen";
+    const textNode = paragraph.firstChild as Text;
+    textNode.data = "Nutzer:innen";
 
-    await flushDom();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    processor.flush();
 
-    expect(target.data).toBe("Nutzer");
+    expect(textNode.data).toBe("Nutzer");
   });
 
   it("reagiert gezielt auf spätere Attributänderungen", async () => {
-    document.body.innerHTML = `<img id="target" alt="neutral">`;
+    const image = document.createElement("img");
+    image.alt = "Unverändert";
+    image.setAttribute("data-label", "Unverändert");
+    document.body.append(image);
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    const target = document.querySelector("#target") as Element;
-    target.setAttribute("alt", "Nutzer:innen");
+    image.alt = "Nutzer:innen im Bild";
+    image.title = "Nutzer:innen anzeigen";
+    image.setAttribute("data-label", "Nutzer:innen");
 
-    await flushDom();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    processor.flush();
 
-    expect(target.getAttribute("alt")).toBe("Nutzer");
+    expect(image.alt).toBe("Nutzer im Bild");
+    expect(image.title).toBe("Nutzer anzeigen");
+    expect(image.getAttribute("data-label")).toBe("Nutzer:innen");
   });
 
   it("stellt eigene Text- und Attributänderungen beim Abschalten zurück", () => {
     document.body.innerHTML = `
-      <p id="text">Hallo Nutzer:innen</p>
-      <img id="image" alt="Nutzer:innen im Bild">
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
-    processor.stop();
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    expect(document.querySelector("#text")?.textContent).toBe("Hallo Nutzer:innen");
-    expect(document.querySelector("#image")?.getAttribute("alt")).toBe(
-      "Nutzer:innen im Bild"
+    expect(document.querySelector("p")?.textContent).toBe("Nutzer lesen.");
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer im Team"
+    );
+
+    processor.stop({ restore: true });
+
+    expect(document.querySelector("p")?.textContent).toBe(
+      "Nutzer:innen lesen."
+    );
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer:innen im Team"
     );
   });
 
   it("überschreibt beim Zurücksetzen keine späteren Seitenänderungen", () => {
-    document.body.innerHTML = `<p id="target">Nutzer:innen</p>`;
+    document.body.innerHTML = `<p>Nutzer:innen lesen.</p>`;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    const target = document.querySelector("#target") as HTMLParagraphElement;
-    target.textContent = "Von der Seite ersetzt";
-    processor.stop();
+    const paragraph = document.querySelector("p") as HTMLParagraphElement;
+    paragraph.firstChild!.textContent = "Die Webseite hat den Inhalt geändert.";
 
-    expect(target.textContent).toBe("Von der Seite ersetzt");
+    processor.stop({ restore: true });
+
+    expect(paragraph.textContent).toBe("Die Webseite hat den Inhalt geändert.");
   });
 
-  it("meldet die aktuelle Zahl und setzt sie beim Wiederherstellen auf null", () => {
+  it("meldet die aktuelle Zahl und setzt sie beim Wiederherstellen auf null", async () => {
     document.body.innerHTML = `
-      <p>Nutzer:innen und Besucher:innen</p>
-      <img alt="Helfer:innen">
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
     `;
-    const onCountChanged = vi.fn();
+    const counts: number[] = [];
 
-    const processor = new DomProcessor(
-      [knownPluralSeparatorsRule],
-      { onCountChanged }
-    );
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      onReplacementCountChange: (count) => counts.push(count)
+    });
+    processor.start();
+    await Promise.resolve();
 
-    expect(processor.getReplacementCount()).toBe(3);
-    expect(onCountChanged).toHaveBeenLastCalledWith(3);
+    expect(processor.getReplacementCount()).toBe(2);
+    expect(counts.at(-1)).toBe(2);
 
-    processor.stop();
+    processor.stop({ restore: true });
+    await Promise.resolve();
+
     expect(processor.getReplacementCount()).toBe(0);
-    expect(onCountChanged).toHaveBeenLastCalledWith(0);
+    expect(counts.at(-1)).toBe(0);
   });
 
   it("kann zugängliche Attribute unabhängig vom sichtbaren Text abschalten", () => {
     document.body.innerHTML = `
-      <p id="text">Nutzer:innen</p>
-      <img id="image" alt="Nutzer:innen">
+      <p>Nutzer:innen lesen.</p>
+      <img alt="Nutzer:innen im Team">
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule], {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
       processAccessibleAttributes: false
     });
-    processor.start(document.body);
+    processor.start();
 
-    expect(document.querySelector("#text")?.textContent).toBe("Nutzer");
-    expect(document.querySelector("#image")?.getAttribute("alt")).toBe(
-      "Nutzer:innen"
+    expect(document.querySelector("p")?.textContent).toBe("Nutzer lesen.");
+    expect(document.querySelector("img")?.getAttribute("alt")).toBe(
+      "Nutzer:innen im Team"
     );
   });
 
   it("kann direkt zitierte Schreibweisen von der Verarbeitung ausnehmen", () => {
-    document.body.innerHTML = `<p>„Nutzer:innen“ und Besucher:innen</p>`;
+    document.body.innerHTML = `<p>„Nutzer:innen“ und Nutzer:innen</p>`;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule], {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
       processQuotedText: false
     });
-    processor.start(document.body);
+    processor.start();
 
-    expect(document.body.textContent).toContain("„Nutzer:innen“ und Besucher");
+    expect(document.querySelector("p")?.textContent).toBe(
+      "„Nutzer:innen“ und Nutzer"
+    );
   });
 
   it("überspringt erkannte Untertitel standardmäßig, aber nicht den restlichen Player", () => {
     document.body.innerHTML = `
-      <div class="video-player">
-        <span id="subtitle" class="ytp-caption-segment">Nutzer:innen sprechen</span>
-        <button id="control">Nutzer:innen</button>
+      <div class="html5-video-player">
+        <p class="video-description">Nutzer:innen in der Beschreibung</p>
+        <div class="ytp-caption-window-container">
+          <span class="ytp-caption-segment">Nutzer:innen im Untertitel</span>
+        </div>
       </div>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    expect(document.querySelector("#subtitle")?.textContent).toBe(
-      "Nutzer:innen sprechen"
+    expect(document.querySelector(".video-description")?.textContent).toBe(
+      "Nutzer in der Beschreibung"
     );
-    expect(document.querySelector("#control")?.textContent).toBe("Nutzer");
+    expect(document.querySelector(".ytp-caption-segment")?.textContent).toBe(
+      "Nutzer:innen im Untertitel"
+    );
   });
 
   it("verwechselt normale Unterzeilen und Bildunterschriften nicht mit Video-Untertiteln", () => {
     document.body.innerHTML = `
-      <article>
-        <p id="subtitle" class="subtitle">Nutzer:innen im Untertitel</p>
-        <figcaption id="caption">Besucher:innen im Bild</figcaption>
-      </article>
+      <h2 class="subtitle">Nutzer:innen in der Unterzeile</h2>
+      <figure>
+        <figcaption class="caption">Nutzer:innen in der Bildunterschrift</figcaption>
+      </figure>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
 
-    expect(document.querySelector("#subtitle")?.textContent).toBe(
-      "Nutzer im Untertitel"
+    expect(document.querySelector(".subtitle")?.textContent).toBe(
+      "Nutzer in der Unterzeile"
     );
-    expect(document.querySelector("#caption")?.textContent).toBe(
-      "Besucher im Bild"
+    expect(document.querySelector("figcaption")?.textContent).toBe(
+      "Nutzer in der Bildunterschrift"
     );
   });
 
   it("korrigiert Untertitel nur nach ausdrücklicher Aktivierung", () => {
     document.body.innerHTML = `
-      <div class="video-player">
-        <span id="subtitle" class="ytp-caption-segment">Nutzer:innen sprechen</span>
+      <div class="player-timedtext">
+        <span>Nutzer:innen im Untertitel</span>
       </div>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule], {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
       processSubtitles: true
     });
-    processor.start(document.body);
+    processor.start();
 
-    expect(document.querySelector("#subtitle")?.textContent).toBe(
-      "Nutzer sprechen"
-    );
+    expect(
+      document.querySelector(".player-timedtext")?.textContent?.trim()
+    ).toBe("Nutzer im Untertitel");
   });
 
   it("verarbeitet Anreden auch über getrennte Inline-Textknoten", () => {
     document.body.innerHTML = `
-      <p>
-        <strong id="salutation">Liebe</strong>
-        <span id="target"> Nutzerinnen und Nutzer</span>
-      </p>
+      <p>Sehr geehrte <strong>Mitarbeitende</strong></p>
+      <p>Die <strong>Mitarbeitenden</strong> arbeiten.</p>
     `;
 
-    const processor = new DomProcessor([knownPluralSeparatorsRule]);
-    processor.start(document.body);
+    processor = new DomProcessor(document, {
+      rules: [salutationParticiplesRule],
+      profile: "aggressive"
+    });
+    processor.start();
 
-    expect(document.querySelector("#target")?.textContent).toBe(" Nutzer");
+    const paragraphs = document.querySelectorAll("p");
+    expect(paragraphs[0]?.textContent).toBe("Sehr geehrte Mitarbeiter");
+    expect(paragraphs[1]?.textContent).toBe("Die Mitarbeitenden arbeiten.");
   });
 });
