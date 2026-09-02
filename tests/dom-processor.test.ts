@@ -64,7 +64,7 @@ describe("DomProcessor", () => {
     expect(button?.getAttribute("aria-description")).toBe("Nutzer verwalten");
     expect(button?.getAttribute("title")).toBe("Nutzer auswählen");
     expect(button?.getAttribute("data-label")).toBe("Nutzer:innen");
-    expect(button?.textContent).toBe("Nutzer:innen");
+    expect(button?.textContent).toBe("Nutzer");
   });
 
   it("schützt ignorierte, versteckte, editierbare und technische Attribute", () => {
