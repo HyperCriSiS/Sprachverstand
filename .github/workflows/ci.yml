@@ -67,8 +67,11 @@ jobs:
         shell: bash
         run: |
           grep -q "width: 384px" static/popup/popup.css
-          grep -q "min-width: 384px" static/popup/popup.css
-          ! grep -Eq "[0-9](vw|vh)" static/popup/popup.css
+          grep -q "max-width: 100vw" static/popup/popup.css
+          ! grep -q "min-width: 384px" static/popup/popup.css
+          grep -q '@media (hover: none) and (pointer: coarse)' static/popup/popup.css
+          grep -q "width: 100vw" static/popup/popup.css
+          ! grep -Eq "[0-9]vh" static/popup/popup.css
           ! grep -q "min-height: 500px" static/popup/popup.css
           grep -q 'id="rule-groups"' static/popup/popup.html
           grep -q 'icons/icon32.png' static/popup/popup.html
