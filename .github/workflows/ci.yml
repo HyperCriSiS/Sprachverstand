@@ -2,11 +2,9 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -15,11 +13,15 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI: true
+
 jobs:
   core:
     name: Kernprüfung
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -27,26 +29,33 @@ jobs:
       - name: Node.js einrichten und npm-Cache laden
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version-file: .nvmrc
+          node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Abhängigkeiten reproduzierbar installieren
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Paket- und Lizenzmetadaten prüfen
-        run: npm run validate:package
+        run: |
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
       - name: Öffentliche Freigabe prüfen
-        run: npm run validate:public-release
+        run: npm run audit:public
 
       - name: TypeScript prüfen
         run: npm run typecheck
 
       - name: Popup-Zähler und Ersetzungsübersicht gezielt prüfen
-        run: npx vitest run tests/popup-runtime-state.test.ts tests/popup-replacement-overview.test.ts
+        run: >-
+          npm run test --
+          tests/popup-runtime-state.test.ts
+          tests/popup-replacement-overview.test.ts
+          tests/background-replacement-state.test.ts
+          tests/popup-layout.test.ts
 
       - name: Gesamte Testsuite ausführen
-        run: npm test
+        run: npm run test
 
       - name: Lokalisierungen und Store-Metadaten prüfen
         run: |
@@ -105,45 +114,41 @@ jobs:
     needs: core
     if: ${{ always() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+
     steps:
       - name: Fehlgeschlagene Kernprüfung übernehmen
         if: ${{ needs.core.result != 'success' }}
-        run: exit 1
+        run: |
+          echo "Die gemeinsame Kernprüfung war nicht erfolgreich."
+          exit 1
 
       - name: Repository auschecken
-        if: ${{ needs.core.result == 'success' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Node.js einrichten und npm-Cache laden
-        if: ${{ needs.core.result == 'success' }}
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version-file: .nvmrc
+          node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Abhängigkeiten reproduzierbar installieren
-        if: ${{ needs.core.result == 'success' }}
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Firefox-Build erstellen
-        if: ${{ needs.core.result == 'success' }}
         run: npm run build:firefox
 
       - name: Firefox im echten Browser prüfen
-        if: ${{ needs.core.result == 'success' }}
         run: npm run test:browser:firefox
 
       - name: Gecko-Build und Kompatibilität prüfen
-        if: ${{ needs.core.result == 'success' }}
-        run: npm run check:gecko
+        run: npm run validate:browsers:gecko
 
       - name: Gecko-Icons vollständig prüfen
-        if: ${{ needs.core.result == 'success' }}
-        run: npm run validate:icons:firefox
+        run: node scripts/validate-icons.mjs dist/firefox/icons
 
       - name: Firefox Desktop und Android linten
-        if: ${{ needs.core.result == 'success' }}
         run: npm run lint:firefox
 
   chromium:
@@ -151,53 +156,49 @@ jobs:
     needs: core
     if: ${{ always() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+
     steps:
       - name: Fehlgeschlagene Kernprüfung übernehmen
         if: ${{ needs.core.result != 'success' }}
-        run: exit 1
+        run: |
+          echo "Die gemeinsame Kernprüfung war nicht erfolgreich."
+          exit 1
 
       - name: Repository auschecken
-        if: ${{ needs.core.result == 'success' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Node.js einrichten und npm-Cache laden
-        if: ${{ needs.core.result == 'success' }}
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version-file: .nvmrc
+          node-version: 24
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Abhängigkeiten reproduzierbar installieren
-        if: ${{ needs.core.result == 'success' }}
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Chromium-, Edge- und Opera-Builds erstellen
-        if: ${{ needs.core.result == 'success' }}
-        run: npm run build:chromium && npm run build:edge && npm run build:opera
+        run: npm run build:chromium-family
 
       - name: Chromium im echten Browser prüfen
-        if: ${{ needs.core.result == 'success' }}
         run: npm run test:browser:chromium
 
       - name: Chromium-Builds und Kompatibilität prüfen
-        if: ${{ needs.core.result == 'success' }}
-        run: npm run check:chromium
+        run: npm run validate:browsers:chromium
 
       - name: Chromium-Icons vollständig prüfen
-        if: ${{ needs.core.result == 'success' }}
-        run: npm run validate:icons:chromium
+        run: node scripts/validate-icons.mjs dist/chromium/icons dist/edge/icons dist/opera/icons
 
   check:
     name: check
-    needs:
-      - core
-      - gecko
-      - chromium
+    needs: [core, gecko, chromium]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+
     steps:
-      - name: Gesamtergebnis auswerten
+      - name: Erforderlichen Gesamtstatus setzen
         run: |
           test "${{ needs.core.result }}" = "success"
           test "${{ needs.gecko.result }}" = "success"
