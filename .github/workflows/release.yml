@@ -6,8 +6,24 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
+      product_line:
+        description: "Produktlinie"
+        required: true
+        default: "modern"
+        type: choice
+        options:
+          - "modern"
+          - "palemoon"
+      mode:
+        description: "Release-Aktion"
+        required: true
+        default: "publish-existing-tag"
+        type: choice
+        options:
+          - "publish-existing-tag"
+          - "create-tag"
       tag:
-        description: "Existing v-prefixed tag to publish"
+        description: "v-präfixierter Release-Tag"
         required: true
         type: string
 
@@ -22,18 +38,63 @@ env:
   CI: true
 
 jobs:
-  release:
+  create_tag:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'create-tag' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Repository auschecken
+      - name: Quellstand der Produktlinie auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.product_line == 'palemoon' && 'palemoon' || 'main' }}
+
+      - name: Release-Tag erstellen
+        env:
+          PRODUCT_LINE: ${{ inputs.product_line }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
+            echo "Erwartet wird ein Tag wie v0.7.2, v0.7.3-rc.1 oder v0.7.0-palemoon.6."
+            exit 1
+          fi
+
+          if [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+            if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-palemoon\.[0-9]+$ ]]; then
+              echo "Pale-Moon-Releases müssen das Schema vX.Y.Z-palemoon.N verwenden."
+              exit 1
+            fi
+          elif [[ "$TAG" == *-palemoon.* ]]; then
+            echo "Ein Pale-Moon-Tag darf nicht aus der modernen Produktlinie erstellt werden."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Der Tag ${TAG} existiert bereits. Für einen erneuten Veröffentlichungsversuch publish-existing-tag verwenden."
+            exit 1
+          fi
+
+          git tag "$TAG"
+          git push origin "refs/tags/${TAG}"
+
+  release:
+    needs: create_tag
+    if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'publish-existing-tag' || (inputs.mode == 'create-tag' && needs.create_tag.result == 'success')))) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Release-Tag auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
-      - name: Release-Ziel und Version aus Tag bestimmen
+      - name: Produktlinie, Quellstand und Version aus Tag bestimmen
         env:
+          REQUESTED_PRODUCT_LINE: ${{ github.event_name == 'workflow_dispatch' && inputs.product_line || '' }}
           REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         shell: bash
         run: |
@@ -42,7 +103,7 @@ jobs:
           TAG="$REQUESTED_TAG"
 
           if [[ ! "$TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?$ ]]; then
-            echo "Erwartet wird ein Tag wie v0.6.7 oder v0.6.8-rc.1."
+            echo "Erwartet wird ein Tag wie v0.7.2, v0.7.3-rc.1 oder v0.7.0-palemoon.6."
             exit 1
           fi
 
@@ -52,25 +113,43 @@ jobs:
 
           for VERSION_PART in "$MAJOR" "$MINOR" "$PATCH"; do
             if [[ "$VERSION_PART" =~ ^0[0-9]+$ ]] || (( 10#$VERSION_PART > 65535 )); then
-              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}."
+              echo "Ungültiger numerischer Versionsbestandteil: ${VERSION_PART}"
               exit 1
             fi
           done
 
           VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          RELEASE_LABEL=${TAG#v}
-          ASSET_LABEL=${RELEASE_LABEL//\//-}
+          RELEASE_LABEL="${TAG#v}"
+          ASSET_LABEL="$RELEASE_LABEL"
 
-          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
-          TAG_SHA=$(git rev-list -n 1 "$TAG")
-          RELEASE_SHA=$(git rev-parse HEAD)
+          if [[ "$TAG" =~ -palemoon\.[0-9]+$ ]]; then
+            PRODUCT_LINE=palemoon
+            SOURCE_BRANCH=palemoon
+          else
+            PRODUCT_LINE=modern
+            SOURCE_BRANCH=main
+          fi
 
-          if [[ "$TAG_SHA" != "$RELEASE_SHA" ]]; then
-            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, ausgecheckt wurde ${RELEASE_SHA}."
+          if [[ -n "$REQUESTED_PRODUCT_LINE" && "$REQUESTED_PRODUCT_LINE" != "$PRODUCT_LINE" ]]; then
+            echo "Tag ${TAG} gehört zu ${PRODUCT_LINE}, angefordert wurde ${REQUESTED_PRODUCT_LINE}."
             exit 1
           fi
 
-          if [[ "$TAG" == "v${VERSION}" ]]; then
+          if [[ "$PRODUCT_LINE" == "palemoon" && ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-palemoon\.[0-9]+$ ]]; then
+            echo "Ungültiger Pale-Moon-Tag: ${TAG}"
+            exit 1
+          fi
+
+          git fetch --no-tags origin "+refs/heads/${SOURCE_BRANCH}:refs/remotes/origin/${SOURCE_BRANCH}"
+          SOURCE_SHA=$(git rev-parse "refs/remotes/origin/${SOURCE_BRANCH}")
+          TAG_SHA=$(git rev-parse HEAD)
+
+          if [[ "$TAG_SHA" != "$SOURCE_SHA" ]]; then
+            echo "Tag ${TAG} zeigt auf ${TAG_SHA}, erwartet wird aktueller ${SOURCE_BRANCH}-Stand ${SOURCE_SHA}."
+            exit 1
+          fi
+
+          if [[ "$PRODUCT_LINE" == "modern" && "$TAG" == "v${VERSION}" ]]; then
             IS_PRERELEASE=false
           else
             IS_PRERELEASE=true
@@ -80,10 +159,12 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "RELEASE_LABEL=${RELEASE_LABEL}" >> "$GITHUB_ENV"
           echo "ASSET_LABEL=${ASSET_LABEL}" >> "$GITHUB_ENV"
-          echo "RELEASE_SHA=${RELEASE_SHA}" >> "$GITHUB_ENV"
+          echo "PRODUCT_LINE=${PRODUCT_LINE}" >> "$GITHUB_ENV"
+          echo "SOURCE_BRANCH=${SOURCE_BRANCH}" >> "$GITHUB_ENV"
+          echo "RELEASE_SHA=${TAG_SHA}" >> "$GITHUB_ENV"
           echo "IS_PRERELEASE=${IS_PRERELEASE}" >> "$GITHUB_ENV"
 
-      - name: Node.js einrichten und npm-Cache laden
+      - name: Node einrichten
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24
@@ -97,10 +178,14 @@ jobs:
 
           npm version "$VERSION" --no-git-tag-version --allow-same-version
 
-          RELEASE_VERSION="$VERSION" node <<'NODE'
+          RELEASE_VERSION="$VERSION" PRODUCT_LINE="$PRODUCT_LINE" node <<'NODE'
           const fs = require("node:fs");
 
-          for (const path of ["manifests/chromium.json", "manifests/firefox.json"]) {
+          const manifestPaths = process.env.PRODUCT_LINE === "palemoon"
+            ? ["manifests/chromium.json", "manifests/firefox.json"]
+            : ["manifests/chromium.json", "manifests/edge.json", "manifests/opera.json", "manifests/firefox.json"];
+
+          for (const path of manifestPaths) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
             manifest.version = process.env.RELEASE_VERSION;
             fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -111,16 +196,19 @@ jobs:
           const fs = require("node:fs");
 
           const expected = process.env.VERSION;
+          const manifestNames = process.env.PRODUCT_LINE === "palemoon"
+            ? ["chromium", "firefox"]
+            : ["chromium", "edge", "opera", "firefox"];
           const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
-          const manifests = ["chromium", "firefox"].map((name) =>
+          const manifests = manifestNames.map((name) =>
             JSON.parse(fs.readFileSync(`manifests/${name}.json`, "utf8"))
           );
 
           const versions = [
             packageJson.version,
             packageLock.version,
-            packageLock.packages?.[""].version,
+            packageLock.packages?.[""]?.version,
             ...manifests.map((manifest) => manifest.version)
           ];
 
@@ -135,45 +223,132 @@ jobs:
       - name: Vollständige Prüfung ausführen
         run: npm run check
 
-      - name: Release-Pakete erstellen
+      - name: Store-Metadaten für die moderne Release-Version erzeugen
+        if: ${{ env.PRODUCT_LINE == 'modern' }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts
+          node scripts/store-release-notes.mjs --release-version "$VERSION"
+          node scripts/generate-store-metadata.mjs --release-version "$VERSION"
+          node scripts/generate-chrome-dashboard.mjs --release-version "$VERSION"
 
-          (
-            cd dist/palemoon
-            zip -qr "../../artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
-          )
+      - name: Release-Pakete und interne Arbeitsartefakte erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/public artifacts/internal
+
+          if [[ "$PRODUCT_LINE" == "modern" ]]; then
+            (
+              cd dist/chromium
+              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip" .
+            )
+            (
+              cd dist/edge
+              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip" .
+            )
+            (
+              cd dist/opera
+              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip" .
+            )
+            (
+              cd dist/firefox
+              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
+            )
+            VERSION_FILES=(
+              package.json
+              package-lock.json
+              manifests/chromium.json
+              manifests/edge.json
+              manifests/opera.json
+              manifests/firefox.json
+            )
+
+            cp docs/BETA-TEST.md artifacts/internal/
+            cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/internal/
+            cp docs/EDGE-SUBMISSION.md artifacts/internal/
+            cp docs/OPERA-SUBMISSION.md artifacts/internal/
+            cp store/generated/amo-metadata.json artifacts/internal/
+            cp store/generated/amo-release-notes.json artifacts/internal/
+            cp store/generated/chrome-dashboard.csv artifacts/internal/
+            cp store/generated/chrome-dashboard.html artifacts/internal/
+            cp store/generated/edge-worklist.csv artifacts/internal/
+            cp store/generated/opera-worklist.csv artifacts/internal/
+          else
+            (
+              cd dist/palemoon
+              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-palemoon.xpi" .
+            )
+            VERSION_FILES=(
+              package.json
+              package-lock.json
+              manifests/chromium.json
+              manifests/firefox.json
+            )
+            cp dist/palemoon/icons/icon64.png artifacts/internal/palemoon-icon64.png
+          fi
+
+          printf '%s\n' "$RELEASE_SHA" > artifacts/internal/SOURCE_COMMIT.txt
+
+          {
+            echo "Sprachverstand Release-Provenienz"
+            echo "Tag: ${TAG}"
+            echo "Produktlinie: ${PRODUCT_LINE}"
+            echo "Quell-Branch: ${SOURCE_BRANCH}"
+            echo "Quell-Commit: ${RELEASE_SHA}"
+            echo "Build-Version: ${VERSION}"
+            echo
+            echo "Das Source-ZIP beginnt mit dem unveränderten Git-Baum des Quell-Commits."
+            echo "Vor dem Packen werden ausschließlich die Versionsfelder dieser Dateien angepasst:"
+            printf -- '- %s\n' "${VERSION_FILES[@]}"
+            echo
+            echo "SOURCE_COMMIT.txt und RELEASE_PROVENANCE.txt werden als Provenienzmetadaten ergänzt."
+          } > artifacts/public/RELEASE_PROVENANCE.txt
 
           SOURCE_DIR=$(mktemp -d)
           git archive "$RELEASE_SHA" | tar -x -C "$SOURCE_DIR"
           cp package.json package-lock.json "$SOURCE_DIR/"
-          cp manifests/chromium.json manifests/firefox.json "$SOURCE_DIR/manifests/"
-
+          for VERSION_FILE in "${VERSION_FILES[@]:2}"; do
+            mkdir -p "$SOURCE_DIR/$(dirname "$VERSION_FILE")"
+            cp "$VERSION_FILE" "$SOURCE_DIR/$VERSION_FILE"
+          done
+          cp artifacts/internal/SOURCE_COMMIT.txt "$SOURCE_DIR/"
+          cp artifacts/public/RELEASE_PROVENANCE.txt "$SOURCE_DIR/"
           (
             cd "$SOURCE_DIR"
-            zip -qr "$GITHUB_WORKSPACE/artifacts/sprachverstand-${ASSET_LABEL}-source.zip" .
+            zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip" .
           )
-
           rm -rf "$SOURCE_DIR"
 
-          cp dist/palemoon/icons/icon64.png artifacts/palemoon-icon64.png
-          printf '%s\n' "$RELEASE_SHA" > artifacts/SOURCE_COMMIT.txt
-
           (
-            cd artifacts
-            sha256sum \
-              "sprachverstand-${ASSET_LABEL}-palemoon.xpi" \
-              "sprachverstand-${ASSET_LABEL}-source.zip" \
-              palemoon-icon64.png \
-              SOURCE_COMMIT.txt \
-              > SHA256SUMS.txt
+            cd artifacts/public
+            find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\0' \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS.txt
             sha256sum -c SHA256SUMS.txt
           )
 
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
-          unzip -t "artifacts/sprachverstand-${ASSET_LABEL}-source.zip"
+          if [[ "$PRODUCT_LINE" == "modern" ]]; then
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip"
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip"
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip"
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi"
+            if unzip -l "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
+              echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
+              exit 1
+            fi
+          else
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
+          fi
+          unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip"
+
+      - name: Interne Release-Arbeitsartefakte sichern
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-internal-${{ env.ASSET_LABEL }}-${{ env.PRODUCT_LINE }}
+          path: artifacts/internal/
+          retention-days: 14
+          if-no-files-found: error
 
       - name: GitHub-Release veröffentlichen
         env:
@@ -183,30 +358,35 @@ jobs:
         run: |
           set -euo pipefail
 
-          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" artifacts/* --repo "$REPOSITORY" --clobber
-
-            RELEASE_ID=$(gh release view "$TAG" --repo "$REPOSITORY" --json databaseId --jq '.databaseId')
+          if [[ "$PRODUCT_LINE" == "palemoon" ]]; then
+            RELEASE_TITLE="Sprachverstand ${VERSION} – Pale Moon"
+            MAKE_LATEST=false
+          else
+            RELEASE_TITLE="Sprachverstand ${RELEASE_LABEL}"
             if [[ "$IS_PRERELEASE" == "true" ]]; then
               MAKE_LATEST=false
             else
               MAKE_LATEST=true
             fi
+          fi
 
+          if gh release view "$TAG" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/public/* --repo "$REPOSITORY" --clobber
+            RELEASE_ID=$(gh release view "$TAG" --repo "$REPOSITORY" --json databaseId --jq '.databaseId')
             gh api \
               --method PATCH \
               "repos/${REPOSITORY}/releases/${RELEASE_ID}" \
-              -f name="Sprachverstand ${VERSION} – Pale Moon" \
+              -f name="$RELEASE_TITLE" \
               -F prerelease="$IS_PRERELEASE" \
               -f make_latest="$MAKE_LATEST" \
               >/dev/null
           else
             RELEASE_ARGS=(
               "$TAG"
-              artifacts/*
+              artifacts/public/*
               --repo "$REPOSITORY"
               --verify-tag
-              --title "Sprachverstand ${VERSION} – Pale Moon"
+              --title "$RELEASE_TITLE"
               --generate-notes
             )
 
