@@ -1,41 +1,16 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  amoLocaleMap,
+  createAmoReleaseNotes,
+  createChromeDescription,
+  loadStoreReleaseNotes,
+  parseReleaseVersionArgument
+} from "./store-release-notes-lib.mjs";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
 const outputDirectory = path.join(root, "store", "generated");
-
-const amoLocaleMap = new Map([
-  ["de", "de"],
-  ["en", "en-US"],
-  ["es", "es-ES"],
-  ["fr", "fr"],
-  ["it", "it"],
-  ["nl", "nl"],
-  ["pl", "pl"],
-  ["pt_BR", "pt-BR"],
-  ["pt_PT", "pt-PT"],
-  ["sv", "sv-SE"],
-  ["no", "nb-NO"],
-  ["fi", "fi"],
-  ["cs", "cs"],
-  ["sk", "sk"],
-  ["hr", "hr"],
-  ["sl", "sl"],
-  ["sr", "sr"],
-  ["hu", "hu"],
-  ["ro", "ro"],
-  ["ru", "ru"],
-  ["uk", "uk"],
-  ["el", "el"],
-  ["tr", "tr"],
-  ["he", "he"],
-  ["ja", "ja"],
-  ["ko", "ko"],
-  ["vi", "vi"],
-  ["zh_CN", "zh-CN"],
-  ["zh_TW", "zh-TW"]
-]);
 
 function fail(message) {
   throw new Error(message);
@@ -50,7 +25,7 @@ function createCsv(rows) {
   const lines = [header.map(csvEscape).join(",")];
   for (const row of rows) {
     lines.push(
-      [row.locale, row.name, row.summary, row.description]
+      [row.locale, row.name, row.summary, row.chromeDescription]
         .map(csvEscape)
         .join(",")
     );
@@ -66,6 +41,11 @@ const locales = await readJson(path.join(root, "config", "locales.json"));
 if (!Array.isArray(locales) || locales.length !== 51) {
   fail("Für Store-Exporte werden exakt 51 konfigurierte Locales erwartet.");
 }
+
+const releaseNotes = await loadStoreReleaseNotes(
+  root,
+  parseReleaseVersionArgument()
+);
 
 const rows = [];
 for (const locale of locales) {
@@ -92,7 +72,12 @@ for (const locale of locales) {
     locale: code,
     name: "Sprachverstand",
     summary: summary.trim(),
-    description: listing.description.trim()
+    description: listing.description.trim(),
+    chromeDescription: createChromeDescription(
+      listing.description,
+      code,
+      releaseNotes
+    )
   });
 }
 
@@ -124,7 +109,8 @@ const amoMetadata = {
   description: amoDescription,
   categories: ["language-support"],
   version: {
-    license: "AGPL-3.0-only"
+    license: "AGPL-3.0-only",
+    release_notes: createAmoReleaseNotes(releaseNotes)
   }
 };
 
@@ -144,7 +130,7 @@ if (!checkOnly) {
 }
 
 console.log(
-  `Store-Ausgaben geprüft: 51 gemeinsame Listings, ${amoLocaleMap.size} AMO-Listing-Locales${
+  `Store-Ausgaben geprüft: 51 gemeinsame Listings mit Release-Notes ${releaseNotes.version}, ${amoLocaleMap.size} AMO-Listing-Locales${
     checkOnly ? "." : "; Dateien unter store/generated erzeugt."
   }`
 );

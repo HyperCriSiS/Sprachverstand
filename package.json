@@ -32,11 +32,18 @@
     "audit:public": "node scripts/audit-publication.mjs",
     "validate:locales": "node scripts/validate-locales.mjs",
     "validate:store": "node scripts/validate-store-listings.mjs",
-    "store:generate": "node scripts/generate-store-metadata.mjs && node scripts/generate-chrome-dashboard.mjs",
-    "validate:store-exports": "node scripts/generate-store-metadata.mjs --check && node scripts/generate-chrome-dashboard.mjs --check",
+    "store:generate": "node scripts/store-release-notes.mjs && node scripts/generate-store-metadata.mjs && node scripts/generate-chrome-dashboard.mjs",
+    "validate:store-exports": "node scripts/store-release-notes.mjs --check && node scripts/generate-store-metadata.mjs --check && node scripts/generate-chrome-dashboard.mjs --check",
     "cws:status": "node scripts/chrome-web-store-v2.mjs status",
     "cws:upload": "node scripts/chrome-web-store-v2.mjs upload",
-    "cws:publish": "node scripts/chrome-web-store-v2.mjs publish"
+    "cws:publish": "node scripts/chrome-web-store-v2.mjs publish",
+    "store:release-notes": "node scripts/store-release-notes.mjs",
+    "amo:profile": "node scripts/amo-api-v5.mjs profile",
+    "amo:notes": "node scripts/amo-api-v5.mjs notes",
+    "amo:submit": "node scripts/amo-api-v5.mjs submit",
+    "cws:wait": "node scripts/chrome-web-store-v2.mjs wait",
+    "cws:cancel": "node scripts/chrome-web-store-v2.mjs cancel",
+    "cws:rollout": "node scripts/chrome-web-store-v2.mjs rollout"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

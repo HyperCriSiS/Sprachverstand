@@ -104,6 +104,7 @@ async function upload(filename) {
   return parseResponse(
     await authorizedFetch(`${uploadBase}:upload`, {
       method: "POST",
+      headers: { "Content-Type": "application/zip" },
       body: data
     })
   );
@@ -118,8 +119,56 @@ async function publish() {
   );
 }
 
+async function waitForUpload(timeoutMs = 180_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const current = await status();
+    const uploadState = current?.lastAsyncUploadState ?? current?.uploadState;
+    if (
+      ["SUCCEEDED", "UPLOAD_SUCCEEDED", "SUCCESS", "UPLOAD_SUCCESS"].includes(
+        uploadState
+      )
+    ) {
+      return current;
+    }
+    if (
+      ["FAILED", "UPLOAD_FAILED", "FAILURE", "UPLOAD_FAILURE", "NOT_FOUND"].includes(
+        uploadState
+      )
+    ) {
+      fail(`Chrome-Web-Store-Upload fehlgeschlagen: ${JSON.stringify(current)}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+  fail("Chrome-Web-Store-Upload hat das Zeitlimit von 180 Sekunden überschritten.");
+}
+
+async function cancelSubmission() {
+  const { api } = endpointBase();
+  return parseResponse(
+    await authorizedFetch(`${api}:cancelSubmission`, {
+      method: "POST"
+    })
+  );
+}
+
+async function setRollout(rawPercentage) {
+  const percentage = Number(rawPercentage);
+  if (!Number.isInteger(percentage) || percentage < 0 || percentage > 100) {
+    fail("Der Rollout-Prozentsatz muss eine ganze Zahl zwischen 0 und 100 sein.");
+  }
+  const { api } = endpointBase();
+  return parseResponse(
+    await authorizedFetch(`${api}:setPublishedDeployPercentage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deployPercentage: percentage })
+    })
+  );
+}
+
 function printHelp() {
-  console.log(`Chrome Web Store API V2\n\nBefehle:\n  status\n  upload <paket.zip>\n  publish\n\nAuthentifizierung:\n  CWS_PUBLISHER_ID und CWS_EXTENSION_ID sind immer erforderlich.\n  Entweder CWS_ACCESS_TOKEN setzen oder CWS_CLIENT_ID, CWS_CLIENT_SECRET und CWS_REFRESH_TOKEN für die automatische Token-Erneuerung verwenden.`);
+  console.log(`Chrome Web Store API V2\n\nBefehle:\n  status\n  upload <paket.zip>\n  wait\n  publish\n  cancel\n  rollout <0-100>\n\nAuthentifizierung:\n  CWS_PUBLISHER_ID und CWS_EXTENSION_ID sind immer erforderlich.\n  Bevorzugt CWS_ACCESS_TOKEN aus einem kurzlebigen GitHub-OIDC/Google-WIF-Token setzen.\n  Alternativ CWS_CLIENT_ID, CWS_CLIENT_SECRET und CWS_REFRESH_TOKEN verwenden.`);
 }
 
 if (!command || command === "--help" || command === "help") {
@@ -135,8 +184,17 @@ switch (command) {
   case "upload":
     result = await upload(argument);
     break;
+  case "wait":
+    result = await waitForUpload();
+    break;
   case "publish":
     result = await publish();
+    break;
+  case "cancel":
+    result = await cancelSubmission();
+    break;
+  case "rollout":
+    result = await setRollout(argument);
     break;
   default:
     fail(`Unbekannter Befehl: ${command}`);

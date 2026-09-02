@@ -32,6 +32,16 @@ Diese Schritte werden unmittelbar vor und nach dem Wechsel von **private** auf
 - [ ] Issue-Tracker und Security-Link von einem nicht angemeldeten Browser prüfen
 - [ ] README-Logo und alle öffentlichen Dokumentlinks prüfen
 
+## Vor Store-Einreichungen allgemein
+
+- [ ] GitHub-Release ist bereits erstellt und `SHA256SUMS.txt` erfolgreich geprüft
+- [ ] Store-Submit wird **nicht** automatisch durch Tag, RC oder Stable-Release ausgelöst
+- [ ] zuerst `Store Publish` mit `mode=validate` ausführen
+- [ ] für einen echten Submit explizit `STORE-SUBMIT:<Tag>:<Ziel>` bestätigen
+- [ ] Freigabe bezieht sich exakt auf den gewählten stabilen Tag und das gewählte Store-Ziel
+- [ ] `store-production` ist auf `main` und – sofern möglich – einen Required Reviewer begrenzt
+- [ ] AMO-Zugangsdaten liegen ausschließlich als Environment-Secrets vor; Google bevorzugt OIDC/WIF ohne langlebigen Schlüssel
+
 ## Vor AMO
 
 - [ ] unsigniertes Firefox-XPI aus dem finalen Commit verwenden

@@ -108,13 +108,13 @@ describe("Browser-Ziele", () => {
     }
   });
 
-  it("verwendet main als Standardquelle für manuell erzeugte Release-Tags", () => {
-    expect(releaseWorkflow).toMatch(
-      /target_ref:[\s\S]*?default: ["']main["']/
+  it("bindet manuell erzeugte Release-Tags an die gewählte Produktlinie", () => {
+    expect(releaseWorkflow).toContain("product_line:");
+    expect(releaseWorkflow).toContain(
+      "inputs.product_line == 'palemoon' && 'palemoon' || 'main'"
     );
-    expect(releaseWorkflow).not.toMatch(
-      /target_ref:[\s\S]*?default: ["']dev["']/
-    );
+    expect(releaseWorkflow).not.toContain("target_ref:");
+    expect(releaseWorkflow).not.toContain("'dev'");
   });
 
   it("veröffentlicht einen im Workflow erzeugten Tag noch im selben Lauf", () => {

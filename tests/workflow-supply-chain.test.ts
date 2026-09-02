@@ -14,7 +14,15 @@ const workflows = workflowPaths.map((workflowPath) => ({
 const expectedActionRefs = new Set([
   "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
   "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
-  "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+  "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+  "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093"
+]);
+
+const expectedMajorComments = new Map([
+  ["actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1", "v7"],
+  ["actions/setup-node@820762786026740c76f36085b0efc47a31fe5020", "v7"],
+  ["actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a", "v7"],
+  ["google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093", "v3"]
 ]);
 
 function requiredActionRef(match: RegExpMatchArray, workflowPath: string): string {
@@ -32,6 +40,7 @@ describe("GitHub-Actions-Supply-Chain", () => {
     expect(workflowPaths).toContain(".github/workflows/ci.yml");
     expect(workflowPaths).toContain(".github/workflows/release.yml");
     expect(workflowPaths).toContain(".github/workflows/real-world.yml");
+    expect(workflowPaths).toContain(".github/workflows/store-publish.yml");
   });
 
   it("pinnt jede verwendete Action auf einen vollständigen Commit-SHA", () => {
@@ -75,14 +84,21 @@ describe("GitHub-Actions-Supply-Chain", () => {
     expect(actualRefs).toEqual(expectedActionRefs);
   });
 
-  it("dokumentiert die lesbare Major-Version neben jedem SHA-Pin", () => {
+  it("dokumentiert die geprüfte Major-Version neben jedem SHA-Pin", () => {
     for (const { path: workflowPath, source } of workflows) {
       for (const line of source.split("\n")) {
-        if (!line.trimStart().startsWith("uses:")) {
+        const match = line.match(/^\s*uses:\s*([^\s#]+)(?:\s+#.*)?$/u);
+        if (!match) {
           continue;
         }
+        const actionRef = requiredActionRef(match, workflowPath);
+        const expectedMajor = expectedMajorComments.get(actionRef);
+        expect(
+          expectedMajor,
+          `${workflowPath}: ungeprüfte Action ${actionRef}`
+        ).toBeTruthy();
         expect(line, `${workflowPath}: Versionskommentar fehlt`).toMatch(
-          /\s+# v7\s*$/u
+          new RegExp(`\\s+# ${expectedMajor}\\s*$`, "u")
         );
       }
     }

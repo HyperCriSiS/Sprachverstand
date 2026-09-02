@@ -1,5 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  createChromeDescription,
+  loadStoreReleaseNotes,
+  parseReleaseVersionArgument
+} from "./store-release-notes-lib.mjs";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
@@ -291,6 +296,11 @@ if (!Array.isArray(locales) || locales.length !== 51) {
   fail("Für die Chrome-Dashboard-Hilfe werden exakt 51 konfigurierte Locales erwartet.");
 }
 
+const releaseNotes = await loadStoreReleaseNotes(
+  root,
+  parseReleaseVersionArgument()
+);
+
 const rows = [];
 for (const locale of locales) {
   const code = locale.code;
@@ -324,12 +334,19 @@ for (const locale of locales) {
     direction: locale.direction,
     name: "Sprachverstand",
     summary: summary.trim(),
-    description: listing.description.trim()
+    description: createChromeDescription(
+      listing.description,
+      code,
+      releaseNotes
+    )
   });
 }
 
 const html = createHtml(rows);
-if (!html.includes("Chrome-Web-Store-Lokalisierung") || !html.includes("0/51 erledigt")) {
+if (
+  !html.includes("Chrome-Web-Store-Lokalisierung") ||
+  !html.includes("0/51 erledigt")
+) {
   fail("Die Chrome-Dashboard-Hilfe wurde nicht vollständig erzeugt.");
 }
 
@@ -339,7 +356,7 @@ if (!checkOnly) {
 }
 
 console.log(
-  `Chrome-Dashboard-Hilfe geprüft: ${rows.length} Locales${
+  `Chrome-Dashboard-Hilfe geprüft: ${rows.length} Locales mit Release-Notes ${releaseNotes.version}${
     checkOnly ? "." : "; store/generated/chrome-dashboard.html erzeugt."
   }`
 );
