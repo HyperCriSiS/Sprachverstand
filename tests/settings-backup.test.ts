@@ -215,7 +215,7 @@ describe("Einstellungssicherung", () => {
           }
         })
       )
-    ).toThrow(/Domain-Ausschluss/u);
+    ).toThrow(/Domaineintrag/u);
 
     expect(() =>
       parseSettingsBackupDocument(
