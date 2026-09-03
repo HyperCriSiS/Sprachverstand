@@ -6,7 +6,7 @@ const html = readFileSync("static/options/options.html", "utf8");
 describe("Einstellungsaufbau", () => {
   it("ordnet die Bereiche in der vorgesehenen Reihenfolge an", () => {
     const headings = [
-      ...html.matchAll(/<summary>\s*<h2\b[^>]*>([^<]+)<\/h2>\s*<\/summary>/gu)
+      ...html.matchAll(/<summary\b[^>]*>\s*<h2\b[^>]*>([^<]+)<\/h2>[\s\S]*?<\/summary>/gu)
     ].map((match) => match[1]);
 
     expect(headings).toEqual([
@@ -20,6 +20,15 @@ describe("Einstellungsaufbau", () => {
       "Einstellungen sichern und übertragen",
       "Browser-Synchronisierung"
     ]);
+  });
+
+  it("setzt den Domain-Arbeitsmodus direkt hinter die Domainüberschrift", () => {
+    const summary = html.match(/<summary class="domain-list-summary">([\s\S]*?)<\/summary>/u)?.[1] ?? "";
+    expect(summary).toContain('id="domain-list-title"');
+    expect(summary).toContain('id="domain-list-mode"');
+    expect(summary.indexOf('id="domain-list-mode"')).toBeGreaterThan(
+      summary.indexOf('id="domain-list-title"')
+    );
   });
 
   it("bietet globale Schalter und einzeln aufklappbare Bereiche", () => {
