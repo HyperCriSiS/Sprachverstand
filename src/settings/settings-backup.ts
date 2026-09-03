@@ -7,7 +7,6 @@ import {
   maximumCustomReplacementTargetLength,
   maximumCustomReplacements,
   maximumExcludedDomainLength,
-  maximumExcludedDomains,
   maximumProtectedTermLength,
   maximumProtectedTerms,
   normalizeExcludedDomain,
@@ -79,13 +78,13 @@ function assertBoolean(
 function strictStringArray(
   value: unknown,
   label: string,
-  maximumEntries: number,
+  maximumEntries: number | undefined,
   maximumLength: number
 ): string[] {
   if (!Array.isArray(value)) {
     throw new Error(`${label} muss eine Liste sein.`);
   }
-  if (value.length > maximumEntries) {
+  if (maximumEntries !== undefined && value.length > maximumEntries) {
     throw new Error(`${label} enthält mehr als ${maximumEntries} Einträge.`);
   }
 
@@ -116,8 +115,8 @@ function strictStringArray(
 function validateDomains(value: unknown): string[] {
   const input = strictStringArray(
     value,
-    "Die Domain-Ausschlüsse",
-    maximumExcludedDomains,
+    "Die Domainliste",
+    undefined,
     maximumExcludedDomainLength
   );
   const result: string[] = [];
@@ -126,11 +125,11 @@ function validateDomains(value: unknown): string[] {
   for (const entry of input) {
     const normalized = normalizeExcludedDomain(entry);
     if (!normalized || !isValidDomainPattern(normalized)) {
-      throw new Error(`Der Domain-Ausschluss „${entry}“ ist ungültig.`);
+      throw new Error(`Der Domaineintrag „${entry}“ ist ungültig.`);
     }
     if (seen.has(normalized)) {
       throw new Error(
-        `Die Domain-Ausschlüsse enthalten „${entry}“ mehrfach beziehungsweise in gleichwertiger Schreibweise.`
+        `Die Domainliste enthält „${entry}“ mehrfach beziehungsweise in gleichwertiger Schreibweise.`
       );
     }
     seen.add(normalized);
@@ -138,6 +137,16 @@ function validateDomains(value: unknown): string[] {
   }
 
   return result;
+}
+
+function validateDomainListMode(value: unknown): "exclude" | "include" {
+  if (value === undefined || value === "exclude") {
+    return "exclude";
+  }
+  if (value === "include") {
+    return "include";
+  }
+  throw new Error("Der Arbeitsmodus der Domainliste ist ungültig.");
 }
 
 function validateRuleGroupIds(value: unknown): string[] {
@@ -291,6 +300,7 @@ function validateSettingsObject(value: unknown): Settings {
       "settingsRevision",
       "enabled",
       "excludedDomains",
+      "domainListMode",
       "enabledRuleGroupIds",
       "protectedTerms",
       "customReplacements",
@@ -336,6 +346,7 @@ function validateSettingsObject(value: unknown): Settings {
     settingsRevision: input.settingsRevision,
     enabled: input.enabled,
     excludedDomains: validateDomains(input.excludedDomains),
+    domainListMode: validateDomainListMode(input.domainListMode),
     enabledRuleGroupIds: validateRuleGroupIds(input.enabledRuleGroupIds),
     protectedTerms: validateProtectedTerms(input.protectedTerms),
     customReplacements: validateCustomReplacements(input.customReplacements),
