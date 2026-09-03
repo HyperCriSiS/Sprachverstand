@@ -18,7 +18,7 @@ describe("Popup-Anzeige", () => {
     expect(defaultSettings.visiblePopupSectionIds).toEqual(
       defaultVisiblePopupSectionIds
     );
-    for (const id of ["count", "activation", "rule-groups", "open-options"]) {
+    for (const id of ["count", "activation", "rule-groups", "domain-action", "open-options"]) {
       expect(defaultVisiblePopupSectionIds).toContain(id);
     }
     expect(defaultVisiblePopupSectionIds).not.toContain("text-options");
@@ -68,6 +68,7 @@ describe("Popup-Anzeige", () => {
       "activation",
       "rule-groups",
       "text-options",
+      "domain-action",
       "open-options"
     ]) {
       expect(popupHtml).toContain(`data-popup-section="${id}"`);
@@ -80,6 +81,17 @@ describe("Popup-Anzeige", () => {
         `data-popup-section="${popupRuleGroupSectionId(group.id)}"`
       );
     }
+  });
+
+  it("stellt die aktuelle Website als separat ausblendbare Domain-Aktion bereit", () => {
+    expect(popupHtml).toContain('id="add-current-domain"');
+    expect(popupHtml).toContain('data-popup-section="domain-action"');
+    expect(optionsHtml).toContain('data-popup-section="domain-action"');
+  });
+
+  it("bietet Alle und Keine für die im Popup sichtbaren Regelgruppen", () => {
+    expect(optionsHtml).toContain('id="select-all-popup-rules"');
+    expect(optionsHtml).toContain('id="select-no-popup-rules"');
   });
 
   it("stellt die Optionen aus Wo soll korrigiert werden im Popup bereit", () => {
