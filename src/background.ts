@@ -14,6 +14,7 @@ interface ReplacementCountMessage {
 
 interface ReplacementStateMessage {
   readonly type: "sprachverstand.replacement-state";
+  readonly hostname?: string;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
 }
@@ -38,6 +39,7 @@ interface GetInspectedCountMessage {
 }
 
 interface CachedReplacementState {
+  readonly hostname?: string;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
 }
@@ -75,6 +77,7 @@ async function notifyStateUpdate(
       type: "sprachverstand.state-updated",
       tabId,
       text: formatBadgeCount(state.count) || "0",
+      hostname: state.hostname,
       count: state.count,
       replacements: state.replacements
     })
@@ -193,6 +196,10 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     await updateTabState(tabId, {
+      hostname:
+        typeof message.hostname === "string" && message.hostname
+          ? message.hostname
+          : undefined,
       count: Math.max(0, Math.trunc(message.count)),
       replacements: normalizedReplacementEntries(message.replacements)
     });
@@ -207,6 +214,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     await updateTabState(tabId, {
+      hostname: statesByTab.get(tabId)?.hostname,
       count: Math.max(0, Math.trunc(message.count)),
       replacements: statesByTab.get(tabId)?.replacements ?? []
     });
@@ -238,6 +246,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     if (cached) {
       return {
         text: formatBadgeCount(cached.count) || "0",
+        hostname: cached.hostname,
         count: cached.count,
         replacements: cached.replacements
       };
