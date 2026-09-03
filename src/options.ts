@@ -9,10 +9,10 @@ import {
   currentSettingsRevision,
   defaultSettings,
   maximumCustomReplacements,
-  maximumExcludedDomains,
   normalizeExcludedDomain,
   popupSectionIds,
   syncCategoryIds,
+  type DomainListMode,
   type PopupSectionId,
   type Settings,
   type SyncCategoryId
@@ -89,10 +89,20 @@ const syncCategoriesContainer =
   requiredElement<HTMLElement>("#sync-categories");
 const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
+const domainListTitle = requiredElement<HTMLElement>("#domain-list-title");
+const domainListLabel = requiredElement<HTMLElement>("#domain-list-label");
+const domainListDescription =
+  requiredElement<HTMLElement>("#domain-list-description");
+const domainListModeButton =
+  requiredElement<HTMLButtonElement>("#domain-list-mode");
 const selectAllRulesButton =
   requiredElement<HTMLButtonElement>("#select-all-rules");
 const selectNoRulesButton =
   requiredElement<HTMLButtonElement>("#select-no-rules");
+const selectAllPopupRulesButton =
+  requiredElement<HTMLButtonElement>("#select-all-popup-rules");
+const selectNoPopupRulesButton =
+  requiredElement<HTMLButtonElement>("#select-no-popup-rules");
 const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const statusOutput = requiredElement<HTMLOutputElement>("#status");
 const expandAllSectionsButton =
@@ -105,6 +115,7 @@ const settingsSections = [
 let activeTabId: number | undefined;
 let interactiveUpdateTimer: number | undefined;
 let statusTimer: number | undefined;
+let domainListMode: DomainListMode = defaultSettings.domainListMode;
 
 function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
   if (!message || typeof message !== "object") {
@@ -182,6 +193,12 @@ function syncCategoryInputs(): HTMLInputElement[] {
   )];
 }
 
+function popupRuleVisibilityInputs(): HTMLInputElement[] {
+  return popupSectionInputs().filter((input) =>
+    input.dataset.popupSection?.startsWith("rule-group:")
+  );
+}
+
 function syncCategoryIdsFromForm(): SyncCategoryId[] {
   const known = new Set<string>(syncCategoryIds);
   return syncCategoryInputs()
@@ -209,8 +226,26 @@ function enabledRuleGroupIdsFromForm(): string[] {
     .filter((id): id is string => Boolean(id));
 }
 
+function renderDomainListMode(): void {
+  const inclusionMode = domainListMode === "include";
+
+  domainListTitle.textContent = inclusionMode
+    ? "Eingeschlossene Domains"
+    : "Ausgeschlossene Domains";
+  domainListLabel.textContent = inclusionMode
+    ? "Sprachverstand ausschließlich auf diesen Webseiten aktivieren"
+    : "Sprachverstand auf diesen Webseiten vollständig deaktivieren";
+  domainListDescription.textContent =
+    "Eine Domain pro Zeile. Unterdomains werden mit erfasst; Eingaben werden auf den Hostnamen normalisiert. Lokal gibt es keine feste Anzahlbegrenzung. Bei aktivierter Browser-Synchronisierung gilt zusätzlich deren sicheres Größenlimit.";
+  domainListModeButton.textContent = inclusionMode
+    ? "Zu ausgeschlossenen Domains wechseln"
+    : "Zu eingeschlossenen Domains wechseln";
+}
+
 function render(settings: Settings): void {
   enabledInput.checked = settings.enabled;
+  domainListMode = settings.domainListMode;
+  renderDomainListMode();
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
@@ -250,22 +285,16 @@ function readLines(value: string): string[] {
 
 function readExcludedDomains(): string[] {
   const entries = readLines(excludedDomainsInput.value);
-  if (entries.length > maximumExcludedDomains) {
-    throw new Error(
-      `Es sind höchstens ${maximumExcludedDomains} Domain-Ausschlüsse möglich.`
-    );
-  }
-
   const result: string[] = [];
   const seen = new Set<string>();
   for (const entry of entries) {
     const normalized = normalizeExcludedDomain(entry);
     if (!normalized) {
-      throw new Error(`Der Domain-Ausschluss „${entry}“ ist ungültig.`);
+      throw new Error(`Der Domaineintrag „${entry}“ ist ungültig.`);
     }
     if (seen.has(normalized)) {
       throw new Error(
-        `Der Domain-Ausschluss „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
+        `Der Domaineintrag „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
       );
     }
     seen.add(normalized);
@@ -279,6 +308,7 @@ function readForm(): Settings {
     settingsRevision: currentSettingsRevision,
     enabled: enabledInput.checked,
     excludedDomains: readExcludedDomains(),
+    domainListMode,
     enabledRuleGroupIds: enabledRuleGroupIdsFromForm(),
     protectedTerms: parseProtectedTermsText(protectedTermsInput.value),
     customReplacements: parseCustomReplacementsText(
@@ -522,7 +552,7 @@ function selectedImportMode(): SettingsBackupImportMode {
 function renderImportSummary(result: SettingsImportResult): void {
   const generalSettings = document.createElement("p");
   generalSettings.textContent =
-    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domain-Ausschlüsse, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
+    "Aktivierungsstatus, Regelgruppen, Popup-Anzeige, Domainliste samt Arbeitsmodus, Zitat-, Untertitel- und Attributoptionen sowie die Auswahl der optionalen Browser-Synchronisierung wurden aus der Sicherung übernommen.";
 
   const summary = document.createElement("p");
   summary.textContent = [
@@ -642,6 +672,27 @@ async function start(): Promise<void> {
       input.checked = false;
     }
     scheduleInteractiveUpdate();
+  });
+
+  selectAllPopupRulesButton.addEventListener("click", () => {
+    for (const input of popupRuleVisibilityInputs()) {
+      input.checked = true;
+    }
+    scheduleInteractiveUpdate();
+  });
+
+  selectNoPopupRulesButton.addEventListener("click", () => {
+    for (const input of popupRuleVisibilityInputs()) {
+      input.checked = false;
+    }
+    scheduleInteractiveUpdate();
+  });
+
+  domainListModeButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    domainListMode = domainListMode === "include" ? "exclude" : "include";
+    renderDomainListMode();
   });
 
   exportSettingsButton.addEventListener("click", exportSettings);
