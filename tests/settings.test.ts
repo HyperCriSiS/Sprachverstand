@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { shouldProcessDomain } from "../src/settings/domain";
 import { defaultRules } from "../src/rules";
 import {
   defaultEnabledRuleGroupIds,
@@ -10,7 +11,6 @@ import {
   defaultSettings,
   maximumCustomReplacementSourceLength,
   maximumCustomReplacements,
-  maximumExcludedDomains,
   maximumProtectedTermLength,
   maximumProtectedTerms,
   normalizeSettings
@@ -123,16 +123,15 @@ describe("Einstellungen", () => {
     expect(settings.processSubtitles).toBe(true);
   });
 
-
-  it("normalisiert und begrenzt Domain-Ausschlüsse", () => {
+  it("normalisiert Domainlisten ohne künstliche 100-Einträge-Grenze", () => {
     const settings = normalizeSettings({
       excludedDomains: [
         "HTTPS://Example.ORG/path",
         "*.example.org",
         "localhost",
-        "ungültig",
+        "nicht gültig",
         ...Array.from(
-          { length: maximumExcludedDomains + 20 },
+          { length: 120 },
           (_, index) => `host${index}.example.net`
         )
       ]
@@ -140,8 +139,20 @@ describe("Einstellungen", () => {
 
     expect(settings.excludedDomains[0]).toBe("example.org");
     expect(settings.excludedDomains).toContain("localhost");
-    expect(settings.excludedDomains).not.toContain("ungültig");
-    expect(settings.excludedDomains).toHaveLength(maximumExcludedDomains);
+    expect(settings.excludedDomains).not.toContain("nicht gültig");
+    expect(settings.excludedDomains).toHaveLength(122);
+  });
+
+  it("unterstützt Ausschluss- und Einschlussmodus mit Unterdomains", () => {
+    const domains = ["example.org"];
+
+    expect(shouldProcessDomain("www.example.org", domains, "exclude")).toBe(false);
+    expect(shouldProcessDomain("other.example", domains, "exclude")).toBe(true);
+    expect(shouldProcessDomain("www.example.org", domains, "include")).toBe(true);
+    expect(shouldProcessDomain("other.example", domains, "include")).toBe(false);
+
+    expect(normalizeSettings({ domainListMode: "include" }).domainListMode).toBe("include");
+    expect(normalizeSettings({ domainListMode: "unbekannt" }).domainListMode).toBe("exclude");
   });
 
   it("übernimmt nur bekannte Synchronisierungskategorien", () => {

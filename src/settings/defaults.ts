@@ -11,9 +11,8 @@ export const maximumProtectedTermLength = 80;
 export const maximumCustomReplacements = 100;
 export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
-export const maximumExcludedDomains = 100;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 9;
+export const currentSettingsRevision = 10;
 
 export const syncCategoryIds = [
   "activation",
@@ -26,11 +25,15 @@ export const syncCategoryIds = [
 
 export type SyncCategoryId = (typeof syncCategoryIds)[number];
 
+export const domainListModes = ["exclude", "include"] as const;
+export type DomainListMode = (typeof domainListModes)[number];
+
 const basePopupSectionIds = [
   "count",
   "activation",
   "rule-groups",
   "text-options",
+  "domain-action",
   "open-options"
 ] as const;
 
@@ -57,6 +60,7 @@ export const defaultVisiblePopupSectionIds: readonly PopupSectionId[] = [
   "count",
   "activation",
   "rule-groups",
+  "domain-action",
   "open-options",
   ...popupRuleGroupSectionIds
 ];
@@ -78,6 +82,7 @@ export interface Settings {
   readonly settingsRevision: number;
   readonly enabled: boolean;
   readonly excludedDomains: readonly string[];
+  readonly domainListMode: DomainListMode;
   readonly enabledRuleGroupIds: readonly string[];
   readonly protectedTerms: readonly string[];
   readonly customReplacements: readonly CustomReplacement[];
@@ -92,6 +97,7 @@ export const defaultSettings: Settings = {
   settingsRevision: currentSettingsRevision,
   enabled: true,
   excludedDomains: [],
+  domainListMode: "exclude",
   enabledRuleGroupIds: defaultEnabledRuleGroupIds,
   protectedTerms: [],
   customReplacements: [],
@@ -163,9 +169,6 @@ function excludedDomainArray(value: unknown): string[] {
 
     seen.add(normalized);
     domains.push(normalized);
-    if (domains.length >= maximumExcludedDomains) {
-      break;
-    }
   }
 
   return domains;
@@ -240,6 +243,10 @@ function syncCategoryArray(value: unknown): SyncCategoryId[] {
   );
 }
 
+function normalizeDomainListMode(value: unknown): DomainListMode {
+  return value === "include" ? "include" : "exclude";
+}
+
 function popupSectionArray(
   value: unknown,
   fromRevision: number
@@ -253,15 +260,19 @@ function popupSectionArray(
     valid.has(entry as PopupSectionId)
   );
 
+  const migrated = new Set<PopupSectionId>(selected);
+
   if (fromRevision < 9) {
-    const migrated = new Set<PopupSectionId>(selected);
     for (const sectionId of popupRuleGroupSectionIds) {
       migrated.add(sectionId);
     }
-    return [...migrated];
   }
 
-  return selected;
+  if (fromRevision < 10) {
+    migrated.add("domain-action");
+  }
+
+  return [...migrated];
 }
 
 function storedRevision(value: unknown): number {
@@ -308,6 +319,7 @@ export function normalizeSettings(value: unknown): Settings {
         ? input.enabled
         : defaultSettings.enabled,
     excludedDomains: excludedDomainArray(input.excludedDomains),
+    domainListMode: normalizeDomainListMode(input.domainListMode),
     enabledRuleGroupIds,
     protectedTerms: protectedTermArray(input.protectedTerms),
     customReplacements: customReplacementArray(input.customReplacements),

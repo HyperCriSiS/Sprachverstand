@@ -2,7 +2,7 @@ import { getExtensionApi } from "./browser/api";
 import { DomProcessor } from "./core/dom-processor";
 import { defaultRules } from "./rules";
 import { disabledRuleIdsForGroups } from "./rules/catalog";
-import { isDomainExcluded } from "./settings/domain";
+import { shouldProcessDomain } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
 import {
   loadSettings,
@@ -15,7 +15,11 @@ function shouldRun(settings: Settings): boolean {
   return (
     settings.enabled &&
     defaultRules.length > 0 &&
-    !isDomainExcluded(location.hostname, settings.excludedDomains)
+    shouldProcessDomain(
+      location.hostname,
+      settings.excludedDomains,
+      settings.domainListMode
+    )
   );
 }
 
@@ -30,6 +34,7 @@ function reportReplacementState(
   void getExtensionApi()
     .runtime.sendMessage({
       type: "sprachverstand.replacement-state",
+      hostname: location.hostname,
       count,
       replacements
     })

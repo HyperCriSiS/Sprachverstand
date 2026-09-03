@@ -526,3 +526,64 @@ small {
     padding: 0 14px 14px;
   }
 }
+
+/* Schnellwahl für die im Popup sichtbaren Regelgruppen. */
+.popup-rule-visibility-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.popup-rule-visibility-header legend {
+  padding-bottom: 0;
+}
+
+.popup-rule-actions {
+  flex: 0 0 auto;
+}
+
+.popup-rule-actions button {
+  min-height: 32px;
+  padding: 4px 10px;
+}
+
+/* Der Arbeitsmodus der Domainliste lässt sich direkt in der Überschrift wechseln. */
+.settings-section > .domain-list-summary {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.domain-list-summary h2 {
+  flex: 0 1 auto;
+}
+
+.domain-mode-button {
+  flex: 0 1 auto;
+  min-height: 34px;
+  margin-left: auto;
+  padding: 5px 10px;
+  font: inherit;
+}
+
+.domain-list-summary::after {
+  margin-left: 0;
+}
+
+@media (max-width: 600px) {
+  .popup-rule-visibility-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .popup-rule-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .domain-mode-button {
+    width: 100%;
+    margin-left: 0;
+  }
+}

@@ -1,3 +1,5 @@
+import type { DomainListMode } from "./defaults";
+
 function extractHostname(input: string): string {
   const value = input.trim().toLowerCase();
 
@@ -22,7 +24,7 @@ export function normalizeDomainPattern(input: string): string {
     .replace(/\.$/u, "");
 }
 
-export function isDomainExcluded(
+export function isDomainListed(
   hostname: string,
   patterns: readonly string[]
 ): boolean {
@@ -37,4 +39,20 @@ export function isDomainExcluded(
         normalizedHostname.endsWith(`.${normalizedPattern}`))
     );
   });
+}
+
+export function isDomainExcluded(
+  hostname: string,
+  patterns: readonly string[]
+): boolean {
+  return isDomainListed(hostname, patterns);
+}
+
+export function shouldProcessDomain(
+  hostname: string,
+  patterns: readonly string[],
+  mode: DomainListMode
+): boolean {
+  const listed = isDomainListed(hostname, patterns);
+  return mode === "include" ? listed : !listed;
 }

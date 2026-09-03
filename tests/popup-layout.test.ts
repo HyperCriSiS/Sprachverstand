@@ -18,7 +18,7 @@ describe("Popup-Anzeige", () => {
     expect(defaultSettings.visiblePopupSectionIds).toEqual(
       defaultVisiblePopupSectionIds
     );
-    for (const id of ["count", "activation", "rule-groups", "open-options"]) {
+    for (const id of ["count", "activation", "rule-groups", "domain-action", "open-options"]) {
       expect(defaultVisiblePopupSectionIds).toContain(id);
     }
     expect(defaultVisiblePopupSectionIds).not.toContain("text-options");
@@ -49,6 +49,15 @@ describe("Popup-Anzeige", () => {
     ]);
   });
 
+  it("blendet die neue Domain-Aktion bei bestehenden Installationen standardmäßig ein", () => {
+    const settings = normalizeSettings({
+      settingsRevision: 9,
+      visiblePopupSectionIds: ["count", "activation", "rule-groups"]
+    });
+
+    expect(settings.visiblePopupSectionIds).toContain("domain-action");
+  });
+
   it("ergänzt beim Upgrade alle Regelgruppen als sichtbar", () => {
     const settings = normalizeSettings({
       settingsRevision: 8,
@@ -68,6 +77,7 @@ describe("Popup-Anzeige", () => {
       "activation",
       "rule-groups",
       "text-options",
+      "domain-action",
       "open-options"
     ]) {
       expect(popupHtml).toContain(`data-popup-section="${id}"`);
@@ -80,6 +90,16 @@ describe("Popup-Anzeige", () => {
         `data-popup-section="${popupRuleGroupSectionId(group.id)}"`
       );
     }
+  });
+
+  it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {
+    expect(popupHtml).toContain('id="add-current-domain"');
+    expect(popupHtml).toContain('data-popup-section="domain-action"');
+  });
+
+  it("bietet für die Popup-Regelgruppen die Schnellwahl Alle und Keine an", () => {
+    expect(optionsHtml).toContain('id="select-all-popup-rules"');
+    expect(optionsHtml).toContain('id="select-no-popup-rules"');
   });
 
   it("stellt die Optionen aus Wo soll korrigiert werden im Popup bereit", () => {
