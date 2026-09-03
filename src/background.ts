@@ -39,7 +39,7 @@ interface GetInspectedCountMessage {
 }
 
 interface CachedReplacementState {
-  readonly hostname?: string;
+  readonly hostname: string | undefined;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
 }
