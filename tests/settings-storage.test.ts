@@ -117,6 +117,38 @@ describe("Einstellungsspeicher", () => {
     expect(sync.values.has("sync.excluded-domains")).toBe(false);
   });
 
+  it("synchronisiert Arbeitsmodus und Domainliste gemeinsam", async () => {
+    await saveSettings(
+      settings({
+        excludedDomains: ["allowed.example"],
+        domainListMode: "include",
+        syncCategoryIds: ["excluded-domains"]
+      })
+    );
+
+    expect(sync.values.get("sync.excluded-domains")).toEqual({
+      mode: "include",
+      domains: ["allowed.example"]
+    });
+
+    await local.set({ settings: defaultSettings });
+    const loaded = await loadSettings();
+    expect(loaded.domainListMode).toBe("include");
+    expect(loaded.excludedDomains).toEqual(["allowed.example"]);
+  });
+
+  it("liest ältere synchronisierte Domain-Arrays weiterhin als Ausschlussliste", async () => {
+    await local.set({ settings: defaultSettings });
+    await sync.set({
+      "sync.selection": ["excluded-domains"],
+      "sync.excluded-domains": ["legacy.example"]
+    });
+
+    const loaded = await loadSettings();
+    expect(loaded.domainListMode).toBe("exclude");
+    expect(loaded.excludedDomains).toEqual(["legacy.example"]);
+  });
+
   it("synchronisiert die Untertiteloption zusammen mit den Textoptionen", async () => {
     await saveSettings(
       settings({
