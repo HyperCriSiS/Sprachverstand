@@ -3,6 +3,7 @@ import { badgeBackgroundColor, formatBadgeCount } from "./browser/badge";
 
 interface ReplacementCountMessage {
   readonly type: "sprachverstand.replacement-count";
+  readonly hostname?: string;
   readonly count: number;
 }
 
@@ -22,15 +23,21 @@ interface GetInspectedCountMessage {
 
 const api = getExtensionApi();
 const countsByTab = new Map<number, number>();
+const hostnamesByTab = new Map<number, string>();
 let inspectedTabId: number | undefined;
 let lastCountedTabId: number | undefined;
 
-async function notifyCountUpdate(tabId: number, count: number): Promise<void> {
+async function notifyCountUpdate(
+  tabId: number,
+  count: number,
+  hostname?: string
+): Promise<void> {
   await api.runtime
     .sendMessage({
       type: "sprachverstand.count-updated",
       tabId,
-      text: formatBadgeCount(count) || "0"
+      text: formatBadgeCount(count) || "0",
+      ...(hostname ? { hostname } : {})
     })
     .catch(() => {
       // Popup oder Einstellungsseite sind meist nicht geöffnet.
@@ -97,7 +104,14 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     const count = Math.max(0, Math.trunc(message.count));
+    const hostname =
+      typeof message.hostname === "string" && message.hostname
+        ? message.hostname
+        : undefined;
     countsByTab.set(tabId, count);
+    if (hostname) {
+      hostnamesByTab.set(tabId, hostname);
+    }
     lastCountedTabId = tabId;
 
     await Promise.all([
@@ -110,7 +124,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
         tabId
       })
     ]);
-    await notifyCountUpdate(tabId, count);
+    await notifyCountUpdate(tabId, count, hostname);
 
     return undefined;
   }
@@ -128,21 +142,35 @@ api.runtime.onMessage.addListener(async (message, sender) => {
 
     const cachedCount = countsByTab.get(tabId);
     if (cachedCount !== undefined) {
-      return { tabId, text: formatBadgeCount(cachedCount) || "0" };
+      return {
+        tabId,
+        text: formatBadgeCount(cachedCount) || "0",
+        hostname: hostnamesByTab.get(tabId)
+      };
     }
 
     const badgeText = await api.action.getBadgeText({ tabId });
-    return { tabId, text: badgeText || "0" };
+    return {
+      tabId,
+      text: badgeText || "0",
+      hostname: hostnamesByTab.get(tabId)
+    };
   }
 
   if (isGetCountMessage(message)) {
     const cachedCount = countsByTab.get(message.tabId);
     if (cachedCount !== undefined) {
-      return { text: formatBadgeCount(cachedCount) || "0" };
+      return {
+        text: formatBadgeCount(cachedCount) || "0",
+        hostname: hostnamesByTab.get(message.tabId)
+      };
     }
 
     const badgeText = await api.action.getBadgeText({ tabId: message.tabId });
-    return { text: badgeText || "0" };
+    return {
+      text: badgeText || "0",
+      hostname: hostnamesByTab.get(message.tabId)
+    };
   }
 
   return undefined;
@@ -150,6 +178,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
 
 api.tabs.onRemoved.addListener((tabId) => {
   countsByTab.delete(tabId);
+  hostnamesByTab.delete(tabId);
   if (inspectedTabId === tabId) {
     inspectedTabId = undefined;
   }

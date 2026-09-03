@@ -1,7 +1,9 @@
 import { getExtensionApi } from "./browser/api";
+import { openOptionsPageInForeground } from "./browser/options";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
+  normalizeExcludedDomain,
   popupRuleGroupSectionId,
   type PopupSectionId,
   type Settings
@@ -12,6 +14,7 @@ interface CountUpdatedMessage {
   readonly type: "sprachverstand.count-updated";
   readonly tabId: number;
   readonly text: string;
+  readonly hostname?: string;
 }
 
 function requiredElement<T extends HTMLElement>(selector: string): T {
@@ -34,6 +37,8 @@ const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
+const domainActionButton =
+  requiredElement<HTMLButtonElement>("#add-current-domain");
 const optionsButton = requiredElement<HTMLButtonElement>("#open-options");
 const popupSections = [
   ...document.querySelectorAll<HTMLElement>("[data-popup-section]")
@@ -41,6 +46,7 @@ const popupSections = [
 
 let settings: Settings;
 let activeTabId: number | undefined;
+let currentHostname = "";
 
 function isCountUpdatedMessage(message: unknown): message is CountUpdatedMessage {
   if (!message || typeof message !== "object") {
@@ -96,6 +102,18 @@ function popupRuleGroupRows(): HTMLElement[] {
   )];
 }
 
+function renderDomainAction(): void {
+  const listed =
+    currentHostname.length > 0 && settings.excludedDomains.includes(currentHostname);
+
+  domainActionButton.disabled = !currentHostname || listed;
+  domainActionButton.textContent = listed
+    ? "Website bereits in der Domainliste"
+    : settings.domainListMode === "include"
+      ? "Diese Website einschließen"
+      : "Diese Website ausschließen";
+}
+
 function render(): void {
   enabledInput.checked = settings.enabled;
   stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
@@ -121,6 +139,8 @@ function render(): void {
   for (const input of ruleGroupInputs()) {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
   }
+
+  renderDomainAction();
 }
 
 async function resolveActiveTabId(): Promise<number | undefined> {
@@ -142,10 +162,17 @@ async function renderCurrentCount(): Promise<void> {
   const response = (await api.runtime.sendMessage({
     type: "sprachverstand.get-count",
     tabId
-  })) as { readonly text?: unknown } | undefined;
+  })) as
+    | { readonly text?: unknown; readonly hostname?: unknown }
+    | undefined;
 
   countOutput.textContent =
     typeof response?.text === "string" ? response.text : "0";
+  currentHostname =
+    typeof response?.hostname === "string"
+      ? normalizeExcludedDomain(response.hostname)
+      : "";
+  renderDomainAction();
 }
 
 function refreshCountAfterChange(): void {
@@ -200,6 +227,10 @@ function handleRuntimeMessage(message: unknown): void {
     message.tabId === activeTabId
   ) {
     countOutput.textContent = message.text || "0";
+    if (message.hostname) {
+      currentHostname = normalizeExcludedDomain(message.hostname);
+      renderDomainAction();
+    }
   }
 }
 
@@ -236,6 +267,19 @@ async function start(): Promise<void> {
     });
   }
 
+  domainActionButton.addEventListener("click", () => {
+    if (!currentHostname || settings.excludedDomains.includes(currentHostname)) {
+      return;
+    }
+
+    settings = {
+      ...settings,
+      excludedDomains: [...settings.excludedDomains, currentHostname]
+    };
+    void saveSettings(settings);
+    render();
+  });
+
   optionsButton.addEventListener("click", () => {
     const open = async (): Promise<void> => {
       if (activeTabId !== undefined) {
@@ -244,7 +288,7 @@ async function start(): Promise<void> {
           tabId: activeTabId
         });
       }
-      await api.runtime.openOptionsPage();
+      await openOptionsPageInForeground(api);
     };
     void open();
   });
