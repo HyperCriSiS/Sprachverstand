@@ -290,3 +290,8 @@ button {
 .details-note {
   line-height: 1.35;
 }
+
+/* Die Domain-Aktion ist ein eigenständig ausblendbarer Popup-Bereich. */
+.domain-action-button {
+  width: 100%;
+}
