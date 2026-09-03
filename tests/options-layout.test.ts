@@ -6,7 +6,7 @@ const html = readFileSync("static/options/options.html", "utf8");
 describe("Einstellungsaufbau", () => {
   it("ordnet die Bereiche in der vorgesehenen Reihenfolge an", () => {
     const headings = [
-      ...html.matchAll(/<summary><h2>([^<]+)<\/h2><\/summary>/gu)
+      ...html.matchAll(/<summary(?:\s+class="[^"]*")?>\s*<h2(?:\s+id="[^"]*")?>([^<]+)<\/h2>/gu)
     ].map((match) => match[1]);
 
     expect(headings).toEqual([
@@ -44,6 +44,15 @@ describe("Einstellungsaufbau", () => {
       expect(buttonIndex).toBeLessThan(firstSectionStart);
     }
     expect(html).not.toContain('<div class="actions">');
+  });
+
+  it("bietet Schnellwahl und Domain-Arbeitsmodus an", () => {
+    expect(html).toContain('id="select-all-popup-rules"');
+    expect(html).toContain('id="select-no-popup-rules"');
+    expect(html).toContain('data-popup-section="domain-action"');
+    expect(html).toContain('id="domain-list-mode"');
+    expect(html).toContain('id="domain-list-title"');
+    expect(html).not.toContain("Höchstens 100 gültige Domains");
   });
 
   it("zeigt im Seitenkopf nur Logo und Titel", () => {

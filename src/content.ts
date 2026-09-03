@@ -2,7 +2,7 @@ import { getExtensionApi } from "./browser/api";
 import { DomProcessor } from "./core/dom-processor";
 import { defaultRules } from "./rules";
 import { disabledRuleIdsForGroups } from "./rules/catalog";
-import { isDomainExcluded } from "./settings/domain";
+import { shouldProcessDomain } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
 import {
   loadSettings,
@@ -15,7 +15,11 @@ function shouldRun(settings: Settings): boolean {
   return (
     settings.enabled &&
     defaultRules.length > 0 &&
-    !isDomainExcluded(location.hostname, settings.excludedDomains)
+    shouldProcessDomain(
+      location.hostname,
+      settings.excludedDomains,
+      settings.domainListMode
+    )
   );
 }
 
@@ -23,10 +27,11 @@ function reportReplacementCount(count: number): void {
   void getExtensionApi()
     .runtime.sendMessage({
       type: "sprachverstand.replacement-count",
+      hostname: location.hostname,
       count
     })
     .catch(() => {
-      // The background context can be unavailable briefly during extension reloads.
+      // Der Hintergrundkontext kann während eines Erweiterungs-Reloads kurz fehlen.
     });
 }
 

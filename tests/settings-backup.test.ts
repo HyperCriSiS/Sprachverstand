@@ -18,6 +18,7 @@ function sampleSettings(overrides: Partial<Settings> = {}): Settings {
     ...defaultSettings,
     enabled: false,
     excludedDomains: ["example.org"],
+    domainListMode: "include",
     enabledRuleGroupIds: ["plural-separators", "unmarked-singular"],
     protectedTerms: ["Nutzer:innen"],
     customReplacements: [
@@ -124,6 +125,7 @@ describe("Einstellungssicherung", () => {
       const result = mergeImportedSettings(existing, imported, mode);
       expect(result.settings.enabled).toBe(false);
       expect(result.settings.excludedDomains).toEqual(["new.example"]);
+      expect(result.settings.domainListMode).toBe("include");
       expect(result.settings.enabledRuleGroupIds).toEqual([
         "plural-separators"
       ]);
@@ -215,7 +217,7 @@ describe("Einstellungssicherung", () => {
           }
         })
       )
-    ).toThrow(/Domain-Ausschluss/u);
+    ).toThrow(/Domaineintrag/u);
 
     expect(() =>
       parseSettingsBackupDocument(

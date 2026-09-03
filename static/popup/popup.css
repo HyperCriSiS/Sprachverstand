@@ -153,3 +153,8 @@ button {
   cursor: pointer;
   touch-action: manipulation;
 }
+
+/* Die Domain-Aktion ist ein eigenständig ausblendbarer Popup-Bereich. */
+.domain-action-button {
+  width: 100%;
+}

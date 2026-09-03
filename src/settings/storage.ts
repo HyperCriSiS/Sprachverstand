@@ -34,7 +34,10 @@ function synchronizedValue(
     case "rule-groups":
       return [...settings.enabledRuleGroupIds];
     case "excluded-domains":
-      return [...settings.excludedDomains];
+      return {
+        mode: settings.domainListMode,
+        domains: [...settings.excludedDomains]
+      };
     case "text-options":
       return {
         processAccessibleAttributes: settings.processAccessibleAttributes,
@@ -62,10 +65,24 @@ function withSynchronizedValue(
       return Array.isArray(value)
         ? normalizeSettings({ ...settings, enabledRuleGroupIds: value })
         : settings;
-    case "excluded-domains":
-      return Array.isArray(value)
-        ? normalizeSettings({ ...settings, excludedDomains: value })
-        : settings;
+    case "excluded-domains": {
+      if (Array.isArray(value)) {
+        return normalizeSettings({
+          ...settings,
+          excludedDomains: value,
+          domainListMode: "exclude"
+        });
+      }
+      if (!value || typeof value !== "object") {
+        return settings;
+      }
+      const input = value as Record<string, unknown>;
+      return normalizeSettings({
+        ...settings,
+        excludedDomains: input.domains,
+        domainListMode: input.mode
+      });
+    }
     case "text-options": {
       if (!value || typeof value !== "object" || Array.isArray(value)) {
         return settings;
