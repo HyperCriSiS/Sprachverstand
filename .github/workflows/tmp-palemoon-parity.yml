@@ -1,0 +1,317 @@
+name: Temporäre Pale-Moon-Feature-Parität
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  portieren:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/palemoon-feature-parity-replacements
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Moderne gemeinsame UI- und Summary-Bausteine übernehmen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:src/core/dom-processor.ts > src/core/dom-processor.ts
+          git show origin/main:src/core/transform-text.ts > src/core/transform-text.ts
+          git show origin/main:src/core/replacement-summary.ts > src/core/replacement-summary.ts
+          git show origin/main:static/popup/popup.html > static/popup/popup.html
+          git show origin/main:static/popup/popup.css > static/popup/popup.css
+          git show origin/main:tests/popup-layout.test.ts > tests/popup-layout.test.ts
+          git show origin/main:tests/replacement-summary.test.ts > tests/replacement-summary.test.ts
+          git show origin/main:src/popup.ts > /tmp/main-popup.ts
+
+      - name: Pale-Moon-Legacy-Bridge für die Änderungsansicht erweitern
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          content_path = Path("src/palemoon/content.ts")
+          content = content_path.read_text(encoding="utf-8")
+          content = content.replace(
+              'import type { Settings } from "../settings/defaults";\n',
+              'import type { Settings } from "../settings/defaults";\nimport type { ReplacementSummaryEntry } from "../core/replacement-summary";\n'
+          )
+          content = content.replace(
+              '  getReplacementCount(): number;\n',
+              '  getReplacementCount(): number;\n  getReplacementSummary(): readonly ReplacementSummaryEntry[];\n'
+          )
+          content = content.replace(
+              '  getReplacementCount() {\n    return processor?.getReplacementCount() ?? 0;\n  }\n',
+              '  getReplacementCount() {\n    return processor?.getReplacementCount() ?? 0;\n  },\n\n  getReplacementSummary() {\n    return processor?.getReplacementSummary() ?? [];\n  }\n'
+          )
+          content_path.write_text(content, encoding="utf-8")
+
+          controller_path = Path("src/palemoon/controller.ts")
+          controller = controller_path.read_text(encoding="utf-8")
+          controller = controller.replace(
+              'import { formatBadgeCount } from "../browser/badge";\n',
+              'import { formatBadgeCount } from "../browser/badge";\nimport type { ReplacementSummaryEntry } from "../core/replacement-summary";\n'
+          )
+          marker = '''function replacementCountFromSandbox(sandbox: ContentSandbox): number {
+            try {
+              const value = evaluateInContentSandbox(
+                sandbox,
+                "this.SprachverstandPaleMoonContent ? this.SprachverstandPaleMoonContent.getReplacementCount() : 0"
+              );
+              return typeof value === "number" && Number.isFinite(value)
+                ? Math.max(0, Math.trunc(value))
+                : 0;
+            } catch {
+              return 0;
+            }
+          }
+          '''
+          addition = marker + '''
+          function isReplacementSummaryEntry(
+            value: unknown
+          ): value is ReplacementSummaryEntry {
+            if (!value || typeof value !== "object") {
+              return false;
+            }
+
+            const candidate = value as Partial<ReplacementSummaryEntry>;
+            return (
+              typeof candidate.original === "string" &&
+              typeof candidate.replacement === "string" &&
+              typeof candidate.count === "number" &&
+              Number.isFinite(candidate.count) &&
+              candidate.count > 0
+            );
+          }
+
+          function replacementSummaryFromSandbox(
+            sandbox: ContentSandbox
+          ): ReplacementSummaryEntry[] {
+            try {
+              const serialized = evaluateInContentSandbox(
+                sandbox,
+                "JSON.stringify(this.SprachverstandPaleMoonContent ? this.SprachverstandPaleMoonContent.getReplacementSummary() : [])"
+              );
+              if (typeof serialized !== "string") {
+                return [];
+              }
+
+              const parsed = JSON.parse(serialized) as unknown;
+              return Array.isArray(parsed)
+                ? parsed.filter(isReplacementSummaryEntry)
+                : [];
+            } catch {
+              return [];
+            }
+          }
+
+          function replacementSummaryForDocument(
+            documentToRead: Document
+          ): ReplacementSummaryEntry[] {
+            const sandbox = sandboxesByDocument.get(documentToRead);
+            return sandbox ? replacementSummaryFromSandbox(sandbox) : [];
+          }
+          '''
+          if marker not in controller:
+              raise SystemExit("Pale-Moon-Count-Marker fehlt")
+          controller = controller.replace(marker, addition)
+          controller = controller.replace(
+              '    count: normalizedCount,\n    replacements: []\n',
+              '    count: normalizedCount,\n    replacements: replacementSummaryForDocument(documentToReport)\n'
+          )
+          controller = controller.replace(
+              '  readonly replacements: readonly [];\n',
+              '  readonly replacements: readonly ReplacementSummaryEntry[];\n'
+          )
+          controller = controller.replace(
+              '    count,\n    replacements: []\n',
+              '    count,\n    replacements: contentDocument\n      ? replacementSummaryForDocument(contentDocument)\n      : []\n'
+          )
+          controller_path.write_text(controller, encoding="utf-8")
+
+          popup = Path("/tmp/main-popup.ts").read_text(encoding="utf-8")
+          popup = popup.replace('import { t } from "./i18n";\n', '')
+          popup = popup.replace(
+              '    title.textContent = t(group.labelKey, undefined, group.label);',
+              '    title.textContent = group.label;'
+          )
+          popup = popup.replace(
+              '''  domainActionButton.textContent = listed
+              ? t(
+                  "currentWebsiteAlreadyInDomainList",
+                  undefined,
+                  "Website bereits in der Domainliste"
+                )
+              : settings.domainListMode === "include"
+                ? t("includeCurrentWebsite", undefined, "Diese Website einschließen")
+                : t("excludeCurrentWebsite", undefined, "Diese Website ausschließen");''',
+              '''  domainActionButton.textContent = listed
+              ? "Website bereits in der Domainliste"
+              : settings.domainListMode === "include"
+                ? "Diese Website einschließen"
+                : "Diese Website ausschließen";'''
+          )
+          popup = popup.replace(
+              '''  stateOutput.textContent = settings.enabled
+              ? t("active", undefined, "Aktiv")
+              : t("paused", undefined, "Pausiert");''',
+              '  stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";'
+          )
+          popup = popup.replace(
+              'let currentHostname = "";\n',
+              'let currentHostname = "";\nlet detailsRefreshHandle: number | undefined;\n'
+          )
+          message_marker = 'function handleRuntimeMessage(message: unknown): void {\n'
+          helper = '''function startDetailsRefresh(): void {
+            if (detailsRefreshHandle !== undefined) {
+              return;
+            }
+
+            detailsRefreshHandle = window.setInterval(() => {
+              if (!detailsView.hidden) {
+                void refreshReplacementState();
+              }
+            }, 750);
+          }
+
+          function stopDetailsRefresh(): void {
+            if (detailsRefreshHandle === undefined) {
+              return;
+            }
+
+            window.clearInterval(detailsRefreshHandle);
+            detailsRefreshHandle = undefined;
+          }
+
+          '''
+          if message_marker not in popup:
+              raise SystemExit("Popup-Message-Marker fehlt")
+          popup = popup.replace(message_marker, helper + message_marker)
+          popup = popup.replace(
+              '''  window.addEventListener("unload", () => {
+              api.runtime.onMessage.removeListener(handleRuntimeMessage);
+            });''',
+              '''  startDetailsRefresh();
+            window.addEventListener("unload", () => {
+              stopDetailsRefresh();
+              api.runtime.onMessage.removeListener(handleRuntimeMessage);
+            });'''
+          )
+          popup = popup.replace(
+              '''  openReplacementsButton.addEventListener("click", () => {
+              mainView.hidden = true;
+              detailsView.hidden = false;
+            });''',
+              '''  openReplacementsButton.addEventListener("click", () => {
+              mainView.hidden = true;
+              detailsView.hidden = false;
+              void refreshReplacementState();
+            });'''
+          )
+          popup = popup.replace(
+              '''  optionsButton.addEventListener("click", () => {
+              void openOptionsPageInForeground(api);
+            });''',
+              '''  optionsButton.addEventListener("click", () => {
+              const open = async (): Promise<void> => {
+                if (activeTabId !== undefined) {
+                  await api.runtime.sendMessage({
+                    type: "sprachverstand.set-inspected-tab",
+                    tabId: activeTabId
+                  });
+                }
+                await openOptionsPageInForeground(api);
+              };
+              void open();
+            });'''
+          )
+          Path("src/popup.ts").write_text(popup, encoding="utf-8")
+
+          test_path = Path("tests/palemoon-release-regressions.test.ts")
+          test = test_path.read_text(encoding="utf-8")
+          test = test.replace(
+              'const popup = readFileSync("src/popup.ts", "utf8");\n',
+              'const popup = readFileSync("src/popup.ts", "utf8");\nconst popupHtml = readFileSync("static/popup/popup.html", "utf8");\nconst popupCss = readFileSync("static/popup/popup.css", "utf8");\nconst paleMoonContent = readFileSync("src/palemoon/content.ts", "utf8");\nconst coreDomProcessor = readFileSync("src/core/dom-processor.ts", "utf8");\nconst transformText = readFileSync("src/core/transform-text.ts", "utf8");\n'
+          )
+          old = '''  it("liefert dem Popup den aktuellen Hostnamen über den bestehenden Count-Vertrag", () => {
+              expect(popup).toContain('type: "sprachverstand.get-count"');
+              expect(popup).toContain("readonly hostname?: unknown");
+              expect(controller).toContain("hostnameForTabId(message.tabId)");
+              expect(controller).toContain("hostname: documentToReport.location?.hostname");
+            });
+          '''
+          new = '''  it("liefert dem Popup den vollständigen Ersetzungsstatus über die Legacy-Bridge", () => {
+              expect(popup).toContain('type: "sprachverstand.get-replacement-state"');
+              expect(popup).toContain("readonly replacements?: unknown");
+              expect(controller).toContain("replacementSummaryFromSandbox");
+              expect(controller).toContain("replacementSummaryForDocument");
+              expect(paleMoonContent).toContain("getReplacementSummary()");
+              expect(coreDomProcessor).toContain("getReplacementSummary(): ReplacementSummaryEntry[]");
+              expect(transformText).toContain("transformTextWithSummary");
+            });
+
+            it("bietet dieselbe detaillierte Änderungsansicht wie die moderne Linie", () => {
+              for (const id of [
+                "main-view",
+                "open-replacements",
+                "details-view",
+                "details-count",
+                "details-unique-count",
+                "replacement-list",
+                "replacement-empty",
+                "close-replacements"
+              ]) {
+                expect(popupHtml).toContain(`id="${id}"`);
+              }
+
+              expect(popup).toContain("renderReplacementDetails");
+              expect(popup).toContain("refreshReplacementState");
+              expect(popupCss).toContain(".replacement-item");
+              expect(popupCss).toContain(".details-summary");
+            });
+
+            it("hält die Änderungsansicht unter Pale Moon ohne moderne Tab-Erzeugungs-API aktuell", () => {
+              expect(popup).toContain("startDetailsRefresh");
+              expect(popup).toContain("window.setInterval");
+              expect(popup).not.toContain("api.tabs.create(");
+              expect(browserOptions).not.toContain("api.tabs.create(");
+            });
+          '''
+          if old not in test:
+              raise SystemExit("Alter Pale-Moon-Popup-Test fehlt")
+          test = test.replace(old, new)
+          test_path.write_text(test, encoding="utf-8")
+          PY
+
+      - name: Port gezielt prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run typecheck
+          npm run test -- tests/replacement-summary.test.ts tests/popup-layout.test.ts tests/palemoon-release-regressions.test.ts
+          npm run build:palemoon
+
+      - name: Produktänderungen committen und Hilfsworkflow entfernen
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-palemoon-parity.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(palemoon): detaillierte Änderungsansicht angleichen"
+          git push origin HEAD:feat/palemoon-feature-parity-replacements
