@@ -87,6 +87,16 @@ h2 {
   text-align: right;
 }
 
+.activation-domain-row {
+  position: relative;
+  min-height: 38px;
+}
+
+.switch-row {
+  min-height: 38px;
+  padding: 3px 0;
+}
+
 input[type="checkbox"] {
   flex: 0 0 auto;
   width: 22px;
@@ -154,7 +164,17 @@ button {
   touch-action: manipulation;
 }
 
-/* Die Domain-Aktion ist ein eigenständig ausblendbarer Popup-Bereich. */
+/* Die Domain-Aktion sitzt kompakt direkt vor dem Aktivierungsschalter. */
 .domain-action-button {
-  width: 100%;
+  position: absolute;
+  top: 50%;
+  right: 30px;
+  max-width: calc(100% - 150px);
+  min-height: 34px;
+  padding: 6px 10px;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: translateY(-50%);
 }
