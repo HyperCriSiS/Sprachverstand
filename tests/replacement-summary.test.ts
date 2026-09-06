@@ -16,6 +16,13 @@ const readerRule = createRegexRule({
   replace: () => "Leser"
 });
 
+const doubleUserRule = createRegexRule({
+  id: "test.summary.double-users",
+  risk: "safe",
+  pattern: /Nutzerinnen und Nutzer/gu,
+  replace: () => "Nutzer"
+});
+
 let processor: DomProcessor | undefined;
 
 afterEach(() => {
@@ -71,5 +78,35 @@ describe("Ersetzungsübersicht", () => {
         { original: "Leser:innen", replacement: "Leser", count: 1 }
       ])
     );
+  });
+
+  it("zeigt bei mehreren Regeltypen nur die tatsächlich geänderten Begriffe", async () => {
+    document.body.innerHTML =
+      "<p>Nutzerinnen und Nutzer lesen einen langen erklärenden Satz über Sprache und später Leser:innen weiter.</p>";
+
+    processor = new DomProcessor(document, {
+      rules: [doubleUserRule, readerRule],
+      profile: "conservative"
+    });
+    processor.start();
+    await Promise.resolve();
+
+    expect(processor.getReplacementCount()).toBe(2);
+    expect(processor.getReplacementSummary()).toEqual(
+      expect.arrayContaining([
+        {
+          original: "Nutzerinnen und Nutzer",
+          replacement: "Nutzer",
+          count: 1
+        },
+        { original: "Leser:innen", replacement: "Leser", count: 1 }
+      ])
+    );
+    expect(processor.getReplacementSummary()).toHaveLength(2);
+    expect(
+      processor
+        .getReplacementSummary()
+        .some((entry) => entry.original.includes("langen erklärenden Satz"))
+    ).toBe(false);
   });
 });
