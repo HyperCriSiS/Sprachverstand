@@ -46,6 +46,7 @@ main {
 
 .brand-header,
 .brand-lockup,
+.switch-row,
 .popup-option-row,
 .details-header,
 .details-summary {
@@ -146,6 +147,7 @@ h2 {
   content: "‹";
 }
 
+.switch-row,
 .popup-option-row {
   justify-content: space-between;
   gap: 12px;
@@ -153,21 +155,13 @@ h2 {
 }
 
 .activation-domain-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 22px;
-  align-items: center;
-  gap: 8px;
+  position: relative;
+  min-height: 38px;
+}
+
+.switch-row {
   min-height: 38px;
   padding: 3px 0;
-}
-
-.activation-label {
-  min-width: 0;
-  font-size: 14px;
-}
-
-.activation-checkbox {
-  grid-column: 3;
 }
 
 input[type="checkbox"] {
@@ -315,11 +309,17 @@ button {
   line-height: 1.35;
 }
 
-/* Die Domain-Aktion sitzt kompakt zwischen Aktivierung und Schalter. */
+/* Die Domain-Aktion sitzt kompakt direkt vor dem Aktivierungsschalter. */
 .domain-action-button {
-  grid-column: 2;
+  position: absolute;
+  top: 50%;
+  right: 30px;
+  max-width: calc(100% - 150px);
   min-height: 34px;
   padding: 6px 10px;
+  overflow: hidden;
   font-size: 12px;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: translateY(-50%);
 }

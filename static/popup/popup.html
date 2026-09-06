@@ -27,9 +27,11 @@
 <span class="page-summary-action"><span data-i18n="show">Anzeigen</span> <span aria-hidden="true" class="chevron-next"></span></span>
 </button>
 <div class="activation-domain-row">
-<label class="activation-label popup-section" data-i18n="extensionActive" data-popup-section="activation" for="enabled">Erweiterung aktiv</label>
+<label class="switch-row popup-section" data-popup-section="activation">
+<span data-i18n="extensionActive">Erweiterung aktiv</span>
+<input id="enabled" type="checkbox"/>
+</label>
 <button class="domain-action-button popup-section" data-popup-section="domain-action" id="add-current-domain" type="button"></button>
-<input class="activation-checkbox popup-section" data-popup-section="activation" id="enabled" type="checkbox"/>
 </div>
 <section class="rules-panel popup-section" data-popup-section="rule-groups">
 <h2 data-i18n="whatCorrect">Was soll korrigiert werden?</h2>
