@@ -23,10 +23,11 @@
         <output id="count">0</output>
       </div>
 
-      <label class="switch-row popup-section" data-popup-section="activation">
-        <span>Erweiterung aktiv</span>
-        <input id="enabled" type="checkbox">
-      </label>
+      <div class="activation-domain-row">
+        <label for="enabled" class="activation-label popup-section" data-popup-section="activation">Erweiterung aktiv</label>
+        <button id="add-current-domain" class="domain-action-button popup-section" data-popup-section="domain-action" type="button"></button>
+        <input id="enabled" class="activation-checkbox popup-section" data-popup-section="activation" type="checkbox">
+      </div>
 
       <section class="rules-panel popup-section" data-popup-section="rule-groups">
         <h2>Was soll korrigiert werden?</h2>
@@ -48,8 +49,6 @@
           <input id="process-subtitles" type="checkbox">
         </label>
       </section>
-
-      <button id="add-current-domain" class="domain-action-button popup-section" data-popup-section="domain-action" type="button"></button>
 
       <button id="open-options" class="popup-section" data-popup-section="open-options" type="button">Ausnahmen und weitere Einstellungen</button>
     </main>

@@ -34,7 +34,6 @@ main {
 }
 
 .brand-header,
-.switch-row,
 .count-row,
 .popup-option-row {
   display: flex;
@@ -75,7 +74,7 @@ h2 {
   font-size: 12px;
 }
 
-.switch-row,
+.activation-label,
 .popup-option-row {
   font-size: 14px;
 }
@@ -85,6 +84,23 @@ h2 {
   font-size: 18px;
   font-weight: 700;
   text-align: right;
+}
+
+.activation-domain-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 22px;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 3px 0;
+}
+
+.activation-label {
+  min-width: 0;
+}
+
+.activation-checkbox {
+  grid-column: 3;
 }
 
 input[type="checkbox"] {
@@ -154,7 +170,11 @@ button {
   touch-action: manipulation;
 }
 
-/* Die Domain-Aktion ist ein eigenständig ausblendbarer Popup-Bereich. */
+/* Die Domain-Aktion sitzt kompakt zwischen Aktivierung und Schalter. */
 .domain-action-button {
-  width: 100%;
+  grid-column: 2;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+  white-space: nowrap;
 }

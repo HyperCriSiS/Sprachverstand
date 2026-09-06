@@ -83,6 +83,18 @@ describe("Popup-Anzeige", () => {
     }
   });
 
+  it("ordnet Aktivierung, Domain-Aktion und Schalter in einer gemeinsamen Zeile an", () => {
+    expect(popupHtml).toContain('class="activation-domain-row"');
+    const activationIndex = popupHtml.indexOf('class="activation-label');
+    const domainIndex = popupHtml.indexOf('id="add-current-domain"');
+    const checkboxIndex = popupHtml.indexOf('id="enabled"');
+    expect(activationIndex).toBeGreaterThanOrEqual(0);
+    expect(domainIndex).toBeGreaterThan(activationIndex);
+    expect(checkboxIndex).toBeGreaterThan(domainIndex);
+    expect(popupCss).toContain("grid-template-columns: minmax(0, 1fr) auto 22px");
+    expect(popupCss).toContain(".activation-checkbox");
+  });
+
   it("stellt die aktuelle Website als separat ausblendbare Domain-Aktion bereit", () => {
     expect(popupHtml).toContain('id="add-current-domain"');
     expect(popupHtml).toContain('data-popup-section="domain-action"');
