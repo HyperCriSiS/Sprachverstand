@@ -61,7 +61,7 @@ describe("Settings-Migration veröffentlichter Versionen", () => {
     );
   });
 
-  it("bewahrt die mit v0.7.1 gespeicherte Popup-Auswahl exakt", () => {
+  it("bewahrt die mit v0.7.1 gespeicherte Popup-Auswahl und ergänzt die neue Domain-Aktion", () => {
     const settings = normalizeSettings(releaseFixture("v0.7.1"));
 
     expect(settings).toMatchObject({
@@ -79,7 +79,8 @@ describe("Settings-Migration veröffentlichter Versionen", () => {
       "activation",
       "rule-groups",
       "rule-group:plural-separators",
-      "open-options"
+      "open-options",
+      "domain-action"
     ]);
   });
 });
