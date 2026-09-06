@@ -6,6 +6,9 @@ const overlay = readFileSync(
   "utf8"
 );
 const controller = readFileSync("src/palemoon/controller.ts", "utf8");
+const browserOptions = readFileSync("src/browser/options.ts", "utf8");
+const legacyApi = readFileSync("legacy/palemoon/palemoon/legacy-api.js", "utf8");
+const popup = readFileSync("src/popup.ts", "utf8");
 const options = readFileSync("static/options/options.html", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
 
@@ -15,6 +18,26 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(overlay).toContain('badge=""');
     expect(controller).toContain('button.setAttribute("badge", text)');
     expect(controller).not.toContain('button.setAttribute("sprachverstand-count", text)');
+  });
+
+  it("öffnet die Einstellungen über die implementierte Pale-Moon-Legacy-API", () => {
+    expect(browserOptions).toContain("api.runtime.openOptionsPage()");
+    expect(browserOptions).not.toContain("api.tabs.create(");
+    expect(legacyApi).toContain("openOptionsPage: function ()");
+    expect(legacyApi).toContain("bridge.openOptions()");
+  });
+
+  it("liefert dem Popup den aktuellen Hostnamen über den bestehenden Count-Vertrag", () => {
+    expect(popup).toContain('type: "sprachverstand.get-count"');
+    expect(popup).toContain("readonly hostname?: unknown");
+    expect(controller).toContain("hostnameForTabId(message.tabId)");
+    expect(controller).toContain("hostname: documentToReport.location?.hostname");
+  });
+
+  it("wendet Ausschluss- und Einschlussmodus auch im Pale-Moon-Controller an", () => {
+    expect(controller).toContain("shouldProcessDomain(");
+    expect(controller).toContain("settings.domainListMode");
+    expect(controller).not.toContain("!isDomainExcluded(");
   });
 
   it("enthält nicht wieder den entfernten Einstellungszähler", () => {
