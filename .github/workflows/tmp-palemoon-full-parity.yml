@@ -1,0 +1,585 @@
+name: Temporärer Pale-Moon-Paritätsabgleich
+
+on:
+  push:
+    branches:
+      - feat/palemoon-feature-parity-replacements
+
+permissions:
+  contents: write
+
+jobs:
+  angleichen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/palemoon-feature-parity-replacements
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Gemeinsame Produktoberfläche und Kernfunktionen mit main synchronisieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- \
+            src/browser/api.ts \
+            src/i18n.ts \
+            src/options.ts \
+            src/popup.ts \
+            src/rules/catalog.ts \
+            src/settings/personal-rules.ts \
+            src/settings/storage.ts \
+            static/_locales \
+            static/i18n-bootstrap.js \
+            static/legal/legal.html \
+            static/options \
+            static/popup \
+            tests/i18n.test.ts \
+            tests/options-layout.test.ts \
+            tests/personal-rules.test.ts \
+            tests/popup-layout.test.ts \
+            tests/replacement-summary.test.ts \
+            tests/settings-storage.test.ts
+
+      - name: Pale-Moon-Adapter für i18n, Sync und Optionskontext ergänzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          options_path = Path("src/browser/options.ts")
+          options_path.write_text('''import type { ExtensionApi } from "./api";
+
+          type OptionsPageApi = {
+            readonly runtime: Pick<
+              ExtensionApi["runtime"],
+              "openOptionsPage" | "sendMessage"
+            >;
+            readonly tabs: Pick<ExtensionApi["tabs"], "query">;
+          };
+
+          export async function openOptionsPageInForeground(
+            api: OptionsPageApi
+          ): Promise<void> {
+            const tabs = await api.tabs.query({ active: true, currentWindow: true });
+            const tabId = tabs[0]?.id;
+
+            if (typeof tabId === "number") {
+              await api.runtime.sendMessage({
+                type: "sprachverstand.set-inspected-tab",
+                tabId
+              });
+            }
+
+            await api.runtime.openOptionsPage();
+          }
+          '''.replace("          ", ""), encoding="utf-8")
+
+          legacy_path = Path("legacy/palemoon/palemoon/legacy-api.js")
+          legacy = legacy_path.read_text(encoding="utf-8")
+
+          legacy = legacy.replace(
+              '  var LOCAL_PREFIX = "extensions.sprachverstand.storage.local.";\n',
+              '''  var LOCAL_PREFIX = "extensions.sprachverstand.storage.local.";
+          var SYNC_PAYLOAD_PREF = "extensions.sprachverstand.storage.sync.payload";
+          var SYNC_CONTROL_PREF = "services.sync.prefs.sync." + SYNC_PAYLOAD_PREF;
+          '''.replace("          ", "")
+          )
+
+          locale_marker = '  function clone(value) {\n'
+          locale_helpers = r'''  var localeMessageCache = {};
+
+  function uiLanguage() {
+    try {
+      if (
+        Services.locale &&
+        typeof Services.locale.getAppLocaleAsLangTag === "function"
+      ) {
+        return Services.locale.getAppLocaleAsLangTag() || "de";
+      }
+    } catch (_error) {}
+
+    try {
+      return Services.prefs.getCharPref("general.useragent.locale") || "de";
+    } catch (_error) {
+      return "de";
+    }
+  }
+
+  function localeCandidates(language) {
+    var normalized = String(language || "de").replace(/-/g, "_");
+    var base = normalized.split("_")[0].toLowerCase();
+    var candidates = [normalized, base, "de"];
+    var result = [];
+
+    candidates.forEach(function (candidate) {
+      if (candidate && result.indexOf(candidate) === -1) {
+        result.push(candidate);
+      }
+    });
+    return result;
+  }
+
+  function readLocaleMessages(locale) {
+    if (Object.prototype.hasOwnProperty.call(localeMessageCache, locale)) {
+      return localeMessageCache[locale];
+    }
+
+    try {
+      var request = new global.XMLHttpRequest();
+      request.open(
+        "GET",
+        "chrome://sprachverstand/content/_locales/" + locale + "/messages.json",
+        false
+      );
+      request.overrideMimeType("application/json");
+      request.send(null);
+      if ((request.status === 0 || request.status < 400) && request.responseText) {
+        var parsed = JSON.parse(request.responseText);
+        localeMessageCache[locale] = parsed;
+        return parsed;
+      }
+    } catch (_error) {}
+
+    localeMessageCache[locale] = null;
+    return null;
+  }
+
+  function selectedLocaleMessages() {
+    var candidates = localeCandidates(uiLanguage());
+    for (var index = 0; index < candidates.length; index += 1) {
+      var messages = readLocaleMessages(candidates[index]);
+      if (messages) {
+        return messages;
+      }
+    }
+    return {};
+  }
+
+  function substitutionValues(substitutions) {
+    if (substitutions === undefined) {
+      return [];
+    }
+    return Array.isArray(substitutions)
+      ? substitutions.map(String)
+      : [String(substitutions)];
+  }
+
+  function escapeRegularExpression(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function localizeMessage(messageName, substitutions) {
+    var selected = selectedLocaleMessages();
+    var fallback = readLocaleMessages("de") || {};
+    var entry = selected[messageName] || fallback[messageName];
+    if (!entry || typeof entry.message !== "string") {
+      return "";
+    }
+
+    var values = substitutionValues(substitutions);
+    var message = entry.message;
+    var placeholders = entry.placeholders || {};
+
+    Object.keys(placeholders).forEach(function (name) {
+      var content = String(placeholders[name].content || "").replace(
+        /\$(\d+)/g,
+        function (_match, number) {
+          return values[Number(number) - 1] || "";
+        }
+      );
+      message = message.replace(
+        new RegExp("\\$" + escapeRegularExpression(name) + "\\$", "gi"),
+        content
+      );
+    });
+
+    message = message.replace(/\$(\d+)/g, function (_match, number) {
+      return values[Number(number) - 1] || "";
+    });
+    return message.replace(/\$\$/g, "$");
+  }
+
+'''
+          if locale_marker not in legacy:
+              raise SystemExit("Locale-Einfügemarke in legacy-api.js fehlt")
+          legacy = legacy.replace(locale_marker, locale_helpers + locale_marker)
+
+          legacy = legacy.replace(
+              '''  function notifyStorageChanges(changes) {
+    if (!Object.keys(changes).length) {
+      return;
+    }
+    Services.obs.notifyObservers(
+      null,
+      STORAGE_TOPIC,
+      JSON.stringify({ areaName: "local", changes: changes })
+    );
+  }
+''',
+              '''  function notifyStorageChanges(changes, areaName) {
+    if (!Object.keys(changes).length) {
+      return;
+    }
+    Services.obs.notifyObservers(
+      null,
+      STORAGE_TOPIC,
+      JSON.stringify({ areaName: areaName || "local", changes: changes })
+    );
+  }
+'''
+          )
+
+          sync_helpers = r'''
+  function readSyncPayload() {
+    if (!Services.prefs.prefHasUserValue(SYNC_PAYLOAD_PREF)) {
+      return {};
+    }
+
+    try {
+      var parsed = JSON.parse(Services.prefs.getCharPref(SYNC_PAYLOAD_PREF));
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? parsed
+        : {};
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  function selectStoredValues(payload, keys) {
+    var result = {};
+    var names = selectedKeys(keys);
+
+    if (keys === undefined || keys === null) {
+      return clone(payload);
+    }
+
+    if (keys && typeof keys === "object" && !Array.isArray(keys)) {
+      Object.keys(keys).forEach(function (key) {
+        result[key] = clone(keys[key]);
+      });
+    }
+
+    names.forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(payload, key)) {
+        result[key] = clone(payload[key]);
+      }
+    });
+    return result;
+  }
+
+  function syncGet(keys) {
+    return Promise.resolve(selectStoredValues(readSyncPayload(), keys));
+  }
+
+  function writeSyncPayload(nextPayload, previousPayload) {
+    Services.prefs.setBoolPref(SYNC_CONTROL_PREF, true);
+    Services.prefs.setCharPref(SYNC_PAYLOAD_PREF, JSON.stringify(nextPayload));
+
+    var changes = {};
+    var keys = Object.keys(previousPayload).concat(Object.keys(nextPayload));
+    keys.forEach(function (key) {
+      if (Object.prototype.hasOwnProperty.call(changes, key)) {
+        return;
+      }
+      var oldValue = previousPayload[key];
+      var newValue = nextPayload[key];
+      if (JSON.stringify(oldValue) === JSON.stringify(newValue)) {
+        return;
+      }
+      changes[key] = {};
+      if (oldValue !== undefined) {
+        changes[key].oldValue = clone(oldValue);
+      }
+      if (newValue !== undefined) {
+        changes[key].newValue = clone(newValue);
+      }
+    });
+
+    notifyStorageChanges(changes, "sync");
+  }
+
+  function syncSet(items) {
+    var previous = readSyncPayload();
+    var next = clone(previous);
+    Object.keys(items).forEach(function (key) {
+      next[key] = clone(items[key]);
+    });
+    writeSyncPayload(next, previous);
+    return Promise.resolve();
+  }
+
+  function syncRemove(keys) {
+    var previous = readSyncPayload();
+    var next = clone(previous);
+    var names = typeof keys === "string" ? [keys] : keys;
+    names.forEach(function (key) {
+      delete next[key];
+    });
+    writeSyncPayload(next, previous);
+    return Promise.resolve();
+  }
+
+'''
+          observer_marker = '  function mostRecentBridge() {\n'
+          if observer_marker not in legacy:
+              raise SystemExit("Sync-Einfügemarke in legacy-api.js fehlt")
+          legacy = legacy.replace(observer_marker, sync_helpers + observer_marker)
+
+          legacy = legacy.replace(
+              '''  var syncArea = {
+    get: function () {
+      return Promise.resolve({});
+    },
+    set: function () {
+      return Promise.resolve();
+    },
+    remove: function () {
+      return Promise.resolve();
+    }
+  };
+''',
+              '''  var syncArea = {
+    get: syncGet,
+    set: syncSet,
+    remove: syncRemove
+  };
+'''
+          )
+
+          legacy = legacy.replace(
+              '  global.browser = {\n    storage: {\n',
+              '''  global.browser = {
+    i18n: {
+      getMessage: localizeMessage,
+      getUILanguage: function () {
+        return uiLanguage().replace(/_/g, "-");
+      }
+    },
+    storage: {
+'''
+          )
+
+          legacy = legacy.replace(
+              '    runtime: {\n      openOptionsPage: function () {\n',
+              '''    runtime: {
+      getURL: function (resourcePath) {
+        return (
+          "chrome://sprachverstand/content/" +
+          String(resourcePath || "").replace(/^\\/+/, "")
+        );
+      },
+      openOptionsPage: function () {
+'''
+          )
+
+          hide_sync_start = '  if (global.document && /\\/options\\/options\\.html$/.test(global.location.pathname)) {\n'
+          index = legacy.find(hide_sync_start)
+          if index != -1:
+              end = legacy.find('\n  }\n})(this);', index)
+              if end == -1:
+                  raise SystemExit("Ende des alten Sync-Ausblendblocks fehlt")
+              legacy = legacy[:index] + legacy[end + len('\n  }'):] 
+
+          legacy_path.write_text(legacy, encoding="utf-8")
+
+          build_path = Path("scripts/build.mjs")
+          build = build_path.read_text(encoding="utf-8")
+          localization_function = r'''
+async function injectLocalizationBootstrap(outputDirectory) {
+  for (const relativePath of [
+    "popup/popup.html",
+    "options/options.html",
+    "legal/legal.html"
+  ]) {
+    const filePath = path.join(outputDirectory, relativePath);
+    const html = await readFile(filePath, "utf8");
+    const markerPattern =
+      /<meta\b(?=[^>]*\bname=["']color-scheme["'])(?=[^>]*\bcontent=["']dark light["'])[^>]*>/i;
+    const marker = html.match(markerPattern)?.[0];
+    if (!marker) {
+      throw new Error(
+        `Lokalisierungs-Bootstrap konnte nicht in ${relativePath} eingefügt werden.`
+      );
+    }
+
+    await writeFile(
+      filePath,
+      html.replace(
+        markerPattern,
+        `${marker}\n    <script src="../i18n-bootstrap.js" defer></script>`
+      ),
+      "utf8"
+    );
+  }
+}
+
+'''
+          compatibility_start = 'async function injectPaleMoonCompatibilityScript(outputDirectory) {'
+          if compatibility_start not in build:
+              raise SystemExit("Pale-Moon-Kompatibilitätsfunktion fehlt")
+          build = build.replace(compatibility_start, localization_function + compatibility_start)
+
+          start = build.index(compatibility_start)
+          end = build.index('\n}\n\nasync function preparePaleMoonFiles', start) + 3
+          compatibility_replacement = r'''async function injectPaleMoonCompatibilityScript(outputDirectory) {
+  for (const relativePath of [
+    "popup/popup.html",
+    "options/options.html",
+    "legal/legal.html"
+  ]) {
+    const filePath = path.join(outputDirectory, relativePath);
+    const html = await readFile(filePath, "utf8");
+    const bootstrapPattern =
+      /<script\s+[^>]*src=["']\.\.\/i18n-bootstrap\.js["'][^>]*><\/script>/i;
+    const bootstrap = html.match(bootstrapPattern)?.[0];
+    if (!bootstrap) {
+      throw new Error(
+        `Pale-Moon-Kompatibilität konnte nicht in ${relativePath} eingefügt werden.`
+      );
+    }
+
+    await writeFile(
+      filePath,
+      html.replace(
+        bootstrapPattern,
+        `<script src="../palemoon/legacy-api.js" defer></script>\n    ${bootstrap}`
+      ),
+      "utf8"
+    );
+  }
+}
+'''
+          build = build[:start] + compatibility_replacement + build[end:]
+
+          static_copy_marker = '''  await cp(path.join(projectRoot, "static"), outputDirectory, {
+    recursive: true
+  });
+
+'''
+          if static_copy_marker not in build:
+              raise SystemExit("Static-Copy-Marker fehlt")
+          build = build.replace(
+              static_copy_marker,
+              static_copy_marker + '  await injectLocalizationBootstrap(outputDirectory);\n\n'
+          )
+          build_path.write_text(build, encoding="utf-8")
+
+          ci_path = Path(".github/workflows/ci.yml")
+          ci = ci_path.read_text(encoding="utf-8")
+          ci = ci.replace(
+              '''      - name: Node.js einrichten und npm-Cache laden
+''',
+              '''      - name: Gemeinsame sichtbare Produktfunktionen mit main abgleichen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin main
+          git diff --exit-code origin/main -- \\
+            src/core \\
+            src/rules \\
+            src/settings \\
+            src/browser/api.ts \\
+            src/i18n.ts \\
+            src/options.ts \\
+            src/popup.ts \\
+            static/_locales \\
+            static/i18n-bootstrap.js \\
+            static/legal \\
+            static/options \\
+            static/popup
+
+      - name: Node.js einrichten und npm-Cache laden
+''',
+              1
+          )
+          ci = ci.replace('          grep -q "min-width: 384px" static/popup/popup.css\n', '          grep -q "max-width: 100vw" static/popup/popup.css\n          ! grep -q "min-width: 384px" static/popup/popup.css\n          grep -q \'@media (hover: none) and (pointer: coarse)\' static/popup/popup.css\n          grep -q "width: 100vw" static/popup/popup.css\n')
+          ci = ci.replace('          ! grep -Eq "[0-9](vw|vh)" static/popup/popup.css\n', '          ! grep -Eq "[0-9]vh" static/popup/popup.css\n')
+          ci = ci.replace('          grep -q \'id="reset"\' static/options/options.html\n', '          ! grep -q \'id="reset"\' static/options/options.html\n')
+          ci = ci.replace('          grep -q \'<h1>Sprachverstand – Lizenz und Quelltext</h1>\' static/legal/legal.html\n', '          grep -q \'data-i18n="legalTitle"\' static/legal/legal.html\n          grep -q \'Sprachverstand – Lizenz und Quelltext</h1>\' static/legal/legal.html\n')
+          ci_path.write_text(ci, encoding="utf-8")
+
+          parity_test = Path("tests/palemoon-feature-parity.test.ts")
+          parity_test.write_text(r'''import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+
+const legacyApi = readFileSync("legacy/palemoon/palemoon/legacy-api.js", "utf8");
+const optionsHtml = readFileSync("static/options/options.html", "utf8");
+const popupHtml = readFileSync("static/popup/popup.html", "utf8");
+const buildScript = readFileSync("scripts/build.mjs", "utf8");
+
+describe("Pale-Moon-Feature-Parität", () => {
+  it("behält die moderne Einstellungsoberfläche ohne invasiven Reset", () => {
+    expect(optionsHtml).toContain('id="save-settings"');
+    expect(optionsHtml).not.toContain('id="reset"');
+    expect(optionsHtml).not.toMatch(/<details[^>]*\sopen(?:[\s=>]|$)/u);
+    expect(optionsHtml).toContain('id="select-all-popup-rules"');
+    expect(optionsHtml).toContain('id="domain-list-mode"');
+  });
+
+  it("stellt die moderne detaillierte Änderungsansicht bereit", () => {
+    expect(popupHtml).toContain('id="details-view"');
+    expect(popupHtml).toContain('id="replacement-list"');
+    expect(popupHtml).toContain('id="details-unique-count"');
+  });
+
+  it("stellt die modernen UI-Sprachen über eine Legacy-i18n-Bridge bereit", () => {
+    const locales = readdirSync("static/_locales", { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+    expect(locales.length).toBeGreaterThanOrEqual(50);
+    expect(locales).toContain("de");
+    expect(locales).toContain("en");
+    expect(legacyApi).toContain("i18n:");
+    expect(legacyApi).toContain("getMessage: localizeMessage");
+    expect(legacyApi).toContain("getUILanguage");
+    expect(buildScript).toContain("injectLocalizationBootstrap");
+  });
+
+  it("bildet storage.sync über Pale-Moon-Sync-Präferenzen ab", () => {
+    expect(legacyApi).toContain("SYNC_PAYLOAD_PREF");
+    expect(legacyApi).toContain("services.sync.prefs.sync.");
+    expect(legacyApi).toContain("get: syncGet");
+    expect(legacyApi).toContain("set: syncSet");
+    expect(legacyApi).toContain("remove: syncRemove");
+    expect(legacyApi).not.toContain("syncSection.hidden = true");
+  });
+});
+''', encoding="utf-8")
+          PY
+
+      - name: Vollständigen Paritätsstand prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --prefer-offline --no-audit --no-fund
+          npm run typecheck
+          npm run test
+          npm run build:palemoon
+          test -s dist/palemoon/palemoon/legacy-api.js
+          grep -q '../palemoon/legacy-api.js' dist/palemoon/popup/popup.html
+          grep -q '../i18n-bootstrap.js' dist/palemoon/popup/popup.html
+          grep -q '../palemoon/legacy-api.js' dist/palemoon/options/options.html
+          grep -q '../i18n-bootstrap.js' dist/palemoon/options/options.html
+          test -s dist/palemoon/_locales/de/messages.json
+          test -s dist/palemoon/_locales/en/messages.json
+
+      - name: Produktänderungen committen und Hilfsworkflow entfernen
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-palemoon-full-parity.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(palemoon): sichtbare Feature-Parität mit main absichern"
+          git push origin HEAD:feat/palemoon-feature-parity-replacements
