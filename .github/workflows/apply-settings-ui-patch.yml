@@ -1,0 +1,174 @@
+name: Settings-UI-Patch anwenden
+
+on:
+  push:
+    branches:
+      - ui/remove-settings-reset
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Reset entfernen und Speichern vollbreit anordnen
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          html_path = Path("static/options/options.html")
+          html = html_path.read_text()
+          old = '''<div aria-label="Einstellungen" class="compact-actions" data-i18n-aria-label="settingsAria">
+          <button class="primary" data-i18n="save" form="settings-form" id="save-settings" type="submit">Speichern</button>
+          <button data-i18n="reset" id="reset" type="button">Zurücksetzen</button>
+          </div>
+          <div aria-label="Einstellungsbereiche" class="compact-actions" data-i18n-aria-label="settingsSectionsAria">'''
+          new = '''<button class="primary settings-save-button" data-i18n="save" form="settings-form" id="save-settings" type="submit">Speichern</button>
+          <div aria-label="Einstellungsbereiche" class="compact-actions settings-section-actions" data-i18n-aria-label="settingsSectionsAria">'''
+          if old not in html:
+              raise SystemExit("Erwarteter Reset-/Speichern-Block fehlt.")
+          html_path.write_text(html.replace(old, new))
+
+          ts_path = Path("src/options.ts")
+          ts = ts_path.read_text()
+          declaration = 'const resetButton = requiredElement<HTMLButtonElement>("#reset");\n'
+          if declaration not in ts:
+              raise SystemExit("Reset-Elementdeklaration fehlt.")
+          ts = ts.replace(declaration, "")
+          handler = '''  resetButton.addEventListener("click", () => {
+            render(defaultSettings);
+            importSummary.replaceChildren();
+            scheduleInteractiveUpdate();
+            void saveSettings(defaultSettings).then(() => {
+              showStatus(
+                t(
+                  "resetDone",
+                  undefined,
+                  "Auf sichere Standardeinstellungen zurückgesetzt."
+                )
+              );
+              refreshCountAfterChange();
+            });
+          });
+'''
+          if handler not in ts:
+              raise SystemExit("Reset-Handler fehlt.")
+          ts_path.write_text(ts.replace(handler, ""))
+
+          css_path = Path("static/options/options.css")
+          css = css_path.read_text()
+          old_toolbar = '''.settings-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 22px;
+            padding: 10px 12px;
+            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+            border-radius: 10px;
+            background: color-mix(in srgb, currentColor 4%, transparent);
+          }
+
+          .settings-toolbar > span {
+            font-weight: 700;
+          }
+'''
+          new_toolbar = '''.settings-toolbar {
+            display: grid;
+            gap: 10px;
+            margin-top: 22px;
+            padding: 10px 12px;
+            border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+            border-radius: 10px;
+            background: color-mix(in srgb, currentColor 4%, transparent);
+          }
+
+          .settings-save-button {
+            width: 100%;
+          }
+
+          .settings-section-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+'''
+          if old_toolbar not in css:
+              raise SystemExit("Erwarteter Toolbar-CSS-Block fehlt.")
+          css = css.replace(old_toolbar, new_toolbar)
+          old_mobile = '''  .settings-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .settings-toolbar .compact-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+'''
+          new_mobile = '''  .settings-toolbar {
+            align-items: stretch;
+          }
+'''
+          if old_mobile not in css:
+              raise SystemExit("Erwarteter mobiler Toolbar-CSS-Block fehlt.")
+          css_path.write_text(css.replace(old_mobile, new_mobile))
+
+          test_path = Path("tests/options-layout.test.ts")
+          test = test_path.read_text()
+          old_test = '''  it("ordnet Speichern und Zurücksetzen bündig vor den Bereichsschaltern an", () => {
+            const toolbarStart = html.indexOf('class="settings-toolbar"');
+            const firstSectionStart = html.indexOf('<details class="settings-section"');
+            const saveIndex = html.indexOf('id="save-settings"');
+            const resetIndex = html.indexOf('id="reset"');
+            const expandIndex = html.indexOf('id="expand-all-sections"');
+            const collapseIndex = html.indexOf('id="collapse-all-sections"');
+
+            expect(toolbarStart).toBeGreaterThanOrEqual(0);
+            expect(firstSectionStart).toBeGreaterThan(toolbarStart);
+            for (const buttonIndex of [saveIndex, resetIndex, expandIndex, collapseIndex]) {
+              expect(buttonIndex).toBeGreaterThan(toolbarStart);
+              expect(buttonIndex).toBeLessThan(firstSectionStart);
+            }
+            expect(html).not.toContain('<div class="actions">');
+          });
+'''
+          new_test = '''  it("zeigt Speichern als alleinige vollbreite Hauptaktion vor den Bereichsschaltern", () => {
+            const toolbarStart = html.indexOf('class="settings-toolbar"');
+            const firstSectionStart = html.indexOf('<details class="settings-section"');
+            const saveIndex = html.indexOf('id="save-settings"');
+            const expandIndex = html.indexOf('id="expand-all-sections"');
+            const collapseIndex = html.indexOf('id="collapse-all-sections"');
+
+            expect(toolbarStart).toBeGreaterThanOrEqual(0);
+            expect(firstSectionStart).toBeGreaterThan(toolbarStart);
+            for (const buttonIndex of [saveIndex, expandIndex, collapseIndex]) {
+              expect(buttonIndex).toBeGreaterThan(toolbarStart);
+              expect(buttonIndex).toBeLessThan(firstSectionStart);
+            }
+            expect(html).not.toContain('id="reset"');
+            expect(css).toMatch(/\\.settings-save-button\\s*\\{[^}]*width:\\s*100%;/u);
+            expect(html).not.toContain('<div class="actions">');
+          });
+'''
+          if old_test not in test:
+              raise SystemExit("Erwarteter Toolbar-Test fehlt.")
+          test_path.write_text(test.replace(old_test, new_test))
+          PY
+
+      - name: Einmaligen Patch-Workflow entfernen
+        run: git rm .github/workflows/apply-settings-ui-patch.yml
+
+      - name: Änderung committen
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static/options/options.html static/options/options.css src/options.ts tests/options-layout.test.ts
+          git commit -m "ui: invasiven Einstellungsreset entfernen"
+          git push
