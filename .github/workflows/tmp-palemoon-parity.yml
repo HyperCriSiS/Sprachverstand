@@ -1,0 +1,41 @@
+name: Temporärer AMO-Sicherheitsdiff
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          ref: fix/amo-codeql-hmac
+          fetch-depth: 0
+      - name: AMO-Datei auf aktuellen main zurücksetzen und nur CodeQL-Markierung ergänzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:scripts/amo-api-v5.mjs > scripts/amo-api-v5.mjs
+          python <<'PY'
+          from pathlib import Path
+          p = Path("scripts/amo-api-v5.mjs")
+          s = p.read_text()
+          needle = '  const signature = createHmac("sha256", secret)'
+          replacement = '''  // AMO verlangt für seine JWT-Authentifizierung ausdrücklich HS256.
+          // Das AMO_API_SECRET ist ein zufälliger API-Schlüssel und kein Benutzerpasswort;
+          // ein langsamer Passwort-Hash wie bcrypt/PBKDF2 würde das JWT-Protokoll brechen.
+          // lgtm[js/insufficient-password-hash]
+          const signature = createHmac("sha256", secret)'''
+          assert needle in s
+          p.write_text(s.replace(needle, replacement, 1))
+          PY
+          rm .github/workflows/tmp-palemoon-parity.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "security: AMO-HS256-CodeQL-False-Positive minimal markieren"
+          git push origin HEAD:fix/amo-codeql-hmac
