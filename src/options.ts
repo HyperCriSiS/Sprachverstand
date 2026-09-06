@@ -97,7 +97,6 @@ const domainListDescription =
 const domainListModeButton =
   requiredElement<HTMLButtonElement>("#domain-list-mode");
 const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
-const resetButton = requiredElement<HTMLButtonElement>("#reset");
 const expandAllSectionsButton =
   requiredElement<HTMLButtonElement>("#expand-all-sections");
 const collapseAllSectionsButton =
@@ -861,21 +860,6 @@ async function start(): Promise<void> {
       });
   });
 
-  resetButton.addEventListener("click", () => {
-    render(defaultSettings);
-    importSummary.replaceChildren();
-    scheduleInteractiveUpdate();
-    void saveSettings(defaultSettings).then(() => {
-      showStatus(
-        t(
-          "resetDone",
-          undefined,
-          "Auf sichere Standardeinstellungen zurückgesetzt."
-        )
-      );
-      refreshCountAfterChange();
-    });
-  });
 }
 
 void start();
