@@ -18,7 +18,13 @@ describe("Popup-Anzeige", () => {
     expect(defaultSettings.visiblePopupSectionIds).toEqual(
       defaultVisiblePopupSectionIds
     );
-    for (const id of ["count", "activation", "rule-groups", "domain-action", "open-options"]) {
+    for (const id of [
+      "count",
+      "activation",
+      "rule-groups",
+      "domain-action",
+      "open-options"
+    ]) {
       expect(defaultVisiblePopupSectionIds).toContain(id);
     }
     expect(defaultVisiblePopupSectionIds).not.toContain("text-options");
@@ -47,6 +53,15 @@ describe("Popup-Anzeige", () => {
       "text-options",
       "rule-group:plural-separators"
     ]);
+  });
+
+  it("blendet die neue Domain-Aktion bei bestehenden Installationen standardmäßig ein", () => {
+    const settings = normalizeSettings({
+      settingsRevision: 9,
+      visiblePopupSectionIds: ["count", "activation", "rule-groups"]
+    });
+
+    expect(settings.visiblePopupSectionIds).toContain("domain-action");
   });
 
   it("ergänzt beim Upgrade alle Regelgruppen als sichtbar", () => {
@@ -96,13 +111,12 @@ describe("Popup-Anzeige", () => {
     expect(domainBlock).toContain("right: 30px");
   });
 
-  it("stellt die aktuelle Website als separat ausblendbare Domain-Aktion bereit", () => {
+  it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {
     expect(popupHtml).toContain('id="add-current-domain"');
     expect(popupHtml).toContain('data-popup-section="domain-action"');
-    expect(optionsHtml).toContain('data-popup-section="domain-action"');
   });
 
-  it("bietet Alle und Keine für die im Popup sichtbaren Regelgruppen", () => {
+  it("bietet für die Popup-Regelgruppen die Schnellwahl Alle und Keine an", () => {
     expect(optionsHtml).toContain('id="select-all-popup-rules"');
     expect(optionsHtml).toContain('id="select-no-popup-rules"');
   });
@@ -111,6 +125,21 @@ describe("Popup-Anzeige", () => {
     expect(popupHtml).toContain('id="process-accessible-attributes"');
     expect(popupHtml).toContain('id="process-quoted-text"');
     expect(popupHtml).toContain('id="process-subtitles"');
+  });
+
+  it("nutzt auf Touch-Geräten die volle Viewport-Breite ohne Überlauf", () => {
+    const bodyBlock =
+      popupCss.match(/body\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
+    const touchBlock =
+      popupCss.match(
+        /@media \(hover: none\) and \(pointer: coarse\)\s*\{[\s\S]*?body\s*\{([\s\S]*?)\}/u
+      )?.[1] ?? "";
+
+    expect(bodyBlock).toContain("width: 384px");
+    expect(bodyBlock).toContain("max-width: 100vw");
+    expect(bodyBlock).not.toContain("min-width: 384px");
+    expect(touchBlock).toContain("width: 100vw");
+    expect(popupCss).not.toMatch(/html,\s*body\s*\{[\s\S]*?width:\s*384px/u);
   });
 
   it("verwendet nur den äußeren Popup-Scrollbereich", () => {

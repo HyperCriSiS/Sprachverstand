@@ -9,6 +9,11 @@ const controller = readFileSync("src/palemoon/controller.ts", "utf8");
 const browserOptions = readFileSync("src/browser/options.ts", "utf8");
 const legacyApi = readFileSync("legacy/palemoon/palemoon/legacy-api.js", "utf8");
 const popup = readFileSync("src/popup.ts", "utf8");
+const popupHtml = readFileSync("static/popup/popup.html", "utf8");
+const popupCss = readFileSync("static/popup/popup.css", "utf8");
+const paleMoonContent = readFileSync("src/palemoon/content.ts", "utf8");
+const coreDomProcessor = readFileSync("src/core/dom-processor.ts", "utf8");
+const transformText = readFileSync("src/core/transform-text.ts", "utf8");
 const options = readFileSync("static/options/options.html", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
 
@@ -27,11 +32,41 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(legacyApi).toContain("bridge.openOptions()");
   });
 
-  it("liefert dem Popup den aktuellen Hostnamen über den bestehenden Count-Vertrag", () => {
-    expect(popup).toContain('type: "sprachverstand.get-count"');
-    expect(popup).toContain("readonly hostname?: unknown");
-    expect(controller).toContain("hostnameForTabId(message.tabId)");
-    expect(controller).toContain("hostname: documentToReport.location?.hostname");
+  it("liefert dem Popup den vollständigen Ersetzungsstatus über die Legacy-Bridge", () => {
+    expect(popup).toContain('type: "sprachverstand.get-replacement-state"');
+    expect(popup).toContain("readonly replacements?: unknown");
+    expect(controller).toContain("replacementSummaryFromSandbox");
+    expect(controller).toContain("replacementSummaryForDocument");
+    expect(paleMoonContent).toContain("getReplacementSummary()");
+    expect(coreDomProcessor).toContain("getReplacementSummary(): ReplacementSummaryEntry[]");
+    expect(transformText).toContain("transformTextWithSummary");
+  });
+
+  it("bietet dieselbe detaillierte Änderungsansicht wie die moderne Linie", () => {
+    for (const id of [
+      "main-view",
+      "open-replacements",
+      "details-view",
+      "details-count",
+      "details-unique-count",
+      "replacement-list",
+      "replacement-empty",
+      "close-replacements"
+    ]) {
+      expect(popupHtml).toContain(`id="${id}"`);
+    }
+
+    expect(popup).toContain("renderReplacementDetails");
+    expect(popup).toContain("refreshReplacementState");
+    expect(popupCss).toContain(".replacement-item");
+    expect(popupCss).toContain(".details-summary");
+  });
+
+  it("hält die Änderungsansicht unter Pale Moon ohne moderne Tab-Erzeugungs-API aktuell", () => {
+    expect(popup).toContain("startDetailsRefresh");
+    expect(popup).toContain("window.setInterval");
+    expect(popup).not.toContain("api.tabs.create(");
+    expect(browserOptions).not.toContain("api.tabs.create(");
   });
 
   it("wendet Ausschluss- und Einschlussmodus auch im Pale-Moon-Controller an", () => {

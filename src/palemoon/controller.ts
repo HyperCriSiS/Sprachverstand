@@ -1,4 +1,5 @@
 import { formatBadgeCount } from "../browser/badge";
+import type { ReplacementSummaryEntry } from "../core/replacement-summary";
 import { defaultRules } from "../rules";
 import { shouldProcessDomain } from "../settings/domain";
 import { normalizeSettings, type Settings } from "../settings/defaults";
@@ -231,7 +232,7 @@ function reportCount(documentToReport: Document, count: number): void {
     text,
     hostname: documentToReport.location?.hostname ?? "",
     count: normalizedCount,
-    replacements: []
+    replacements: replacementSummaryForDocument(documentToReport)
   });
 }
 
@@ -263,6 +264,51 @@ function replacementCountFromSandbox(sandbox: ContentSandbox): number {
   } catch {
     return 0;
   }
+}
+
+function isReplacementSummaryEntry(
+  value: unknown
+): value is ReplacementSummaryEntry {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<ReplacementSummaryEntry>;
+  return (
+    typeof candidate.original === "string" &&
+    typeof candidate.replacement === "string" &&
+    typeof candidate.count === "number" &&
+    Number.isFinite(candidate.count) &&
+    candidate.count > 0
+  );
+}
+
+function replacementSummaryFromSandbox(
+  sandbox: ContentSandbox
+): ReplacementSummaryEntry[] {
+  try {
+    const serialized = evaluateInContentSandbox(
+      sandbox,
+      "JSON.stringify(this.SprachverstandPaleMoonContent ? this.SprachverstandPaleMoonContent.getReplacementSummary() : [])"
+    );
+    if (typeof serialized !== "string") {
+      return [];
+    }
+
+    const parsed = JSON.parse(serialized) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter(isReplacementSummaryEntry)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function replacementSummaryForDocument(
+  documentToRead: Document
+): ReplacementSummaryEntry[] {
+  const sandbox = sandboxesByDocument.get(documentToRead);
+  return sandbox ? replacementSummaryFromSandbox(sandbox) : [];
 }
 
 function refreshDocumentCount(documentToRefresh: Document): number {
@@ -499,7 +545,7 @@ function replacementState(tabId: number): {
   readonly text: string;
   readonly hostname?: string;
   readonly count: number;
-  readonly replacements: readonly [];
+  readonly replacements: readonly ReplacementSummaryEntry[];
 } {
   const browser = browsersByTabId.get(tabId);
   const contentDocument = browser?.contentDocument;
@@ -512,7 +558,9 @@ function replacementState(tabId: number): {
     text: formatBadgeCount(count) || "0",
     ...(hostname ? { hostname } : {}),
     count,
-    replacements: []
+    replacements: contentDocument
+      ? replacementSummaryForDocument(contentDocument)
+      : []
   };
 }
 
