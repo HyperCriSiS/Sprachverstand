@@ -41,10 +41,10 @@ function createJwt() {
     JSON.stringify(payload)
   )}`;
   // AMO verlangt für seine JWT-Authentifizierung ausdrücklich HS256.
-  // Das AMO_API_SECRET ist ein zufälliger API-Schlüssel und kein Benutzerpasswort;
-  // ein langsamer Passwort-Hash wie bcrypt/PBKDF2 würde das JWT-Protokoll brechen.
-  // lgtm[js/insufficient-password-hash]
-  const signature = createHmac("sha256", secret)
+// Das AMO_API_SECRET ist ein zufälliger API-Schlüssel und kein Benutzerpasswort;
+// ein langsamer Passwort-Hash wie bcrypt/PBKDF2 würde das JWT-Protokoll brechen.
+// lgtm[js/insufficient-password-hash]
+const signature = createHmac("sha256", secret)
     .update(unsigned)
     .digest("base64url");
   return `${unsigned}.${signature}`;
@@ -222,88 +222,143 @@ async function createListedVersion({ uploadUuid, sourceFilename }) {
   const form = new FormData();
   form.append("upload", uploadUuid);
   form.append("source", new Blob([source]), path.basename(sourcePath));
+  form.append("license", "AGPL-3.0-only");
 
   return parseResponse(
     await amoFetch(
       `${apiBase}/addons/addon/${encodeURIComponent(addonId)}/versions/`,
-      {
-        method: "POST",
-        body: form
-      }
+      { method: "POST", body: form }
     )
   );
 }
 
-async function updateReleaseNotes(version, notesFile) {
+async function releaseNotesPayload(version, filename) {
+  if (filename) {
+    const document = JSON.parse(await readFile(path.resolve(filename), "utf8"));
+    if (
+      document?.version !== version ||
+      typeof document?.release_notes !== "object"
+    ) {
+      fail(`AMO-Release-Notes-Datei passt nicht zu Version ${version}.`);
+    }
+    const entries = Object.entries(document.release_notes);
+    if (
+      entries.length !== 29 ||
+      entries.some(
+        ([, value]) => typeof value !== "string" || !value.trim()
+      )
+    ) {
+      fail(
+        "AMO-Release-Notes-Datei muss exakt 29 nichtleere Übersetzungen enthalten."
+      );
+    }
+    return document.release_notes;
+  }
+
+  const releaseNotes = await loadStoreReleaseNotes(process.cwd(), version);
+  return createAmoReleaseNotes(releaseNotes);
+}
+
+async function setReleaseNotes(version, filename) {
   const addonId = requiredEnvironment("AMO_ADDON_ID");
-  const notes = JSON.parse(await readFile(path.resolve(notesFile), "utf8"));
+  const payload = {
+    release_notes: await releaseNotesPayload(version, filename)
+  };
 
   return parseResponse(
     await amoFetch(
-      `${apiBase}/addons/addon/${encodeURIComponent(addonId)}/versions/${encodeURIComponent(version)}/`,
+      `${apiBase}/addons/addon/${encodeURIComponent(
+        addonId
+      )}/versions/${encodeURIComponent(`v${version}`)}/`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ release_notes: notes })
+        body: JSON.stringify(payload)
       }
     )
   );
 }
 
-async function main() {
-  let result;
-
-  switch (command) {
-    case "profile":
-      result = await profile();
-      break;
-    case "listing-status":
-      result = await listingStatus();
-      break;
-    case "listing-update":
-      result = await updateListing(args[0]);
-      break;
-    case "upload":
-      result = await uploadPackage(args[0], args[1]);
-      break;
-    case "validate": {
-      const upload = await uploadPackage(args[0], args[1]);
-      result = await waitForValidation(upload);
-      break;
-    }
-    case "publish": {
-      const [xpi, sourceZip, channel = "listed"] = args;
-      const upload = await uploadPackage(xpi, channel);
-      const validation = await waitForValidation(upload);
-      const version = await createListedVersion({
-        uploadUuid: validation.uuid,
-        sourceFilename: sourceZip
-      });
-      result = { upload: validation, version };
-      break;
-    }
-    case "notes": {
-      const [version, releaseNotesFile] = args;
-      if (!version || !releaseNotesFile) {
-        fail("Version oder Pfad zu den AMO-Release-Notes fehlt.");
-      }
-      const releaseNotes = await loadStoreReleaseNotes(releaseNotesFile);
-      result = await updateReleaseNotes(
-        version,
-        await createAmoReleaseNotes(releaseNotes, path.dirname(releaseNotesFile))
-      );
-      break;
-    }
-    default:
-      fail(
-        "Befehl fehlt. Erlaubt: profile, listing-status, listing-update, upload, validate, publish, notes"
-      );
+async function submit(xpiFilename, sourceFilename, version, releaseNotesFilename) {
+  if (
+    !xpiFilename ||
+    !sourceFilename ||
+    !/^\d+\.\d+\.\d+$/u.test(version ?? "")
+  ) {
+    fail(
+      "Verwendung: submit <firefox.xpi> <source.zip> <x.y.z> [amo-release-notes.json]"
+    );
   }
 
-  console.log(JSON.stringify(result, null, 2));
+  const upload = await uploadPackage(xpiFilename, "listed");
+  const validated = await waitForValidation(upload);
+  if (validated.version !== version) {
+    fail(
+      `AMO erkannte Version ${validated.version}, erwartet wurde ${version}.`
+    );
+  }
+
+  await createListedVersion({
+    uploadUuid: validated.uuid,
+    sourceFilename
+  });
+  await setReleaseNotes(version, releaseNotesFilename);
+
+  return {
+    addon: requiredEnvironment("AMO_ADDON_ID"),
+    version,
+    channel: "listed",
+    validation: "valid",
+    releaseNotesLocales: 29,
+    submitted: true
+  };
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+function printHelp() {
+  console.log(`AMO API v5\n\nBefehle:\n  profile\n  listing-status\n  listing-update [amo-metadata.json]\n  notes <x.y.z> [amo-release-notes.json]\n  submit <firefox.xpi> <source.zip> <x.y.z> [amo-release-notes.json]\n\nUmgebung:\n  AMO_API_KEY             AMO API issuer/key (für schreibende Befehle)\n  AMO_API_SECRET          AMO API secret (für schreibende Befehle)\n  AMO_ADDON_ID            GUID, Slug oder numerische Add-on-ID\n  AMO_LISTING_APPROVAL    Für listing-update exakt AMO-LISTING-UPDATE:<AMO_ADDON_ID>\n\nDas JWT wird pro Request kurzlebig im Prozess erzeugt und nicht gespeichert. Listing-Updates werden nie ohne zusätzliche explizite Freigabe ausgeführt.`);
+}
+
+if (!command || command === "help" || command === "--help") {
+  printHelp();
+  process.exit(0);
+}
+
+let result;
+switch (command) {
+  case "profile":
+    result = await profile();
+    break;
+  case "listing-status":
+    result = await listingStatus();
+    break;
+  case "listing-update":
+    result = await updateListing(args[0]);
+    break;
+  case "notes":
+    if (!/^\d+\.\d+\.\d+$/u.test(args[0] ?? "")) {
+      fail("Verwendung: notes <x.y.z> [amo-release-notes.json]");
+    }
+    result = await setReleaseNotes(args[0], args[1]);
+    break;
+  case "submit":
+    result = await submit(args[0], args[1], args[2], args[3]);
+    break;
+  default:
+    fail(`Unbekannter Befehl: ${command}`);
+}
+
+if (command === "profile") {
+  console.log(
+    JSON.stringify(
+      {
+        id: result?.id,
+        username: result?.username,
+        display_name: result?.display_name
+      },
+      null,
+      2
+    )
+  );
+} else {
+  console.log(JSON.stringify(result, null, 2));
+}
