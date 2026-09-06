@@ -51,7 +51,7 @@ describe("Popup-Anzeige", () => {
     expect(settings.visiblePopupSectionIds).toEqual([
       "count",
       "text-options",
- "rule-group:plural-separators"
+      "rule-group:plural-separators"
     ]);
   });
 
@@ -96,6 +96,18 @@ describe("Popup-Anzeige", () => {
         `data-popup-section="${popupRuleGroupSectionId(group.id)}"`
       );
     }
+  });
+
+  it("ordnet Aktivierung, Domain-Aktion und Schalter in einer gemeinsamen Zeile an", () => {
+    expect(popupHtml).toContain('class="activation-domain-row"');
+    const activationIndex = popupHtml.indexOf('class="activation-label');
+    const domainIndex = popupHtml.indexOf('id="add-current-domain"');
+    const checkboxIndex = popupHtml.indexOf('id="enabled"');
+    expect(activationIndex).toBeGreaterThanOrEqual(0);
+    expect(domainIndex).toBeGreaterThan(activationIndex);
+    expect(checkboxIndex).toBeGreaterThan(domainIndex);
+    expect(popupCss).toContain("grid-template-columns: minmax(0, 1fr) auto 22px");
+    expect(popupCss).toContain(".activation-checkbox");
   });
 
   it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {

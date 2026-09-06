@@ -26,10 +26,11 @@
 </span>
 <span class="page-summary-action"><span data-i18n="show">Anzeigen</span> <span aria-hidden="true" class="chevron-next"></span></span>
 </button>
-<label class="switch-row popup-section" data-popup-section="activation">
-<span data-i18n="extensionActive">Erweiterung aktiv</span>
-<input id="enabled" type="checkbox"/>
-</label>
+<div class="activation-domain-row">
+<label class="activation-label popup-section" data-i18n="extensionActive" data-popup-section="activation" for="enabled">Erweiterung aktiv</label>
+<button class="domain-action-button popup-section" data-popup-section="domain-action" id="add-current-domain" type="button"></button>
+<input class="activation-checkbox popup-section" data-popup-section="activation" id="enabled" type="checkbox"/>
+</div>
 <section class="rules-panel popup-section" data-popup-section="rule-groups">
 <h2 data-i18n="whatCorrect">Was soll korrigiert werden?</h2>
 <div class="popup-rules" id="rule-groups"></div>
@@ -49,7 +50,6 @@
 <input id="process-subtitles" type="checkbox"/>
 </label>
 </section>
-<button class="domain-action-button popup-section" data-popup-section="domain-action" id="add-current-domain" type="button"></button>
 <button class="popup-section" data-i18n="exceptionsMoreSettings" data-popup-section="open-options" id="open-options" type="button">Ausnahmen und weitere Einstellungen</button>
 </section>
 <section aria-labelledby="details-title" class="popup-view" hidden="" id="details-view">
