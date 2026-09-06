@@ -1,6 +1,6 @@
 import { formatBadgeCount } from "../browser/badge";
 import { defaultRules } from "../rules";
-import { isDomainExcluded } from "../settings/domain";
+import { shouldProcessDomain } from "../settings/domain";
 import { normalizeSettings, type Settings } from "../settings/defaults";
 
 declare const Components: {
@@ -70,6 +70,11 @@ interface GetCountMessage {
 
 interface SetInspectedTabMessage {
   readonly type: "sprachverstand.set-inspected-tab";
+  readonly tabId: number;
+}
+
+interface GetReplacementStateMessage {
+  readonly type: "sprachverstand.get-replacement-state";
   readonly tabId: number;
 }
 
@@ -147,9 +152,10 @@ function shouldRun(documentToCheck: Document, settings: Settings): boolean {
     settings.enabled &&
     defaultRules.length > 0 &&
     isEligibleDocument(documentToCheck) &&
-    !isDomainExcluded(
+    shouldProcessDomain(
       documentToCheck.location?.hostname ?? "",
-      settings.excludedDomains
+      settings.excludedDomains,
+      settings.domainListMode
     )
   );
 }
@@ -212,10 +218,19 @@ function reportCount(documentToReport: Document, count: number): void {
   const normalizedCount = Math.max(0, Math.trunc(count));
   countsByTabId.set(tabId, normalizedCount);
   updateToolbarTooltip();
+  const text = formatBadgeCount(normalizedCount) || "0";
   notifyRuntimeMessage({
     type: "sprachverstand.count-updated",
     tabId,
-    text: formatBadgeCount(normalizedCount) || "0"
+    text
+  });
+  notifyRuntimeMessage({
+    type: "sprachverstand.state-updated",
+    tabId,
+    text,
+    hostname: documentToReport.location?.hostname ?? "",
+    count: normalizedCount,
+    replacements: []
   });
 }
 
@@ -475,6 +490,39 @@ function countText(tabId?: number): string {
   return formatBadgeCount(countsByTabId.get(resolvedTabId) ?? 0) || "0";
 }
 
+function replacementState(tabId: number): {
+  readonly text: string;
+  readonly hostname?: string;
+  readonly count: number;
+  readonly replacements: readonly [];
+} {
+  const browser = browsersByTabId.get(tabId);
+  const contentDocument = browser?.contentDocument;
+  const count = contentDocument
+    ? refreshDocumentCount(contentDocument)
+    : countsByTabId.get(tabId) ?? 0;
+  const hostname = contentDocument?.location?.hostname ?? "";
+
+  return {
+    text: formatBadgeCount(count) || "0",
+    ...(hostname ? { hostname } : {}),
+    count,
+    replacements: []
+  };
+}
+
+function isGetReplacementStateMessage(
+  message: unknown
+): message is GetReplacementStateMessage {
+  return (
+    Boolean(message) &&
+    typeof message === "object" &&
+    (message as Partial<GetReplacementStateMessage>).type ===
+      "sprachverstand.get-replacement-state" &&
+    typeof (message as Partial<GetReplacementStateMessage>).tabId === "number"
+  );
+}
+
 function isGetCountMessage(message: unknown): message is GetCountMessage {
   return (
     Boolean(message) &&
@@ -515,6 +563,10 @@ const bridge: PaleMoonBridge = {
   handleMessage(message) {
     if (isGetCountMessage(message)) {
       return { text: countText(message.tabId) };
+    }
+
+    if (isGetReplacementStateMessage(message)) {
+      return replacementState(message.tabId);
     }
 
     if (isSetInspectedTabMessage(message)) {
