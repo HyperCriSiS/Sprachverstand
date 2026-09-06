@@ -63,6 +63,12 @@ interface ContentSandbox extends Record<string, unknown> {
   __sprachverstandCommandPayload?: string;
 }
 
+interface ReplacementSummaryEntry {
+  readonly original: string;
+  readonly replacement: string;
+  readonly count: number;
+}
+
 interface GetCountMessage {
   readonly type: "sprachverstand.get-count";
   readonly tabId: number;
@@ -219,6 +225,8 @@ function reportCount(documentToReport: Document, count: number): void {
   countsByTabId.set(tabId, normalizedCount);
   updateToolbarTooltip();
   const text = formatBadgeCount(normalizedCount) || "0";
+  const sandbox = sandboxesByDocument.get(documentToReport);
+  const replacements = sandbox ? replacementSummaryFromSandbox(sandbox) : [];
   notifyRuntimeMessage({
     type: "sprachverstand.count-updated",
     tabId,
@@ -231,7 +239,7 @@ function reportCount(documentToReport: Document, count: number): void {
     text,
     hostname: documentToReport.location?.hostname ?? "",
     count: normalizedCount,
-    replacements: []
+    replacements
   });
 }
 
@@ -262,6 +270,28 @@ function replacementCountFromSandbox(sandbox: ContentSandbox): number {
       : 0;
   } catch {
     return 0;
+  }
+}
+
+function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<ReplacementSummaryEntry>;
+  return typeof candidate.original === "string" &&
+    typeof candidate.replacement === "string" &&
+    typeof candidate.count === "number" && Number.isFinite(candidate.count) && candidate.count > 0;
+}
+
+function replacementSummaryFromSandbox(sandbox: ContentSandbox): ReplacementSummaryEntry[] {
+  try {
+    const serialized = evaluateInContentSandbox(
+      sandbox,
+      "this.SprachverstandPaleMoonContent ? JSON.stringify(this.SprachverstandPaleMoonContent.getReplacementSummary()) : '[]'"
+    );
+    if (typeof serialized !== "string") return [];
+    const parsed = JSON.parse(serialized) as unknown;
+    return Array.isArray(parsed) ? parsed.filter(isReplacementSummaryEntry) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -499,7 +529,7 @@ function replacementState(tabId: number): {
   readonly text: string;
   readonly hostname?: string;
   readonly count: number;
-  readonly replacements: readonly [];
+  readonly replacements: readonly ReplacementSummaryEntry[];
 } {
   const browser = browsersByTabId.get(tabId);
   const contentDocument = browser?.contentDocument;
@@ -507,12 +537,14 @@ function replacementState(tabId: number): {
     ? refreshDocumentCount(contentDocument)
     : countsByTabId.get(tabId) ?? 0;
   const hostname = contentDocument?.location?.hostname ?? "";
+  const sandbox = contentDocument ? sandboxesByDocument.get(contentDocument) : undefined;
+  const replacements = sandbox ? replacementSummaryFromSandbox(sandbox) : [];
 
   return {
     text: formatBadgeCount(count) || "0",
     ...(hostname ? { hostname } : {}),
     count,
-    replacements: []
+    replacements
   };
 }
 

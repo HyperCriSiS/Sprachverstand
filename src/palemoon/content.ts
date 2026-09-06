@@ -2,11 +2,13 @@ import { PaleMoonDomProcessor } from "./dom-processor";
 import { defaultRules } from "../rules";
 import { disabledRuleIdsForGroups } from "../rules/catalog";
 import type { Settings } from "../settings/defaults";
+import type { ReplacementSummaryEntry } from "../core/replacement-summary";
 
 interface PaleMoonContentRuntime {
   apply(settings: Settings): void;
   stop(restore?: boolean): void;
   getReplacementCount(): number;
+  getReplacementSummary(): readonly ReplacementSummaryEntry[];
 }
 
 type PaleMoonContentGlobal = typeof globalThis & {
@@ -60,8 +62,12 @@ const runtime: PaleMoonContentRuntime = {
   },
 
   getReplacementCount() {
-    return processor?.getReplacementCount() ?? 0;
-  }
+  return processor?.getReplacementCount() ?? 0;
+},
+
+getReplacementSummary() {
+  return processor?.getReplacementSummary() ?? [];
+}
 };
 
 runtimeGlobal.SprachverstandPaleMoonContent = runtime;
