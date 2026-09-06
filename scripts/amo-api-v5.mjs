@@ -41,10 +41,10 @@ function createJwt() {
     JSON.stringify(payload)
   )}`;
   // AMO verlangt für seine JWT-Authentifizierung ausdrücklich HS256.
-// Das AMO_API_SECRET ist ein zufälliger API-Schlüssel und kein Benutzerpasswort;
-// ein langsamer Passwort-Hash wie bcrypt/PBKDF2 würde das JWT-Protokoll brechen.
-// lgtm[js/insufficient-password-hash]
-const signature = createHmac("sha256", secret)
+  // Das AMO_API_SECRET ist ein zufälliger API-Schlüssel und kein Benutzerpasswort;
+  // ein langsamer Passwort-Hash wie bcrypt/PBKDF2 würde das JWT-Protokoll brechen.
+  // lgtm[js/insufficient-password-hash]
+  const signature = createHmac("sha256", secret)
     .update(unsigned)
     .digest("base64url");
   return `${unsigned}.${signature}`;
