@@ -1,6 +1,9 @@
 name: Temporäre Pale-Moon-Feature-Parität
 
 on:
+  push:
+    branches:
+      - feat/palemoon-feature-parity-replacements
   workflow_dispatch:
 
 permissions:
