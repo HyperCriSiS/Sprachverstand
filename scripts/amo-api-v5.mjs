@@ -72,8 +72,100 @@ async function amoFetch(url, options = {}) {
   return fetch(url, { ...options, headers });
 }
 
+async function publicAmoFetch(url, options = {}) {
+  const headers = new Headers(options.headers ?? {});
+  headers.set("Accept", "application/json");
+  return fetch(url, { ...options, headers });
+}
+
+function translatedLocales(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return [];
+  }
+  return Object.keys(value)
+    .filter((locale) => locale !== "_default")
+    .sort();
+}
+
 async function profile() {
   return parseResponse(await amoFetch(`${apiBase}/accounts/profile/`));
+}
+
+async function listingStatus() {
+  const addonId = requiredEnvironment("AMO_ADDON_ID");
+  const addon = await parseResponse(
+    await publicAmoFetch(
+      `${apiBase}/addons/addon/${encodeURIComponent(addonId)}/`
+    )
+  );
+
+  return {
+    id: addon?.id ?? null,
+    slug: addon?.slug ?? null,
+    default_locale: addon?.default_locale ?? null,
+    current_version: addon?.current_version?.version ?? null,
+    summary_locales: translatedLocales(addon?.summary),
+    description_locales: translatedLocales(addon?.description),
+    url: addon?.url ?? null
+  };
+}
+
+async function listingPayload(filename) {
+  const metadataPath = path.resolve(
+    filename || path.join("store", "generated", "amo-metadata.json")
+  );
+  const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
+  const summaryEntries = Object.entries(metadata?.summary ?? {});
+  const descriptionEntries = Object.entries(metadata?.description ?? {});
+
+  if (
+    summaryEntries.length !== 34 ||
+    descriptionEntries.length !== 34 ||
+    summaryEntries.some(([, value]) => typeof value !== "string" || !value.trim()) ||
+    descriptionEntries.some(
+      ([, value]) => typeof value !== "string" || !value.trim()
+    )
+  ) {
+    fail(
+      "AMO-Listing-Metadaten müssen exakt 34 nichtleere Summary- und Description-Übersetzungen enthalten."
+    );
+  }
+
+  return {
+    default_locale: metadata.default_locale || "de",
+    summary: metadata.summary,
+    description: metadata.description
+  };
+}
+
+async function updateListing(filename) {
+  const addonId = requiredEnvironment("AMO_ADDON_ID");
+  const expectedApproval = `AMO-LISTING-UPDATE:${addonId}`;
+  if (process.env.AMO_LISTING_APPROVAL !== expectedApproval) {
+    fail(
+      `Keine explizite AMO-Listing-Freigabe. Erwartet: ${expectedApproval}`
+    );
+  }
+
+  const payload = await listingPayload(filename);
+  const addon = await parseResponse(
+    await amoFetch(
+      `${apiBase}/addons/addon/${encodeURIComponent(addonId)}/`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    )
+  );
+
+  return {
+    addon: addonId,
+    default_locale: addon?.default_locale ?? payload.default_locale,
+    summary_locales: translatedLocales(addon?.summary).length,
+    description_locales: translatedLocales(addon?.description).length,
+    updated: true
+  };
 }
 
 async function uploadPackage(filename, channel = "listed") {
@@ -219,7 +311,7 @@ async function submit(xpiFilename, sourceFilename, version, releaseNotesFilename
 }
 
 function printHelp() {
-  console.log(`AMO API v5\n\nBefehle:\n  profile\n  notes <x.y.z> [amo-release-notes.json]\n  submit <firefox.xpi> <source.zip> <x.y.z> [amo-release-notes.json]\n\nUmgebung:\n  AMO_API_KEY      AMO API issuer/key\n  AMO_API_SECRET   AMO API secret\n  AMO_ADDON_ID     GUID, Slug oder numerische Add-on-ID\n\nDas JWT wird pro Request kurzlebig im Prozess erzeugt und nicht gespeichert.`);
+  console.log(`AMO API v5\n\nBefehle:\n  profile\n  listing-status\n  listing-update [amo-metadata.json]\n  notes <x.y.z> [amo-release-notes.json]\n  submit <firefox.xpi> <source.zip> <x.y.z> [amo-release-notes.json]\n\nUmgebung:\n  AMO_API_KEY             AMO API issuer/key (für schreibende Befehle)\n  AMO_API_SECRET          AMO API secret (für schreibende Befehle)\n  AMO_ADDON_ID            GUID, Slug oder numerische Add-on-ID\n  AMO_LISTING_APPROVAL    Für listing-update exakt AMO-LISTING-UPDATE:<AMO_ADDON_ID>\n\nDas JWT wird pro Request kurzlebig im Prozess erzeugt und nicht gespeichert. Listing-Updates werden nie ohne zusätzliche explizite Freigabe ausgeführt.`);
 }
 
 if (!command || command === "help" || command === "--help") {
@@ -231,6 +323,12 @@ let result;
 switch (command) {
   case "profile":
     result = await profile();
+    break;
+  case "listing-status":
+    result = await listingStatus();
+    break;
+  case "listing-update":
+    result = await updateListing(args[0]);
     break;
   case "notes":
     if (!/^\d+\.\d+\.\d+$/u.test(args[0] ?? "")) {
