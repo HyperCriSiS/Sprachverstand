@@ -145,7 +145,6 @@ describe("WebExtension localization", () => {
     expect(optionsSource).toContain("group.labelKey");
     expect(optionsSource).toContain("group.descriptionKey");
     for (const key of [
-      "maxExcludedDomains",
       "noticeMore",
       "replacementsChecked",
       "previewNoChange",

@@ -4,6 +4,7 @@ import { t } from "./i18n";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
+  normalizeExcludedDomain,
   popupRuleGroupSectionId,
   type PopupSectionId,
   type Settings
@@ -22,12 +23,14 @@ interface StateUpdatedMessage {
   readonly text: string;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
+  readonly hostname?: string;
 }
 
 interface ReplacementStateResponse {
   readonly text?: unknown;
   readonly count?: unknown;
   readonly replacements?: unknown;
+  readonly hostname?: unknown;
 }
 
 function requiredElement<T extends HTMLElement>(selector: string): T {
@@ -61,6 +64,8 @@ const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
+const domainActionButton =
+  requiredElement<HTMLButtonElement>("#add-current-domain");
 const optionsButton = requiredElement<HTMLButtonElement>("#open-options");
 const popupSections = [
   ...document.querySelectorAll<HTMLElement>("[data-popup-section]")
@@ -70,6 +75,7 @@ let settings: Settings;
 let activeTabId: number | undefined;
 let currentCount = 0;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
+let currentHostname = "";
 
 function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
   if (!value || typeof value !== "object") {
@@ -97,6 +103,7 @@ function isStateUpdatedMessage(message: unknown): message is StateUpdatedMessage
     typeof candidate.tabId === "number" &&
     typeof candidate.text === "string" &&
     typeof candidate.count === "number" &&
+    (candidate.hostname === undefined || typeof candidate.hostname === "string") &&
     Array.isArray(candidate.replacements) &&
     candidate.replacements.every(isReplacementSummaryEntry)
   );
@@ -178,6 +185,22 @@ function renderReplacementDetails(): void {
   replacementList.replaceChildren(fragment);
 }
 
+function renderDomainAction(): void {
+  const listed =
+    currentHostname.length > 0 && settings.excludedDomains.includes(currentHostname);
+
+  domainActionButton.disabled = !currentHostname || listed;
+  domainActionButton.textContent = listed
+    ? t(
+        "currentWebsiteAlreadyInDomainList",
+        undefined,
+        "Website bereits in der Domainliste"
+      )
+    : settings.domainListMode === "include"
+      ? t("includeCurrentWebsite", undefined, "Diese Website einschließen")
+      : t("excludeCurrentWebsite", undefined, "Diese Website ausschließen");
+}
+
 function render(): void {
   enabledInput.checked = settings.enabled;
   stateOutput.textContent = settings.enabled
@@ -205,6 +228,8 @@ function render(): void {
   for (const input of ruleGroupInputs()) {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
   }
+
+  renderDomainAction();
 }
 
 async function resolveActiveTabId(): Promise<number | undefined> {
@@ -219,6 +244,7 @@ function normalizeReplacementState(
 ): {
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
+  readonly hostname: string;
 } {
   const replacements = Array.isArray(value?.replacements)
     ? value.replacements.filter(isReplacementSummaryEntry)
@@ -227,14 +253,20 @@ function normalizeReplacementState(
     typeof value?.count === "number" && Number.isFinite(value.count)
       ? Math.max(0, value.count)
       : replacements.reduce((total, entry) => total + entry.count, 0);
-  return { count, replacements };
+  const hostname =
+    typeof value?.hostname === "string"
+      ? normalizeExcludedDomain(value.hostname)
+      : "";
+  return { count, replacements, hostname };
 }
 
 async function refreshReplacementState(): Promise<void> {
   if (activeTabId === undefined) {
     currentCount = 0;
     currentReplacements = [];
+    currentHostname = "";
     renderReplacementDetails();
+    renderDomainAction();
     return;
   }
 
@@ -246,7 +278,9 @@ async function refreshReplacementState(): Promise<void> {
   const normalized = normalizeReplacementState(response);
   currentCount = normalized.count;
   currentReplacements = normalized.replacements;
+  currentHostname = normalized.hostname;
   renderReplacementDetails();
+  renderDomainAction();
 }
 
 function handleRuntimeMessage(message: unknown): void {
@@ -256,7 +290,11 @@ function handleRuntimeMessage(message: unknown): void {
 
   currentCount = Math.max(0, message.count);
   currentReplacements = message.replacements;
+  if (message.hostname) {
+    currentHostname = normalizeExcludedDomain(message.hostname);
+  }
   renderReplacementDetails();
+  renderDomainAction();
 }
 
 async function start(): Promise<void> {
@@ -331,6 +369,19 @@ async function start(): Promise<void> {
   closeReplacementsButton.addEventListener("click", () => {
     detailsView.hidden = true;
     mainView.hidden = false;
+  });
+
+  domainActionButton.addEventListener("click", () => {
+    if (!currentHostname || settings.excludedDomains.includes(currentHostname)) {
+      return;
+    }
+
+    settings = {
+      ...settings,
+      excludedDomains: [...settings.excludedDomains, currentHostname]
+    };
+    void saveSettings(settings);
+    render();
   });
 
   optionsButton.addEventListener("click", () => {

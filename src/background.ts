@@ -15,6 +15,7 @@ interface ReplacementCountMessage {
 
 interface ReplacementStateMessage {
   readonly type: "sprachverstand.replacement-state";
+  readonly hostname?: string;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
 }
@@ -34,6 +35,7 @@ interface GetInspectedCountMessage {
 }
 
 interface CachedReplacementState {
+  readonly hostname: string | undefined;
   readonly count: number;
   readonly replacements: readonly ReplacementSummaryEntry[];
 }
@@ -87,6 +89,7 @@ async function notifyStateUpdate(
         type: "sprachverstand.state-updated",
         tabId,
         text,
+        hostname: state.hostname,
         count: state.count,
         replacements: state.replacements
       })
@@ -186,6 +189,7 @@ async function readLiveReplacementState(
     }
 
     const candidate = response as {
+      readonly hostname?: unknown;
       readonly count?: unknown;
       readonly replacements?: unknown;
     };
@@ -198,6 +202,10 @@ async function readLiveReplacementState(
     }
 
     return {
+      hostname:
+        typeof candidate.hostname === "string" && candidate.hostname
+          ? candidate.hostname
+          : undefined,
       count: Math.max(0, Math.trunc(candidate.count)),
       replacements: normalizedReplacementEntries(candidate.replacements)
     };
@@ -236,6 +244,7 @@ async function resetTabState(tabId: number): Promise<void> {
   }
 
   await notifyStateUpdate(tabId, {
+    hostname: undefined,
     count: 0,
     replacements: []
   });
@@ -268,6 +277,10 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     await updateTabState(tabId, {
+      hostname:
+        typeof message.hostname === "string" && message.hostname
+          ? message.hostname
+          : undefined,
       count: Math.max(0, Math.trunc(message.count)),
       replacements: normalizedReplacementEntries(message.replacements)
     });
@@ -282,6 +295,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     await updateTabState(tabId, {
+      hostname: statesByTab.get(tabId)?.hostname,
       count: Math.max(0, Math.trunc(message.count)),
       replacements: statesByTab.get(tabId)?.replacements ?? []
     });
@@ -302,6 +316,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
       statesByTab.set(message.tabId, live);
       return {
         text: formatBadgeCount(live.count) || "0",
+        hostname: live.hostname,
         count: live.count,
         replacements: live.replacements
       };
@@ -311,6 +326,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     if (cached) {
       return {
         text: formatBadgeCount(cached.count) || "0",
+        hostname: cached.hostname,
         count: cached.count,
         replacements: cached.replacements
       };
@@ -319,6 +335,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     const badgeText = await api.action.getBadgeText({ tabId: message.tabId });
     return {
       text: badgeText || "0",
+      hostname: undefined,
       count: Number.parseInt(badgeText, 10) || 0,
       replacements: []
     };
