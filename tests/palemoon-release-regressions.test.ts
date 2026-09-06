@@ -27,12 +27,11 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(legacyApi).toContain("bridge.openOptions()");
   });
 
-  it("liefert dem Popup den aktuellen Hostnamen über die Legacy-Bridge", () => {
-    expect(popup).toContain('type: "sprachverstand.get-replacement-state"');
-    expect(controller).toContain('"sprachverstand.get-replacement-state"');
-    expect(controller).toContain("return replacementState(message.tabId)");
-    expect(controller).toContain("contentDocument?.location?.hostname");
-    expect(controller).toContain('type: "sprachverstand.state-updated"');
+  it("liefert dem Popup den aktuellen Hostnamen über den bestehenden Count-Vertrag", () => {
+    expect(popup).toContain('type: "sprachverstand.get-count"');
+    expect(popup).toContain("readonly hostname?: unknown");
+    expect(controller).toContain("hostnameForTabId(message.tabId)");
+    expect(controller).toContain("hostname: documentToReport.location?.hostname");
   });
 
   it("wendet Ausschluss- und Einschlussmodus auch im Pale-Moon-Controller an", () => {
