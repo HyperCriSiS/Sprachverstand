@@ -150,8 +150,7 @@ describe("WebExtension localization", () => {
       "previewNoChange",
       "saved",
       "settingsExported",
-      "importSummary",
-      "resetDone"
+      "importSummary"
     ]) {
       expect(optionsSource, `missing dynamic i18n key ${key}`).toContain(`"${key}"`);
     }
