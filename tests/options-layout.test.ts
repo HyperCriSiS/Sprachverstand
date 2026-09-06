@@ -47,20 +47,21 @@ describe("Einstellungsaufbau", () => {
     expect(css).toMatch(/\.rule-card:last-child\s*\{[^}]*border-bottom:\s*0;/u);
   });
 
-  it("ordnet Speichern und Zurücksetzen bündig vor den Bereichsschaltern an", () => {
+  it("zeigt Speichern als alleinige vollbreite Hauptaktion vor den Bereichsschaltern", () => {
     const toolbarStart = html.indexOf('class="settings-toolbar"');
     const firstSectionStart = html.indexOf('<details class="settings-section"');
     const saveIndex = html.indexOf('id="save-settings"');
-    const resetIndex = html.indexOf('id="reset"');
     const expandIndex = html.indexOf('id="expand-all-sections"');
     const collapseIndex = html.indexOf('id="collapse-all-sections"');
 
     expect(toolbarStart).toBeGreaterThanOrEqual(0);
     expect(firstSectionStart).toBeGreaterThan(toolbarStart);
-    for (const buttonIndex of [saveIndex, resetIndex, expandIndex, collapseIndex]) {
+    for (const buttonIndex of [saveIndex, expandIndex, collapseIndex]) {
       expect(buttonIndex).toBeGreaterThan(toolbarStart);
       expect(buttonIndex).toBeLessThan(firstSectionStart);
     }
+    expect(html).not.toContain('id="reset"');
+    expect(css).toMatch(/\.settings-save-button\s*\{[^}]*width:\s*100%;/u);
     expect(html).not.toContain('<div class="actions">');
   });
 
