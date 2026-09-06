@@ -222,7 +222,8 @@ function reportCount(documentToReport: Document, count: number): void {
   notifyRuntimeMessage({
     type: "sprachverstand.count-updated",
     tabId,
-    text
+    text,
+    hostname: documentToReport.location?.hostname ?? ""
   });
   notifyRuntimeMessage({
     type: "sprachverstand.state-updated",
@@ -490,6 +491,10 @@ function countText(tabId?: number): string {
   return formatBadgeCount(countsByTabId.get(resolvedTabId) ?? 0) || "0";
 }
 
+function hostnameForTabId(tabId: number): string {
+  return browsersByTabId.get(tabId)?.contentDocument?.location?.hostname ?? "";
+}
+
 function replacementState(tabId: number): {
   readonly text: string;
   readonly hostname?: string;
@@ -562,7 +567,11 @@ const bridge: PaleMoonBridge = {
   getCountText: countText,
   handleMessage(message) {
     if (isGetCountMessage(message)) {
-      return { text: countText(message.tabId) };
+      const hostname = hostnameForTabId(message.tabId);
+      return {
+        text: countText(message.tabId),
+        ...(hostname ? { hostname } : {})
+      };
     }
 
     if (isGetReplacementStateMessage(message)) {
