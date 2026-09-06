@@ -29,19 +29,24 @@ async function injectPaleMoonCompatibilityScript(outputDirectory) {
     const filePath = path.join(outputDirectory, relativePath);
     const html = await readFile(filePath, "utf8");
     const bundleName = path.basename(relativePath, ".html");
-    const marker = `<script src="${bundleName}.js" defer></script>`;
-    const compatibilityScript =
-      `<script src="../palemoon/legacy-api.js" defer></script>\n    ${marker}`;
+    const escapedBundleName = bundleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const markerPattern = new RegExp(
+      `<script\\s+[^>]*src=["']${escapedBundleName}\\.js["'][^>]*><\\/script>`
+    );
+    const marker = html.match(markerPattern)?.[0];
 
-    if (!html.includes(marker)) {
+    if (!marker) {
       throw new Error(
         `Pale-Moon-Kompatibilität konnte nicht in ${relativePath} eingefügt werden.`
       );
     }
 
+    const compatibilityScript =
+      `<script src="../palemoon/legacy-api.js" defer></script>\n    ${marker}`;
+
     await writeFile(
       filePath,
-      html.replace(marker, compatibilityScript),
+      html.replace(markerPattern, compatibilityScript),
       "utf8"
     );
   }
