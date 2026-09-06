@@ -19,6 +19,7 @@ Die erzeugten Dateien landen unter `store/generated/` und werden nicht versionie
 Erzeugt werden:
 
 - `amo-metadata.json`
+- `amo-worklist.csv`
 - `chrome-dashboard.csv`
 - `chrome-dashboard.html`
 - `edge-worklist.csv`
@@ -28,12 +29,12 @@ Die CI prüft mit `npm run validate:store-exports`, dass sämtliche Quelldaten u
 
 ## Firefox AMO
 
-AMO unterstützt für Store-Einträge derzeit nur einen Teil der 51 WebExtension-Locales. Die Erweiterung selbst bleibt in Firefox trotzdem in allen 51 UI-Sprachen verfügbar.
+Die Erweiterungsoberfläche bleibt in Firefox in allen 51 UI-Sprachen verfügbar. Für das eigentliche AMO-Listing pflegt Sprachverstand bewusst **29 eigenständige Quellübersetzungen** unter `store/amo-listings/`. Daraus erzeugt der Generator **34 produktive Listing-Locales**.
 
-Der Generator bildet die derzeit unterstützte Schnittmenge auf die AMO-Locale-Codes ab, unter anderem:
+Regionale AMO-Varianten verwenden passende gemeinsame Quelltexte:
 
-- `en` → `en-US`
-- `es` → `es-ES`
+- `en` → `en-US`, `en-GB`, `en-CA`
+- `es` → `es-ES`, `es-AR`, `es-CL`, `es-MX`
 - `pt_BR` → `pt-BR`
 - `pt_PT` → `pt-PT`
 - `sv` → `sv-SE`
@@ -41,22 +42,28 @@ Der Generator bildet die derzeit unterstützte Schnittmenge auf die AMO-Locale-C
 - `zh_CN` → `zh-CN`
 - `zh_TW` → `zh-TW`
 
-Aktuell entstehen **29 lokalisierte AMO-Store-Einträge**.
+Die AMO-spezifischen Beschreibungen sind kompakter als die gemeinsamen Chrome-/Edge-/Opera-Texte. Technische Aussagen und Funktionsumfang bleiben konsistent; eingebettete SEO-Tagblöcke sind nicht erlaubt.
 
 `amo-metadata.json` enthält:
 
-- lokalisierte Kurzbeschreibungen,
-- lokalisierte Vollbeschreibungen,
+- 34 lokalisierte Kurzbeschreibungen,
+- 34 lokalisierte Vollbeschreibungen,
+- `default_locale` `de`,
 - Kategorie `language-support`,
-- Lizenz `AGPL-3.0-only`.
+- Lizenz `AGPL-3.0-only`,
+- weiterhin 29 lokalisierte Release-Notes.
 
-Die Datei kann nach dem Erzeugen direkt mit `web-ext` verwendet werden:
+`amo-worklist.csv` dient als lesbare Kontroll- und Übertragungshilfe. Listing-Texte und Release-Notes bleiben absichtlich getrennte Matrizen: Regionale Listing-Varianten benötigen keine zusätzlichen, künstlich duplizierten Release-Note-Quellen.
+
+Der aktuelle öffentliche Listing-Status lässt sich prüfen mit:
 
 ```bash
-web-ext sign --channel=listed --amo-metadata=store/generated/amo-metadata.json
+AMO_ADDON_ID='…' npm run amo:listing-status
 ```
 
-Die AMO-Locale-Liste ist eine Store-Eigenschaft und kann sich unabhängig von den unterstützten Firefox-Sprachen ändern. Deshalb muss die Zuordnung bei Änderungen auf AMO aktualisiert werden.
+Ein Live-Update des Listings ist vorbereitet, wird aber niemals automatisch durch den Store-Publishing-Workflow ausgelöst. Der schreibende Befehl verlangt API-Zugangsdaten und zusätzlich `AMO_LISTING_APPROVAL=AMO-LISTING-UPDATE:<AMO_ADDON_ID>`.
+
+Die AMO-Locale-Liste ist eine Store-Eigenschaft und kann sich unabhängig von den unterstützten Firefox-Sprachen ändern. Deshalb validiert der Generator die 29 Quelltexte und die 34 Ziel-Locales ausdrücklich.
 
 ## Microsoft Edge Add-ons
 

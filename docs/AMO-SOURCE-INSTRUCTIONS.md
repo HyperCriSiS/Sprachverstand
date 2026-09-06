@@ -96,3 +96,25 @@ Andere Quelldateien werden vor dem Packen nicht verändert. Deshalb kann das bei
 Mozilla eingereichte Source-ZIP direkt mit `npm ci` und `npm run build:firefox`
 gebaut werden, auch wenn die Versionsfelder des rohen Git-Tags von der
 Release-Version abweichen.
+
+## AMO-Store-Metadaten
+
+Die Store-Texte für Firefox werden getrennt von den allgemeinen Store-Beschreibungen unter `store/amo-listings/` gepflegt. `npm run store:generate` validiert 29 eigenständige Quellübersetzungen und erzeugt daraus 34 produktive AMO-Listing-Locales in `store/generated/amo-metadata.json`. Die regionalen Varianten für Englisch und Spanisch verwenden jeweils denselben geprüften Quelltext.
+
+Der öffentliche Listing-Status kann ohne API-Schreibzugriff geprüft werden:
+
+```bash
+AMO_ADDON_ID='…' npm run amo:listing-status
+```
+
+Ein Update des bestehenden Listings läuft über den bereits vorhandenen AMO-v5-Helfer. Es benötigt API-Key und Secret sowie zusätzlich eine absichtliche Freigabe für genau das Add-on:
+
+```bash
+AMO_API_KEY='…' \
+AMO_API_SECRET='…' \
+AMO_ADDON_ID='…' \
+AMO_LISTING_APPROVAL='AMO-LISTING-UPDATE:…' \
+npm run amo:update-listing
+```
+
+Die Zugangsdaten und die Freigabe werden ausschließlich zur Laufzeit gelesen und nicht in Dateien geschrieben. Der geschützte Store-Publishing-Workflow führt `listing-update` nicht automatisch aus.

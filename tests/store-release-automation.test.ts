@@ -19,6 +19,7 @@ const storeWorkflow = readFileSync(
 );
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
 const amoScript = readFileSync("scripts/amo-api-v5.mjs", "utf8");
+const amoGenerator = readFileSync("scripts/generate-store-metadata.mjs", "utf8");
 const chromeScript = readFileSync("scripts/chrome-web-store-v2.mjs", "utf8");
 
 const googleAuthSha = "7c6bc770dae815cd3e89ee6cdf493a5fab2cc093";
@@ -62,6 +63,18 @@ describe("Store-Release-Automatisierung", () => {
     expect(amoScript).toContain("randomUUID()");
     expect(amoScript).toContain('Authorization", `JWT ${createJwt()}`');
     expect(amoScript).toContain('case "notes"');
+  });
+
+  it("trennt AMO-Listing-Texte von Release-Notes und schützt Listing-Updates extra", () => {
+    expect(amoGenerator).toContain("amoListingLocalePairs");
+    expect(amoGenerator).toContain("amoSourceLocales.size !== 29");
+    expect(amoGenerator).toContain("amoListingLocalePairs.length !== 34");
+    expect(amoGenerator).toContain('"amo-worklist.csv"');
+    expect(amoScript).toContain('case "listing-status"');
+    expect(amoScript).toContain('case "listing-update"');
+    expect(amoScript).toContain("AMO_LISTING_APPROVAL");
+    expect(amoScript).toContain("AMO-LISTING-UPDATE:${addonId}");
+    expect(storeWorkflow).not.toContain("listing-update");
   });
 
   it("erzeugt AMO-Notes aus den releasegebundenen Daten des geprüften Source-ZIPs", () => {

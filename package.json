@@ -39,6 +39,8 @@
     "cws:publish": "node scripts/chrome-web-store-v2.mjs publish",
     "store:release-notes": "node scripts/store-release-notes.mjs",
     "amo:profile": "node scripts/amo-api-v5.mjs profile",
+    "amo:listing-status": "node scripts/amo-api-v5.mjs listing-status",
+    "amo:update-listing": "npm run store:generate && node scripts/amo-api-v5.mjs listing-update",
     "amo:notes": "node scripts/amo-api-v5.mjs notes",
     "amo:submit": "node scripts/amo-api-v5.mjs submit",
     "cws:wait": "node scripts/chrome-web-store-v2.mjs wait",
