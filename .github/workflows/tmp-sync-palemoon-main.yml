@@ -1,0 +1,62 @@
+name: Temporärer Pale-Moon-Main-Paritätssync
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pale-Moon-Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/palemoon-feature-parity-replacements
+          fetch-depth: 0
+
+      - name: Gemeinsame Produktteile exakt aus main übernehmen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- \
+            src/browser/api.ts \
+            src/core \
+            src/i18n.ts \
+            src/options.ts \
+            src/popup.ts \
+            src/rules \
+            src/settings \
+            static/_locales \
+            static/i18n-bootstrap.js \
+            static/legal \
+            static/options \
+            static/popup
+
+      - name: Synchronisierten Stand committen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/browser/api.ts \
+            src/core \
+            src/i18n.ts \
+            src/options.ts \
+            src/popup.ts \
+            src/rules \
+            src/settings \
+            static/_locales \
+            static/i18n-bootstrap.js \
+            static/legal \
+            static/options \
+            static/popup
+          if git diff --cached --quiet; then
+            echo "Gemeinsame Produktteile sind bereits identisch mit main."
+            exit 0
+          fi
+          git commit -m "sync(palemoon): gemeinsame Produktfunktionen mit main abgleichen"
+          git push origin HEAD:feat/palemoon-feature-parity-replacements
