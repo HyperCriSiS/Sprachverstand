@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/workflows/tmp-fix-popup-runtime.yml scripts/fix-i18n-temp.mjs scripts/.tmp-i18n-*.txt scripts/.tmp-i18n-rest-*.txt
+          git rm -f .github/workflows/tmp-fix-popup-runtime.yml scripts/fix-i18n-temp.mjs scripts/.tmp-i18n-*.txt scripts/.tmp-i18n-rest-*.txt
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
