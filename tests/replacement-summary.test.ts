@@ -109,4 +109,30 @@ describe("Ersetzungsübersicht", () => {
         .some((entry) => entry.original.includes("langen erklärenden Satz"))
     ).toBe(false);
   });
+
+  it("trennt mehrere Treffer derselben verkürzenden Regel trotz langem Zwischenkontext", async () => {
+    document.body.innerHTML =
+      "<p>Nutzerinnen und Nutzer seien zuständig. Dieser sehr lange unveränderte Mittelteil darf nicht in der Übersicht erscheinen. Am Ende bleiben Nutzerinnen und Nutzer verantwortlich.</p>";
+
+    processor = new DomProcessor(document, {
+      rules: [doubleUserRule],
+      profile: "conservative"
+    });
+    processor.start();
+    await Promise.resolve();
+
+    expect(processor.getReplacementCount()).toBe(2);
+    expect(processor.getReplacementSummary()).toEqual([
+      {
+        original: "Nutzerinnen und Nutzer",
+        replacement: "Nutzer",
+        count: 2
+      }
+    ]);
+    expect(
+      processor
+        .getReplacementSummary()
+        .some((entry) => entry.original.includes("Mittelteil"))
+    ).toBe(false);
+  });
 });
