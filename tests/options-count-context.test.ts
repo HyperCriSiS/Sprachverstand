@@ -3,18 +3,28 @@ import { describe, expect, it } from "vitest";
 
 const backgroundSource = readFileSync("src/background.ts", "utf8");
 const optionsSource = readFileSync("src/options.ts", "utf8");
+const browserOptionsSource = readFileSync("src/browser/options.ts", "utf8");
 
 describe("Options-Zähler", () => {
-  it("leitet den Ursprungstab stateless aus der Sender-URL ab", () => {
-    expect(backgroundSource).toContain("parseOptionsPageTabId(sender.url)");
-    expect(backgroundSource).not.toContain("inspectedTabId");
+  it("übergibt den Ursprungstab vor dem nativen Öffnen der Optionsseite", () => {
+    expect(browserOptionsSource).toContain("sprachverstand.set-inspected-tab");
+    expect(browserOptionsSource).toContain("api.runtime.openOptionsPage()");
+    expect(backgroundSource).toContain("isSetInspectedTabMessage(message)");
+    expect(backgroundSource).toContain("inspectedTabId = message.tabId");
+    expect(backgroundSource).toContain(
+      "inspectedTabId ?? parseOptionsPageTabId(sender.url)"
+    );
     expect(backgroundSource).not.toContain("lastCountedTabId");
-    expect(backgroundSource).not.toContain("sprachverstand.set-inspected-tab");
   });
 
-  it("fragt nach einem Worker-Neustart den Content-Script-Zustand live ab", () => {
-    expect(backgroundSource).toContain("const live = await readLiveReplacementState(tabId)");
-    expect(backgroundSource).toContain("statesByTab.set(tabId, live)");
+  it("fragt nach einem Worker-Neustart den Content-Script-Zustand live ab und erhält vollständige Cache-Daten", () => {
+    expect(backgroundSource).toContain(
+      "const live = await readLiveReplacementState(tabId)"
+    );
+    expect(backgroundSource).toContain(
+      "const merged = mergeCompatibleState(live, cached)"
+    );
+    expect(backgroundSource).toContain("statesByTab.set(tabId, merged)");
   });
 
   it("bedient das bestehende Options-Protokoll weiterhin kompatibel", () => {
