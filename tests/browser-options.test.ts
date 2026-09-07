@@ -5,49 +5,46 @@ import {
 } from "../src/browser/options";
 
 describe("Optionsseite", () => {
-  it("öffnet die Einstellungen mit dem aktiven Ursprungstab im Vordergrund", async () => {
-    const getURL = vi.fn(
-      (path: string) => `moz-extension://sprachverstand/${path}`
-    );
-    const create = vi.fn(async () => ({ id: 42 }));
-    const update = vi.fn(async () => ({ id: 42 }));
+  it("übergibt den Ursprungstab und öffnet danach die native Optionsseite", async () => {
+    const calls: string[] = [];
+    const sendMessage = vi.fn(async () => {
+      calls.push("inspected-tab");
+      return undefined;
+    });
+    const openOptionsPage = vi.fn(async () => {
+      calls.push("open-options");
+    });
     const query = vi.fn(async () => [{ id: 17 }]);
 
     await openOptionsPageInForeground({
-      runtime: { getURL },
-      tabs: { create, query, update }
+      runtime: { sendMessage, openOptionsPage },
+      tabs: { query }
     });
 
     expect(query).toHaveBeenCalledWith({
       active: true,
       currentWindow: true
     });
-    expect(getURL).toHaveBeenCalledWith("options/options.html");
-    expect(create).toHaveBeenCalledWith({
-      url: "moz-extension://sprachverstand/options/options.html?tabId=17",
-      active: true
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: "sprachverstand.set-inspected-tab",
+      tabId: 17
     });
-    expect(update).toHaveBeenCalledWith(42, { active: true });
+    expect(openOptionsPage).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual(["inspected-tab", "open-options"]);
   });
 
-  it("erfindet ohne gültigen aktiven Tab keinen Kontext", async () => {
-    const getURL = vi.fn(
-      (path: string) => `moz-extension://sprachverstand/${path}`
-    );
-    const create = vi.fn(async () => ({ id: 42 }));
-    const update = vi.fn(async () => ({ id: 42 }));
+  it("öffnet ohne gültigen aktiven Tab trotzdem die Optionsseite", async () => {
+    const sendMessage = vi.fn(async () => undefined);
+    const openOptionsPage = vi.fn(async () => undefined);
     const query = vi.fn(async () => [{}]);
 
     await openOptionsPageInForeground({
-      runtime: { getURL },
-      tabs: { create, query, update }
+      runtime: { sendMessage, openOptionsPage },
+      tabs: { query }
     });
 
-    expect(create).toHaveBeenCalledWith({
-      url: "moz-extension://sprachverstand/options/options.html",
-      active: true
-    });
-    expect(update).toHaveBeenCalledWith(42, { active: true });
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(openOptionsPage).toHaveBeenCalledTimes(1);
   });
 
   it("liest nur gültige Tab-IDs aus Options-URLs und Querystrings", () => {
