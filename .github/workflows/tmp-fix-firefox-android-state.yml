@@ -1,0 +1,809 @@
+name: Temporärer Firefox-Android-Zustandsfix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Firefox-Android-Fixes anwenden
+        shell: bash
+        run: |
+          cat > /tmp/firefox-android-state.patch <<'PATCH'
+          --- a/src/browser/api.ts
+          +++ b/src/browser/api.ts
+          @@ -5,6 +5,7 @@
+           
+           export interface ExtensionTab {
+             readonly id?: number;
+          +  readonly url?: string;
+           }
+           
+           export interface MessageSender {
+          @@ -36,6 +37,7 @@
+             readonly storage: {
+               readonly sync: StorageArea;
+               readonly local: StorageArea;
+          +    readonly session?: StorageArea;
+               readonly onChanged: {
+                 addListener(
+                   listener: (
+          @@ -72,6 +74,7 @@
+               }): Promise<void> | void;
+             };
+             readonly tabs: {
+          +    get?(tabId: number): Promise<ExtensionTab>;
+               create(createProperties: {
+                 readonly url: string;
+                 readonly active?: boolean;
+          --- a/src/background.ts
+          +++ b/src/background.ts
+          @@ -47,7 +47,109 @@
+           
+           const api = getExtensionApi();
+           const statesByTab = new Map<number, CachedReplacementState>();
+          +const runtimeStateStoragePrefix = "sprachverstand.runtime-state.";
+           let inspectedTabId: number | undefined;
+          +
+          +function runtimeStateStorageKey(tabId: number): string {
+          +  return `${runtimeStateStoragePrefix}${tabId}`;
+          +}
+          +
+          +function normalizedCachedReplacementState(
+          +  value: unknown
+          +): CachedReplacementState | undefined {
+          +  if (!value || typeof value !== "object") {
+          +    return undefined;
+          +  }
+          +
+          +  const candidate = value as {
+          +    readonly hostname?: unknown;
+          +    readonly count?: unknown;
+          +    readonly replacements?: unknown;
+          +  };
+          +  if (
+          +    typeof candidate.count !== "number" ||
+          +    !Number.isFinite(candidate.count) ||
+          +    !Array.isArray(candidate.replacements)
+          +  ) {
+          +    return undefined;
+          +  }
+          +
+          +  return {
+          +    hostname:
+          +      typeof candidate.hostname === "string" && candidate.hostname
+          +        ? candidate.hostname
+          +        : undefined,
+          +    count: Math.max(0, Math.trunc(candidate.count)),
+          +    replacements: normalizedReplacementEntries(candidate.replacements)
+          +  };
+          +}
+          +
+          +async function readPersistedTabState(
+          +  tabId: number
+          +): Promise<CachedReplacementState | undefined> {
+          +  const session = api.storage.session;
+          +  if (!session) {
+          +    return undefined;
+          +  }
+          +
+          +  const key = runtimeStateStorageKey(tabId);
+          +  try {
+          +    const stored = await session.get(key);
+          +    return normalizedCachedReplacementState(stored[key]);
+          +  } catch {
+          +    // Pale Moon und ältere Browser können storage.session noch nicht anbieten.
+          +    return undefined;
+          +  }
+          +}
+          +
+          +async function readCachedTabState(
+          +  tabId: number
+          +): Promise<CachedReplacementState | undefined> {
+          +  const memoryState = statesByTab.get(tabId);
+          +  if (memoryState) {
+          +    return memoryState;
+          +  }
+          +
+          +  const persisted = await readPersistedTabState(tabId);
+          +  const newerMemoryState = statesByTab.get(tabId);
+          +  if (newerMemoryState) {
+          +    return newerMemoryState;
+          +  }
+          +
+          +  if (persisted) {
+          +    statesByTab.set(tabId, persisted);
+          +  }
+          +  return persisted;
+          +}
+          +
+          +async function persistTabState(
+          +  tabId: number,
+          +  state: CachedReplacementState
+          +): Promise<void> {
+          +  const session = api.storage.session;
+          +  if (!session) {
+          +    return;
+          +  }
+          +
+          +  try {
+          +    await session.set({ [runtimeStateStorageKey(tabId)]: state });
+          +  } catch {
+          +    // Der Laufzeitzustand ist nur eine Komfortkopie; der Hauptpfad bleibt aktiv.
+          +  }
+          +}
+          +
+          +async function removePersistedTabState(tabId: number): Promise<void> {
+          +  const session = api.storage.session;
+          +  if (!session) {
+          +    return;
+          +  }
+          +
+          +  try {
+          +    await session.remove(runtimeStateStorageKey(tabId));
+          +  } catch {
+          +    // Beim Browser-Shutdown kann der Session-Speicher bereits verschwunden sein.
+          +  }
+          +}
+           
+           function hostnameFromSenderUrl(url: string | undefined): string | undefined {
+             if (!url) {
+          @@ -62,6 +164,31 @@
+             }
+           }
+           
+          +async function hostnameFromTab(tabId: number): Promise<string | undefined> {
+          +  if (!api.tabs.get) {
+          +    return undefined;
+          +  }
+          +
+          +  try {
+          +    const tab = await api.tabs.get(tabId);
+          +    return hostnameFromSenderUrl(tab.url);
+          +  } catch {
+          +    return undefined;
+          +  }
+          +}
+          +
+          +async function enrichStateHostname(
+          +  tabId: number,
+          +  state: CachedReplacementState
+          +): Promise<CachedReplacementState> {
+          +  if (state.hostname) {
+          +    return state;
+          +  }
+          +
+          +  const hostname = await hostnameFromTab(tabId);
+          +  return hostname ? { ...state, hostname } : state;
+          +}
+          +
+           function replacementTotal(
+             entries: readonly ReplacementSummaryEntry[]
+           ): number {
+          @@ -282,23 +409,26 @@
+             tabId: number,
+             state: CachedReplacementState
+           ): Promise<void> {
+          -  statesByTab.set(tabId, state);
+          +  const completeState = await enrichStateHostname(tabId, state);
+          +  statesByTab.set(tabId, completeState);
+           
+             await Promise.all([
+          +    persistTabState(tabId, completeState),
+               api.action.setBadgeBackgroundColor({
+                 color: badgeBackgroundColor,
+                 tabId
+               }),
+               api.action.setBadgeText({
+          -      text: formatBadgeCount(state.count),
+          +      text: formatBadgeCount(completeState.count),
+                 tabId
+               })
+             ]);
+          -  await notifyStateUpdate(tabId, state);
+          +  await notifyStateUpdate(tabId, completeState);
+           }
+           
+           async function resetTabState(tabId: number): Promise<void> {
+             statesByTab.delete(tabId);
+          +  await removePersistedTabState(tabId);
+           
+             try {
+               await api.action.setBadgeText({ text: "", tabId });
+          @@ -317,11 +447,15 @@
+             readonly tabId: number;
+             readonly text: string;
+           }> {
+          -  const cached = statesByTab.get(tabId);
+          +  const cached = await readCachedTabState(tabId);
+             const live = await readLiveReplacementState(tabId);
+             if (live) {
+          -    const merged = mergeCompatibleState(live, cached);
+          +    const merged = await enrichStateHostname(
+          +      tabId,
+          +      mergeCompatibleState(live, statesByTab.get(tabId) ?? cached)
+          +    );
+               statesByTab.set(tabId, merged);
+          +    void persistTabState(tabId, merged);
+               return { tabId, text: formatBadgeCount(merged.count) || "0" };
+             }
+           
+          @@ -340,6 +474,7 @@
+                 return undefined;
+               }
+           
+          +    const restored = statesByTab.get(tabId) ?? (await readCachedTabState(tabId));
+               const incoming = mergeCompatibleState(
+                 {
+                   hostname:
+          @@ -349,7 +484,7 @@
+                   count: Math.max(0, Math.trunc(message.count)),
+                   replacements: normalizedReplacementEntries(message.replacements)
+                 },
+          -      statesByTab.get(tabId)
+          +      statesByTab.get(tabId) ?? restored
+               );
+               await updateTabState(tabId, incoming);
+               return undefined;
+          @@ -362,11 +497,11 @@
+                 return undefined;
+               }
+           
+          +    const restored = statesByTab.get(tabId) ?? (await readCachedTabState(tabId));
+               await updateTabState(tabId, {
+          -      hostname:
+          -        statesByTab.get(tabId)?.hostname ?? hostnameFromSenderUrl(sender.url),
+          +      hostname: restored?.hostname ?? hostnameFromSenderUrl(sender.url),
+                 count: Math.max(0, Math.trunc(message.count)),
+          -      replacements: statesByTab.get(tabId)?.replacements ?? []
+          +      replacements: restored?.replacements ?? []
+               });
+               return undefined;
+             }
+          @@ -385,11 +520,15 @@
+             }
+           
+             if (isGetReplacementStateMessage(message)) {
+          -    const cached = statesByTab.get(message.tabId);
+          +    const cached = await readCachedTabState(message.tabId);
+               const live = await readLiveReplacementState(message.tabId);
+               if (live) {
+          -      const merged = mergeCompatibleState(live, cached);
+          +      const merged = await enrichStateHostname(
+          +        message.tabId,
+          +        mergeCompatibleState(live, statesByTab.get(message.tabId) ?? cached)
+          +      );
+                 statesByTab.set(message.tabId, merged);
+          +      void persistTabState(message.tabId, merged);
+                 return {
+                   text: formatBadgeCount(merged.count) || "0",
+                   hostname: merged.hostname,
+          @@ -399,18 +538,21 @@
+               }
+           
+               if (cached) {
+          +      const completeState = await enrichStateHostname(message.tabId, cached);
+          +      statesByTab.set(message.tabId, completeState);
+          +      void persistTabState(message.tabId, completeState);
+                 return {
+          -        text: formatBadgeCount(cached.count) || "0",
+          -        hostname: cached.hostname,
+          -        count: cached.count,
+          -        replacements: cached.replacements
+          +        text: formatBadgeCount(completeState.count) || "0",
+          +        hostname: completeState.hostname,
+          +        count: completeState.count,
+          +        replacements: completeState.replacements
+                 };
+               }
+           
+               const badgeText = await api.action.getBadgeText({ tabId: message.tabId });
+               return {
+                 text: badgeText || "0",
+          -      hostname: undefined,
+          +      hostname: await hostnameFromTab(message.tabId),
+                 count: Number.parseInt(badgeText, 10) || 0,
+                 replacements: []
+               };
+          @@ -432,4 +574,5 @@
+           
+           api.tabs.onRemoved.addListener((tabId) => {
+             statesByTab.delete(tabId);
+          +  void removePersistedTabState(tabId);
+           });
+          --- a/src/browser/options.ts
+          +++ b/src/browser/options.ts
+          @@ -3,9 +3,9 @@
+           type OptionsPageApi = {
+             readonly runtime: Pick<
+               ExtensionApi["runtime"],
+          -    "openOptionsPage" | "sendMessage"
+          +    "getURL" | "openOptionsPage" | "sendMessage"
+             >;
+          -  readonly tabs: Pick<ExtensionApi["tabs"], "query">;
+          +  readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query" | "update">;
+           };
+           
+           function isValidTabId(tabId: number | undefined): tabId is number {
+          @@ -39,6 +39,13 @@
+             }
+           }
+           
+          +function optionsPageUrl(api: OptionsPageApi, tabId: number | undefined): string {
+          +  const baseUrl = api.runtime.getURL("options/options.html");
+          +  return isValidTabId(tabId)
+          +    ? `${baseUrl}?tabId=${encodeURIComponent(String(tabId))}`
+          +    : baseUrl;
+          +}
+          +
+           export async function openOptionsPageInForeground(
+             api: OptionsPageApi
+           ): Promise<void> {
+          @@ -46,16 +53,32 @@
+               active: true,
+               currentWindow: true
+             });
+          +  const inspectedTabId = isValidTabId(activeTab?.id) ? activeTab.id : undefined;
+           
+          -  if (isValidTabId(activeTab?.id)) {
+          +  if (inspectedTabId !== undefined) {
+               await api.runtime.sendMessage({
+                 type: "sprachverstand.set-inspected-tab",
+          -      tabId: activeTab.id
+          +      tabId: inspectedTabId
+               });
+             }
+           
+          -  // Die semantische Options-API überlässt Firefox die korrekte Auswahl und
+          -  // Fokussierung der Optionsseite. tabs.create({ active: true }) garantiert
+          -  // lediglich einen aktiven Tab, nicht den Fokus des Browserfensters.
+          +  // Firefox für Android hat einen bekannten Fehler, bei dem
+          +  // runtime.openOptionsPage() die Seite hinter dem Vollbild-Popup öffnet.
+          +  // Ein normaler aktiver Tab ist dort der von Mozilla empfohlene Workaround.
+          +  try {
+          +    const createdTab = await api.tabs.create({
+          +      url: optionsPageUrl(api, inspectedTabId),
+          +      active: true
+          +    });
+          +
+          +    if (isValidTabId(createdTab.id)) {
+          +      await api.tabs.update(createdTab.id, { active: true });
+          +    }
+          +    return;
+          +  } catch {
+          +    // Falls ein Browser das direkte Öffnen blockiert, bleibt die native
+          +    // Options-API als kompatibler Rückfallpfad erhalten.
+          +  }
+          +
+             await api.runtime.openOptionsPage();
+           }
+          --- a/src/popup.ts
+          +++ b/src/popup.ts
+          @@ -429,7 +429,15 @@
+             });
+           
+             optionsButton.addEventListener("click", () => {
+          -    void openOptionsPageInForeground(api);
+          +    void openOptionsPageInForeground(api)
+          +      .then(() => {
+          +        // Auf Firefox Android bleibt das Vollbild-Popup sonst über dem
+          +        // neu geöffneten Einstellungs-Tab liegen.
+          +        window.close();
+          +      })
+          +      .catch((error: unknown) => {
+          +        console.error("Die Einstellungen konnten nicht geöffnet werden.", error);
+          +      });
+             });
+           }
+           
+          --- a/tests/browser-options.test.ts
+          +++ b/tests/browser-options.test.ts
+          @@ -5,20 +5,29 @@
+           } from "../src/browser/options";
+           
+           describe("Optionsseite", () => {
+          -  it("übergibt den Ursprungstab und öffnet danach die native Optionsseite", async () => {
+          +  it("öffnet die Einstellungen als aktiven Tab mit Ursprungskontext", async () => {
+               const calls: string[] = [];
+               const sendMessage = vi.fn(async () => {
+                 calls.push("inspected-tab");
+                 return undefined;
+               });
+          +    const getURL = vi.fn((path: string) => `moz-extension://sprachverstand/${path}`);
+               const openOptionsPage = vi.fn(async () => {
+          -      calls.push("open-options");
+          +      calls.push("native-options");
+               });
+               const query = vi.fn(async () => [{ id: 17 }]);
+          +    const create = vi.fn(async () => {
+          +      calls.push("create-tab");
+          +      return { id: 23 };
+          +    });
+          +    const update = vi.fn(async () => {
+          +      calls.push("activate-tab");
+          +      return { id: 23 };
+          +    });
+           
+               await openOptionsPageInForeground({
+          -      runtime: { sendMessage, openOptionsPage },
+          -      tabs: { query }
+          +      runtime: { getURL, sendMessage, openOptionsPage },
+          +      tabs: { query, create, update }
+               });
+           
+               expect(query).toHaveBeenCalledWith({
+          @@ -29,22 +38,54 @@
+                 type: "sprachverstand.set-inspected-tab",
+                 tabId: 17
+               });
+          -    expect(openOptionsPage).toHaveBeenCalledTimes(1);
+          -    expect(calls).toEqual(["inspected-tab", "open-options"]);
+          +    expect(create).toHaveBeenCalledWith({
+          +      url: "moz-extension://sprachverstand/options/options.html?tabId=17",
+          +      active: true
+          +    });
+          +    expect(update).toHaveBeenCalledWith(23, { active: true });
+          +    expect(openOptionsPage).not.toHaveBeenCalled();
+          +    expect(calls).toEqual(["inspected-tab", "create-tab", "activate-tab"]);
+             });
+           
+          -  it("öffnet ohne gültigen aktiven Tab trotzdem die Optionsseite", async () => {
+          +  it("öffnet auch ohne Ursprungstab einen aktiven Einstellungs-Tab", async () => {
+               const sendMessage = vi.fn(async () => undefined);
+          +    const getURL = vi.fn((path: string) => `moz-extension://sprachverstand/${path}`);
+               const openOptionsPage = vi.fn(async () => undefined);
+               const query = vi.fn(async () => [{}]);
+          +    const create = vi.fn(async () => ({ id: 9 }));
+          +    const update = vi.fn(async () => ({ id: 9 }));
+           
+               await openOptionsPageInForeground({
+          -      runtime: { sendMessage, openOptionsPage },
+          -      tabs: { query }
+          +      runtime: { getURL, sendMessage, openOptionsPage },
+          +      tabs: { query, create, update }
+               });
+           
+               expect(sendMessage).not.toHaveBeenCalled();
+          +    expect(create).toHaveBeenCalledWith({
+          +      url: "moz-extension://sprachverstand/options/options.html",
+          +      active: true
+          +    });
+          +    expect(update).toHaveBeenCalledWith(9, { active: true });
+          +    expect(openOptionsPage).not.toHaveBeenCalled();
+          +  });
+          +
+          +  it("fällt bei blockiertem Tab-Öffnen auf die native Options-API zurück", async () => {
+          +    const sendMessage = vi.fn(async () => undefined);
+          +    const getURL = vi.fn((path: string) => `moz-extension://sprachverstand/${path}`);
+          +    const openOptionsPage = vi.fn(async () => undefined);
+          +    const query = vi.fn(async () => [{ id: 17 }]);
+          +    const create = vi.fn(async () => {
+          +      throw new Error("Tab blockiert");
+          +    });
+          +    const update = vi.fn(async () => ({ id: 1 }));
+          +
+          +    await openOptionsPageInForeground({
+          +      runtime: { getURL, sendMessage, openOptionsPage },
+          +      tabs: { query, create, update }
+          +    });
+          +
+               expect(openOptionsPage).toHaveBeenCalledTimes(1);
+          +    expect(update).not.toHaveBeenCalled();
+             });
+           
+             it("liest nur gültige Tab-IDs aus Options-URLs und Querystrings", () => {
+          --- a/tests/options-count-context.test.ts
+          +++ b/tests/options-count-context.test.ts
+          @@ -6,9 +6,11 @@
+           const browserOptionsSource = readFileSync("src/browser/options.ts", "utf8");
+           
+           describe("Options-Zähler", () => {
+          -  it("übergibt den Ursprungstab vor dem nativen Öffnen der Optionsseite", () => {
+          +  it("übergibt den Ursprungstab und öffnet die Optionsseite als aktiven Browser-Tab", () => {
+               expect(browserOptionsSource).toContain("sprachverstand.set-inspected-tab");
+          -    expect(browserOptionsSource).toContain("api.runtime.openOptionsPage()");
+          +    expect(browserOptionsSource).toContain("api.tabs.create({");
+          +    expect(browserOptionsSource).toContain("active: true");
+          +    expect(browserOptionsSource).toContain("optionsPageUrl(api, inspectedTabId)");
+               expect(backgroundSource).toContain("isSetInspectedTabMessage(message)");
+               expect(backgroundSource).toContain("inspectedTabId = message.tabId");
+               expect(backgroundSource).toContain(
+          @@ -17,14 +19,18 @@
+               expect(backgroundSource).not.toContain("lastCountedTabId");
+             });
+           
+          -  it("fragt nach einem Worker-Neustart den Content-Script-Zustand live ab und erhält vollständige Cache-Daten", () => {
+          +  it("stellt vollständige Tab-Daten nach einem Background-Neustart aus der Session wieder her", () => {
+               expect(backgroundSource).toContain(
+          -      "const live = await readLiveReplacementState(tabId)"
+          +      'const runtimeStateStoragePrefix = "sprachverstand.runtime-state."'
+               );
+          +    expect(backgroundSource).toContain("api.storage.session");
+               expect(backgroundSource).toContain(
+          -      "const merged = mergeCompatibleState(live, cached)"
+          +      "const cached = await readCachedTabState(tabId)"
+               );
+          -    expect(backgroundSource).toContain("statesByTab.set(tabId, merged)");
+          +    expect(backgroundSource).toContain(
+          +      "mergeCompatibleState(live, statesByTab.get(tabId) ?? cached)"
+          +    );
+          +    expect(backgroundSource).toContain("void persistTabState(tabId, merged)");
+             });
+           
+             it("bedient das bestehende Options-Protokoll weiterhin kompatibel", () => {
+          --- a/package.json
+          +++ b/package.json
+          @@ -1,6 +1,6 @@
+           {
+             "name": "sprachverstand",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "private": false,
+             "type": "module",
+             "description": "Macht Webseiten leichter lesbar. Dein Browser. Deine Sprache.",
+          --- a/package-lock.json
+          +++ b/package-lock.json
+          @@ -1,12 +1,12 @@
+           {
+             "name": "sprachverstand",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "lockfileVersion": 3,
+             "requires": true,
+             "packages": {
+               "": {
+                 "name": "sprachverstand",
+          -      "version": "0.7.0",
+          +      "version": "0.7.2",
+                 "license": "AGPL-3.0-only",
+                 "devDependencies": {
+                   "esbuild": "0.28.2",
+          --- a/manifests/chromium.json
+          +++ b/manifests/chromium.json
+          @@ -1,7 +1,7 @@
+           {
+             "manifest_version": 3,
+             "name": "__MSG_extensionName__",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "description": "__MSG_extensionDescription__",
+             "default_locale": "de",
+             "permissions": ["storage", "tabs"],
+          --- a/manifests/edge.json
+          +++ b/manifests/edge.json
+          @@ -1,7 +1,7 @@
+           {
+             "manifest_version": 3,
+             "name": "__MSG_extensionName__",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "description": "__MSG_extensionDescription__",
+             "default_locale": "de",
+             "permissions": ["storage", "tabs"],
+          --- a/manifests/firefox.json
+          +++ b/manifests/firefox.json
+          @@ -1,7 +1,7 @@
+           {
+             "manifest_version": 2,
+             "name": "__MSG_extensionName__",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "description": "__MSG_extensionDescription__",
+             "default_locale": "de",
+             "permissions": ["storage", "tabs", "<all_urls>"],
+          --- a/manifests/opera.json
+          +++ b/manifests/opera.json
+          @@ -1,7 +1,7 @@
+           {
+             "manifest_version": 3,
+             "name": "__MSG_extensionName__",
+          -  "version": "0.7.0",
+          +  "version": "0.7.2",
+             "description": "__MSG_extensionDescription__",
+             "default_locale": "de",
+             "permissions": ["storage", "tabs"],
+          --- /dev/null
+          +++ b/tests/background-session-state.test.ts
+          @@ -0,0 +1,94 @@
+          +import { afterEach, describe, expect, it, vi } from "vitest";
+          +import type { MessageListener } from "../src/browser/api";
+          +
+          +afterEach(() => {
+          +  vi.unstubAllGlobals();
+          +  vi.restoreAllMocks();
+          +  vi.resetModules();
+          +});
+          +
+          +describe("Background-Sessionzustand", () => {
+          +  it("stellt Ersetzungsdetails nach einem Background-Neustart aus storage.session wieder her", async () => {
+          +    let runtimeListener: MessageListener | undefined;
+          +    const sessionValues: Record<string, unknown> = {
+          +      "sprachverstand.runtime-state.37": {
+          +        count: 14,
+          +        replacements: [
+          +          { original: "Nutzer:innen", replacement: "Nutzer", count: 14 }
+          +        ]
+          +      }
+          +    };
+          +
+          +    vi.stubGlobal("browser", {
+          +      runtime: {
+          +        openOptionsPage: vi.fn(),
+          +        getURL: vi.fn((path: string) => path),
+          +        sendMessage: vi.fn(async () => undefined),
+          +        onMessage: {
+          +          addListener: vi.fn((listener: MessageListener) => {
+          +            runtimeListener = listener;
+          +          }),
+          +          removeListener: vi.fn()
+          +        }
+          +      },
+          +      action: {
+          +        setBadgeText: vi.fn(async () => undefined),
+          +        getBadgeText: vi.fn(async () => "14"),
+          +        setBadgeBackgroundColor: vi.fn(async () => undefined)
+          +      },
+          +      tabs: {
+          +        get: vi.fn(async () => ({
+          +          id: 37,
+          +          url: "https://www.example.org/artikel"
+          +        })),
+          +        sendMessage: vi.fn(async () => {
+          +          throw new Error("Kein Content-Script-Empfänger");
+          +        }),
+          +        query: vi.fn(async () => [{ id: 37 }]),
+          +        create: vi.fn(async () => ({ id: 1 })),
+          +        update: vi.fn(async () => ({ id: 1 })),
+          +        onUpdated: {
+          +          addListener: vi.fn(),
+          +          removeListener: vi.fn()
+          +        },
+          +        onRemoved: {
+          +          addListener: vi.fn(),
+          +          removeListener: vi.fn()
+          +        }
+          +      },
+          +      i18n: {
+          +        getMessage: vi.fn(() => ""),
+          +        getUILanguage: vi.fn(() => "de")
+          +      },
+          +      storage: {
+          +        local: {},
+          +        sync: {},
+          +        session: {
+          +          get: vi.fn(async (key: string) => ({
+          +            [key]: sessionValues[key]
+          +          })),
+          +          set: vi.fn(async (items: Record<string, unknown>) => {
+          +            Object.assign(sessionValues, items);
+          +          }),
+          +          remove: vi.fn(async (key: string) => {
+          +            delete sessionValues[key];
+          +          })
+          +        },
+          +        onChanged: {
+          +          addListener: vi.fn(),
+          +          removeListener: vi.fn()
+          +        }
+          +      }
+          +    });
+          +
+          +    await import("../src/background");
+          +    expect(runtimeListener).toBeDefined();
+          +
+          +    const response = (await runtimeListener?.(
+          +      { type: "sprachverstand.get-replacement-state", tabId: 37 },
+          +      {}
+          +    )) as
+          +      | {
+          +          readonly hostname?: string;
+          +          readonly count?: number;
+          +          readonly replacements?: readonly unknown[];
+          +        }
+          +      | undefined;
+          +
+          +    expect(response).toMatchObject({
+          +      hostname: "www.example.org",
+          +      count: 14,
+          +      replacements: [
+          +        { original: "Nutzer:innen", replacement: "Nutzer", count: 14 }
+          +      ]
+          +    });
+          +  });
+          +});
+          --- /dev/null
+          +++ b/tests/firefox-android-options.test.ts
+          @@ -0,0 +1,20 @@
+          +import { readFileSync } from "node:fs";
+          +import { describe, expect, it } from "vitest";
+          +
+          +const popupSource = readFileSync("src/popup.ts", "utf8");
+          +const browserOptionsSource = readFileSync("src/browser/options.ts", "utf8");
+          +
+          +describe("Firefox-Android-Optionsseite", () => {
+          +  it("umgeht den openOptionsPage-Hintergrundfehler mit einem aktiven Tab", () => {
+          +    expect(browserOptionsSource).toContain("api.tabs.create({");
+          +    expect(browserOptionsSource).toContain("active: true");
+          +    expect(browserOptionsSource).toContain(
+          +      'api.runtime.getURL("options/options.html")'
+          +    );
+          +  });
+          +
+          +  it("schließt das Vollbild-Popup nach erfolgreichem Öffnen der Einstellungen", () => {
+          +    expect(popupSource).toContain("openOptionsPageInForeground(api)");
+          +    expect(popupSource).toContain("window.close()");
+          +  });
+          +});
+          --- /dev/null
+          +++ b/tests/version-consistency.test.ts
+          @@ -0,0 +1,27 @@
+          +import { readFileSync } from "node:fs";
+          +import { describe, expect, it } from "vitest";
+          +
+          +function readJson(path: string): Record<string, unknown> {
+          +  return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+          +}
+          +
+          +describe("Versionskonsistenz", () => {
+          +  it("führt die aktuelle Modern-Basisversion in Paket und allen Modern-Manifests", () => {
+          +    const currentVersion = readJson("store/release-notes/current.json").version;
+          +    expect(currentVersion).toBe("0.7.2");
+          +
+          +    expect(readJson("package.json").version).toBe(currentVersion);
+          +    expect(readJson("package-lock.json").version).toBe(currentVersion);
+          +    const rootPackage = readJson("package-lock.json").packages as Record<string, Record<string, unknown>>;
+          +    expect(rootPackage[""]?.version).toBe(currentVersion);
+          +    for (const manifest of [
+          +      "manifests/chromium.json",
+          +      "manifests/edge.json",
+          +      "manifests/firefox.json",
+          +      "manifests/opera.json"
+          +    ]) {
+          +      expect(readJson(manifest).version).toBe(currentVersion);
+          +    }
+          +  });
+          +});
+          PATCH
+          git apply --check /tmp/firefox-android-state.patch
+          git apply /tmp/firefox-android-state.patch
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: TypeScript prüfen
+        run: npm run typecheck
+
+      - name: Regressionstests ausführen
+        run: npm test -- --run tests/browser-options.test.ts tests/background-state-merge.test.ts tests/background-session-state.test.ts tests/popup-runtime-race.test.ts tests/options-count-context.test.ts tests/firefox-android-options.test.ts tests/version-consistency.test.ts
+
+      - name: Firefox-Paket bauen
+        run: npm run build:firefox
+
+      - name: Firefox-Paket linten
+        run: npm run lint:firefox
+
+      - name: Geprüften Fix übernehmen
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-fix-firefox-android-state.yml
+          git add src tests package.json package-lock.json manifests
+          git commit -m "fix: Firefox-Android-Zustand und Optionsnavigation stabilisieren"
+          git push origin HEAD:main
