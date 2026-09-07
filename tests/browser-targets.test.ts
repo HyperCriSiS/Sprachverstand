@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
@@ -9,8 +9,6 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
 const chromiumManifest = JSON.parse(
   readFileSync("manifests/chromium.json", "utf8")
 );
-const edgeManifest = JSON.parse(readFileSync("manifests/edge.json", "utf8"));
-const operaManifest = JSON.parse(readFileSync("manifests/opera.json", "utf8"));
 const firefoxManifest = JSON.parse(
   readFileSync("manifests/firefox.json", "utf8")
 );
@@ -35,34 +33,35 @@ const standardCompatibilityBrowsers = compatibilityBrowsers.filter(
 const orion = compatibilityBrowsers.find((browser) => browser.name === "Orion");
 
 describe("Browser-Ziele", () => {
-  it("baut Chromium, Edge, Opera und Firefox als explizite Ziele", () => {
+  it("baut nur einen gemeinsamen Chromium-Build und den getrennten Firefox-Build", () => {
     expect(buildScript).toContain(
-      'const supportedTargets = ["chromium", "edge", "opera", "firefox"];'
+      'const supportedTargets = ["chromium", "firefox"];'
     );
-    expect(packageJson.scripts["build:edge"]).toBe(
-      "node scripts/build.mjs --target edge"
-    );
-    expect(packageJson.scripts["build:opera"]).toBe(
-      "node scripts/build.mjs --target opera"
-    );
+    expect(packageJson.scripts["build:edge"]).toBeUndefined();
+    expect(packageJson.scripts["build:opera"]).toBeUndefined();
     expect(packageJson.scripts["build:chromium-family"]).toBe(
-      "node scripts/build.mjs --targets chromium,edge,opera"
+      "node scripts/build.mjs --target chromium"
     );
+    expect(existsSync("manifests/edge.json")).toBe(false);
+    expect(existsSync("manifests/opera.json")).toBe(false);
   });
 
-  it("hält Edge und Opera auf derselben minimalen Chromium-Berechtigungsbasis", () => {
-    for (const manifest of [chromiumManifest, edgeManifest, operaManifest]) {
-      expect(manifest.manifest_version).toBe(3);
-      expect(manifest.version).toBe(packageJson.version);
-      expect(manifest.permissions).toEqual(["storage"]);
-      expect(manifest.content_scripts).toHaveLength(1);
-      expect(manifest.content_scripts[0].matches).toEqual(["<all_urls>"]);
-      expect(manifest.background).toEqual({ service_worker: "background.js" });
-      expect(manifest.browser_specific_settings).toBeUndefined();
-    }
+  it("ordnet Edge und Opera demselben minimalen Chromium-Basis-Build zu", () => {
+    expect(chromiumManifest.manifest_version).toBe(3);
+    expect(chromiumManifest.version).toBe(packageJson.version);
+    expect(chromiumManifest.permissions).toEqual(["storage"]);
+    expect(chromiumManifest.content_scripts).toHaveLength(1);
+    expect(chromiumManifest.content_scripts[0].matches).toEqual(["<all_urls>"]);
+    expect(chromiumManifest.background).toEqual({ service_worker: "background.js" });
+    expect(chromiumManifest.browser_specific_settings).toBeUndefined();
 
-    expect(edgeManifest).toEqual(chromiumManifest);
-    expect(operaManifest).toEqual(chromiumManifest);
+    for (const name of ["Microsoft Edge", "Opera"]) {
+      expect(standardCompatibilityBrowsers).toContainEqual({
+        name,
+        family: "chromium",
+        target: "chromium"
+      });
+    }
   });
 
   it("behält Firefox als bewusst getrennten WebExtension-Build", () => {
@@ -73,6 +72,8 @@ describe("Browser-Ziele", () => {
   it("ordnet Browser ohne eigenen Release ihrem gemeinsamen Basis-Build zu", () => {
     expect(standardCompatibilityBrowsers).toEqual([
       { name: "Chromium", family: "chromium", target: "chromium" },
+      { name: "Microsoft Edge", family: "chromium", target: "chromium" },
+      { name: "Opera", family: "chromium", target: "chromium" },
       { name: "Brave", family: "chromium", target: "chromium" },
       { name: "Vivaldi", family: "chromium", target: "chromium" },
       { name: "Arc", family: "chromium", target: "chromium" },
@@ -101,11 +102,13 @@ describe("Browser-Ziele", () => {
     expect(releaseWorkflow.toLowerCase()).not.toContain("orion");
   });
 
-  it("packt Edge und Opera im Release-Workflow", () => {
-    for (const target of ["edge", "opera"]) {
-      expect(releaseWorkflow).toContain(`dist/${target}`);
-      expect(releaseWorkflow).toContain(`-${target}.zip`);
-    }
+  it("veröffentlicht für die Chromium-Familie nur ein gemeinsames Paket", () => {
+    expect(releaseWorkflow).toContain("dist/chromium");
+    expect(releaseWorkflow).toContain("-chromium.zip");
+    expect(releaseWorkflow).not.toContain("dist/edge");
+    expect(releaseWorkflow).not.toContain("dist/opera");
+    expect(releaseWorkflow).not.toContain("-edge.zip");
+    expect(releaseWorkflow).not.toContain("-opera.zip");
   });
 
   it("bindet manuell erzeugte Release-Tags an die gewählte Produktlinie", () => {

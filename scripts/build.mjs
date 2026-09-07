@@ -16,7 +16,7 @@ const requestedTargets =
 const watch = argumentsSet.has("--watch");
 const cleanOnly = argumentsSet.has("--clean");
 
-const supportedTargets = ["chromium", "edge", "opera", "firefox"];
+const supportedTargets = ["chromium", "firefox"];
 
 if (requestedTarget && requestedTargets) {
   throw new Error("--target und --targets dürfen nicht gleichzeitig verwendet werden.");

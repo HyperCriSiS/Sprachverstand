@@ -260,10 +260,10 @@ npm install
 npm run check
 ```
 
-Browser-Builds werden anschließend unter `dist/chromium/`, `dist/edge/`,
-`dist/opera/` und `dist/firefox/` erstellt. Edge und Opera verwenden bewusst
-dieselbe geprüfte Chromium-Payload; die CI kontrolliert deren Bytegleichheit
-außerhalb des Manifests.
+Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
+erstellt. Microsoft Edge, Opera und weitere Chromium-basierte Browser verwenden
+denselben geprüften Chromium-Build; browserspezifische Kompatibilität bleibt
+separat in der Browsermatrix abgesichert.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das

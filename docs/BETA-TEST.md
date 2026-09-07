@@ -6,9 +6,7 @@ aus dem die beigefügten Pakete gebaut wurden.
 
 ## Enthaltene Pakete
 
-- `sprachverstand-<release>-chromium.zip`
-- `sprachverstand-<release>-edge.zip`
-- `sprachverstand-<release>-opera.zip`
+- `sprachverstand-<release>-chromium.zip` – gemeinsamer Build für Chromium, Chrome, Edge, Opera und kompatible Chromium-Browser
 - `sprachverstand-<release>-firefox.xpi`
 - `sprachverstand-<release>-source.zip`
 - `SHA256SUMS.txt`

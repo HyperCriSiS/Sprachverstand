@@ -3,8 +3,8 @@
 **Stand: 25. August 2026**
 
 Diese Datei ist die operative Checkliste für die erste Veröffentlichung von
-Sprachverstand bei Microsoft Edge Add-ons. Das einzureichende Paket wird vom
-Release-Workflow als `sprachverstand-<release>-edge.zip` erzeugt.
+Sprachverstand bei Microsoft Edge Add-ons. Das einzureichende Paket ist der gemeinsame Chromium-Build und wird vom
+Release-Workflow als `sprachverstand-<release>-chromium.zip` erzeugt.
 
 Offizielle Referenzen:
 
@@ -197,7 +197,7 @@ Für den Edge-Eintrag vorbereiten:
 
 ## Vor der Einreichung
 
-- [ ] neuestes `sprachverstand-<release>-edge.zip` verwenden
+- [ ] neuestes `sprachverstand-<release>-chromium.zip` verwenden
 - [ ] SHA256 mit `SHA256SUMS.txt` prüfen
 - [ ] Paket in Microsoft Edge über `edge://extensions` als entpackte Erweiterung testen
 - [ ] Popup, Detailansicht, Optionsseite und Wiederherstellung beim Ausschalten testen

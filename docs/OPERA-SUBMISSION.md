@@ -3,8 +3,8 @@
 **Stand: 25. August 2026**
 
 Diese Datei ist die operative Checkliste für die erste Veröffentlichung von
-Sprachverstand bei Opera Add-ons. Das Release-Artefakt wird als
-`sprachverstand-<release>-opera.zip` erzeugt.
+Sprachverstand bei Opera Add-ons. Das Release-Artefakt ist der gemeinsame Chromium-Build und wird als
+`sprachverstand-<release>-chromium.zip` erzeugt.
 
 Offizielle Referenzen:
 
@@ -117,7 +117,7 @@ Position beziehungsweise Oberfläche im Browser zeigen.
 Opera verlangt ausdrücklich gründliche Tests und empfiehlt Windows und macOS
 sowie niedrige und hohe Bandbreite.
 
-1. `sprachverstand-<release>-opera.zip` entpacken.
+1. `sprachverstand-<release>-chromium.zip` entpacken.
 2. `opera:extensions` öffnen.
 3. Entwicklermodus aktivieren.
 4. **Load unpacked extension** wählen und den entpackten Ordner laden.
@@ -138,12 +138,12 @@ Die aktuelle öffentliche Opera-Dokumentation beschreibt die Einreichung über d
 eindeutiges aktuelles Dateiformat. Das bereitgestellte ZIP ist deshalb das
 reproduzierbare Release- und Testartefakt. Falls das aktuelle Upload-Formular
 beim Einreichen ein von Opera gepacktes CRX verlangt, denselben geprüften
-`dist/opera`-Inhalt in Opera über **Pack Extension** paketieren. Es dürfen dabei
+`dist/chromium`-Inhalt in Opera über **Pack Extension** paketieren. Es dürfen dabei
 keine Quell- oder Funktionsänderungen gegenüber dem geprüften ZIP erfolgen.
 
 ## Vor der Einreichung
 
-- [ ] neuestes `sprachverstand-<release>-opera.zip` verwenden
+- [ ] neuestes `sprachverstand-<release>-chromium.zip` verwenden
 - [ ] SHA256 mit `SHA256SUMS.txt` prüfen
 - [ ] entpackte Version in aktuellem Opera Stable testen
 - [ ] mindestens zusätzlich Windows oder macOS gegenprüfen
