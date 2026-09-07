@@ -251,14 +251,6 @@ jobs:
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip" .
             )
             (
-              cd dist/edge
-              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip" .
-            )
-            (
-              cd dist/opera
-              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip" .
-            )
-            (
               cd dist/firefox
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
             )
@@ -320,8 +312,6 @@ jobs:
 
           if [[ "$PRODUCT_LINE" == "modern" ]]; then
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip"
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi"
             if unzip -l "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
               echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
