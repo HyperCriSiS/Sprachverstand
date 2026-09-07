@@ -63,6 +63,12 @@ jobs:
           npm run validate:store
           npm run validate:store-exports
 
+      - name: Semantische Übersetzungsänderungen vollständig abgleichen
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: node scripts/validate-locale-change-coverage.mjs
+
       - name: Oberfläche und Rechtshinweise absichern
         shell: bash
         run: |
