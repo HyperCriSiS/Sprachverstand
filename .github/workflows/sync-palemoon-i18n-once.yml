@@ -27,38 +27,18 @@ jobs:
           git rm -f static/options/domain-ui.js
           git rm -f legacy/palemoon/palemoon/domain-ui.js
 
-      - name: Pale-Moon-Build und CI auf die neue UI-Struktur anpassen
+      - name: Pale-Moon-Build auf die neue UI-Struktur anpassen
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
           const fs = require('node:fs');
-
           const buildPath = 'scripts/build.mjs';
           let build = fs.readFileSync(buildPath, 'utf8');
           const oldBuild = `    cp(\n      path.join(legacyDirectory, "palemoon", "i18n-bootstrap.js"),\n      path.join(paleMoonRuntimeDirectory, "i18n-bootstrap.js")\n    ),\n    cp(\n      path.join(legacyDirectory, "palemoon", "domain-ui.js"),\n      path.join(outputDirectory, "options", "domain-ui.js")\n    )`;
           const newBuild = `    cp(\n      path.join(legacyDirectory, "palemoon", "i18n-bootstrap.js"),\n      path.join(paleMoonRuntimeDirectory, "i18n-bootstrap.js")\n    )`;
           if (!build.includes(oldBuild)) throw new Error('Erwarteter domain-ui.js-Buildblock fehlt');
-          build = build.replace(oldBuild, newBuild);
-          fs.writeFileSync(buildPath, build, 'utf8');
-
-          const ciPath = '.github/workflows/ci.yml';
-          let ci = fs.readFileSync(ciPath, 'utf8');
-          const obsoleteFragments = [
-            'test -s legacy/palemoon/palemoon/domain-ui.js',
-            'test -s static/options/domain-ui.js',
-            'test -s dist/palemoon/options/domain-ui.js',
-            "! grep -q 'globalThis' dist/palemoon/options/domain-ui.js",
-            "! grep -Fq '?.' dist/palemoon/options/domain-ui.js"
-          ];
-          const lines = ci.split('\n');
-          for (const fragment of obsoleteFragments) {
-            if (!lines.some((line) => line.includes(fragment))) {
-              throw new Error(`Erwartete veraltete CI-Prüfung fehlt: ${fragment}`);
-            }
-          }
-          ci = lines.filter((line) => !obsoleteFragments.some((fragment) => line.includes(fragment))).join('\n');
-          fs.writeFileSync(ciPath, ci, 'utf8');
+          fs.writeFileSync(buildPath, build.replace(oldBuild, newBuild), 'utf8');
           NODE
 
       - name: Einmal-Workflow entfernen und Sync committen
