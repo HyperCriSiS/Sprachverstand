@@ -27,6 +27,7 @@ const compatibilityBrowsers = JSON.parse(
 const buildScript = readFileSync("scripts/build.mjs", "utf8");
 const releaseWorkflow = readFileSync(".github/workflows/release.yml", "utf8");
 const ciWorkflow = readFileSync(".github/workflows/ci.yml", "utf8");
+const iconValidator = readFileSync("scripts/validate-icons.mjs", "utf8");
 const readme = readFileSync("README.md", "utf8");
 
 const standardCompatibilityBrowsers = compatibilityBrowsers.filter(
@@ -107,6 +108,13 @@ describe("Browser-Ziele", () => {
     expect(releaseWorkflow).not.toContain("dist/opera");
     expect(releaseWorkflow).not.toContain("-edge.zip");
     expect(releaseWorkflow).not.toContain("-opera.zip");
+  });
+
+  it("prüft standardmäßig nur die tatsächlich erzeugten Icon-Verzeichnisse", () => {
+    expect(iconValidator).toContain('"dist/chromium/icons"');
+    expect(iconValidator).toContain('"dist/firefox/icons"');
+    expect(iconValidator).not.toContain('"dist/edge/icons"');
+    expect(iconValidator).not.toContain('"dist/opera/icons"');
   });
 
   it("bindet manuell erzeugte Release-Tags an die gewählte Produktlinie", () => {
