@@ -108,7 +108,7 @@ jobs:
           }
           NODE
 
-      - name: Temporären Generator escapen
+      - name: Temporären Generator korrigieren
         shell: bash
         run: |
           set -euo pipefail
@@ -125,6 +125,10 @@ jobs:
               if before not in source:
                   raise SystemExit(f"Erwarteter Generatorausdruck fehlt: {before}")
               source = source.replace(before, after)
+          needle = "        keys.add(match[1]);"
+          if source.count(needle) != 2:
+              raise SystemExit("Unerwartete Anzahl nicht typensicherer Match-Zugriffe.")
+          source = source.replace(needle, "        if (match[1]) keys.add(match[1]);")
           path.write_text(source, encoding="utf-8")
           PY
 
