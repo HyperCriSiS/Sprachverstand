@@ -10,11 +10,12 @@ describe("Optionsseite", () => {
       (path: string) => `moz-extension://sprachverstand/${path}`
     );
     const create = vi.fn(async () => ({ id: 42 }));
+    const update = vi.fn(async () => ({ id: 42 }));
     const query = vi.fn(async () => [{ id: 17 }]);
 
     await openOptionsPageInForeground({
       runtime: { getURL },
-      tabs: { create, query }
+      tabs: { create, query, update }
     });
 
     expect(query).toHaveBeenCalledWith({
@@ -26,6 +27,7 @@ describe("Optionsseite", () => {
       url: "moz-extension://sprachverstand/options/options.html?tabId=17",
       active: true
     });
+    expect(update).toHaveBeenCalledWith(42, { active: true });
   });
 
   it("erfindet ohne gültigen aktiven Tab keinen Kontext", async () => {
@@ -33,17 +35,19 @@ describe("Optionsseite", () => {
       (path: string) => `moz-extension://sprachverstand/${path}`
     );
     const create = vi.fn(async () => ({ id: 42 }));
+    const update = vi.fn(async () => ({ id: 42 }));
     const query = vi.fn(async () => [{}]);
 
     await openOptionsPageInForeground({
       runtime: { getURL },
-      tabs: { create, query }
+      tabs: { create, query, update }
     });
 
     expect(create).toHaveBeenCalledWith({
       url: "moz-extension://sprachverstand/options/options.html",
       active: true
     });
+    expect(update).toHaveBeenCalledWith(42, { active: true });
   });
 
   it("liest nur gültige Tab-IDs aus Options-URLs und Querystrings", () => {

@@ -2,7 +2,7 @@ import type { ExtensionApi } from "./api";
 
 type OptionsPageApi = {
   readonly runtime: Pick<ExtensionApi["runtime"], "getURL">;
-  readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query">;
+  readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query" | "update">;
 };
 
 function isValidTabId(tabId: number | undefined): tabId is number {
@@ -48,8 +48,15 @@ export async function openOptionsPageInForeground(
     ? `${baseUrl}?tabId=${encodeURIComponent(String(activeTab.id))}`
     : baseUrl;
 
-  await api.tabs.create({
+  const createdTab = await api.tabs.create({
     url,
     active: true
   });
+
+  // Firefox kann einen aus dem Erweiterungs-Popup erzeugten Tab trotz
+  // active:true zunächst im Hintergrund belassen. Die zweite Aktivierung
+  // macht den Vordergrundvertrag browserübergreifend eindeutig.
+  if (isValidTabId(createdTab.id)) {
+    await api.tabs.update(createdTab.id, { active: true });
+  }
 }
