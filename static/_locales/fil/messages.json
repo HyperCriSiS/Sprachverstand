@@ -17,9 +17,6 @@
   "save": {
     "message": "I-save"
   },
-  "reset": {
-    "message": "I-reset"
-  },
   "expandAll": {
     "message": "Palawakin lahat"
   },
@@ -161,9 +158,6 @@
   "excludedDomains": {
     "message": "Mga ibinukod na domain"
   },
-  "excludedDomainsDescription": {
-    "message": "Isang domain bawat linya. Kasama rin ang mga subdomain. Hanggang 100 valid na domain; kino-convert ang mga entry sa normalized na hostname."
-  },
   "backupTransfer": {
     "message": "I-backup at ilipat ang mga setting"
   },
@@ -200,12 +194,6 @@
   "syncRuleGroupsDescription": {
     "message": "Sini-sync ang pagpili ng mga naka-enable at naka-disable na grupo ng panuntunan."
   },
-  "syncExcludedDomains": {
-    "message": "Mga exception sa domain"
-  },
-  "syncExcludedDomainsDescription": {
-    "message": "Maaaring maglaman ng personal o internal na domain name."
-  },
   "syncTextMedia": {
     "message": "Mga opsyon sa teksto at media"
   },
@@ -224,9 +212,6 @@
   "licenseSource": {
     "message": "Lisensya at source code"
   },
-  "correctionsOnPage": {
-    "message": "Mga pagwawasto sa page na ito"
-  },
   "extensionActive": {
     "message": "Naka-enable ang extension"
   },
@@ -240,13 +225,10 @@
     "message": "Mga subtitle"
   },
   "exceptionsMoreSettings": {
-    "message": "Mga exception at higit pang setting"
+    "message": "Mga advanced na setting"
   },
   "settingsToolbarAria": {
     "message": "Kontrolin ang mga setting at seksyon"
-  },
-  "settingsAria": {
-    "message": "Mga Setting"
   },
   "settingsSectionsAria": {
     "message": "Mga seksyon ng setting"
@@ -358,9 +340,6 @@
   "saveFailed": {
     "message": "Hindi ma-save ang mga setting."
   },
-  "resetDone": {
-    "message": "Na-reset sa ligtas na default."
-  },
   "importTooLarge": {
     "message": "Mas malaki sa 1 MB ang import file at hindi ito poprosesuhin."
   },
@@ -454,30 +433,6 @@
   "nameLogoDescription": {
     "message": "Hindi nagbibigay ang software license ng karapatan sa pangalang “Sprachverstand”, sa SV logo, o sa iba pang markang tumutukoy sa pinagmulan. Dapat malinaw na makilala ang binagong bersyon bilang hindi opisyal at gumamit ng natatanging pangalan at ibang logo ng produkto."
   },
-  "maxExcludedDomains": {
-    "message": "Hanggang $COUNT$ domain exception lamang ang pinapayagan.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
-  },
-  "invalidExcludedDomain": {
-    "message": "Hindi valid ang domain exception na “$ENTRY$”.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
-  "duplicateExcludedDomain": {
-    "message": "Mahigit isang beses o sa katumbas na baybay lumilitaw ang domain exception na “$ENTRY$”.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
   "settingsExported": {
     "message": "Na-export ang lahat ng setting, kabilang ang $EXCEPTIONS$ exception at $REPLACEMENTS$ custom na pagpapalit.",
     "placeholders": {
@@ -541,5 +496,57 @@
   },
   "replacementOverviewMemoryNotice": {
     "message": "Ang overview ay pinananatili lamang sa memory para sa kasalukuyang tab at muling binubuo kapag isinara o ni-reload ang page."
+  },
+  "includedDomains": {
+    "message": "Mga kasamang domain"
+  },
+  "includedDomainsLabel": {
+    "message": "I-enable ang Sprachverstand sa mga website na ito lamang"
+  },
+  "switchToExcludedDomains": {
+    "message": "Lumipat sa mga ibinukod na domain"
+  },
+  "switchToIncludedDomains": {
+    "message": "Lumipat sa mga kasamang domain"
+  },
+  "popupDomainActionTitle": {
+    "message": "Idagdag ang kasalukuyang website sa listahan ng domain"
+  },
+  "popupDomainActionDescription": {
+    "message": "Nagpapakita sa popup ng button para idagdag ang kasalukuyang website sa listahan ng domain ayon sa aktibong mode."
+  },
+  "currentWebsiteAlreadyInDomainList": {
+    "message": "Nasa listahan na ng domain ang website"
+  },
+  "includeCurrentWebsite": {
+    "message": "Isama ang website na ito"
+  },
+  "excludeCurrentWebsite": {
+    "message": "Ibukod ang website na ito"
+  },
+  "domainListDescription": {
+    "message": "Isang domain bawat linya. Kasama rin ang mga subdomain; inaayos ang mga entry sa hostname. Walang nakapirming lokal na limitasyon ng bilang. Kapag naka-enable ang browser sync, nalalapat din ang ligtas na limitasyon ng laki nito."
+  },
+  "syncDomainListTitle": {
+    "message": "Listahan ng domain"
+  },
+  "syncDomainListDescription": {
+    "message": "Sini-sync ang aktibong mode at kaugnay na listahan ng domain. Maaaring maglaman ng personal o panloob na mga domain name."
+  },
+  "invalidDomainEntry": {
+    "message": "Hindi wasto ang domain entry na “$ENTRY$”.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateDomainEntry": {
+    "message": "Paulit-ulit o nasa katumbas na anyo ang domain entry na “$ENTRY$”.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
   }
 }

@@ -17,9 +17,6 @@
   "save": {
     "message": "Speichern"
   },
-  "reset": {
-    "message": "Zurücksetzen"
-  },
   "expandAll": {
     "message": "Alle öffnen"
   },
@@ -161,9 +158,6 @@
   "excludedDomains": {
     "message": "Ausgeschlossene Domains"
   },
-  "excludedDomainsDescription": {
-    "message": "Eine Domain pro Zeile. Unterdomains werden mit erfasst. Höchstens 100 gültige Domains; Eingaben werden auf den Hostnamen normalisiert."
-  },
   "backupTransfer": {
     "message": "Einstellungen sichern und übertragen"
   },
@@ -200,12 +194,6 @@
   "syncRuleGroupsDescription": {
     "message": "Synchronisiert die Auswahl aktivierter und deaktivierter Regelgruppen."
   },
-  "syncExcludedDomains": {
-    "message": "Domain-Ausschlüsse"
-  },
-  "syncExcludedDomainsDescription": {
-    "message": "Kann persönliche oder interne Domainnamen enthalten."
-  },
   "syncTextMedia": {
     "message": "Text- und Medienoptionen"
   },
@@ -224,9 +212,6 @@
   "licenseSource": {
     "message": "Lizenz und Quelltext"
   },
-  "correctionsOnPage": {
-    "message": "Korrekturen auf dieser Seite"
-  },
   "extensionActive": {
     "message": "Erweiterung aktiv"
   },
@@ -244,9 +229,6 @@
   },
   "settingsToolbarAria": {
     "message": "Einstellungen und Bereiche steuern"
-  },
-  "settingsAria": {
-    "message": "Einstellungen"
   },
   "settingsSectionsAria": {
     "message": "Einstellungsbereiche"
@@ -358,9 +340,6 @@
   "saveFailed": {
     "message": "Einstellungen konnten nicht gespeichert werden."
   },
-  "resetDone": {
-    "message": "Auf sichere Standardeinstellungen zurückgesetzt."
-  },
   "importTooLarge": {
     "message": "Die Importdatei ist größer als 1 MB und wird nicht verarbeitet."
   },
@@ -454,30 +433,6 @@
   "nameLogoDescription": {
     "message": "Die Softwarelizenz gewährt keine Rechte am Namen „Sprachverstand“, am SV-Logo oder an anderen Herkunftskennzeichen. Veränderte Fassungen müssen klar als inoffiziell erkennbar sein und einen unterscheidbaren Namen sowie ein anderes Produktlogo verwenden."
   },
-  "maxExcludedDomains": {
-    "message": "Es sind höchstens $COUNT$ Domain-Ausschlüsse möglich.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
-  },
-  "invalidExcludedDomain": {
-    "message": "Der Domain-Ausschluss „$ENTRY$“ ist ungültig.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
-  "duplicateExcludedDomain": {
-    "message": "Der Domain-Ausschluss „$ENTRY$“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
   "settingsExported": {
     "message": "Alle Einstellungen einschließlich $EXCEPTIONS$ Ausnahmen und $REPLACEMENTS$ eigener Ersetzungen exportiert.",
     "placeholders": {
@@ -541,5 +496,57 @@
   },
   "replacementOverviewMemoryNotice": {
     "message": "Die Übersicht wird nur für den aktuellen Tab im Arbeitsspeicher gehalten und beim Schließen oder Neuladen der Seite neu aufgebaut."
+  },
+  "includedDomains": {
+    "message": "Eingeschlossene Domains"
+  },
+  "includedDomainsLabel": {
+    "message": "Sprachverstand ausschließlich auf diesen Webseiten aktivieren"
+  },
+  "switchToExcludedDomains": {
+    "message": "Zu ausgeschlossenen Domains wechseln"
+  },
+  "switchToIncludedDomains": {
+    "message": "Zu eingeschlossenen Domains wechseln"
+  },
+  "popupDomainActionTitle": {
+    "message": "Aktuelle Website zur Domainliste hinzufügen"
+  },
+  "popupDomainActionDescription": {
+    "message": "Zeigt im Popup eine Schaltfläche, um die aktuelle Website abhängig vom Arbeitsmodus zur Domainliste hinzuzufügen."
+  },
+  "currentWebsiteAlreadyInDomainList": {
+    "message": "Website bereits in der Domainliste"
+  },
+  "includeCurrentWebsite": {
+    "message": "Diese Website einschließen"
+  },
+  "excludeCurrentWebsite": {
+    "message": "Diese Website ausschließen"
+  },
+  "domainListDescription": {
+    "message": "Eine Domain pro Zeile. Unterdomains werden mit erfasst; Eingaben werden auf den Hostnamen normalisiert. Lokal gibt es keine feste Anzahlbegrenzung. Bei aktivierter Browser-Synchronisierung gilt zusätzlich deren sicheres Größenlimit."
+  },
+  "syncDomainListTitle": {
+    "message": "Domainliste"
+  },
+  "syncDomainListDescription": {
+    "message": "Synchronisiert den Arbeitsmodus und die zugehörige Domainliste. Kann persönliche oder interne Domainnamen enthalten."
+  },
+  "invalidDomainEntry": {
+    "message": "Der Domaineintrag „$ENTRY$“ ist ungültig.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateDomainEntry": {
+    "message": "Der Domaineintrag „$ENTRY$“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
   }
 }

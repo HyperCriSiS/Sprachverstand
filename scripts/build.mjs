@@ -141,10 +141,6 @@ async function preparePaleMoonFiles(outputDirectory) {
     cp(
       path.join(legacyDirectory, "palemoon", "i18n-bootstrap.js"),
       path.join(paleMoonRuntimeDirectory, "i18n-bootstrap.js")
-    ),
-    cp(
-      path.join(legacyDirectory, "palemoon", "domain-ui.js"),
-      path.join(outputDirectory, "options", "domain-ui.js")
     )
   ]);
 

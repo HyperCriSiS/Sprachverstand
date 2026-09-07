@@ -17,9 +17,6 @@
   "save": {
     "message": "Save"
   },
-  "reset": {
-    "message": "Reset"
-  },
   "expandAll": {
     "message": "Expand all"
   },
@@ -161,9 +158,6 @@
   "excludedDomains": {
     "message": "Excluded domains"
   },
-  "excludedDomainsDescription": {
-    "message": "One domain per line. Subdomains are included. Up to 100 valid domains; entries are normalized to host names."
-  },
   "backupTransfer": {
     "message": "Back up and transfer settings"
   },
@@ -200,12 +194,6 @@
   "syncRuleGroupsDescription": {
     "message": "Synchronizes the selection of enabled and disabled rule groups."
   },
-  "syncExcludedDomains": {
-    "message": "Domain exclusions"
-  },
-  "syncExcludedDomainsDescription": {
-    "message": "May contain personal or internal domain names."
-  },
   "syncTextMedia": {
     "message": "Text and media options"
   },
@@ -224,9 +212,6 @@
   "licenseSource": {
     "message": "License and source code"
   },
-  "correctionsOnPage": {
-    "message": "Corrections on this page"
-  },
   "extensionActive": {
     "message": "Extension enabled"
   },
@@ -244,9 +229,6 @@
   },
   "settingsToolbarAria": {
     "message": "Control settings and sections"
-  },
-  "settingsAria": {
-    "message": "Settings"
   },
   "settingsSectionsAria": {
     "message": "Settings sections"
@@ -358,9 +340,6 @@
   "saveFailed": {
     "message": "Settings could not be saved."
   },
-  "resetDone": {
-    "message": "Reset to safe defaults."
-  },
   "importTooLarge": {
     "message": "The import file is larger than 1 MB and will not be processed."
   },
@@ -454,30 +433,6 @@
   "nameLogoDescription": {
     "message": "The software license grants no rights to the name “Sprachverstand”, the SV logo, or other source-identifying marks. Modified versions must be clearly identifiable as unofficial and must use a distinguishable name and a different product logo."
   },
-  "maxExcludedDomains": {
-    "message": "At most $COUNT$ domain exclusions are allowed.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
-  },
-  "invalidExcludedDomain": {
-    "message": "The domain exclusion “$ENTRY$” is invalid.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
-  "duplicateExcludedDomain": {
-    "message": "The domain exclusion “$ENTRY$” is included more than once or in an equivalent spelling.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
   "settingsExported": {
     "message": "Exported all settings, including $EXCEPTIONS$ exceptions and $REPLACEMENTS$ custom replacements.",
     "placeholders": {
@@ -541,5 +496,57 @@
   },
   "replacementOverviewMemoryNotice": {
     "message": "The overview is kept only in memory for the current tab and is rebuilt when the page is closed or reloaded."
+  },
+  "includedDomains": {
+    "message": "Included domains"
+  },
+  "includedDomainsLabel": {
+    "message": "Enable Sprachverstand only on these websites"
+  },
+  "switchToExcludedDomains": {
+    "message": "Switch to excluded domains"
+  },
+  "switchToIncludedDomains": {
+    "message": "Switch to included domains"
+  },
+  "popupDomainActionTitle": {
+    "message": "Add current website to domain list"
+  },
+  "popupDomainActionDescription": {
+    "message": "Shows a button in the popup to add the current website to the domain list according to the active mode."
+  },
+  "currentWebsiteAlreadyInDomainList": {
+    "message": "Website already in the domain list"
+  },
+  "includeCurrentWebsite": {
+    "message": "Include this website"
+  },
+  "excludeCurrentWebsite": {
+    "message": "Exclude this website"
+  },
+  "domainListDescription": {
+    "message": "One domain per line. Subdomains are included; entries are normalized to the hostname. There is no fixed local entry limit. When browser sync is enabled, its safe size limit also applies."
+  },
+  "syncDomainListTitle": {
+    "message": "Domain list"
+  },
+  "syncDomainListDescription": {
+    "message": "Synchronizes the active mode and its domain list. May contain personal or internal domain names."
+  },
+  "invalidDomainEntry": {
+    "message": "The domain entry “$ENTRY$” is invalid.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateDomainEntry": {
+    "message": "The domain entry “$ENTRY$” is duplicated or uses an equivalent spelling.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
   }
 }
