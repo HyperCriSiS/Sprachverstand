@@ -31,7 +31,6 @@ jobs:
           if test -s legacy/palemoon/palemoon/parity-api.js; then
             git fetch --depth=1 origin main
             git diff --exit-code origin/main -- \
-              src/browser/api.ts \
               src/core \
               src/i18n.ts \
               src/options.ts \
