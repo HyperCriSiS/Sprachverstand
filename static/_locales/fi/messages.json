@@ -1,0 +1,545 @@
+{
+  "extensionName": {
+    "message": "Sprachverstand"
+  },
+  "extensionDescription": {
+    "message": "Tekee saksankielisistä verkkosivuista helpommin luettavia normalisoimalla valittuja sukupuolittuneita muotoja."
+  },
+  "active": {
+    "message": "Käytössä"
+  },
+  "paused": {
+    "message": "Keskeytetty"
+  },
+  "optionsTitle": {
+    "message": "Sprachverstand – Asetukset"
+  },
+  "save": {
+    "message": "Tallenna"
+  },
+  "reset": {
+    "message": "Palauta"
+  },
+  "expandAll": {
+    "message": "Avaa kaikki"
+  },
+  "collapseAll": {
+    "message": "Sulje kaikki"
+  },
+  "general": {
+    "message": "Yleiset"
+  },
+  "enableExtension": {
+    "message": "Ota laajennus käyttöön"
+  },
+  "disableReverts": {
+    "message": "Kun laajennus poistetaan käytöstä, avoimille sivuille tehdyt muutokset kumotaan heti."
+  },
+  "popupMenu": {
+    "message": "Ponnahdusvalikko"
+  },
+  "popupMenuDescription": {
+    "message": "Valitse, mitkä ohjaimet näytetään ponnahdusvalikossa."
+  },
+  "correctionCounter": {
+    "message": "Korjauslaskuri"
+  },
+  "correctionCounterDescription": {
+    "message": "Näyttää nykyisen sivun korjausten määrän."
+  },
+  "activationToggle": {
+    "message": "Käyttökytkin"
+  },
+  "activationToggleDescription": {
+    "message": "Näyttää kytkimen, jolla laajennus otetaan käyttöön tai poistetaan käytöstä."
+  },
+  "whereCorrect": {
+    "message": "Missä korjauksia tehdään?"
+  },
+  "whereCorrectPopupDescription": {
+    "message": "Näyttää esteettömien nimikkeiden, lainatun tekstin ja tekstitysten asetukset suoraan ponnahdusvalikossa."
+  },
+  "moreSettingsButton": {
+    "message": "Lisäasetusten painike"
+  },
+  "moreSettingsButtonDescription": {
+    "message": "Näyttää painikkeen tämän asetussivun avaamista varten."
+  },
+  "whatCorrect": {
+    "message": "Mitä korjataan?"
+  },
+  "whatCorrectPopupDescription": {
+    "message": "Näyttää valitut sääntöryhmät suoraan ponnahdusvalikossa."
+  },
+  "individualRuleGroupsPopup": {
+    "message": "Yksittäiset sääntöryhmät ponnahdusvalikossa"
+  },
+  "groupPluralSeparatorsLabel": {
+    "message": "Sukupuolimerkinnät monikossa"
+  },
+  "groupPluralBinnenILabel": {
+    "message": "Binnen-I monikossa"
+  },
+  "groupPluralDoubleFormsLabel": {
+    "message": "Kaksoismuodot monikossa"
+  },
+  "groupSingularExplicitContextLabel": {
+    "message": "Sukupuolitetut yksikkömuodot artikkelin kanssa"
+  },
+  "groupUnmarkedSingularLabel": {
+    "message": "Näkyvästi merkityt yksikkömuodot"
+  },
+  "groupSubstantivizedAdjectivesLabel": {
+    "message": "Substantiivistetut adjektiivit"
+  },
+  "groupSpecialGenderFormsLabel": {
+    "message": "Muut näkyvät sukupuolimuodot"
+  },
+  "groupSingularDoubleFormsLabel": {
+    "message": "Kaksoismuodot yksikössä"
+  },
+  "groupExplicitPronounsLabel": {
+    "message": "Eksplisiittiset pronomini- ja possessiiviparit"
+  },
+  "groupNaturalFamilyFormsLabel": {
+    "message": "Keinotekoisesti sukupuolitetut perhesanat"
+  },
+  "groupTitleAbbreviationsLabel": {
+    "message": "Sukupuolitetut tittelin lyhenteet"
+  },
+  "groupSalutationParticiplesLabel": {
+    "message": "Neutraalit partisiippimuodot"
+  },
+  "groupNeutralPersonTermsLabel": {
+    "message": "Kontekstisidonnaiset kiertoilmaukset"
+  },
+  "groupJobAdSuffixesLabel": {
+    "message": "Sukupuolilisäykset työpaikkailmoituksissa"
+  },
+  "ruleGroupsDescription": {
+    "message": "Jokainen sääntöryhmä voidaan valita erikseen. Selvästi naispuolisia nimityksiä ei muuteta yleisesti."
+  },
+  "all": {
+    "message": "Kaikki"
+  },
+  "none": {
+    "message": "Ei mitään"
+  },
+  "accessibleAttributes": {
+    "message": "Kuvaukset ja esteettömät nimikkeet"
+  },
+  "processQuotedText": {
+    "message": "Korjaa lainausmerkkien sisällä oleva teksti"
+  },
+  "processQuotedTextDescription": {
+    "message": "Oletuksena käytössä. Poistaminen käytöstä suojaa suoraan lainatut kirjoitusasut saman tekstijakson sisällä."
+  },
+  "processSubtitles": {
+    "message": "Korjaa tekstitykset"
+  },
+  "processSubtitlesDescription": {
+    "message": "Oletuksena pois käytöstä. Tunnistetut tekstityspeitteet ohitetaan muuten kokonaan; kun toiminto on käytössä, nopeat muutokset kootaan ja käsitellään vain kerran kehystä kohden."
+  },
+  "personalExceptions": {
+    "message": "Henkilökohtaiset poikkeukset"
+  },
+  "customReplacements": {
+    "message": "Omat korvaukset"
+  },
+  "sourceToReplacement": {
+    "message": "Lähtöteksti => korvaus"
+  },
+  "preview": {
+    "message": "Esikatselu"
+  },
+  "previewDescription": {
+    "message": "Testaa juuri syötetyt poikkeukset, korvaukset ja käytössä olevat sääntöryhmät tallentamatta mitään."
+  },
+  "noPreviewText": {
+    "message": "Testitekstiä ei ole vielä syötetty."
+  },
+  "excludedDomains": {
+    "message": "Poissuljetut verkkotunnukset"
+  },
+  "excludedDomainsDescription": {
+    "message": "Yksi verkkotunnus riviä kohden. Aliverkkotunnukset sisällytetään. Enintään 100 kelvollista verkkotunnusta; syötteet normalisoidaan isäntänimiksi."
+  },
+  "backupTransfer": {
+    "message": "Varmuuskopioi ja siirrä asetukset"
+  },
+  "exportSettings": {
+    "message": "Vie kaikki asetukset JSON-muodossa"
+  },
+  "importSettings": {
+    "message": "Tuo asetukset JSON-tiedostosta"
+  },
+  "importKeepExisting": {
+    "message": "Käytä tuotuja asetuksia, säilytä nykyiset korvauskohteet"
+  },
+  "importPreferImported": {
+    "message": "Käytä tuotuja asetuksia ja tuotuja korvauskohteita"
+  },
+  "importReplace": {
+    "message": "Korvaa kaikki asetukset ja henkilökohtaiset luettelot kokonaan"
+  },
+  "browserSync": {
+    "message": "Selaimen synkronointi"
+  },
+  "browserSyncDescription": {
+    "message": "Oletuksena kaikki asetukset säilyvät vain tällä laitteella. Vain erikseen valitut luokat siirretään lisäksi selaimen synkronointipalvelun kautta."
+  },
+  "syncActivation": {
+    "message": "Käyttötila"
+  },
+  "syncActivationDescription": {
+    "message": "Synkronoi, onko Sprachverstand käytössä vai pois käytöstä."
+  },
+  "syncRuleGroups": {
+    "message": "Sääntöryhmät"
+  },
+  "syncRuleGroupsDescription": {
+    "message": "Synkronoi käytössä olevien ja käytöstä poistettujen sääntöryhmien valinnan."
+  },
+  "syncExcludedDomains": {
+    "message": "Verkkotunnusten poissulkemiset"
+  },
+  "syncExcludedDomainsDescription": {
+    "message": "Voi sisältää henkilökohtaisia tai sisäisiä verkkotunnuksia."
+  },
+  "syncTextMedia": {
+    "message": "Teksti- ja media-asetukset"
+  },
+  "syncTextMediaDescription": {
+    "message": "Synkronoi lainausten, tekstitysten ja esteettömien attribuuttien käsittelyn."
+  },
+  "syncPersonalExceptionsDescription": {
+    "message": "Voi sisältää henkilökohtaisia termejä tai kokonaisia ilmauksia."
+  },
+  "syncCustomReplacementsDescription": {
+    "message": "Voi sisältää henkilökohtaisia lähtö- ja kohdetekstejä."
+  },
+  "reportProblems": {
+    "message": "Ilmoita ongelmista"
+  },
+  "licenseSource": {
+    "message": "Lisenssi ja lähdekoodi"
+  },
+  "correctionsOnPage": {
+    "message": "Korjaukset tällä sivulla"
+  },
+  "extensionActive": {
+    "message": "Laajennus käytössä"
+  },
+  "imageDescriptionsLabels": {
+    "message": "Kuvaukset ja nimikkeet"
+  },
+  "quotedText": {
+    "message": "Teksti lainausmerkeissä"
+  },
+  "subtitles": {
+    "message": "Tekstitykset"
+  },
+  "exceptionsMoreSettings": {
+    "message": "Poikkeukset ja lisäasetukset"
+  },
+  "settingsToolbarAria": {
+    "message": "Hallitse asetuksia ja osioita"
+  },
+  "settingsAria": {
+    "message": "Asetukset"
+  },
+  "settingsSectionsAria": {
+    "message": "Asetusosiot"
+  },
+  "customReplacementsPlaceholder": {
+    "message": "Oma erikoismuoto => Haluttu muoto\nTarpeeton lisäys =>"
+  },
+  "previewPlaceholder": {
+    "message": "Oma erikoismuoto ja Nutzer:innen ovat tässä."
+  },
+  "protectedTermsPlaceholder": {
+    "message": "Nutzer:innen\nOma suojattu ilmaus"
+  },
+  "excludedDomainsPlaceholder": {
+    "message": "example.org\nintranet.example.org"
+  },
+  "rule_plural_separators_description": {
+    "message": "Kaksoispiste, tähti, alaviiva, vinoviiva, piste ja typografiset erottimet, mukaan lukien erikseen tarkistetut erikoismuodot."
+  },
+  "rule_plural_binnen_i_description": {
+    "message": "Iso I tunnettujen henkilönimitysten sisällä."
+  },
+  "rule_plural_double_forms_description": {
+    "message": "Nais- ja miesmuotoiset monikot yhdistetään yhdeksi yhteiseksi muodoksi."
+  },
+  "rule_singular_explicit_context_description": {
+    "message": "Selvästi merkityt artikkelit, määritteet ja possessiivimuodot, mukaan lukien sijataivutus."
+  },
+  "rule_unmarked_singular_description": {
+    "message": "Sukupuolimerkinnät ja Binnen-I normalisoidaan tunnetuissa ja erikseen tarkistetuissa henkilönimityksissä; moniselitteiset artikkelikontekstit suojataan."
+  },
+  "rule_substantivized_adjectives_description": {
+    "message": "Näkyvästi merkityt muodot, kuten Erwachsene:r ja Beschäftigte:n, taivutetaan sanaston perusteella."
+  },
+  "rule_special_gender_forms_description": {
+    "message": "Erikseen tarkistetut erikoismuodot, kuten Rom*nja, Sinti*zze ja Studentys."
+  },
+  "rule_singular_double_forms_description": {
+    "message": "Saman henkilönimityksen erikseen mainitut nais- ja miesmuotoiset yksikkömuodot."
+  },
+  "rule_explicit_pronouns_description": {
+    "message": "Vain näkyvästi sukupuolitetut parimuodot; tavalliset naispuoliset pronominit säilyvät ennallaan."
+  },
+  "rule_natural_family_forms_description": {
+    "message": "Luonnostaan feminiiniset perhesanat säilyttävät kieliopillisen sukunsa."
+  },
+  "rule_title_abbreviations_description": {
+    "message": "Kirjoittaa Prof.in- ja Dr.in-lyhenteet auki kontekstin mukaan tai palauttaa ne tavalliseen titteliin."
+  },
+  "rule_salutation_participles_description": {
+    "message": "Korvaa valittuja henkilönimityksiä, kuten Studierende, Lesende ja Arbeitnehmende; yksiselitteiset puhuttelut tunnistetaan edelleen kokonaan."
+  },
+  "rule_neutral_person_terms_description": {
+    "message": "Korvaa vain erikseen tarkistetut kiertoilmaukset ja vakiintuneet ilmaukset. Muita konteksteja kerätään projektin luetteloon."
+  },
+  "rule_job_ad_suffixes_description": {
+    "message": "Poistaa yleisiä lisäyksiä, kuten (m/w/d)."
+  },
+  "noticeMore": {
+    "message": "$COUNT$ muuta ilmoitusta ei näytetä tilanpuutteen vuoksi.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "replacementsChecked": {
+    "message": "$COUNT$ / $MAX$ mahdollisesta korvauksesta tarkistettu.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "noConflicts": {
+    "message": "Ristiriitoja tai epäilyttäviä päällekkäisyyksiä ei havaittu."
+  },
+  "customCheckFailed": {
+    "message": "Omia korvauksia ei voitu tarkistaa."
+  },
+  "previewNoChange": {
+    "message": "Testitekstissä ei muutoksia."
+  },
+  "previewOneReplacement": {
+    "message": "$COUNT$ korvaus testitekstissä.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewManyReplacements": {
+    "message": "$COUNT$ korvausta testitekstissä.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "previewFailed": {
+    "message": "Esikatselua ei voitu luoda."
+  },
+  "saved": {
+    "message": "Tallennettu – avoimet sivut käsitellään heti uudelleen."
+  },
+  "saveFailed": {
+    "message": "Asetuksia ei voitu tallentaa."
+  },
+  "resetDone": {
+    "message": "Palautettu turvallisiin oletusasetuksiin."
+  },
+  "importTooLarge": {
+    "message": "Tuontitiedosto on suurempi kuin 1 Mt, eikä sitä käsitellä."
+  },
+  "importPrepared": {
+    "message": "Asetusten varmuuskopio tarkistettiin ja ladattiin lomakkeeseen. Tallenna vielä ottaaksesi sen käyttöön."
+  },
+  "importFailed": {
+    "message": "Asetuksia ei voitu tuoda."
+  },
+  "accessibleAttributesTechnicalPrefix": {
+    "message": "Käsittelee vain"
+  },
+  "and": {
+    "message": "ja"
+  },
+  "protectedTermsLabel": {
+    "message": "Sanat tai kokonaiset ilmaukset, joita ei koskaan muuteta"
+  },
+  "protectedTermsDescription": {
+    "message": "Yksi täsmällinen poikkeus riviä kohden; kirjainkoko jätetään huomiotta. Säännöllisiä lausekkeita tai paikkamerkkejä ei tueta. Yksittäisen sanan suojaaminen ei automaattisesti suojaa pidempiä yhdyssanoja. Enintään 100 merkintää, kukin enintään 80 merkkiä. Luettelo säilyy oletuksena paikallisena ja synkronoidaan vain erikseen valittaessa."
+  },
+  "customReplacementsLabel": {
+    "message": "Kirjaimelliset korvaukset muodossa"
+  },
+  "customReplacementsDescription": {
+    "message": "Yksi korvaus riviä kohden. Kirjainkoko huomioidaan; säännöllisiä lausekkeita ja paikkamerkkejä ei sallita. Korvaus tehdään täsmälleen kerran, eikä sitä käsitellä sen jälkeen uudelleen säännöillä tai muilla omilla korvauksilla. Tyhjä kohdeteksti poistaa osuman. Henkilökohtaiset poikkeukset ovat etusijalla. Luettelo säilyy oletuksena paikallisena ja synkronoidaan vain erikseen valittaessa."
+  },
+  "testText": {
+    "message": "Testiteksti"
+  },
+  "result": {
+    "message": "Tulos"
+  },
+  "excludedDomainsLabel": {
+    "message": "Poista Sprachverstand kokonaan käytöstä näillä verkkosivustoilla"
+  },
+  "backupTransferDescription": {
+    "message": "Vie kaikki nykyiset asetukset: käyttötila, sääntöryhmät, ponnahdusvalikon näyttö, verkkotunnusten poissulkemiset, lainaus-, tekstitys- ja attribuuttiasetukset, henkilökohtaiset poikkeukset, omat korvaukset sekä valinnaisen selainsynkronoinnin valinnat."
+  },
+  "importModeLabel": {
+    "message": "Nykyisten henkilökohtaisten luetteloiden käsittely"
+  },
+  "importDescription": {
+    "message": "Varmuuskopion yleiset asetukset ladataan aina lomakkeeseen. Tämä valinta määrittää vain, miten nykyiset henkilökohtaiset poikkeukset ja omat korvaukset yhdistetään tuotuihin luetteloihin. Tuontitiedostot luetaan paikallisesti vasta tiedoston valinnan jälkeen. Tuonti otetaan käyttöön vasta, kun napsautat ”Tallenna”."
+  },
+  "browserSyncFootnote": {
+    "message": "Kaikki luokat ovat oletuksena pois käytöstä. Kun vähintään yksi luokka otetaan käyttöön, selain tallentaa myös tämän valinnan synkronointitietona, jotta muut sisäänkirjautuneet laitteet voivat ladata samat luokat. Valitsemattomat luokat poistetaan synkronointitallennuksesta."
+  },
+  "copyright": {
+    "message": "Copyright © 2026 HyperCriSiS ja avustajat"
+  },
+  "legalTitle": {
+    "message": "Sprachverstand – Lisenssi ja lähdekoodi"
+  },
+  "licenseHeading": {
+    "message": "Lisenssi"
+  },
+  "licenseIntroPrefix": {
+    "message": "Copyright © 2026 HyperCriSiS ja avustajat. Sprachverstandin lähdekoodi on lisensoitu yksinomaan GNU Affero General Public License Version 3 -lisenssillä"
+  },
+  "licenseTerms": {
+    "message": "Ohjelmaa saa käyttää, tutkia, muuttaa ja levittää tämän lisenssin ehtojen mukaisesti. Muutettuihin ja edelleen levitettyihin versioihin sovelletaan erityisesti velvollisuutta toimittaa vastaava lähdekoodi ja säilyttää lisenssiehdot."
+  },
+  "fullLicense": {
+    "message": "Koko lisenssiteksti"
+  },
+  "trademarkPolicy": {
+    "message": "Nimi- ja logokäytäntö"
+  },
+  "legalNotices": {
+    "message": "Oikeudelliset tiedot"
+  },
+  "sourceHeading": {
+    "message": "Lähdekoodi"
+  },
+  "sourceDescription": {
+    "message": "Täydellinen ensisijainen lähdekoodi, mukaan lukien koonti- ja testiskriptit, on saatavilla virallisessa projektivarastossa."
+  },
+  "openSourceRepo": {
+    "message": "Avaa virallinen lähdekoodivarasto"
+  },
+  "warrantyHeading": {
+    "message": "Ei takuuta"
+  },
+  "warrantyDescription": {
+    "message": "Ohjelma toimitetaan ilman takuuta lain sallimissa rajoissa. Erityisesti sen kaupallisesta hyödynnettävyydestä tai soveltuvuudesta tiettyyn tarkoitukseen ei anneta takuuta. AGPL:n kohdat 15 ja 16 ovat ratkaisevia."
+  },
+  "nameLogoHeading": {
+    "message": "Nimi ja logo"
+  },
+  "nameLogoDescription": {
+    "message": "Ohjelmistolisenssi ei myönnä oikeuksia nimeen ”Sprachverstand”, SV-logoon tai muihin alkuperää osoittaviin tunnuksiin. Muutettujen versioiden on oltava selvästi tunnistettavissa epävirallisiksi, ja niissä on käytettävä erottuvaa nimeä ja eri tuotelogoa."
+  },
+  "maxExcludedDomains": {
+    "message": "Verkkotunnusten poissulkemisia voi olla enintään $COUNT$.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "invalidExcludedDomain": {
+    "message": "Verkkotunnuksen poissulkeminen ”$ENTRY$” on virheellinen.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateExcludedDomain": {
+    "message": "Verkkotunnuksen poissulkeminen ”$ENTRY$” esiintyy useammin kuin kerran tai vastaavassa kirjoitusasussa.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsExported": {
+    "message": "Kaikki asetukset vietiin, mukaan lukien $EXCEPTIONS$ poikkeusta ja $REPLACEMENTS$ omaa korvausta.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "replacements": {
+        "content": "$2"
+      }
+    }
+  },
+  "settingsExportFailed": {
+    "message": "Asetuksia ei voitu viedä."
+  },
+  "importGeneralSettingsRestored": {
+    "message": "Käyttötila, sääntöryhmät, ponnahdusvalikon näyttö, verkkotunnusten poissulkemiset, lainaus-, tekstitys- ja attribuuttiasetukset sekä valinnaisen selainsynkronoinnin valinnat ladattiin varmuuskopiosta."
+  },
+  "importSummary": {
+    "message": "Lisätty poikkeuksia: $EXCEPTIONS$; lisätty korvauksia: $ADDED$; korvauksia korvattu: $REPLACED$; kaksoiskappaleita ohitettu: $SKIPPED$.",
+    "placeholders": {
+      "exceptions": {
+        "content": "$1"
+      },
+      "added": {
+        "content": "$2"
+      },
+      "replaced": {
+        "content": "$3"
+      },
+      "skipped": {
+        "content": "$4"
+      }
+    }
+  },
+  "importPreparedNotSaved": {
+    "message": "Tuonti on valmisteltu, mutta sitä ei ole vielä tallennettu."
+  },
+  "currentPage": {
+    "message": "Tämä sivu"
+  },
+  "corrections": {
+    "message": "Korjaukset"
+  },
+  "show": {
+    "message": "Näytä"
+  },
+  "back": {
+    "message": "Takaisin"
+  },
+  "changes": {
+    "message": "Muutokset"
+  },
+  "differentReplacements": {
+    "message": "erilaista korvausta"
+  },
+  "replacementsOnPage": {
+    "message": "Korvaukset tällä sivulla"
+  },
+  "noReplacementsOnPage": {
+    "message": "Tällä sivulla ei ole vielä korvauksia."
+  },
+  "replacementOverviewMemoryNotice": {
+    "message": "Yhteenveto säilytetään vain nykyisen välilehden muistissa ja rakennetaan uudelleen, kun sivu suljetaan tai ladataan uudelleen."
+  }
+}

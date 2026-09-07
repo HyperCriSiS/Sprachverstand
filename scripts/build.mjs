@@ -24,24 +24,62 @@ const packageJson = JSON.parse(
   await readFile(path.join(projectRoot, "package.json"), "utf8")
 );
 
-async function injectPaleMoonCompatibilityScript(outputDirectory) {
-  for (const relativePath of ["popup/popup.html", "options/options.html"]) {
+async function injectLocalizationBootstrap(outputDirectory) {
+  for (const relativePath of [
+    "popup/popup.html",
+    "options/options.html",
+    "legal/legal.html"
+  ]) {
     const filePath = path.join(outputDirectory, relativePath);
     const html = await readFile(filePath, "utf8");
-    const bundleName = path.basename(relativePath, ".html");
-    const marker = `<script src="${bundleName}.js" defer></script>`;
-    const compatibilityScript =
-      `<script src="../palemoon/legacy-api.js" defer></script>\n    ${marker}`;
+    const markerPattern =
+      /<meta\b(?=[^>]*\bname=["']color-scheme["'])(?=[^>]*\bcontent=["']dark light["'])[^>]*>/i;
+    const marker = html.match(markerPattern)?.[0];
 
-    if (!html.includes(marker)) {
+    if (!marker) {
       throw new Error(
-        `Pale-Moon-Kompatibilität konnte nicht in ${relativePath} eingefügt werden.`
+        `Lokalisierungs-Bootstrap konnte nicht in ${relativePath} eingefügt werden.`
       );
     }
 
     await writeFile(
       filePath,
-      html.replace(marker, compatibilityScript),
+      html.replace(
+        markerPattern,
+        `${marker}\n    <script src="../i18n-bootstrap.js" defer></script>`
+      ),
+      "utf8"
+    );
+  }
+}
+
+async function injectPaleMoonCompatibilityScripts(outputDirectory) {
+  for (const relativePath of [
+    "popup/popup.html",
+    "options/options.html",
+    "legal/legal.html"
+  ]) {
+    const filePath = path.join(outputDirectory, relativePath);
+    const html = await readFile(filePath, "utf8");
+    const bootstrapPattern =
+      /<script\s+[^>]*src=["']\.\.\/i18n-bootstrap\.js["'][^>]*><\/script>/i;
+    const bootstrap = html.match(bootstrapPattern)?.[0];
+
+    if (!bootstrap) {
+      throw new Error(
+        `Pale-Moon-Kompatibilität konnte nicht in ${relativePath} eingefügt werden.`
+      );
+    }
+
+    const compatibilityScripts = [
+      '<script src="../palemoon/legacy-api.js" defer></script>',
+      '<script src="../palemoon/parity-api.js" defer></script>',
+      '<script src="../palemoon/i18n-bootstrap.js" defer></script>'
+    ].join("\n    ");
+
+    await writeFile(
+      filePath,
+      html.replace(bootstrapPattern, compatibilityScripts),
       "utf8"
     );
   }
@@ -95,10 +133,22 @@ async function preparePaleMoonFiles(outputDirectory) {
     cp(
       path.join(legacyDirectory, "palemoon", "legacy-api.js"),
       path.join(paleMoonRuntimeDirectory, "legacy-api.js")
+    ),
+    cp(
+      path.join(legacyDirectory, "palemoon", "parity-api.js"),
+      path.join(paleMoonRuntimeDirectory, "parity-api.js")
+    ),
+    cp(
+      path.join(legacyDirectory, "palemoon", "i18n-bootstrap.js"),
+      path.join(paleMoonRuntimeDirectory, "i18n-bootstrap.js")
+    ),
+    cp(
+      path.join(legacyDirectory, "palemoon", "domain-ui.js"),
+      path.join(outputDirectory, "options", "domain-ui.js")
     )
   ]);
 
-  await injectPaleMoonCompatibilityScript(outputDirectory);
+  await injectPaleMoonCompatibilityScripts(outputDirectory);
 }
 
 async function prepareStaticFiles(target) {
@@ -108,6 +158,8 @@ async function prepareStaticFiles(target) {
   await cp(path.join(projectRoot, "static"), outputDirectory, {
     recursive: true
   });
+
+  await injectLocalizationBootstrap(outputDirectory);
 
   const legalDirectory = path.join(outputDirectory, "legal");
   await mkdir(legalDirectory, { recursive: true });

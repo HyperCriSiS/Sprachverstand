@@ -9,6 +9,7 @@ export interface ExtensionTab {
 
 export interface MessageSender {
   readonly tab?: ExtensionTab;
+  readonly url?: string;
 }
 
 export type MessageListener = (
@@ -25,6 +26,13 @@ export interface StorageArea {
 }
 
 export interface ExtensionApi {
+  readonly i18n: {
+    getMessage(
+      messageName: string,
+      substitutions?: string | readonly string[]
+    ): string;
+    getUILanguage(): string;
+  };
   readonly storage: {
     readonly sync: StorageArea;
     readonly local: StorageArea;
@@ -72,6 +80,21 @@ export interface ExtensionApi {
       readonly active: boolean;
       readonly currentWindow: boolean;
     }): Promise<ExtensionTab[]>;
+    sendMessage(tabId: number, message: unknown): Promise<unknown>;
+    readonly onUpdated: {
+      addListener(
+        listener: (
+          tabId: number,
+          changeInfo: { readonly status?: "loading" | "complete" }
+        ) => void
+      ): void;
+      removeListener(
+        listener: (
+          tabId: number,
+          changeInfo: { readonly status?: "loading" | "complete" }
+        ) => void
+      ): void;
+    };
     readonly onRemoved: {
       addListener(listener: (tabId: number) => void): void;
       removeListener(listener: (tabId: number) => void): void;

@@ -9,7 +9,11 @@ import {
   isSubtitleContainer,
   isSubtitleContent
 } from "./subtitles";
-import { transformText } from "./transform-text";
+import { transformTextWithSummary } from "./transform-text";
+import {
+  aggregateReplacementSummaries,
+  type ReplacementSummaryEntry
+} from "./replacement-summary";
 
 export interface DomProcessorOptions {
   readonly rules: readonly Rule[];
@@ -20,7 +24,10 @@ export interface DomProcessorOptions {
   readonly processAccessibleAttributes?: boolean;
   readonly processQuotedText?: boolean;
   readonly processSubtitles?: boolean;
-  readonly onReplacementCountChange?: (count: number) => void;
+  readonly onReplacementCountChange?: (
+    count: number,
+    replacements: readonly ReplacementSummaryEntry[]
+  ) => void;
 }
 
 export interface StopOptions {
@@ -66,6 +73,7 @@ interface ChangeRecord {
   readonly original: string;
   readonly transformed: string;
   readonly replacements: number;
+  readonly summaries: readonly ReplacementSummaryEntry[];
 }
 
 export class DomProcessor {
@@ -83,7 +91,7 @@ export class DomProcessor {
   private subtitleFlushUsesAnimationFrame = false;
   private readonly subtitleTransformCache = new Map<
     string,
-    ReturnType<typeof transformText>
+    ReturnType<typeof transformTextWithSummary>
   >();
   private countNotificationScheduled = false;
   private running = false;
@@ -184,6 +192,22 @@ export class DomProcessor {
 
   public getReplacementCount(): number {
     return this.replacementCount;
+  }
+
+  public getReplacementSummary(): ReplacementSummaryEntry[] {
+    const summaries: ReplacementSummaryEntry[] = [];
+
+    for (const change of this.textChanges.values()) {
+      summaries.push(...change.summaries);
+    }
+
+    for (const changes of this.attributeChanges.values()) {
+      for (const change of changes.values()) {
+        summaries.push(...change.summaries);
+      }
+    }
+
+    return aggregateReplacementSummaries(summaries);
   }
 
   public restoreAll(): void {
@@ -444,7 +468,8 @@ export class DomProcessor {
     this.textChanges.set(node, {
       original,
       transformed: result.text,
-      replacements: result.replacements
+      replacements: result.replacements,
+      summaries: result.summaries
     });
     this.adjustReplacementCount(result.replacements);
     node.data = result.text;
@@ -491,7 +516,8 @@ export class DomProcessor {
     changes.set(attributeName, {
       original: value,
       transformed: result.text,
-      replacements: result.replacements
+      replacements: result.replacements,
+      summaries: result.summaries
     });
     this.attributeChanges.set(element, changes);
     this.adjustReplacementCount(result.replacements);
@@ -514,7 +540,7 @@ export class DomProcessor {
       ...(leadingContext ? { leadingContext } : {})
     };
 
-    return transformText(input, this.options.rules, transformOptions);
+    return transformTextWithSummary(input, this.options.rules, transformOptions);
   }
 
   private transformSubtitleValue(input: string) {
@@ -683,7 +709,10 @@ export class DomProcessor {
     this.countNotificationScheduled = true;
     queueMicrotask(() => {
       this.countNotificationScheduled = false;
-      this.options.onReplacementCountChange?.(this.replacementCount);
+      this.options.onReplacementCountChange?.(
+        this.replacementCount,
+        this.getReplacementSummary()
+      );
     });
   }
 }

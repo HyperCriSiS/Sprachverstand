@@ -192,6 +192,11 @@ button {
   border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
+/* Die letzte Regelkarte braucht keinen abschließenden Trenner. */
+.rule-card:last-child {
+  border-bottom: 0;
+}
+
 .rule-card-content {
   display: grid;
   min-width: 0;
@@ -377,10 +382,8 @@ small {
 
 /* Einstellungsbereiche */
 .settings-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  gap: 10px;
   margin-top: 22px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
@@ -388,8 +391,13 @@ small {
   background: color-mix(in srgb, currentColor 4%, transparent);
 }
 
-.settings-toolbar > span {
-  font-weight: 700;
+.settings-save-button {
+  width: 100%;
+}
+
+.settings-section-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .settings-section {
@@ -510,12 +518,6 @@ small {
 
   .settings-toolbar {
     align-items: stretch;
-    flex-direction: column;
-  }
-
-  .settings-toolbar .compact-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settings-section > summary {
