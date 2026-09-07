@@ -1,5 +1,6 @@
 import { getExtensionApi } from "./browser/api";
 import { openOptionsPageInForeground } from "./browser/options";
+import { t } from "./i18n";
 import { ruleGroupDefinitions } from "./rules/catalog";
 import {
   defaultVisiblePopupSectionIds,
@@ -75,7 +76,6 @@ let activeTabId: number | undefined;
 let currentCount = 0;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
 let currentHostname = "";
-let detailsRefreshHandle: number | undefined;
 
 function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
   if (!value || typeof value !== "object") {
@@ -125,7 +125,7 @@ function createRuleGroupControls(): void {
     content.className = "popup-rule-content";
 
     const title = document.createElement("strong");
-    title.textContent = group.label;
+    title.textContent = t(group.labelKey, undefined, group.label);
 
     const example = document.createElement("code");
     example.textContent = group.example;
@@ -191,15 +191,21 @@ function renderDomainAction(): void {
 
   domainActionButton.disabled = !currentHostname || listed;
   domainActionButton.textContent = listed
-    ? "Website bereits in der Domainliste"
+    ? t(
+        "currentWebsiteAlreadyInDomainList",
+        undefined,
+        "Website bereits in der Domainliste"
+      )
     : settings.domainListMode === "include"
-      ? "Diese Website einschließen"
-      : "Diese Website ausschließen";
+      ? t("includeCurrentWebsite", undefined, "Diese Website einschließen")
+      : t("excludeCurrentWebsite", undefined, "Diese Website ausschließen");
 }
 
 function render(): void {
   enabledInput.checked = settings.enabled;
-  stateOutput.textContent = settings.enabled ? "Aktiv" : "Pausiert";
+  stateOutput.textContent = settings.enabled
+    ? t("active", undefined, "Aktiv")
+    : t("paused", undefined, "Pausiert");
   processAccessibleAttributesInput.checked =
     settings.processAccessibleAttributes;
   processQuotedTextInput.checked = settings.processQuotedText;
@@ -277,27 +283,6 @@ async function refreshReplacementState(): Promise<void> {
   renderDomainAction();
 }
 
-function startDetailsRefresh(): void {
-  if (detailsRefreshHandle !== undefined) {
-    return;
-  }
-
-  detailsRefreshHandle = window.setInterval(() => {
-    if (!detailsView.hidden) {
-      void refreshReplacementState();
-    }
-  }, 750);
-}
-
-function stopDetailsRefresh(): void {
-  if (detailsRefreshHandle === undefined) {
-    return;
-  }
-
-  window.clearInterval(detailsRefreshHandle);
-  detailsRefreshHandle = undefined;
-}
-
 function handleRuntimeMessage(message: unknown): void {
   if (!isStateUpdatedMessage(message) || message.tabId !== activeTabId) {
     return;
@@ -321,9 +306,7 @@ async function start(): Promise<void> {
 
   const api = getExtensionApi();
   api.runtime.onMessage.addListener(handleRuntimeMessage);
-  startDetailsRefresh();
   window.addEventListener("unload", () => {
-    stopDetailsRefresh();
     api.runtime.onMessage.removeListener(handleRuntimeMessage);
   });
 
@@ -382,7 +365,6 @@ async function start(): Promise<void> {
   openReplacementsButton.addEventListener("click", () => {
     mainView.hidden = true;
     detailsView.hidden = false;
-    void refreshReplacementState();
   });
   closeReplacementsButton.addEventListener("click", () => {
     detailsView.hidden = true;
@@ -403,16 +385,7 @@ async function start(): Promise<void> {
   });
 
   optionsButton.addEventListener("click", () => {
-    const open = async (): Promise<void> => {
-      if (activeTabId !== undefined) {
-        await api.runtime.sendMessage({
-          type: "sprachverstand.set-inspected-tab",
-          tabId: activeTabId
-        });
-      }
-      await openOptionsPageInForeground(api);
-    };
-    void open();
+    void openOptionsPageInForeground(api);
   });
 }
 
