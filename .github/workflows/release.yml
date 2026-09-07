@@ -190,7 +190,7 @@ jobs:
 
           const manifestPaths = process.env.PRODUCT_LINE === "palemoon"
             ? ["manifests/chromium.json", "manifests/firefox.json"]
-            : ["manifests/chromium.json", "manifests/edge.json", "manifests/opera.json", "manifests/firefox.json"];
+            : ["manifests/chromium.json", "manifests/firefox.json"];
 
           for (const path of manifestPaths) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
@@ -205,7 +205,7 @@ jobs:
           const expected = process.env.VERSION;
           const manifestNames = process.env.PRODUCT_LINE === "palemoon"
             ? ["chromium", "firefox"]
-            : ["chromium", "edge", "opera", "firefox"];
+            : ["chromium", "firefox"];
           const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
           const manifests = manifestNames.map((name) =>
@@ -251,14 +251,6 @@ jobs:
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip" .
             )
             (
-              cd dist/edge
-              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip" .
-            )
-            (
-              cd dist/opera
-              zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip" .
-            )
-            (
               cd dist/firefox
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
             )
@@ -266,8 +258,6 @@ jobs:
               package.json
               package-lock.json
               manifests/chromium.json
-              manifests/edge.json
-              manifests/opera.json
               manifests/firefox.json
             )
 
@@ -320,8 +310,6 @@ jobs:
 
           if [[ "$PRODUCT_LINE" == "modern" ]]; then
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip"
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi"
             if unzip -l "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
               echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
