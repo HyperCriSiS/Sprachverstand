@@ -106,8 +106,6 @@ jobs:
             grep -q 'Sprachverstand – Lizenz und Quelltext</h1>' static/legal/legal.html
             test -s legacy/palemoon/palemoon/parity-api.js
             test -s legacy/palemoon/palemoon/i18n-bootstrap.js
-            test -s legacy/palemoon/palemoon/domain-ui.js
-            test -s static/options/domain-ui.js
             test -s static/i18n-bootstrap.js
             test -s static/_locales/de/messages.json
             test -s static/_locales/en/messages.json
@@ -174,7 +172,6 @@ jobs:
           if test -s legacy/palemoon/palemoon/parity-api.js; then
             test -s dist/palemoon/palemoon/parity-api.js
             test -s dist/palemoon/palemoon/i18n-bootstrap.js
-            test -s dist/palemoon/options/domain-ui.js
             test -s dist/palemoon/_locales/de/messages.json
             test -s dist/palemoon/_locales/en/messages.json
             grep -q '../palemoon/parity-api.js' dist/palemoon/popup/popup.html
@@ -182,8 +179,6 @@ jobs:
             grep -q '../palemoon/parity-api.js' dist/palemoon/options/options.html
             grep -q '../palemoon/i18n-bootstrap.js' dist/palemoon/options/options.html
             grep -q '../palemoon/i18n-bootstrap.js' dist/palemoon/legal/legal.html
-            ! grep -q 'globalThis' dist/palemoon/options/domain-ui.js
-            ! grep -Fq '?.' dist/palemoon/options/domain-ui.js
             ! grep -q 'globalThis' dist/palemoon/palemoon/i18n-bootstrap.js
             ! grep -Fq '?.' dist/palemoon/palemoon/i18n-bootstrap.js
           fi

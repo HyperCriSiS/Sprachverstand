@@ -17,9 +17,6 @@
   "save": {
     "message": "Guardar"
   },
-  "reset": {
-    "message": "Restablecer"
-  },
   "expandAll": {
     "message": "Abrir todo"
   },
@@ -161,9 +158,6 @@
   "excludedDomains": {
     "message": "Dominios excluidos"
   },
-  "excludedDomainsDescription": {
-    "message": "Un dominio por línea. Se incluyen los subdominios. Hasta 100 dominios válidos; las entradas se normalizan como nombres de host."
-  },
   "backupTransfer": {
     "message": "Guardar y transferir la configuración"
   },
@@ -200,12 +194,6 @@
   "syncRuleGroupsDescription": {
     "message": "Sincroniza la selección de grupos de reglas activados y desactivados."
   },
-  "syncExcludedDomains": {
-    "message": "Exclusiones de dominios"
-  },
-  "syncExcludedDomainsDescription": {
-    "message": "Puede contener nombres de dominio personales o internos."
-  },
   "syncTextMedia": {
     "message": "Opciones de texto y multimedia"
   },
@@ -224,9 +212,6 @@
   "licenseSource": {
     "message": "Licencia y código fuente"
   },
-  "correctionsOnPage": {
-    "message": "Correcciones en esta página"
-  },
   "extensionActive": {
     "message": "Extensión activada"
   },
@@ -240,13 +225,10 @@
     "message": "Subtítulos"
   },
   "exceptionsMoreSettings": {
-    "message": "Excepciones y más ajustes"
+    "message": "Configuración avanzada"
   },
   "settingsToolbarAria": {
     "message": "Controlar configuración y secciones"
-  },
-  "settingsAria": {
-    "message": "Configuración"
   },
   "settingsSectionsAria": {
     "message": "Secciones de configuración"
@@ -358,9 +340,6 @@
   "saveFailed": {
     "message": "No se pudo guardar la configuración."
   },
-  "resetDone": {
-    "message": "Restablecido a valores predeterminados seguros."
-  },
   "importTooLarge": {
     "message": "El archivo de importación supera 1 MB y no se procesará."
   },
@@ -454,30 +433,6 @@
   "nameLogoDescription": {
     "message": "La licencia del software no concede derechos sobre el nombre «Sprachverstand», el logotipo SV ni otras marcas identificativas de origen. Las versiones modificadas deben poder identificarse claramente como no oficiales y utilizar un nombre distinguible y un logotipo de producto diferente."
   },
-  "maxExcludedDomains": {
-    "message": "Se permiten como máximo $COUNT$ exclusiones de dominio.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
-  },
-  "invalidExcludedDomain": {
-    "message": "La exclusión de dominio «$ENTRY$» no es válida.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
-  "duplicateExcludedDomain": {
-    "message": "La exclusión de dominio «$ENTRY$» aparece más de una vez o con una grafía equivalente.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
   "settingsExported": {
     "message": "Se exportó toda la configuración, incluidas $EXCEPTIONS$ excepciones y $REPLACEMENTS$ sustituciones personalizadas.",
     "placeholders": {
@@ -541,5 +496,57 @@
   },
   "replacementOverviewMemoryNotice": {
     "message": "La vista general se mantiene únicamente en memoria para la pestaña actual y se reconstruye al cerrar o recargar la página."
+  },
+  "includedDomains": {
+    "message": "Dominios incluidos"
+  },
+  "includedDomainsLabel": {
+    "message": "Activar Sprachverstand solo en estos sitios web"
+  },
+  "switchToExcludedDomains": {
+    "message": "Cambiar a dominios excluidos"
+  },
+  "switchToIncludedDomains": {
+    "message": "Cambiar a dominios incluidos"
+  },
+  "popupDomainActionTitle": {
+    "message": "Añadir el sitio web actual a la lista de dominios"
+  },
+  "popupDomainActionDescription": {
+    "message": "Muestra en la ventana emergente un botón para añadir el sitio web actual a la lista de dominios según el modo activo."
+  },
+  "currentWebsiteAlreadyInDomainList": {
+    "message": "El sitio web ya está en la lista de dominios"
+  },
+  "includeCurrentWebsite": {
+    "message": "Incluir este sitio web"
+  },
+  "excludeCurrentWebsite": {
+    "message": "Excluir este sitio web"
+  },
+  "domainListDescription": {
+    "message": "Un dominio por línea. También se incluyen los subdominios; las entradas se normalizan al nombre de host. No hay un límite local fijo. Si la sincronización del navegador está activada, también se aplica su límite de tamaño seguro."
+  },
+  "syncDomainListTitle": {
+    "message": "Lista de dominios"
+  },
+  "syncDomainListDescription": {
+    "message": "Sincroniza el modo activo y la lista de dominios correspondiente. Puede contener nombres de dominio personales o internos."
+  },
+  "invalidDomainEntry": {
+    "message": "La entrada de dominio «$ENTRY$» no es válida.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateDomainEntry": {
+    "message": "La entrada de dominio «$ENTRY$» está repetida o aparece con una forma equivalente.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
   }
 }

@@ -17,9 +17,6 @@
   "save": {
     "message": "Tallenna"
   },
-  "reset": {
-    "message": "Palauta"
-  },
   "expandAll": {
     "message": "Avaa kaikki"
   },
@@ -161,9 +158,6 @@
   "excludedDomains": {
     "message": "Poissuljetut verkkotunnukset"
   },
-  "excludedDomainsDescription": {
-    "message": "Yksi verkkotunnus riviä kohden. Aliverkkotunnukset sisällytetään. Enintään 100 kelvollista verkkotunnusta; syötteet normalisoidaan isäntänimiksi."
-  },
   "backupTransfer": {
     "message": "Varmuuskopioi ja siirrä asetukset"
   },
@@ -200,12 +194,6 @@
   "syncRuleGroupsDescription": {
     "message": "Synkronoi käytössä olevien ja käytöstä poistettujen sääntöryhmien valinnan."
   },
-  "syncExcludedDomains": {
-    "message": "Verkkotunnusten poissulkemiset"
-  },
-  "syncExcludedDomainsDescription": {
-    "message": "Voi sisältää henkilökohtaisia tai sisäisiä verkkotunnuksia."
-  },
   "syncTextMedia": {
     "message": "Teksti- ja media-asetukset"
   },
@@ -224,9 +212,6 @@
   "licenseSource": {
     "message": "Lisenssi ja lähdekoodi"
   },
-  "correctionsOnPage": {
-    "message": "Korjaukset tällä sivulla"
-  },
   "extensionActive": {
     "message": "Laajennus käytössä"
   },
@@ -240,13 +225,10 @@
     "message": "Tekstitykset"
   },
   "exceptionsMoreSettings": {
-    "message": "Poikkeukset ja lisäasetukset"
+    "message": "Lisäasetukset"
   },
   "settingsToolbarAria": {
     "message": "Hallitse asetuksia ja osioita"
-  },
-  "settingsAria": {
-    "message": "Asetukset"
   },
   "settingsSectionsAria": {
     "message": "Asetusosiot"
@@ -358,9 +340,6 @@
   "saveFailed": {
     "message": "Asetuksia ei voitu tallentaa."
   },
-  "resetDone": {
-    "message": "Palautettu turvallisiin oletusasetuksiin."
-  },
   "importTooLarge": {
     "message": "Tuontitiedosto on suurempi kuin 1 Mt, eikä sitä käsitellä."
   },
@@ -454,30 +433,6 @@
   "nameLogoDescription": {
     "message": "Ohjelmistolisenssi ei myönnä oikeuksia nimeen ”Sprachverstand”, SV-logoon tai muihin alkuperää osoittaviin tunnuksiin. Muutettujen versioiden on oltava selvästi tunnistettavissa epävirallisiksi, ja niissä on käytettävä erottuvaa nimeä ja eri tuotelogoa."
   },
-  "maxExcludedDomains": {
-    "message": "Verkkotunnusten poissulkemisia voi olla enintään $COUNT$.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
-  },
-  "invalidExcludedDomain": {
-    "message": "Verkkotunnuksen poissulkeminen ”$ENTRY$” on virheellinen.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
-  "duplicateExcludedDomain": {
-    "message": "Verkkotunnuksen poissulkeminen ”$ENTRY$” esiintyy useammin kuin kerran tai vastaavassa kirjoitusasussa.",
-    "placeholders": {
-      "entry": {
-        "content": "$1"
-      }
-    }
-  },
   "settingsExported": {
     "message": "Kaikki asetukset vietiin, mukaan lukien $EXCEPTIONS$ poikkeusta ja $REPLACEMENTS$ omaa korvausta.",
     "placeholders": {
@@ -541,5 +496,57 @@
   },
   "replacementOverviewMemoryNotice": {
     "message": "Yhteenveto säilytetään vain nykyisen välilehden muistissa ja rakennetaan uudelleen, kun sivu suljetaan tai ladataan uudelleen."
+  },
+  "includedDomains": {
+    "message": "Sisällytetyt verkkotunnukset"
+  },
+  "includedDomainsLabel": {
+    "message": "Ota Sprachverstand käyttöön vain näillä verkkosivustoilla"
+  },
+  "switchToExcludedDomains": {
+    "message": "Vaihda poissuljettuihin verkkotunnuksiin"
+  },
+  "switchToIncludedDomains": {
+    "message": "Vaihda sisällytettyihin verkkotunnuksiin"
+  },
+  "popupDomainActionTitle": {
+    "message": "Lisää nykyinen verkkosivusto verkkotunnusluetteloon"
+  },
+  "popupDomainActionDescription": {
+    "message": "Näyttää ponnahdusikkunassa painikkeen, jolla nykyinen verkkosivusto lisätään verkkotunnusluetteloon aktiivisen tilan mukaisesti."
+  },
+  "currentWebsiteAlreadyInDomainList": {
+    "message": "Verkkosivusto on jo verkkotunnusluettelossa"
+  },
+  "includeCurrentWebsite": {
+    "message": "Sisällytä tämä verkkosivusto"
+  },
+  "excludeCurrentWebsite": {
+    "message": "Sulje tämä verkkosivusto pois"
+  },
+  "domainListDescription": {
+    "message": "Yksi verkkotunnus riviä kohden. Aliverkkotunnukset otetaan mukaan; syötteet normalisoidaan isäntänimeksi. Paikallista kiinteää määrärajaa ei ole. Kun selaimen synkronointi on käytössä, myös sen turvallinen kokoraja koskee luetteloa."
+  },
+  "syncDomainListTitle": {
+    "message": "Verkkotunnusluettelo"
+  },
+  "syncDomainListDescription": {
+    "message": "Synkronoi aktiivisen tilan ja siihen liittyvän verkkotunnusluettelon. Voi sisältää henkilökohtaisia tai sisäisiä verkkotunnuksia."
+  },
+  "invalidDomainEntry": {
+    "message": "Verkkotunnusmerkintä “$ENTRY$” on virheellinen.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
+  },
+  "duplicateDomainEntry": {
+    "message": "Verkkotunnusmerkintä “$ENTRY$” esiintyy useita kertoja tai vastaavassa muodossa.",
+    "placeholders": {
+      "entry": {
+        "content": "$1"
+      }
+    }
   }
 }
