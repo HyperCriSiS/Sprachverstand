@@ -429,7 +429,14 @@ async function start(): Promise<void> {
   });
 
   optionsButton.addEventListener("click", () => {
-    void openOptionsPageInForeground(api);
+    void (async () => {
+      try {
+        await openOptionsPageInForeground(api);
+        window.close();
+      } catch (error) {
+        console.error("Die erweiterten Einstellungen konnten nicht geöffnet werden.", error);
+      }
+    })();
   });
 }
 
