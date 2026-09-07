@@ -27,11 +27,15 @@ Neue moderne Arbeitsbranches entstehen vom aktuellen `main`, werden nach `main` 
 
 Gestapelte Pull Requests sind erlaubt, wenn eine noch nicht gemergte Änderung technisch von einer anderen abhängt. Sie bleiben temporär und sind kein Ersatz für permanente Modul-Branches.
 
-## Roadmap
+## Dokumentationsautorität
 
-Die maßgebliche Roadmap bzw. Projektplanung für die modernen WebExtension-Ziele liegt auf `main`. Änderungen daran können Teil eines Feature-/Docs-PRs sein; ein Planungsstand, der nur auf einem Nebenbranch existiert, gilt nicht als Source of Truth.
+Die maßgebliche Roadmap, Projektplanung und sonstige projektglobale Ist-Dokumentation liegt auf `main`. Dazu zählen insbesondere globaler Status und Prioritäten, gemeinsame Architektur-/API-Dokumentation sowie allgemeine Release-, Prozess- und Managementregeln.
 
-Pale-Moon-spezifische Portierungs- und Releaseinformationen dürfen auf `palemoon` liegen, sofern sie ausschließlich diesen technisch getrennten Port betreffen.
+Arbeitsbranches dokumentieren ihr eigenes Delta statt einen unabhängigen globalen Projektstand zu pflegen. Änderungen an kanonischen Dokumenten innerhalb eines Arbeitsbranches gelten bis zum Merge nur als vorgeschlagene Änderung und müssen vor dem Merge mit dem aktuellen `main` abgeglichen werden. Ein Planungsstand, der nur auf einem Nebenbranch existiert, ist keine Source of Truth.
+
+`palemoon` darf Pale-Moon-spezifische Implementierungs-, Portierungs-, Kompatibilitäts- und Releaseinformationen eigenständig führen, sofern sie ausschließlich diesen technisch getrennten Port betreffen. Projektübergreifende Planung und gemeinsamer Ist-Zustand bleiben auf `main` autoritativ.
+
+Details: `docs/engineering/PROJECT-PLAYBOOK.md`.
 
 ## Hygiene
 
