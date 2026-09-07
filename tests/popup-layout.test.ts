@@ -98,17 +98,23 @@ describe("Popup-Anzeige", () => {
     }
   });
 
-  it("ordnet Aktivierung, Domain-Aktion und Schalter in einer gemeinsamen Zeile an", () => {
+  it("ordnet Aktivierungs-Checkbox links wie die Regelgruppen und die Domain-Aktion rechts an", () => {
     expect(popupHtml).toContain('class="activation-domain-row"');
-    expect(popupHtml).toMatch(/<label class="switch-row popup-section"[\s\S]*?<input id="enabled" type="checkbox"\/?>[\s\S]*?<\/label>/u);
+    expect(popupHtml).toMatch(
+      /<label class="switch-row popup-section"[\s\S]*?<input id="enabled" type="checkbox"\/?>([\s\S]*?)<span data-i18n="extensionActive">Erweiterung aktiv<\/span>[\s\S]*?<\/label>/u
+    );
     expect(popupHtml).toContain('id="add-current-domain"');
     const rowBlock =
       popupCss.match(/\.activation-domain-row\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
+    const switchBlock =
+      popupCss.match(/\.switch-row\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
     const domainBlock =
       popupCss.match(/\.domain-action-button\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
-    expect(rowBlock).toContain("position: relative");
-    expect(domainBlock).toContain("position: absolute");
-    expect(domainBlock).toContain("right: 30px");
+    expect(rowBlock).toContain("display: flex");
+    expect(rowBlock).toContain("align-items: center");
+    expect(switchBlock).toContain("justify-content: flex-start");
+    expect(domainBlock).toContain("margin-left: auto");
+    expect(domainBlock).not.toContain("position: absolute");
   });
 
   it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {
