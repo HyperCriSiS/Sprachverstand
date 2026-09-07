@@ -8,8 +8,6 @@ const modernReleaseVersionFiles = [
   "package.json",
   "package-lock.json",
   "manifests/chromium.json",
-  "manifests/edge.json",
-  "manifests/opera.json",
   "manifests/firefox.json"
 ] as const;
 
@@ -25,12 +23,16 @@ describe("Release-Provenienz", () => {
     );
   });
 
-  it("dokumentiert vollständig die sechs modernen release-spezifisch vorbereiteten Dateien", () => {
+  it("dokumentiert vollständig die vier modernen release-spezifisch vorbereiteten Dateien", () => {
     for (const path of modernReleaseVersionFiles) {
       expect(amoInstructions).toContain(`- \`${path}\``);
       expect(releaseWorkflow).toContain(path);
     }
 
+    expect(releaseWorkflow).not.toContain("manifests/edge.json");
+    expect(releaseWorkflow).not.toContain("manifests/opera.json");
+    expect(amoInstructions).not.toContain("manifests/edge.json");
+    expect(amoInstructions).not.toContain("manifests/opera.json");
     expect(amoInstructions).toContain(
       "Andere Quelldateien werden vor dem Packen nicht verändert."
     );
