@@ -1,0 +1,52 @@
+name: Temporärer Pale-Moon-Popup-Sync
+
+on:
+  push:
+    branches:
+      - sync/palemoon-popup-runtime-fix
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: sync/palemoon-popup-runtime-fix
+          fetch-depth: 0
+      - name: Gemeinsame Produktdateien aus main übernehmen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- \
+            src/popup.ts \
+            static/popup/popup.html \
+            static/_locales/de/messages.json \
+            static/_locales/en/messages.json \
+            tests/popup-runtime-race.test.ts
+          rm .github/workflows/tmp-sync-popup-runtime.yml
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Pale-Moon-Zielprüfungen
+        run: |
+          npm run typecheck
+          npx vitest run tests/popup-runtime-race.test.ts tests/popup-runtime-state.test.ts tests/palemoon-release-regressions.test.ts tests/popup-layout.test.ts
+          npm run build:palemoon
+      - name: Änderungen committen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "HyperCriSiS"
+          git config user.email "dev.github@w3b.world"
+          git add -A
+          git commit -m "sync(palemoon): Popup-Zustand und erweiterte Einstellungen übernehmen"
+          git push origin HEAD:sync/palemoon-popup-runtime-fix
