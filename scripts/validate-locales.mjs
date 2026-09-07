@@ -6,6 +6,9 @@ const localeRoot = path.join(projectRoot, "static", "_locales");
 const configuredLocales = JSON.parse(
   await readFile(path.join(projectRoot, "config", "locales.json"), "utf8")
 );
+const semanticContracts = JSON.parse(
+  await readFile(path.join(projectRoot, "config", "locale-semantic-contracts.json"), "utf8")
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -82,6 +85,30 @@ for (const code of configuredCodes) {
   }
 
   assert(messages.extensionName.message === "Sprachverstand", `${code}: Produktname Sprachverstand darf nicht übersetzt werden.`);
+}
+
+for (const [key, translations] of Object.entries(semanticContracts)) {
+  assert(referenceKeys.includes(key), `Semantikvertrag verweist auf unbekannten Key: ${key}.`);
+  assert(
+    translations && typeof translations === "object" && !Array.isArray(translations),
+    `${key}: Semantikvertrag muss ein Locale-Objekt sein.`
+  );
+
+  const contractCodes = sorted(Object.keys(translations));
+  assert(
+    JSON.stringify(contractCodes) === JSON.stringify(sorted(configuredCodes)),
+    `${key}: Semantikvertrag muss exakt alle konfigurierten Locales enthalten.`
+  );
+
+  for (const code of configuredCodes) {
+    const expected = translations[code];
+    assert(typeof expected === "string" && expected.trim(), `${key}/${code}: erwartete Übersetzung fehlt.`);
+    const messages = await readMessages(code);
+    assert(
+      messages[key]?.message === expected,
+      `${code}/${key}: semantisch veraltete Übersetzung. Erwartet: ${JSON.stringify(expected)}; gefunden: ${JSON.stringify(messages[key]?.message)}.`
+    );
+  }
 }
 
 console.log(`i18n geprüft: ${configuredCodes.length} Locales mit jeweils ${referenceKeys.length} Nachrichten.`);
