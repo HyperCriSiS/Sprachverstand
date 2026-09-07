@@ -1,7 +1,9 @@
 name: Temporärer Pale-Moon-Main-Paritätssync
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feat/palemoon-feature-parity-replacements
 
 permissions:
   contents: write
