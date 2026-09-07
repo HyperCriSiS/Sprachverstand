@@ -155,11 +155,16 @@ h2 {
 }
 
 .activation-domain-row {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-height: 38px;
 }
 
 .switch-row {
+  flex: 0 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
   min-height: 38px;
   padding: 3px 0;
 }
@@ -309,17 +314,15 @@ button {
   line-height: 1.35;
 }
 
-/* Die Domain-Aktion sitzt kompakt direkt vor dem Aktivierungsschalter. */
+/* Die Aktivierungs-Checkbox bleibt links auf derselben Achse wie die Regelgruppen; die Domain-Aktion sitzt rechts. */
 .domain-action-button {
-  position: absolute;
-  top: 50%;
-  right: 30px;
-  max-width: calc(100% - 150px);
+  flex: 0 1 auto;
+  max-width: 62%;
   min-height: 34px;
+  margin-left: auto;
   padding: 6px 10px;
   overflow: hidden;
   font-size: 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
-  transform: translateY(-50%);
 }
