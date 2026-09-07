@@ -6,6 +6,7 @@ export interface ReplacementSummaryEntry {
 
 const wordLikeCharacter = /[\p{L}\p{M}\p{N}’'_-]/u;
 const nonWhitespaceTokenPattern = /\S+/gu;
+const maximumTokenDiffCells = 160_000;
 
 function trimSharedContext(
   original: string,
@@ -85,12 +86,133 @@ function positionAlignedChanges(
   return changes;
 }
 
+function sequenceAlignedChanges(
+  original: string,
+  transformed: string
+): { original: string; replacement: string }[] | undefined {
+  const originalTokens = tokenValues(original);
+  const transformedTokens = tokenValues(transformed);
+  const rows = originalTokens.length + 1;
+  const columns = transformedTokens.length + 1;
+
+  if (
+    originalTokens.length === 0 ||
+    transformedTokens.length === 0 ||
+    rows * columns > maximumTokenDiffCells
+  ) {
+    return undefined;
+  }
+
+  const lcs = Array.from(
+    { length: rows },
+    () => new Uint16Array(columns)
+  );
+
+  for (
+    let originalIndex = originalTokens.length - 1;
+    originalIndex >= 0;
+    originalIndex -= 1
+  ) {
+    const row = lcs[originalIndex];
+    const nextRow = lcs[originalIndex + 1];
+    if (!row || !nextRow) {
+      continue;
+    }
+
+    for (
+      let transformedIndex = transformedTokens.length - 1;
+      transformedIndex >= 0;
+      transformedIndex -= 1
+    ) {
+      row[transformedIndex] =
+        originalTokens[originalIndex] === transformedTokens[transformedIndex]
+          ? (nextRow[transformedIndex + 1] ?? 0) + 1
+          : Math.max(
+              nextRow[transformedIndex] ?? 0,
+              row[transformedIndex + 1] ?? 0
+            );
+    }
+  }
+
+  const changes: { original: string; replacement: string }[] = [];
+  let originalIndex = 0;
+  let transformedIndex = 0;
+  let originalChange: string[] = [];
+  let transformedChange: string[] = [];
+
+  const flushChange = (followingToken?: string): void => {
+    if (originalChange.length === 0 && transformedChange.length === 0) {
+      return;
+    }
+
+    // Bei reinen Löschungen/Einfügungen gehört der folgende gemeinsame Token
+    // semantisch zur Ersetzung (z. B. „Schülerinnen und Schülern“ → „Schülern“).
+    const includeFollowingToken =
+      Boolean(followingToken) &&
+      (originalChange.length === 0 || transformedChange.length === 0);
+    const originalPart = [
+      ...originalChange,
+      ...(includeFollowingToken && followingToken ? [followingToken] : [])
+    ].join(" ");
+    const replacementPart = [
+      ...transformedChange,
+      ...(includeFollowingToken && followingToken ? [followingToken] : [])
+    ].join(" ");
+
+    changes.push(trimSharedContext(originalPart, replacementPart));
+    originalChange = [];
+    transformedChange = [];
+  };
+
+  while (
+    originalIndex < originalTokens.length &&
+    transformedIndex < transformedTokens.length
+  ) {
+    const originalToken = originalTokens[originalIndex] ?? "";
+    const transformedToken = transformedTokens[transformedIndex] ?? "";
+
+    if (originalToken === transformedToken) {
+      flushChange(originalToken);
+      originalIndex += 1;
+      transformedIndex += 1;
+      continue;
+    }
+
+    const skipOriginal = lcs[originalIndex + 1]?.[transformedIndex] ?? 0;
+    const skipTransformed = lcs[originalIndex]?.[transformedIndex + 1] ?? 0;
+
+    if (skipOriginal >= skipTransformed) {
+      originalChange.push(originalToken);
+      originalIndex += 1;
+    } else {
+      transformedChange.push(transformedToken);
+      transformedIndex += 1;
+    }
+  }
+
+  while (originalIndex < originalTokens.length) {
+    originalChange.push(originalTokens[originalIndex] ?? "");
+    originalIndex += 1;
+  }
+  while (transformedIndex < transformedTokens.length) {
+    transformedChange.push(transformedTokens[transformedIndex] ?? "");
+    transformedIndex += 1;
+  }
+  flushChange();
+
+  return changes.filter(
+    (change) => change.original && change.original !== change.replacement
+  );
+}
+
 function summarizeChangePairs(
   original: string,
   transformed: string,
   replacements: number
 ): ReplacementSummaryEntry[] {
-  const aligned = positionAlignedChanges(original, transformed);
+  const aligned =
+    positionAlignedChanges(original, transformed) ??
+    sequenceAlignedChanges(original, transformed);
   if (aligned && aligned.length > 0 && aligned.length <= replacements) {
     const entries = aligned.map((pair) => ({ ...pair, count: 1 }));
     if (replacements > entries.length) {
