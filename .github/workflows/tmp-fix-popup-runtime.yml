@@ -108,6 +108,26 @@ jobs:
           }
           NODE
 
+      - name: Temporären Generator escapen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+          path = Path("scripts/fix-i18n-temp.mjs")
+          source = path.read_text(encoding="utf-8")
+          replacements = {
+              r'\`${path}: missing German key ${key}\`': r'\`\${path}: missing German key \${key}\`',
+              r'\`${relativePath}: unbekannter i18n-Key ${key}.\`': r'\`\${relativePath}: unbekannter i18n-Key \${key}.\`',
+              r'\`Verwaiste i18n-Keys gefunden: ${orphanedKeys.join(", ")}.\`': r'\`Verwaiste i18n-Keys gefunden: \${orphanedKeys.join(", ")}.\`',
+          }
+          for before, after in replacements.items():
+              if before not in source:
+                  raise SystemExit(f"Erwarteter Generatorausdruck fehlt: {before}")
+              source = source.replace(before, after)
+          path.write_text(source, encoding="utf-8")
+          PY
+
       - name: i18n-Reparatur anwenden
         run: node scripts/fix-i18n-temp.mjs
 
