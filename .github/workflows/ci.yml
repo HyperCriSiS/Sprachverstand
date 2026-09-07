@@ -38,7 +38,7 @@ jobs:
 
       - name: Paket- und Lizenzmetadaten prüfen
         run: |
-          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","edge","opera","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));const manifests=["chromium","firefox"].map(name=>JSON.parse(fs.readFileSync(`manifests/${name}.json`,"utf8")));if(l.version!==p.version||l.packages?.[""]?.version!==p.version)throw new Error("package-lock version mismatch");if(manifests.some(m=>m.version!==p.version))throw new Error("manifest version mismatch");if(p.license!=="AGPL-3.0-only"||l.packages?.[""]?.license!==p.license)throw new Error("license mismatch");'
 
       - name: Öffentliche Freigabe prüfen
         run: npm run audit:public
@@ -105,7 +105,7 @@ jobs:
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
-          for target in chromium edge opera firefox; do
+          for target in chromium firefox; do
             grep -q '"default_icon"' "manifests/${target}.json"
           done
 
@@ -178,17 +178,17 @@ jobs:
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
-      - name: Chromium-, Edge- und Opera-Builds erstellen
+      - name: Gemeinsamen Chromium-Build erstellen
         run: npm run build:chromium-family
 
       - name: Chromium im echten Browser prüfen
         run: npm run test:browser:chromium
 
-      - name: Chromium-Builds und Kompatibilität prüfen
+      - name: Chromium-Build und Kompatibilität prüfen
         run: npm run validate:browsers:chromium
 
       - name: Chromium-Icons vollständig prüfen
-        run: node scripts/validate-icons.mjs dist/chromium/icons dist/edge/icons dist/opera/icons
+        run: node scripts/validate-icons.mjs dist/chromium/icons
 
   check:
     name: check
