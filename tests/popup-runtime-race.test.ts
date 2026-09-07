@@ -109,3 +109,88 @@ describe("Popup-Zustand während des Starts", () => {
     );
   });
 });
+
+describe("Popup-Zustand mit unvollständigem Push-Update", () => {
+  it("ergänzt Ersetzungsdetails und Hostname aus einer gleichzähligen Antwort", async () => {
+    installPopupMarkup();
+
+    let runtimeListener: MessageListener | undefined;
+    let resolveInitialState: ((value: unknown) => void) | undefined;
+    const initialState = new Promise<unknown>((resolve) => {
+      resolveInitialState = resolve;
+    });
+
+    vi.doMock("../src/settings/storage", () => ({
+      loadSettings: vi.fn(async () => defaultSettings),
+      saveSettings: vi.fn(async () => undefined)
+    }));
+
+    vi.stubGlobal("browser", {
+      i18n: {
+        getMessage: vi.fn(() => ""),
+        getUILanguage: vi.fn(() => "de")
+      },
+      runtime: {
+        openOptionsPage: vi.fn(),
+        getURL: vi.fn((path: string) => path),
+        sendMessage: vi.fn(async (message: unknown) => {
+          if (
+            message &&
+            typeof message === "object" &&
+            (message as { readonly type?: unknown }).type ===
+              "sprachverstand.get-replacement-state"
+          ) {
+            return initialState;
+          }
+          return undefined;
+        }),
+        onMessage: {
+          addListener: vi.fn((listener: MessageListener) => {
+            runtimeListener = listener;
+          }),
+          removeListener: vi.fn()
+        }
+      },
+      tabs: {
+        query: vi.fn(async () => [{ id: 37 }]),
+        create: vi.fn(async () => ({ id: 1 })),
+        update: vi.fn(async () => ({ id: 1 }))
+      }
+    });
+
+    void import("../src/popup");
+
+    await vi.waitFor(() => {
+      expect(runtimeListener).toBeDefined();
+    });
+
+    runtimeListener?.(
+      {
+        type: "sprachverstand.state-updated",
+        tabId: 37,
+        text: "14",
+        count: 14,
+        replacements: []
+      },
+      {}
+    );
+
+    resolveInitialState?.({
+      text: "14",
+      count: 14,
+      hostname: "www.example.org",
+      replacements: [
+        { original: "Nutzer:innen", replacement: "Nutzer", count: 14 }
+      ]
+    });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector("#replacement-list")?.textContent).toContain(
+        "Nutzer:innen"
+      );
+      expect(
+        document.querySelector<HTMLButtonElement>("#add-current-domain")?.disabled
+      ).toBe(false);
+    });
+  });
+});
