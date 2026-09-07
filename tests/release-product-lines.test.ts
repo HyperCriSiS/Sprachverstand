@@ -28,12 +28,16 @@ describe("Gemeinsamer Release-Flow", () => {
     expect(releaseWorkflow).toContain("MAKE_LATEST=false");
   });
 
-  it("erstellt je Produktlinie nur die passenden Pakete", () => {
+  it("erstellt je Produktlinie nur die tatsächlich unterschiedlichen Pakete", () => {
     expect(releaseWorkflow).toContain("dist/palemoon");
     expect(releaseWorkflow).toContain("-palemoon.xpi");
     expect(releaseWorkflow).toContain("dist/chromium");
+    expect(releaseWorkflow).toContain("-chromium.zip");
     expect(releaseWorkflow).toContain("dist/firefox");
-    expect(releaseWorkflow).toContain("dist/edge");
-    expect(releaseWorkflow).toContain("dist/opera");
+    expect(releaseWorkflow).toContain("-firefox.xpi");
+    expect(releaseWorkflow).not.toContain("dist/edge");
+    expect(releaseWorkflow).not.toContain("dist/opera");
+    expect(releaseWorkflow).not.toContain("-edge.zip");
+    expect(releaseWorkflow).not.toContain("-opera.zip");
   });
 });
