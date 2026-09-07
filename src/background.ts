@@ -30,6 +30,11 @@ interface GetReplacementStateMessage {
   readonly tabId: number;
 }
 
+interface SetInspectedTabMessage {
+  readonly type: "sprachverstand.set-inspected-tab";
+  readonly tabId: number;
+}
+
 interface GetInspectedCountMessage {
   readonly type: "sprachverstand.get-inspected-count";
 }
@@ -42,6 +47,48 @@ interface CachedReplacementState {
 
 const api = getExtensionApi();
 const statesByTab = new Map<number, CachedReplacementState>();
+let inspectedTabId: number | undefined;
+
+function hostnameFromSenderUrl(url: string | undefined): string | undefined {
+  if (!url) {
+    return undefined;
+  }
+
+  try {
+    const hostname = new URL(url).hostname.trim().toLowerCase().replace(/\.$/u, "");
+    return hostname || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function replacementTotal(
+  entries: readonly ReplacementSummaryEntry[]
+): number {
+  return entries.reduce((total, entry) => total + entry.count, 0);
+}
+
+function mergeCompatibleState(
+  primary: CachedReplacementState,
+  fallback: CachedReplacementState | undefined
+): CachedReplacementState {
+  if (!fallback || primary.count !== fallback.count) {
+    return primary;
+  }
+
+  const fallbackReplacementsAreComplete =
+    primary.count > 0 &&
+    replacementTotal(fallback.replacements) === primary.count;
+
+  return {
+    hostname: primary.hostname ?? fallback.hostname,
+    count: primary.count,
+    replacements:
+      primary.replacements.length > 0 || !fallbackReplacementsAreComplete
+        ? primary.replacements
+        : fallback.replacements
+  };
+}
 
 function normalizedReplacementEntries(
   entries: readonly unknown[]
@@ -165,6 +212,22 @@ function isGetReplacementStateMessage(
   );
 }
 
+function isSetInspectedTabMessage(
+  message: unknown
+): message is SetInspectedTabMessage {
+  if (!message || typeof message !== "object") {
+    return false;
+  }
+
+  const candidate = message as Partial<SetInspectedTabMessage>;
+  return (
+    candidate.type === "sprachverstand.set-inspected-tab" &&
+    typeof candidate.tabId === "number" &&
+    Number.isInteger(candidate.tabId) &&
+    candidate.tabId >= 0
+  );
+}
+
 function isGetInspectedCountMessage(
   message: unknown
 ): message is GetInspectedCountMessage {
@@ -254,13 +317,14 @@ async function getCountState(tabId: number): Promise<{
   readonly tabId: number;
   readonly text: string;
 }> {
+  const cached = statesByTab.get(tabId);
   const live = await readLiveReplacementState(tabId);
   if (live) {
-    statesByTab.set(tabId, live);
-    return { tabId, text: formatBadgeCount(live.count) || "0" };
+    const merged = mergeCompatibleState(live, cached);
+    statesByTab.set(tabId, merged);
+    return { tabId, text: formatBadgeCount(merged.count) || "0" };
   }
 
-  const cached = statesByTab.get(tabId);
   if (cached) {
     return { tabId, text: formatBadgeCount(cached.count) || "0" };
   }
@@ -276,14 +340,18 @@ api.runtime.onMessage.addListener(async (message, sender) => {
       return undefined;
     }
 
-    await updateTabState(tabId, {
-      hostname:
-        typeof message.hostname === "string" && message.hostname
-          ? message.hostname
-          : undefined,
-      count: Math.max(0, Math.trunc(message.count)),
-      replacements: normalizedReplacementEntries(message.replacements)
-    });
+    const incoming = mergeCompatibleState(
+      {
+        hostname:
+          typeof message.hostname === "string" && message.hostname
+            ? message.hostname
+            : hostnameFromSenderUrl(sender.url),
+        count: Math.max(0, Math.trunc(message.count)),
+        replacements: normalizedReplacementEntries(message.replacements)
+      },
+      statesByTab.get(tabId)
+    );
+    await updateTabState(tabId, incoming);
     return undefined;
   }
 
@@ -295,15 +363,21 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     await updateTabState(tabId, {
-      hostname: statesByTab.get(tabId)?.hostname,
+      hostname:
+        statesByTab.get(tabId)?.hostname ?? hostnameFromSenderUrl(sender.url),
       count: Math.max(0, Math.trunc(message.count)),
       replacements: statesByTab.get(tabId)?.replacements ?? []
     });
     return undefined;
   }
 
+  if (isSetInspectedTabMessage(message)) {
+    inspectedTabId = message.tabId;
+    return undefined;
+  }
+
   if (isGetInspectedCountMessage(message)) {
-    const tabId = parseOptionsPageTabId(sender.url);
+    const tabId = inspectedTabId ?? parseOptionsPageTabId(sender.url);
     if (tabId === undefined) {
       return { text: "0" };
     }
@@ -311,18 +385,19 @@ api.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   if (isGetReplacementStateMessage(message)) {
+    const cached = statesByTab.get(message.tabId);
     const live = await readLiveReplacementState(message.tabId);
     if (live) {
-      statesByTab.set(message.tabId, live);
+      const merged = mergeCompatibleState(live, cached);
+      statesByTab.set(message.tabId, merged);
       return {
-        text: formatBadgeCount(live.count) || "0",
-        hostname: live.hostname,
-        count: live.count,
-        replacements: live.replacements
+        text: formatBadgeCount(merged.count) || "0",
+        hostname: merged.hostname,
+        count: merged.count,
+        replacements: merged.replacements
       };
     }
 
-    const cached = statesByTab.get(message.tabId);
     if (cached) {
       return {
         text: formatBadgeCount(cached.count) || "0",

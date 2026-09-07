@@ -9,6 +9,7 @@ import {
   type PopupSectionId,
   type Settings
 } from "./settings/defaults";
+import { isDomainListed } from "./settings/domain";
 import { loadSettings, saveSettings } from "./settings/storage";
 
 interface ReplacementSummaryEntry {
@@ -188,7 +189,8 @@ function renderReplacementDetails(): void {
 
 function renderDomainAction(): void {
   const listed =
-    currentHostname.length > 0 && settings.excludedDomains.includes(currentHostname);
+    currentHostname.length > 0 &&
+    isDomainListed(currentHostname, settings.excludedDomains);
 
   domainActionButton.disabled = !currentHostname || listed;
   domainActionButton.textContent = listed
@@ -278,13 +280,37 @@ async function refreshReplacementState(): Promise<void> {
     type: "sprachverstand.get-replacement-state",
     tabId: activeTabId
   })) as ReplacementStateResponse | undefined;
+  const normalized = normalizeReplacementState(response);
+
   // Ein Push-Zustand, der während der Anfrage eingetroffen ist, ist neuer
-  // als die angefragte Momentaufnahme und darf nicht überschrieben werden.
+  // als die angefragte Momentaufnahme. Fehlende Detailfelder dürfen aber aus
+  // einer kompatiblen Antwort ergänzt werden, solange der Zähler identisch ist.
+  // So löscht ein zähler-only Update weder Ersetzungsliste noch Hostname.
   if (runtimeStateRevision !== revisionAtRequestStart) {
+    if (normalized.count !== currentCount) {
+      return;
+    }
+
+    let changed = false;
+    if (!currentHostname && normalized.hostname) {
+      currentHostname = normalized.hostname;
+      changed = true;
+    }
+    if (
+      currentReplacements.length === 0 &&
+      normalized.replacements.length > 0
+    ) {
+      currentReplacements = normalized.replacements;
+      changed = true;
+    }
+
+    if (changed) {
+      renderReplacementDetails();
+      renderDomainAction();
+    }
     return;
   }
 
-  const normalized = normalizeReplacementState(response);
   currentCount = normalized.count;
   currentReplacements = normalized.replacements;
   currentHostname = normalized.hostname;
@@ -387,7 +413,10 @@ async function start(): Promise<void> {
   });
 
   domainActionButton.addEventListener("click", () => {
-    if (!currentHostname || settings.excludedDomains.includes(currentHostname)) {
+    if (
+      !currentHostname ||
+      isDomainListed(currentHostname, settings.excludedDomains)
+    ) {
       return;
     }
 

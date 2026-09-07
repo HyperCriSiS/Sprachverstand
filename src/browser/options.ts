@@ -1,8 +1,11 @@
 import type { ExtensionApi } from "./api";
 
 type OptionsPageApi = {
-  readonly runtime: Pick<ExtensionApi["runtime"], "getURL">;
-  readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query" | "update">;
+  readonly runtime: Pick<
+    ExtensionApi["runtime"],
+    "openOptionsPage" | "sendMessage"
+  >;
+  readonly tabs: Pick<ExtensionApi["tabs"], "query">;
 };
 
 function isValidTabId(tabId: number | undefined): tabId is number {
@@ -43,20 +46,16 @@ export async function openOptionsPageInForeground(
     active: true,
     currentWindow: true
   });
-  const baseUrl = api.runtime.getURL("options/options.html");
-  const url = isValidTabId(activeTab?.id)
-    ? `${baseUrl}?tabId=${encodeURIComponent(String(activeTab.id))}`
-    : baseUrl;
 
-  const createdTab = await api.tabs.create({
-    url,
-    active: true
-  });
-
-  // Firefox kann einen aus dem Erweiterungs-Popup erzeugten Tab trotz
-  // active:true zunächst im Hintergrund belassen. Die zweite Aktivierung
-  // macht den Vordergrundvertrag browserübergreifend eindeutig.
-  if (isValidTabId(createdTab.id)) {
-    await api.tabs.update(createdTab.id, { active: true });
+  if (isValidTabId(activeTab?.id)) {
+    await api.runtime.sendMessage({
+      type: "sprachverstand.set-inspected-tab",
+      tabId: activeTab.id
+    });
   }
+
+  // Die semantische Options-API überlässt Firefox die korrekte Auswahl und
+  // Fokussierung der Optionsseite. tabs.create({ active: true }) garantiert
+  // lediglich einen aktiven Tab, nicht den Fokus des Browserfensters.
+  await api.runtime.openOptionsPage();
 }
