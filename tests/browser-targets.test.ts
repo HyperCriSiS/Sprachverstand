@@ -35,18 +35,14 @@ const standardCompatibilityBrowsers = compatibilityBrowsers.filter(
 const orion = compatibilityBrowsers.find((browser) => browser.name === "Orion");
 
 describe("Browser-Ziele", () => {
-  it("baut Chromium, Edge, Opera und Firefox als explizite Ziele", () => {
+  it("baut Chromium und Firefox als gemeinsame Basisziele", () => {
     expect(buildScript).toContain(
-      'const supportedTargets = ["chromium", "edge", "opera", "firefox"];'
+      'const supportedTargets = ["chromium", "firefox"];'
     );
-    expect(packageJson.scripts["build:edge"]).toBe(
-      "node scripts/build.mjs --target edge"
-    );
-    expect(packageJson.scripts["build:opera"]).toBe(
-      "node scripts/build.mjs --target opera"
-    );
+    expect(packageJson.scripts["build:edge"]).toBeUndefined();
+    expect(packageJson.scripts["build:opera"]).toBeUndefined();
     expect(packageJson.scripts["build:chromium-family"]).toBe(
-      "node scripts/build.mjs --targets chromium,edge,opera"
+      "npm run build:chromium"
     );
   });
 
@@ -73,6 +69,9 @@ describe("Browser-Ziele", () => {
   it("ordnet Browser ohne eigenen Release ihrem gemeinsamen Basis-Build zu", () => {
     expect(standardCompatibilityBrowsers).toEqual([
       { name: "Chromium", family: "chromium", target: "chromium" },
+      { name: "Google Chrome", family: "chromium", target: "chromium" },
+      { name: "Microsoft Edge", family: "chromium", target: "chromium" },
+      { name: "Opera", family: "chromium", target: "chromium" },
       { name: "Brave", family: "chromium", target: "chromium" },
       { name: "Vivaldi", family: "chromium", target: "chromium" },
       { name: "Arc", family: "chromium", target: "chromium" },
@@ -101,11 +100,13 @@ describe("Browser-Ziele", () => {
     expect(releaseWorkflow.toLowerCase()).not.toContain("orion");
   });
 
-  it("packt Edge und Opera im Release-Workflow", () => {
-    for (const target of ["edge", "opera"]) {
-      expect(releaseWorkflow).toContain(`dist/${target}`);
-      expect(releaseWorkflow).toContain(`-${target}.zip`);
-    }
+  it("veröffentlicht für Chrome, Edge und Opera genau ein Chromium-Familienpaket", () => {
+    expect(releaseWorkflow).toContain("dist/chromium");
+    expect(releaseWorkflow).toContain("-chromium.zip");
+    expect(releaseWorkflow).not.toContain("dist/edge");
+    expect(releaseWorkflow).not.toContain("dist/opera");
+    expect(releaseWorkflow).not.toContain("-edge.zip");
+    expect(releaseWorkflow).not.toContain("-opera.zip");
   });
 
   it("bindet manuell erzeugte Release-Tags an die gewählte Produktlinie", () => {
@@ -139,7 +140,7 @@ describe("Browser-Ziele", () => {
     expect(ciWorkflow).toContain("name: check");
     expect(ciWorkflow).toContain("npm run validate:browsers:gecko");
     expect(ciWorkflow).toContain("npm run validate:browsers:chromium");
-    expect(ciWorkflow).toContain("npm run build:chromium-family");
+    expect(ciWorkflow).toContain("npm run build:chromium");
     expect(ciWorkflow).not.toContain("branches: [main, dev]");
   });
 

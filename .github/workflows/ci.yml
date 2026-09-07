@@ -178,17 +178,17 @@ jobs:
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
-      - name: Chromium-, Edge- und Opera-Builds erstellen
-        run: npm run build:chromium-family
+      - name: Gemeinsamen Chromium-Familienbuild erstellen
+        run: npm run build:chromium
 
       - name: Chromium im echten Browser prüfen
         run: npm run test:browser:chromium
 
-      - name: Chromium-Builds und Kompatibilität prüfen
+      - name: Chromium-Basisbuild und Familienkompatibilität prüfen
         run: npm run validate:browsers:chromium
 
       - name: Chromium-Icons vollständig prüfen
-        run: node scripts/validate-icons.mjs dist/chromium/icons dist/edge/icons dist/opera/icons
+        run: node scripts/validate-icons.mjs dist/chromium/icons
 
   check:
     name: check
