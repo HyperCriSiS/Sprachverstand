@@ -1,10 +1,9 @@
-import { createHash } from "node:crypto";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
 const projectRoot = process.cwd();
-const chromiumTargets = ["chromium", "edge", "opera"];
+const chromiumTargets = ["chromium"];
 const geckoTargets = ["firefox"];
 const allTargets = [...chromiumTargets, ...geckoTargets];
 const supportedFamilies = new Set(["all", "chromium", "gecko"]);
@@ -60,28 +59,6 @@ async function fileExists(filePath) {
   } catch {
     return false;
   }
-}
-
-async function listFiles(directory, prefix = "") {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const files = [];
-
-  for (const entry of entries) {
-    const relativePath = path.posix.join(prefix, entry.name);
-    const absolutePath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await listFiles(absolutePath, relativePath)));
-    } else if (entry.isFile()) {
-      files.push(relativePath);
-    }
-  }
-
-  return files.sort();
-}
-
-async function digest(filePath) {
-  const data = await readFile(filePath);
-  return createHash("sha256").update(data).digest("hex");
 }
 
 function assert(condition, message) {
@@ -215,35 +192,6 @@ if (selectedFamily !== "gecko") {
   for (const target of chromiumTargets) {
     validateChromiumManifest(target, manifests.get(target));
   }
-
-  const referenceDirectory = path.join(projectRoot, "dist", "chromium");
-  const referenceFiles = (await listFiles(referenceDirectory)).filter(
-    (relativePath) => relativePath !== "manifest.json"
-  );
-
-  for (const target of ["edge", "opera"]) {
-    const targetDirectory = path.join(projectRoot, "dist", target);
-    const targetFiles = (await listFiles(targetDirectory)).filter(
-      (relativePath) => relativePath !== "manifest.json"
-    );
-
-    assert(
-      JSON.stringify(targetFiles) === JSON.stringify(referenceFiles),
-      `${target}: Dateiliste weicht vom Chromium-Build ab.`
-    );
-
-    for (const relativePath of referenceFiles) {
-      const [referenceDigest, targetDigest] = await Promise.all([
-        digest(path.join(referenceDirectory, relativePath)),
-        digest(path.join(targetDirectory, relativePath))
-      ]);
-
-      assert(
-        referenceDigest === targetDigest,
-        `${target}: ${relativePath} weicht unerwartet vom Chromium-Build ab.`
-      );
-    }
-  }
 }
 
 if (selectedFamily !== "chromium") {
@@ -321,7 +269,7 @@ const browserNachFamilie = Object.groupBy(
 );
 
 if (selectedFamily !== "gecko") {
-  console.log("Chromium-Ziele geprüft: Chromium, Microsoft Edge und Opera.");
+  console.log("Chromium-Basisbuild geprüft: ein gemeinsames Paket für Chromium, Microsoft Edge und Opera.");
   console.log(
     `Chromium-Kompatibilität geprüft: ${browserNachFamilie.chromium.map((browser) => browser.name).join(", ")}.`
   );
