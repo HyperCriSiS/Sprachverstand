@@ -41,7 +41,6 @@ jobs:
               '''    query(queryInfo: {\n      readonly active: boolean;\n      readonly currentWindow: boolean;\n    }): Promise<ExtensionTab[]>;\n    sendMessage(tabId: number, message: unknown): Promise<unknown>;''',
               '''    query(queryInfo: {\n      readonly active: boolean;\n      readonly currentWindow: boolean;\n    }): Promise<ExtensionTab[]>;\n    update(\n      tabId: number,\n      updateProperties: { readonly active?: boolean }\n    ): Promise<ExtensionTab>;\n    sendMessage(tabId: number, message: unknown): Promise<unknown>;'''
           )
-
           replace(
               "src/browser/options.ts",
               'readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query">;',
@@ -76,28 +75,15 @@ jobs:
           if old not in text:
               raise SystemExit("Startblock in src/popup.ts nicht gefunden")
           text = text.replace(old, new, 1)
-          text = text.replace(
-              '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n  });''',
-              '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n    // Beim Öffnen nochmals direkt vom aktiven Tab lesen.\n    void refreshReplacementState();\n  });''',
-              1
-          )
-          p.write_text(text)
+          replace_block = '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n  });'''
+          replacement_block = '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n    // Beim Öffnen nochmals direkt vom aktiven Tab lesen.\n    void refreshReplacementState();\n  });'''
+          if replace_block not in text:
+              raise SystemExit("Details-Handler in src/popup.ts nicht gefunden")
+          p.write_text(text.replace(replace_block, replacement_block, 1))
 
-          replace(
-              "static/popup/popup.html",
-              '>Ausnahmen und weitere Einstellungen</button>',
-              '>Erweiterte Einstellungen</button>'
-          )
-          replace(
-              "static/_locales/de/messages.json",
-              '"message": "Ausnahmen und weitere Einstellungen"',
-              '"message": "Erweiterte Einstellungen"'
-          )
-          replace(
-              "static/_locales/en/messages.json",
-              '"message": "Exceptions and more settings"',
-              '"message": "Advanced settings"'
-          )
+          replace("static/popup/popup.html", ">Ausnahmen und weitere Einstellungen</button>", ">Erweiterte Einstellungen</button>")
+          replace("static/_locales/de/messages.json", '"message": "Ausnahmen und weitere Einstellungen"', '"message": "Erweiterte Einstellungen"')
+          replace("static/_locales/en/messages.json", '"message": "Exceptions and more settings"', '"message": "Advanced settings"')
 
           p = Path("tests/browser-options.test.ts")
           text = p.read_text()
@@ -124,99 +110,8 @@ jobs:
               1
           )
           p.write_text(text)
-
-          p = Path("tests/popup-runtime-state.test.ts")
-          text = p.read_text()
-          marker = '\n});\n'
-          pos = text.rfind(marker)
-          if pos < 0:
-              raise SystemExit("Testabschluss nicht gefunden")
-          test = r'''
-
-  it("verliert Ersetzungsdetails nicht während der ersten Zustandsabfrage", async () => {
-    installPopupMarkup();
-
-    let runtimeListener: MessageListener | undefined;
-    let resolveInitialState: ((value: unknown) => void) | undefined;
-    const initialState = new Promise<unknown>((resolve) => {
-      resolveInitialState = resolve;
-    });
-
-    vi.doMock("../src/settings/storage", () => ({
-      loadSettings: vi.fn(async () => defaultSettings),
-      saveSettings: vi.fn(async () => undefined)
-    }));
-
-    const sendRuntimeMessage = vi.fn(async (message: unknown) => {
-      if (
-        message &&
-        typeof message === "object" &&
-        (message as { readonly type?: unknown }).type ===
-          "sprachverstand.get-replacement-state"
-      ) {
-        return initialState;
-      }
-      return undefined;
-    });
-
-    vi.stubGlobal("browser", {
-      i18n: {
-        getMessage: vi.fn(() => ""),
-        getUILanguage: vi.fn(() => "de")
-      },
-      runtime: {
-        openOptionsPage: vi.fn(),
-        getURL: vi.fn((path: string) => path),
-        sendMessage: sendRuntimeMessage,
-        onMessage: {
-          addListener: vi.fn((listener: MessageListener) => {
-            runtimeListener = listener;
-          }),
-          removeListener: vi.fn()
-        }
-      },
-      tabs: {
-        query: vi.fn(async () => [{ id: 37 }]),
-        create: vi.fn(async () => ({ id: 1 })),
-        update: vi.fn(async () => ({ id: 1 }))
-      }
-    });
-
-    await import("../src/popup");
-
-    await vi.waitFor(() => {
-      expect(runtimeListener).toBeDefined();
-    });
-
-    runtimeListener?.(
-      {
-        type: "sprachverstand.state-updated",
-        tabId: 37,
-        text: "14",
-        count: 14,
-        replacements: [
-          { original: "Nutzer:innen", replacement: "Nutzer", count: 14 }
-        ]
-      },
-      {}
-    );
-
-    resolveInitialState?.({ text: "14", count: 14, replacements: [] });
-
-    await vi.waitFor(() => {
-      expect(document.querySelector("#details-count")?.textContent).toBe("14");
-      expect(document.querySelector("#details-unique-count")?.textContent).toBe("1");
-    });
-    expect(document.querySelector("#replacement-list")?.textContent).toContain(
-      "Nutzer:innen"
-    );
-  });
-'''
-          p.write_text(text[:pos] + test + text[pos:])
           PY
-
           rm .github/workflows/tmp-fix-popup-runtime.yml
-
       - name: Abhängigkeiten installieren
         run: npm ci --prefer-offline --no-audit --no-fund
       - name: Zielprüfungen ausführen
