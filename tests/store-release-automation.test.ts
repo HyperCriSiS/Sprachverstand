@@ -61,6 +61,10 @@ describe("Store-Release-Automatisierung", () => {
     expect(storeWorkflow).toContain("store/generated/amo-release-notes.json");
     expect(amoScript).toContain("exp: issuedAt + 60");
     expect(amoScript).toContain("randomUUID()");
+    expect(amoScript).toContain('const header = { alg: "HS256", typ: "JWT" }');
+    expect(amoScript).toContain('createHmac("sha256", secret)');
+    expect(amoScript).toContain("kein Benutzerpasswort");
+    expect(amoScript).toContain("lgtm[js/insufficient-password-hash]");
     expect(amoScript).toContain('Authorization", `JWT ${createJwt()}`');
     expect(amoScript).toContain('case "notes"');
   });
