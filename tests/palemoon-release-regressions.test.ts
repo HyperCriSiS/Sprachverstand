@@ -80,7 +80,9 @@ describe("Pale-Moon-Port Regressionen", () => {
 
   it("enthält nicht wieder den entfernten Einstellungszähler", () => {
     expect(options).not.toContain("Korrekturen im aktuell aktiven Tab");
-    expect(options).toContain('<output id="count" hidden aria-hidden="true">0</output>');
+    expect(options).toMatch(
+      /<output\b(?=[^>]*\bid="count")(?=[^>]*\bhidden(?:="")?)(?=[^>]*\baria-hidden="true")[^>]*>0<\/output>/u
+    );
   });
 
   it("veröffentlicht keine Pale-Moon-Einreichungsnotiz als Release-Asset", () => {
