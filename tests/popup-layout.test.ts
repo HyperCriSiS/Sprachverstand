@@ -133,19 +133,21 @@ describe("Popup-Anzeige", () => {
     expect(popupHtml).toContain('id="process-subtitles"');
   });
 
-  it("nutzt auf Touch-Geräten die volle Viewport-Breite ohne Überlauf", () => {
-    const bodyBlock =
-      popupCss.match(/body\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
+  it("hält Desktop-Popups intrinsisch breit und nutzt Touch-Viewport responsiv", () => {
+    const desktopBlock =
+      popupCss.match(/html,\s*body\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
     const touchBlock =
       popupCss.match(
-        /@media \(hover: none\) and \(pointer: coarse\)\s*\{[\s\S]*?body\s*\{([\s\S]*?)\}/u
+        /@media \(hover: none\) and \(pointer: coarse\)\s*\{[\s\S]*?html,\s*body\s*\{([\s\S]*?)\}/u
       )?.[1] ?? "";
 
-    expect(bodyBlock).toContain("width: 384px");
-    expect(bodyBlock).toContain("max-width: 100vw");
-    expect(bodyBlock).not.toContain("min-width: 384px");
-    expect(touchBlock).toContain("width: 100vw");
-    expect(popupCss).not.toMatch(/html,\s*body\s*\{[\s\S]*?width:\s*384px/u);
+    expect(desktopBlock).toContain("width: 384px");
+    expect(desktopBlock).toContain("min-width: 384px");
+    expect(desktopBlock).not.toContain("100vw");
+    expect(touchBlock).toContain("width: 100%");
+    expect(touchBlock).toContain("min-width: 0");
+    expect(touchBlock).not.toContain("100vw");
+    expect(popupCss).not.toContain("max-width: 100vw");
   });
 
   it("verwendet nur den äußeren Popup-Scrollbereich", () => {
