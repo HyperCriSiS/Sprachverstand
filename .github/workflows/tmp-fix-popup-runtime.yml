@@ -1,0 +1,234 @@
+name: Temporärer Popup-Regressionsfix
+
+on:
+  push:
+    branches:
+      - fix/popup-runtime-and-options
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: fix/popup-runtime-and-options
+          fetch-depth: 0
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Laufzeit- und Optionsfix anwenden
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"Erwarteter Block fehlt in {path}: {old[:80]!r}")
+              p.write_text(text.replace(old, new, 1))
+
+          replace(
+              "src/browser/api.ts",
+              '''    query(queryInfo: {\n      readonly active: boolean;\n      readonly currentWindow: boolean;\n    }): Promise<ExtensionTab[]>;\n    sendMessage(tabId: number, message: unknown): Promise<unknown>;''',
+              '''    query(queryInfo: {\n      readonly active: boolean;\n      readonly currentWindow: boolean;\n    }): Promise<ExtensionTab[]>;\n    update(\n      tabId: number,\n      updateProperties: { readonly active?: boolean }\n    ): Promise<ExtensionTab>;\n    sendMessage(tabId: number, message: unknown): Promise<unknown>;'''
+          )
+
+          replace(
+              "src/browser/options.ts",
+              'readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query">;',
+              'readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query" | "update">;'
+          )
+          replace(
+              "src/browser/options.ts",
+              '''  await api.tabs.create({\n    url,\n    active: true\n  });''',
+              '''  const createdTab = await api.tabs.create({\n    url,\n    active: true\n  });\n\n  // Firefox kann einen aus dem Erweiterungs-Popup erzeugten Tab trotz\n  // active:true zunächst im Hintergrund belassen. Die zweite Aktivierung\n  // macht den Vordergrundvertrag browserübergreifend eindeutig.\n  if (isValidTabId(createdTab.id)) {\n    await api.tabs.update(createdTab.id, { active: true });\n  }'''
+          )
+
+          p = Path("src/popup.ts")
+          text = p.read_text()
+          text = text.replace('let currentHostname = "";', 'let currentHostname = "";\nlet runtimeStateRevision = 0;', 1)
+          text = text.replace(
+              'async function refreshReplacementState(): Promise<void> {\n  if (activeTabId === undefined) {',
+              'async function refreshReplacementState(): Promise<void> {\n  const revisionAtRequestStart = runtimeStateRevision;\n\n  if (activeTabId === undefined) {',
+              1
+          )
+          text = text.replace(
+              '  const normalized = normalizeReplacementState(response);\n  currentCount = normalized.count;',
+              '''  // Ein Push-Zustand, der während der Anfrage eingetroffen ist, ist neuer\n  // als die angefragte Momentaufnahme und darf nicht überschrieben werden.\n  if (runtimeStateRevision !== revisionAtRequestStart) {\n    return;\n  }\n\n  const normalized = normalizeReplacementState(response);\n  currentCount = normalized.count;''',
+              1
+          )
+          text = text.replace(
+              '  currentCount = Math.max(0, message.count);\n  currentReplacements = message.replacements;',
+              '  runtimeStateRevision += 1;\n  currentCount = Math.max(0, message.count);\n  currentReplacements = message.replacements;',
+              1
+          )
+          old = '''  settings = await loadSettings();\n  await resolveActiveTabId();\n  render();\n  await refreshReplacementState();\n\n  const api = getExtensionApi();\n  api.runtime.onMessage.addListener(handleRuntimeMessage);\n  window.addEventListener("unload", () => {\n    api.runtime.onMessage.removeListener(handleRuntimeMessage);\n  });'''
+          new = '''  settings = await loadSettings();\n  await resolveActiveTabId();\n  render();\n\n  const api = getExtensionApi();\n  // Vor der ersten asynchronen Zustandsabfrage registrieren, damit ein\n  // zeitgleich eintreffendes Update mit Ersetzungsdetails nicht verloren geht.\n  api.runtime.onMessage.addListener(handleRuntimeMessage);\n  window.addEventListener("unload", () => {\n    api.runtime.onMessage.removeListener(handleRuntimeMessage);\n  });\n\n  await refreshReplacementState();'''
+          if old not in text:
+              raise SystemExit("Startblock in src/popup.ts nicht gefunden")
+          text = text.replace(old, new, 1)
+          text = text.replace(
+              '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n  });''',
+              '''  openReplacementsButton.addEventListener("click", () => {\n    mainView.hidden = true;\n    detailsView.hidden = false;\n    // Beim Öffnen nochmals direkt vom aktiven Tab lesen.\n    void refreshReplacementState();\n  });''',
+              1
+          )
+          p.write_text(text)
+
+          replace(
+              "static/popup/popup.html",
+              '>Ausnahmen und weitere Einstellungen</button>',
+              '>Erweiterte Einstellungen</button>'
+          )
+          replace(
+              "static/_locales/de/messages.json",
+              '"message": "Ausnahmen und weitere Einstellungen"',
+              '"message": "Erweiterte Einstellungen"'
+          )
+          replace(
+              "static/_locales/en/messages.json",
+              '"message": "Exceptions and more settings"',
+              '"message": "Advanced settings"'
+          )
+
+          p = Path("tests/browser-options.test.ts")
+          text = p.read_text()
+          text = text.replace(
+              'const create = vi.fn(async () => ({ id: 42 }));\n    const query = vi.fn(async () => [{ id: 17 }]);',
+              'const create = vi.fn(async () => ({ id: 42 }));\n    const update = vi.fn(async () => ({ id: 42 }));\n    const query = vi.fn(async () => [{ id: 17 }]);',
+              1
+          )
+          text = text.replace('tabs: { create, query }', 'tabs: { create, query, update }', 1)
+          text = text.replace(
+              '''    expect(create).toHaveBeenCalledWith({\n      url: "moz-extension://sprachverstand/options/options.html?tabId=17",\n      active: true\n    });''',
+              '''    expect(create).toHaveBeenCalledWith({\n      url: "moz-extension://sprachverstand/options/options.html?tabId=17",\n      active: true\n    });\n    expect(update).toHaveBeenCalledWith(42, { active: true });''',
+              1
+          )
+          text = text.replace(
+              'const create = vi.fn(async () => ({ id: 42 }));\n    const query = vi.fn(async () => [{}]);',
+              'const create = vi.fn(async () => ({ id: 42 }));\n    const update = vi.fn(async () => ({ id: 42 }));\n    const query = vi.fn(async () => [{}]);',
+              1
+          )
+          text = text.replace('tabs: { create, query }', 'tabs: { create, query, update }', 1)
+          text = text.replace(
+              '''    expect(create).toHaveBeenCalledWith({\n      url: "moz-extension://sprachverstand/options/options.html",\n      active: true\n    });''',
+              '''    expect(create).toHaveBeenCalledWith({\n      url: "moz-extension://sprachverstand/options/options.html",\n      active: true\n    });\n    expect(update).toHaveBeenCalledWith(42, { active: true });''',
+              1
+          )
+          p.write_text(text)
+
+          p = Path("tests/popup-runtime-state.test.ts")
+          text = p.read_text()
+          marker = '\n});\n'
+          pos = text.rfind(marker)
+          if pos < 0:
+              raise SystemExit("Testabschluss nicht gefunden")
+          test = r'''
+
+  it("verliert Ersetzungsdetails nicht während der ersten Zustandsabfrage", async () => {
+    installPopupMarkup();
+
+    let runtimeListener: MessageListener | undefined;
+    let resolveInitialState: ((value: unknown) => void) | undefined;
+    const initialState = new Promise<unknown>((resolve) => {
+      resolveInitialState = resolve;
+    });
+
+    vi.doMock("../src/settings/storage", () => ({
+      loadSettings: vi.fn(async () => defaultSettings),
+      saveSettings: vi.fn(async () => undefined)
+    }));
+
+    const sendRuntimeMessage = vi.fn(async (message: unknown) => {
+      if (
+        message &&
+        typeof message === "object" &&
+        (message as { readonly type?: unknown }).type ===
+          "sprachverstand.get-replacement-state"
+      ) {
+        return initialState;
+      }
+      return undefined;
+    });
+
+    vi.stubGlobal("browser", {
+      i18n: {
+        getMessage: vi.fn(() => ""),
+        getUILanguage: vi.fn(() => "de")
+      },
+      runtime: {
+        openOptionsPage: vi.fn(),
+        getURL: vi.fn((path: string) => path),
+        sendMessage: sendRuntimeMessage,
+        onMessage: {
+          addListener: vi.fn((listener: MessageListener) => {
+            runtimeListener = listener;
+          }),
+          removeListener: vi.fn()
+        }
+      },
+      tabs: {
+        query: vi.fn(async () => [{ id: 37 }]),
+        create: vi.fn(async () => ({ id: 1 })),
+        update: vi.fn(async () => ({ id: 1 }))
+      }
+    });
+
+    await import("../src/popup");
+
+    await vi.waitFor(() => {
+      expect(runtimeListener).toBeDefined();
+    });
+
+    runtimeListener?.(
+      {
+        type: "sprachverstand.state-updated",
+        tabId: 37,
+        text: "14",
+        count: 14,
+        replacements: [
+          { original: "Nutzer:innen", replacement: "Nutzer", count: 14 }
+        ]
+      },
+      {}
+    );
+
+    resolveInitialState?.({ text: "14", count: 14, replacements: [] });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector("#details-count")?.textContent).toBe("14");
+      expect(document.querySelector("#details-unique-count")?.textContent).toBe("1");
+    });
+    expect(document.querySelector("#replacement-list")?.textContent).toContain(
+      "Nutzer:innen"
+    );
+  });
+'''
+          p.write_text(text[:pos] + test + text[pos:])
+          PY
+
+          rm .github/workflows/tmp-fix-popup-runtime.yml
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Zielprüfungen ausführen
+        run: |
+          npm run typecheck
+          npx vitest run tests/browser-options.test.ts tests/popup-runtime-state.test.ts tests/popup-layout.test.ts tests/i18n.test.ts
+      - name: Änderungen committen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "HyperCriSiS"
+          git config user.email "dev.github@w3b.world"
+          git add -A
+          git commit -m "fix: Popup-Zustand und erweiterte Einstellungen stabilisieren"
+          git push origin HEAD:fix/popup-runtime-and-options
