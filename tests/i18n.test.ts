@@ -53,7 +53,7 @@ describe("WebExtension localization", () => {
 
     const de = await readMessages("de");
     const referenceKeys = Object.keys(de).sort();
-    expect(referenceKeys).toHaveLength(161);
+    expect(referenceKeys).toHaveLength(165);
     for (const locale of locales) {
       const messages = await readMessages(locale.code);
       expect(Object.keys(messages).sort(), locale.code).toEqual(referenceKeys);
@@ -130,6 +130,55 @@ describe("WebExtension localization", () => {
         `${path}: text missing from localization catalog`
       ).toEqual([]);
     }
+  });
+
+
+  it("prüft dynamische i18n-Schlüssel generisch gegen den Katalog", async () => {
+    const de = await readMessages("de");
+    const sources = await Promise.all(
+      ["src/options.ts", "src/popup.ts", "src/rules/catalog.ts"].map(async (path) => ({
+        path,
+        source: await readFile(path, "utf8")
+      }))
+    );
+
+    for (const { path, source } of sources) {
+      const keys = new Set<string>();
+      for (const match of source.matchAll(/\bt\(\s*["']([^"']+)["']/gu)) {
+        if (match[1]) keys.add(match[1]);
+      }
+      for (const match of source.matchAll(
+        /\b(?:labelKey|descriptionKey):\s*["']([^"']+)["']/gu
+      )) {
+        if (match[1]) keys.add(match[1]);
+      }
+      for (const key of keys) {
+        expect(de[key]?.message, `${path}: missing German key ${key}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("lässt keine verwaisten UI-Schlüssel im Katalog zurück", async () => {
+    const de = await readMessages("de");
+    const productionPaths = [
+      "src/options.ts",
+      "src/popup.ts",
+      "src/rules/catalog.ts",
+      "static/options/options.html",
+      "static/popup/popup.html",
+      "static/legal/legal.html",
+      "manifests/firefox.json",
+      "manifests/chromium.json"
+    ];
+    const productionText = (
+      await Promise.all(productionPaths.map((path) => readFile(path, "utf8")))
+    ).join("\n");
+
+    const orphaned = Object.keys(de)
+      .filter((key) => !productionText.includes(key))
+      .sort();
+
+    expect(orphaned).toEqual([]);
   });
 
   it("localizes dynamic standard text directly by message key", async () => {

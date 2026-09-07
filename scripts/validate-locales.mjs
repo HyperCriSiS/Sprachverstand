@@ -59,7 +59,7 @@ assert(
 
 const reference = await readMessages("de");
 const referenceKeys = sorted(Object.keys(reference));
-assert(referenceKeys.length === 161, `Die deutsche Referenz muss exakt 161 Nachrichten enthalten, gefunden: ${referenceKeys.length}.`);
+assert(referenceKeys.length === 165, `Die deutsche Referenz muss exakt 165 Nachrichten enthalten, gefunden: ${referenceKeys.length}.`);
 
 for (const code of configuredCodes) {
   const messages = await readMessages(code);
@@ -86,6 +86,55 @@ for (const code of configuredCodes) {
 
   assert(messages.extensionName.message === "Sprachverstand", `${code}: Produktname Sprachverstand darf nicht übersetzt werden.`);
 }
+
+
+const productionPaths = [
+  "src/options.ts",
+  "src/popup.ts",
+  "src/rules/catalog.ts",
+  "static/options/options.html",
+  "static/popup/popup.html",
+  "static/legal/legal.html",
+  "manifests/firefox.json",
+  "manifests/chromium.json"
+];
+const productionSources = await Promise.all(
+  productionPaths.map(async (relativePath) => ({
+    relativePath,
+    source: await readFile(path.join(projectRoot, relativePath), "utf8")
+  }))
+);
+const productionText = productionSources.map(({ source }) => source).join("\n");
+
+for (const { relativePath, source } of productionSources) {
+  const referencedKeys = new Set();
+  for (const match of source.matchAll(/\bt\(\s*["']([^"']+)["']/gu)) {
+    referencedKeys.add(match[1]);
+  }
+  for (const match of source.matchAll(
+    /\b(?:labelKey|descriptionKey):\s*["']([^"']+)["']/gu
+  )) {
+    referencedKeys.add(match[1]);
+  }
+  for (const match of source.matchAll(
+    /data-i18n(?:-[a-z-]+)?=["']([^"']+)["']/gu
+  )) {
+    referencedKeys.add(match[1]);
+  }
+
+  for (const key of referencedKeys) {
+    assert(
+      referenceKeys.includes(key),
+      `${relativePath}: unbekannter i18n-Key ${key}.`
+    );
+  }
+}
+
+const orphanedKeys = referenceKeys.filter((key) => !productionText.includes(key));
+assert(
+  orphanedKeys.length === 0,
+  `Verwaiste i18n-Keys gefunden: ${orphanedKeys.join(", ")}.`
+);
 
 for (const [key, translations] of Object.entries(semanticContracts)) {
   assert(referenceKeys.includes(key), `Semantikvertrag verweist auf unbekannten Key: ${key}.`);

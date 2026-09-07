@@ -92,8 +92,6 @@ const excludedDomainsInput =
   requiredElement<HTMLTextAreaElement>("#excluded-domains");
 const domainListTitle = requiredElement<HTMLElement>("#domain-list-title");
 const domainListLabel = requiredElement<HTMLElement>("#domain-list-label");
-const domainListDescription =
-  requiredElement<HTMLElement>("#domain-list-description");
 const domainListModeButton =
   requiredElement<HTMLButtonElement>("#domain-list-mode");
 const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
@@ -264,11 +262,6 @@ function renderDomainListMode(): void {
         undefined,
         "Sprachverstand auf diesen Webseiten vollständig deaktivieren"
       );
-  domainListDescription.textContent = t(
-    "domainListDescription",
-    undefined,
-    "Eine Domain pro Zeile. Unterdomains werden mit erfasst; Eingaben werden auf den Hostnamen normalisiert. Lokal gibt es keine feste Anzahlbegrenzung. Bei aktivierter Browser-Synchronisierung gilt zusätzlich deren sicheres Größenlimit."
-  );
   domainListModeButton.textContent = inclusionMode
     ? t(
         "switchToExcludedDomains",
@@ -328,14 +321,14 @@ function readExcludedDomains(): string[] {
     const normalized = normalizeExcludedDomain(entry);
     if (!normalized) {
       throw localizedUiError(
-        "invalidExcludedDomain",
+        "invalidDomainEntry",
         [entry],
         `Der Domaineintrag „${entry}“ ist ungültig.`
       );
     }
     if (seen.has(normalized)) {
       throw localizedUiError(
-        "duplicateExcludedDomain",
+        "duplicateDomainEntry",
         [entry],
         `Der Domaineintrag „${entry}“ ist mehrfach beziehungsweise in gleichwertiger Schreibweise enthalten.`
       );
