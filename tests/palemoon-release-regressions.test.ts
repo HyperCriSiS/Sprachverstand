@@ -25,8 +25,10 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(controller).not.toContain('button.setAttribute("sprachverstand-count", text)');
   });
 
-  it("öffnet die Einstellungen über die implementierte Pale-Moon-Legacy-API", () => {
+  it("öffnet die Einstellungen über die implementierte Pale-Moon-Legacy-API und erhält den Tabkontext", () => {
     expect(browserOptions).toContain("api.runtime.openOptionsPage()");
+    expect(browserOptions).toContain("api.tabs.query(");
+    expect(browserOptions).toContain('type: "sprachverstand.set-inspected-tab"');
     expect(browserOptions).not.toContain("api.tabs.create(");
     expect(legacyApi).toContain("openOptionsPage: function ()");
     expect(legacyApi).toContain("bridge.openOptions()");
@@ -62,9 +64,10 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(popupCss).toContain(".details-summary");
   });
 
-  it("hält die Änderungsansicht unter Pale Moon ohne moderne Tab-Erzeugungs-API aktuell", () => {
-    expect(popup).toContain("startDetailsRefresh");
-    expect(popup).toContain("window.setInterval");
+  it("nutzt für die Änderungsansicht den gemeinsamen Statuspfad ohne moderne Tab-Erzeugungs-API", () => {
+    expect(popup).toContain('type: "sprachverstand.state-updated"');
+    expect(popup).toContain('type: "sprachverstand.get-replacement-state"');
+    expect(popup).not.toContain("window.setInterval");
     expect(popup).not.toContain("api.tabs.create(");
     expect(browserOptions).not.toContain("api.tabs.create(");
   });
