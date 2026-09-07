@@ -6,9 +6,11 @@ const optionsSource = readFileSync("src/options.ts", "utf8");
 const browserOptionsSource = readFileSync("src/browser/options.ts", "utf8");
 
 describe("Options-Zähler", () => {
-  it("übergibt den Ursprungstab vor dem nativen Öffnen der Optionsseite", () => {
+  it("übergibt den Ursprungstab und öffnet die Optionsseite sichtbar als aktiven Tab", () => {
     expect(browserOptionsSource).toContain("sprachverstand.set-inspected-tab");
-    expect(browserOptionsSource).toContain("api.runtime.openOptionsPage()");
+    expect(browserOptionsSource).toContain("api.tabs.create({");
+    expect(browserOptionsSource).toContain("active: true");
+    expect(browserOptionsSource).not.toContain("api.runtime.openOptionsPage()");
     expect(backgroundSource).toContain("isSetInspectedTabMessage(message)");
     expect(backgroundSource).toContain("inspectedTabId = message.tabId");
     expect(backgroundSource).toContain(
@@ -17,14 +19,11 @@ describe("Options-Zähler", () => {
     expect(backgroundSource).not.toContain("lastCountedTabId");
   });
 
-  it("fragt nach einem Worker-Neustart den Content-Script-Zustand live ab und erhält vollständige Cache-Daten", () => {
-    expect(backgroundSource).toContain(
-      "const live = await readLiveReplacementState(tabId)"
-    );
-    expect(backgroundSource).toContain(
-      "const merged = mergeCompatibleState(live, cached)"
-    );
-    expect(backgroundSource).toContain("statesByTab.set(tabId, merged)");
+  it("stellt vollständige Ersetzungsdetails nach einem Background-Neustart aus storage.session wieder her", () => {
+    expect(backgroundSource).toContain("sprachverstand.runtime-state.");
+    expect(backgroundSource).toContain("api.storage.session");
+    expect(backgroundSource).toContain("readCachedTabState(tabId)");
+    expect(backgroundSource).toContain("persistTabState(tabId, state)");
   });
 
   it("bedient das bestehende Options-Protokoll weiterhin kompatibel", () => {

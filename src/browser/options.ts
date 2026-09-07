@@ -3,9 +3,9 @@ import type { ExtensionApi } from "./api";
 type OptionsPageApi = {
   readonly runtime: Pick<
     ExtensionApi["runtime"],
-    "openOptionsPage" | "sendMessage"
+    "getURL" | "sendMessage"
   >;
-  readonly tabs: Pick<ExtensionApi["tabs"], "query">;
+  readonly tabs: Pick<ExtensionApi["tabs"], "create" | "query" | "update">;
 };
 
 function isValidTabId(tabId: number | undefined): tabId is number {
@@ -39,6 +39,14 @@ export function parseOptionsPageTabId(
   }
 }
 
+function optionsPageUrl(api: OptionsPageApi, tabId: number | undefined): string {
+  const url = new URL(api.runtime.getURL("options/options.html"));
+  if (isValidTabId(tabId)) {
+    url.searchParams.set("tabId", String(tabId));
+  }
+  return url.toString();
+}
+
 export async function openOptionsPageInForeground(
   api: OptionsPageApi
 ): Promise<void> {
@@ -47,15 +55,24 @@ export async function openOptionsPageInForeground(
     currentWindow: true
   });
 
-  if (isValidTabId(activeTab?.id)) {
+  const inspectedTabId = isValidTabId(activeTab?.id) ? activeTab.id : undefined;
+
+  if (inspectedTabId !== undefined) {
     await api.runtime.sendMessage({
       type: "sprachverstand.set-inspected-tab",
-      tabId: activeTab.id
+      tabId: inspectedTabId
     });
   }
 
-  // Die semantische Options-API überlässt Firefox die korrekte Auswahl und
-  // Fokussierung der Optionsseite. tabs.create({ active: true }) garantiert
-  // lediglich einen aktiven Tab, nicht den Fokus des Browserfensters.
-  await api.runtime.openOptionsPage();
+  // Firefox Android kann runtime.openOptionsPage() hinter dem Vollbild-Popup
+  // öffnen. Ein explizit aktiver Tab plus anschließendes Schließen des Popups
+  // hält die Einstellungen sichtbar im Vordergrund.
+  const createdTab = await api.tabs.create({
+    url: optionsPageUrl(api, inspectedTabId),
+    active: true
+  });
+
+  if (isValidTabId(createdTab.id)) {
+    await api.tabs.update(createdTab.id, { active: true });
+  }
 }

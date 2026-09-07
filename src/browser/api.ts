@@ -5,6 +5,7 @@ export interface StorageChange {
 
 export interface ExtensionTab {
   readonly id?: number;
+  readonly url?: string;
 }
 
 export interface MessageSender {
@@ -36,6 +37,7 @@ export interface ExtensionApi {
   readonly storage: {
     readonly sync: StorageArea;
     readonly local: StorageArea;
+    readonly session?: StorageArea;
     readonly onChanged: {
       addListener(
         listener: (
@@ -72,6 +74,7 @@ export interface ExtensionApi {
     }): Promise<void> | void;
   };
   readonly tabs: {
+    get?(tabId: number): Promise<ExtensionTab>;
     create(createProperties: {
       readonly url: string;
       readonly active?: boolean;
