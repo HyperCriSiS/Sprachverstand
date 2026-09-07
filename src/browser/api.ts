@@ -80,6 +80,10 @@ export interface ExtensionApi {
       readonly active: boolean;
       readonly currentWindow: boolean;
     }): Promise<ExtensionTab[]>;
+    update(
+      tabId: number,
+      updateProperties: { readonly active?: boolean }
+    ): Promise<ExtensionTab>;
     sendMessage(tabId: number, message: unknown): Promise<unknown>;
     readonly onUpdated: {
       addListener(
