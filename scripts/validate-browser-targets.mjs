@@ -61,7 +61,6 @@ async function fileExists(filePath) {
   }
 }
 
-
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
@@ -193,7 +192,6 @@ if (selectedFamily !== "gecko") {
   for (const target of chromiumTargets) {
     validateChromiumManifest(target, manifests.get(target));
   }
-
 }
 
 if (selectedFamily !== "chromium") {
@@ -203,9 +201,7 @@ if (selectedFamily !== "chromium") {
 const extensionApiNamespaces = await getExtensionApiNamespaces();
 
 const selectedCompatibilityBrowsers = compatibilityBrowsers.filter(
-  (browser) =>
-    selectedFamily === "all" ||
-    browser.family === selectedFamily
+  (browser) => selectedFamily === "all" || browser.family === selectedFamily
 );
 
 for (const browser of selectedCompatibilityBrowsers) {
