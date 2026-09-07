@@ -1,0 +1,47 @@
+name: Temporärer vollständiger i18n-Fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CI: true
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Arbeitsbranch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Node.js 24 einrichten
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: i18n-Reparatur anwenden
+        run: node scripts/fix-i18n-temp.mjs
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Vollständige Projektprüfung
+        run: npm run check
+
+      - name: Änderungen committen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/tmp-fix-popup-runtime.yml scripts/fix-i18n-temp.mjs scripts/.tmp-i18n-*.txt scripts/.tmp-i18n-rest-*.txt
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "i18n: neue Domain-Oberfläche vollständig lokalisieren"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
