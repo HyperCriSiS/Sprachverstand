@@ -76,6 +76,7 @@ let activeTabId: number | undefined;
 let currentCount = 0;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
 let currentHostname = "";
+let runtimeStateRevision = 0;
 
 function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
   if (!value || typeof value !== "object") {
@@ -261,6 +262,8 @@ function normalizeReplacementState(
 }
 
 async function refreshReplacementState(): Promise<void> {
+  const revisionAtRequestStart = runtimeStateRevision;
+
   if (activeTabId === undefined) {
     currentCount = 0;
     currentReplacements = [];
@@ -275,6 +278,12 @@ async function refreshReplacementState(): Promise<void> {
     type: "sprachverstand.get-replacement-state",
     tabId: activeTabId
   })) as ReplacementStateResponse | undefined;
+  // Ein Push-Zustand, der während der Anfrage eingetroffen ist, ist neuer
+  // als die angefragte Momentaufnahme und darf nicht überschrieben werden.
+  if (runtimeStateRevision !== revisionAtRequestStart) {
+    return;
+  }
+
   const normalized = normalizeReplacementState(response);
   currentCount = normalized.count;
   currentReplacements = normalized.replacements;
@@ -288,6 +297,7 @@ function handleRuntimeMessage(message: unknown): void {
     return;
   }
 
+  runtimeStateRevision += 1;
   currentCount = Math.max(0, message.count);
   currentReplacements = message.replacements;
   if (message.hostname) {
@@ -302,13 +312,16 @@ async function start(): Promise<void> {
   settings = await loadSettings();
   await resolveActiveTabId();
   render();
-  await refreshReplacementState();
 
   const api = getExtensionApi();
+  // Vor der ersten asynchronen Zustandsabfrage registrieren, damit ein
+  // zeitgleich eintreffendes Update mit Ersetzungsdetails nicht verloren geht.
   api.runtime.onMessage.addListener(handleRuntimeMessage);
   window.addEventListener("unload", () => {
     api.runtime.onMessage.removeListener(handleRuntimeMessage);
   });
+
+  await refreshReplacementState();
 
   enabledInput.addEventListener("change", () => {
     settings = { ...settings, enabled: enabledInput.checked };
@@ -365,6 +378,8 @@ async function start(): Promise<void> {
   openReplacementsButton.addEventListener("click", () => {
     mainView.hidden = true;
     detailsView.hidden = false;
+    // Beim Öffnen nochmals direkt vom aktiven Tab lesen.
+    void refreshReplacementState();
   });
   closeReplacementsButton.addEventListener("click", () => {
     detailsView.hidden = true;
