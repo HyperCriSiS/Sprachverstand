@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { build } from "esbuild";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -75,9 +76,26 @@ function normalizeObserved(candidateSet) {
 }
 
 async function loadRuntimePluralMapper() {
-  // Node 24 kann die typfreien Laufzeitanteile der TypeScript-Datei direkt laden.
-  const lexiconUrl = new URL("../src/rules/person-lexicon.ts", import.meta.url);
-  const { mapMappedPlural } = await import(lexiconUrl.href);
+  // Der Audit bündelt denselben TypeScript-Regelpfad wie der Browser-Build.
+  // Dadurch funktionieren auch interne extensionlose Imports zuverlässig.
+  const lexiconPath = fileURLToPath(
+    new URL("../src/rules/person-lexicon.ts", import.meta.url)
+  );
+  const bundle = await build({
+    entryPoints: [lexiconPath],
+    bundle: true,
+    format: "esm",
+    platform: "node",
+    target: "node24",
+    write: false,
+    logLevel: "silent"
+  });
+  const output = bundle.outputFiles[0]?.text;
+  if (!output) {
+    throw new Error("Der Personenwortschatz konnte nicht gebündelt werden.");
+  }
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
+  const { mapMappedPlural } = await import(moduleUrl);
 
   // Die kleine Zusatzliste liegt derzeit noch im Wrapper. Für den Audit wird sie
   // aus dem eigenen Quelltext gelesen, damit keine zweite manuelle Liste entsteht.
