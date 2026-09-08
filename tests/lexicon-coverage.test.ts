@@ -49,11 +49,12 @@ function runCoverage(
 }
 
 describe("Lexikon-Coverage-Audit", () => {
-  it("weist bekannte und unbekannte reale Genderformen getrennt aus", () => {
+  it("weist beide produktiven Pluralpfade sowie unbekannte Formen getrennt aus", () => {
     const report = runCoverage([
       { base: "psychiater", count: 2 },
       { base: "psycholog", count: 1 },
       { base: "dozent", count: 1 },
+      { base: "anbieter", count: 4 },
       { base: "quantenflauscher", count: 3 }
     ]);
 
@@ -61,21 +62,22 @@ describe("Lexikon-Coverage-Audit", () => {
       expect.arrayContaining([
         { base: "psychiater", count: 2, replacement: "psychiater" },
         { base: "psycholog", count: 1, replacement: "psychologen" },
-        { base: "dozent", count: 1, replacement: "dozenten" }
+        { base: "dozent", count: 1, replacement: "dozenten" },
+        { base: "anbieter", count: 4, replacement: "anbieter" }
       ])
     );
     expect(report.unknown).toEqual([
       { base: "quantenflauscher", count: 3 }
     ]);
     expect(report.stats).toMatchObject({
-      uniqueObserved: 4,
-      knownUnique: 3,
+      uniqueObserved: 5,
+      knownUnique: 4,
       unknownUnique: 1,
-      uniqueCoveragePercent: 75,
-      observedOccurrences: 7,
-      knownOccurrences: 4,
+      uniqueCoveragePercent: 80,
+      observedOccurrences: 11,
+      knownOccurrences: 8,
       unknownOccurrences: 3,
-      occurrenceCoveragePercent: 57.14
+      occurrenceCoveragePercent: 72.73
     });
   });
 
