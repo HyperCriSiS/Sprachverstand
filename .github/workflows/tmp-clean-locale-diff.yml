@@ -52,6 +52,7 @@ jobs:
               'currentWebsiteIncluded',
               'currentWebsiteInclusionRemoved',
           ]
+
           translations = {}
           for path in sorted(root.glob('*/messages.json')):
               data = json.loads(path.read_text(encoding='utf-8'))
@@ -64,39 +65,140 @@ jobs:
               check=True,
           )
 
-          def block(key, value):
-              encoded = json.dumps(value, ensure_ascii=False)
-              return f'  "{key}": {{\n    "message": {encoded}\n  }},'
+          def property_span(text, key):
+              token = json.dumps(key, ensure_ascii=False)
+              matches = list(re.finditer(re.escape(token) + r'\s*:', text))
+              if len(matches) != 1:
+                  raise ValueError(f'{key}: Schlüssel nicht eindeutig gefunden ({len(matches)})')
 
-          for path in sorted(root.glob('*/messages.json')):
+              match = matches[0]
+              value_start = match.end()
+              while value_start < len(text) and text[value_start].isspace():
+                  value_start += 1
+              if value_start >= len(text):
+                  raise ValueError(f'{key}: Wert fehlt')
+
+              opener = text[value_start]
+              pairs = {'{': '}', '[': ']'}
+              if opener not in pairs:
+                  raise ValueError(f'{key}: Objekt oder Array erwartet')
+
+              stack = [pairs[opener]]
+              in_string = False
+              escaped = False
+              index = value_start + 1
+              while index < len(text) and stack:
+                  char = text[index]
+                  if in_string:
+                      if escaped:
+                          escaped = False
+                      elif char == '\\':
+                          escaped = True
+                      elif char == '"':
+                          in_string = False
+                  else:
+                      if char == '"':
+                          in_string = True
+                      elif char in pairs:
+                          stack.append(pairs[char])
+                      elif char == stack[-1]:
+                          stack.pop()
+                  index += 1
+
+              if stack:
+                  raise ValueError(f'{key}: Wert ist nicht abgeschlossen')
+              return match.start(), index
+
+          def replace_message(text, key, value):
+              start, end = property_span(text, key)
+              block = text[start:end]
+              pattern = re.compile(r'("message"\s*:\s*)"(?:\\.|[^"\\])*"')
+              matches = list(pattern.finditer(block))
+              if len(matches) != 1:
+                  raise ValueError(f'{key}: message nicht eindeutig gefunden ({len(matches)})')
+              match = matches[0]
+              encoded = json.dumps(value, ensure_ascii=False)
+              block = block[:match.start(0)] + match.group(1) + encoded + block[match.end(0):]
+              return text[:start] + block + text[end:]
+
+          def remove_property(text, key):
+              start, end = property_span(text, key)
+              line_start = text.rfind('\n', 0, start) + 1
+              if text[line_start:start].strip() == '':
+                  start = line_start
+
+              cursor = end
+              while cursor < len(text) and text[cursor] in ' \t':
+                  cursor += 1
+              if cursor < len(text) and text[cursor] == ',':
+                  cursor += 1
+                  if cursor < len(text) and text[cursor] == '\r':
+                      cursor += 1
+                  if cursor < len(text) and text[cursor] == '\n':
+                      cursor += 1
+                  return text[:start] + text[cursor:]
+
+              cursor = start - 1
+              while cursor >= 0 and text[cursor] in ' \t\r\n':
+                  cursor -= 1
+              if cursor >= 0 and text[cursor] == ',':
+                  return text[:cursor] + text[end:]
+              raise ValueError(f'{key}: trennendes Komma nicht gefunden')
+
+          def insert_before(text, marker_key, entries):
+              marker_start, _ = property_span(text, marker_key)
+              line_start = text.rfind('\n', 0, marker_start) + 1
+              pretty = '\n' in text and text[line_start:marker_start].strip() == ''
+
+              if pretty:
+                  indent = text[line_start:marker_start]
+                  child_indent = indent + '  '
+                  additions = ''.join(
+                      f'{indent}{json.dumps(key)}: {{\n'
+                      f'{child_indent}"message": {json.dumps(value, ensure_ascii=False)}\n'
+                      f'{indent}}},\n'
+                      for key, value in entries
+                  )
+                  return text[:line_start] + additions + text[line_start:]
+
+              additions = ''.join(
+                  f'{json.dumps(key)}:{{"message":{json.dumps(value, ensure_ascii=False)}}},'
+                  for key, value in entries
+              )
+              return text[:marker_start] + additions + text[marker_start:]
+
+          locale_paths = sorted(root.glob('*/messages.json'))
+          for path in locale_paths:
               code = path.parent.name
               values = translations[code]
               text = path.read_text(encoding='utf-8')
 
               for key in keys_to_update:
-                  pattern = rf'^  "{re.escape(key)}": \{{\n    "message": .*?\n  \}},$'
-                  replacement = block(key, values[key])
-                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
-                  if count != 1:
-                      raise SystemExit(f'{code}: {key} konnte nicht eindeutig ersetzt werden')
+                  text = replace_message(text, key, values[key])
 
-              old_pattern = r'^  "currentWebsiteAlreadyInDomainList": \{\n    "message": .*?\n  \},\n'
-              text, count = re.subn(old_pattern, '', text, count=1, flags=re.MULTILINE)
-              if count != 1:
-                  raise SystemExit(f'{code}: alter Domainlisten-Key konnte nicht entfernt werden')
-
-              marker = '  "includeCurrentWebsite": {'
-              if text.count(marker) != 1:
-                  raise SystemExit(f'{code}: Einfügeposition ist nicht eindeutig')
-              additions = '\n'.join(block(key, values[key]) for key in keys_to_add) + '\n'
-              text = text.replace(marker, additions + marker, 1)
-              path.write_text(text, encoding='utf-8')
+              text = remove_property(text, 'currentWebsiteAlreadyInDomainList')
+              text = insert_before(
+                  text,
+                  'includeCurrentWebsite',
+                  [(key, values[key]) for key in keys_to_add],
+              )
 
               parsed = json.loads(text)
               if len(parsed) != 170:
-                  raise SystemExit(f'{code}: erwartet 170 Nachrichten, gefunden {len(parsed)}')
+                  raise SystemExit(
+                      f'{code}: erwartet 170 Nachrichten, gefunden {len(parsed)}'
+                  )
+              expected = set(json.loads(
+                  Path('static/_locales/de/messages.json').read_text(encoding='utf-8')
+              )) if code != 'de' and Path('static/_locales/de/messages.json').exists() else set(parsed)
+              if code != 'de' and set(parsed) != expected:
+                  missing = sorted(expected - set(parsed))
+                  extra = sorted(set(parsed) - expected)
+                  raise SystemExit(f'{code}: abweichende Keys; fehlen={missing}, zusätzlich={extra}')
 
-          print(f'{len(translations)} Locales minimal aktualisiert.')
+              path.write_text(text, encoding='utf-8')
+
+          print(f'{len(locale_paths)} Locales formatgetreu aktualisiert.')
           PY
 
       - name: Temporären Workflow entfernen
