@@ -515,6 +515,24 @@
   "popupDomainActionDescription": {
     "message": "Shows a button in the popup to add the current website to the domain list or remove it from the list according to the active mode."
   },
+  "removeCurrentWebsiteExclusion": {
+    "message": "Undo exclusion"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "Undo inclusion"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Website excluded"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Exclusion removed"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Website included"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Inclusion removed"
+  },
   "includeCurrentWebsite": {
     "message": "Include this website"
   },
@@ -545,23 +563,5 @@
         "content": "$1"
       }
     }
-  },
-  "removeCurrentWebsiteExclusion": {
-    "message": "Undo exclusion"
-  },
-  "removeCurrentWebsiteInclusion": {
-    "message": "Undo inclusion"
-  },
-  "currentWebsiteExcluded": {
-    "message": "Website excluded"
-  },
-  "currentWebsiteExclusionRemoved": {
-    "message": "Exclusion removed"
-  },
-  "currentWebsiteIncluded": {
-    "message": "Website included"
-  },
-  "currentWebsiteInclusionRemoved": {
-    "message": "Inclusion removed"
   }
 }

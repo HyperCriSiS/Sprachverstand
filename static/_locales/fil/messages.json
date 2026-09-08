@@ -515,6 +515,24 @@
   "popupDomainActionDescription": {
     "message": "Nagpapakita sa popup ng button para idagdag ang kasalukuyang website sa listahan ng domain o alisin ito roon ayon sa aktibong mode."
   },
+  "removeCurrentWebsiteExclusion": {
+    "message": "I-undo ang pagbubukod"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "I-undo ang pagsasama"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Ibinukod ang website"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Na-undo ang pagbubukod"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Isinama ang website"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Na-undo ang pagsasama"
+  },
   "includeCurrentWebsite": {
     "message": "Isama ang website na ito"
   },
@@ -545,23 +563,5 @@
         "content": "$1"
       }
     }
-  },
-  "removeCurrentWebsiteExclusion": {
-    "message": "I-undo ang pagbubukod"
-  },
-  "removeCurrentWebsiteInclusion": {
-    "message": "I-undo ang pagsasama"
-  },
-  "currentWebsiteExcluded": {
-    "message": "Ibinukod ang website"
-  },
-  "currentWebsiteExclusionRemoved": {
-    "message": "Na-undo ang pagbubukod"
-  },
-  "currentWebsiteIncluded": {
-    "message": "Isinama ang website"
-  },
-  "currentWebsiteInclusionRemoved": {
-    "message": "Na-undo ang pagsasama"
   }
 }
