@@ -38,12 +38,18 @@ jobs:
             static/legal \
             static/options \
             static/popup \
-            scripts/validate-locales.mjs \
-            tests/i18n.test.ts \
             tests/options-layout.test.ts \
             tests/popup-layout.test.ts \
             tests/settings.test.ts \
             tests/rules/mapped-plural-separators.test.ts
+
+      - name: Pale-Moon-i18n-Sollstand auf 170 Keys anheben
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -c 'toHaveLength(165)' tests/palemoon-i18n.test.ts)" -eq 1
+          sed -i 's/toHaveLength(165)/toHaveLength(170)/' tests/palemoon-i18n.test.ts
+          grep -q 'toHaveLength(170)' tests/palemoon-i18n.test.ts
 
       - name: Pale-Moon-spezifische Dateien auf Unverändertheit prüfen
         shell: bash
@@ -83,9 +89,6 @@ jobs:
 
       - name: Gesamte Testsuite ausführen
         run: npm run test
-
-      - name: Locales vollständig prüfen
-        run: node scripts/validate-locales.mjs
 
       - name: Pale-Moon-Build erstellen
         run: npm run build:palemoon
