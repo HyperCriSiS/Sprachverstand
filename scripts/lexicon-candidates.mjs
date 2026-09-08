@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const locale = "de-DE";
@@ -8,6 +8,18 @@ const separatedGenderPattern =
   /(?<![\p{L}\p{M}])([\p{L}][\p{L}\p{M}’'-]{1,80})(?::|\*|_|·|•|\/-?|\/)(?:in|innen)(?![\p{L}\p{M}])/gu;
 const binnenIPattern =
   /(?<![\p{L}\p{M}])([\p{L}][\p{L}\p{M}’'-]{1,80})Innen(?![\p{L}\p{M}])/gu;
+const textExtensions = new Set([
+  ".csv",
+  ".htm",
+  ".html",
+  ".json",
+  ".jsonl",
+  ".md",
+  ".ndjson",
+  ".tsv",
+  ".txt",
+  ".xml"
+]);
 
 function normalizeWord(value) {
   return value.normalize("NFC").toLocaleLowerCase(locale);
@@ -82,26 +94,16 @@ function findMasculine(wordSet, stem) {
   return matches.length === 1 ? matches[0] : undefined;
 }
 
-export function extractPersonPairs(texts) {
-  const wordSet = new Set();
-  for (const text of texts) {
-    for (const word of extractWords(text)) {
-      wordSet.add(word);
-    }
-  }
-
+function buildPersonPairs(wordSet) {
   const pairs = new Map();
 
   for (const word of wordSet) {
     let stem;
-    let feminine;
 
     if (word.endsWith("innen") && word.length > 7) {
       stem = word.slice(0, -5);
-      feminine = `${stem}in`;
     } else if (word.endsWith("in") && word.length > 4) {
       stem = word.slice(0, -2);
-      feminine = word;
     } else {
       continue;
     }
@@ -110,13 +112,29 @@ export function extractPersonPairs(texts) {
       continue;
     }
 
+    const feminine = `${stem}in`;
+    const femininePlural = `${stem}innen`;
     const masculine = findMasculine(wordSet, stem);
     if (!masculine || masculine === feminine) {
       continue;
     }
 
+    const feminineSingularObserved = wordSet.has(feminine);
+    const femininePluralObserved = wordSet.has(femininePlural);
+    const confidence =
+      feminineSingularObserved && femininePluralObserved ? "strong" : "weak";
     const key = `${stem}\u0000${masculine}\u0000${feminine}`;
-    pairs.set(key, { base: stem, masculine, feminine });
+
+    pairs.set(key, {
+      base: stem,
+      masculine,
+      feminine,
+      evidence: {
+        feminineSingular: feminineSingularObserved,
+        femininePlural: femininePluralObserved
+      },
+      confidence
+    });
   }
 
   return [...pairs.values()].sort(
@@ -126,41 +144,95 @@ export function extractPersonPairs(texts) {
   );
 }
 
-export function extractObservedGenderedBases(texts) {
-  const bases = new Set();
-
-  for (const text of texts) {
-    for (const pattern of [separatedGenderPattern, binnenIPattern]) {
-      pattern.lastIndex = 0;
-      for (const match of text.matchAll(pattern)) {
-        const base = match[1];
-        if (base) {
-          bases.add(normalizeWord(base));
-        }
+function addObservedGenderedBases(text, counts) {
+  for (const pattern of [separatedGenderPattern, binnenIPattern]) {
+    pattern.lastIndex = 0;
+    for (const match of text.matchAll(pattern)) {
+      const base = match[1];
+      if (!base) {
+        continue;
       }
+
+      const normalized = normalizeWord(base);
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
     }
   }
-
-  return [...bases].sort((left, right) => left.localeCompare(right, locale));
 }
 
-export function buildCandidateSet(texts) {
-  const pairs = extractPersonPairs(texts);
-  const observedBases = extractObservedGenderedBases(texts);
+function observedEntries(counts) {
+  return [...counts.entries()]
+    .map(([base, count]) => ({ base, count }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.base.localeCompare(right.base, locale)
+    );
+}
 
+function createAccumulator() {
   return {
-    version: 1,
-    stats: {
-      pairs: pairs.length,
-      observedBases: observedBases.length
-    },
-    pairs,
-    observedBases
+    words: new Set(),
+    observedCounts: new Map()
   };
 }
 
+function addText(accumulator, text) {
+  for (const word of extractWords(text)) {
+    accumulator.words.add(word);
+  }
+  addObservedGenderedBases(text, accumulator.observedCounts);
+}
+
+function finalizeCandidateSet(accumulator) {
+  const pairs = buildPersonPairs(accumulator.words);
+  const observedGenderedBases = observedEntries(accumulator.observedCounts);
+  const strongPairs = pairs.filter((pair) => pair.confidence === "strong").length;
+  const observedOccurrences = observedGenderedBases.reduce(
+    (sum, entry) => sum + entry.count,
+    0
+  );
+
+  return {
+    version: 2,
+    stats: {
+      words: accumulator.words.size,
+      pairs: pairs.length,
+      strongPairs,
+      weakPairs: pairs.length - strongPairs,
+      observedBases: observedGenderedBases.length,
+      observedOccurrences
+    },
+    pairs,
+    observedBases: observedGenderedBases.map((entry) => entry.base),
+    observedGenderedBases
+  };
+}
+
+export function extractPersonPairs(texts) {
+  const accumulator = createAccumulator();
+  for (const text of texts) {
+    addText(accumulator, text);
+  }
+  return buildPersonPairs(accumulator.words);
+}
+
+export function extractObservedGenderedBases(texts) {
+  const accumulator = createAccumulator();
+  for (const text of texts) {
+    addObservedGenderedBases(text, accumulator.observedCounts);
+  }
+  return observedEntries(accumulator.observedCounts).map((entry) => entry.base);
+}
+
+export function buildCandidateSet(texts) {
+  const accumulator = createAccumulator();
+  for (const text of texts) {
+    addText(accumulator, text);
+  }
+  return finalizeCandidateSet(accumulator);
+}
+
 function parseArguments(argv) {
-  const files = [];
+  const inputs = [];
   let output;
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -173,24 +245,64 @@ function parseArguments(argv) {
       index += 1;
       continue;
     }
-    files.push(argument);
+    inputs.push(argument);
   }
 
-  if (files.length === 0) {
+  if (inputs.length === 0) {
     throw new Error(
-      "Mindestens eine lokale Text-, CSV-, JSON- oder HTML-Datei angeben."
+      "Mindestens eine lokale Datei oder ein Verzeichnis mit Rohdaten angeben."
     );
   }
 
-  return { files, output };
+  return { inputs, output };
+}
+
+async function collectInputFiles(input) {
+  const absolute = resolve(input);
+  const metadata = await stat(absolute);
+
+  if (metadata.isFile()) {
+    return [absolute];
+  }
+
+  if (!metadata.isDirectory()) {
+    return [];
+  }
+
+  const files = [];
+  for (const entry of await readdir(absolute, { withFileTypes: true })) {
+    const child = resolve(absolute, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectInputFiles(child)));
+      continue;
+    }
+    if (entry.isFile() && textExtensions.has(extname(entry.name).toLowerCase())) {
+      files.push(child);
+    }
+  }
+
+  return files;
 }
 
 async function main(argv) {
-  const { files, output } = parseArguments(argv);
-  const texts = await Promise.all(
-    files.map((file) => readFile(resolve(file), "utf8"))
-  );
-  const result = buildCandidateSet(texts);
+  const { inputs, output } = parseArguments(argv);
+  const files = (
+    await Promise.all(inputs.map((input) => collectInputFiles(input)))
+  )
+    .flat()
+    .sort((left, right) => left.localeCompare(right));
+
+  if (files.length === 0) {
+    throw new Error("In den angegebenen Pfaden wurden keine Textdaten gefunden.");
+  }
+
+  const accumulator = createAccumulator();
+  for (const file of files) {
+    // Große Rohdaten werden absichtlich nacheinander verarbeitet und nicht gesammelt.
+    addText(accumulator, await readFile(file, "utf8"));
+  }
+
+  const result = finalizeCandidateSet(accumulator);
   const serialized = `${JSON.stringify(result, null, 2)}\n`;
 
   if (output) {
