@@ -1,0 +1,54 @@
+name: Temporärer Pale-Moon-Lexikonsync
+
+on:
+  push:
+    branches:
+      - sync/palemoon-domain-toggle-154
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: sync/palemoon-domain-toggle-154
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Geprüfte Lexikon-Runtime von main übernehmen
+        run: |
+          git fetch origin main
+          git show origin/main:src/rules/generated-person-lexicon.ts > src/rules/generated-person-lexicon.ts
+          git show origin/main:src/rules/person-lexicon.ts > src/rules/person-lexicon.ts
+          git show origin/main:tests/generated-person-lexicon.test.ts > tests/generated-person-lexicon.test.ts
+          grep -q 'generatedPersonFormCount' src/rules/generated-person-lexicon.ts
+          grep -q 'toBe(1029)' tests/generated-person-lexicon.test.ts
+
+      - name: Vollständige Prüfung einschließlich Pale Moon
+        run: npm run check
+
+      - name: Temporären Workflow entfernen und Sync committen
+        run: |
+          git rm -f .github/workflows/tmp-sync-main-lexicon-palemoon.yml
+          git add src/rules/generated-person-lexicon.ts src/rules/person-lexicon.ts tests/generated-person-lexicon.test.ts
+          if git diff --cached --quiet; then
+            echo 'Keine Änderungen zu committen.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'sync(palemoon): großen Personenwortschatz übernehmen'
+          git push origin HEAD:sync/palemoon-domain-toggle-154
