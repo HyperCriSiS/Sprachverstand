@@ -22,12 +22,17 @@ Eine neue Fundstelle wird mit folgenden Angaben erfasst:
 
 ## Aktuelle Entscheidungen
 
-Sicher umgesetzt sind klare Anreden und explizite Personenumschreibungen:
+Umgesetzt sind klar abgegrenzte Anreden, Personenumschreibungen und mehrere
+kontextuell eindeutige Rollenbezeichnungen, zum Beispiel:
 
 ```text
 Sehr geehrte Mitarbeitende → Sehr geehrte Mitarbeiter
 Liebe Teilnehmende → Liebe Teilnehmer
 mitarbeitende Personen → Mitarbeiter
+Studierende → Studenten
+Wir suchen Mitarbeitende → Wir suchen Mitarbeiter
+Teilnehmende des Kurses → Teilnehmer des Kurses
+Arbeitnehmende → Arbeitnehmer
 ```
 
 Als optionale feste Stilumschreibung ist außerdem hinterlegt:
@@ -36,24 +41,25 @@ Als optionale feste Stilumschreibung ist außerdem hinterlegt:
 Benutzungshandbuch → Benutzerhandbuch
 ```
 
-Noch gesammelt und nicht allgemein ersetzt werden unter anderem:
+Der derzeitige Katalog enthält keine ungeklärten `collect`-Einträge. Neue reale
+Fundstellen können weiterhin zunächst mit diesem Status aufgenommen werden.
 
-```text
-Studierende
-Wir suchen Mitarbeitende
-Teilnehmende des Kurses
-```
-
-Hier soll zunächst ausgewertet werden, ob DOM-Kontext wie Überschrift,
-Navigation, Formularbeschriftung oder Stellenanzeige zuverlässig erkannt werden
-kann. Eine bloße Wortliste reicht dafür nicht.
-
-Nicht ersetzt werden wörtliche Tätigkeitsbeschreibungen:
+Nicht automatisch ersetzt werden insbesondere wörtliche Tätigkeitsbeschreibungen
+und Bezeichnungen, bei denen eine Änderung Eigennamen oder fachliche Bedeutung
+verfälschen könnte:
 
 ```text
 die gerade Lesenden
 die seit Stunden Wartenden
+Studierendenwerk
+trans* Personen
+inter* Personen
 ```
+
+`Studierendenwerk` bleibt bewusst unverändert, weil der Ausdruck häufig
+Bestandteil offizieller Namen von Anstalten des öffentlichen Rechts ist. Eine
+pauschale Ersetzung durch `Studentenwerk` könnte damit Eigennamen und rechtliche
+Bezeichnungen verändern.
 
 ## Datenschutz
 
