@@ -45,7 +45,9 @@
     "cws:cancel": "node scripts/chrome-web-store-v2.mjs cancel",
     "cws:rollout": "node scripts/chrome-web-store-v2.mjs rollout",
     "lexicon:candidates": "node scripts/lexicon-candidates.mjs",
-    "lexicon:coverage": "node scripts/lexicon-coverage.mjs"
+    "lexicon:coverage": "node scripts/lexicon-coverage.mjs",
+    "lexicon:compile": "node scripts/compile-person-lexicon.mjs",
+    "benchmark:lexicon": "node scripts/benchmark-lexicon.mjs"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

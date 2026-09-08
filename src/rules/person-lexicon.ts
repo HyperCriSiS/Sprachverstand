@@ -1,3 +1,5 @@
+import { getGeneratedPersonForms } from "./generated-person-lexicon";
+
 export type GrammaticalCase =
   | "nominative"
   | "accusative"
@@ -163,14 +165,8 @@ const personForms: readonly PersonForms[] = [
   weak("anthropolog", "anthropologe", "anthropologen"),
   weak("ökolog", "ökologe", "ökologen"),
   weak("zoolog", "zoologe", "zoologen"),
-  {
-    ...weak("zeitzeug", "zeitzeuge", "zeitzeugen"),
-    match: "exact" as const
-  },
-  {
-    ...weak("augenzeug", "augenzeuge", "augenzeugen"),
-    match: "exact" as const
-  },
+  { ...weak("zeitzeug", "zeitzeuge", "zeitzeugen"), match: "exact" as const },
+  { ...weak("augenzeug", "augenzeuge", "augenzeugen"), match: "exact" as const },
   { ...weak("zeug", "zeuge", "zeugen"), match: "exact" as const },
   { ...weak("postbot", "postbote", "postboten"), match: "exact" as const },
   { ...weak("bot", "bote", "boten"), match: "exact" as const },
@@ -331,6 +327,11 @@ function hasMatchingPrefixes(
 
 export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
+  const generated = getGeneratedPersonForms(normalizedBase);
+
+  if (generated) {
+    return applyCase(base, generated.plural);
+  }
 
   for (const mapping of personForms) {
     if (mapping.match !== "exact" && normalizedBase.endsWith(mapping.stem)) {
@@ -389,18 +390,8 @@ export function mapMappedSingularPair(
     }
 
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
-    const direct = hasMatchingPrefixes(
-      left,
-      right,
-      mapping.singular,
-      feminine
-    );
-    const reverse = hasMatchingPrefixes(
-      right,
-      left,
-      mapping.singular,
-      feminine
-    );
+    const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
+    const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
 
     if (mapping.match !== "exact" || left.length === mapping.singular.length) {
       if (direct) {
