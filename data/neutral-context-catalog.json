@@ -86,10 +86,10 @@
     {
       "id": "compound-studierendenwerk",
       "source": "Studierendenwerk",
-      "replacement": "Studentenwerk",
-      "context": "mögliche feste Institutionsbezeichnung oder Eigenname",
-      "confidence": "candidate",
-      "status": "collect",
+      "replacement": null,
+      "context": "Institutionsbezeichnung und häufiger Bestandteil offizieller Eigennamen",
+      "confidence": "unsafe",
+      "status": "reject",
       "ruleGroup": null
     },
     {
