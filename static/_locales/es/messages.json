@@ -51,7 +51,7 @@
     "message": "Muestra el interruptor para activar o desactivar la extensión."
   },
   "whereCorrect": {
-    "message": "¿Dónde deben aplicarse las correcciones?"
+    "message": "¿Dónde deben aplicarse las correcciones adicionales?"
   },
   "whereCorrectPopupDescription": {
     "message": "Muestra directamente en el menú emergente las opciones para etiquetas accesibles, texto citado y subtítulos."
@@ -510,13 +510,28 @@
     "message": "Cambiar a dominios incluidos"
   },
   "popupDomainActionTitle": {
-    "message": "Añadir el sitio web actual a la lista de dominios"
+    "message": "Alternar el sitio web actual en la lista de dominios"
   },
   "popupDomainActionDescription": {
-    "message": "Muestra en la ventana emergente un botón para añadir el sitio web actual a la lista de dominios según el modo activo."
+    "message": "Muestra en la ventana emergente un botón para añadir el sitio web actual a la lista de dominios o eliminarlo de ella según el modo activo."
   },
-  "currentWebsiteAlreadyInDomainList": {
-    "message": "El sitio web ya está en la lista de dominios"
+  "removeCurrentWebsiteExclusion": {
+    "message": "Deshacer exclusión"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "Deshacer inclusión"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Sitio web excluido"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Exclusión anulada"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Sitio web incluido"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Inclusión anulada"
   },
   "includeCurrentWebsite": {
     "message": "Incluir este sitio web"

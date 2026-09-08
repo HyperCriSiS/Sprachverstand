@@ -41,6 +41,25 @@ export function isDomainListed(
   });
 }
 
+export function toggleDomainListing(
+  hostname: string,
+  patterns: readonly string[]
+): string[] {
+  const normalizedHostname = normalizeDomainPattern(hostname);
+
+  if (!normalizedHostname) {
+    return [...patterns];
+  }
+
+  if (isDomainListed(normalizedHostname, patterns)) {
+    return patterns.filter(
+      (pattern) => !isDomainListed(normalizedHostname, [pattern])
+    );
+  }
+
+  return [...patterns, normalizedHostname];
+}
+
 export function isDomainExcluded(
   hostname: string,
   patterns: readonly string[]
