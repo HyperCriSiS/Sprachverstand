@@ -76,13 +76,19 @@ function normalizeObserved(candidateSet) {
 }
 
 async function loadRuntimePluralMapper() {
-  // Der Audit bündelt denselben TypeScript-Regelpfad wie der Browser-Build.
-  // Dadurch funktionieren auch interne extensionlose Imports zuverlässig.
-  const lexiconPath = fileURLToPath(
-    new URL("../src/rules/person-lexicon.ts", import.meta.url)
-  );
+  // Der Audit bündelt exakt beide produktiven Pluralpfade. So werden sowohl
+  // sichere unveränderte Suffixe als auch flektierende Personenformen gezählt.
+  const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
   const bundle = await build({
-    entryPoints: [lexiconPath],
+    stdin: {
+      contents: `
+        export { mapKnownPlural } from "./src/rules/known-plural-separators.ts";
+        export { mapMappedPlural } from "./src/rules/mapped-plural-separators.ts";
+      `,
+      resolveDir: repositoryRoot,
+      sourcefile: "lexicon-coverage-entry.ts",
+      loader: "ts"
+    },
     bundle: true,
     format: "esm",
     platform: "node",
@@ -92,43 +98,23 @@ async function loadRuntimePluralMapper() {
   });
   const output = bundle.outputFiles[0]?.text;
   if (!output) {
-    throw new Error("Der Personenwortschatz konnte nicht gebündelt werden.");
+    throw new Error("Die produktiven Pluralregeln konnten nicht gebündelt werden.");
   }
+
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
-  const { mapMappedPlural } = await import(moduleUrl);
+  const { mapKnownPlural, mapMappedPlural } = await import(moduleUrl);
 
-  // Die kleine Zusatzliste liegt derzeit noch im Wrapper. Für den Audit wird sie
-  // aus dem eigenen Quelltext gelesen, damit keine zweite manuelle Liste entsteht.
-  const wrapperUrl = new URL(
-    "../src/rules/mapped-plural-separators.ts",
-    import.meta.url
-  );
-  const wrapperSource = await readFile(wrapperUrl, "utf8");
-  const block = wrapperSource.match(
-    /const additionalPluralForms = new Map<string, string>\(\[([\s\S]*?)\]\);/
-  )?.[1];
-  const additional = new Map();
-
-  if (block) {
-    for (const match of block.matchAll(/\["([^"]+)",\s*"([^"]+)"\]/g)) {
-      const [, base, replacement] = match;
-      if (base && replacement) {
-        additional.set(base, replacement);
-      }
-    }
-  }
-
-  return (base) => additional.get(base) ?? mapMappedPlural(base);
+  return (base) => mapKnownPlural(base) ?? mapMappedPlural(base);
 }
 
 export async function buildCoverageReport(candidateSet) {
-  const mapMappedPlural = await loadRuntimePluralMapper();
+  const mapPlural = await loadRuntimePluralMapper();
   const observed = normalizeObserved(candidateSet);
   const known = [];
   const unknown = [];
 
   for (const entry of observed) {
-    const replacement = mapMappedPlural(entry.base);
+    const replacement = mapPlural(entry.base);
     if (replacement === undefined) {
       unknown.push(entry);
       continue;
