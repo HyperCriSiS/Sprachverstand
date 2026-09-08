@@ -1,0 +1,29 @@
+name: Temporär generierten Personenwortschatz anwenden
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/lexicon-expansion-pipeline
+
+      - name: Produktdatei erzeugen und verifizieren
+        shell: bash
+        run: |
+          base64 --decode scripts/.tmp-generated-person-lexicon.b64 | gzip --decompress > src/rules/generated-person-lexicon.ts
+          test "$(sha256sum src/rules/generated-person-lexicon.ts | cut -d' ' -f1)" = "9d235f834907c4beb1b941304b17d130af0dc7c25cd21b00dd867eb5303c4e50"
+          git rm scripts/.tmp-generated-person-lexicon.b64
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/rules/generated-person-lexicon.ts
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: konservativ verifizierten Personenwortschatz erzeugen"
+          git push origin HEAD:feat/lexicon-expansion-pipeline
