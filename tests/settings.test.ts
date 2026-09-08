@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldProcessDomain } from "../src/settings/domain";
+import { shouldProcessDomain, toggleDomainListing } from "../src/settings/domain";
 import { defaultRules } from "../src/rules";
 import {
   defaultEnabledRuleGroupIds,
@@ -141,6 +141,20 @@ describe("Einstellungen", () => {
     expect(settings.excludedDomains).toContain("localhost");
     expect(settings.excludedDomains).not.toContain("nicht gültig");
     expect(settings.excludedDomains).toHaveLength(122);
+  });
+
+  it("schaltet die aktuelle Domain inklusive wirksamer Oberdomains um", () => {
+    expect(toggleDomainListing("www.example.org", [])).toEqual([
+      "www.example.org"
+    ]);
+    expect(toggleDomainListing("www.example.org", ["example.org"])).toEqual([]);
+    expect(
+      toggleDomainListing("www.example.org", [
+        "example.org",
+        "www.example.org",
+        "other.example"
+      ])
+    ).toEqual(["other.example"]);
   });
 
   it("unterstützt Ausschluss- und Einschlussmodus mit Unterdomains", () => {

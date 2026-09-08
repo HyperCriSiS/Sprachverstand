@@ -53,7 +53,7 @@ describe("WebExtension localization", () => {
 
     const de = await readMessages("de");
     const referenceKeys = Object.keys(de).sort();
-    expect(referenceKeys).toHaveLength(165);
+    expect(referenceKeys).toHaveLength(170);
     for (const locale of locales) {
       const messages = await readMessages(locale.code);
       expect(Object.keys(messages).sort(), locale.code).toEqual(referenceKeys);

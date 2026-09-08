@@ -59,7 +59,7 @@ assert(
 
 const reference = await readMessages("de");
 const referenceKeys = sorted(Object.keys(reference));
-assert(referenceKeys.length === 165, `Die deutsche Referenz muss exakt 165 Nachrichten enthalten, gefunden: ${referenceKeys.length}.`);
+assert(referenceKeys.length === 170, `Die deutsche Referenz muss exakt 170 Nachrichten enthalten, gefunden: ${referenceKeys.length}.`);
 
 for (const code of configuredCodes) {
   const messages = await readMessages(code);
