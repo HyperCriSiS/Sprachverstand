@@ -1,0 +1,125 @@
+name: Temporäre Locale-Diff-Bereinigung
+
+on:
+  push:
+    branches:
+      - fix/domain-toggle-additional-scope
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v5
+        with:
+          ref: fix/domain-toggle-additional-scope
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Locale-Diff auf semantische Änderungen reduzieren
+        shell: bash
+        run: |
+          git fetch origin main
+          python3 - <<'PY'
+          import json
+          import re
+          import subprocess
+          from pathlib import Path
+
+          root = Path('static/_locales')
+          keys_to_update = [
+              'whereCorrect',
+              'popupDomainActionTitle',
+              'popupDomainActionDescription',
+          ]
+          keys_to_add = [
+              'removeCurrentWebsiteExclusion',
+              'removeCurrentWebsiteInclusion',
+              'currentWebsiteExcluded',
+              'currentWebsiteExclusionRemoved',
+              'currentWebsiteIncluded',
+              'currentWebsiteInclusionRemoved',
+          ]
+          translations = {}
+          for path in sorted(root.glob('*/messages.json')):
+              data = json.loads(path.read_text(encoding='utf-8'))
+              translations[path.parent.name] = {
+                  key: data[key]['message'] for key in keys_to_update + keys_to_add
+              }
+
+          subprocess.run(
+              ['git', 'checkout', 'origin/main', '--', 'static/_locales'],
+              check=True,
+          )
+
+          def block(key, value):
+              encoded = json.dumps(value, ensure_ascii=False)
+              return f'  "{key}": {{\n    "message": {encoded}\n  }},'
+
+          for path in sorted(root.glob('*/messages.json')):
+              code = path.parent.name
+              values = translations[code]
+              text = path.read_text(encoding='utf-8')
+
+              for key in keys_to_update:
+                  pattern = rf'^  "{re.escape(key)}": \{{\n    "message": .*?\n  \}},$'
+                  replacement = block(key, values[key])
+                  text, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE)
+                  if count != 1:
+                      raise SystemExit(f'{code}: {key} konnte nicht eindeutig ersetzt werden')
+
+              old_pattern = r'^  "currentWebsiteAlreadyInDomainList": \{\n    "message": .*?\n  \},\n'
+              text, count = re.subn(old_pattern, '', text, count=1, flags=re.MULTILINE)
+              if count != 1:
+                  raise SystemExit(f'{code}: alter Domainlisten-Key konnte nicht entfernt werden')
+
+              marker = '  "includeCurrentWebsite": {'
+              if text.count(marker) != 1:
+                  raise SystemExit(f'{code}: Einfügeposition ist nicht eindeutig')
+              additions = '\n'.join(block(key, values[key]) for key in keys_to_add) + '\n'
+              text = text.replace(marker, additions + marker, 1)
+              path.write_text(text, encoding='utf-8')
+
+              parsed = json.loads(text)
+              if len(parsed) != 170:
+                  raise SystemExit(f'{code}: erwartet 170 Nachrichten, gefunden {len(parsed)}')
+
+          print(f'{len(translations)} Locales minimal aktualisiert.')
+          PY
+
+      - name: Temporären Workflow entfernen
+        run: rm .github/workflows/tmp-clean-locale-diff.yml
+
+      - name: Locale-Validierung ausführen
+        run: npm run validate:locales
+
+      - name: Diff-Größe kontrollieren
+        shell: bash
+        run: |
+          git diff --stat origin/main -- static/_locales
+          additions=$(git diff --numstat origin/main -- static/_locales | awk '{sum += $1} END {print sum+0}')
+          if [ "$additions" -gt 1000 ]; then
+            echo "Locale-Diff ist mit $additions neuen Zeilen weiterhin zu groß." >&2
+            exit 1
+          fi
+          echo "Locale-Diff enthält $additions neue Zeilen."
+
+      - name: Bereinigung committen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: Locale-Diff auf echte Änderungen reduzieren"
+          git push origin HEAD:fix/domain-toggle-additional-scope
