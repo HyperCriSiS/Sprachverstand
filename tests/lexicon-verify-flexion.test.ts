@@ -57,9 +57,9 @@ describe("Automatische Flexionsgegenprüfung", () => {
       {
         pairs: [
           {
-            base: "analyst",
-            masculine: "analyst",
-            feminine: "analystin",
+            base: "neuanalyst",
+            masculine: "neuanalyst",
+            feminine: "neuanalystin",
             confidence: "strong"
           },
           {
@@ -82,17 +82,25 @@ describe("Automatische Flexionsgegenprüfung", () => {
           }
         ]
       },
-      [masculineNoun("Analyst", "Analysten", "Analysten", "Analysten", "Analysten")]
+      [
+        masculineNoun(
+          "Neuanalyst",
+          "Neuanalysten",
+          "Neuanalysten",
+          "Neuanalysten",
+          "Neuanalysten"
+        )
+      ]
     );
 
     expect(result.entries).toEqual([
       {
-        base: "analyst",
-        plural: "analysten",
-        singular: "analyst",
-        feminineSingular: "analystin",
-        obliqueSingular: "analysten",
-        genitiveSingular: "analysten"
+        base: "neuanalyst",
+        plural: "neuanalysten",
+        singular: "neuanalyst",
+        feminineSingular: "neuanalystin",
+        obliqueSingular: "neuanalysten",
+        genitiveSingular: "neuanalysten"
       }
     ]);
     expect(result.stats).toMatchObject({
