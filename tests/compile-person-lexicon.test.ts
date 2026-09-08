@@ -22,25 +22,49 @@ function compile(payload: unknown) {
 }
 
 describe("Generierter Personenwortschatz", () => {
-  it("erzeugt nur normalisierte Produktdaten und sortiert deterministisch", () => {
+  it("verdichtet häufige Flexionsmuster und sortiert deterministisch", () => {
     const source = compile({
       entries: [
-        { base: "psycholog", plural: "psychologen", singular: "psychologe" },
-        { base: "psychiater", plural: "psychiater", singular: "psychiater" }
+        {
+          base: "psycholog",
+          plural: "psychologen",
+          singular: "psychologe",
+          feminineSingular: "psychologin",
+          obliqueSingular: "psychologen",
+          genitiveSingular: "psychologen"
+        },
+        {
+          base: "psychiater",
+          plural: "psychiater",
+          singular: "psychiater",
+          feminineSingular: "psychiaterin",
+          obliqueSingular: "psychiater",
+          genitiveSingular: "psychiaters"
+        },
+        {
+          base: "student",
+          plural: "studenten",
+          singular: "student",
+          feminineSingular: "studentin",
+          obliqueSingular: "studenten",
+          genitiveSingular: "studenten"
+        }
       ]
     });
 
+    expect(source).toContain("unchangedForms");
+    expect(source).toContain("weakEnForms");
+    expect(source).toContain("specialForms");
     expect(source).toContain('"psychiater"');
+    expect(source).toContain('"student"');
     expect(source).toContain('"psycholog"');
-    expect(source.indexOf('"psychiater"')).toBeLessThan(source.indexOf('"psycholog"'));
+    expect(source.indexOf('"psychiater"')).toBeLessThan(source.indexOf('"student"'));
     expect(source).not.toMatch(/source|quelle|url|license/i);
   });
 
   it("weist doppelte oder nicht normalisierte Basen zurück", () => {
     expect(() =>
-      compile([
-        { base: "Psychiater", plural: "psychiater" }
-      ])
+      compile([{ base: "Psychiater", plural: "psychiater" }])
     ).toThrow();
 
     expect(() =>

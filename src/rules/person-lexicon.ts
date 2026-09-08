@@ -1,4 +1,7 @@
-import { getGeneratedPersonForms } from "./generated-person-lexicon";
+import {
+  getGeneratedPersonForms,
+  type GeneratedPersonForms
+} from "./generated-person-lexicon";
 
 export type GrammaticalCase =
   | "nominative"
@@ -354,36 +357,85 @@ export function mapMappedPlural(base: string): string | undefined {
   return undefined;
 }
 
+function selectSingularForm(
+  forms: GeneratedPersonForms,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  if (!forms.singular) {
+    return undefined;
+  }
+
+  if (grammaticalCase === "nominative") {
+    return forms.singular;
+  }
+  if (grammaticalCase === "genitive") {
+    return (
+      forms.genitiveSingular ??
+      forms.obliqueSingular ??
+      `${forms.singular}s`
+    );
+  }
+  return forms.obliqueSingular ?? forms.singular;
+}
+
 export function mapMappedSingular(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
-  const mapping = findSingularMapping(base);
+  const normalizedBase = base.toLocaleLowerCase(locale);
+  const generated = getGeneratedPersonForms(normalizedBase);
+  const generatedReplacement = generated
+    ? selectSingularForm(generated, grammaticalCase)
+    : undefined;
 
+  if (generatedReplacement) {
+    return applyCase(base, generatedReplacement);
+  }
+
+  const mapping = findSingularMapping(base);
   if (!mapping?.singular) {
     return undefined;
   }
 
-  let replacement: string;
+  const replacement = selectSingularForm(mapping, grammaticalCase);
+  return replacement ? applyMapping(base, mapping, replacement) : undefined;
+}
 
-  if (grammaticalCase === "nominative") {
-    replacement = mapping.singular;
-  } else if (grammaticalCase === "genitive") {
-    replacement =
-      mapping.genitiveSingular ??
-      mapping.obliqueSingular ??
-      `${mapping.singular}s`;
-  } else {
-    replacement = mapping.obliqueSingular ?? mapping.singular;
+function mapGeneratedSingularPairOrientation(
+  masculine: string,
+  feminine: string
+): string | undefined {
+  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
+  if (!normalizedFeminine.endsWith("in")) {
+    return undefined;
   }
 
-  return applyMapping(base, mapping, replacement);
+  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  if (
+    !generated?.singular ||
+    !generated.feminineSingular ||
+    masculine.toLocaleLowerCase(locale) !== generated.singular ||
+    normalizedFeminine !== generated.feminineSingular
+  ) {
+    return undefined;
+  }
+
+  return masculine;
 }
 
 export function mapMappedSingularPair(
   left: string,
   right: string
 ): string | undefined {
+  const generatedDirect = mapGeneratedSingularPairOrientation(left, right);
+  if (generatedDirect) {
+    return generatedDirect;
+  }
+  const generatedReverse = mapGeneratedSingularPairOrientation(right, left);
+  if (generatedReverse) {
+    return generatedReverse;
+  }
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;
@@ -434,11 +486,55 @@ export function mapMappedSingularPair(
 
   return undefined;
 }
+
+function mapGeneratedInflectedPairOrientation(
+  feminine: string,
+  masculine: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
+  if (!normalizedFeminine.endsWith("in")) {
+    return undefined;
+  }
+
+  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const expectedMasculine = generated
+    ? selectSingularForm(generated, grammaticalCase)
+    : undefined;
+  if (
+    !generated?.feminineSingular ||
+    !expectedMasculine ||
+    normalizedFeminine !== generated.feminineSingular ||
+    masculine.toLocaleLowerCase(locale) !== expectedMasculine
+  ) {
+    return undefined;
+  }
+
+  return masculine;
+}
+
 export function mapMappedInflectedSingularPair(
   left: string,
   right: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
+  const generatedDirect = mapGeneratedInflectedPairOrientation(
+    left,
+    right,
+    grammaticalCase
+  );
+  if (generatedDirect) {
+    return generatedDirect;
+  }
+  const generatedReverse = mapGeneratedInflectedPairOrientation(
+    right,
+    left,
+    grammaticalCase
+  );
+  if (generatedReverse) {
+    return generatedReverse;
+  }
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;

@@ -59,16 +59,75 @@ export function normalizeApprovedEntries(payload) {
   return entries;
 }
 
-export function renderGeneratedModule(entries) {
+function classifyEntry(base, forms) {
+  const {
+    plural,
+    singular,
+    feminineSingular,
+    obliqueSingular,
+    genitiveSingular
+  } = forms;
+  const regularBase =
+    singular === base &&
+    feminineSingular === `${base}in` &&
+    obliqueSingular === base &&
+    genitiveSingular === `${base}s`;
+
+  if (regularBase) {
+    if (plural === base) return "unchanged";
+    if (plural === `${base}e`) return "pluralE";
+    if (plural === `${base}en`) return "pluralEn";
+    if (plural === `${base}s`) return "pluralS";
+  }
+
+  if (
+    singular === base &&
+    feminineSingular === `${base}in` &&
+    plural === `${base}en` &&
+    obliqueSingular === `${base}en` &&
+    genitiveSingular === `${base}en`
+  ) {
+    return "weakEn";
+  }
+
+  return "special";
+}
+
+function serializeSet(values) {
+  return JSON.stringify(values, null, 2);
+}
+
+function serializeSpecials(entries) {
   const object = Object.fromEntries(entries);
-  const serialized = JSON.stringify(object, null, 2)
+  return JSON.stringify(object, null, 2)
     .replaceAll('"plural"', "plural")
     .replaceAll('"singular"', "singular")
     .replaceAll('"feminineSingular"', "feminineSingular")
     .replaceAll('"obliqueSingular"', "obliqueSingular")
     .replaceAll('"genitiveSingular"', "genitiveSingular");
+}
 
-  return `export interface GeneratedPersonForms {\n  readonly plural: string;\n  readonly singular?: string;\n  readonly feminineSingular?: string;\n  readonly obliqueSingular?: string;\n  readonly genitiveSingular?: string;\n}\n\n// Automatisch erzeugte, normalisierte Produktdaten.\nconst generatedPersonForms: Readonly<Record<string, GeneratedPersonForms>> =\n  Object.freeze(${serialized});\n\nexport const generatedPersonFormCount = Object.keys(generatedPersonForms).length;\n\nexport function getGeneratedPersonForms(\n  normalizedBase: string\n): GeneratedPersonForms | undefined {\n  return generatedPersonForms[normalizedBase];\n}\n`;
+export function renderGeneratedModule(entries) {
+  const classes = {
+    unchanged: [],
+    weakEn: [],
+    pluralE: [],
+    pluralEn: [],
+    pluralS: [],
+    special: []
+  };
+
+  for (const [base, forms] of entries) {
+    const kind = classifyEntry(base, forms);
+    if (kind === "special") {
+      classes.special.push([base, forms]);
+    } else {
+      classes[kind].push(base);
+    }
+  }
+
+  const specials = serializeSpecials(classes.special);
+  return `export interface GeneratedPersonForms {\n  readonly plural: string;\n  readonly singular?: string;\n  readonly feminineSingular?: string;\n  readonly obliqueSingular?: string;\n  readonly genitiveSingular?: string;\n}\n\n// Automatisch erzeugte, normalisierte Produktdaten. Häufige Flexionsmuster\n// werden kompakt als Mengen gespeichert; nur Sonderfälle tragen Vollformen.\nconst unchangedForms: ReadonlySet<string> = new Set(${serializeSet(classes.unchanged)});\nconst weakEnForms: ReadonlySet<string> = new Set(${serializeSet(classes.weakEn)});\nconst pluralEForms: ReadonlySet<string> = new Set(${serializeSet(classes.pluralE)});\nconst pluralEnForms: ReadonlySet<string> = new Set(${serializeSet(classes.pluralEn)});\nconst pluralSForms: ReadonlySet<string> = new Set(${serializeSet(classes.pluralS)});\nconst specialForms: Readonly<Record<string, GeneratedPersonForms>> =\n  Object.freeze(${specials});\n\nexport const generatedPersonFormCount =\n  unchangedForms.size +\n  weakEnForms.size +\n  pluralEForms.size +\n  pluralEnForms.size +\n  pluralSForms.size +\n  Object.keys(specialForms).length;\n\nfunction regularForms(\n  base: string,\n  plural: string,\n  obliqueSingular = base,\n  genitiveSingular = \`\${base}s\`\n): GeneratedPersonForms {\n  return {\n    plural,\n    singular: base,\n    feminineSingular: \`\${base}in\`,\n    obliqueSingular,\n    genitiveSingular\n  };\n}\n\nexport function getGeneratedPersonForms(\n  normalizedBase: string\n): GeneratedPersonForms | undefined {\n  if (unchangedForms.has(normalizedBase)) {\n    return regularForms(normalizedBase, normalizedBase);\n  }\n  if (weakEnForms.has(normalizedBase)) {\n    const inflected = \`\${normalizedBase}en\`;\n    return regularForms(normalizedBase, inflected, inflected, inflected);\n  }\n  if (pluralEForms.has(normalizedBase)) {\n    return regularForms(normalizedBase, \`\${normalizedBase}e\`);\n  }\n  if (pluralEnForms.has(normalizedBase)) {\n    return regularForms(normalizedBase, \`\${normalizedBase}en\`);\n  }\n  if (pluralSForms.has(normalizedBase)) {\n    return regularForms(normalizedBase, \`\${normalizedBase}s\`);\n  }\n  return specialForms[normalizedBase];\n}\n`;
 }
 
 async function main(argv) {
