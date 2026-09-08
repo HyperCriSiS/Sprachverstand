@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { generatedPersonFormCount } from "../src/rules/generated-person-lexicon";
+import {
+  generatedPersonFormCount,
+  getGeneratedPersonForms
+} from "../src/rules/generated-person-lexicon";
 import {
   mapMappedInflectedSingularPair,
   mapMappedSingular,
@@ -8,45 +11,52 @@ import {
 import { mapMappedPlural } from "../src/rules/mapped-plural-separators";
 
 const representativePluralCases = [
-  ["abbrecher", "abbrecher"],
+  ["abenteurer", "abenteurer"],
   ["abiturient", "abiturienten"],
   ["admiral", "admirale"],
-  ["agitator", "agitatoren"],
   ["clown", "clowns"],
   ["brit", "briten"],
-  ["gött", "götter"],
-  ["hünd", "hunde"],
   ["hörer", "hörer"],
+  ["psychiater", "psychiater"],
   ["sänger", "sänger"],
   ["schauspieler", "schauspieler"],
   ["texter", "texter"]
 ] as const;
 
 describe("Generierter Personenwortschatz im Produktpfad", () => {
-  it("enthält die vollständig verifizierte Ausbauwelle", () => {
-    expect(generatedPersonFormCount).toBe(1057);
+  it("enthält ausschließlich die konservativ freigegebene Ausbauwelle", () => {
+    expect(generatedPersonFormCount).toBe(1029);
 
     for (const [base, plural] of representativePluralCases) {
       expect(mapMappedPlural(base), base).toBe(plural);
     }
   });
 
+  it("schließt bekannte Scheintreffer aus dem generierten Bestand aus", () => {
+    for (const base of ["alphabet", "oktober", "torwärt", "wolf", "hünd"]) {
+      expect(getGeneratedPersonForms(base), base).toBeUndefined();
+    }
+  });
+
   it("erhält die Schreibweise des erkannten Stamms", () => {
     expect(mapMappedPlural("Sänger")).toBe("Sänger");
     expect(mapMappedPlural("SÄNGER")).toBe("SÄNGER");
-    expect(mapMappedSingular("GÖTT", "nominative")).toBe("GOTT");
+    expect(mapMappedPlural("PSYCHIATER")).toBe("PSYCHIATER");
   });
 
   it("nutzt generierte Vollformen auch im Singular", () => {
     expect(mapMappedSingular("brit", "nominative")).toBe("brite");
     expect(mapMappedSingular("brit", "dative")).toBe("briten");
-    expect(mapMappedSingular("gött", "genitive")).toBe("gottes");
+    expect(mapMappedSingular("analphabet", "genitive")).toBe("analphabeten");
   });
 
   it("erkennt generierte direkte Singularpaare ohne lineare Lexikonsuche", () => {
     expect(mapMappedSingularPair("Brite", "Britin")).toBe("Brite");
     expect(mapMappedSingularPair("Britin", "Brite")).toBe("Brite");
     expect(mapMappedSingularPair("Sänger", "Sängerin")).toBe("Sänger");
+    expect(mapMappedSingularPair("Psychiater", "Psychiaterin")).toBe(
+      "Psychiater"
+    );
   });
 
   it("erkennt auch flektierte Singularpaare aus dem generierten Bestand", () => {
@@ -54,7 +64,11 @@ describe("Generierter Personenwortschatz im Produktpfad", () => {
       mapMappedInflectedSingularPair("Britin", "Briten", "dative")
     ).toBe("Briten");
     expect(
-      mapMappedInflectedSingularPair("Göttin", "Gottes", "genitive")
-    ).toBe("Gottes");
+      mapMappedInflectedSingularPair(
+        "Analphabetin",
+        "Analphabeten",
+        "genitive"
+      )
+    ).toBe("Analphabeten");
   });
 });
