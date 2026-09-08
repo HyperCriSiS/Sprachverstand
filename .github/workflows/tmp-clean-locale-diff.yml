@@ -188,15 +188,20 @@ jobs:
                   raise SystemExit(
                       f'{code}: erwartet 170 Nachrichten, gefunden {len(parsed)}'
                   )
-              expected = set(json.loads(
-                  Path('static/_locales/de/messages.json').read_text(encoding='utf-8')
-              )) if code != 'de' and Path('static/_locales/de/messages.json').exists() else set(parsed)
-              if code != 'de' and set(parsed) != expected:
+              path.write_text(text, encoding='utf-8')
+
+          expected = set(json.loads(
+              Path('static/_locales/de/messages.json').read_text(encoding='utf-8')
+          ))
+          for path in locale_paths:
+              code = path.parent.name
+              parsed = json.loads(path.read_text(encoding='utf-8'))
+              if set(parsed) != expected:
                   missing = sorted(expected - set(parsed))
                   extra = sorted(set(parsed) - expected)
-                  raise SystemExit(f'{code}: abweichende Keys; fehlen={missing}, zusätzlich={extra}')
-
-              path.write_text(text, encoding='utf-8')
+                  raise SystemExit(
+                      f'{code}: abweichende Keys; fehlen={missing}, zusätzlich={extra}'
+                  )
 
           print(f'{len(locale_paths)} Locales formatgetreu aktualisiert.')
           PY
