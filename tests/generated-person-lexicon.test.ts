@@ -23,6 +23,8 @@ const representativePluralCases = [
   ["texter", "texter"]
 ] as const;
 
+// Dieser Produktvertrag wird bewusst mit main synchron gehalten, damit Pale Moon
+// denselben konservativ freigegebenen Personenwortschatz wie die modernen Builds nutzt.
 describe("Generierter Personenwortschatz im Produktpfad", () => {
   it("enthält ausschließlich die konservativ freigegebene Ausbauwelle", () => {
     expect(generatedPersonFormCount).toBe(1029);
