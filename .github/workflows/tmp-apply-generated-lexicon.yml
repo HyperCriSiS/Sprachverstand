@@ -1,13 +1,16 @@
 name: Temporär generierten Personenwortschatz anwenden
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - feat/lexicon-expansion-pipeline
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Repository auschecken
