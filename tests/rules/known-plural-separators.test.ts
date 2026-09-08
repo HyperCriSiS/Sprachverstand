@@ -114,6 +114,21 @@ describe("knownPluralSeparatorsRule", () => {
     });
   });
 
+  it.each([
+    ["Nutzer'innen", "Nutzer"],
+    ["NutzerINNen", "Nutzer"],
+    ["Nutzer(innen)", "Nutzer"],
+    ["Schüler/inne/n", "Schüler"]
+  ])(
+    "erkennt zusätzliche eindeutig markierte Pluralvariante %s",
+    (input, expected) => {
+      expect(knownPluralSeparatorsRule.apply(input)).toEqual({
+        text: expected,
+        replacements: 1
+      });
+    }
+  );
+
   it("erhält Großschreibung und zusammengesetzte Wörter", () => {
     const result = knownPluralSeparatorsRule.apply(
       "NUTZER:INNEN, Online-Nutzer:innen, Nutzer:innenkonto und " +
@@ -220,6 +235,20 @@ describe("additionalPersonPluralRule", () => {
       replacements: 26
     });
   });
+
+  it.each([
+    ["Follower'innen", "Follower"],
+    ["Follower(innen)", "Follower"],
+    ["Proband/inne/n", "Probanden"]
+  ])(
+    "normalisiert zusätzliche geprüfte Pluralvariante %s",
+    (input, expected) => {
+      expect(additionalPersonPluralRule.apply(input)).toEqual({
+        text: expected,
+        replacements: 1
+      });
+    }
+  );
 
   it("verarbeitet sichtbar getrennte Schreibweisen", () => {
     expect(
