@@ -34,3 +34,6 @@ store/generated/
 
 # Temporäre Google-OIDC-Zugangsdaten (falls lokal erzeugt)
 gha-creds-*.json
+
+# Lokale Lexikon-Rohdaten und Arbeitsdateien
+.lexicon-work/

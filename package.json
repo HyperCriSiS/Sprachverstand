@@ -43,7 +43,14 @@
     "amo:submit": "node scripts/amo-api-v5.mjs submit",
     "cws:wait": "node scripts/chrome-web-store-v2.mjs wait",
     "cws:cancel": "node scripts/chrome-web-store-v2.mjs cancel",
-    "cws:rollout": "node scripts/chrome-web-store-v2.mjs rollout"
+    "cws:rollout": "node scripts/chrome-web-store-v2.mjs rollout",
+    "lexicon:candidates": "node scripts/lexicon-candidates.mjs",
+    "lexicon:merge": "node scripts/merge-lexicon-candidates.mjs",
+    "lexicon:coverage": "node scripts/lexicon-coverage.mjs",
+    "lexicon:verify": "node scripts/lexicon-verify-flexion.mjs",
+    "lexicon:compile": "node scripts/compile-person-lexicon.mjs",
+    "benchmark:lexicon": "node scripts/benchmark-lexicon.mjs",
+    "lexicon:approve": "node scripts/lexicon-approve.mjs"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,
