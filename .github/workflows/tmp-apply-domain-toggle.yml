@@ -31,6 +31,9 @@ jobs:
       - name: Domain-Toggle-Patch anwenden
         run: python3 scripts/tmp-apply-domain-toggle.py
 
+      - name: Layout-Erwartung aktualisieren
+        run: sed -i 's/"Wo soll korrigiert werden?"/"Wo sollen zusätzliche Korrekturen gelten?"/' tests/options-layout.test.ts
+
       - name: Temporäre Hilfsdateien entfernen
         run: |
           rm scripts/tmp-apply-domain-toggle.py scripts/tmp-domain-toggle-payload-*.txt
