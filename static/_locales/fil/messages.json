@@ -51,7 +51,7 @@
     "message": "Ipinapakita ang switch para i-enable o i-disable ang extension."
   },
   "whereCorrect": {
-    "message": "Saan ilalapat ang mga pagwawasto?"
+    "message": "Saan ilalapat ang mga karagdagang pagwawasto?"
   },
   "whereCorrectPopupDescription": {
     "message": "Ipinapakita nang direkta sa popup ang mga opsyon para sa accessible na label, siniping teksto, at subtitle."
@@ -510,13 +510,10 @@
     "message": "Lumipat sa mga kasamang domain"
   },
   "popupDomainActionTitle": {
-    "message": "Idagdag ang kasalukuyang website sa listahan ng domain"
+    "message": "I-toggle ang kasalukuyang website sa listahan ng domain"
   },
   "popupDomainActionDescription": {
-    "message": "Nagpapakita sa popup ng button para idagdag ang kasalukuyang website sa listahan ng domain ayon sa aktibong mode."
-  },
-  "currentWebsiteAlreadyInDomainList": {
-    "message": "Nasa listahan na ng domain ang website"
+    "message": "Nagpapakita sa popup ng button para idagdag ang kasalukuyang website sa listahan ng domain o alisin ito roon ayon sa aktibong mode."
   },
   "includeCurrentWebsite": {
     "message": "Isama ang website na ito"
@@ -548,5 +545,23 @@
         "content": "$1"
       }
     }
+  },
+  "removeCurrentWebsiteExclusion": {
+    "message": "I-undo ang pagbubukod"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "I-undo ang pagsasama"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Ibinukod ang website"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Na-undo ang pagbubukod"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Isinama ang website"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Na-undo ang pagsasama"
   }
 }

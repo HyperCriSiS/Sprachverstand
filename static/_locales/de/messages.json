@@ -51,7 +51,7 @@
     "message": "Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein."
   },
   "whereCorrect": {
-    "message": "Wo soll korrigiert werden?"
+    "message": "Wo sollen zusätzliche Korrekturen gelten?"
   },
   "whereCorrectPopupDescription": {
     "message": "Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup."
@@ -510,13 +510,10 @@
     "message": "Zu eingeschlossenen Domains wechseln"
   },
   "popupDomainActionTitle": {
-    "message": "Aktuelle Website zur Domainliste hinzufügen"
+    "message": "Aktuelle Website in der Domainliste umschalten"
   },
   "popupDomainActionDescription": {
-    "message": "Zeigt im Popup eine Schaltfläche, um die aktuelle Website abhängig vom Arbeitsmodus zur Domainliste hinzuzufügen."
-  },
-  "currentWebsiteAlreadyInDomainList": {
-    "message": "Website bereits in der Domainliste"
+    "message": "Zeigt im Popup eine Schaltfläche, um die aktuelle Website abhängig vom Arbeitsmodus zur Domainliste hinzuzufügen oder daraus zu entfernen."
   },
   "includeCurrentWebsite": {
     "message": "Diese Website einschließen"
@@ -548,5 +545,23 @@
         "content": "$1"
       }
     }
+  },
+  "removeCurrentWebsiteExclusion": {
+    "message": "Ausschluss aufheben"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "Einschluss aufheben"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Website ausgeschlossen"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Ausschluss aufgehoben"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Website eingeschlossen"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Einschluss aufgehoben"
   }
 }

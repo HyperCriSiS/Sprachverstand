@@ -51,7 +51,7 @@
     "message": "Shows the switch for enabling or disabling the extension."
   },
   "whereCorrect": {
-    "message": "Where should corrections be applied?"
+    "message": "Where should additional corrections apply?"
   },
   "whereCorrectPopupDescription": {
     "message": "Shows options for accessible labels, quoted text, and subtitles directly in the popup."
@@ -510,13 +510,10 @@
     "message": "Switch to included domains"
   },
   "popupDomainActionTitle": {
-    "message": "Add current website to domain list"
+    "message": "Toggle current website in domain list"
   },
   "popupDomainActionDescription": {
-    "message": "Shows a button in the popup to add the current website to the domain list according to the active mode."
-  },
-  "currentWebsiteAlreadyInDomainList": {
-    "message": "Website already in the domain list"
+    "message": "Shows a button in the popup to add the current website to the domain list or remove it from the list according to the active mode."
   },
   "includeCurrentWebsite": {
     "message": "Include this website"
@@ -548,5 +545,23 @@
         "content": "$1"
       }
     }
+  },
+  "removeCurrentWebsiteExclusion": {
+    "message": "Undo exclusion"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "Undo inclusion"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Website excluded"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Exclusion removed"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Website included"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Inclusion removed"
   }
 }
