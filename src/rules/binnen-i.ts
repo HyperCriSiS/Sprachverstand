@@ -8,7 +8,7 @@ import { mapMappedPlural } from "./mapped-plural-separators";
  * "NutzerInnenkonto" wird zu "Nutzerkonto".
  */
 const binnenIPluralPattern =
-  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)Innen/gu;
+  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:Innen|INNen)/gu;
 
 function mapPlural(base: string): string | undefined {
   return mapMappedPlural(base) ?? mapKnownPlural(base);

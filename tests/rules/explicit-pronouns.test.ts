@@ -16,7 +16,9 @@ describe("explicitPronounsRule", () => {
     ["die/der", "der"],
     ["der/dem", "dem"],
     ["DER:DIE", "DER"],
-    ["Sie:Er", "Er"]
+    ["Sie:Er", "Er"],
+    ["jede/-r", "jeder"],
+    ["JEDE/-R", "JEDER"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: expected,
@@ -44,7 +46,8 @@ describe("explicitPronounsRule", () => {
     "innerhalb",
     "der/den",
     "sein:ihr Hebamme:in",
-    "der:die unbekannte:r"
+    "der:die unbekannte:r",
+    "jede/-r Nutzer:in"
   ])("lässt %s unverändert", (input) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: input,

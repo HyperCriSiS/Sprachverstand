@@ -14,6 +14,13 @@ describe("binnenIPluralRule", () => {
     });
   });
 
+  it("erkennt die ältere Großschreibungsvariante INNen", () => {
+    expect(binnenIPluralRule.apply("NutzerINNen")).toEqual({
+      text: "Nutzer",
+      replacements: 1
+    });
+  });
+
   it("unterstützt zusammengesetzte Formen und Komposita", () => {
     const result = binnenIPluralRule.apply(
       "Online-NutzerInnen, TierärztInnen, WerkstudentInnen, " +

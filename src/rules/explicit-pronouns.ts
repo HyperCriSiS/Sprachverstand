@@ -2,7 +2,7 @@ import type { Rule, TransformResult } from "../core/rule";
 
 const locale = "de-DE";
 const separators = [":", "*", "_", "/", "·", "•", "’", "‘"] as const;
-const replacements = new Map<string, string>();
+const replacements = new Map<string, string>([["jede/-r", "jeder"]]);
 
 function addPair(
   masculine: string,
@@ -34,7 +34,7 @@ addPair("seines", "ihres");
 addPair("seiner", "ihrer");
 
 const pairPattern =
-  /(?<![\p{L}\p{M}])([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)(?![\p{L}\p{M}])/gu;
+  /(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r))(?![\p{L}\p{M}])/giu;
 const followingGenderedTokenPattern =
   /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In)(?![\p{L}\p{M}])/u;
 
@@ -68,7 +68,8 @@ function transformExplicitPronouns(input: string): TransformResult {
       match: string,
       _left: string,
       _separator: string,
-      _right: string,
+      _right: string | undefined,
+      _compactPair: string | undefined,
       offset: number,
       source: string
     ) => {
