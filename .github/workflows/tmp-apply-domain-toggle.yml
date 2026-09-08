@@ -1,0 +1,54 @@
+name: Temporärer Domain-Toggle-Patch
+
+on:
+  push:
+    branches:
+      - fix/domain-toggle-additional-scope
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v5
+        with:
+          ref: fix/domain-toggle-additional-scope
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Domain-Toggle-Patch anwenden
+        run: python3 scripts/tmp-apply-domain-toggle.py
+
+      - name: Temporäre Hilfsdateien entfernen
+        run: |
+          rm scripts/tmp-apply-domain-toggle.py scripts/tmp-domain-toggle-payload-*.txt
+          rm .github/workflows/tmp-apply-domain-toggle.yml
+
+      - name: TypeScript prüfen
+        run: npm run typecheck
+
+      - name: Tests ausführen
+        run: npm test
+
+      - name: Locales prüfen
+        run: npm run validate:locales
+
+      - name: Änderungen committen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: Domain-Aktion als Toggle umsetzen"
+          git push origin HEAD:fix/domain-toggle-additional-scope
