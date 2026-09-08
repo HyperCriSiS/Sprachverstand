@@ -51,7 +51,7 @@
     "message": "Näyttää kytkimen, jolla laajennus otetaan käyttöön tai poistetaan käytöstä."
   },
   "whereCorrect": {
-    "message": "Missä korjauksia tehdään?"
+    "message": "Missä lisäkorjauksia tehdään?"
   },
   "whereCorrectPopupDescription": {
     "message": "Näyttää esteettömien nimikkeiden, lainatun tekstin ja tekstitysten asetukset suoraan ponnahdusvalikossa."
@@ -510,13 +510,28 @@
     "message": "Vaihda sisällytettyihin verkkotunnuksiin"
   },
   "popupDomainActionTitle": {
-    "message": "Lisää nykyinen verkkosivusto verkkotunnusluetteloon"
+    "message": "Vaihda nykyisen verkkosivuston tilaa verkkotunnusluettelossa"
   },
   "popupDomainActionDescription": {
-    "message": "Näyttää ponnahdusikkunassa painikkeen, jolla nykyinen verkkosivusto lisätään verkkotunnusluetteloon aktiivisen tilan mukaisesti."
+    "message": "Näyttää ponnahdusikkunassa painikkeen, jolla nykyinen verkkosivusto lisätään verkkotunnusluetteloon tai poistetaan siitä aktiivisen tilan mukaisesti."
   },
-  "currentWebsiteAlreadyInDomainList": {
-    "message": "Verkkosivusto on jo verkkotunnusluettelossa"
+  "removeCurrentWebsiteExclusion": {
+    "message": "Kumoa poissulkeminen"
+  },
+  "removeCurrentWebsiteInclusion": {
+    "message": "Kumoa sisällyttäminen"
+  },
+  "currentWebsiteExcluded": {
+    "message": "Verkkosivusto suljettu pois"
+  },
+  "currentWebsiteExclusionRemoved": {
+    "message": "Poissulkeminen kumottu"
+  },
+  "currentWebsiteIncluded": {
+    "message": "Verkkosivusto sisällytetty"
+  },
+  "currentWebsiteInclusionRemoved": {
+    "message": "Sisällyttäminen kumottu"
   },
   "includeCurrentWebsite": {
     "message": "Sisällytä tämä verkkosivusto"

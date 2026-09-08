@@ -9,7 +9,7 @@ import {
   type PopupSectionId,
   type Settings
 } from "./settings/defaults";
-import { isDomainListed } from "./settings/domain";
+import { isDomainListed, toggleDomainListing } from "./settings/domain";
 import { loadSettings, saveSettings } from "./settings/storage";
 
 interface ReplacementSummaryEntry {
@@ -67,6 +67,8 @@ const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
 const domainActionButton =
   requiredElement<HTMLButtonElement>("#add-current-domain");
+const domainActionStatus =
+  requiredElement<HTMLOutputElement>("#domain-action-status");
 const optionsButton = requiredElement<HTMLButtonElement>("#open-options");
 const popupSections = [
   ...document.querySelectorAll<HTMLElement>("[data-popup-section]")
@@ -78,6 +80,7 @@ let currentCount = 0;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
 let currentHostname = "";
 let runtimeStateRevision = 0;
+let domainActionStatusTimer: number | undefined;
 
 function isReplacementSummaryEntry(value: unknown): value is ReplacementSummaryEntry {
   if (!value || typeof value !== "object") {
@@ -192,16 +195,34 @@ function renderDomainAction(): void {
     currentHostname.length > 0 &&
     isDomainListed(currentHostname, settings.excludedDomains);
 
-  domainActionButton.disabled = !currentHostname || listed;
+  domainActionButton.disabled = !currentHostname;
   domainActionButton.textContent = listed
-    ? t(
-        "currentWebsiteAlreadyInDomainList",
-        undefined,
-        "Website bereits in der Domainliste"
-      )
+    ? settings.domainListMode === "include"
+      ? t(
+          "removeCurrentWebsiteInclusion",
+          undefined,
+          "Einschluss aufheben"
+        )
+      : t(
+          "removeCurrentWebsiteExclusion",
+          undefined,
+          "Ausschluss aufheben"
+        )
     : settings.domainListMode === "include"
       ? t("includeCurrentWebsite", undefined, "Diese Website einschließen")
       : t("excludeCurrentWebsite", undefined, "Diese Website ausschließen");
+}
+
+function showDomainActionStatus(key: string, fallback: string): void {
+  if (domainActionStatusTimer !== undefined) {
+    window.clearTimeout(domainActionStatusTimer);
+  }
+
+  domainActionStatus.textContent = t(key, undefined, fallback);
+  domainActionStatusTimer = window.setTimeout(() => {
+    domainActionStatus.textContent = "";
+    domainActionStatusTimer = undefined;
+  }, 1600);
 }
 
 function render(): void {
@@ -413,19 +434,46 @@ async function start(): Promise<void> {
   });
 
   domainActionButton.addEventListener("click", () => {
-    if (
-      !currentHostname ||
-      isDomainListed(currentHostname, settings.excludedDomains)
-    ) {
+    if (!currentHostname) {
       return;
     }
 
+    const listed = isDomainListed(currentHostname, settings.excludedDomains);
+    const domainListMode = settings.domainListMode;
+
     settings = {
       ...settings,
-      excludedDomains: [...settings.excludedDomains, currentHostname]
+      excludedDomains: toggleDomainListing(
+        currentHostname,
+        settings.excludedDomains
+      )
     };
     void saveSettings(settings);
     render();
+
+    if (listed) {
+      if (domainListMode === "include") {
+        showDomainActionStatus(
+          "currentWebsiteInclusionRemoved",
+          "Einschluss aufgehoben"
+        );
+      } else {
+        showDomainActionStatus(
+          "currentWebsiteExclusionRemoved",
+          "Ausschluss aufgehoben"
+        );
+      }
+    } else if (domainListMode === "include") {
+      showDomainActionStatus(
+        "currentWebsiteIncluded",
+        "Website eingeschlossen"
+      );
+    } else {
+      showDomainActionStatus(
+        "currentWebsiteExcluded",
+        "Website ausgeschlossen"
+      );
+    }
   });
 
   optionsButton.addEventListener("click", () => {

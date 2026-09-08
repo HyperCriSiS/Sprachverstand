@@ -47,6 +47,7 @@ function regular(
 const personForms: readonly PersonForms[] = [
   weak("hochschulabsolvent"),
   weak("psychotherapeut"),
+  regular("psychiater", "psychiater"),
   regular("administrator", "administratoren"),
   regular("bibliothekar", "bibliothekare"),
   regular("parlamentarier", "parlamentarier"),
@@ -496,4 +497,3 @@ export function mapMappedInflectedSingularPair(
 
   return undefined;
 }
-
