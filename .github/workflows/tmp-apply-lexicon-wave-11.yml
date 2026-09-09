@@ -1,0 +1,135 @@
+name: Temporäre Lexikon-Ausbauwelle 11 anwenden
+
+on:
+  push:
+    branches:
+      - feat/lexicon-expansion-wave-11
+    paths:
+      - .github/workflows/tmp-apply-lexicon-wave-11.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/lexicon-expansion-wave-11
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Weitere schwache Personenformen ergänzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          person_path = Path("src/rules/person-lexicon.ts")
+          person = person_path.read_text(encoding="utf-8")
+          marker = "const personForms: readonly PersonForms[] = [\n"
+          additions = [
+              "reprograf",
+              "modist",
+              "visagist",
+              "katechet",
+              "kartograf",
+              "galerist",
+              "chemigraf",
+              "flexograf",
+              "illusionist",
+              "humorist",
+              "orientalist",
+          ]
+          missing = [base for base in additions if f'weak("{base}")' not in person]
+          if missing:
+              insertion = "".join(f'  weak("{base}"),\n' for base in missing)
+              person = person.replace(marker, marker + insertion, 1)
+              person_path.write_text(person, encoding="utf-8")
+
+          test_path = Path("tests/lexicon-expansion-wave-11.test.ts")
+          test_path.write_text(
+              '''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import { mapMappedSingular } from "../src/rules/person-lexicon";
+
+          describe("elfte konservative Lexikon-Ausbauwelle", () => {
+            it.each([
+              ["Reprograf:innen", "Reprografen"],
+              ["Modist:innen", "Modisten"],
+              ["Visagist:innen", "Visagisten"],
+              ["Katechet:innen", "Katecheten"],
+              ["Kartograf:innen", "Kartografen"],
+              ["Galerist:innen", "Galeristen"],
+              ["Chemigraf:innen", "Chemigrafen"],
+              ["Flexograf:innen", "Flexografen"],
+              ["Illusionist:innen", "Illusionisten"],
+              ["Humorist:innen", "Humoristen"],
+              ["Orientalist:innen", "Orientalisten"]
+            ])("deckt eine eindeutig schwach flektierende Personenform ab: %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["reprograf", "accusative", "reprografen"],
+              ["modist", "dative", "modisten"],
+              ["visagist", "genitive", "visagisten"],
+              ["katechet", "accusative", "katecheten"],
+              ["kartograf", "genitive", "kartografen"],
+              ["galerist", "dative", "galeristen"],
+              ["chemigraf", "genitive", "chemigrafen"],
+              ["flexograf", "accusative", "flexografen"],
+              ["illusionist", "genitive", "illusionisten"],
+              ["humorist", "dative", "humoristen"],
+              ["orientalist", "genitive", "orientalisten"]
+            ])("stellt die schwache Singularflexion bereit: %s/%s", (base, grammaticalCase, expected) => {
+              expect(mapMappedSingular(base, grammaticalCase as "nominative" | "accusative" | "dative" | "genitive")).toBe(expected);
+            });
+
+            it.each([
+              "Graf:innen",
+              "Analyst:innen",
+              "Fraud-Analyst:innen"
+            ])("lässt mehrdeutige oder unregelmäßige Nachbarformen unverändert: %s", (input) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          ''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Neue Regressionen gezielt prüfen
+        run: npx vitest run tests/lexicon-expansion-wave-11.test.ts
+
+      - name: Vollständige Projektprüfung ausführen
+        run: npm run check
+
+      - name: Temporären Workflow entfernen und Änderungen festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-apply-lexicon-wave-11.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: elfte konservative Lexikonwelle ergänzen"
+          git push origin HEAD:feat/lexicon-expansion-wave-11
