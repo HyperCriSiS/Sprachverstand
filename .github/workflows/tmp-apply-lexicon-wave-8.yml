@@ -1,0 +1,142 @@
+name: Temporäre Lexikon-Ausbauwelle 8 anwenden
+
+on:
+  push:
+    branches:
+      - feat/lexicon-expansion-wave-8
+    paths:
+      - .github/workflows/tmp-apply-lexicon-wave-8.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/lexicon-expansion-wave-8
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Eindeutige gemappte Plurale ergänzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/rules/person-lexicon.ts")
+          text = path.read_text(encoding="utf-8")
+          marker = "const personForms: readonly PersonForms[] = [\n"
+          mappings = [
+              ("polier", "poliere"),
+              ("platzwart", "platzwarte"),
+              ("orchesterwart", "orchesterwarte"),
+              ("galvaniseur", "galvaniseure"),
+              ("kalkulator", "kalkulatoren"),
+              ("stuckateur", "stuckateure"),
+              ("dokumentar", "dokumentare"),
+              ("registrator", "registratoren"),
+              ("konservator", "konservatoren"),
+              ("requisiteur", "requisiteure"),
+              ("juwelier", "juweliere"),
+              ("kastellan", "kastellane"),
+          ]
+          missing = [pair for pair in mappings if f'regular("{pair[0]}"' not in text]
+          if missing:
+              insertion = "".join(
+                  f'  regular("{stem}", "{plural}"),\n'
+                  for stem, plural in missing
+              )
+              text = text.replace(marker, marker + insertion, 1)
+              path.write_text(text, encoding="utf-8")
+
+          Path("tests/lexicon-expansion-wave-8.test.ts").write_text(
+          '''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import { mapMappedSingular } from "../src/rules/person-lexicon";
+
+          describe("achte konservative Lexikon-Ausbauwelle", () => {
+            it.each([
+              ["Polier:innen", "Poliere"],
+              ["Werkpolier:innen", "Werkpoliere"],
+              ["Zimmererpolier:innen", "Zimmererpoliere"],
+              ["Platzwart:innen", "Platzwarte"],
+              ["Orchesterwart:innen", "Orchesterwarte"],
+              ["Galvaniseur:innen", "Galvaniseure"],
+              ["Kalkulator:innen", "Kalkulatoren"],
+              ["Stuckateur:innen", "Stuckateure"],
+              ["Dokumentar:innen", "Dokumentare"],
+              ["Registrator:innen", "Registratoren"],
+              ["Konservator:innen", "Konservatoren"],
+              ["Requisiteur:innen", "Requisiteure"],
+              ["Juwelier:innen", "Juweliere"],
+              ["Kastellan:innen", "Kastellane"]
+            ])("deckt einen eindeutigen gemappten Plural ab: %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it("stellt die regulären Singular- und Genitivformen bereit", () => {
+              expect(mapMappedSingular("Werkpolier", "genitive")).toBe("Werkpoliers");
+              expect(mapMappedSingular("Platzwart", "genitive")).toBe("Platzwarts");
+              expect(mapMappedSingular("Orchesterwart", "dative")).toBe("Orchesterwart");
+              expect(mapMappedSingular("Galvaniseur", "genitive")).toBe("Galvaniseurs");
+              expect(mapMappedSingular("Kalkulator", "genitive")).toBe("Kalkulators");
+              expect(mapMappedSingular("Stuckateur", "genitive")).toBe("Stuckateurs");
+              expect(mapMappedSingular("Dokumentar", "genitive")).toBe("Dokumentars");
+              expect(mapMappedSingular("Registrator", "genitive")).toBe("Registrators");
+              expect(mapMappedSingular("Konservator", "genitive")).toBe("Konservators");
+              expect(mapMappedSingular("Requisiteur", "genitive")).toBe("Requisiteurs");
+              expect(mapMappedSingular("Juwelier", "genitive")).toBe("Juweliers");
+              expect(mapMappedSingular("Kastellan", "genitive")).toBe("Kastellans");
+            });
+
+            it.each([
+              "Polierer:innen",
+              "Gegenwart:innen",
+              "Kalkulation:innen",
+              "Dokumentation:innen",
+              "Registratur:innen",
+              "Konservation:innen",
+              "Juwel:innen",
+              "Kastell:innen"
+            ])("lässt abweichende oder nicht-personale Formen unverändert: %s", (input) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          ''', encoding="utf-8")
+          PY
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Neue Regressionen gezielt prüfen
+        run: npx vitest run tests/lexicon-expansion-wave-8.test.ts
+
+      - name: Vollständige Projektprüfung ausführen
+        run: npm run check
+
+      - name: Temporären Workflow entfernen und Änderungen festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-apply-lexicon-wave-8.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: achte konservative Lexikonwelle ergänzen"
+          git push origin HEAD:feat/lexicon-expansion-wave-8
