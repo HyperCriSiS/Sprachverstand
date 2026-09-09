@@ -50,6 +50,15 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  regular("graveur", "graveure"),
+  regular("rotisseur", "rotisseure"),
+  regular("poissonnier", "poissonniers"),
+  regular("desinfektor", "desinfektoren"),
+  regular("präparator", "präparatoren"),
+  regular("repetitor", "repetitoren"),
+  regular("arrangeur", "arrangeure"),
+  regular("gardemanger", "gardemangers"),
+  regular("prior", "prioren"),
   weak("reprograf"),
   weak("modist"),
   weak("visagist"),
