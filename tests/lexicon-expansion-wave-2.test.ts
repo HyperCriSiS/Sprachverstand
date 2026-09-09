@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { knownPluralSeparatorsRule } from "../src/rules/known-plural-separators";
+import {
+  knownPluralSeparatorsRule,
+  mapKnownSingular
+} from "../src/rules/known-plural-separators";
 import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
 import { mapMappedSingular } from "../src/rules/person-lexicon";
 
@@ -15,6 +18,19 @@ describe("zweite konservative Lexikon-Ausbauwelle", () => {
       text: expected,
       replacements: 1
     });
+  });
+
+  it("nutzt die neuen Familien auch im sicheren Singular- und Genitivpfad", () => {
+    expect(mapKnownSingular("Kinderpfleger", "nominative")).toBe("Kinderpfleger");
+    expect(mapKnownSingular("Kinderpfleger", "genitive")).toBe("Kinderpflegers");
+    expect(mapKnownSingular("Landmaschinenmechatroniker", "genitive")).toBe(
+      "Landmaschinenmechatronikers"
+    );
+    expect(mapKnownSingular("Industrieelektroniker", "dative")).toBe(
+      "Industrieelektroniker"
+    );
+    expect(mapKnownSingular("Bautischler", "genitive")).toBe("Bautischlers");
+    expect(mapKnownSingular("Rohrschweißer", "genitive")).toBe("Rohrschweißers");
   });
 
   it.each([
