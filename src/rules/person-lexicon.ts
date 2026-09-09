@@ -50,6 +50,9 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  weak("chemikant"),
+  weak("fachlagerist"),
+  weak("orthoptist"),
   weak("hochschulabsolvent"),
   weak("psychotherapeut"),
   regular("psychiater", "psychiater"),
