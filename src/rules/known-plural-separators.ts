@@ -128,7 +128,15 @@ const safePluralSuffixes = [
   "schneider",
   "wärter",
   "werker",
-  "zeichner"
+  "zeichner",
+  "ausstatter",
+  "dachdecker",
+  "fertiger",
+  "glasbläser",
+  "isolierer",
+  "lackierer",
+  "leger",
+  "näher"
 ] as const;
 
 function isKnownBase(base: string): boolean {
