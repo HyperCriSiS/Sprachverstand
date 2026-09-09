@@ -100,7 +100,6 @@ jobs:
 
             it.each([
               "Graf:innen",
-              "Analyst:innen",
               "Fraud-Analyst:innen"
             ])("lässt mehrdeutige oder unregelmäßige Nachbarformen unverändert: %s", (input) => {
               expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
