@@ -154,7 +154,23 @@ const safePluralSuffixes = [
   "polierer",
   "butler",
   "beleuchter",
-  "schlächter"
+  "schlächter",
+  "lagerhalter",
+  "haushälter",
+  "treuhänder",
+  "markierer",
+  "klempner",
+  "holzfäller",
+  "färber",
+  "küper",
+  "küster",
+  "schaffner",
+  "weber",
+  "buchbinder",
+  "glaser",
+  "akustiker",
+  "schornsteinfeger",
+  "sprachmittler"
 ] as const;
 
 function isKnownBase(base: string): boolean {
