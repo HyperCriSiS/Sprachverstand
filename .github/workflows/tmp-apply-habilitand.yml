@@ -1,0 +1,90 @@
+name: Temporäre Habilitand-Ergänzung anwenden
+
+on:
+  push:
+    branches:
+      - feat/lexicon-habilitand
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Arbeitszweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/lexicon-habilitand
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Schwache Flexion für Habilitand ergänzen
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/rules/person-lexicon.ts")
+          text = path.read_text(encoding="utf-8")
+          if 'weak("habilitand")' not in text:
+              needle = '  weak("doktorand"),\n'
+              if needle not in text:
+                  raise SystemExit("Einfügepunkt für Habilitand fehlt.")
+              text = text.replace(needle, '  weak("habilitand"),\n' + needle, 1)
+              path.write_text(text, encoding="utf-8")
+
+          Path("tests/lexicon-habilitand.test.ts").write_text('''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import { mapMappedSingular } from "../src/rules/person-lexicon";
+
+          describe("schwache Flexion von Habilitand", () => {
+            it("bildet den maskulinen Plural korrekt", () => {
+              expect(mappedPluralSeparatorsRule.apply("Habilitand:innen")).toEqual({
+                text: "Habilitanden",
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["accusative", "habilitanden"],
+              ["dative", "habilitanden"],
+              ["genitive", "habilitanden"]
+            ] as const)("bildet den schwachen Singular im %s", (grammaticalCase, expected) => {
+              expect(mapMappedSingular("habilitand", grammaticalCase)).toBe(expected);
+            });
+
+            it("öffnet ähnlich aussehende Sachbegriffe nicht", () => {
+              expect(mappedPluralSeparatorsRule.apply("Habilitation:innen")).toEqual({
+                text: "Habilitation:innen",
+                replacements: 0
+              });
+            });
+          });
+          ''', encoding="utf-8")
+          PY
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Neue Regression gezielt prüfen
+        run: npx vitest run tests/lexicon-habilitand.test.ts
+
+      - name: Vollständige Projektprüfung ausführen
+        run: npm run check
+
+      - name: Temporären Workflow entfernen und Änderungen festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/tmp-apply-habilitand.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/rules/person-lexicon.ts tests/lexicon-habilitand.test.ts .github/workflows/tmp-apply-habilitand.yml
+          git commit -m 'feat: Habilitand als schwache Personenform ergänzen'
+          git push
