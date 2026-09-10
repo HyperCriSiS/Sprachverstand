@@ -144,6 +144,7 @@ const personForms: readonly PersonForms[] = [
   weak("abonnent"),
   weak("adressat"),
   weak("absolvent"),
+  weak("habilitand"),
   weak("doktorand"),
   weak("praktikant"),
   weak("präsident"),
