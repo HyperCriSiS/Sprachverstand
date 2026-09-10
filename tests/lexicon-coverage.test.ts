@@ -49,12 +49,13 @@ function runCoverage(
 }
 
 describe("Lexikon-Coverage-Audit", () => {
-  it("weist beide produktiven Pluralpfade sowie unbekannte Formen getrennt aus", () => {
+  it("weist alle produktiven Pluralpfade sowie unbekannte Formen getrennt aus", () => {
     const report = runCoverage([
       { base: "psychiater", count: 2 },
       { base: "psycholog", count: 1 },
       { base: "dozent", count: 1 },
       { base: "anbieter", count: 4 },
+      { base: "speaker", count: 2 },
       { base: "quantenflauscher", count: 3 }
     ]);
 
@@ -63,21 +64,22 @@ describe("Lexikon-Coverage-Audit", () => {
         { base: "psychiater", count: 2, replacement: "psychiater" },
         { base: "psycholog", count: 1, replacement: "psychologen" },
         { base: "dozent", count: 1, replacement: "dozenten" },
-        { base: "anbieter", count: 4, replacement: "anbieter" }
+        { base: "anbieter", count: 4, replacement: "anbieter" },
+        { base: "speaker", count: 2, replacement: "speaker" }
       ])
     );
     expect(report.unknown).toEqual([
       { base: "quantenflauscher", count: 3 }
     ]);
     expect(report.stats).toMatchObject({
-      uniqueObserved: 5,
-      knownUnique: 4,
+      uniqueObserved: 6,
+      knownUnique: 5,
       unknownUnique: 1,
-      uniqueCoveragePercent: 80,
-      observedOccurrences: 11,
-      knownOccurrences: 8,
+      uniqueCoveragePercent: 83.33,
+      observedOccurrences: 13,
+      knownOccurrences: 10,
       unknownOccurrences: 3,
-      occurrenceCoveragePercent: 72.73
+      occurrenceCoveragePercent: 76.92
     });
   });
 

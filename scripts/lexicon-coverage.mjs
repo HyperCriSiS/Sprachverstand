@@ -76,12 +76,13 @@ function normalizeObserved(candidateSet) {
 }
 
 async function loadRuntimePluralMapper() {
-  // Der Audit bündelt exakt beide produktiven Pluralpfade. So werden sowohl
-  // sichere unveränderte Suffixe als auch flektierende Personenformen gezählt.
+  // Der Audit bündelt exakt die drei produktiven Pluralpfade. So werden sowohl
+  // zusätzliche Personenformen als auch bekannte und gemappte Flexionen gezählt.
   const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
   const bundle = await build({
     stdin: {
       contents: `
+        export { additionalPersonPluralRule } from "./src/rules/additional-person-forms.ts";
         export { mapKnownPlural } from "./src/rules/known-plural-separators.ts";
         export { mapMappedPlural } from "./src/rules/mapped-plural-separators.ts";
       `,
@@ -102,9 +103,19 @@ async function loadRuntimePluralMapper() {
   }
 
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
-  const { mapKnownPlural, mapMappedPlural } = await import(moduleUrl);
+  const { additionalPersonPluralRule, mapKnownPlural, mapMappedPlural } =
+    await import(moduleUrl);
 
-  return (base) => mapKnownPlural(base) ?? mapMappedPlural(base);
+  return (base) => {
+    const mapped = mapKnownPlural(base) ?? mapMappedPlural(base);
+    if (mapped !== undefined) {
+      return mapped;
+    }
+
+    const markerForm = `${base}:innen`;
+    const supplemental = additionalPersonPluralRule.apply(markerForm);
+    return supplemental.replacements > 0 ? supplemental.text : undefined;
+  };
 }
 
 export async function buildCoverageReport(candidateSet) {
