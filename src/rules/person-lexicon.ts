@@ -50,6 +50,16 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  weak("hirt", "hirte", "hirten"),
+  regular("schäfer", "schäfer"),
+  regular("mesner", "mesner"),
+  {
+    stem: "schwäger",
+    singular: "schwager",
+    feminineSingular: "schwägerin",
+    genitiveSingular: "schwagers",
+    plural: "schwäger"
+  },
   regular("graveur", "graveure"),
   regular("rotisseur", "rotisseure"),
   regular("poissonnier", "poissonniers"),
