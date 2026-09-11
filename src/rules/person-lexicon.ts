@@ -60,6 +60,10 @@ const personForms: readonly PersonForms[] = [
     genitiveSingular: "schwagers",
     plural: "schwäger"
   },
+  { ...regular("operator", "operatoren"), match: "exact" as const },
+  { ...weak("trauzeug", "trauzeuge", "trauzeugen"), match: "exact" as const },
+  { ...regular("sünder", "sünder"), match: "exact" as const },
+  { ...weak("ries", "riese", "riesen"), match: "exact" as const },
   regular("graveur", "graveure"),
   regular("rotisseur", "rotisseure"),
   regular("poissonnier", "poissonniers"),
