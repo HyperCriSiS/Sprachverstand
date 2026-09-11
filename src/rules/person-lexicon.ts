@@ -64,6 +64,8 @@ const personForms: readonly PersonForms[] = [
   { ...weak("trauzeug", "trauzeuge", "trauzeugen"), match: "exact" as const },
   { ...regular("sünder", "sünder"), match: "exact" as const },
   { ...weak("ries", "riese", "riesen"), match: "exact" as const },
+  { ...weak("finn", "finne", "finnen"), match: "exact" as const },
+  { ...weak("dän", "däne", "dänen"), match: "exact" as const },
   regular("graveur", "graveure"),
   regular("rotisseur", "rotisseure"),
   regular("poissonnier", "poissonniers"),
