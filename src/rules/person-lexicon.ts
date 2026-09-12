@@ -2,6 +2,7 @@ import {
   getGeneratedPersonForms,
   type GeneratedPersonForms
 } from "./generated-person-lexicon";
+import { nationalityPersonForms } from "./nationality-person-forms";
 
 export type GrammaticalCase =
   | "nominative"
@@ -121,6 +122,7 @@ const personForms: readonly PersonForms[] = [
   { ...regular("bruneier", "bruneier"), match: "exact" as const },
   { ...regular("burkiner", "burkiner"), match: "exact" as const },
   { ...regular("burundier", "burundier"), match: "exact" as const },
+  ...nationalityPersonForms,
   regular("graveur", "graveure"),
   regular("rotisseur", "rotisseure"),
   regular("poissonnier", "poissonniers"),
