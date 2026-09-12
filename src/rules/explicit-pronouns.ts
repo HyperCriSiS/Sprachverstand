@@ -23,6 +23,7 @@ addPair("der", "die");
 addPair("den", "die");
 addPair("dem", "der");
 addPair("des", "der");
+addPair("dessen", "deren");
 addPair("er", "sie");
 addPair("ihn", "sie");
 addPair("ihm", "ihr");
