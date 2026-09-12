@@ -2,6 +2,7 @@ export interface NationalityPersonForms {
   readonly stem: string;
   readonly plural: string;
   readonly singular: string;
+  readonly obliqueSingular?: string;
   readonly genitiveSingular?: string;
   readonly match: "exact";
 }
@@ -12,6 +13,21 @@ function unchanged(stem: string): NationalityPersonForms {
     singular: stem,
     genitiveSingular: `${stem}s`,
     plural: stem,
+    match: "exact"
+  };
+}
+
+function weak(
+  stem: string,
+  singular: string,
+  obliqueSingular: string
+): NationalityPersonForms {
+  return {
+    stem,
+    singular,
+    obliqueSingular,
+    genitiveSingular: obliqueSingular,
+    plural: obliqueSingular,
     match: "exact"
   };
 }
@@ -121,5 +137,19 @@ export const nationalityPersonForms: readonly NationalityPersonForms[] = [
   unchanged("venezolaner"),
   unchanged("zentralafrikaner"),
   unchanged("zyprer"),
-  unchanged("schweizer")
+  unchanged("schweizer"),
+  unchanged("syrer"),
+  unchanged("são-toméer"),
+  weak("jemenit", "jemenit", "jemeniten"),
+  weak("laot", "laote", "laoten"),
+  weak("libanes", "libanese", "libanesen"),
+  weak("madagass", "madagasse", "madagassen"),
+  weak("monegass", "monegasse", "monegassen"),
+  weak("san-marines", "san-marinese", "san-marinesen"),
+  weak("senegales", "senegalese", "senegalesen"),
+  weak("sudanes", "sudanese", "sudanesen"),
+  weak("südsudanes", "südsudanese", "südsudanesen"),
+  weak("vietnames", "vietnamese", "vietnamesen"),
+  weak("guatemaltek", "guatemalteke", "guatemalteken"),
+  weak("kongoles", "kongolese", "kongolesen")
 ];
