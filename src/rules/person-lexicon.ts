@@ -78,7 +78,7 @@ const personForms: readonly PersonForms[] = [
   { ...weak("kroat", "kroate", "kroaten"), match: "exact" as const },
   { ...weak("slowen", "slowene", "slowenen"), match: "exact" as const },
   { ...regular("belgier", "belgier"), match: "exact" as const },
-  { ...regular("koreaner", "koreaner"), match: "exact" as const },
+  regular("koreaner", "koreaner"),
   { ...regular("pakistaner", "pakistaner"), match: "exact" as const },
   { ...regular("iraker", "iraker"), match: "exact" as const },
   { ...regular("araber", "araber"), match: "exact" as const },
