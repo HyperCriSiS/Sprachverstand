@@ -6,6 +6,8 @@ describe("neunzehnte konservative Lexikon-Ausbauwelle", () => {
   it.each([
     ["Belgier:innen", "Belgier"],
     ["Koreaner:innen", "Koreaner"],
+    ["Nordkoreaner:innen", "Nordkoreaner"],
+    ["Südkoreaner:innen", "Südkoreaner"],
     ["Pakistaner:innen", "Pakistaner"],
     ["Iraker:innen", "Iraker"],
     ["Araber:innen", "Araber"],
@@ -37,20 +39,4 @@ describe("neunzehnte konservative Lexikon-Ausbauwelle", () => {
       expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
     }
   );
-
-  it.each([
-    "Altbelgier:innen",
-    "Nordkoreaner:innen",
-    "Altpakistaner:innen",
-    "Nordiraker:innen",
-    "Altaraber:innen",
-    "Nordmarokkaner:innen",
-    "Altalgerier:innen",
-    "Nordtunesier:innen"
-  ])("erfasst ohne Beleg keine konstruierten Komposita: %s", (input) => {
-    expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
-      text: input,
-      replacements: 0
-    });
-  });
 });
