@@ -19,6 +19,12 @@ function addPair(
   }
 }
 
+function addCompactForm(left: string, right: string, replacement: string): void {
+  for (const separator of separators) {
+    replacements.set(`${left}${separator}${right}`, replacement);
+  }
+}
+
 addPair("der", "die");
 addPair("den", "die");
 addPair("dem", "der");
@@ -37,6 +43,8 @@ addPair("seinen", "ihren");
 addPair("seinem", "ihrem");
 addPair("seines", "ihres");
 addPair("seiner", "ihrer");
+addCompactForm("jede", "r", "jeder");
+addCompactForm("ein", "e", "ein");
 
 const pairPattern =
   /(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r))(?![\p{L}\p{M}])/giu;
