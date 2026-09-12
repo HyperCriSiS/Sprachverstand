@@ -10,12 +10,43 @@ const additionalPluralForms = new Map<string, string>([
   ["solist", "solisten"]
 ]);
 
+function isTitleCasePart(part: string): boolean {
+  const characters = [...part];
+  const first = characters.shift();
+  const remaining = characters.join("");
+
+  return Boolean(
+    first &&
+      first === first.toLocaleUpperCase(locale) &&
+      remaining === remaining.toLocaleLowerCase(locale)
+  );
+}
+
 function applyTokenCase(source: string, replacement: string): string {
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
   if (source === upperSource && source !== lowerSource) {
     return replacement.toLocaleUpperCase(locale);
+  }
+
+  const sourceParts = source.split("-");
+  const replacementParts = replacement.split("-");
+  if (
+    sourceParts.length > 1 &&
+    sourceParts.length === replacementParts.length &&
+    sourceParts.every(isTitleCasePart)
+  ) {
+    return replacementParts
+      .map((part) => {
+        const characters = [...part];
+        const first = characters.shift();
+        return first
+          ? first.toLocaleUpperCase(locale) +
+              characters.join("").toLocaleLowerCase(locale)
+          : part;
+      })
+      .join("-");
   }
 
   const first = [...source][0];
@@ -43,7 +74,8 @@ export function mapMappedPlural(base: string): string | undefined {
     return prefix + applyTokenCase(sourceSuffix, plural);
   }
 
-  return mapLexiconPlural(base);
+  const mapped = mapLexiconPlural(base);
+  return mapped === undefined ? undefined : applyTokenCase(base, mapped);
 }
 
 export const mappedPluralSeparatorsRule: Rule = {
