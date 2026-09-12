@@ -140,6 +140,7 @@ export const nationalityPersonForms: readonly NationalityPersonForms[] = [
   unchanged("schweizer"),
   unchanged("syrer"),
   unchanged("são-toméer"),
+  unchanged("malteser"),
   weak("jemenit", "jemenit", "jemeniten"),
   weak("laot", "laote", "laoten"),
   weak("libanes", "libanese", "libanesen"),
