@@ -11,6 +11,8 @@ describe("fünfundzwanzigste konservative Lexikon-Ausbauwelle", () => {
     ["Äthiopier:innen", "Äthiopier"],
     ["Caboverdier:innen", "Caboverdier"],
     ["Costa-Ricaner:innen", "Costa-Ricaner"],
+    ["COSTA-RICANER:INNEN", "COSTA-RICANER"],
+    ["costa-ricaner:innen", "costa-ricaner"],
     ["Ivorer:innen", "Ivorer"],
     ["Dominicaner:innen", "Dominicaner"],
     ["Dominikaner:innen", "Dominikaner"],
