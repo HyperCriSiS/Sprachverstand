@@ -184,6 +184,7 @@ const safePluralSuffixes = [
   "goldschläger",
   "fasser",
   "skipper",
+  "sticker",
   "sattler",
   "optiker",
   "müller",
