@@ -28,9 +28,12 @@ describe("siebzehnte konservative Lexikon-Ausbauwelle", () => {
     ["est", "genitive", "esten"],
     ["slowak", "nominative", "slowake"],
     ["slowak", "genitive", "slowaken"]
-  ] as const)("stellt die schwache Singularflexion bereit: %s/%s", (base, grammaticalCase, expected) => {
-    expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
-  });
+  ] as const)(
+    "stellt die schwache Singularflexion bereit: %s/%s",
+    (base, grammaticalCase, expected) => {
+      expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
+    }
+  );
 
   it.each([
     "Altschwed:innen",
