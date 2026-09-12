@@ -6,7 +6,8 @@ describe("zweiunddreißigste konservative Lexikon-Ausbauwelle", () => {
   it.each([
     ["Schott:innen", "Schotten"],
     ["Schott*innen", "Schotten"],
-    ["Schott_innen", "Schotten"]
+    ["Schott_innen", "Schotten"],
+    ["Moldauer:innen", "Moldauer"]
   ])("deckt eine eindeutig rückführbare Personenform ab: %s", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
@@ -19,5 +20,9 @@ describe("zweiunddreißigste konservative Lexikon-Ausbauwelle", () => {
     expect(mapMappedSingular("schott", "accusative")).toBe("schotten");
     expect(mapMappedSingular("schott", "dative")).toBe("schotten");
     expect(mapMappedSingular("schott", "genitive")).toBe("schotten");
+  });
+
+  it("behält Moldauer nach der Deduplizierung vollständig bei", () => {
+    expect(mapMappedSingular("moldauer", "genitive")).toBe("moldauers");
   });
 });

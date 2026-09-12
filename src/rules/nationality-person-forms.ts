@@ -91,7 +91,6 @@ export const nationalityPersonForms: readonly NationalityPersonForms[] = [
   unchanged("mauritier"),
   unchanged("mexikaner"),
   unchanged("mikronesier"),
-  unchanged("moldauer"),
   unchanged("mosambikaner"),
   unchanged("namibier"),
   unchanged("neuseeländer"),
