@@ -37,5 +37,21 @@ export const nationalityPersonForms: readonly NationalityPersonForms[] = [
   unchanged("salvadorianer"),
   unchanged("eritreer"),
   unchanged("eswatiner"),
-  unchanged("fidschianer")
+  unchanged("fidschianer"),
+  unchanged("gabuner"),
+  unchanged("gambier"),
+  unchanged("ghanaer"),
+  unchanged("grenader"),
+  unchanged("guineer"),
+  unchanged("guinea-bissauer"),
+  unchanged("guyaner"),
+  unchanged("haitianer"),
+  unchanged("honduraner"),
+  unchanged("jamaikaner"),
+  unchanged("jordanier"),
+  unchanged("kambodschaner"),
+  unchanged("kameruner"),
+  unchanged("katarer"),
+  unchanged("kenianer"),
+  unchanged("kiribatier")
 ];
