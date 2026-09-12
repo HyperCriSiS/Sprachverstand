@@ -342,6 +342,7 @@ const personForms: readonly PersonForms[] = [
     genitiveSingular: "bischofs",
     plural: "bischöfe"
   },
+  { ...regular("päpst", "päpste", "papst", "papstes"), match: "exact" as const },
   {
     stem: "rät",
     singular: "rat",
