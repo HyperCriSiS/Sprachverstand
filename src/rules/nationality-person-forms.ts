@@ -152,5 +152,6 @@ export const nationalityPersonForms: readonly NationalityPersonForms[] = [
   weak("südsudanes", "südsudanese", "südsudanesen"),
   weak("vietnames", "vietnamese", "vietnamesen"),
   weak("guatemaltek", "guatemalteke", "guatemalteken"),
-  weak("kongoles", "kongolese", "kongolesen")
+  weak("kongoles", "kongolese", "kongolesen"),
+  weak("schott", "schotte", "schotten")
 ];
