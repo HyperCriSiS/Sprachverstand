@@ -7,6 +7,8 @@ describe("explicitPronounsRule", () => {
     ["sie/er", "er"],
     ["ihn*sie", "ihn"],
     ["ihr_ihm", "ihm"],
+    ["dessen:deren", "dessen"],
+    ["deren/dessen", "dessen"],
     ["seiner:ihrer", "seiner"],
     ["ihres/seines", "seines"],
     ["seinem·ihrem", "seinem"],
@@ -16,6 +18,7 @@ describe("explicitPronounsRule", () => {
     ["die/der", "der"],
     ["der/dem", "dem"],
     ["DER:DIE", "DER"],
+    ["DESSEN:DEREN", "DESSEN"],
     ["Sie:Er", "Er"],
     ["jede/-r", "jeder"],
     ["JEDE/-R", "JEDER"]
@@ -45,6 +48,8 @@ describe("explicitPronounsRule", () => {
     "er/siehe",
     "innerhalb",
     "der/den",
+    "dessen Fall",
+    "deren Nutzer",
     "sein:ihr Hebamme:in",
     "der:die unbekannte:r",
     "jede/-r Nutzer:in"
