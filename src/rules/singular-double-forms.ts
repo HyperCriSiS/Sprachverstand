@@ -239,9 +239,9 @@ export const singularDoubleFormsRule: Rule = {
     return {
       text: wordResult.text,
       replacements:
-      shorthandResult.replacements +
-      phraseResult.replacements +
-      wordResult.replacements
+        shorthandResult.replacements +
+        phraseResult.replacements +
+        wordResult.replacements
     };
   }
 };
