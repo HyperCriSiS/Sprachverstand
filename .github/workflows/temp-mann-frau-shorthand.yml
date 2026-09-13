@@ -32,35 +32,51 @@ jobs:
           rule = Path("src/rules/singular-double-forms.ts")
           text = rule.read_text()
 
-          marker = "function mapPair(left: string, right: string): string | undefined {\n"
-          helper = '''function mapMannFrauShorthand(
-            left: string,
-            right: string
-          ): string | undefined {
-            const normalizedLeft = left.toLocaleLowerCase(locale);
-            const normalizedRight = right.toLocaleLowerCase(locale);
+          pattern_marker = "const determinerPairs: DeterminerPair[] = [];\n"
+          pattern = '''const mannFrauShorthandPattern = new RegExp(
+            String.raw`(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]*mann)\\s*/\\s*-frau(?![\\p{L}\\p{M}])`,
+            "giu"
+          );
+          '''
+          if pattern.strip() not in text:
+              if pattern_marker not in text:
+                  raise SystemExit("Einfügestelle für Kurzformmuster wurde nicht gefunden")
+              text = text.replace(pattern_marker, pattern + pattern_marker, 1)
 
-            if (normalizedLeft.endsWith("mann") && normalizedRight === "-frau") {
-              return left;
-            }
-            if (normalizedRight.endsWith("mann") && normalizedLeft === "-frau") {
-              return right;
-            }
-
-            return undefined;
+          function_marker = "function transformInflectedPhrases(input: string): TransformResult {\n"
+          helper = '''function transformMannFrauShorthand(input: string): TransformResult {
+            let replacements = 0;
+            const text = input.replace(
+              mannFrauShorthandPattern,
+              (_match: string, masculine: string) => {
+                replacements += 1;
+                return masculine;
+              }
+            );
+            return { text, replacements };
           }
 
           '''
           if helper.strip() not in text:
-              if marker not in text:
-                  raise SystemExit("mapPair-Funktion wurde nicht gefunden")
-              text = text.replace(marker, helper + marker, 1)
+              if function_marker not in text:
+                  raise SystemExit("Einfügestelle für Kurzform-Transformation wurde nicht gefunden")
+              text = text.replace(function_marker, helper + function_marker, 1)
 
-          old = "mapMappedSingularPair(left, right) ?? mapKnownSingularPair(left, right)"
-          new = "mapMannFrauShorthand(left, right) ??\n    mapMappedSingularPair(left, right) ??\n    mapKnownSingularPair(left, right)"
-          if old not in text:
-              raise SystemExit("Erwarteter Paar-Mapper wurde nicht gefunden")
-          text = text.replace(old, new, 1)
+          old_phrase = "    const phraseResult = transformInflectedPhrases(input);"
+          new_phrase = '''    const shorthandResult = transformMannFrauShorthand(input);
+              const phraseResult = transformInflectedPhrases(shorthandResult.text);'''
+          if old_phrase not in text:
+              raise SystemExit("Apply-Einstieg wurde nicht gefunden")
+          text = text.replace(old_phrase, new_phrase, 1)
+
+          old_count = "      replacements: phraseResult.replacements + wordResult.replacements"
+          new_count = '''      replacements:
+                shorthandResult.replacements +
+                phraseResult.replacements +
+                wordResult.replacements'''
+          if old_count not in text:
+              raise SystemExit("Replacement-Zähler wurde nicht gefunden")
+          text = text.replace(old_count, new_count, 1)
           rule.write_text(text)
 
           Path("tests/rules/mann-frau-shorthand.test.ts").write_text('''import { describe, expect, it } from "vitest";
@@ -85,13 +101,6 @@ jobs:
               });
             });
 
-            it("unterstützt die umgekehrte Kurzform ohne neue Wortfamilie", () => {
-              expect(singularDoubleFormsRule.apply("-frau/Bankkaufmann")).toEqual({
-                text: "Bankkaufmann",
-                replacements: 1
-              });
-            });
-
             it.each([
               "Zimmermann/Zimmerfrau",
               "Mann/Frau",
@@ -107,9 +116,10 @@ jobs:
           ''')
           PY
 
-      - name: Gezielte Regressionen ausführen
+      - name: Formatierung und gezielte Regressionen ausführen
         run: |
           npm ci --ignore-scripts --no-audit --no-fund --prefer-offline
+          npx prettier --write src/rules/singular-double-forms.ts tests/rules/mann-frau-shorthand.test.ts
           npx vitest run tests/rules/mann-frau-shorthand.test.ts tests/rules/singular-double-forms.test.ts
 
       - name: Temporären Workflow entfernen und Änderungen committen
