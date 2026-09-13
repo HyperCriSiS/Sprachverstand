@@ -1,0 +1,183 @@
+name: Temporärer BERUFENET-Patch Welle 38
+
+on:
+  push:
+    branches:
+      - feat/berufenet-irregular-pairs-wave-38
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Unregelmäßige Paare und Kurzformen ergänzen
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path("src/rules/person-lexicon.ts")
+          text = path.read_text()
+
+          marker = "const personForms: readonly PersonForms[] = [\n"
+          additions = (
+              '  { ...weak("technolog", "technologe", "technologen") },\n',
+              '  { ...regular("zimmerer", "zimmerer"), feminineSingular: "zimmerin" },\n',
+              '  { ...regular("polsterer", "polsterer"), feminineSingular: "polsterin", match: "exact" as const },\n',
+          )
+          for line in reversed(additions):
+              if line.strip() not in text:
+                  text = text.replace(marker, marker + line, 1)
+
+          helper_marker = "export function mapMappedPlural(base: string): string | undefined {\n"
+          helper = '''function hasMatchingShortenedFeminine(
+            masculine: string,
+            feminine: string,
+            masculineSuffix: string,
+            feminineSuffix: string
+          ): boolean {
+            const normalizedMasculine = masculine.toLocaleLowerCase(locale);
+            const normalizedFeminine = feminine.toLocaleLowerCase(locale);
+
+            return (
+              normalizedMasculine.endsWith(masculineSuffix) &&
+              normalizedFeminine === `-${feminineSuffix}`
+            );
+          }
+
+          '''
+          if helper.strip() not in text:
+              if helper_marker not in text:
+                  raise SystemExit("Einfügestelle für verkürzte feminine Paarform nicht gefunden")
+              text = text.replace(helper_marker, helper + helper_marker, 1)
+
+          old = '''    const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
+              const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
+              const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
+
+              if (mapping.match !== "exact" || left.length === mapping.singular.length) {
+                if (direct) {
+                  return left;
+                }
+              }
+
+              if (mapping.match !== "exact" || right.length === mapping.singular.length) {
+                if (reverse) {
+                  return right;
+                }
+              }'''
+          new = '''    const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
+              const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
+              const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
+              const directShort = hasMatchingShortenedFeminine(
+                left,
+                right,
+                mapping.singular,
+                feminine
+              );
+
+              if (mapping.match !== "exact" || left.length === mapping.singular.length) {
+                if (direct || directShort) {
+                  return left;
+                }
+              }
+
+              if (mapping.match !== "exact" || right.length === mapping.singular.length) {
+                if (reverse) {
+                  return right;
+                }
+              }'''
+          if old not in text:
+              raise SystemExit("Paarlogik wurde nicht in erwarteter Form gefunden")
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+
+          Path("tests/lexicon-person-forms-wave-38.test.ts").write_text('''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import {
+            mapMappedSingular,
+            mapMappedSingularPair
+          } from "../src/rules/person-lexicon";
+          import { singularDoubleFormsRule } from "../src/rules/singular-double-forms";
+
+          describe("achtunddreißigste konservative Lexikon-Ausbauwelle", () => {
+            it.each([
+              ["Verfahrenstechnolog:innen", "Verfahrenstechnologen"],
+              ["Radiologietechnolog*innen", "Radiologietechnologen"],
+              ["Bergbautechnolog_innen", "Bergbautechnologen"]
+            ])("normalisiert die Technologenfamilie %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it("bildet Technologe auch in Komposita schwach ab", () => {
+              expect(mapMappedSingular("verfahrenstechnolog", "nominative")).toBe("verfahrenstechnologe");
+              expect(mapMappedSingular("verfahrenstechnolog", "accusative")).toBe("verfahrenstechnologen");
+              expect(mapMappedSingular("verfahrenstechnolog", "dative")).toBe("verfahrenstechnologen");
+              expect(mapMappedSingular("verfahrenstechnolog", "genitive")).toBe("verfahrenstechnologen");
+            });
+
+            it.each([
+              ["Zimmerer", "Zimmerin", "Zimmerer"],
+              ["Brückenbauzimmerer", "Brückenbauzimmerin", "Brückenbauzimmerer"],
+              ["Polsterer", "Polsterin", "Polsterer"],
+              ["Verfahrenstechnologe", "Verfahrenstechnologin", "Verfahrenstechnologe"]
+            ])("erkennt das unregelmäßige Paar %s/%s", (masculine, feminine, expected) => {
+              expect(mapMappedSingularPair(masculine, feminine)).toBe(expected);
+            });
+
+            it.each([
+              ["Brückenbauzimmerer/-zimmerin", "Brückenbauzimmerer"],
+              ["Schiffszimmerer/-zimmerin", "Schiffszimmerer"],
+              ["Verfahrenstechnologe/-technologin Metall", "Verfahrenstechnologe Metall"],
+              ["Radiologietechnologe/-technologin", "Radiologietechnologe"]
+            ])("normalisiert die lexikalisch abgesicherte Kurzform %s", (input, expected) => {
+              expect(singularDoubleFormsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              "Fantast/-fantasin",
+              "Programmierer/-programmierin",
+              "Polsterer/-polsterin"
+            ])("lässt unbelegte Kurzformen unverändert: %s", (input) => {
+              expect(singularDoubleFormsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          ''')
+          PY
+
+      - name: Gezielte Regressionen ausführen
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefer-offline
+          npx vitest run tests/lexicon-person-forms-wave-38.test.ts tests/rules/singular-double-forms.test.ts
+
+      - name: Temporären Workflow entfernen und Änderungen committen
+        shell: bash
+        run: |
+          rm .github/workflows/temp-berufenet-wave-38.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/rules/person-lexicon.ts tests/lexicon-person-forms-wave-38.test.ts .github/workflows/temp-berufenet-wave-38.yml
+          git commit -m "Lexikon: unregelmäßige BERUFENET-Paare ergänzen"
+          git push
