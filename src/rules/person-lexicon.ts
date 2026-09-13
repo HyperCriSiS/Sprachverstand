@@ -51,6 +51,9 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  { ...weak("technolog", "technologe", "technologen") },
+  { ...regular("zimmerer", "zimmerer"), feminineSingular: "zimmerin" },
+  { ...regular("polsterer", "polsterer"), feminineSingular: "polsterin", match: "exact" as const },
   { ...weak("skandinavist"), match: "exact" as const },
   { ...weak("albanolog", "albanologe", "albanologen"), match: "exact" as const },
   { ...weak("japanolog", "japanologe", "japanologen"), match: "exact" as const },
@@ -458,6 +461,21 @@ function hasMatchingPrefixes(
   );
 }
 
+function hasMatchingShortenedFeminine(
+  masculine: string,
+  feminine: string,
+  masculineSuffix: string,
+  feminineSuffix: string
+): boolean {
+  const normalizedMasculine = masculine.toLocaleLowerCase(locale);
+  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
+
+  return (
+    normalizedMasculine.endsWith(masculineSuffix) &&
+    normalizedFeminine === `-${feminineSuffix}`
+  );
+}
+
 export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
   const generated = getGeneratedPersonForms(normalizedBase);
@@ -574,9 +592,15 @@ export function mapMappedSingularPair(
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
     const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
     const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
+    const directShort = hasMatchingShortenedFeminine(
+      left,
+      right,
+      mapping.singular,
+      feminine
+    );
 
     if (mapping.match !== "exact" || left.length === mapping.singular.length) {
-      if (direct) {
+      if (direct || (mapping.match !== "exact" && directShort)) {
         return left;
       }
     }
