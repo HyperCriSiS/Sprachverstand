@@ -1,12 +1,12 @@
 import type { Rule, TransformResult } from "../core/rule";
 import {
   mapKnownInflectedSingularPair,
-  mapKnownSingularPair,
+  mapKnownSingularPair
 } from "./known-plural-separators";
 import {
   mapMappedInflectedSingularPair,
   mapMappedSingularPair,
-  type GrammaticalCase,
+  type GrammaticalCase
 } from "./person-lexicon";
 
 interface DeterminerPair {
@@ -20,18 +20,18 @@ const word = String.raw`[\p{L}\p{M}’'-]+`;
 const connector = String.raw`(?:\s*(?:/|&|:)\s*|\s+(?:und|oder|bzw\.|beziehungsweise)\s+)`;
 const singularDoubleFormPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(${word})(${connector})(${word})(?![\p{L}\p{M}])`,
-  "giu",
+  "giu"
 );
 const mannFrauShorthandPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*mann)\s*/\s*-frau(?![\p{L}\p{M}])`,
-  "giu",
+  "giu"
 );
 const determinerPairs: DeterminerPair[] = [];
 
 function addDeterminerPair(
   feminine: string,
   masculine: string,
-  grammaticalCase: GrammaticalCase,
+  grammaticalCase: GrammaticalCase
 ): void {
   determinerPairs.push({ feminine, masculine, grammaticalCase });
 }
@@ -67,17 +67,17 @@ function addPossessivePairs(
   masculineNominative: string,
   masculineAccusative: string,
   masculineDative: string,
-  masculineGenitive: string,
+  masculineGenitive: string
 ): void {
   addDeterminerPair(
     feminineNominativeAccusative,
     masculineNominative,
-    "nominative",
+    "nominative"
   );
   addDeterminerPair(
     feminineNominativeAccusative,
     masculineAccusative,
-    "accusative",
+    "accusative"
   );
   addDeterminerPair(feminineDativeGenitive, masculineDative, "dative");
   addDeterminerPair(feminineDativeGenitive, masculineGenitive, "genitive");
@@ -93,20 +93,20 @@ addPossessivePairs(
   "unser",
   "unseren",
   "unserem",
-  "unseres",
+  "unseres"
 );
 addPossessivePairs("eure", "eurer", "euer", "euren", "eurem", "eures");
 
 const determinerAlternation = [
   ...new Set(
-    determinerPairs.flatMap((pair) => [pair.feminine, pair.masculine]),
-  ),
+    determinerPairs.flatMap((pair) => [pair.feminine, pair.masculine])
+  )
 ]
   .sort((left, right) => right.length - left.length)
   .join("|");
 const inflectedPhrasePattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(${determinerAlternation})(\s+)(${word})(${connector})(${determinerAlternation})(\s+)(${word})(?![\p{L}\p{M}])`,
-  "giu",
+  "giu"
 );
 
 function isRejectedPair(left: string, right: string): boolean {
@@ -136,7 +136,7 @@ function transformMannFrauShorthand(input: string): TransformResult {
     (_match: string, masculine: string) => {
       replacements += 1;
       return masculine;
-    },
+    }
   );
   return { text, replacements };
 }
@@ -153,11 +153,10 @@ function transformInflectedPhrases(input: string): TransformResult {
       _connector: string,
       rightDeterminer: string,
       rightWhitespace: string,
-      rightNoun: string,
+      rightNoun: string
     ) => {
       const normalizedLeftDeterminer = leftDeterminer.toLocaleLowerCase(locale);
-      const normalizedRightDeterminer =
-        rightDeterminer.toLocaleLowerCase(locale);
+      const normalizedRightDeterminer = rightDeterminer.toLocaleLowerCase(locale);
 
       for (const pair of determinerPairs) {
         if (
@@ -168,12 +167,12 @@ function transformInflectedPhrases(input: string): TransformResult {
             mapMappedInflectedSingularPair(
               leftNoun,
               rightNoun,
-              pair.grammaticalCase,
+              pair.grammaticalCase
             ) ??
             mapKnownInflectedSingularPair(
               leftNoun,
               rightNoun,
-              pair.grammaticalCase,
+              pair.grammaticalCase
             );
           if (masculineNoun) {
             replacements += 1;
@@ -189,12 +188,12 @@ function transformInflectedPhrases(input: string): TransformResult {
             mapMappedInflectedSingularPair(
               rightNoun,
               leftNoun,
-              pair.grammaticalCase,
+              pair.grammaticalCase
             ) ??
             mapKnownInflectedSingularPair(
               rightNoun,
               leftNoun,
-              pair.grammaticalCase,
+              pair.grammaticalCase
             );
           if (masculineNoun) {
             replacements += 1;
@@ -204,7 +203,7 @@ function transformInflectedPhrases(input: string): TransformResult {
       }
 
       return match;
-    },
+    }
   );
   return { text, replacements };
 }
@@ -223,7 +222,7 @@ function transformSingularDoubleForms(input: string): TransformResult {
 
       replacements += 1;
       return masculine;
-    },
+    }
   );
 
   return { text, replacements };
@@ -240,9 +239,9 @@ export const singularDoubleFormsRule: Rule = {
     return {
       text: wordResult.text,
       replacements:
-        shorthandResult.replacements +
-        phraseResult.replacements +
-        wordResult.replacements,
+      shorthandResult.replacements +
+      phraseResult.replacements +
+      wordResult.replacements
     };
-  },
+  }
 };
