@@ -22,6 +22,10 @@ const singularDoubleFormPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(${word})(${connector})(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
+const mannFrauShorthandPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*mann)\s*/\s*-frau(?![\p{L}\p{M}])`,
+  "giu"
+);
 const determinerPairs: DeterminerPair[] = [];
 
 function addDeterminerPair(
@@ -125,6 +129,18 @@ function mapPair(left: string, right: string): string | undefined {
   );
 }
 
+function transformMannFrauShorthand(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    mannFrauShorthandPattern,
+    (_match: string, masculine: string) => {
+      replacements += 1;
+      return masculine;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformInflectedPhrases(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -217,11 +233,15 @@ export const singularDoubleFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    const phraseResult = transformInflectedPhrases(input);
+    const shorthandResult = transformMannFrauShorthand(input);
+    const phraseResult = transformInflectedPhrases(shorthandResult.text);
     const wordResult = transformSingularDoubleForms(phraseResult.text);
     return {
       text: wordResult.text,
-      replacements: phraseResult.replacements + wordResult.replacements
+      replacements:
+        shorthandResult.replacements +
+        phraseResult.replacements +
+        wordResult.replacements
     };
   }
 };
