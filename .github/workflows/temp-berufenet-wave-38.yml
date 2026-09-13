@@ -90,7 +90,7 @@ jobs:
               );
 
               if (mapping.match !== "exact" || left.length === mapping.singular.length) {
-                if (direct || directShort) {
+                if (direct || (mapping.match !== "exact" && directShort)) {
                   return left;
                 }
               }
