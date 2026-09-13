@@ -8,6 +8,7 @@ import type { GrammaticalCase } from "./person-lexicon";
  * "Student:innen" -> "Student".
  */
 const safePluralSuffixes = [
+  "abfüller",
   "abnehmer",
   "anfänger",
   "anbieter",
