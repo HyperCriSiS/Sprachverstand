@@ -51,6 +51,8 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  { ...weak("ägyptolog", "ägyptologe", "ägyptologen"), match: "exact" as const },
+  { ...weak("afrikanist"), match: "exact" as const },
   weak("hirt", "hirte", "hirten"),
   regular("schäfer", "schäfer"),
   regular("mesner", "mesner"),
