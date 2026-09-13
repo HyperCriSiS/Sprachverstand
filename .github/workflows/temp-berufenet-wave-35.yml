@@ -33,10 +33,10 @@ jobs:
           text = lexicon.read_text()
           marker = "const personForms: readonly PersonForms[] = [\n"
           additions = (
-              '  { ...weak("ägyptolog", "ägyptologe", "ägyptologen"), match: "exact" as const },\n'
-              '  { ...weak("afrikanist"), match: "exact" as const },\n'
+              '  { ...weak("ägyptolog", "ägyptologe", "ägyptologen"), match: "exact" as const },\n',
+              '  { ...weak("afrikanist"), match: "exact" as const },\n',
           )
-          for line in additions:
+          for line in reversed(additions):
               if line.strip() not in text:
                   text = text.replace(marker, marker + line, 1)
           lexicon.write_text(text)
