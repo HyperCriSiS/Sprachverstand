@@ -1,0 +1,128 @@
+name: Temporärer Patch für Mann-Frau-Kurzformen
+
+on:
+  push:
+    branches:
+      - feat/singular-mann-frau-shorthand
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Kurzformregel und Regressionen ergänzen
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          rule = Path("src/rules/singular-double-forms.ts")
+          text = rule.read_text()
+
+          marker = '''function mapPair(left: string, right: string): string | undefined {
+          '''
+          helper = '''function mapMannFrauShorthand(
+            left: string,
+            right: string
+          ): string | undefined {
+            const normalizedLeft = left.toLocaleLowerCase(locale);
+            const normalizedRight = right.toLocaleLowerCase(locale);
+
+            if (normalizedLeft.endsWith("mann") && normalizedRight === "-frau") {
+              return left;
+            }
+            if (normalizedRight.endsWith("mann") && normalizedLeft === "-frau") {
+              return right;
+            }
+
+            return undefined;
+          }
+
+          '''
+          if helper.strip() not in text:
+              text = text.replace(marker, helper + marker, 1)
+
+          old = '''  return (
+            mapMappedSingularPair(left, right) ?? mapKnownSingularPair(left, right)
+          );'''
+          new = '''  return (
+            mapMannFrauShorthand(left, right) ??
+            mapMappedSingularPair(left, right) ??
+            mapKnownSingularPair(left, right)
+          );'''
+          if old not in text:
+              raise SystemExit("Erwartete mapPair-Stelle wurde nicht gefunden")
+          text = text.replace(old, new, 1)
+          rule.write_text(text)
+
+          Path("tests/rules/mann-frau-shorthand.test.ts").write_text('''import { describe, expect, it } from "vitest";
+          import { singularDoubleFormsRule } from "../../src/rules/singular-double-forms";
+
+          describe("explizite Mann-Frau-Kurzformen", () => {
+            it.each([
+              ["Automatenfachmann/-frau", "Automatenfachmann"],
+              ["Automobilkaufmann/-frau", "Automobilkaufmann"],
+              ["Bankkaufmann/-frau", "Bankkaufmann"],
+              ["Berg- und Maschinenmann/-frau", "Berg- und Maschinenmann"],
+              ["Fachmann/-frau - Systemgastronomie", "Fachmann - Systemgastronomie"],
+              ["Hotelfachmann/-frau", "Hotelfachmann"],
+              ["Medienkaufmann/-frau Digital und Print", "Medienkaufmann Digital und Print"],
+              ["Pflegefachmann/-frau", "Pflegefachmann"],
+              ["Werkfeuerwehrmann/-frau", "Werkfeuerwehrmann"],
+              ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]
+            ])("normalisiert die amtliche Kurzform %s", (input, expected) => {
+              expect(singularDoubleFormsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it("unterstützt die umgekehrte Kurzform ohne neue Wortfamilie", () => {
+              expect(singularDoubleFormsRule.apply("-frau/Bankkaufmann")).toEqual({
+                text: "Bankkaufmann",
+                replacements: 1
+              });
+            });
+
+            it.each([
+              "Zimmermann/Zimmerfrau",
+              "Mann/Frau",
+              "Kaufmann/Kauffrau",
+              "mannigfaltig/-frau"
+            ])("lässt nicht explizit unterstützte Vollformen unverändert: %s", (input) => {
+              expect(singularDoubleFormsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          ''')
+          PY
+
+      - name: Gezielte Regressionen ausführen
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefer-offline
+          npx vitest run tests/rules/mann-frau-shorthand.test.ts tests/rules/singular-double-forms.test.ts
+
+      - name: Temporären Workflow entfernen und Änderungen committen
+        shell: bash
+        run: |
+          rm .github/workflows/temp-mann-frau-shorthand.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/rules/singular-double-forms.ts tests/rules/mann-frau-shorthand.test.ts .github/workflows/temp-mann-frau-shorthand.yml
+          git commit -m "Regeln: Mann-Frau-Kurzformen aus BERUFENET abdecken"
+          git push
