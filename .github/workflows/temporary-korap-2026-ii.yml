@@ -48,12 +48,7 @@ jobs:
           if "const parentheticalResult" not in text:
               start = text.index("    const binnenIResult = transformMarkerPattern(")
               return_pos = text.index("\n\n    return {", start)
-              insertion = '''
-    const parentheticalResult = transformMarkerPattern(
-              binnenIResult.text,
-              parentheticalMarkerPattern,
-              true
-            );'''
+              insertion = "\n    const parentheticalResult = transformMarkerPattern(\n      binnenIResult.text,\n      parentheticalMarkerPattern,\n      true\n    );"
               text = text[:return_pos] + insertion + text[return_pos:]
               text = text.replace(
                   "      text: binnenIResult.text,",
@@ -240,7 +235,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add             src/rules/unmarked-singular.ts             src/rules/singular-double-forms.ts             src/rules/explicit-pronouns.ts             tests/rules/unmarked-singular.test.ts             tests/rules/mann-frau-shorthand.test.ts             tests/rules/explicit-pronouns.test.ts             .github/workflows/temporary-korap-2026-ii.yml
+          git add src/rules/unmarked-singular.ts src/rules/singular-double-forms.ts src/rules/explicit-pronouns.ts tests/rules/unmarked-singular.test.ts tests/rules/mann-frau-shorthand.test.ts tests/rules/explicit-pronouns.test.ts .github/workflows/temporary-korap-2026-ii.yml
           git diff --cached --check
           git commit -m "Regeln: KorAP-2026-II-Kurzformen ergänzen"
           git push
