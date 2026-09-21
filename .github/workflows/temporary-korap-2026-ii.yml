@@ -1,0 +1,301 @@
+name: Temporärer KorAP-2026-II-Regelaudit
+
+on:
+  push:
+    branches:
+      - feat/korap-2026-ii-kurzformen
+
+permissions:
+  contents: write
+
+jobs:
+  patch-und-pruefung:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/korap-2026-ii-kurzformen
+
+      - name: Node einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: KorAP-Regeländerungen anwenden
+        shell: python
+        run: |
+          from pathlib import Path
+
+          # Bekannte Personenbasen auch in dokumentierten Klammerformen erkennen.
+          path = Path("src/rules/unmarked-singular.ts")
+          text = path.read_text(encoding="utf-8")
+          old = '''const binnenIMarkerPattern =
+            /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)In(?![\\p{L}\\p{M}])/gu;
+          '''
+          new = '''const binnenIMarkerPattern =
+            /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)In(?![\\p{L}\\p{M}])/gu;
+          const parentheticalMarkerPattern =
+            /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)\\((?:-)?in\\)(?![\\p{L}\\p{M}])/giu;
+          '''
+          if "parentheticalMarkerPattern" not in text:
+              if old not in text:
+                  raise RuntimeError("Einfügepunkt für Klammerformen nicht gefunden")
+              text = text.replace(old, new, 1)
+
+          old = '''    const binnenIResult = transformMarkerPattern(
+              separatorResult.text,
+              binnenIMarkerPattern,
+              true
+            );
+
+            return {
+              text: binnenIResult.text,
+              replacements:
+                adjectiveResult.replacements +
+                separatorResult.replacements +
+                binnenIResult.replacements
+            };
+          '''
+          new = '''    const binnenIResult = transformMarkerPattern(
+              separatorResult.text,
+              binnenIMarkerPattern,
+              true
+            );
+            const parentheticalResult = transformMarkerPattern(
+              binnenIResult.text,
+              parentheticalMarkerPattern,
+              true
+            );
+
+            return {
+              text: parentheticalResult.text,
+              replacements:
+                adjectiveResult.replacements +
+                separatorResult.replacements +
+                binnenIResult.replacements +
+                parentheticalResult.replacements
+            };
+          '''
+          if "parentheticalResult" not in text:
+              if old not in text:
+                  raise RuntimeError("Transformationskette für Klammerformen nicht gefunden")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+
+          # Die dokumentierte Sonderform Kaufmann/frau nur exakt zulassen.
+          path = Path("src/rules/singular-double-forms.ts")
+          text = path.read_text(encoding="utf-8")
+          old = '''const mannFrauShorthandPattern = new RegExp(
+            String.raw`(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]*mann)\\s*/\\s*-frau(?![\\p{L}\\p{M}])`,
+            "giu"
+          );
+          '''
+          new = '''const mannFrauShorthandPattern = new RegExp(
+            String.raw`(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]*mann)\\s*/\\s*-frau(?![\\p{L}\\p{M}])`,
+            "giu"
+          );
+          const kaufmannFrauShorthandPattern =
+            /(?<![\\p{L}\\p{M}])(Kaufmann)\\s*\/\\s*frau(?![\\p{L}\\p{M}])/giu;
+          '''
+          if "kaufmannFrauShorthandPattern" not in text:
+              if old not in text:
+                  raise RuntimeError("Einfügepunkt für Kaufmann/frau nicht gefunden")
+              text = text.replace(old, new, 1)
+
+          old = '''function transformMannFrauShorthand(input: string): TransformResult {
+            let replacements = 0;
+            const text = input.replace(
+              mannFrauShorthandPattern,
+              (_match: string, masculine: string) => {
+                replacements += 1;
+                return masculine;
+              }
+            );
+            return { text, replacements };
+          }
+          '''
+          new = '''function transformMannFrauShorthand(
+            input: string,
+            pattern = mannFrauShorthandPattern
+          ): TransformResult {
+            let replacements = 0;
+            const text = input.replace(
+              pattern,
+              (_match: string, masculine: string) => {
+                replacements += 1;
+                return masculine;
+              }
+            );
+            return { text, replacements };
+          }
+          '''
+          if "pattern = mannFrauShorthandPattern" not in text:
+              if old not in text:
+                  raise RuntimeError("Mann-Frau-Transformation nicht gefunden")
+              text = text.replace(old, new, 1)
+
+          old = '''  apply(input) {
+            const shorthandResult = transformMannFrauShorthand(input);
+            const phraseResult = transformInflectedPhrases(shorthandResult.text);
+            const wordResult = transformSingularDoubleForms(phraseResult.text);
+            return {
+              text: wordResult.text,
+              replacements:
+                shorthandResult.replacements +
+                phraseResult.replacements +
+                wordResult.replacements
+            };
+          }
+          '''
+          new = '''  apply(input) {
+            const shorthandResult = transformMannFrauShorthand(input);
+            const kaufmannResult = transformMannFrauShorthand(
+              shorthandResult.text,
+              kaufmannFrauShorthandPattern
+            );
+            const phraseResult = transformInflectedPhrases(kaufmannResult.text);
+            const wordResult = transformSingularDoubleForms(phraseResult.text);
+            return {
+              text: wordResult.text,
+              replacements:
+                shorthandResult.replacements +
+                kaufmannResult.replacements +
+                phraseResult.replacements +
+                wordResult.replacements
+            };
+          }
+          '''
+          if "const kaufmannResult" not in text:
+              if old not in text:
+                  raise RuntimeError("Regelkette für Kaufmann/frau nicht gefunden")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+
+          # Dokumentierte kompakte Pronomen-/Determinerformen exakt abbilden.
+          path = Path("src/rules/explicit-pronouns.ts")
+          text = path.read_text(encoding="utf-8")
+          old = 'const replacements = new Map<string, string>([["jede/-r", "jeder"]]);\n'
+          new = '''const replacements = new Map<string, string>([
+            ["jede/-r", "jeder"],
+            ["ihm/r", "ihm"],
+            ["diese(r)", "dieser"],
+            ["eine(n)", "einen"]
+          ]);
+          '''
+          if '["ihm/r", "ihm"]' not in text:
+              if old not in text:
+                  raise RuntimeError("Ersetzungstabelle für kompakte Formen nicht gefunden")
+              text = text.replace(old, new, 1)
+
+          old = '''const pairPattern =
+            /(?<![\\p{L}\\p{M}])(?:([\\p{L}\\p{M}]+)([:*_/·•’‘])([\\p{L}\\p{M}]+)|(jede\\/-r))(?![\\p{L}\\p{M}])/giu;
+          const followingGenderedTokenPattern =
+            /^\\s+[\\p{L}\\p{M}’'-]+(?:[:*_/·•.’‘][\\p{L}\\p{M}]+|In)(?![\\p{L}\\p{M}])/u;
+          '''
+          new = '''const pairPattern =
+            /(?<![\\p{L}\\p{M}])(?:([\\p{L}\\p{M}]+)([:*_/·•’‘])([\\p{L}\\p{M}]+)|(jede\\/-r|ihm\\/r|diese\\(r\\)|eine\\(n\\)))(?![\\p{L}\\p{M}])/giu;
+          const followingGenderedTokenPattern =
+            /^\\s+[\\p{L}\\p{M}’'-]+(?:[:*_/·•.’‘][\\p{L}\\p{M}]+|In|\\((?:-)?in\\))(?![\\p{L}\\p{M}])/u;
+          '''
+          if "diese\\(r\\)" not in text:
+              if old not in text:
+                  raise RuntimeError("Kompaktmuster nicht gefunden")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
+
+          # Bestehende Regeltests um die dokumentierten KorAP-Formen erweitern.
+          path = Path("tests/rules/unmarked-singular.test.ts")
+          text = path.read_text(encoding="utf-8")
+          anchor = '    ["NutzerIn", "Nutzer"],\n'
+          additions = '''    ["Nutzer(in)", "Nutzer"],
+            ["Nutzer(-in)", "Nutzer"],
+            ["NUTZER(-IN)", "NUTZER"],
+          '''
+          if '["Nutzer(in)", "Nutzer"]' not in text:
+              if anchor not in text:
+                  raise RuntimeError("Testeinfügepunkt für Klammerformen nicht gefunden")
+              text = text.replace(anchor, additions + anchor, 1)
+          anchor = '    "Vielleicht eine NutzerIn im Team",\n'
+          additions = '''    "Vielleicht eine Nutzer(in) im Team",
+            "Vielleicht jene Nutzer(-in) im Team",
+          '''
+          if '"Vielleicht eine Nutzer(in) im Team"' not in text:
+              text = text.replace(anchor, additions + anchor, 1)
+          anchor = '    "Hebamme:in",\n'
+          additions = '''    "Hebamme(in)",
+            "Hebamme(-in)",
+          '''
+          if '"Hebamme(in)"' not in text:
+              text = text.replace(anchor, additions + anchor, 1)
+          path.write_text(text, encoding="utf-8")
+
+          path = Path("tests/rules/mann-frau-shorthand.test.ts")
+          text = path.read_text(encoding="utf-8")
+          anchor = '    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]\n'
+          additions = '''    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],
+            ["Kaufmann/frau", "Kaufmann"],
+            ["KAUFMANN/FRAU", "KAUFMANN"]
+          '''
+          if '["Kaufmann/frau", "Kaufmann"]' not in text:
+              if anchor not in text:
+                  raise RuntimeError("Positiver Kaufmann-Testeinfügepunkt nicht gefunden")
+              text = text.replace(anchor, additions, 1)
+          anchor = '    "Kaufmann/Kauffrau",\n'
+          additions = '''    "Kaufmann/Kauffrau",
+            "Automobilkaufmann/frau",
+          '''
+          if '"Automobilkaufmann/frau"' not in text:
+              text = text.replace(anchor, additions, 1)
+          path.write_text(text, encoding="utf-8")
+
+          path = Path("tests/rules/explicit-pronouns.test.ts")
+          text = path.read_text(encoding="utf-8")
+          anchor = '    ["JEDE/-R", "JEDER"]\n'
+          additions = '''    ["JEDE/-R", "JEDER"],
+            ["ihm/r", "ihm"],
+            ["IHM/R", "IHM"],
+            ["diese(r)", "dieser"],
+            ["DIESE(R)", "DIESER"],
+            ["eine(n)", "einen"],
+            ["EINE(N)", "EINEN"]
+          '''
+          if '["ihm/r", "ihm"]' not in text:
+              if anchor not in text:
+                  raise RuntimeError("Positiver Kompaktform-Testeinfügepunkt nicht gefunden")
+              text = text.replace(anchor, additions, 1)
+
+          anchor = '    "jede/-r Nutzer:in"\n'
+          additions = '''    "jede/-r Nutzer:in",
+            "ihm/r Nutzer:in",
+            "diese(r) Nutzer:in",
+            "eine(n) Nutzer(in)",
+            "sier",
+            "xier",
+            "hen",
+            "dey"
+          '''
+          if '"diese(r) Nutzer:in"' not in text:
+              if anchor not in text:
+                  raise RuntimeError("Negativtest-Einfügepunkt nicht gefunden")
+              text = text.replace(anchor, additions, 1)
+          path.write_text(text, encoding="utf-8")
+
+      - name: Vollständige Prüfung
+        run: npm run check
+
+      - name: Temporären Workflow entfernen
+        run: rm .github/workflows/temporary-korap-2026-ii.yml
+
+      - name: Änderungen einchecken
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             src/rules/unmarked-singular.ts             src/rules/singular-double-forms.ts             src/rules/explicit-pronouns.ts             tests/rules/unmarked-singular.test.ts             tests/rules/mann-frau-shorthand.test.ts             tests/rules/explicit-pronouns.test.ts             .github/workflows/temporary-korap-2026-ii.yml
+          git diff --cached --check
+          git commit -m "Regeln: KorAP-2026-II-Kurzformen ergänzen"
+          git push
