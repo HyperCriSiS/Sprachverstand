@@ -34,8 +34,7 @@ jobs:
           person_path = Path("src/rules/person-lexicon.ts")
           person = person_path.read_text(encoding="utf-8")
           marker = "const personForms: readonly PersonForms[] = [\n"
-          insert = (
-              "const personForms: readonly PersonForms[] = [\n"
+          additions = (
               '  { ...weak("adjutant"), match: "exact" as const },\n'
               '  { ...weak("autodidakt"), match: "exact" as const },\n'
               '  weak("banaus", "banause", "banausen"),\n'
@@ -44,21 +43,25 @@ jobs:
           if 'weak("adjutant")' not in person:
               if marker not in person:
                   raise RuntimeError("Einfügepunkt im Personenlexikon nicht gefunden")
-              person = person.replace(marker, insert, 1)
+              person = person.replace(marker, marker + additions, 1)
           person_path.write_text(person, encoding="utf-8")
 
           adjective_path = Path("src/rules/substantivized-adjectives.ts")
           adjective = adjective_path.read_text(encoding="utf-8")
-          replacements = [
-              ('  "angestellte",\n', '  "angeklagte",\n  "angestellte",\n'),
-              ('  "auszubildende",\n', '  "auszubildende",\n  "bankangestellte",\n'),
-              ('  "beauftragte",\n', '  "beauftragte",\n  "befragte",\n'),
-          ]
-          for old, new in replacements:
-              if new.split("\n", 1)[0].strip() not in adjective:
-                  if old not in adjective:
-                      raise RuntimeError(f"Einfügepunkt nicht gefunden: {old.strip()}")
-                  adjective = adjective.replace(old, new, 1)
+
+          def insert_before(target: str, entry: str) -> None:
+              global adjective
+              line = f'  "{entry}",'
+              if line in adjective:
+                  return
+              target_line = f'  "{target}",'
+              if target_line not in adjective:
+                  raise RuntimeError(f"Einfügepunkt nicht gefunden: {target}")
+              adjective = adjective.replace(target_line, f'{line}\n{target_line}', 1)
+
+          insert_before("angestellte", "angeklagte")
+          insert_before("auszubildende", "bankangestellte")
+          insert_before("beauftragte", "befragte")
           adjective_path.write_text(adjective, encoding="utf-8")
 
           test = '''import { describe, expect, it } from "vitest";
@@ -129,13 +132,17 @@ jobs:
             });
           });
           '''
-          test = "\n".join(line[10:] if line.startswith("          ") else line for line in test.splitlines()) + "\n"
+          test = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in test.splitlines()
+          ) + "\n"
           Path("tests/lexicon-person-forms-wave-39.test.ts").write_text(test, encoding="utf-8")
-
-          Path(".github/workflows/temporary-wave39.yml").unlink()
 
       - name: Vollständige Prüfung
         run: npm run check
+
+      - name: Temporären Workflow entfernen
+        run: rm .github/workflows/temporary-wave39.yml
 
       - name: Änderungen einchecken
         run: |
