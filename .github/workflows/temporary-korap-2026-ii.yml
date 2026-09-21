@@ -80,10 +80,7 @@ jobs:
 
           text = text.replace(
               "function transformMannFrauShorthand(input: string): TransformResult {",
-              '''function transformMannFrauShorthand(
-            input: string,
-            pattern = mannFrauShorthandPattern
-          ): TransformResult {''',
+              "function transformMannFrauShorthand(\n  input: string,\n  pattern = mannFrauShorthandPattern\n): TransformResult {",
               1
           )
           text = text.replace(
@@ -93,29 +90,20 @@ jobs:
           )
 
           if "const kaufmannResult" not in text:
-              text = text.replace(
-                  '''    const shorthandResult = transformMannFrauShorthand(input);
-            const phraseResult = transformInflectedPhrases(shorthandResult.text);
-          ''',
-                  '''    const shorthandResult = transformMannFrauShorthand(input);
-            const kaufmannResult = transformMannFrauShorthand(
-              shorthandResult.text,
-              kaufmannFrauShorthandPattern
-            );
-            const phraseResult = transformInflectedPhrases(kaufmannResult.text);
-          ''',
-                  1
-              )
-              text = text.replace(
-                  '''        shorthandResult.replacements +
-                phraseResult.replacements +
-          ''',
-                  '''        shorthandResult.replacements +
-                kaufmannResult.replacements +
-                phraseResult.replacements +
-          ''',
-                  1
-              )
+              old_chain = "    const shorthandResult = transformMannFrauShorthand(input);\n    const phraseResult = transformInflectedPhrases(shorthandResult.text);"
+              new_chain = "    const shorthandResult = transformMannFrauShorthand(input);\n    const kaufmannResult = transformMannFrauShorthand(\n      shorthandResult.text,\n      kaufmannFrauShorthandPattern\n    );\n    const phraseResult = transformInflectedPhrases(kaufmannResult.text);"
+              if old_chain not in text:
+                  raise RuntimeError("Ausführungskette für Kaufmann/frau nicht gefunden")
+              text = text.replace(old_chain, new_chain, 1)
+
+              old_count = "        shorthandResult.replacements +\n        phraseResult.replacements +"
+              new_count = "        shorthandResult.replacements +\n        kaufmannResult.replacements +\n        phraseResult.replacements +"
+              if old_count not in text:
+                  raise RuntimeError("Ersetzungszähler für Kaufmann/frau nicht gefunden")
+              text = text.replace(old_count, new_count, 1)
+
+          if "const kaufmannResult" not in text:
+              raise RuntimeError("Kaufmann/frau wurde nicht in die Regelkette eingebunden")
           path.write_text(text, encoding="utf-8")
 
           # Exakte dokumentierte Pronomen- und Determinerkurzformen.
@@ -133,16 +121,14 @@ jobs:
                   1
               )
           if "diese\\(r\\)" not in text:
-              text = text.replace(
-                  r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r))(?![\p{L}\p{M}])/giu;''',
-                  r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;''',
-                  1
-              )
-              text = text.replace(
-                  r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In)(?![\p{L}\p{M}])/u;''',
-                  r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?in\))(?![\p{L}\p{M}])/u;''',
-                  1
-              )
+              old_pattern = r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r))(?![\p{L}\p{M}])/giu;'''
+              new_pattern = r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;'''
+              old_following = r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In)(?![\p{L}\p{M}])/u;'''
+              new_following = r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?in\))(?![\p{L}\p{M}])/u;'''
+              if old_pattern not in text or old_following not in text:
+                  raise RuntimeError("Pronomenmuster nicht gefunden")
+              text = text.replace(old_pattern, new_pattern, 1)
+              text = text.replace(old_following, new_following, 1)
           path.write_text(text, encoding="utf-8")
 
           # Tests: Klammerformen.
@@ -151,26 +137,19 @@ jobs:
           if '["Nutzer(in)", "Nutzer"]' not in text:
               text = text.replace(
                   '    ["NutzerIn", "Nutzer"],',
-                  '''    ["Nutzer(in)", "Nutzer"],
-            ["Nutzer(-in)", "Nutzer"],
-            ["NUTZER(-IN)", "NUTZER"],
-            ["NutzerIn", "Nutzer"],''',
+                  '    ["Nutzer(in)", "Nutzer"],\n    ["Nutzer(-in)", "Nutzer"],\n    ["NUTZER(-IN)", "NUTZER"],\n    ["NutzerIn", "Nutzer"],',
                   1
               )
           if '"Vielleicht eine Nutzer(in) im Team"' not in text:
               text = text.replace(
                   '    "Vielleicht eine NutzerIn im Team",',
-                  '''    "Vielleicht eine Nutzer(in) im Team",
-            "Vielleicht jene Nutzer(-in) im Team",
-            "Vielleicht eine NutzerIn im Team",''',
+                  '    "Vielleicht eine Nutzer(in) im Team",\n    "Vielleicht jene Nutzer(-in) im Team",\n    "Vielleicht eine NutzerIn im Team",',
                   1
               )
           if '"Hebamme(in)"' not in text:
               text = text.replace(
                   '    "Hebamme:in",',
-                  '''    "Hebamme(in)",
-            "Hebamme(-in)",
-            "Hebamme:in",''',
+                  '    "Hebamme(in)",\n    "Hebamme(-in)",\n    "Hebamme:in",',
                   1
               )
           path.write_text(text, encoding="utf-8")
@@ -181,16 +160,13 @@ jobs:
           if '["Kaufmann/frau", "Kaufmann"]' not in text:
               text = text.replace(
                   '    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]',
-                  '''    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],
-            ["Kaufmann/frau", "Kaufmann"],
-            ["KAUFMANN/FRAU", "KAUFMANN"]''',
+                  '    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],\n    ["Kaufmann/frau", "Kaufmann"],\n    ["KAUFMANN/FRAU", "KAUFMANN"]',
                   1
               )
           if '"Automobilkaufmann/frau"' not in text:
               text = text.replace(
                   '    "Kaufmann/Kauffrau",',
-                  '''    "Kaufmann/Kauffrau",
-            "Automobilkaufmann/frau",''',
+                  '    "Kaufmann/Kauffrau",\n    "Automobilkaufmann/frau",',
                   1
               )
           path.write_text(text, encoding="utf-8")
@@ -201,26 +177,13 @@ jobs:
           if '["ihm/r", "ihm"]' not in text:
               text = text.replace(
                   '    ["JEDE/-R", "JEDER"]',
-                  '''    ["JEDE/-R", "JEDER"],
-            ["ihm/r", "ihm"],
-            ["IHM/R", "IHM"],
-            ["diese(r)", "dieser"],
-            ["DIESE(R)", "DIESER"],
-            ["eine(n)", "einen"],
-            ["EINE(N)", "EINEN"]''',
+                  '    ["JEDE/-R", "JEDER"],\n    ["ihm/r", "ihm"],\n    ["IHM/R", "IHM"],\n    ["diese(r)", "dieser"],\n    ["DIESE(R)", "DIESER"],\n    ["eine(n)", "einen"],\n    ["EINE(N)", "EINEN"]',
                   1
               )
           if '"diese(r) Nutzer:in"' not in text:
               text = text.replace(
                   '    "jede/-r Nutzer:in"',
-                  '''    "jede/-r Nutzer:in",
-            "ihm/r Nutzer:in",
-            "diese(r) Nutzer:in",
-            "eine(n) Nutzer(in)",
-            "sier",
-            "xier",
-            "hen",
-            "dey"''',
+                  '    "jede/-r Nutzer:in",\n    "ihm/r Nutzer:in",\n    "diese(r) Nutzer:in",\n    "eine(n) Nutzer(in)",\n    "sier",\n    "xier",\n    "hen",\n    "dey"',
                   1
               )
           path.write_text(text, encoding="utf-8")
