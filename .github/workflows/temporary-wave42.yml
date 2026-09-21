@@ -38,6 +38,7 @@ jobs:
               '  { ...regular("scharlatan", "scharlatane", "scharlatan", "scharlatans"), match: "exact" as const },\n'
               '  { ...regular("schelm", "schelme", "schelm", "schelms"), match: "exact" as const },\n'
               '  { ...weak("sexist"), match: "exact" as const },\n'
+              '  { ...regular("sparringspartner", "sparringspartner", "sparringspartner", "sparringspartners"), match: "exact" as const },\n'
               '  { ...regular("speaker", "speaker", "speaker", "speakers"), match: "exact" as const },\n'
               '  { ...weak("südostasiat"), match: "exact" as const },\n'
           )
@@ -59,6 +60,7 @@ jobs:
               ["Scharlatan:innen", "Scharlatane"],
               ["Schelm*innen", "Schelme"],
               ["Sexist_innen", "Sexisten"],
+              ["Sparringspartner:innen", "Sparringspartner"],
               ["Speaker:innen", "Speaker"],
               ["Südostasiat:innen", "Südostasiaten"]
             ])("normalisiert die neue Personenform %s", (input, expected) => {
@@ -72,6 +74,7 @@ jobs:
               ["scharlatan", "genitive", "scharlatans"],
               ["schelm", "genitive", "schelms"],
               ["sexist", "accusative", "sexisten"],
+              ["sparringspartner", "genitive", "sparringspartners"],
               ["speaker", "genitive", "speakers"],
               ["südostasiat", "dative", "südostasiaten"]
             ] as const)("bildet %s im Kasus %s korrekt ab", (base, grammaticalCase, expected) => {
@@ -82,6 +85,7 @@ jobs:
               ["Scharlatan", "Scharlatanin", "Scharlatan"],
               ["Schelm", "Schelmin", "Schelm"],
               ["Sexist", "Sexistin", "Sexist"],
+              ["Sparringspartner", "Sparringspartnerin", "Sparringspartner"],
               ["Speaker", "Speakerin", "Speaker"],
               ["Südostasiat", "Südostasiatin", "Südostasiat"]
             ])("erkennt das Paar %s/%s", (masculine, feminine, expected) => {
@@ -90,7 +94,6 @@ jobs:
 
             it.each([
               ["Schützenkönig:innen", "Schützenkönige"],
-              ["Sparringspartner:innen", "Sparringspartner"],
               ["Stellvertreter:innen", "Stellvertreter"]
             ])("bestätigt die bereits vorhandene Abdeckung für %s", (input, expected) => {
               expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
