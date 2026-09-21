@@ -31,258 +31,203 @@ jobs:
         run: |
           from pathlib import Path
 
-          # Bekannte Personenbasen auch in dokumentierten Klammerformen erkennen.
+          # Klammerformen bekannter Personenbasen.
           path = Path("src/rules/unmarked-singular.ts")
           text = path.read_text(encoding="utf-8")
-          old = '''const binnenIMarkerPattern =
+          if "parentheticalMarkerPattern" not in text:
+              anchor = '''const binnenIMarkerPattern =
             /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)In(?![\\p{L}\\p{M}])/gu;
           '''
-          new = '''const binnenIMarkerPattern =
-            /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)In(?![\\p{L}\\p{M}])/gu;
-          const parentheticalMarkerPattern =
+              insertion = '''const parentheticalMarkerPattern =
             /(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]+)\\((?:-)?in\\)(?![\\p{L}\\p{M}])/giu;
           '''
-          if "parentheticalMarkerPattern" not in text:
-              if old not in text:
-                  raise RuntimeError("Einfügepunkt für Klammerformen nicht gefunden")
-              text = text.replace(old, new, 1)
+              if anchor not in text:
+                  raise RuntimeError("Anker für Klammermuster nicht gefunden")
+              text = text.replace(anchor, anchor + insertion, 1)
 
-          old = '''    const binnenIResult = transformMarkerPattern(
-              separatorResult.text,
-              binnenIMarkerPattern,
-              true
-            );
-
-            return {
-              text: binnenIResult.text,
-              replacements:
-                adjectiveResult.replacements +
-                separatorResult.replacements +
-                binnenIResult.replacements
-            };
-          '''
-          new = '''    const binnenIResult = transformMarkerPattern(
-              separatorResult.text,
-              binnenIMarkerPattern,
-              true
-            );
-            const parentheticalResult = transformMarkerPattern(
+          if "const parentheticalResult" not in text:
+              start = text.index("    const binnenIResult = transformMarkerPattern(")
+              return_pos = text.index("\n\n    return {", start)
+              insertion = '''
+    const parentheticalResult = transformMarkerPattern(
               binnenIResult.text,
               parentheticalMarkerPattern,
               true
-            );
-
-            return {
-              text: parentheticalResult.text,
-              replacements:
-                adjectiveResult.replacements +
-                separatorResult.replacements +
-                binnenIResult.replacements +
-                parentheticalResult.replacements
-            };
-          '''
-          if "parentheticalResult" not in text:
-              if old not in text:
-                  raise RuntimeError("Transformationskette für Klammerformen nicht gefunden")
-              text = text.replace(old, new, 1)
+            );'''
+              text = text[:return_pos] + insertion + text[return_pos:]
+              text = text.replace(
+                  "      text: binnenIResult.text,",
+                  "      text: parentheticalResult.text,",
+                  1
+              )
+              text = text.replace(
+                  "        binnenIResult.replacements",
+                  "        binnenIResult.replacements +\n        parentheticalResult.replacements",
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
-          # Die dokumentierte Sonderform Kaufmann/frau nur exakt zulassen.
+          # Kaufmann/frau exakt, ohne Komposita zu verallgemeinern.
           path = Path("src/rules/singular-double-forms.ts")
           text = path.read_text(encoding="utf-8")
-          old = '''const mannFrauShorthandPattern = new RegExp(
+          if "kaufmannFrauShorthandPattern" not in text:
+              anchor = '''const mannFrauShorthandPattern = new RegExp(
             String.raw`(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]*mann)\\s*/\\s*-frau(?![\\p{L}\\p{M}])`,
             "giu"
           );
           '''
-          new = '''const mannFrauShorthandPattern = new RegExp(
-            String.raw`(?<![\\p{L}\\p{M}])([\\p{L}\\p{M}’'-]*mann)\\s*/\\s*-frau(?![\\p{L}\\p{M}])`,
-            "giu"
-          );
-          const kaufmannFrauShorthandPattern =
+              insertion = '''const kaufmannFrauShorthandPattern =
             /(?<![\\p{L}\\p{M}])(Kaufmann)\\s*\/\\s*frau(?![\\p{L}\\p{M}])/giu;
           '''
-          if "kaufmannFrauShorthandPattern" not in text:
-              if old not in text:
-                  raise RuntimeError("Einfügepunkt für Kaufmann/frau nicht gefunden")
-              text = text.replace(old, new, 1)
+              if anchor not in text:
+                  raise RuntimeError("Anker für Mann-Frau-Muster nicht gefunden")
+              text = text.replace(anchor, anchor + insertion, 1)
 
-          old = '''function transformMannFrauShorthand(input: string): TransformResult {
-            let replacements = 0;
-            const text = input.replace(
-              mannFrauShorthandPattern,
-              (_match: string, masculine: string) => {
-                replacements += 1;
-                return masculine;
-              }
-            );
-            return { text, replacements };
-          }
-          '''
-          new = '''function transformMannFrauShorthand(
+          text = text.replace(
+              "function transformMannFrauShorthand(input: string): TransformResult {",
+              '''function transformMannFrauShorthand(
             input: string,
             pattern = mannFrauShorthandPattern
-          ): TransformResult {
-            let replacements = 0;
-            const text = input.replace(
-              pattern,
-              (_match: string, masculine: string) => {
-                replacements += 1;
-                return masculine;
-              }
-            );
-            return { text, replacements };
-          }
-          '''
-          if "pattern = mannFrauShorthandPattern" not in text:
-              if old not in text:
-                  raise RuntimeError("Mann-Frau-Transformation nicht gefunden")
-              text = text.replace(old, new, 1)
+          ): TransformResult {''',
+              1
+          )
+          text = text.replace(
+              "    mannFrauShorthandPattern,",
+              "    pattern,",
+              1
+          )
 
-          old = '''  apply(input) {
-            const shorthandResult = transformMannFrauShorthand(input);
+          if "const kaufmannResult" not in text:
+              text = text.replace(
+                  '''    const shorthandResult = transformMannFrauShorthand(input);
             const phraseResult = transformInflectedPhrases(shorthandResult.text);
-            const wordResult = transformSingularDoubleForms(phraseResult.text);
-            return {
-              text: wordResult.text,
-              replacements:
-                shorthandResult.replacements +
-                phraseResult.replacements +
-                wordResult.replacements
-            };
-          }
-          '''
-          new = '''  apply(input) {
-            const shorthandResult = transformMannFrauShorthand(input);
+          ''',
+                  '''    const shorthandResult = transformMannFrauShorthand(input);
             const kaufmannResult = transformMannFrauShorthand(
               shorthandResult.text,
               kaufmannFrauShorthandPattern
             );
             const phraseResult = transformInflectedPhrases(kaufmannResult.text);
-            const wordResult = transformSingularDoubleForms(phraseResult.text);
-            return {
-              text: wordResult.text,
-              replacements:
-                shorthandResult.replacements +
+          ''',
+                  1
+              )
+              text = text.replace(
+                  '''        shorthandResult.replacements +
+                phraseResult.replacements +
+          ''',
+                  '''        shorthandResult.replacements +
                 kaufmannResult.replacements +
                 phraseResult.replacements +
-                wordResult.replacements
-            };
-          }
-          '''
-          if "const kaufmannResult" not in text:
-              if old not in text:
-                  raise RuntimeError("Regelkette für Kaufmann/frau nicht gefunden")
-              text = text.replace(old, new, 1)
+          ''',
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
-          # Dokumentierte kompakte Pronomen-/Determinerformen exakt abbilden.
+          # Exakte dokumentierte Pronomen- und Determinerkurzformen.
           path = Path("src/rules/explicit-pronouns.ts")
           text = path.read_text(encoding="utf-8")
-          old = 'const replacements = new Map<string, string>([["jede/-r", "jeder"]]);\n'
-          new = '''const replacements = new Map<string, string>([
+          if '["ihm/r", "ihm"]' not in text:
+              text = text.replace(
+                  'const replacements = new Map<string, string>([["jede/-r", "jeder"]]);',
+                  '''const replacements = new Map<string, string>([
             ["jede/-r", "jeder"],
             ["ihm/r", "ihm"],
             ["diese(r)", "dieser"],
             ["eine(n)", "einen"]
-          ]);
-          '''
-          if '["ihm/r", "ihm"]' not in text:
-              if old not in text:
-                  raise RuntimeError("Ersetzungstabelle für kompakte Formen nicht gefunden")
-              text = text.replace(old, new, 1)
-
-          old = '''const pairPattern =
-            /(?<![\\p{L}\\p{M}])(?:([\\p{L}\\p{M}]+)([:*_/·•’‘])([\\p{L}\\p{M}]+)|(jede\\/-r))(?![\\p{L}\\p{M}])/giu;
-          const followingGenderedTokenPattern =
-            /^\\s+[\\p{L}\\p{M}’'-]+(?:[:*_/·•.’‘][\\p{L}\\p{M}]+|In)(?![\\p{L}\\p{M}])/u;
-          '''
-          new = '''const pairPattern =
-            /(?<![\\p{L}\\p{M}])(?:([\\p{L}\\p{M}]+)([:*_/·•’‘])([\\p{L}\\p{M}]+)|(jede\\/-r|ihm\\/r|diese\\(r\\)|eine\\(n\\)))(?![\\p{L}\\p{M}])/giu;
-          const followingGenderedTokenPattern =
-            /^\\s+[\\p{L}\\p{M}’'-]+(?:[:*_/·•.’‘][\\p{L}\\p{M}]+|In|\\((?:-)?in\\))(?![\\p{L}\\p{M}])/u;
-          '''
+          ]);''',
+                  1
+              )
           if "diese\\(r\\)" not in text:
-              if old not in text:
-                  raise RuntimeError("Kompaktmuster nicht gefunden")
-              text = text.replace(old, new, 1)
+              text = text.replace(
+                  r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r))(?![\p{L}\p{M}])/giu;''',
+                  r'''/(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;''',
+                  1
+              )
+              text = text.replace(
+                  r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In)(?![\p{L}\p{M}])/u;''',
+                  r'''/^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?in\))(?![\p{L}\p{M}])/u;''',
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
-          # Bestehende Regeltests um die dokumentierten KorAP-Formen erweitern.
+          # Tests: Klammerformen.
           path = Path("tests/rules/unmarked-singular.test.ts")
           text = path.read_text(encoding="utf-8")
-          anchor = '    ["NutzerIn", "Nutzer"],\n'
-          additions = '''    ["Nutzer(in)", "Nutzer"],
+          if '["Nutzer(in)", "Nutzer"]' not in text:
+              text = text.replace(
+                  '    ["NutzerIn", "Nutzer"],',
+                  '''    ["Nutzer(in)", "Nutzer"],
             ["Nutzer(-in)", "Nutzer"],
             ["NUTZER(-IN)", "NUTZER"],
-          '''
-          if '["Nutzer(in)", "Nutzer"]' not in text:
-              if anchor not in text:
-                  raise RuntimeError("Testeinfügepunkt für Klammerformen nicht gefunden")
-              text = text.replace(anchor, additions + anchor, 1)
-          anchor = '    "Vielleicht eine NutzerIn im Team",\n'
-          additions = '''    "Vielleicht eine Nutzer(in) im Team",
-            "Vielleicht jene Nutzer(-in) im Team",
-          '''
+            ["NutzerIn", "Nutzer"],''',
+                  1
+              )
           if '"Vielleicht eine Nutzer(in) im Team"' not in text:
-              text = text.replace(anchor, additions + anchor, 1)
-          anchor = '    "Hebamme:in",\n'
-          additions = '''    "Hebamme(in)",
-            "Hebamme(-in)",
-          '''
+              text = text.replace(
+                  '    "Vielleicht eine NutzerIn im Team",',
+                  '''    "Vielleicht eine Nutzer(in) im Team",
+            "Vielleicht jene Nutzer(-in) im Team",
+            "Vielleicht eine NutzerIn im Team",''',
+                  1
+              )
           if '"Hebamme(in)"' not in text:
-              text = text.replace(anchor, additions + anchor, 1)
+              text = text.replace(
+                  '    "Hebamme:in",',
+                  '''    "Hebamme(in)",
+            "Hebamme(-in)",
+            "Hebamme:in",''',
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
+          # Tests: Kaufmann/frau.
           path = Path("tests/rules/mann-frau-shorthand.test.ts")
           text = path.read_text(encoding="utf-8")
-          anchor = '    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]\n'
-          additions = '''    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],
-            ["Kaufmann/frau", "Kaufmann"],
-            ["KAUFMANN/FRAU", "KAUFMANN"]
-          '''
           if '["Kaufmann/frau", "Kaufmann"]' not in text:
-              if anchor not in text:
-                  raise RuntimeError("Positiver Kaufmann-Testeinfügepunkt nicht gefunden")
-              text = text.replace(anchor, additions, 1)
-          anchor = '    "Kaufmann/Kauffrau",\n'
-          additions = '''    "Kaufmann/Kauffrau",
-            "Automobilkaufmann/frau",
-          '''
+              text = text.replace(
+                  '    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]',
+                  '''    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],
+            ["Kaufmann/frau", "Kaufmann"],
+            ["KAUFMANN/FRAU", "KAUFMANN"]''',
+                  1
+              )
           if '"Automobilkaufmann/frau"' not in text:
-              text = text.replace(anchor, additions, 1)
+              text = text.replace(
+                  '    "Kaufmann/Kauffrau",',
+                  '''    "Kaufmann/Kauffrau",
+            "Automobilkaufmann/frau",''',
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
+          # Tests: kompakte Pronomen/Determiner und Schutzfälle.
           path = Path("tests/rules/explicit-pronouns.test.ts")
           text = path.read_text(encoding="utf-8")
-          anchor = '    ["JEDE/-R", "JEDER"]\n'
-          additions = '''    ["JEDE/-R", "JEDER"],
+          if '["ihm/r", "ihm"]' not in text:
+              text = text.replace(
+                  '    ["JEDE/-R", "JEDER"]',
+                  '''    ["JEDE/-R", "JEDER"],
             ["ihm/r", "ihm"],
             ["IHM/R", "IHM"],
             ["diese(r)", "dieser"],
             ["DIESE(R)", "DIESER"],
             ["eine(n)", "einen"],
-            ["EINE(N)", "EINEN"]
-          '''
-          if '["ihm/r", "ihm"]' not in text:
-              if anchor not in text:
-                  raise RuntimeError("Positiver Kompaktform-Testeinfügepunkt nicht gefunden")
-              text = text.replace(anchor, additions, 1)
-
-          anchor = '    "jede/-r Nutzer:in"\n'
-          additions = '''    "jede/-r Nutzer:in",
+            ["EINE(N)", "EINEN"]''',
+                  1
+              )
+          if '"diese(r) Nutzer:in"' not in text:
+              text = text.replace(
+                  '    "jede/-r Nutzer:in"',
+                  '''    "jede/-r Nutzer:in",
             "ihm/r Nutzer:in",
             "diese(r) Nutzer:in",
             "eine(n) Nutzer(in)",
             "sier",
             "xier",
             "hen",
-            "dey"
-          '''
-          if '"diese(r) Nutzer:in"' not in text:
-              if anchor not in text:
-                  raise RuntimeError("Negativtest-Einfügepunkt nicht gefunden")
-              text = text.replace(anchor, additions, 1)
+            "dey"''',
+                  1
+              )
           path.write_text(text, encoding="utf-8")
 
       - name: Vollständige Prüfung
