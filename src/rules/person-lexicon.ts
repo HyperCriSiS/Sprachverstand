@@ -51,6 +51,11 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  { ...regular("tischler", "tischler"), match: "exact" as const },
+  { ...regular("torhüter", "torhüter"), match: "exact" as const },
+  { ...regular("turner", "turner"), match: "exact" as const },
+  { ...regular("torwart", "torwarte", "torwart", "torwarts"), match: "exact" as const },
+  { ...weak("vorfahr", "vorfahre", "vorfahren"), match: "exact" as const },
   { ...regular("scharlatan", "scharlatane", "scharlatan", "scharlatans"), match: "exact" as const },
   { ...regular("schelm", "schelme", "schelm", "schelms"), match: "exact" as const },
   { ...weak("sexist"), match: "exact" as const },
