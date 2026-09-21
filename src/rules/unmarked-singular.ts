@@ -8,6 +8,8 @@ const markerPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])/giu;
 const binnenIMarkerPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)In(?![\p{L}\p{M}])/gu;
+const parentheticalMarkerPattern =
+  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)\((?:-)?in\)(?![\p{L}\p{M}])/giu;
 const markedAdjectivePattern =
   /(?<![\p{L}\p{M}])(Verbündete)(?:[:*_\/·•.’‘])r(?![\p{L}\p{M}])/giu;
 const unchangedSingularForms = new Set(["content-creator", "creator"]);
@@ -112,13 +114,19 @@ export const unmarkedSingularRule: Rule = {
       binnenIMarkerPattern,
       true
     );
+    const parentheticalResult = transformMarkerPattern(
+      binnenIResult.text,
+      parentheticalMarkerPattern,
+      true
+    );
 
     return {
-      text: binnenIResult.text,
+      text: parentheticalResult.text,
       replacements:
         adjectiveResult.replacements +
         separatorResult.replacements +
-        binnenIResult.replacements
+        binnenIResult.replacements +
+        parentheticalResult.replacements
     };
   }
 };

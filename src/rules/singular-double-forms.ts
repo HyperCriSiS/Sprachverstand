@@ -26,6 +26,8 @@ const mannFrauShorthandPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*mann)\s*/\s*-frau(?![\p{L}\p{M}])`,
   "giu"
 );
+const kaufmannFrauShorthandPattern =
+  /(?<![\p{L}\p{M}])(Kaufmann)\s*\/\s*frau(?![\p{L}\p{M}])/giu;
 const determinerPairs: DeterminerPair[] = [];
 
 function addDeterminerPair(
@@ -129,10 +131,13 @@ function mapPair(left: string, right: string): string | undefined {
   );
 }
 
-function transformMannFrauShorthand(input: string): TransformResult {
+function transformMannFrauShorthand(
+  input: string,
+  pattern = mannFrauShorthandPattern
+): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    mannFrauShorthandPattern,
+    pattern,
     (_match: string, masculine: string) => {
       replacements += 1;
       return masculine;
@@ -234,12 +239,17 @@ export const singularDoubleFormsRule: Rule = {
 
   apply(input) {
     const shorthandResult = transformMannFrauShorthand(input);
-    const phraseResult = transformInflectedPhrases(shorthandResult.text);
+    const kaufmannResult = transformMannFrauShorthand(
+      shorthandResult.text,
+      kaufmannFrauShorthandPattern
+    );
+    const phraseResult = transformInflectedPhrases(kaufmannResult.text);
     const wordResult = transformSingularDoubleForms(phraseResult.text);
     return {
       text: wordResult.text,
       replacements:
         shorthandResult.replacements +
+        kaufmannResult.replacements +
         phraseResult.replacements +
         wordResult.replacements
     };

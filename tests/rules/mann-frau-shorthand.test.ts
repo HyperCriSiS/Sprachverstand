@@ -12,7 +12,9 @@ describe("explizite Mann-Frau-Kurzformen", () => {
     ["Medienkaufmann/-frau Digital und Print", "Medienkaufmann Digital und Print"],
     ["Pflegefachmann/-frau", "Pflegefachmann"],
     ["Werkfeuerwehrmann/-frau", "Werkfeuerwehrmann"],
-    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"]
+    ["BANKKAUFMANN/-FRAU", "BANKKAUFMANN"],
+    ["Kaufmann/frau", "Kaufmann"],
+    ["KAUFMANN/FRAU", "KAUFMANN"]
   ])("normalisiert die amtliche Kurzform %s", (input, expected) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({
       text: expected,
@@ -24,6 +26,7 @@ describe("explizite Mann-Frau-Kurzformen", () => {
     "Zimmermann/Zimmerfrau",
     "Mann/Frau",
     "Kaufmann/Kauffrau",
+    "Automobilkaufmann/frau",
     "mannigfaltig/-frau"
   ])("lässt nicht explizit unterstützte Vollformen unverändert: %s", (input) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({

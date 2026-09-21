@@ -32,7 +32,13 @@ describe("explicitPronounsRule", () => {
     ["EIN:E", "EIN"],
     ["Sie:Er", "Er"],
     ["jede/-r", "jeder"],
-    ["JEDE/-R", "JEDER"]
+    ["JEDE/-R", "JEDER"],
+    ["ihm/r", "ihm"],
+    ["IHM/R", "IHM"],
+    ["diese(r)", "dieser"],
+    ["DIESE(R)", "DIESER"],
+    ["eine(n)", "einen"],
+    ["EINE(N)", "EINEN"]
   ])("wandelt %s in %s um", (input, expected) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: expected,
@@ -69,7 +75,14 @@ describe("explicitPronounsRule", () => {
     "sein:ihr Hebamme:in",
     "dieser:diese Nutzer:in",
     "der:die unbekannte:r",
-    "jede/-r Nutzer:in"
+    "jede/-r Nutzer:in",
+    "ihm/r Nutzer:in",
+    "diese(r) Nutzer:in",
+    "eine(n) Nutzer(in)",
+    "sier",
+    "xier",
+    "hen",
+    "dey"
   ])("lässt %s unverändert", (input) => {
     expect(explicitPronounsRule.apply(input)).toEqual({
       text: input,
