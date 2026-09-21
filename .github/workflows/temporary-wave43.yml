@@ -1,0 +1,168 @@
+name: Temporärer Quellen-Audit Welle 43
+
+on:
+  push:
+    branches:
+      - feat/source-audit-korrektur-tz-wave-43
+
+permissions:
+  contents: write
+
+jobs:
+  patch-und-pruefung:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/source-audit-korrektur-tz-wave-43
+
+      - name: Node einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Quellenänderungen anwenden
+        shell: python
+        run: |
+          from pathlib import Path
+
+          person_path = Path("src/rules/person-lexicon.ts")
+          person = person_path.read_text(encoding="utf-8")
+          marker = "const personForms: readonly PersonForms[] = [\n"
+          additions = (
+              '  { ...regular("tischler", "tischler"), match: "exact" as const },\n'
+              '  { ...regular("torhüter", "torhüter"), match: "exact" as const },\n'
+              '  { ...regular("turner", "turner"), match: "exact" as const },\n'
+              '  { ...regular("torwart", "torwarte", "torwart", "torwarts"), match: "exact" as const },\n'
+              '  { ...weak("vorfahr", "vorfahre", "vorfahren"), match: "exact" as const },\n'
+          )
+          if 'regular("tischler"' not in person:
+              if marker not in person:
+                  raise RuntimeError("Einfügepunkt im Personenlexikon nicht gefunden")
+              person = person.replace(marker, marker + additions, 1)
+          person_path.write_text(person, encoding="utf-8")
+
+          adjective_path = Path("src/rules/substantivized-adjectives.ts")
+          adjective = adjective_path.read_text(encoding="utf-8")
+
+          def insert_before(target: str, entry: str) -> None:
+              global adjective
+              line = f'  "{entry}",'
+              if line in adjective:
+                  return
+              target_line = f'  "{target}",'
+              if target_line not in adjective:
+                  raise RuntimeError(f"Einfügepunkt nicht gefunden: {target}")
+              adjective = adjective.replace(target_line, f'{line}\n{target_line}', 1)
+
+          insert_before("verantwortliche", "verbündete")
+          insert_before("verfolgte", "verdächtige")
+          insert_before("verwandte", "vertraute")
+          adjective_path.write_text(adjective, encoding="utf-8")
+
+          test = '''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import {
+            mapMappedSingular,
+            mapMappedSingularPair
+          } from "../src/rules/person-lexicon";
+          import { substantivizedAdjectivesRule } from "../src/rules/substantivized-adjectives";
+
+          describe("dreiundvierzigste konservative Lexikon-Ausbauwelle", () => {
+            it.each([
+              ["Tischler:innen", "Tischler"],
+              ["Torhüter*innen", "Torhüter"],
+              ["Turner_innen", "Turner"],
+              ["Torwart:innen", "Torwarte"],
+              ["Vorfahr:innen", "Vorfahren"]
+            ])("normalisiert die neue Personenform %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["tischler", "genitive", "tischlers"],
+              ["torhüter", "genitive", "torhüters"],
+              ["turner", "genitive", "turners"],
+              ["torwart", "genitive", "torwarts"],
+              ["vorfahr", "nominative", "vorfahre"],
+              ["vorfahr", "accusative", "vorfahren"]
+            ] as const)("bildet %s im Kasus %s korrekt ab", (base, grammaticalCase, expected) => {
+              expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
+            });
+
+            it.each([
+              ["Tischler", "Tischlerin", "Tischler"],
+              ["Torhüter", "Torhüterin", "Torhüter"],
+              ["Turner", "Turnerin", "Turner"],
+              ["Torwart", "Torwartin", "Torwart"],
+              ["Vorfahre", "Vorfahrin", "Vorfahre"]
+            ])("erkennt das Paar %s/%s", (masculine, feminine, expected) => {
+              expect(mapMappedSingularPair(masculine, feminine)).toBe(expected);
+            });
+
+            it.each([
+              ["Verbündete:r", "Verbündeter"],
+              ["Verdächtige:n", "Verdächtigen"],
+              ["Vertraute:r", "Vertrauter"],
+              ["ein:e Verbündete:r", "ein Verbündeter"],
+              ["den:die Verdächtige:n", "den Verdächtigen"]
+            ])("normalisiert die substantivierte Form %s", (input, expected) => {
+              expect(substantivizedAdjectivesRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["Verwandte:r", "Verwandter"],
+              ["Vorgesetzte:r", "Vorgesetzter"],
+              ["Vorsitzende:r", "Vorsitzender"],
+              ["Verantwortliche:r", "Verantwortlicher"]
+            ])("bestätigt die bereits vorhandene Adjektivabdeckung für %s", (input, expected) => {
+              expect(substantivizedAdjectivesRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              "Typ:innen",
+              "Waise:innen",
+              "Vordermann:innen",
+              "Teilnehmerliste:innen"
+            ])("lässt ungeeignete oder nicht personenbezogene Kurzformen unverändert: %s", (input) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          '''
+          test = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in test.splitlines()
+          ) + "\n"
+          Path("tests/lexicon-person-forms-wave-43.test.ts").write_text(test, encoding="utf-8")
+
+      - name: Vollständige Prüfung
+        run: npm run check
+
+      - name: Temporären Workflow entfernen
+        run: rm .github/workflows/temporary-wave43.yml
+
+      - name: Änderungen einchecken
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/rules/person-lexicon.ts src/rules/substantivized-adjectives.ts tests/lexicon-person-forms-wave-43.test.ts .github/workflows/temporary-wave43.yml
+          git diff --cached --check
+          git commit -m "Lexikon: dreiundvierzigste konservative Ausbauwelle"
+          git push
