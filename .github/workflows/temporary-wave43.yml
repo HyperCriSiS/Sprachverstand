@@ -65,6 +65,21 @@ jobs:
           insert_before("verwandte", "vertraute")
           adjective_path.write_text(adjective, encoding="utf-8")
 
+          existing_test_path = Path("tests/rules/substantivized-adjectives.test.ts")
+          existing_test = existing_test_path.read_text(encoding="utf-8")
+          positive_anchor = '    ["Vorgesetzte:r", "Vorgesetzter"],\n'
+          positive_line = '    ["Verbündete:r", "Verbündeter"],\n'
+          if positive_line not in existing_test:
+              if positive_anchor not in existing_test:
+                  raise RuntimeError("Positiver Test-Einfügepunkt nicht gefunden")
+              existing_test = existing_test.replace(
+                  positive_anchor,
+                  positive_anchor + positive_line,
+                  1
+              )
+          existing_test = existing_test.replace('    "Verbündete:r",\n', "", 1)
+          existing_test_path.write_text(existing_test, encoding="utf-8")
+
           test = '''import { describe, expect, it } from "vitest";
           import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
           import {
@@ -162,7 +177,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/rules/person-lexicon.ts src/rules/substantivized-adjectives.ts tests/lexicon-person-forms-wave-43.test.ts .github/workflows/temporary-wave43.yml
+          git add src/rules/person-lexicon.ts src/rules/substantivized-adjectives.ts tests/rules/substantivized-adjectives.test.ts tests/lexicon-person-forms-wave-43.test.ts .github/workflows/temporary-wave43.yml
           git diff --cached --check
           git commit -m "Lexikon: dreiundvierzigste konservative Ausbauwelle"
           git push
