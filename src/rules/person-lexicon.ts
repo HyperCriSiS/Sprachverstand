@@ -51,6 +51,10 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  { ...weak("egoman", "egomane", "egomanen"), match: "exact" as const },
+  { ...weak("ehegatt", "ehegatte", "ehegatten"), match: "exact" as const },
+  { ...weak("ergonom"), match: "exact" as const },
+  { ...regular("intermediär", "intermediäre", "intermediär", "intermediärs"), match: "exact" as const },
   { ...weak("adjutant"), match: "exact" as const },
   { ...weak("autodidakt"), match: "exact" as const },
   weak("banaus", "banause", "banausen"),
@@ -287,7 +291,14 @@ const personForms: readonly PersonForms[] = [
   weak("jurist"),
   weak("pilot"),
   weak("poet"),
-  weak("herr", "herr", "herrn"),
+  {
+    stem: "herr",
+    singular: "herr",
+    feminineSingular: "herrin",
+    obliqueSingular: "herrn",
+    genitiveSingular: "herrn",
+    plural: "herren"
+  },
   weak("narr"),
   weak("prinz"),
   weak("held"),
