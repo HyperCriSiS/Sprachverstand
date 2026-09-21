@@ -1,0 +1,132 @@
+name: Temporärer Quellen-Audit Welle 42
+
+on:
+  push:
+    branches:
+      - feat/source-audit-korrektur-rs-wave-42
+
+permissions:
+  contents: write
+
+jobs:
+  patch-und-pruefung:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feat/source-audit-korrektur-rs-wave-42
+
+      - name: Node einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Quellenänderungen anwenden
+        shell: python
+        run: |
+          from pathlib import Path
+
+          person_path = Path("src/rules/person-lexicon.ts")
+          person = person_path.read_text(encoding="utf-8")
+          marker = "const personForms: readonly PersonForms[] = [\n"
+          additions = (
+              '  { ...regular("scharlatan", "scharlatane", "scharlatan", "scharlatans"), match: "exact" as const },\n'
+              '  { ...regular("schelm", "schelme", "schelm", "schelms"), match: "exact" as const },\n'
+              '  { ...weak("sexist"), match: "exact" as const },\n'
+              '  { ...regular("speaker", "speaker", "speaker", "speakers"), match: "exact" as const },\n'
+              '  { ...weak("südostasiat"), match: "exact" as const },\n'
+          )
+          if 'regular("scharlatan"' not in person:
+              if marker not in person:
+                  raise RuntimeError("Einfügepunkt im Personenlexikon nicht gefunden")
+              person = person.replace(marker, marker + additions, 1)
+          person_path.write_text(person, encoding="utf-8")
+
+          test = '''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import {
+            mapMappedSingular,
+            mapMappedSingularPair
+          } from "../src/rules/person-lexicon";
+
+          describe("zweiundvierzigste konservative Lexikon-Ausbauwelle", () => {
+            it.each([
+              ["Scharlatan:innen", "Scharlatane"],
+              ["Schelm*innen", "Schelme"],
+              ["Sexist_innen", "Sexisten"],
+              ["Speaker:innen", "Speaker"],
+              ["Südostasiat:innen", "Südostasiaten"]
+            ])("normalisiert die neue Personenform %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["scharlatan", "genitive", "scharlatans"],
+              ["schelm", "genitive", "schelms"],
+              ["sexist", "accusative", "sexisten"],
+              ["speaker", "genitive", "speakers"],
+              ["südostasiat", "dative", "südostasiaten"]
+            ] as const)("bildet %s im Kasus %s korrekt ab", (base, grammaticalCase, expected) => {
+              expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
+            });
+
+            it.each([
+              ["Scharlatan", "Scharlatanin", "Scharlatan"],
+              ["Schelm", "Schelmin", "Schelm"],
+              ["Sexist", "Sexistin", "Sexist"],
+              ["Speaker", "Speakerin", "Speaker"],
+              ["Südostasiat", "Südostasiatin", "Südostasiat"]
+            ])("erkennt das Paar %s/%s", (masculine, feminine, expected) => {
+              expect(mapMappedSingularPair(masculine, feminine)).toBe(expected);
+            });
+
+            it.each([
+              ["Schützenkönig:innen", "Schützenkönige"],
+              ["Sparringspartner:innen", "Sparringspartner"],
+              ["Stellvertreter:innen", "Stellvertreter"]
+            ])("bestätigt die bereits vorhandene Abdeckung für %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              "Schneemann:innen",
+              "Steward:innen"
+            ])("lässt unregelmäßige Paarbildungen unverändert: %s", (input) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: input,
+                replacements: 0
+              });
+            });
+          });
+          '''
+          test = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in test.splitlines()
+          ) + "\n"
+          Path("tests/lexicon-person-forms-wave-42.test.ts").write_text(test, encoding="utf-8")
+
+      - name: Vollständige Prüfung
+        run: npm run check
+
+      - name: Temporären Workflow entfernen
+        run: rm .github/workflows/temporary-wave42.yml
+
+      - name: Änderungen einchecken
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/rules/person-lexicon.ts tests/lexicon-person-forms-wave-42.test.ts .github/workflows/temporary-wave42.yml
+          git diff --cached --check
+          git commit -m "Lexikon: zweiundvierzigste konservative Ausbauwelle"
+          git push
