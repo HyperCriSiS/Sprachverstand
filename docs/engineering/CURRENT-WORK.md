@@ -17,30 +17,31 @@ Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Verifizierter Produktbaseline-Commit auf `main`: `38c82b08c950d9ff50a14d00869fb1fae1b80d7b`
+- Verifizierter Produktbaseline-Commit auf `main`: `af0db6c266e933920a00456c035569c107438f16`
 - Bedeutung der Baseline: letzter hier verifizierter Produkt-/Regelstand; reine Dokumentations- oder Managementänderungen dürfen den aktuellen `main`-HEAD darüber hinaus fortschreiben.
 - Aktueller `main`-HEAD: bei jeder Wiederaufnahme live ermitteln, nicht dauerhaft als selbstreferenzielle Sollbedingung in dieser Datei festschreiben.
 - Letzte integrierte Lexikon-Ausbauwelle: **43**
-- Letzter dazugehöriger Produkt-PR: **#207**
+- Letzter integrierter Produkt-PR: **#208 — KorAP-2026-II-Kurzformen**
+- PR #208 wurde nach abschließendem Review und zusätzlichen Negativregressionen gemergt.
+- Nach-Merge-CI und CodeQL auf `af0db6c…`: **grün**.
 - Pale Moon: technisch getrennte Produktlinie; **nicht aktiver Arbeitsstrom**, solange er hier nicht ausdrücklich genannt wird.
 
-## Aktive Produktarbeit
+## Aktiver Arbeitsstrom
 
-### PR #208 — Regeln: KorAP-2026-II-Kurzformen ergänzen
+### Priorität 1 — private Quellenpipeline KldB/DKZ wieder ausführbar machen
 
-- Branch: `feat/korap-2026-ii-kurzformen`
-- Basis: `main` bei `38c82b08c950d9ff50a14d00869fb1fae1b80d7b`
-- Status: Draft, mergebar
-- Verifizierter Head: `f025cb8a0606df905e1ca2f4bcea755cc0231f44`
-- Prüfstand: alle 9 gemeldeten Checks erfolgreich
-- Nächster Schritt: Inhalt gegen den aktuellen `main`-Stand abschließend prüfen, danach bei unverändert grünen Gates zur Integration vorbereiten.
+Dieser Arbeitsstrom ist eine Quellen-/Evidenzaufgabe. Deshalb muss bei seiner Wiederaufnahme die unten beschriebene nicht öffentliche Ebene gezielt aufgelöst werden.
+
+- Ziel: den vorbereiteten Priorität-1-Import für KldB/DKZ wieder technisch ausführbar machen oder eine robuste runnerunabhängige Importstrecke verwenden.
+- Danach: Kandidaten gegen die aktuelle Produktbaseline `af0db6c…` berechnen und konservativ prüfen.
+- Keine Rohquellen, privaten URLs oder Herkunftsmetadaten in dieses öffentliche Repository übernehmen.
 - Keine Release- oder Store-Aktion als Teil dieses Arbeitsstroms.
 
 ## Optionale nicht öffentliche Quellen-/Evidenzebene
 
-Standard: **nicht laden**.
+Standard für normale Produktarbeit: **nicht laden**.
 
-Diese Ebene wird nur benötigt bei:
+Diese Ebene wird benötigt bei:
 
 - Quellenimport oder Quellenaktualisierung,
 - Quellenaudit,
@@ -48,14 +49,17 @@ Diese Ebene wird nur benötigt bei:
 - Kandidatengenerierung,
 - Coverage-, Frequenz- oder Evidenzauswertung.
 
-Wenn eine solche Aufgabe vorliegt und autorisierter Zugriff auf private Repositories vorhanden ist:
+Für den aktuell aktiven Priorität-1-Quellenimport ist sie daher **aktiv relevant**.
+
+Wenn autorisierter Zugriff auf private Repositories vorhanden ist:
 
 1. in den zugänglichen privaten Repositories nach einer Projektzuordnung zu `HyperCriSiS/Sprachverstand` suchen,
 2. den dort ausgewiesenen stabilen Projektzustand `sprachverstand/CURRENT-STATE.json` lesen,
-3. dessen Quellen-/Pipeline-Status gegen den aktuellen öffentlichen Produktstand abgleichen,
-4. keine privaten Rohquellen, URLs, Herkunftsmetadaten oder geschützten Evidenzdaten in dieses öffentliche Repository kopieren.
+3. anschließend dessen Quellenregistry und aktuellsten abgeleiteten Status lesen,
+4. den privaten Pipeline-Status gegen die aktuelle öffentliche Produktbaseline abgleichen,
+5. keine privaten Rohquellen, URLs, Herkunftsmetadaten oder geschützten Evidenzdaten in dieses öffentliche Repository kopieren.
 
-Für Feature-, UI-, Bugfix-, Refactoring-, Browser-Kompatibilitäts-, Release- und allgemeine Wartungsaufgaben wird diese Ebene nicht automatisch aufgelöst.
+Für Feature-, UI-, Bugfix-, Refactoring-, Browser-Kompatibilitäts-, Release- und allgemeine Wartungsaufgaben wird diese Ebene weiterhin nicht automatisch aufgelöst.
 
 ## Staleness-Regel
 
