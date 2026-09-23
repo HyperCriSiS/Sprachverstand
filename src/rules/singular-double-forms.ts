@@ -27,7 +27,7 @@ const mannFrauShorthandPattern = new RegExp(
   "giu"
 );
 const kaufmannFrauShorthandPattern =
-  /(?<![\p{L}\p{M}])(Kaufmann)\s*\/\s*frau(?![\p{L}\p{M}])/giu;
+  /(?<![\p{L}\p{M}’'-])(Kaufmann)\s*\/\s*frau(?![\p{L}\p{M}’'-])/giu;
 const determinerPairs: DeterminerPair[] = [];
 
 function addDeterminerPair(

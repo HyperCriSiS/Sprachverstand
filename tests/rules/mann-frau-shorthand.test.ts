@@ -27,6 +27,8 @@ describe("explizite Mann-Frau-Kurzformen", () => {
     "Mann/Frau",
     "Kaufmann/Kauffrau",
     "Automobilkaufmann/frau",
+    "Automobil-Kaufmann/frau",
+    "Kaufmann/frau-Team",
     "mannigfaltig/-frau"
   ])("lässt nicht explizit unterstützte Vollformen unverändert: %s", (input) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({
