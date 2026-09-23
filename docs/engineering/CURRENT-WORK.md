@@ -18,52 +18,65 @@ Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in
 
 - Moderne Produktlinie: `main`
 - Verifizierter Produktbaseline-Commit auf `main`: `af0db6c266e933920a00456c035569c107438f16`
-- Bedeutung der Baseline: letzter hier verifizierter Produkt-/Regelstand; reine Dokumentations- oder Managementänderungen dürfen den aktuellen `main`-HEAD darüber hinaus fortschreiben.
-- Aktueller `main`-HEAD: bei jeder Wiederaufnahme live ermitteln, nicht dauerhaft als selbstreferenzielle Sollbedingung in dieser Datei festschreiben.
+- Aktueller öffentlicher Workflow-/Dokumentationsstand: `ace360dd9947749def73b5f7c083cae18d1dfa02`
+- Bedeutung der Produktbaseline: letzter hier verifizierter Produkt-/Regelstand; reine CI-, Dokumentations- oder Managementänderungen dürfen den aktuellen `main`-HEAD darüber hinaus fortschreiben.
+- Aktueller `main`-HEAD: bei jeder Wiederaufnahme live ermitteln.
 - Letzte integrierte Lexikon-Ausbauwelle: **43**
 - Letzter integrierter Produkt-PR: **#208 — KorAP-2026-II-Kurzformen**
-- PR #208 wurde nach abschließendem Review und zusätzlichen Negativregressionen gemergt.
-- Nach-Merge-CI und CodeQL auf `af0db6c…`: **grün**.
 - Pale Moon: technisch getrennte Produktlinie; **nicht aktiver Arbeitsstrom**, solange er hier nicht ausdrücklich genannt wird.
 
 ## Aktiver Arbeitsstrom
 
-### Priorität 1 — KldB/DKZ runnerunabhängig importieren und Kandidaten prüfen
+### Priorität 1 — KldB/DKZ über den öffentlichen Sprachverstand-Runner importieren
 
-Dieser Arbeitsstrom ist eine Quellen-/Evidenzaufgabe. Deshalb muss bei seiner Wiederaufnahme die unten beschriebene nicht öffentliche Ebene gezielt aufgelöst werden.
+Die Runner-Architektur ist geklärt und umgesetzt:
 
-- Der private GitHub-Hosted-Runner scheitert weiterhin vor dem ersten Step; der Fehler liegt damit außerhalb des Importcodes.
-- Die private Quellenebene besitzt inzwischen einen lokal ausführbaren, runnerunabhängigen KldB-/DKZ-Importpfad mit Registry-basierter Quellenauswahl, Manifest und Regressionstests.
-- Nächster Schritt: KldB-Jahressnapshot und tagesaktuelles DKZ über diesen Pfad importieren.
-- Danach: Kandidaten und Coverage gegen die Produktbaseline `af0db6c…` berechnen und konservativ prüfen.
-- Produktänderungen aus diesen Ergebnissen erfolgen ausschließlich in einer getrennten Arbeitseinheit.
-- Keine Rohquellen, privaten URLs oder Herkunftsmetadaten in dieses öffentliche Repository übernehmen.
-- Keine Release- oder Store-Aktion als Teil dieses Arbeitsstroms.
+- GitHub-Actions-Host ist **ausschließlich das öffentliche Repository `HyperCriSiS/Sprachverstand`**.
+- Workflow: `.github/workflows/source-ingest.yml`
+- Runner: GitHub-hosted `ubuntu-latest`
+- Der private `Generic-Datastore` hält Quellen, Registry, Importskripte und Ergebnisse, aber **keinen eigenen Import-Workflow mehr**.
+- Öffentlicher Testlauf `35918132129` erhielt sofort einen Runner und erreichte erfolgreich Checkout, Node.js 24 und `npm ci`.
+- Der Lauf stoppte ausschließlich beim expliziten Auth-Check, weil das Actions-Secret `GENERIC_DATASTORE_TOKEN` noch fehlt.
+
+### Einziger aktueller Blocker
+
+Im öffentlichen Repository `HyperCriSiS/Sprachverstand` muss einmalig das Actions-Secret
+
+`GENERIC_DATASTORE_TOKEN`
+
+hinterlegt werden.
+
+Erforderliche Berechtigung:
+
+- Fine-grained Token
+- Repository-Zugriff nur auf `HyperCriSiS/Generic-Datastore`
+- `Contents: Read and write`
+- keine unnötigen Zusatzrechte
+
+Danach ohne weitere Architekturarbeit:
+
+1. `kldb-snapshot` über den öffentlichen Workflow ausführen,
+2. `kldb-current` ausführen,
+3. private Manifeste, Kandidaten, Coverage und Unknown-Queues prüfen,
+4. eindeutig abgesicherte Produktkandidaten erst in einer getrennten Produktarbeitseinheit übernehmen.
+
+Keine privaten Rohdaten, Quell-URLs oder Herkunftsmetadaten dürfen in das öffentliche Repository oder in öffentliche Actions-Artefakte gelangen.
 
 ## Optionale nicht öffentliche Quellen-/Evidenzebene
 
 Standard für normale Produktarbeit: **nicht laden**.
 
-Diese Ebene wird benötigt bei:
+Für Quellenimport, Quellenaudit, Provenienz/Lizenzprüfung, Kandidatengenerierung sowie Coverage-/Evidenzauswertung ist die private Ebene relevant.
 
-- Quellenimport oder Quellenaktualisierung,
-- Quellenaudit,
-- Provenienz- oder Lizenzprüfung,
-- Kandidatengenerierung,
-- Coverage-, Frequenz- oder Evidenzauswertung.
+Bei autorisiertem Zugriff:
 
-Für den aktuell aktiven Priorität-1-Quellenimport ist sie daher **aktiv relevant**.
+1. privaten stabilen Zustand `sprachverstand/CURRENT-STATE.json` lesen,
+2. Registry und neuesten privaten Status lesen,
+3. privaten Pipeline-Status gegen die öffentliche Produktbaseline abgleichen,
+4. private Daten ausschließlich im `Generic-Datastore` halten.
 
-Wenn autorisierter Zugriff auf private Repositories vorhanden ist:
-
-1. in den zugänglichen privaten Repositories nach einer Projektzuordnung zu `HyperCriSiS/Sprachverstand` suchen,
-2. den dort ausgewiesenen stabilen Projektzustand `sprachverstand/CURRENT-STATE.json` lesen,
-3. anschließend dessen Quellenregistry und aktuellsten abgeleiteten Status lesen,
-4. den privaten Pipeline-Status gegen die aktuelle öffentliche Produktbaseline abgleichen,
-5. keine privaten Rohquellen, URLs, Herkunftsmetadaten oder geschützten Evidenzdaten in dieses öffentliche Repository kopieren.
-
-Für Feature-, UI-, Bugfix-, Refactoring-, Browser-Kompatibilitäts-, Release- und allgemeine Wartungsaufgaben wird diese Ebene weiterhin nicht automatisch aufgelöst.
+Aktuell verifizierter privater `main` nach Host-Bereinigung: `94b9fa14c96985663d0da4855173a96eaf2a351c`.
 
 ## Staleness-Regel
 
-Wenn diese Datei einem verifizierten Live-Zustand widerspricht, ist das ein dokumentierter Drift. Den Checkpoint zuerst mit dem Live-Zustand versöhnen; nicht raten, welcher alte Branch oder Chat gemeint war.
+Wenn diese Datei einem verifizierten Live-Zustand widerspricht, ist das dokumentierter Drift. Den Checkpoint zuerst mit dem Live-Zustand versöhnen; nicht raten.
