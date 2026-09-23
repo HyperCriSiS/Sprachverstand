@@ -54,7 +54,7 @@ addCompactForm("ein", "e", "ein");
 const pairPattern =
   /(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;
 const followingGenderedTokenPattern =
-  /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?in\))(?![\p{L}\p{M}])/u;
+  /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?[iI][nN]\))(?![\p{L}\p{M}])/u;
 
 function applyTokenCase(source: string, replacement: string): string {
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");

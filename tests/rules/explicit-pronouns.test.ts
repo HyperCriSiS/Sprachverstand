@@ -79,6 +79,8 @@ describe("explicitPronounsRule", () => {
     "ihm/r Nutzer:in",
     "diese(r) Nutzer:in",
     "eine(n) Nutzer(in)",
+    "DIESE(R) UNBEKANNT(IN)",
+    "EINE(N) UNBEKANNT(-IN)",
     "sier",
     "xier",
     "hen",
