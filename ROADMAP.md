@@ -1,14 +1,31 @@
 # Roadmap
 
+> Strategische Projektplanung. Der aktuelle operative Übergabestand mit aktiven PRs, Blockern und unmittelbaren nächsten Schritten liegt in `docs/engineering/CURRENT-WORK.md`.
+
+## Regel- und Lexikonausbau
+
+Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regressionsgesichert und quellenneutral. Recherche-, Rohquellen- und Herkunftsdaten, die nicht für das öffentliche Produkt bestimmt sind, bleiben in einem getrennten autorisierten Arbeitsbereich; in dieses Repository gelangen nur eigenständig entwickelte Regeln, quellenneutrale Produktdaten und Tests.
+
+### Produkt- und Evidenzpipeline
+
+- [x] Kuratierte Aufnahme neuer Personenformen mit Positiv-/Negativregressionen und Flexionsprüfung etablieren.
+- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 43 in `main` integrieren.
+- [ ] Weitere priorisierte Berufs-, Lexikon-, Flexions- und Realtext-Evidenz systematisch gegen den aktuellen Produktstand auswerten.
+- [ ] Kandidaten nur nach morphologischer, semantischer und kontextueller Absicherung produktiv übernehmen; mehrdeutige Fälle zurückhalten oder kontextgebunden modellieren.
+- [ ] Quellen-/Evidenzarbeit so fortführen, dass private Rohdaten, URLs und Herkunftsmetadaten nicht in das öffentliche Produktrepository gelangen.
+- [ ] Nach stabilen `main`-Checkpoints gemeinsame Produktänderungen in einem getrennten Schritt in den Pale-Moon-Port synchronisieren.
+
+Der detaillierte nicht öffentliche Quellen- und Abarbeitungsstand wird nur bei Aufgaben geladen, die Quellenimport, Audit, Provenienz/Lizenz, Kandidatengenerierung oder Coverage/Evidenz betreffen. Die sichere Wiederaufnahme- und Lookup-Regel steht in `docs/engineering/CURRENT-WORK.md`.
+
 ## Internationalisierung und Store-Reichweite
 
-Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales gepflegt. Deutsch ist die fachliche Referenz. Jede Locale muss exakt 161 i18n-Nachrichten und dieselben Platzhalter wie Deutsch enthalten.
+Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales gepflegt. Deutsch ist die fachliche Referenz. Jede Locale muss exakt 170 i18n-Nachrichten und dieselben Platzhalter wie Deutsch enthalten.
 
 ### Technische Leitplanken
 
 - [x] WebExtension-i18n als gemeinsame Basis für Chromium, Edge, Opera und Firefox verwenden.
 - [x] Locale-Matrix zentral in `config/locales.json` pflegen.
-- [x] Deutsch als Referenz mit exakt 161 Nachrichten festschreiben.
+- [x] Deutsch als Referenz mit exakt 170 Nachrichten festschreiben.
 - [x] Vollständigkeit, identische Keys und Platzhalter automatisiert validieren.
 - [x] RTL-Unterstützung für Arabisch, Persisch und Hebräisch berücksichtigen.
 - [x] Locale-Matrix von 50 auf 51 Sprachen erweitern und Amharisch ergänzen.
