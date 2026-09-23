@@ -30,11 +30,11 @@ Der kompakte operative Übergabestand liegt in `docs/engineering/CURRENT-WORK.md
 Bei Wiederaufnahme bestehender Arbeit gilt diese Reihenfolge:
 
 1. `docs/engineering/CURRENT-WORK.md` aus `main` lesen,
-2. den dort genannten `main`-Commit sowie Branches, Pull Requests oder Issues gegen den aktuellen GitHub-Zustand verifizieren,
+2. den aktuellen `main`-HEAD live ermitteln und die dort genannte Produktbaseline sowie Branches, Pull Requests oder Issues gegen den aktuellen GitHub-Zustand verifizieren,
 3. nur die dort als aktiv markierten Arbeitsströme fortsetzen, sofern der Nutzer keine andere Priorität vorgibt,
 4. nach einem logisch abgeschlossenen Integrations- oder Entscheidungsstand den Checkpoint zeitnah aktualisieren.
 
-Der zuletzt aktualisierte Branch oder Pull Request ist ausdrücklich **kein** Ersatz für diesen Übergabestand. Chatverlauf, lokale Scratch-Daten und Tool-Historie sind ebenfalls keine Projekt-Source-of-Truth.
+Der zuletzt aktualisierte Branch oder Pull Request ist ausdrücklich **kein** Ersatz für diesen Übergabestand. Chatverlauf, lokale Scratch-Daten und Tool-Historie sind ebenfalls keine Projekt-Source-of-Truth. Der aktuelle `main`-HEAD wird bewusst live ermittelt und nicht als selbstreferenzielle Sollbedingung im Checkpoint festgeschrieben.
 
 ## Optionale nicht öffentliche Projektzustände
 

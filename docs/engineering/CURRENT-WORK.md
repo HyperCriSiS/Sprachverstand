@@ -8,7 +8,7 @@ Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in
 ## Wiederaufnahmeprotokoll
 
 1. Diese Datei immer aus `main` lesen.
-2. Den angegebenen `main`-Commit und alle referenzierten Live-Refs gegen GitHub verifizieren.
+2. Den aktuellen `main`-HEAD live lesen und die angegebene Produktbaseline sowie alle referenzierten Live-Refs gegen GitHub verifizieren.
 3. Nur die hier als aktiv markierten Arbeitsströme fortsetzen, sofern der Nutzer nicht ausdrücklich umpriorisiert.
 4. Nicht aus dem zuletzt aktualisierten Branch, PR, Chat oder Toolverlauf auf die aktive Arbeit schließen.
 5. Optionale nicht öffentliche Zustände nur bei den unten definierten Aufgabenklassen auflösen.
@@ -17,7 +17,9 @@ Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Verifizierter `main`-Commit: `38c82b08c950d9ff50a14d00869fb1fae1b80d7b`
+- Verifizierter Produktbaseline-Commit auf `main`: `38c82b08c950d9ff50a14d00869fb1fae1b80d7b`
+- Bedeutung der Baseline: letzter hier verifizierter Produkt-/Regelstand; reine Dokumentations- oder Managementänderungen dürfen den aktuellen `main`-HEAD darüber hinaus fortschreiben.
+- Aktueller `main`-HEAD: bei jeder Wiederaufnahme live ermitteln, nicht dauerhaft als selbstreferenzielle Sollbedingung in dieser Datei festschreiben.
 - Letzte integrierte Lexikon-Ausbauwelle: **43**
 - Letzter dazugehöriger Produkt-PR: **#207**
 - Pale Moon: technisch getrennte Produktlinie; **nicht aktiver Arbeitsstrom**, solange er hier nicht ausdrücklich genannt wird.
