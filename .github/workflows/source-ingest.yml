@@ -1,0 +1,166 @@
+name: Quellenimport
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Private Quelle importieren"
+        required: true
+        default: "kldb-snapshot"
+        type: choice
+        options:
+          - kldb-snapshot
+          - kldb-current
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sprachverstand-private-source-ingest
+  cancel-in-progress: false
+
+env:
+  CI: true
+  DATASTORE_REPOSITORY: HyperCriSiS/Generic-Datastore
+
+jobs:
+  import:
+    name: Private Quelle über öffentlichen Runner importieren
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Sprachverstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Produktabhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Datastore-Zugriff prüfen
+        env:
+          DATASTORE_TOKEN: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$DATASTORE_TOKEN" ]]; then
+            echo "Das Actions-Secret GENERIC_DATASTORE_TOKEN fehlt."
+            echo "Benötigt wird ein fein begrenztes Token mit Contents: Read and write ausschließlich für HyperCriSiS/Generic-Datastore."
+            exit 1
+          fi
+
+      - name: Privaten Datastore auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ env.DATASTORE_REPOSITORY }}
+          ref: main
+          path: datastore
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: true
+
+      - name: Private Python-Abhängigkeiten installieren
+        run: python -m pip install --disable-pip-version-check -r datastore/sprachverstand/requirements.txt
+
+      - name: Private Importtests ausführen
+        run: python -m pytest -q datastore/sprachverstand/tests
+
+      - name: Private Quell-URL in Logs maskieren
+        env:
+          SOURCE: ${{ inputs.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_URL="$(
+            python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          ids = {
+              "kldb-snapshot": "ba-kldb-2026",
+              "kldb-current": "ba-dkz-current",
+          }
+          source = os.environ["SOURCE"]
+          source_id = ids[source]
+          registry = json.loads(
+              Path("datastore/sprachverstand/sources/registry.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          for entry in registry["sources"]:
+              if entry.get("id") == source_id:
+                  print(entry["sourceFileUrl"], end="")
+                  break
+          else:
+              raise SystemExit(f"Quelle {source_id} fehlt in der privaten Registry.")
+          PY
+          )"
+          if [[ -z "$SOURCE_URL" ]]; then
+            echo "Die private Registry enthält keine Quell-URL."
+            exit 1
+          fi
+          echo "::add-mask::$SOURCE_URL"
+
+      - name: KldB/DKZ importieren und Coverage berechnen
+        env:
+          SOURCE: ${{ inputs.source }}
+        run: |
+          python datastore/sprachverstand/scripts/run_kldb_ingest.py \
+            --source "$SOURCE" \
+            --product-dir "$GITHUB_WORKSPACE"
+
+      - name: Änderungen auf erlaubte private Pfade begrenzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd datastore
+          mapfile -t CHANGED < <(
+            {
+              git diff --name-only
+              git ls-files --others --exclude-standard
+            } | sort -u
+          )
+
+          if (( ${#CHANGED[@]} == 0 )); then
+            echo "Der Import hat keine privaten Dateien geändert."
+            exit 0
+          fi
+
+          for path in "${CHANGED[@]}"; do
+            case "$path" in
+              sprachverstand/raw/*|sprachverstand/normalized/*|sprachverstand/derived/*)
+                ;;
+              *)
+                echo "Unerwartete Änderung außerhalb der erlaubten privaten Importpfade: $path"
+                exit 1
+                ;;
+            esac
+          done
+
+          printf 'Geänderte private Importdateien:\n'
+          printf ' - %s\n' "${CHANGED[@]}"
+
+      - name: Private Importdaten festschreiben
+        env:
+          SOURCE: ${{ inputs.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd datastore
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sprachverstand/raw sprachverstand/normalized sprachverstand/derived
+
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen am privaten Quellenbestand."
+            exit 0
+          fi
+
+          git commit -m "data: private Quelle $SOURCE aktualisieren"
+          git push origin HEAD:main
