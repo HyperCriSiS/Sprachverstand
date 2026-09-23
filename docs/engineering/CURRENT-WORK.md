@@ -28,12 +28,15 @@ Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in
 
 ## Aktiver Arbeitsstrom
 
-### Priorität 1 — private Quellenpipeline KldB/DKZ wieder ausführbar machen
+### Priorität 1 — KldB/DKZ runnerunabhängig importieren und Kandidaten prüfen
 
 Dieser Arbeitsstrom ist eine Quellen-/Evidenzaufgabe. Deshalb muss bei seiner Wiederaufnahme die unten beschriebene nicht öffentliche Ebene gezielt aufgelöst werden.
 
-- Ziel: den vorbereiteten Priorität-1-Import für KldB/DKZ wieder technisch ausführbar machen oder eine robuste runnerunabhängige Importstrecke verwenden.
-- Danach: Kandidaten gegen die aktuelle Produktbaseline `af0db6c…` berechnen und konservativ prüfen.
+- Der private GitHub-Hosted-Runner scheitert weiterhin vor dem ersten Step; der Fehler liegt damit außerhalb des Importcodes.
+- Die private Quellenebene besitzt inzwischen einen lokal ausführbaren, runnerunabhängigen KldB-/DKZ-Importpfad mit Registry-basierter Quellenauswahl, Manifest und Regressionstests.
+- Nächster Schritt: KldB-Jahressnapshot und tagesaktuelles DKZ über diesen Pfad importieren.
+- Danach: Kandidaten und Coverage gegen die Produktbaseline `af0db6c…` berechnen und konservativ prüfen.
+- Produktänderungen aus diesen Ergebnissen erfolgen ausschließlich in einer getrennten Arbeitseinheit.
 - Keine Rohquellen, privaten URLs oder Herkunftsmetadaten in dieses öffentliche Repository übernehmen.
 - Keine Release- oder Store-Aktion als Teil dieses Arbeitsstroms.
 
