@@ -5,22 +5,16 @@ Autorität: `main`
 
 ## Abgeschlossene Arbeitseinheit
 
-- Der frühere Blocker `GENERIC_DATASTORE_TOKEN` ist erledigt. Der öffentliche Quellenimport kann auf den privaten `HyperCriSiS/Generic-Datastore` zugreifen.
+- Die private KldB/DKZ-Quellenpipeline ist funktionsfähig; aktuell gibt es keinen technischen Blocker.
 - `kldb-snapshot` und `kldb-current` wurden erfolgreich über `.github/workflows/source-ingest.yml` importiert.
-- Die neue private Quellenreview läuft über `.github/workflows/source-review.yml`.
-- Zwei isolierte Fehler der Review-Pipeline wurden im privaten Datastore behoben:
-  - veraltete Wikidata-Resilienztests an den aktuellen `hole_json()`-Vertrag angepasst,
-  - Wikipedia-Titelsuche von deaktiviertem `srwhat=title` auf CirrusSearch-`intitle:` umgestellt.
-- Öffentlicher Review-Lauf `36168435763` war vollständig erfolgreich und schrieb die Evidenz privat fest.
-- Die gemeinsame KldB/DKZ-Review umfasste 96 Kandidaten:
-  - 9 semantisch und morphologisch abgesichert,
-  - 3 Scheinbelege verworfen,
-  - 84 weiterhin offen.
-- Es wurde bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Die Übernahmen bleiben auf explizite Personenstämme mit exaktem Stammabgleich begrenzt.
+- Die private Evidenzreview läuft über `.github/workflows/source-review.yml`.
+- Die gemeinsame KldB/DKZ-Review umfasste ursprünglich 96 Kandidaten.
 - PR #215 „Lexikon: vierundvierzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #215: `93b260566f53eb8e1753d4b8acd2697f8a75568d`.
-- Kernprüfung, Gecko CI, Chromium CI und CodeQL waren für PR #215 grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #15 gemergt; privater Merge-Commit: `d542d40093b33ce7d0265dc317b4a35bbf6f7c20`.
+- PR #217 „Lexikon: fünfundvierzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #217: `ab735b69888af696f13c394e783c83a1a29bbaf6`.
+- Für PR #217 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #16 gemergt; privater Merge-Commit: `8f910a7cfdc9776d468181d71af039b9b9b4e616`.
+- Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
 
@@ -34,7 +28,11 @@ Autorität: `main`
   - 8.409 bereits bekannt,
   - 1.995 unbekannt,
   - Coverage 80,82 %.
-- Von den 96 gemeinsamen Review-Kandidaten wurden in Welle 44 übernommen:
+- Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
+  - 19 angenommen,
+  - 3 verworfen,
+  - 74 offen.
+- Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
   - Indolog,
@@ -44,12 +42,21 @@ Autorität: `main`
   - Metallurge,
   - Museolog,
   - Politolog.
-- Bewusst verworfen wurden:
+- Welle 45 übernahm:
+  - Orthopäde,
+  - Podologe,
+  - Urologe,
+  - Kardiologe,
+  - Neurologe,
+  - Hämatologe,
+  - Gastroenterologe,
+  - Immunologe,
+  - Physiologe,
+  - Pharmakologe.
+- Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
   - Polster.
-- 84 Kandidaten bleiben für weitere manuelle Evidenzprüfung offen.
-- Es gibt aktuell keinen technischen Blocker.
 
 ## Private Autorität für Quellenarbeit
 
@@ -63,8 +70,8 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 84 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
-2. Zuerst Kandidaten mit belastbaren Personen-/Berufstreffern priorisieren.
+1. Die verbleibenden 74 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
 5. Mehrdeutige oder nicht belegte Fälle offen lassen oder explizit verwerfen.
