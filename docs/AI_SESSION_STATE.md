@@ -11,9 +11,10 @@ Autorität: `main`
 - Die gemeinsame KldB/DKZ-Review umfasste ursprünglich 96 Kandidaten.
 - PR #215 „Lexikon: vierundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #217 „Lexikon: fünfundvierzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #217: `ab735b69888af696f13c394e783c83a1a29bbaf6`.
-- Für PR #217 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #16 gemergt; privater Merge-Commit: `8f910a7cfdc9776d468181d71af039b9b9b4e616`.
+- PR #219 „Lexikon: sechsundvierzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #219: `1602977fe4326a0df57e62670b938bacba1656a9`.
+- Für PR #219 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #17 gemergt; privater Merge-Commit: `b2a6b516e9cd60d8527de10bc908f871b231b17b`.
 - Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
@@ -29,9 +30,9 @@ Autorität: `main`
   - 1.995 unbekannt,
   - Coverage 80,82 %.
 - Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
-  - 19 angenommen,
+  - 29 angenommen,
   - 3 verworfen,
-  - 74 offen.
+  - 64 offen.
 - Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
@@ -53,6 +54,17 @@ Autorität: `main`
   - Immunologe,
   - Physiologe,
   - Pharmakologe.
+- Welle 46 übernahm:
+  - Bakteriologe,
+  - Endokrinologe,
+  - Entomologe,
+  - Etymologe,
+  - Gemmologe,
+  - Genealoge,
+  - Gerontologe,
+  - Kriminologe,
+  - Limnologe,
+  - Ornithologe.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -70,7 +82,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 74 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 64 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
