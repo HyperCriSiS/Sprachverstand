@@ -1,0 +1,229 @@
+name: Private Quellenreview
+
+on:
+  workflow_dispatch:
+    inputs:
+      queue:
+        description: "Private Prüfwarteschlange"
+        required: true
+        default: "kldb-common-2026"
+        type: choice
+        options:
+          - kldb-common-2026
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sprachverstand-private-source-review
+  cancel-in-progress: false
+
+env:
+  CI: true
+  DATASTORE_REPOSITORY: HyperCriSiS/Generic-Datastore
+
+jobs:
+  review:
+    name: Private Evidenz über öffentlichen Runner erzeugen
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Sprachverstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Datastore-Zugriff prüfen
+        env:
+          DATASTORE_TOKEN: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$DATASTORE_TOKEN" ]]; then
+            echo "Das Actions-Secret GENERIC_DATASTORE_TOKEN fehlt."
+            exit 1
+          fi
+
+      - name: Privaten Datastore auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ env.DATASTORE_REPOSITORY }}
+          ref: main
+          path: datastore
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: true
+
+      - name: Gemeinsame KldB/DKZ-Kandidaten verifizieren
+        id: kandidaten
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          snapshot = {
+              line.strip()
+              for line in Path(
+                  "datastore/sprachverstand/derived/candidates/"
+                  "kldb-snapshot-2026-unknown.txt"
+              ).read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          }
+          current = {
+              line.strip()
+              for line in Path(
+                  "datastore/sprachverstand/derived/candidates/"
+                  "kldb-current-unknown.txt"
+              ).read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          }
+
+          if not snapshot:
+              raise SystemExit("Die Snapshot-Warteschlange ist leer.")
+          if not snapshot.issubset(current):
+              raise SystemExit(
+                  "Die Snapshot-Warteschlange ist kein vollständiger Teil "
+                  "der aktuellen DKZ-Warteschlange."
+              )
+
+          print(f"{len(snapshot)} gemeinsame private Kandidaten verifiziert.")
+          PY
+
+      - name: Wikidata-Evidenz abfragen
+        run: |
+          mkdir -p datastore/sprachverstand/derived/evidence
+          python datastore/sprachverstand/scripts/query_wikidata_candidates.py \
+            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
+            datastore/sprachverstand/derived/evidence/kldb-common-2026-wikidata.jsonl \
+            --limit 5 \
+            --pause 0.25
+
+      - name: Wikipedia-Titelevidenz abfragen
+        run: |
+          mkdir -p datastore/sprachverstand/derived/evidence
+          python datastore/sprachverstand/scripts/query_wikipedia_candidates.py \
+            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
+            datastore/sprachverstand/derived/evidence/kldb-common-2026-wikipedia.jsonl \
+            --limit 5 \
+            --pause 0.25
+
+      - name: Private Review-Queue erzeugen
+        env:
+          PRODUCT_COMMIT: ${{ github.sha }}
+        run: |
+          mkdir -p datastore/sprachverstand/derived/review
+          python datastore/sprachverstand/scripts/assemble_review_queue.py \
+            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
+            datastore/sprachverstand/derived/review/kldb-common-2026-review.json \
+            --source-id "ba-kldb-2026+ba-dkz-current" \
+            --wikidata-jsonl datastore/sprachverstand/derived/evidence/kldb-common-2026-wikidata.jsonl \
+            --wikipedia-jsonl datastore/sprachverstand/derived/evidence/kldb-common-2026-wikipedia.jsonl \
+            --product-commit "$PRODUCT_COMMIT"
+
+      - name: Kompakte Review-Zusammenfassung erzeugen
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          queue_path = Path(
+              "datastore/sprachverstand/derived/review/"
+              "kldb-common-2026-review.json"
+          )
+          output_path = Path(
+              "datastore/sprachverstand/derived/review/"
+              "kldb-common-2026-summary.json"
+          )
+          queue = json.loads(queue_path.read_text(encoding="utf-8"))
+          candidates = queue.get("candidates", [])
+
+          groups = {
+              "bothExact": [],
+              "wikidataExactOnly": [],
+              "wikipediaExactOnly": [],
+              "otherHits": [],
+              "noHits": [],
+          }
+
+          for item in candidates:
+              candidate = item["candidate"]
+              evidence = item.get("evidence", {})
+              wd_exact = bool(evidence.get("wikidataExactLabelOrAlias"))
+              wp_exact = bool(evidence.get("wikipediaExactTitle"))
+              wd_hits = int(evidence.get("wikidataHitCount") or 0)
+              wp_hits = int(evidence.get("wikipediaHitCount") or 0)
+
+              if wd_exact and wp_exact:
+                  groups["bothExact"].append(candidate)
+              elif wd_exact:
+                  groups["wikidataExactOnly"].append(candidate)
+              elif wp_exact:
+                  groups["wikipediaExactOnly"].append(candidate)
+              elif wd_hits or wp_hits:
+                  groups["otherHits"].append(candidate)
+              else:
+                  groups["noHits"].append(candidate)
+
+          payload = {
+              "version": 1,
+              "sourceId": queue.get("sourceId"),
+              "productCommit": queue.get("productCommit"),
+              "candidateCount": len(candidates),
+              "groups": groups,
+              "counts": {name: len(values) for name, values in groups.items()},
+              "autoApprovalAllowed": False,
+          }
+          output_path.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(
+              "Private Review-Zusammenfassung erzeugt: "
+              f"{len(candidates)} Kandidaten."
+          )
+          PY
+
+      - name: Änderungen auf private Review-Pfade begrenzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd datastore
+          mapfile -t CHANGED < <(
+            {
+              git diff --name-only
+              git ls-files --others --exclude-standard
+            } | sort -u
+          )
+
+          if (( ${#CHANGED[@]} == 0 )); then
+            echo "Die Evidenzabfrage hat keine privaten Dateien geändert."
+            exit 0
+          fi
+
+          for path in "${CHANGED[@]}"; do
+            case "$path" in
+              sprachverstand/derived/evidence/*|sprachverstand/derived/review/*)
+                ;;
+              *)
+                echo "Unerwartete Änderung außerhalb der erlaubten privaten Review-Pfade: $path"
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Private Evidenz festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd datastore
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sprachverstand/derived/evidence sprachverstand/derived/review
+
+          if git diff --cached --quiet; then
+            echo "Keine Änderungen an der privaten Review-Evidenz."
+            exit 0
+          fi
+
+          git commit -m "data: private KldB-DKZ-Review-Evidenz aktualisieren"
+          git push origin HEAD:main
