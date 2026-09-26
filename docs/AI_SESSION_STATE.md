@@ -14,10 +14,11 @@ Autorität: `main`
 - PR #219 „Lexikon: sechsundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #221 „Lexikon: siebenundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #223 „Lexikon: achtundvierzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #223: `e667dbf4425835731f22a56b96e66e0884d6e4fd`.
-- Für PR #223 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #19 gemergt; privater Merge-Commit: `635742a643ed68ad205d684b54401e7e8bec7bb5`.
-- Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
+- PR #225 korrigierte anschließend zwei redundante manuelle Welle-48-Einträge; `Ethnologe` und `Gynäkologe` bleiben über das generierte Produktlexikon vollständig abgedeckt und gehören nicht zur 96er `kldb-common-2026`-Queue.
+- Produktbaseline nach der Korrektur: `30aa8db38b2e0a61c17bc16968d0a5a1a2ac17e9`.
+- Für PR #225 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der korrigierte private Review-/Resume-Stand wurde über Generic-Datastore PR #20 gemergt; privater Merge-Commit: `407e60f696115436118c781ee7964ebfe42d5f9e`.
+- Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle manuellen Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
 
@@ -32,9 +33,9 @@ Autorität: `main`
   - 1.995 unbekannt,
   - Coverage 80,82 %.
 - Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
-  - 49 angenommen,
+  - 47 angenommen,
   - 3 verworfen,
-  - 44 offen.
+  - 46 offen.
 - Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
@@ -78,17 +79,16 @@ Autorität: `main`
   - Glaziologe,
   - Lichenologe,
   - Hungarologe.
-- Welle 48 übernahm:
+- Welle 48 übernahm aus der gemeinsamen Review-Queue:
   - Dermatologe,
   - Epidemiologe,
-  - Ethnologe,
-  - Gynäkologe,
   - Hydrologe,
   - Mineraloge,
   - Mykologe,
   - Nephrologe,
   - Klimatologe,
   - Histologe.
+- `Ethnologe` und `Gynäkologe` sind unabhängig davon bereits über das generierte Produktlexikon abgedeckt.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -106,7 +106,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 44 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 46 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
