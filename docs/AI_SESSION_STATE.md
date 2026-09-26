@@ -17,10 +17,10 @@ Autorität: `main`
 - PR #225 korrigierte zwei redundante manuelle Welle-48-Einträge; `Ethnologe` und `Gynäkologe` bleiben über das generierte Produktlexikon vollständig abgedeckt und gehören nicht zur 96er `kldb-common-2026`-Queue.
 - PR #227 „Lexikon: neunundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #229 „Lexikon: fünfzigste konservative Ausbauwelle“ wurde gemergt.
-- PR #231 „Lexikon: einundfünfzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #231: `ab492ee5c9c8055b23e6d34f2336fdb7aaa34fe8`.
-- Für PR #231 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #23 gemergt; privater Merge-Commit: `a299c824b3251a1874dc87fdd2509cdc4710bdb3`.
+- PR #231 „Lexikon: einundfünfzigste konservative Ausbauwelle“ wurde gemergt.\n- PR #233 „Lexikon: zweiundfünfzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #233: `06e578aa4ceab9455d5427153c9373d951d273fa`.
+- Für PR #233 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #24 gemergt; privater Merge-Commit: `1e60fb429df799574dcdd16047066ed58859dede`.
 - Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle manuellen Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
@@ -126,6 +126,17 @@ Autorität: `main`
   - Malaiologe,
   - Motologe,
   - Ökotoxikologe.
+- Welle 52 übernahm:
+  - Aerologe,
+  - Algesiologe,
+  - Anaplastologe,
+  - Atlasloge,
+  - Kaukasiologe,
+  - Morphologe,
+  - Sozialgerontologe,
+  - Töpfergeselle,
+  - Vitaloge,
+  - Wirtschaftsjapanologe.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -143,7 +154,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 16 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 6 Kandidaten einzeln abschließend prüfen und die Review-Queue vollständig schließen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
