@@ -17,9 +17,10 @@ Autorität: `main`
 - PR #225 korrigierte zwei redundante manuelle Welle-48-Einträge; `Ethnologe` und `Gynäkologe` bleiben über das generierte Produktlexikon vollständig abgedeckt und gehören nicht zur 96er `kldb-common-2026`-Queue.
 - PR #227 „Lexikon: neunundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #229 „Lexikon: fünfzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #229: `ed31a4340a8ebc47fb33965005cd2f354014dc3c`.
-- Für PR #229 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #22 gemergt; privater Merge-Commit: `5bba1aaba1cd30a3efbe4d254734dfa1fa2feb81`.
+- PR #231 „Lexikon: einundfünfzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #231: `ab492ee5c9c8055b23e6d34f2336fdb7aaa34fe8`.
+- Für PR #231 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #23 gemergt; privater Merge-Commit: `a299c824b3251a1874dc87fdd2509cdc4710bdb3`.
 - Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle manuellen Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
@@ -35,9 +36,9 @@ Autorität: `main`
   - 1.995 unbekannt,
   - Coverage 80,82 %.
 - Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
-  - 67 angenommen,
+  - 77 angenommen,
   - 3 verworfen,
-  - 26 offen.
+  - 16 offen.
 - Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
@@ -114,6 +115,17 @@ Autorität: `main`
   - Tibetologe,
   - Ökotrophologe.
 - Beim Quellenpaar `parfumeur` wird bewusst die in KldB beobachtete Schreibung `Parfumeur/Parfumeurin` exakt abgebildet; Sprachverstand nimmt dabei keine zusätzliche Rechtschreibnormalisierung vor.
+- Welle 51 übernahm:
+  - Ausbesserer,
+  - Badegehilfe,
+  - Beikoch,
+  - Bürobote,
+  - Geragoge,
+  - Hispanologe,
+  - Infektologe,
+  - Malaiologe,
+  - Motologe,
+  - Ökotoxikologe.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -131,7 +143,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 26 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 16 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
