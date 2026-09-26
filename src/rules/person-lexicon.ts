@@ -136,8 +136,6 @@ const personForms: readonly PersonForms[] = [
   { ...weak("hungarolog", "hungarologe", "hungarologen"), match: "exact" as const },
   { ...weak("dermatolog", "dermatologe", "dermatologen"), match: "exact" as const },
   { ...weak("epidemiolog", "epidemiologe", "epidemiologen"), match: "exact" as const },
-  { ...weak("ethnolog", "ethnologe", "ethnologen"), match: "exact" as const },
-  { ...weak("gynäkolog", "gynäkologe", "gynäkologen"), match: "exact" as const },
   { ...weak("hydrolog", "hydrologe", "hydrologen"), match: "exact" as const },
   { ...weak("mineralog", "mineraloge", "mineralogen"), match: "exact" as const },
   { ...weak("mykolog", "mykologe", "mykologen"), match: "exact" as const },
