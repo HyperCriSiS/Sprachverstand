@@ -1,6 +1,6 @@
 # AI Session State
 
-Stand: 2026-09-25  
+Stand: 2026-09-26  
 Autorität: `main`
 
 ## Abgeschlossene Arbeitseinheit
@@ -12,9 +12,10 @@ Autorität: `main`
 - PR #215 „Lexikon: vierundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #217 „Lexikon: fünfundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #219 „Lexikon: sechsundvierzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #219: `1602977fe4326a0df57e62670b938bacba1656a9`.
-- Für PR #219 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #17 gemergt; privater Merge-Commit: `b2a6b516e9cd60d8527de10bc908f871b231b17b`.
+- PR #221 „Lexikon: siebenundvierzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #221: `792279397d86fe44a5bd307b939b41d1d85e5d98`.
+- Für PR #221 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #18 gemergt; privater Merge-Commit: `fa9140dbb0ca569e11ea29a4b452a1b5bf0ed45a`.
 - Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
@@ -30,9 +31,9 @@ Autorität: `main`
   - 1.995 unbekannt,
   - Coverage 80,82 %.
 - Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
-  - 29 angenommen,
+  - 39 angenommen,
   - 3 verworfen,
-  - 64 offen.
+  - 54 offen.
 - Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
@@ -65,6 +66,17 @@ Autorität: `main`
   - Kriminologe,
   - Limnologe,
   - Ornithologe.
+- Welle 47 übernahm:
+  - Turkologe,
+  - Toxikologe,
+  - Radiologe,
+  - Pneumologe,
+  - Philologe,
+  - Parasitologe,
+  - Paläontologe,
+  - Glaziologe,
+  - Lichenologe,
+  - Hungarologe.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -82,7 +94,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 64 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 54 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
