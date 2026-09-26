@@ -16,9 +16,10 @@ Autorität: `main`
 - PR #223 „Lexikon: achtundvierzigste konservative Ausbauwelle“ wurde gemergt.
 - PR #225 korrigierte zwei redundante manuelle Welle-48-Einträge; `Ethnologe` und `Gynäkologe` bleiben über das generierte Produktlexikon vollständig abgedeckt und gehören nicht zur 96er `kldb-common-2026`-Queue.
 - PR #227 „Lexikon: neunundvierzigste konservative Ausbauwelle“ wurde gemergt.
-- Produktbaseline nach PR #227: `21a99b4d97169e7d3cae343121980ca5b267be62`.
-- Für PR #227 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
-- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #21 gemergt; privater Merge-Commit: `8e69b7c17e5a97ff70c42bb376d17694f190cb58`.
+- PR #229 „Lexikon: fünfzigste konservative Ausbauwelle“ wurde gemergt.
+- Produktbaseline nach PR #229: `ed31a4340a8ebc47fb33965005cd2f354014dc3c`.
+- Für PR #229 waren Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security grün.
+- Der private Review-/Resume-Stand wurde über Generic-Datastore PR #22 gemergt; privater Merge-Commit: `5bba1aaba1cd30a3efbe4d254734dfa1fa2feb81`.
 - Es wurde weiterhin bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Alle manuellen Übernahmen sind explizite Personenstämme mit exaktem Stammabgleich.
 
 ## Aktueller Quellenstand
@@ -34,9 +35,9 @@ Autorität: `main`
   - 1.995 unbekannt,
   - Coverage 80,82 %.
 - Von den 96 gemeinsamen Review-Kandidaten sind jetzt:
-  - 57 angenommen,
+  - 67 angenommen,
   - 3 verworfen,
-  - 36 offen.
+  - 26 offen.
 - Welle 44 übernahm:
   - Astrolog,
   - Dekorateur,
@@ -101,6 +102,18 @@ Autorität: `main`
   - Önologe,
   - Pädaudiologe,
   - Zytologe.
+- Welle 50 übernahm:
+  - Heilgehilfe,
+  - Kosmetologe,
+  - Motopäde,
+  - Pantomime,
+  - Parfumeur,
+  - Planetologe,
+  - Röntgenologe,
+  - Sedimentologe,
+  - Tibetologe,
+  - Ökotrophologe.
+- Beim Quellenpaar `parfumeur` wird bewusst die in KldB beobachtete Schreibung `Parfumeur/Parfumeurin` exakt abgebildet; Sprachverstand nimmt dabei keine zusätzliche Rechtschreibnormalisierung vor.
 - Bewusst verworfen bleiben:
   - Steuer,
   - Möller,
@@ -118,7 +131,7 @@ Private Rohquellen, URLs und Herkunftsmetadaten bleiben vollständig außerhalb 
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 36 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
+1. Die verbleibenden 26 Kandidaten in kleinen manuellen Evidenzpaketen weiterprüfen.
 2. Zuerst Kandidaten mit direkten Personen-/Berufstreffern priorisieren.
 3. Für jeden Übernahmekandidaten Semantik und Flexion separat absichern.
 4. Nur eindeutig abgesicherte Teilmengen in weiteren konservativen Lexikonwellen übernehmen.
