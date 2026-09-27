@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - kldb-common-2026
+          - kldb-current-priority-1
 
 permissions:
   contents: read
@@ -52,87 +53,154 @@ jobs:
           token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
           persist-credentials: true
 
-      - name: Gemeinsame KldB/DKZ-Kandidaten verifizieren
-        id: kandidaten
+      - name: Review-Warteschlange auswählen
+        id: queue
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          case "${{ inputs.queue }}" in
+            kldb-common-2026)
+              echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt" >> "$GITHUB_OUTPUT"
+              echo "review_prefix=kldb-common-2026" >> "$GITHUB_OUTPUT"
+              echo "source_id=ba-kldb-2026+ba-dkz-current" >> "$GITHUB_OUTPUT"
+              ;;
+            kldb-current-priority-1)
+              echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-current-priority-1.txt" >> "$GITHUB_OUTPUT"
+              echo "review_prefix=kldb-current-priority-1" >> "$GITHUB_OUTPUT"
+              echo "source_id=ba-dkz-current" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unbekannte Review-Warteschlange: ${{ inputs.queue }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Review-Warteschlange verifizieren
+        env:
+          QUEUE: ${{ inputs.queue }}
+          CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
+          import json
+          import os
           from pathlib import Path
 
-          snapshot = {
+          queue = os.environ["QUEUE"]
+          candidate_file = Path(os.environ["CANDIDATE_FILE"])
+          current_file = Path(
+              "datastore/sprachverstand/derived/candidates/"
+              "kldb-current-unknown.txt"
+          )
+
+          candidates = {
               line.strip()
-              for line in Path(
-                  "datastore/sprachverstand/derived/candidates/"
-                  "kldb-snapshot-2026-unknown.txt"
-              ).read_text(encoding="utf-8").splitlines()
+              for line in candidate_file.read_text(encoding="utf-8").splitlines()
               if line.strip()
           }
           current = {
               line.strip()
-              for line in Path(
-                  "datastore/sprachverstand/derived/candidates/"
-                  "kldb-current-unknown.txt"
-              ).read_text(encoding="utf-8").splitlines()
+              for line in current_file.read_text(encoding="utf-8").splitlines()
               if line.strip()
           }
 
-          if not snapshot:
-              raise SystemExit("Die Snapshot-Warteschlange ist leer.")
-          if not snapshot.issubset(current):
+          if not candidates:
+              raise SystemExit("Die Review-Warteschlange ist leer.")
+          if not candidates.issubset(current):
+              missing = sorted(candidates - current)
               raise SystemExit(
-                  "Die Snapshot-Warteschlange ist kein vollständiger Teil "
-                  "der aktuellen DKZ-Warteschlange."
+                  "Review-Kandidaten fehlen in kldb-current-unknown: "
+                  + ", ".join(missing)
               )
 
-          print(f"{len(snapshot)} gemeinsame private Kandidaten verifiziert.")
+          if queue == "kldb-common-2026":
+              snapshot_file = Path(
+                  "datastore/sprachverstand/derived/candidates/"
+                  "kldb-snapshot-2026-unknown.txt"
+              )
+              snapshot = {
+                  line.strip()
+                  for line in snapshot_file.read_text(
+                      encoding="utf-8"
+                  ).splitlines()
+                  if line.strip()
+              }
+              if candidates != snapshot:
+                  raise SystemExit(
+                      "Die Common-Queue stimmt nicht mit der Snapshot-Queue überein."
+                  )
+          else:
+              decisions_file = Path(
+                  "datastore/sprachverstand/derived/review/"
+                  "kldb-common-2026-manual-decisions.json"
+              )
+              decisions = json.loads(
+                  decisions_file.read_text(encoding="utf-8")
+              )
+              decided = {
+                  item["candidate"]
+                  for key in ("accepted", "rejected")
+                  for item in decisions.get(key, [])
+                  if item.get("candidate")
+              }
+              overlap = sorted(candidates & decided)
+              if overlap:
+                  raise SystemExit(
+                      "Bereits entschiedene Kandidaten im neuen Batch: "
+                      + ", ".join(overlap)
+                  )
+
+          print(
+              f"{len(candidates)} Kandidaten für {queue} verifiziert."
+          )
           PY
 
       - name: Wikidata-Evidenz abfragen
+        env:
+          CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
+          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
         run: |
           mkdir -p datastore/sprachverstand/derived/evidence
-          python datastore/sprachverstand/scripts/query_wikidata_candidates.py \
-            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
-            datastore/sprachverstand/derived/evidence/kldb-common-2026-wikidata.jsonl \
-            --limit 5 \
-            --pause 0.25
+          python datastore/sprachverstand/scripts/query_wikidata_candidates.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl"             --limit 5             --pause 0.25
 
       - name: Wikipedia-Titelevidenz abfragen
+        env:
+          CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
+          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
         run: |
           mkdir -p datastore/sprachverstand/derived/evidence
-          python datastore/sprachverstand/scripts/query_wikipedia_candidates.py \
-            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
-            datastore/sprachverstand/derived/evidence/kldb-common-2026-wikipedia.jsonl \
-            --limit 5 \
-            --pause 0.25
+          python datastore/sprachverstand/scripts/query_wikipedia_candidates.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl"             --limit 5             --pause 0.25
 
       - name: Private Review-Queue erzeugen
         env:
           PRODUCT_COMMIT: ${{ github.sha }}
+          CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
+          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
+          SOURCE_ID: ${{ steps.queue.outputs.source_id }}
         run: |
           mkdir -p datastore/sprachverstand/derived/review
-          python datastore/sprachverstand/scripts/assemble_review_queue.py \
-            datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt \
-            datastore/sprachverstand/derived/review/kldb-common-2026-review.json \
-            --source-id "ba-kldb-2026+ba-dkz-current" \
-            --wikidata-jsonl datastore/sprachverstand/derived/evidence/kldb-common-2026-wikidata.jsonl \
-            --wikipedia-jsonl datastore/sprachverstand/derived/evidence/kldb-common-2026-wikipedia.jsonl \
-            --product-commit "$PRODUCT_COMMIT"
+          python datastore/sprachverstand/scripts/assemble_review_queue.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/review/${REVIEW_PREFIX}-review.json"             --source-id "$SOURCE_ID"             --wikidata-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl"             --wikipedia-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl"             --product-commit "$PRODUCT_COMMIT"
 
       - name: Kompakte Review-Zusammenfassung erzeugen
+        env:
+          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
         shell: bash
         run: |
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
 
+          prefix = os.environ["REVIEW_PREFIX"]
           queue_path = Path(
               "datastore/sprachverstand/derived/review/"
-              "kldb-common-2026-review.json"
+              f"{prefix}-review.json"
           )
           output_path = Path(
               "datastore/sprachverstand/derived/review/"
-              "kldb-common-2026-summary.json"
+              f"{prefix}-summary.json"
           )
           queue = json.loads(queue_path.read_text(encoding="utf-8"))
           candidates = queue.get("candidates", [])
@@ -170,7 +238,10 @@ jobs:
               "productCommit": queue.get("productCommit"),
               "candidateCount": len(candidates),
               "groups": groups,
-              "counts": {name: len(values) for name, values in groups.items()},
+              "counts": {
+                  name: len(values)
+                  for name, values in groups.items()
+              },
               "autoApprovalAllowed": False,
           }
           output_path.write_text(
@@ -212,6 +283,8 @@ jobs:
           done
 
       - name: Private Evidenz festschreiben
+        env:
+          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
         shell: bash
         run: |
           set -euo pipefail
@@ -225,5 +298,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "data: private KldB-DKZ-Review-Evidenz aktualisieren"
+          git commit -m "data: private Quellenreview ${REVIEW_PREFIX} aktualisieren"
           git push origin HEAD:main
