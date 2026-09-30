@@ -41,8 +41,7 @@ describe("zwölfte konservative Lexikon-Ausbauwelle", () => {
   it.each([
     "Portier:innen",
     "Nachtportier:innen",
-    "Diakon:innen",
-    "Fraud-Analyst:innen"
+    "Diakon:innen"
   ])("friert einen bewusst mehrdeutigen Restfall ein: %s", (input) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: input,

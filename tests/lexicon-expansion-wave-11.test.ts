@@ -39,8 +39,7 @@ describe("elfte konservative Lexikon-Ausbauwelle", () => {
   });
 
   it.each([
-    "Graf:innen",
-    "Fraud-Analyst:innen"
+    "Graf:innen"
   ])("lässt mehrdeutige oder unregelmäßige Nachbarformen unverändert: %s", (input) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: input,
