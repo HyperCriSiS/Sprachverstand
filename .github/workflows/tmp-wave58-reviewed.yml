@@ -1,0 +1,411 @@
+name: Temporärer Welle-58-Patch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Produktbranch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: lexicon/reviewed-wave-58
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Produktabhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Privaten Review-Stand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HyperCriSiS/Generic-Datastore
+          ref: main
+          path: datastore
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: false
+
+      - name: Exakte Welle-58-Daten erzeugen
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          decisions_path = Path(
+              "datastore/sprachverstand/derived/review/"
+              "kldb-current-priority-4-manual-decisions.json"
+          )
+          decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+
+          if decisions.get("sourceId") != "kldb-current-priority-4":
+              raise SystemExit("Falscher Review-Block.")
+          if decisions.get("reviewMode") != "language_model_first":
+              raise SystemExit("Priority 4 wurde nicht im neuen Review-Modus geprüft.")
+          if decisions.get("rejected") or decisions.get("pending"):
+              raise SystemExit("Priority 4 ist nicht vollständig positiv entschieden.")
+          accepted = decisions.get("accepted") or []
+          if len(accepted) != 222:
+              raise SystemExit(f"Erwartet wurden 222 akzeptierte Kandidaten, erhalten: {len(accepted)}")
+
+          classes = {
+              "unchanged": [],
+              "weak_en": [],
+              "plural_en": [],
+              "gehilf": [],
+              "koech": [],
+              "baeuer": [],
+          }
+
+          def expected(candidate: str):
+              if candidate.endswith("gehilf"):
+                  return (
+                      "gehilf",
+                      candidate + "e",
+                      candidate + "in",
+                      candidate + "en",
+                  )
+              if candidate.endswith("köch"):
+                  masculine = candidate[:-4] + "koch"
+                  return (
+                      "koech",
+                      masculine,
+                      candidate + "in",
+                      candidate + "e",
+                  )
+              if candidate.endswith("bäuer"):
+                  masculine = candidate[:-5] + "bauer"
+                  return (
+                      "baeuer",
+                      masculine,
+                      candidate + "in",
+                      candidate[:-5] + "bauern",
+                  )
+              if candidate.endswith("analyst"):
+                  return ("weak_en", candidate, candidate + "in", candidate + "en")
+              if candidate.endswith(("revisor", "restaurator")):
+                  return ("plural_en", candidate, candidate + "in", candidate + "en")
+              if candidate.endswith(("schlosser", "schreiner", "drucker", "brauer")):
+                  return ("unchanged", candidate, candidate + "in", candidate)
+              raise SystemExit(f"Nicht abgesicherte Kopfwortklasse: {candidate}")
+
+          seen = set()
+          for item in accepted:
+              candidate = item["candidate"]
+              if candidate in seen:
+                  raise SystemExit(f"Doppelter Kandidat: {candidate}")
+              seen.add(candidate)
+              kind, masculine, feminine, plural = expected(candidate)
+              if (
+                  item.get("masculine") != masculine
+                  or item.get("feminine") != feminine
+                  or item.get("plural") != plural
+              ):
+                  raise SystemExit(f"Review-Formen widersprechen der abgesicherten Flexion: {candidate}")
+              classes[kind].append(candidate)
+
+          for values in classes.values():
+              values.sort()
+
+          def render_set(name: str, values: list[str]) -> str:
+              body = ",\n".join(f'  {json.dumps(value, ensure_ascii=False)}' for value in values)
+              return f"const {name}: ReadonlySet<string> = new Set([\n{body}\n]);\n"
+
+          module = '''import type { GeneratedPersonForms } from "./generated-person-lexicon";
+
+          // Quellenneutraler, exakt freigegebener Zusatzbestand.
+          // Die Mengen sind Allow-Lists: Ableitungen gelten nur nach exaktem Basistreffer.
+          '''.replace("          ", "")
+
+          module += render_set("unchangedForms", classes["unchanged"])
+          module += render_set("weakEnForms", classes["weak_en"])
+          module += render_set("pluralEnForms", classes["plural_en"])
+          module += render_set("gehilfForms", classes["gehilf"])
+          module += render_set("koechForms", classes["koech"])
+          module += render_set("baeuerForms", classes["baeuer"])
+          module += '''
+          export const reviewedPersonFormCount =
+            unchangedForms.size +
+            weakEnForms.size +
+            pluralEnForms.size +
+            gehilfForms.size +
+            koechForms.size +
+            baeuerForms.size;
+
+          function regularForms(
+            base: string,
+            plural: string,
+            obliqueSingular = base,
+            genitiveSingular = `${base}s`
+          ): GeneratedPersonForms {
+            return {
+              plural,
+              singular: base,
+              feminineSingular: `${base}in`,
+              obliqueSingular,
+              genitiveSingular
+            };
+          }
+
+          export function getReviewedPersonForms(
+            normalizedBase: string
+          ): GeneratedPersonForms | undefined {
+            if (unchangedForms.has(normalizedBase)) {
+              return regularForms(normalizedBase, normalizedBase);
+            }
+
+            if (weakEnForms.has(normalizedBase)) {
+              const inflected = `${normalizedBase}en`;
+              return regularForms(normalizedBase, inflected, inflected, inflected);
+            }
+
+            if (pluralEnForms.has(normalizedBase)) {
+              return regularForms(normalizedBase, `${normalizedBase}en`);
+            }
+
+            if (gehilfForms.has(normalizedBase)) {
+              const singular = `${normalizedBase}e`;
+              const inflected = `${normalizedBase}en`;
+              return {
+                plural: inflected,
+                singular,
+                feminineSingular: `${normalizedBase}in`,
+                obliqueSingular: inflected,
+                genitiveSingular: inflected
+              };
+            }
+
+            if (koechForms.has(normalizedBase)) {
+              const singular = `${normalizedBase.slice(0, -4)}koch`;
+              return {
+                plural: `${normalizedBase}e`,
+                singular,
+                feminineSingular: `${normalizedBase}in`,
+                obliqueSingular: singular,
+                genitiveSingular: `${singular}s`
+              };
+            }
+
+            if (baeuerForms.has(normalizedBase)) {
+              const prefix = normalizedBase.slice(0, -5);
+              const singular = `${prefix}bauer`;
+              const inflected = `${prefix}bauern`;
+              return {
+                plural: inflected,
+                singular,
+                feminineSingular: `${normalizedBase}in`,
+                obliqueSingular: inflected,
+                genitiveSingular: inflected
+              };
+            }
+
+            return undefined;
+          }
+          '''.replace("          ", "")
+
+          Path("src/rules/reviewed-person-forms.ts").write_text(
+              module, encoding="utf-8"
+          )
+
+          lexicon_path = Path("src/rules/person-lexicon.ts")
+          lexicon = lexicon_path.read_text(encoding="utf-8")
+          import_anchor = 'import { nationalityPersonForms } from "./nationality-person-forms";\n'
+          import_line = 'import { getReviewedPersonForms } from "./reviewed-person-forms";\n'
+          if import_line not in lexicon:
+              if import_anchor not in lexicon:
+                  raise SystemExit("Import-Anker in person-lexicon.ts fehlt.")
+              lexicon = lexicon.replace(import_anchor, import_anchor + import_line, 1)
+
+          lexicon = lexicon.replace(
+              "getGeneratedPersonForms(",
+              "getExactPersonForms(",
+          )
+          helper_anchor = 'const locale = "de-DE";\n'
+          helper = '''const locale = "de-DE";
+
+          function getExactPersonForms(
+            normalizedBase: string
+          ): GeneratedPersonForms | undefined {
+            return (
+              getGeneratedPersonForms(normalizedBase) ??
+              getReviewedPersonForms(normalizedBase)
+            );
+          }
+          '''.replace("          ", "")
+          if "function getExactPersonForms(" not in lexicon:
+              if helper_anchor not in lexicon:
+                  raise SystemExit("Helper-Anker in person-lexicon.ts fehlt.")
+              lexicon = lexicon.replace(helper_anchor, helper, 1)
+
+          # Der globale Austausch darf den neu eingefügten Helper nicht rekursiv machen.
+          helper_bad = "return (\n    getExactPersonForms(normalizedBase) ??"
+          helper_good = "return (\n    getGeneratedPersonForms(normalizedBase) ??"
+          lexicon = lexicon.replace(helper_bad, helper_good, 1)
+
+          if lexicon.count("getExactPersonForms(") < 5:
+              raise SystemExit("Nicht alle Produktpfade verwenden den kombinierten Exakt-Lookup.")
+          lexicon_path.write_text(lexicon, encoding="utf-8")
+
+          def cap(value: str) -> str:
+              return value[:1].upper() + value[1:]
+
+          plural_cases = []
+          pair_cases = []
+          case_cases = []
+          seen_kinds = set()
+          inflected_cases = []
+
+          for item in accepted:
+              candidate = item["candidate"]
+              kind, masculine, feminine, plural = expected(candidate)
+              plural_cases.append([cap(candidate) + ":innen", cap(plural)])
+              pair_cases.append([cap(masculine), cap(feminine), cap(masculine)])
+
+              if kind not in seen_kinds:
+                  seen_kinds.add(kind)
+                  if kind in {"weak_en", "gehilf", "baeuer"}:
+                      grammatical_case = "dative"
+                      case_form = (
+                          candidate + "en"
+                          if kind != "baeuer"
+                          else candidate[:-5] + "bauern"
+                      )
+                  elif kind == "koech":
+                      grammatical_case = "genitive"
+                      case_form = masculine + "s"
+                  else:
+                      grammatical_case = "genitive"
+                      case_form = masculine + "s"
+                  case_cases.append([candidate, grammatical_case, case_form])
+
+              if kind in {"gehilf", "koech", "baeuer", "weak_en"} and not any(
+                  row[4] == kind for row in inflected_cases
+              ):
+                  if kind == "gehilf":
+                      case = "dative"
+                      inflected = candidate + "en"
+                  elif kind == "koech":
+                      case = "genitive"
+                      inflected = masculine + "s"
+                  elif kind == "baeuer":
+                      case = "dative"
+                      inflected = candidate[:-5] + "bauern"
+                  else:
+                      case = "dative"
+                      inflected = candidate + "en"
+                  inflected_cases.append(
+                      [cap(feminine), cap(inflected), case, cap(inflected), kind]
+                  )
+
+          def ts_rows(rows):
+              return ",\n".join(
+                  "    [" + ", ".join(json.dumps(v, ensure_ascii=False) for v in row) + "]"
+                  for row in rows
+              )
+
+          clean_inflected = [row[:4] for row in inflected_cases]
+          test = f'''import {{ describe, expect, it }} from "vitest";
+          import {{ mappedPluralSeparatorsRule }} from "../src/rules/mapped-plural-separators";
+          import {{
+            mapMappedInflectedSingularPair,
+            mapMappedSingular,
+            mapMappedSingularPair
+          }} from "../src/rules/person-lexicon";
+          import {{
+            getReviewedPersonForms,
+            reviewedPersonFormCount
+          }} from "../src/rules/reviewed-person-forms";
+
+          describe("achtundfünfzigste Lexikon-Ausbauwelle", () => {{
+            it("enthält genau den intern geprüften Exaktbestand", () => {{
+              expect(reviewedPersonFormCount).toBe(222);
+              for (const base of ["robot", "alphabet", "oktober", "fantasieanalyst"]) {{
+                expect(getReviewedPersonForms(base), base).toBeUndefined();
+              }}
+            }});
+
+            it.each([
+          {ts_rows(plural_cases)}
+            ])("normalisiert den intern geprüften Personenstamm %s", (input, expected) => {{
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({{
+                text: expected,
+                replacements: 1
+              }});
+            }});
+
+            it.each([
+          {ts_rows(pair_cases)}
+            ])("erkennt das intern geprüfte Paar %s/%s", (masculine, feminine, expected) => {{
+              expect(mapMappedSingularPair(masculine, feminine)).toBe(expected);
+            }});
+
+            it.each([
+          {ts_rows(case_cases)}
+            ] as const)(
+              "bildet die repräsentative Basis %s im Kasus %s korrekt ab",
+              (base, grammaticalCase, expected) => {{
+                expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
+              }}
+            );
+
+            it.each([
+          {ts_rows(clean_inflected)}
+            ] as const)(
+              "erkennt das flektierte Paar %s/%s im Kasus %s",
+              (feminine, masculine, grammaticalCase, expected) => {{
+                expect(
+                  mapMappedInflectedSingularPair(feminine, masculine, grammaticalCase)
+                ).toBe(expected);
+              }}
+            );
+          }});
+          '''.replace("          ", "")
+
+          Path("tests/lexicon-person-forms-wave-58.test.ts").write_text(
+              test, encoding="utf-8"
+          )
+          PY
+
+      - name: Geänderten Produktpfad prüfen
+        run: |
+          npm run typecheck
+          npx vitest run tests/lexicon-person-forms-wave-58.test.ts
+
+      - name: Änderungen begrenzen und festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t CHANGED < <(git diff --name-only | sort -u)
+          printf 'Geänderte Dateien:\n'
+          printf ' - %s\n' "${CHANGED[@]}"
+
+          expected=(
+            "src/rules/person-lexicon.ts"
+            "src/rules/reviewed-person-forms.ts"
+            "tests/lexicon-person-forms-wave-58.test.ts"
+          )
+          if [[ "${#CHANGED[@]}" -ne "${#expected[@]}" ]]; then
+            echo "Unerwartete Anzahl geänderter Dateien."
+            exit 1
+          fi
+          for path in "${expected[@]}"; do
+            if ! printf '%s\n' "${CHANGED[@]}" | grep -Fxq "$path"; then
+              echo "Erwartete Änderung fehlt: $path"
+              exit 1
+            fi
+          done
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "${expected[@]}"
+          git commit -m "Lexikon: achtundfünfzigste Ausbauwelle"
+          git push origin HEAD:lexicon/reviewed-wave-58
