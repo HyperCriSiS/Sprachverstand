@@ -43,21 +43,25 @@ Hinweis zur früheren Welle 48:
 - Die versehentliche Doppelzählung wurde mit PR #225 und dem privaten Korrektur-PR #20 behoben.
 - Sie gehören nicht zu den 93 angenommenen Entscheidungen der 96er Review-Queue.
 
-## Aktiver kldb-current-Reviewblock
+## Abgeschlossener kldb-current-Pilotblock
 
-Aktive Queue: `kldb-current-priority-1`
+Die Queue `kldb-current-priority-1` ist vollständig manuell geprüft:
 
 - 20 Kandidaten insgesamt
-- 15 angenommen
+- 20 angenommen
 - 0 verworfen
-- 5 offen
-- Status: `in_progress`
+- 0 offen
+- Status: `completed`
 - Auswahl-Commit im privaten Datastore: `541a357338e2a229c95fdbe623113e30638a2d59`
 - Evidenz-Commit: `71ffa13ef11ba5d3751d5af5a6ac6c394fdeb647`
-- Letzter privater Review-Abschluss: Generic-Datastore PR #28
-- Merge-Commit: `e3a7781d684f0d21e05308d92f8fd1ec446a26a5`
+- Privater Abschluss: Generic-Datastore PR #29
+- Merge-Commit: `95f0b1009ac986e3b4f4b55cc02508a3fb5253f1`
 
-Neun weitere Kandidaten sind semantisch und morphologisch geprüft und für Welle 55 vorbereitet:
+Sechs der 20 Kandidaten sind bereits mit Welle 54 im Produkt. Die restlichen 14 sind für zwei kleine Produktwellen vorbereitet.
+
+### Welle 55
+
+Neun reguläre Drucker-/Schreiner-/Akquisiteur-Fälle:
 
 - Adremadrucker
 - Adressendrucker
@@ -69,15 +73,17 @@ Neun weitere Kandidaten sind semantisch und morphologisch geprüft und für Well
 - Anzeigenakquisiteur
 - Aquarelldrucker
 
-Die fünf verbleibenden Fälle bleiben bewusst separat offen:
+### Welle 56
 
-- `ackerbäuer`
-- `ackergehilf`
-- `alleinköch`
-- `almbäuer`
-- `anwaltsgehilf`
+Fünf separat geprüfte Bauer-/Gehilfe-/Koch-Fälle:
 
-Für alle fünf liegt ein direkter Berufsbeleg im BA-Schlüsselverzeichnis 02/2026 vor. Offen ist nur noch die konservative Einzelprüfung der zusammengesetzten Bauer-/Gehilfe-/Koch-Flexion.
+- Ackerbauer / Ackerbäuerin
+- Ackergehilfe / Ackergehilfin
+- Alleinkoch / Alleinköchin
+- Almbauer / Almbäuerin
+- Anwaltsgehilfe / Anwaltsgehilfin
+
+Für alle 20 Kandidaten liegt ein direkter Berufsbeleg im BA-Schlüsselverzeichnis 02/2026 vor. Die Flexion der Restfälle wurde zusätzlich anhand der lexikografisch belegten Kopfglieder Bauer/Bäuerin, Gehilfe/Gehilfin und Koch/Köchin abgesichert.
 
 ## Privater Quellenstand
 
@@ -115,8 +121,9 @@ Die Coverage-Werte beschreiben den Importstand vor den manuellen Produktwellen. 
 1. Welle 55 mit den neun bereits vollständig geprüften Kandidaten als exakte Produktmappings integrieren.
 2. Regressionstests für Plural, Singular/Kasus und explizite Singularpaare ergänzen.
 3. Produkt-PR vollständig durch Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security laufen lassen.
-4. Nach Merge privaten Reviewstand mit Produkt-PR und Merge-Commit verknüpfen.
-5. Danach die fünf verbleibenden Umlaut-/Schwachflexionsfälle einzeln prüfen.
+4. Danach Welle 56 mit den fünf separat geprüften Bauer-/Gehilfe-/Koch-Fällen integrieren.
+5. Nach beiden Produktwellen den privaten Reviewstand mit Produkt-PRs und Merge-Commits verknüpfen.
+6. Anschließend aus den verbleibenden `kldb-current`-Unbekannten den nächsten reproduzierbaren Priority-Batch ableiten.
 
 ## Verbindliche Wiederaufnahme-Regel
 
