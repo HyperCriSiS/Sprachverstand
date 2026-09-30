@@ -6,11 +6,12 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `1fc46b0a9fd37f61e931178cc5489e152f30e25a`
-- Letzte Produktänderung: PR #249 „Lexikon: siebenundfünfzigste konservative Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 57
-- PR #249: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizite, geprüfte `exact`-Mappings übernommen.
+- Produktbaseline: `8242fdbe13288208a74e30df06e8d5516fe281fc`
+- Letzte Produktänderung: PR #252 „Lexikon: achtundfünfzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 58
+- PR #252: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizit geprüfte, quellenneutrale Exact-Allow-Lists bzw. `exact`-Mappings übernommen.
+- Die Groß-/Kleinschreibungslogik erhält nun bei Bindestrichkomposita jedes Segment separat, z. B. `Kfz-Schlosser:innen → Kfz-Schlosser` und `Rating-Analyst:innen → Rating-Analysten`.
 
 ## Abgeschlossene kldb-current-Blöcke
 
@@ -38,22 +39,34 @@ Autorität: `main`
 - 50 angenommen
 - 0 verworfen
 - 0 offen
-- BA-Paar für jeden Kandidaten vorhanden
-- externe Wikidata-/Wikipedia-Evidenz über den öffentlichen Quellenreview erzeugt
-- Flexion ausschließlich über bereits abgesicherte Kopfwortklassen
-- `Fraud-Analyst:innen` war historisch als mehrdeutiger Restfall eingefroren; Priority 3 liefert nun BA-Paar sowie exakte Wikidata- und Wikipedia-Evidenz, deshalb wurde diese alte Negativ-Regression gezielt aufgehoben.
+- historisch noch mit BA-Paar- und externer Evidenz geprüft
 - vollständig in Welle 57 integriert
 - Integrations-PR: #249
+
+### `kldb-current-priority-4`
+
+- 222 Kandidaten
+- 222 angenommen
+- 0 verworfen
+- 0 offen
+- 0 Kandidaten benötigten externe Recherche
+- vollständig mit `language_model_first` semantisch und morphologisch geprüft
+- alle Kandidaten gehören zu bereits abgesicherten Kopfwortklassen: `Gehilfe`, `Schlosser`, `Drucker`, `Koch`, `Restaurator`, `Schreiner`, `Bauer`, `Analyst`, `Revisor` oder `Brauer`
+- als quellenneutrale exakte Allow-List integriert; keine generische Suffixfreigabe
+- 461 dedizierte Welle-58-Regressionen einschließlich Bindestrich-Großschreibung
+- vollständig in Welle 58 integriert
+- Integrations-PR: #252
+- Merge-Commit: `8242fdbe13288208a74e30df06e8d5516fe281fc`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt unverändert bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
 ## Kandidatenprüfung
 
-- Externe Web-Evidenz ist **keine Freigabevoraussetzung mehr**. KldB, ESCO und andere Quellen dienen nur als Kandidatenlieferanten.
+- Externe Web-Evidenz ist **keine Freigabevoraussetzung**. KldB, ESCO und andere Quellen dienen nur als Kandidatenlieferanten.
 - Standard ist `language_model_first`: Kandidaten werden semantisch und morphologisch intern geprüft; eindeutige Formen dürfen ohne Wikidata-, Wikipedia-, Duden- oder DWDS-Recherche in die Produktprüfung gehen.
 - Lokal vorhandene Paarinformationen dürfen als Hinweis genutzt werden, sind aber keine Pflicht.
-- Externe Recherche wird nur noch für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde zugeschaltet.
-- Der Standardbatch für `kldb-current` wird von 50 auf 250 erhöht; die produktive Aufnahme bleibt durch exakte Mappings und Regressionstests abgesichert.
+- Externe Recherche wird nur für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde zugeschaltet.
+- Produktseitige Sicherheitsgrenzen bleiben exakte Freigabelisten bzw. Mappings, Positiv-/Negativregressionen und die vollständige CI.
 
 ## Privater Quellenstand
 
@@ -62,8 +75,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. die dort referenzierte aktuelle Review-Zusammenfassung
-3. die dort referenzierten manuellen Entscheidungen
+2. `sprachverstand/derived/review/kldb-current-priority-4-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-4-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 Private Rohquellen, URLs und Herkunftsmetadaten bleiben außerhalb des öffentlichen Produkt-Repositories.
@@ -79,22 +92,31 @@ Importbaseline der aktuellen DKZ:
 
 Abgeschlossene Entscheidungen aus dem unbekannten Pool:
 
+- `kldb-common-2026`: 96
 - `kldb-current-priority-1`: 20
 - `kldb-current-priority-2`: 50
 - `kldb-current-priority-3`: 50
+- `kldb-current-priority-4`: 222
 
-Zusammen mit den zuvor ausgeschlossenen 96 `kldb-common-2026`-Entscheidungen sind 216 Kandidaten entschieden. Im priorisierten `kldb-current`-Review-Pool verbleiben 1.779 noch nicht entschiedene Kandidaten.
+Damit sind 438 der ursprünglich 1.995 unbekannten Kandidaten entschieden. Es verbleiben **1.557 noch nicht entschiedene Kandidaten**.
+
+Der bisherige starke Personen-Suffixselektor ist ausgeschöpft:
+
+- vor Priority 4 priorisierbar: 222
+- in Priority 4 vollständig verarbeitet: 222
+- danach mit demselben Selektor priorisierbar: **0**
 
 ## Nächste Arbeitseinheit
 
-Als nächster Quellenblock:
+Nicht einfach `kldb-current-priority-5` mit demselben Selektor erzeugen. Als nächster Quellenblock:
 
-1. `kldb-current-priority-4` mit bis zu 250 Kandidaten reproduzierbar ableiten und bereits entschiedene Kandidaten ausschließen.
-2. Den gesamten Batch intern semantisch und morphologisch prüfen.
-3. Eindeutige Kandidaten ohne externe Webrecherche für exakte Produkt-Mappings vorbereiten.
-4. Nur echte Grenzfälle separat markieren und bei Bedarf gezielt extern nachprüfen.
-5. Positiv-/Negativregressionen und die vollständige Produktprüfung ausführen.
-6. Keine generische Suffixregel allein aus dem Batch ableiten.
+1. Die verbleibenden 1.557 Kandidaten nach Wortbildungs- und Endgliedmustern gruppieren.
+2. Eine breitere, aber weiterhin konservative Kandidatenauswahl definieren, die keine Personenbedeutung allein aus einem Suffix behauptet.
+3. Bis zu 250 Kandidaten als nächsten reproduzierbaren Batch ableiten.
+4. Den gesamten Batch intern semantisch und morphologisch prüfen.
+5. Eindeutige Kandidaten ohne externe Webrecherche als exakte Produktfreigaben vorbereiten.
+6. Nur echte Grenzfälle separat markieren und bei Bedarf gezielt extern nachprüfen.
+7. Keine generische Suffixregel allein aus dem Batch ableiten.
 
 ## Verbindliche Wiederaufnahme-Regel
 
