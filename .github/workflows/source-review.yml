@@ -52,11 +52,13 @@ jobs:
 
       - name: Review-Warteschlange auswählen
         id: queue
+        env:
+          QUEUE: ${{ inputs.queue }}
         shell: bash
         run: |
           set -euo pipefail
 
-          queue="${{ inputs.queue }}"
+          queue="$QUEUE"
           case "$queue" in
             kldb-common-2026)
               echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt" >> "$GITHUB_OUTPUT"
