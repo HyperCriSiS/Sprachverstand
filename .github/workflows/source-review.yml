@@ -170,21 +170,38 @@ jobs:
           )
           PY
 
-      - name: Wikidata-Evidenz abfragen
+      - name: Wikidata- und Wikipedia-Evidenz parallel abfragen
         env:
           CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
           REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p datastore/sprachverstand/derived/evidence
-          python datastore/sprachverstand/scripts/query_wikidata_candidates.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl"             --limit 5             --pause 0.25
 
-      - name: Wikipedia-Titelevidenz abfragen
-        env:
-          CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
-          REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
-        run: |
-          mkdir -p datastore/sprachverstand/derived/evidence
-          python datastore/sprachverstand/scripts/query_wikipedia_candidates.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl"             --limit 5             --pause 0.25
+          python datastore/sprachverstand/scripts/query_wikidata_candidates.py \
+            "$CANDIDATE_FILE" \
+            "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl" \
+            --limit 5 \
+            --pause 2.0 &
+          wikidata_pid=$!
+
+          python datastore/sprachverstand/scripts/query_wikipedia_candidates.py \
+            "$CANDIDATE_FILE" \
+            "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl" \
+            --limit 5 \
+            --pause 2.0 &
+          wikipedia_pid=$!
+
+          wikidata_status=0
+          wikipedia_status=0
+          wait "$wikidata_pid" || wikidata_status=$?
+          wait "$wikipedia_pid" || wikipedia_status=$?
+
+          if (( wikidata_status != 0 || wikipedia_status != 0 )); then
+            echo "Mindestens eine externe Evidenzabfrage ist fehlgeschlagen."
+            exit 1
+          fi
 
       - name: Private Review-Queue erzeugen
         env:
