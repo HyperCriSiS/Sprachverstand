@@ -50,6 +50,7 @@
     "lexicon:verify": "node scripts/lexicon-verify-flexion.mjs",
     "lexicon:compile": "node scripts/compile-person-lexicon.mjs",
     "benchmark:lexicon": "node scripts/benchmark-lexicon.mjs",
+    "benchmark:dom": "vitest run --config vitest.performance.config.ts",
     "lexicon:approve": "node scripts/lexicon-approve.mjs"
   },
   "allowScripts": {
