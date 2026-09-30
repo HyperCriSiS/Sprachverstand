@@ -6,10 +6,10 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `27cfc991b9aa18651a8bac6651d8a98e8b33fe0b`
-- Letzte Produktänderung: PR #254 „Lexikon: neunundfünfzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 59
-- PR #254: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Produktbaseline: `609798ba0207454439dfcfbf8cd6a29c4f6e2dff`
+- Letzte Produktänderung: PR #256 „Lexikon: sechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 60
+- PR #256: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 - Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizit geprüfte, quellenneutrale Exact-Allow-Lists bzw. `exact`-Mappings übernommen.
 
 ## Abgeschlossene kldb-current-Blöcke
@@ -58,11 +58,28 @@ Autorität: `main`
   - `plural_en`: 20
   - `loge`: 15
 - morphologisch heikle `Modelleur`-/`Dompteur`-/`Magister`-Fälle sowie `Mikrograf` und `Xerograf` wurden bewusst nicht aufgenommen
-- die alte Negativ-Regression für `Diakon:innen` wurde gezielt aufgehoben, nachdem `Diakon → Diakonin → Diakone` intern freigegeben wurde
 - 511 dedizierte Welle-59-Regressionen
 - vollständig in Welle 59 integriert
 - Integrations-PR: #254
-- Merge-Commit: `27cfc991b9aa18651a8bac6651d8a98e8b33fe0b`
+
+### `kldb-current-priority-6`
+
+- 250 Kandidaten
+- 250 angenommen
+- 0 verworfen, 0 offen, 0 externe Grenzfälle
+- vollständig mit `language_model_first` geprüft
+- vier explizite Flexionsklassen:
+  - `unchanged`: 157
+  - `weak_en`: 47
+  - `plural_e`: 26
+  - `loge`: 20
+- klar personenbezogene Endgliedklassen umfassen u. a. `Wart`, `Schiffer`, `Gerber`, `Schnitzer`, `Ansager`, `Schätzer`, `Steiger`, `Flechter`, `Stricker`, `Spinner`, `Montierer`, `-ist`, `-log` und `-graph`
+- neun weniger klare Formen wurden vor der Batchbildung bewusst zurückgestellt: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`
+- mehrdeutige Geräte-/Werkzeugklassen wie `Bohrer`, `Brenner`, `Presser`, `Stanzer`, `Walzer` und `Wickler` blieben weiterhin draußen
+- 510 dedizierte Welle-60-Regressionen
+- vollständig in Welle 60 integriert
+- Integrations-PR: #256
+- Merge-Commit: `609798ba0207454439dfcfbf8cd6a29c4f6e2dff`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
@@ -81,8 +98,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-5-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-6-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -102,22 +119,24 @@ Abgeschlossene Entscheidungen aus dem unbekannten Pool:
 - `kldb-current-priority-3`: 50
 - `kldb-current-priority-4`: 222
 - `kldb-current-priority-5`: 250
+- `kldb-current-priority-6`: 250
 
-Damit sind **688 von 1.995** ursprünglich unbekannten Kandidaten entschieden. Es verbleiben **1.307 noch nicht entschiedene Kandidaten**.
+Damit sind **938 von 1.995** ursprünglich unbekannten Kandidaten entschieden. Es verbleiben **1.057 noch nicht entschiedene Kandidaten**.
 
-Der Priority-5-Selektor ist ebenfalls ausgeschöpft: Alle von ihm zugelassenen 250 Kandidaten wurden verarbeitet.
+Der Priority-6-Selektor liefert im Restbestand nur noch die neun bewusst zurückgestellten Grenzfälle. Für Priority 7 muss daher eine neue konservative Auswahlstrategie definiert werden.
 
 ## Nächste Arbeitseinheit
 
-Nicht denselben Selektor unverändert als Priority 6 wiederverwenden. Als nächster Block:
+Als nächster Block:
 
-1. Die verbleibenden 1.307 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
-2. Besonders die bislang bewusst ausgesparten morphologisch heiklen Klassen separat untersuchen.
-3. Weitere klar personenbezogene Klassen definieren, ohne daraus eine generische Suffixregel abzuleiten.
-4. Bis zu 250 Kandidaten reproduzierbar als `kldb-current-priority-6` ableiten.
-5. Den gesamten Batch intern semantisch und morphologisch prüfen.
-6. Nur echte Grenzfälle gezielt extern nachprüfen.
-7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
+1. Die verbleibenden 1.057 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
+2. Die neun zurückgestellten Priority-6-Grenzfälle separat behandeln und nicht automatisch freigeben.
+3. Neue klar personenbezogene Klassen aus dem Restbestand definieren; besonders häufig sind noch produktive `-ierer`-Klassen, daneben `Binder`, `Halter`, `Hauer` und weitere Handwerks-/Bedienerbezeichnungen.
+4. Mehrdeutige Geräte-/Werkzeugklassen weiterhin nicht pauschal freigeben.
+5. Bis zu 250 Kandidaten reproduzierbar als `kldb-current-priority-7` ableiten.
+6. Den gesamten Batch intern semantisch und morphologisch prüfen.
+7. Nur echte Grenzfälle gezielt extern nachprüfen.
+8. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 

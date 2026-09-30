@@ -6,37 +6,41 @@ Autorität: `main`
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Letzte integrierte Lexikon-Ausbauwelle: **59**
-- Letzter integrierter Produkt-PR: **#254 — neunundfünfzigste Ausbauwelle**
-- Verifizierter Produktbaseline-Commit: `27cfc991b9aa18651a8bac6651d8a98e8b33fe0b`
-- Welle 59 integriert 250 intern geprüfte exakte Personenbasen in fünf Flexionsklassen.
-- CI von PR #254: Kernprüfung, Gecko, Chromium, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Letzte integrierte Lexikon-Ausbauwelle: **60**
+- Letzter integrierter Produkt-PR: **#256 — sechzigste Ausbauwelle**
+- Verifizierter Produktbaseline-Commit: `609798ba0207454439dfcfbf8cd6a29c4f6e2dff`
+- Welle 60 integriert 250 intern geprüfte exakte Personenbasen in vier Flexionsklassen.
+- CI von PR #256: Kernprüfung, Gecko, Chromium, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 
 ## Aktiver Arbeitsstrom
 
 ### Priorität 1 — verbleibende KldB/DKZ-Kandidaten sprachmodellbasiert erschließen
 
-`kldb-current-priority-5` ist abgeschlossen und in Welle 59 integriert:
+`kldb-current-priority-6` ist abgeschlossen und in Welle 60 integriert:
 
 - 250 Kandidaten
 - 250 angenommen
 - 0 verworfen
 - 0 offen
 - 0 externe Grenzfälle
+- Flexionsklassen: 157 `unchanged`, 47 `weak_en`, 26 `plural_e`, 20 `loge`
 
-Von den ursprünglich 1.995 unbekannten Kandidaten sind inzwischen **688 entschieden**; **1.307 bleiben offen**.
+Neun weniger klare Formen wurden bewusst nicht in den Batch aufgenommen und bleiben offen: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`.
 
-Der Priority-5-Selektor ist ausgeschöpft. Er darf nicht unverändert als Priority 6 wiederverwendet werden.
+Von den ursprünglich 1.995 unbekannten Kandidaten sind inzwischen **938 entschieden**; **1.057 bleiben offen**.
+
+Der Priority-6-Selektor ist für klare Fälle ausgeschöpft. Unverändert angewendet würde er nur noch die neun bewusst ausgesparten Grenzfälle liefern.
 
 Nächster Schritt:
 
-1. Restbestand von 1.307 Kandidaten erneut nach Wortbildungs- und Endgliedmustern analysieren.
-2. Morphologisch heikle Restklassen getrennt betrachten.
-3. Einen weiteren konservativen Selektor bzw. reproduzierbare Kandidatengruppen definieren.
-4. Bis zu 250 Kandidaten als Priority 6 ableiten.
-5. Standardmäßig intern semantisch und morphologisch prüfen.
-6. Externe Recherche nur für echte Mehrdeutigkeiten oder widersprüchliche Befunde.
-7. Produktiv weiterhin nur exakte Allow-Lists bzw. Mappings plus Regressionen; keine generische Suffixregel aus einem Batch ableiten.
+1. Restbestand von 1.057 Kandidaten erneut nach Wortbildungs- und Endgliedmustern analysieren.
+2. Einen neuen konservativen Priority-7-Selektor definieren.
+3. Häufige `-ierer`-Klassen sowie weitere klare Personenendglieder gezielt untersuchen.
+4. Mehrdeutige Geräte-/Werkzeugklassen wie `Bohrer`, `Brenner`, `Presser`, `Stanzer`, `Walzer` und `Wickler` nicht pauschal freigeben.
+5. Bis zu 250 Kandidaten als Priority 7 ableiten.
+6. Standardmäßig intern semantisch und morphologisch prüfen.
+7. Externe Recherche nur für echte Mehrdeutigkeiten oder widersprüchliche Befunde.
+8. Produktiv weiterhin nur exakte Allow-Lists bzw. Mappings plus Regressionen; keine generische Suffixregel aus einem Batch ableiten.
 
 ## Prüfprinzip
 
@@ -51,8 +55,8 @@ Nächster Schritt:
 Aktuell maßgeblich:
 
 - `sprachverstand/CURRENT-STATE.json`
-- `sprachverstand/derived/review/kldb-current-priority-5-summary.json`
-- `sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json`
+- `sprachverstand/derived/review/kldb-current-priority-6-summary.json`
+- `sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json`
 
 ## Wiederaufnahmeprotokoll
 
