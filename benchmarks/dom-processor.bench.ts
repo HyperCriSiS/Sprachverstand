@@ -238,7 +238,7 @@ describe("DomProcessor Performance-Baseline", () => {
 
     expect(result.ruleCalls).toBe(1_500);
     expect(result.replacements).toBe(1_500);
-    expect(result.rootCalls).toBeGreaterThanOrEqual(1);
+    expect(result.rootCalls).toBe(1);
   });
 
   it("misst wiederholte externe Text-Rewrites desselben Knotens", async () => {
