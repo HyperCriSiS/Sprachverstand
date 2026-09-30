@@ -4,6 +4,7 @@ import {
 } from "./generated-person-lexicon";
 import { nationalityPersonForms } from "./nationality-person-forms";
 import { getReviewedPersonForms } from "./reviewed-person-forms";
+import { getReviewedPersonFormsWave59 } from "./reviewed-person-forms-wave-59";
 
 export type GrammaticalCase =
   | "nominative"
@@ -32,7 +33,8 @@ function getExactPersonForms(
 ): GeneratedPersonForms | undefined {
   return (
     getGeneratedPersonForms(normalizedBase) ??
-    getReviewedPersonForms(normalizedBase)
+    getReviewedPersonForms(normalizedBase) ??
+    getReviewedPersonFormsWave59(normalizedBase)
   );
 }
 
