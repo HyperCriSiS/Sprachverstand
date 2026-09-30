@@ -6,90 +6,38 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `28989e8fb8558cdff9f4e8486f9d3539cd3b9dd3`
-- Letzte Produktänderung: PR #258 „Lexikon: einundsechzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 61
-- PR #258: Kernprüfung, Gecko CI, Chromium CI, GitHub Advanced Security und Sammelcheck grün.
-- Post-Merge auf `main`: Kernprüfung, Gecko CI, Chromium CI, Sammelcheck sowie beide CodeQL-Analysen grün.
-- Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizit geprüfte, quellenneutrale Exact-Allow-Lists bzw. `exact`-Mappings übernommen.
+- Produktbaseline: `ec0e7d904626d88d4307ec55f0565347536347c0`
+- Letzte Produktänderung: PR #260 „Lexikon: zweiundsechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 62
+- Welle 62 integriert 250 intern geprüfte exakte Personenbasen der regulären `-er`-Flexionsklasse.
+- PR-CI sowie Post-Merge-CI einschließlich Kernprüfung, Gecko, Chromium, Sammelcheck und CodeQL sind grün.
+- Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur über explizit geprüfte Exact-Allow-Lists bzw. `exact`-Mappings freigegeben.
 
 ## Abgeschlossene kldb-current-Blöcke
 
-### `kldb-current-priority-1`
+- `kldb-current-priority-1`: 20 angenommen, integriert bis Welle 55 / PR #243
+- `kldb-current-priority-2`: 50 angenommen, Welle 56 / PR #247
+- `kldb-current-priority-3`: 50 angenommen, Welle 57 / PR #249
+- `kldb-current-priority-4`: 222 angenommen, Welle 58 / PR #252
+- `kldb-current-priority-5`: 250 angenommen, Welle 59 / PR #254
+- `kldb-current-priority-6`: 250 angenommen, Welle 60 / PR #256
+- `kldb-current-priority-7`: 250 angenommen, Welle 61 / PR #258
+- `kldb-current-priority-8`: 250 angenommen, Welle 62 / PR #260
 
-- 20 Kandidaten
-- 20 angenommen
-- vollständig in Welle 54 und 55 integriert
-- letzter Integrations-PR: #243
-
-### `kldb-current-priority-2`
-
-- 50 Kandidaten
-- 50 angenommen
-- vollständig in Welle 56 integriert
-- Integrations-PR: #247
-
-### `kldb-current-priority-3`
-
-- 50 Kandidaten
-- 50 angenommen
-- historisch noch mit externer Evidenz geprüft
-- vollständig in Welle 57 integriert
-- Integrations-PR: #249
-
-### `kldb-current-priority-4`
-
-- 222 Kandidaten
-- 222 angenommen
-- 0 verworfen, 0 offen, 0 externe Grenzfälle
-- vollständig mit `language_model_first` geprüft
-- als quellenneutrale exakte Allow-List in Welle 58 integriert
-- Integrations-PR: #252
-
-### `kldb-current-priority-5`
+### Priority 8 im Detail
 
 - 250 Kandidaten
 - 250 angenommen
-- 0 verworfen, 0 offen, 0 externe Grenzfälle
-- vollständig mit `language_model_first` geprüft
-- fünf explizite Flexionsklassen:
-  - `unchanged`: 123
-  - `weak_en`: 64
-  - `plural_e`: 28
-  - `plural_en`: 20
-  - `loge`: 15
-- vollständig in Welle 59 integriert
-- Integrations-PR: #254
-
-### `kldb-current-priority-6`
-
-- 250 Kandidaten
-- 250 angenommen
-- 0 verworfen, 0 offen, 0 externe Grenzfälle
-- vollständig mit `language_model_first` geprüft
-- vier explizite Flexionsklassen:
-  - `unchanged`: 157
-  - `weak_en`: 47
-  - `plural_e`: 26
-  - `loge`: 20
-- neun weniger klare Formen wurden bewusst zurückgestellt: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`
-- vollständig in Welle 60 integriert
-- Integrations-PR: #256
-
-### `kldb-current-priority-7`
-
-- 250 Kandidaten
-- 250 angenommen
-- 0 verworfen, 0 offen, 0 externe Grenzfälle
-- vollständig mit `language_model_first` geprüft
-- alle 250 Kandidaten gehören zur regulären `-er`-Flexionsklasse mit unverändertem Plural
-- Auswahl ausschließlich über eine intern geprüfte Exaktliste; keine neue Suffixregel
-- die neun Priority-6-Grenzfälle blieben weiterhin ausgeschlossen
-- mehrdeutige Sach-/Geräteformen wurden ebenfalls nicht pauschal übernommen
-- 505 dedizierte Welle-61-Regressionen; zusammen mit Welle 60 waren 1.015 gezielte Tests grün
-- vollständig in Welle 61 integriert
-- Integrations-PR: #258
-- Merge-Commit: `28989e8fb8558cdff9f4e8486f9d3539cd3b9dd3`
+- 0 verworfen
+- 0 offen
+- 0 externe Recherchefälle
+- Flexionsklasse: 250 × `unchanged`
+- Review-Modus: `language_model_first`
+- Entscheidung: intern eindeutig als Personen-/Berufsbezeichnung; reguläre `-er`-Flexion mit unverändertem Plural
+- neun bereits aus Priority 6 zurückgestellte Grenzfälle blieben ausgeschlossen
+- mehrdeutige Geräte-/Sach-Endglieder wie `bohrer`, `presser`, `stanzer`, `walzer`, `wickler`, `brenner`, `sortierer`, `kopierer`, `rechner`, `zähler`, `mischer`, `spritzer`, `roller` und `tiefzieher` wurden nicht pauschal freigegeben
+- Welle 62 enthält eine quellenneutrale Exact-Allow-List und 505 dedizierte Regressionen
+- keine generische Suffixregel
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
@@ -100,7 +48,6 @@ Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davo
 - Quellenherkunft und lokale Paarinformationen dürfen Hinweise liefern, haben aber kein Freigabegewicht.
 - Externe Recherche wird nur für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde zugeschaltet.
 - Produktseitige Sicherheitsgrenzen bleiben exakte Allow-Lists bzw. Mappings, Positiv-/Negativregressionen und vollständige CI.
-- Ein Batch darf keine generische Suffixfreigabe implizieren.
 
 ## Privater Quellenstand
 
@@ -109,8 +56,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-7-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-7-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-8-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-8-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -122,33 +69,19 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Abgeschlossene Entscheidungen aus dem unbekannten Pool:
-
-- `kldb-common-2026`: 96
-- `kldb-current-priority-1`: 20
-- `kldb-current-priority-2`: 50
-- `kldb-current-priority-3`: 50
-- `kldb-current-priority-4`: 222
-- `kldb-current-priority-5`: 250
-- `kldb-current-priority-6`: 250
-- `kldb-current-priority-7`: 250
-
-Damit sind **1.188 von 1.995** ursprünglich unbekannten Kandidaten entschieden. Es verbleiben **807 noch nicht entschiedene Kandidaten**.
-
-Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin separat offen.
+Entschieden sind inzwischen **1.438 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **557 noch nicht entschiedene Kandidaten**.
 
 ## Nächste Arbeitseinheit
 
 Als nächster Block:
 
-1. Die verbleibenden 807 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
-2. Die neun zurückgestellten Priority-6-Grenzfälle weiterhin separat behandeln und nicht automatisch freigeben.
-3. Verbleibende klare `-ierer`-Formen sowie weitere eindeutig personenbezogene Handwerks-, Bediener- und Berufsbezeichnungen identifizieren.
-4. Mehrdeutige Geräte-/Sachklassen weiterhin nicht pauschal freigeben.
-5. Bis zu 250 Kandidaten reproduzierbar als `kldb-current-priority-8` ableiten.
-6. Den gesamten Batch intern semantisch und morphologisch prüfen.
-7. Nur echte Grenzfälle gezielt extern nachprüfen.
-8. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
+1. Die verbleibenden 557 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
+2. Die neun zurückgestellten Priority-6-Grenzfälle separat belassen und nicht automatisch freigeben.
+3. Mehrdeutige Geräte-/Sachklassen weiterhin nicht pauschal freigeben.
+4. Einen konservativen `kldb-current-priority-9`-Batch von bis zu 250 intern eindeutig personenbezogenen Formen ableiten.
+5. Den Batch vollständig semantisch und morphologisch intern prüfen.
+6. Nur echte Grenzfälle gezielt extern nachprüfen.
+7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 
