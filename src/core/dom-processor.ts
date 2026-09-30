@@ -76,8 +76,28 @@ interface ChangeRecord {
   readonly summaries: readonly ReplacementSummaryEntry[];
 }
 
+interface RewriteState {
+  count: number;
+  windowStartedAt: number;
+  backoffUntil: number;
+}
+
+interface TraversalState {
+  readonly root: Node;
+  readonly walker: TreeWalker | undefined;
+  readonly skipSubtitles: boolean;
+  rootProcessed: boolean;
+}
+
+const regularWorkBudgetMs = 4;
+const frameworkRewriteWindowMs = 1_000;
+const frameworkRewriteThreshold = 5;
+const frameworkRewriteCooldownMs = 250;
+
 export class DomProcessor {
   private observer: MutationObserver | undefined;
+  private observerOptions: MutationObserverInit | undefined;
+  private observedShadowRoots = new WeakSet<ShadowRoot>();
   private readonly pendingNodes = new Set<Node>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
@@ -86,7 +106,10 @@ export class DomProcessor {
     Element,
     Map<string, ChangeRecord>
   >();
-  private flushScheduled = false;
+  private flushHandle: number | undefined;
+  private flushDueAt: number | undefined;
+  private activeTraversal: TraversalState | undefined;
+  private textRewriteStates = new WeakMap<Text, RewriteState>();
   private subtitleFlushHandle: number | undefined;
   private subtitleFlushUsesAnimationFrame = false;
   private readonly subtitleTransformCache = new Map<
@@ -108,37 +131,13 @@ export class DomProcessor {
     }
 
     this.running = true;
-
-    const root = this.document.body ?? this.document.documentElement;
-    if (root) {
-      this.processRoot(root);
-    }
+    this.observedShadowRoots = new WeakSet<ShadowRoot>();
+    this.textRewriteStates = new WeakMap<Text, RewriteState>();
 
     const MutationObserverConstructor =
       this.document.defaultView?.MutationObserver ?? MutationObserver;
-
     this.observer = new MutationObserverConstructor((records) => {
-      for (const record of records) {
-        if (record.type === "characterData") {
-          this.queue(record.target);
-          continue;
-        }
-
-        if (record.type === "attributes") {
-          if (record.target instanceof Element && record.attributeName) {
-            this.queueAttribute(record.target, record.attributeName);
-          }
-          continue;
-        }
-
-        for (const removedNode of record.removedNodes) {
-          this.forgetRoot(removedNode);
-        }
-
-        for (const addedNode of record.addedNodes) {
-          this.queue(addedNode);
-        }
-      }
+      this.handleMutationRecords(records);
     });
 
     const observerOptions: MutationObserverInit = {
@@ -146,13 +145,17 @@ export class DomProcessor {
       characterData: true,
       subtree: true
     };
-
     if (this.options.processAccessibleAttributes !== false) {
       observerOptions.attributes = true;
       observerOptions.attributeFilter = [...accessibleAttributeNames];
     }
+    this.observerOptions = observerOptions;
+    this.observeMutationTarget(this.document.documentElement);
 
-    this.observer.observe(this.document.documentElement, observerOptions);
+    const root = this.document.body ?? this.document.documentElement;
+    if (root) {
+      this.processRoot(root);
+    }
 
     this.scheduleCountNotification();
   }
@@ -161,12 +164,16 @@ export class DomProcessor {
     this.running = false;
     this.observer?.disconnect();
     this.observer = undefined;
+    this.observerOptions = undefined;
+    this.cancelRegularFlush();
+    this.activeTraversal = undefined;
     this.pendingNodes.clear();
     this.pendingSubtitleTextNodes.clear();
     this.pendingAttributes.clear();
-    this.flushScheduled = false;
     this.cancelSubtitleFlush();
     this.subtitleTransformCache.clear();
+    this.observedShadowRoots = new WeakSet<ShadowRoot>();
+    this.textRewriteStates = new WeakMap<Text, RewriteState>();
 
     if (options.restore) {
       this.restoreAll();
@@ -233,23 +240,27 @@ export class DomProcessor {
   }
 
   public flush(): void {
-    this.flushRegularNodes();
+    this.cancelRegularFlush();
+    this.flushRegularNodesSynchronously();
     this.cancelSubtitleFlush();
     this.flushSubtitleNodes();
   }
 
-  private flushRegularNodes(): void {
+  private flushRegularNodesSynchronously(): void {
     if (!this.running) {
       return;
     }
 
-    this.flushScheduled = false;
-    const nodes = [...this.pendingNodes];
+    const roots = [
+      ...(this.activeTraversal ? [this.activeTraversal.root] : []),
+      ...this.pendingNodes
+    ];
     const attributes = [...this.pendingAttributes.entries()];
+    this.activeTraversal = undefined;
     this.pendingNodes.clear();
     this.pendingAttributes.clear();
 
-    for (const node of nodes) {
+    for (const node of this.coalesceRoots(roots)) {
       this.processRoot(node);
     }
 
@@ -276,7 +287,7 @@ export class DomProcessor {
   }
 
   public processRoot(root: Node): void {
-    if (!this.running) {
+    if (!this.running || !this.isProcessableRoot(root)) {
       return;
     }
 
@@ -290,11 +301,8 @@ export class DomProcessor {
       return;
     }
 
-    if (
-      root instanceof Element &&
-      this.options.processAccessibleAttributes !== false
-    ) {
-      this.processAccessibleAttributes(root);
+    if (root instanceof Element) {
+      this.processElement(root, true);
     }
 
     const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
@@ -318,11 +326,8 @@ export class DomProcessor {
           currentNode as Text,
           skipSubtitles ? false : undefined
         );
-      } else if (
-        currentNode instanceof Element &&
-        this.options.processAccessibleAttributes !== false
-      ) {
-        this.processAccessibleAttributes(currentNode);
+      } else if (currentNode instanceof Element) {
+        this.processElement(currentNode, true);
       }
 
       currentNode = walker.nextNode();
@@ -334,22 +339,39 @@ export class DomProcessor {
       return;
     }
 
-    if (isSubtitleContent(node)) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const tracked = this.textChanges.get(node as Text);
-        if (tracked && (node as Text).data === tracked.transformed) {
-          return;
-        }
+    if (node.nodeType === Node.TEXT_NODE) {
+      const textNode = node as Text;
+      const tracked = this.textChanges.get(textNode);
+      if (tracked && textNode.data === tracked.transformed) {
+        return;
       }
+    }
 
+    if (isSubtitleContent(node)) {
       if (this.options.processSubtitles === true) {
         this.queueSubtitleTextNodes(node);
       }
       return;
     }
 
+    for (const pending of this.pendingNodes) {
+      if (pending === node || pending.contains(node)) {
+        return;
+      }
+    }
+
+    for (const pending of [...this.pendingNodes]) {
+      if (node.contains(pending)) {
+        this.pendingNodes.delete(pending);
+      }
+    }
+
     this.pendingNodes.add(node);
-    this.scheduleFlush();
+    const delay =
+      node.nodeType === Node.TEXT_NODE
+        ? this.getBackoffRemaining(node as Text)
+        : 0;
+    this.scheduleFlush(delay);
   }
 
   private queueSubtitleTextNodes(root: Node): void {
@@ -377,6 +399,11 @@ export class DomProcessor {
       return;
     }
 
+    const tracked = this.attributeChanges.get(element)?.get(attributeName);
+    if (tracked && element.getAttribute(attributeName) === tracked.transformed) {
+      return;
+    }
+
     const attributeNames =
       this.pendingAttributes.get(element) ?? new Set<string>();
     attributeNames.add(attributeName);
@@ -384,13 +411,210 @@ export class DomProcessor {
     this.scheduleFlush();
   }
 
-  private scheduleFlush(): void {
-    if (this.flushScheduled) {
+  private scheduleFlush(delayMs = 0): void {
+    if (!this.running) {
       return;
     }
 
-    this.flushScheduled = true;
-    queueMicrotask(() => this.flushRegularNodes());
+    const dueAt = this.now() + Math.max(0, delayMs);
+    if (
+      this.flushHandle !== undefined &&
+      this.flushDueAt !== undefined &&
+      this.flushDueAt <= dueAt
+    ) {
+      return;
+    }
+
+    this.cancelRegularFlush();
+    const view = this.document.defaultView;
+    const callback = () => {
+      this.flushHandle = undefined;
+      this.flushDueAt = undefined;
+      this.flushRegularNodesBudgeted();
+    };
+    this.flushDueAt = dueAt;
+    this.flushHandle = view
+      ? view.setTimeout(callback, Math.max(0, delayMs))
+      : window.setTimeout(callback, Math.max(0, delayMs));
+  }
+
+  private cancelRegularFlush(): void {
+    if (this.flushHandle === undefined) {
+      return;
+    }
+
+    const view = this.document.defaultView;
+    if (view) {
+      view.clearTimeout(this.flushHandle);
+    } else {
+      window.clearTimeout(this.flushHandle);
+    }
+    this.flushHandle = undefined;
+    this.flushDueAt = undefined;
+  }
+
+  private flushRegularNodesBudgeted(): void {
+    if (!this.running) {
+      return;
+    }
+
+    const deadline = this.now() + regularWorkBudgetMs;
+    let nextDelay: number | undefined;
+
+    while (this.now() < deadline) {
+      if (this.activeTraversal) {
+        if (this.processTraversalStep(this.activeTraversal)) {
+          this.activeTraversal = undefined;
+        }
+        continue;
+      }
+
+      const ready = this.takeNextReadyNode();
+      if (ready.node) {
+        const traversal = this.createTraversal(ready.node);
+        if (traversal) {
+          this.activeTraversal = traversal;
+        }
+        continue;
+      }
+      nextDelay = ready.delayMs;
+
+      const attribute = this.takeNextPendingAttribute();
+      if (attribute) {
+        this.processAccessibleAttribute(attribute.element, attribute.attributeName);
+        continue;
+      }
+
+      break;
+    }
+
+    if (this.hasRegularWork()) {
+      this.scheduleFlush(nextDelay ?? 0);
+    }
+  }
+
+  private createTraversal(root: Node): TraversalState | undefined {
+    if (!this.isProcessableRoot(root)) {
+      return undefined;
+    }
+
+    const skipSubtitles = this.options.processSubtitles !== true;
+    if (skipSubtitles && isSubtitleContent(root)) {
+      return undefined;
+    }
+
+    if (root.nodeType === Node.TEXT_NODE) {
+      return {
+        root,
+        walker: undefined,
+        skipSubtitles,
+        rootProcessed: false
+      };
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(
+      root,
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT,
+      skipSubtitles
+        ? {
+            acceptNode: (node) =>
+              node instanceof Element && isSubtitleContainer(node)
+                ? nodeFilter.FILTER_REJECT
+                : nodeFilter.FILTER_ACCEPT
+          }
+        : null
+    );
+
+    return { root, walker, skipSubtitles, rootProcessed: false };
+  }
+
+  private processTraversalStep(state: TraversalState): boolean {
+    if (!state.rootProcessed) {
+      state.rootProcessed = true;
+      if (state.root.nodeType === Node.TEXT_NODE) {
+        this.processTextNode(
+          state.root as Text,
+          state.skipSubtitles ? false : undefined
+        );
+        return true;
+      }
+      if (state.root instanceof Element) {
+        this.processElement(state.root, false);
+      }
+      if (!state.walker) {
+        return true;
+      }
+    }
+
+    const currentNode = state.walker?.nextNode();
+    if (!currentNode) {
+      return true;
+    }
+
+    if (currentNode.nodeType === Node.TEXT_NODE) {
+      this.processTextNode(
+        currentNode as Text,
+        state.skipSubtitles ? false : undefined
+      );
+    } else if (currentNode instanceof Element) {
+      this.processElement(currentNode, false);
+    }
+    return false;
+  }
+
+  private takeNextReadyNode(): {
+    readonly node?: Node;
+    readonly delayMs?: number;
+  } {
+    const now = this.now();
+    let minimumDelay: number | undefined;
+
+    for (const node of this.pendingNodes) {
+      if (!this.isProcessableRoot(node)) {
+        this.pendingNodes.delete(node);
+        continue;
+      }
+
+      const delay =
+        node.nodeType === Node.TEXT_NODE
+          ? this.getBackoffRemaining(node as Text, now)
+          : 0;
+      if (delay <= 0) {
+        this.pendingNodes.delete(node);
+        return { node };
+      }
+      minimumDelay = Math.min(minimumDelay ?? delay, delay);
+    }
+
+    return minimumDelay === undefined ? {} : { delayMs: minimumDelay };
+  }
+
+  private takeNextPendingAttribute():
+    | { readonly element: Element; readonly attributeName: string }
+    | undefined {
+    for (const [element, names] of this.pendingAttributes) {
+      const iterator = names.values();
+      const attributeName = iterator.next().value as string | undefined;
+      if (!attributeName) {
+        this.pendingAttributes.delete(element);
+        continue;
+      }
+      names.delete(attributeName);
+      if (names.size === 0) {
+        this.pendingAttributes.delete(element);
+      }
+      return { element, attributeName };
+    }
+    return undefined;
+  }
+
+  private hasRegularWork(): boolean {
+    return Boolean(
+      this.activeTraversal ||
+        this.pendingNodes.size > 0 ||
+        this.pendingAttributes.size > 0
+    );
   }
 
   private scheduleSubtitleFlush(): void {
@@ -433,6 +657,131 @@ export class DomProcessor {
 
     this.subtitleFlushHandle = undefined;
     this.subtitleFlushUsesAnimationFrame = false;
+  }
+
+  private handleMutationRecords(records: readonly MutationRecord[]): void {
+    for (const record of records) {
+      if (record.type === "characterData") {
+        const node = record.target as Text;
+        const tracked = this.textChanges.get(node);
+        if (tracked && node.data === tracked.transformed) {
+          continue;
+        }
+        if (tracked) {
+          this.noteExternalTextRewrite(node);
+        }
+        this.queue(node);
+        continue;
+      }
+
+      if (record.type === "attributes") {
+        if (record.target instanceof Element && record.attributeName) {
+          const tracked = this.attributeChanges
+            .get(record.target)
+            ?.get(record.attributeName);
+          if (
+            tracked &&
+            record.target.getAttribute(record.attributeName) === tracked.transformed
+          ) {
+            continue;
+          }
+          this.queueAttribute(record.target, record.attributeName);
+        }
+        continue;
+      }
+
+      for (const removedNode of record.removedNodes) {
+        this.forgetRoot(removedNode);
+      }
+      for (const addedNode of record.addedNodes) {
+        this.queue(addedNode);
+      }
+    }
+  }
+
+  private processElement(element: Element, processShadowNow: boolean): void {
+    if (this.options.processAccessibleAttributes !== false) {
+      this.processAccessibleAttributes(element);
+    }
+
+    const shadowRoot = element.shadowRoot;
+    if (!shadowRoot) {
+      return;
+    }
+
+    this.observeShadowRoot(shadowRoot);
+    if (processShadowNow) {
+      this.processRoot(shadowRoot);
+    } else {
+      this.queue(shadowRoot);
+    }
+  }
+
+  private observeShadowRoot(root: ShadowRoot): void {
+    if (this.observedShadowRoots.has(root)) {
+      return;
+    }
+    this.observedShadowRoots.add(root);
+    this.observeMutationTarget(root);
+  }
+
+  private observeMutationTarget(target: Node): void {
+    if (!this.observer || !this.observerOptions) {
+      return;
+    }
+    this.observer.observe(target, this.observerOptions);
+  }
+
+  private noteExternalTextRewrite(node: Text): void {
+    const now = this.now();
+    const previous = this.textRewriteStates.get(node);
+    const state =
+      previous && now - previous.windowStartedAt <= frameworkRewriteWindowMs
+        ? previous
+        : { count: 0, windowStartedAt: now, backoffUntil: 0 };
+
+    state.count += 1;
+    if (state.count >= frameworkRewriteThreshold) {
+      state.backoffUntil = now + frameworkRewriteCooldownMs;
+      state.count = 0;
+      state.windowStartedAt = now;
+    }
+    this.textRewriteStates.set(node, state);
+  }
+
+  private getBackoffRemaining(node: Text, now = this.now()): number {
+    const state = this.textRewriteStates.get(node);
+    return state ? Math.max(0, state.backoffUntil - now) : 0;
+  }
+
+  private coalesceRoots(nodes: readonly Node[]): Node[] {
+    const roots: Node[] = [];
+    for (const node of nodes) {
+      if (!this.isProcessableRoot(node)) {
+        continue;
+      }
+      if (roots.some((root) => root === node || root.contains(node))) {
+        continue;
+      }
+      for (let index = roots.length - 1; index >= 0; index -= 1) {
+        if (node.contains(roots[index] as Node)) {
+          roots.splice(index, 1);
+        }
+      }
+      roots.push(node);
+    }
+    return roots;
+  }
+
+  private isProcessableRoot(root: Node): boolean {
+    if (root instanceof ShadowRoot) {
+      return root.host.isConnected;
+    }
+    return root.isConnected;
+  }
+
+  private now(): number {
+    return this.document.defaultView?.performance.now() ?? performance.now();
   }
 
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
@@ -624,6 +973,9 @@ export class DomProcessor {
 
     if (root instanceof Element) {
       this.removeAllAttributeChanges(root);
+      if (root.shadowRoot) {
+        this.forgetRoot(root.shadowRoot);
+      }
     }
 
     const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
@@ -642,6 +994,9 @@ export class DomProcessor {
         }
       } else if (currentNode instanceof Element) {
         this.removeAllAttributeChanges(currentNode);
+        if (currentNode.shadowRoot) {
+          this.forgetRoot(currentNode.shadowRoot);
+        }
       }
 
       currentNode = walker.nextNode();
