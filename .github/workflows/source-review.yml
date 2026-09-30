@@ -231,6 +231,8 @@ jobs:
               "weak": 0,
               "none": 0,
           }
+          multiple_source_pair_candidates = []
+          missing_source_pair_candidates = []
 
           for item in candidates:
               candidate = item["candidate"]
@@ -244,12 +246,16 @@ jobs:
                   evidence.get("strongSourcePairCount") or 0
               )
 
+              if pair_hits > 1:
+                  multiple_source_pair_candidates.append(candidate)
+
               if strong_pair_hits:
                   source_pair_counts["strong"] += 1
               elif pair_hits:
                   source_pair_counts["weak"] += 1
               else:
                   source_pair_counts["none"] += 1
+                  missing_source_pair_candidates.append(candidate)
 
               if wd_exact and wp_exact:
                   groups["bothExact"].append(candidate)
@@ -262,6 +268,12 @@ jobs:
               else:
                   groups["noHits"].append(candidate)
 
+          if missing_source_pair_candidates:
+              raise SystemExit(
+                  "BA-Quellpaare fehlen für Review-Kandidaten: "
+                  + ", ".join(missing_source_pair_candidates)
+              )
+
           payload = {
               "version": 1,
               "sourceId": queue.get("sourceId"),
@@ -273,6 +285,7 @@ jobs:
                   for name, values in groups.items()
               },
               "sourcePairCounts": source_pair_counts,
+              "multipleSourcePairCandidates": multiple_source_pair_candidates,
               "autoApprovalAllowed": False,
           }
           output_path.write_text(
