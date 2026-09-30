@@ -21,33 +21,18 @@ jobs:
       - name: Priority 6 reproduzierbar erzeugen
         shell: bash
         run: |
-          python sprachverstand/scripts/select_and_review_kldb_priority6.py             sprachverstand/derived/candidates/kldb-current-unknown.txt             sprachverstand/derived/review             --decision sprachverstand/derived/review/kldb-common-2026-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-1-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-2-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-3-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-4-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json
-
+          python sprachverstand/scripts/select_and_review_kldb_priority6.py sprachverstand/derived/candidates/kldb-current-unknown.txt sprachverstand/derived/review --decision sprachverstand/derived/review/kldb-common-2026-manual-decisions.json --decision sprachverstand/derived/review/kldb-current-priority-1-manual-decisions.json --decision sprachverstand/derived/review/kldb-current-priority-2-manual-decisions.json --decision sprachverstand/derived/review/kldb-current-priority-3-manual-decisions.json --decision sprachverstand/derived/review/kldb-current-priority-4-manual-decisions.json --decision sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json
           test "$(wc -l < sprachverstand/derived/candidates/kldb-current-priority-6.txt)" -eq 250
           python - <<'PY'
           import json
           from pathlib import Path
-
-          decision_path = Path(
-              "sprachverstand/derived/review/"
-              "kldb-current-priority-6-manual-decisions.json"
-          )
-          selection_path = Path(
-              "sprachverstand/derived/candidates/"
-              "kldb-current-priority-6-selection.json"
-          )
-          d = json.loads(decision_path.read_text(encoding="utf-8"))
-          s = json.loads(selection_path.read_text(encoding="utf-8"))
+          d = json.loads(Path("sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json").read_text(encoding="utf-8"))
+          s = json.loads(Path("sprachverstand/derived/candidates/kldb-current-priority-6-selection.json").read_text(encoding="utf-8"))
           assert len(d["accepted"]) == 250
           assert not d["rejected"]
           assert not d["pending"]
           assert not d["externalReviewCandidates"]
-          assert d["classCounts"] == {
-              "loge": 20,
-              "plural_e": 26,
-              "unchanged": 157,
-              "weak_en": 47,
-          }
+          assert d["classCounts"] == {"loge": 20, "plural_e": 26, "unchanged": 157, "weak_en": 47}
           assert len(s["boundaryExclusions"]) == 9
           assert s["remainingBeforeSelection"] == 1307
           assert s["eligibleBeforeBoundaryExclusions"] == 259
@@ -59,14 +44,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t CHANGED < <(
-            { git diff --name-only; git ls-files --others --exclude-standard; } | sort -u
-          )
-          printf '%s
-' "${CHANGED[@]}"
+          mapfile -t CHANGED < <({ git diff --name-only; git ls-files --others --exclude-standard; } | sort -u)
+          printf '%s\n' "${CHANGED[@]}"
           for path in "${CHANGED[@]}"; do
             case "$path" in
-              sprachverstand/derived/candidates/kldb-current-priority-6.txt|              sprachverstand/derived/candidates/kldb-current-priority-6-selection.json|              sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json|              sprachverstand/derived/review/kldb-current-priority-6-summary.json)
+              sprachverstand/derived/candidates/kldb-current-priority-6.txt|sprachverstand/derived/candidates/kldb-current-priority-6-selection.json|sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json|sprachverstand/derived/review/kldb-current-priority-6-summary.json)
                 ;;
               *)
                 echo "Unerwartete Änderung: $path"
@@ -81,6 +63,6 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add             sprachverstand/derived/candidates/kldb-current-priority-6.txt             sprachverstand/derived/candidates/kldb-current-priority-6-selection.json             sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json             sprachverstand/derived/review/kldb-current-priority-6-summary.json
+          git add sprachverstand/derived/candidates/kldb-current-priority-6.txt sprachverstand/derived/candidates/kldb-current-priority-6-selection.json sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json sprachverstand/derived/review/kldb-current-priority-6-summary.json
           git commit -m "Review: Priority 6 sprachmodellbasiert abschließen"
           git push origin HEAD:review/kldb-current-priority-6
