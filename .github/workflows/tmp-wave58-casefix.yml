@@ -1,0 +1,117 @@
+name: Temporärer Welle-58-Großschreibungsfix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Produktbranch auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: lexicon/reviewed-wave-58
+          fetch-depth: 0
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Bindestrich-Großschreibung absichern
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/rules/person-lexicon.ts")
+          source = path.read_text(encoding="utf-8")
+          old = '''function applyCase(source: string, replacement: string): string {
+            const lowerSource = source.toLocaleLowerCase(locale);
+          '''.replace("          ", "")
+          new = '''function applyCase(source: string, replacement: string): string {
+            if (source.includes("-") && replacement.includes("-")) {
+              const sourceParts = source.split("-");
+              const replacementParts = replacement.split("-");
+
+              if (sourceParts.length === replacementParts.length) {
+                return replacementParts
+                  .map((part, index) => applyCase(sourceParts[index] ?? "", part))
+                  .join("-");
+              }
+            }
+
+            const lowerSource = source.toLocaleLowerCase(locale);
+          '''.replace("          ", "")
+          if old not in source:
+              raise SystemExit("applyCase-Anker nicht gefunden.")
+          path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+          test = '''import { describe, expect, it } from "vitest";
+          import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separators";
+          import { mapMappedSingularPair } from "../src/rules/person-lexicon";
+
+          describe("Bindestrich-Großschreibung in Welle 58", () => {
+            it.each([
+              ["Kfz-Schlosser:innen", "Kfz-Schlosser"],
+              ["Lkw-Schlosser:innen", "Lkw-Schlosser"],
+              ["Pkw-Schlosser:innen", "Pkw-Schlosser"],
+              ["Rating-Analyst:innen", "Rating-Analysten"]
+            ])("erhält die Segmentgroßschreibung für %s", (input, expected) => {
+              expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+                text: expected,
+                replacements: 1
+              });
+            });
+
+            it.each([
+              ["Kfz-Schlosser", "Kfz-Schlosserin"],
+              ["Rating-Analyst", "Rating-Analystin"]
+            ])("erkennt korrekt geschriebenes Bindestrichpaar %s/%s", (masculine, feminine) => {
+              expect(mapMappedSingularPair(masculine, feminine)).toBe(masculine);
+            });
+          });
+          '''.replace("          ", "")
+          Path("tests/lexicon-person-forms-wave-58-hyphen-case.test.ts").write_text(
+              test,
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Fix prüfen
+        run: |
+          npm run typecheck
+          npx vitest run             tests/lexicon-person-forms-wave-58.test.ts             tests/lexicon-person-forms-wave-58-hyphen-case.test.ts
+
+      - name: Änderungen festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t CHANGED < <(
+            { git diff --name-only; git ls-files --others --exclude-standard; } | sort -u
+          )
+          expected=(
+            "src/rules/person-lexicon.ts"
+            "tests/lexicon-person-forms-wave-58-hyphen-case.test.ts"
+          )
+          if [[ "${#CHANGED[@]}" -ne "${#expected[@]}" ]]; then
+            printf 'Unerwartete Änderungen:\n'
+            printf ' - %s\n' "${CHANGED[@]}"
+            exit 1
+          fi
+          for path in "${expected[@]}"; do
+            printf '%s\n' "${CHANGED[@]}" | grep -Fxq "$path"
+          done
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "${expected[@]}"
+          git commit -m "Lexikon: Bindestrich-Großschreibung absichern"
+          git push origin HEAD:lexicon/reviewed-wave-58
