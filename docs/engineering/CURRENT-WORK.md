@@ -3,60 +3,56 @@
 Stand: 2026-09-30
 Autorität: `main`
 
-Diese Datei ist der kompakte operative Übergabepunkt für unterbrochene oder in einem neuen Chat fortgesetzte Arbeit.
-
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Letzte integrierte Lexikon-Ausbauwelle: **58**
-- Letzter integrierter Produkt-PR: **#252 — achtundfünfzigste Ausbauwelle**
-- Verifizierter Produktbaseline-Commit: `8242fdbe13288208a74e30df06e8d5516fe281fc`
-- Welle 58 integriert 222 intern geprüfte exakte Personenbasen sowie segmentweise Groß-/Kleinschreibung für Bindestrichkomposita.
-- CI von PR #252: Kernprüfung, Gecko, Chromium, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Aktuellen `main`-HEAD bei jeder Wiederaufnahme live ermitteln.
+- Letzte integrierte Lexikon-Ausbauwelle: **59**
+- Letzter integrierter Produkt-PR: **#254 — neunundfünfzigste Ausbauwelle**
+- Verifizierter Produktbaseline-Commit: `27cfc991b9aa18651a8bac6651d8a98e8b33fe0b`
+- Welle 59 integriert 250 intern geprüfte exakte Personenbasen in fünf Flexionsklassen.
+- CI von PR #254: Kernprüfung, Gecko, Chromium, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 
 ## Aktiver Arbeitsstrom
 
 ### Priorität 1 — verbleibende KldB/DKZ-Kandidaten sprachmodellbasiert erschließen
 
-Der Quellenimport ist abgeschlossen. `kldb-current-priority-4` ist ebenfalls vollständig abgeschlossen und in Welle 58 integriert:
+`kldb-current-priority-5` ist abgeschlossen und in Welle 59 integriert:
 
-- 222 Kandidaten
-- 222 angenommen
+- 250 Kandidaten
+- 250 angenommen
 - 0 verworfen
 - 0 offen
 - 0 externe Grenzfälle
 
-Von den ursprünglich 1.995 unbekannten Kandidaten sind inzwischen 438 entschieden; **1.557 bleiben offen**.
+Von den ursprünglich 1.995 unbekannten Kandidaten sind inzwischen **688 entschieden**; **1.307 bleiben offen**.
 
-Der bisherige starke Personen-Suffixselektor ist vollständig ausgeschöpft und liefert für den Restbestand **0 weitere Kandidaten**. Deshalb darf nicht einfach derselbe Selektor als Priority 5 wiederverwendet werden.
+Der Priority-5-Selektor ist ausgeschöpft. Er darf nicht unverändert als Priority 6 wiederverwendet werden.
 
 Nächster Schritt:
 
-1. Restbestand von 1.557 Kandidaten nach Wortbildungs- und Endgliedmustern analysieren.
-2. Einen breiteren konservativen Selektor bzw. reproduzierbare Kandidatengruppen definieren.
-3. Bis zu 250 Kandidaten als nächsten Batch ableiten.
-4. Standardmäßig intern semantisch und morphologisch prüfen.
-5. Externe Recherche nur für echte Mehrdeutigkeiten oder widersprüchliche Befunde.
-6. Produktiv weiterhin nur exakte Freigaben plus Regressionen; keine generische Suffixregel aus einem Batch ableiten.
+1. Restbestand von 1.307 Kandidaten erneut nach Wortbildungs- und Endgliedmustern analysieren.
+2. Morphologisch heikle Restklassen getrennt betrachten.
+3. Einen weiteren konservativen Selektor bzw. reproduzierbare Kandidatengruppen definieren.
+4. Bis zu 250 Kandidaten als Priority 6 ableiten.
+5. Standardmäßig intern semantisch und morphologisch prüfen.
+6. Externe Recherche nur für echte Mehrdeutigkeiten oder widersprüchliche Befunde.
+7. Produktiv weiterhin nur exakte Allow-Lists bzw. Mappings plus Regressionen; keine generische Suffixregel aus einem Batch ableiten.
 
 ## Prüfprinzip
 
 1. Quellen liefern nur Kandidaten; ihre Herkunft hat kein Freigabegewicht.
 2. Eindeutige deutsche Personenformen können ohne Webrecherche weiterverarbeitet werden.
-3. Lokal vorhandene Paarinformationen sind optionaler Hinweis, keine Voraussetzung.
-4. Produktseitige Sicherheitsgrenzen sind exakte Allow-Lists bzw. Mappings, Positiv-/Negativregressionen und vollständige CI.
-5. Bindestrichkomposita behalten die Groß-/Kleinschreibung ihrer einzelnen Segmente.
+3. Lokal vorhandene Paarinformationen sind optionaler Hinweis.
+4. Produktseitige Sicherheitsgrenzen sind exakte Freigaben, Positiv-/Negativregressionen und vollständige CI.
+5. Historisch eingefrorene Negativfälle dürfen nur gezielt aufgehoben werden, wenn die neue interne Prüfung sie eindeutig freigibt.
 
 ## Optionale private Ebene
-
-Für Kandidatengenerierung und Coverage darf `HyperCriSiS/Generic-Datastore` geladen werden. Private Rohquellen, URLs und Herkunftsmetadaten bleiben außerhalb des öffentlichen Produkt-Repositories. Herkunftsmetadaten dürfen die sprachliche Freigabeentscheidung nicht beeinflussen.
 
 Aktuell maßgeblich:
 
 - `sprachverstand/CURRENT-STATE.json`
-- `sprachverstand/derived/review/kldb-current-priority-4-summary.json`
-- `sprachverstand/derived/review/kldb-current-priority-4-manual-decisions.json`
+- `sprachverstand/derived/review/kldb-current-priority-5-summary.json`
+- `sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json`
 
 ## Wiederaufnahmeprotokoll
 
