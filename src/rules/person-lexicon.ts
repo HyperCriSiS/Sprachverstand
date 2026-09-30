@@ -5,6 +5,7 @@ import {
 import { nationalityPersonForms } from "./nationality-person-forms";
 import { getReviewedPersonForms } from "./reviewed-person-forms";
 import { getReviewedPersonFormsWave59 } from "./reviewed-person-forms-wave-59";
+import { getReviewedPersonFormsWave60 } from "./reviewed-person-forms-wave-60";
 
 export type GrammaticalCase =
   | "nominative"
@@ -34,7 +35,8 @@ function getExactPersonForms(
   return (
     getGeneratedPersonForms(normalizedBase) ??
     getReviewedPersonForms(normalizedBase) ??
-    getReviewedPersonFormsWave59(normalizedBase)
+    getReviewedPersonFormsWave59(normalizedBase) ??
+    getReviewedPersonFormsWave60(normalizedBase)
   );
 }
 
