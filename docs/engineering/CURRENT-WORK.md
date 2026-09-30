@@ -6,29 +6,30 @@ Autorität: `main`
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Letzte integrierte Lexikon-Ausbauwelle: **63**
-- Letzter integrierter Produkt-PR: **#264 — dreiundsechzigste Ausbauwelle**
-- Verifizierter Produktbaseline-Commit: `7ff05d9c75ecf76fdf1018fca3fc330c28f38930`
-- Welle 63 integriert 246 intern geprüfte exakte Personenbasen in sechs expliziten Flexionsklassen.
-- PR-CI und Post-Merge-CI einschließlich Gecko, Chromium und CodeQL sind vollständig grün.
+- Letzte integrierte Lexikon-Ausbauwelle: **64**
+- Letzter integrierter Produkt-PR: **#266 — vierundsechzigste Ausbauwelle**
+- Verifizierter Produktbaseline-Commit: `2f69a81991ce0c126878efe0f2ec553e35dbd3eb`
+- Welle 64 integriert 20 intern geprüfte exakte Personenbasen.
+- Klassen: 18 `unchanged`, 2 `plural_e`.
+- PR-CI einschließlich Kernprüfung, Gecko, Chromium, CodeQL, Advanced Security und Sammelcheck vollständig grün.
 - Keine generische Suffixregel; die neuen Formen liegen ausschließlich in einer Exact-Allow-List.
 
 ## Aktiver Arbeitsstrom
 
 ### Priorität 1 — verbleibende KldB/DKZ-Kandidaten als Einzelfälle erschließen
 
-`kldb-current-priority-9` ist abgeschlossen und in Welle 63 integriert:
+`kldb-current-priority-10` ist abgeschlossen und in Welle 64 integriert:
 
-- 246 Kandidaten
-- 246 angenommen
+- 20 Kandidaten
+- 20 angenommen
 - 0 verworfen
 - 0 offen
 - 0 externe Grenzfälle
-- Klassen: 140 `unchanged`, 66 `plural_e`, 13 `weak_e`, 13 `weak_en`, 12 `plural_en`, 2 `plural_s`
-- 503 dedizierte Welle-63-Regressionen
+- 18 `unchanged`, 2 `plural_e`
+- bekannte Priority-6-Grenzfälle und mehrdeutige Geräte-/Sachklassen blieben ausgeschlossen
 - keine generische Suffixregel
 
-Von den ursprünglich 1.995 unbekannten Kandidaten sind **1.684 entschieden**; **311 bleiben offen**.
+Von den ursprünglich 1.995 unbekannten Kandidaten sind **1.704 entschieden**; **291 bleiben offen**.
 
 Der Restpool besteht überwiegend aus bewusst nicht pauschal freigegebenen Geräte-/Sachbezeichnungen. Besonders häufig sind `Bohrer`, `Presser`, `Stanzer`, `Walzer`, `Wickler`, `Brenner`, `Sortierer`, `Kopierer`, `Rechner`, `Mischer` und ähnliche Endglieder.
 
@@ -36,8 +37,8 @@ Die neun in Priority 6 zurückgestellten Formen bleiben separat offen: `computer
 
 Nächster Schritt:
 
-1. Restbestand von 311 Kandidaten einzeln bzw. in kleinen eindeutigen Gruppen prüfen.
-2. Priority 10 ausschließlich aus explizit sicheren Personenformen bilden; kein Ziel von 250 erzwingen.
+1. Restbestand von 291 Kandidaten einzeln bzw. in kleinen eindeutigen Gruppen prüfen.
+2. Einen möglichen Priority-11-Batch ausschließlich aus explizit sicheren Personenformen bilden; kein Zielumfang erzwingen.
 3. Mehrdeutige Geräte-/Sachklassen weiterhin nicht pauschal freigeben.
 4. Morphologisch ungewöhnliche Formen zurückstellen, sofern die interne Bewertung nicht eindeutig ist.
 5. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
@@ -56,8 +57,8 @@ Nächster Schritt:
 Aktuell maßgeblich:
 
 - `sprachverstand/CURRENT-STATE.json`
-- `sprachverstand/derived/review/kldb-current-priority-9-summary.json`
-- `sprachverstand/derived/review/kldb-current-priority-9-manual-decisions.json`
+- `sprachverstand/derived/review/kldb-current-priority-10-summary.json`
+- `sprachverstand/derived/review/kldb-current-priority-10-manual-decisions.json`
 
 ## Wiederaufnahmeprotokoll
 
