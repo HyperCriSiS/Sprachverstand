@@ -6,10 +6,10 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `3741d7083bcb6138554b35dcf95a2baee45b4f91`
-- Letzte Produktänderung: PR #247 „Lexikon: sechsundfünfzigste konservative Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 56
-- PR #247: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Produktbaseline: `1fc46b0a9fd37f61e931178cc5489e152f30e25a`
+- Letzte Produktänderung: PR #249 „Lexikon: siebenundfünfzigste konservative Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 57
+- PR #249: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 - Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizite, geprüfte `exact`-Mappings übernommen.
 
 ## Abgeschlossene kldb-current-Blöcke
@@ -20,9 +20,7 @@ Autorität: `main`
 - 20 angenommen
 - 0 verworfen
 - 0 offen
-- vollständig öffentlich integriert:
-  - Welle 54: erste 6 Kandidaten
-  - Welle 55: restliche 14 Kandidaten
+- vollständig in Welle 54 und 55 integriert
 - letzter Integrations-PR: #243
 
 ### `kldb-current-priority-2`
@@ -31,11 +29,21 @@ Autorität: `main`
 - 50 angenommen
 - 0 verworfen
 - 0 offen
-- für jeden Kandidaten liegt BA-Paarevidenz vor
-- Flexion wurde anhand der jeweiligen Kopfwortklasse geprüft
-- vollständig öffentlich integriert:
-  - Welle 56: 50 exakte Mappings
+- vollständig in Welle 56 integriert
 - Integrations-PR: #247
+
+### `kldb-current-priority-3`
+
+- 50 Kandidaten
+- 50 angenommen
+- 0 verworfen
+- 0 offen
+- BA-Paar für jeden Kandidaten vorhanden
+- externe Wikidata-/Wikipedia-Evidenz über den öffentlichen Quellenreview erzeugt
+- Flexion ausschließlich über bereits abgesicherte Kopfwortklassen
+- `Fraud-Analyst:innen` war historisch als mehrdeutiger Restfall eingefroren; Priority 3 liefert nun BA-Paar sowie exakte Wikidata- und Wikipedia-Evidenz, deshalb wurde diese alte Negativ-Regression gezielt aufgehoben.
+- vollständig in Welle 57 integriert
+- Integrations-PR: #249
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt unverändert bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
@@ -69,19 +77,20 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Aus diesem unbekannten Pool sind inzwischen abgeschlossen:
+Abgeschlossene Entscheidungen aus dem unbekannten Pool:
 
-- `kldb-current-priority-1`: 20 Entscheidungen
-- `kldb-current-priority-2`: 50 Entscheidungen
+- `kldb-current-priority-1`: 20
+- `kldb-current-priority-2`: 50
+- `kldb-current-priority-3`: 50
 
-Nach Ausschluss der zuvor bereits entschiedenen `kldb-common-2026`-Fälle und dieser beiden Priority-Batches verbleiben im priorisierten `kldb-current`-Review-Pool 1.829 noch nicht entschiedene Kandidaten.
+Zusammen mit den zuvor ausgeschlossenen 96 `kldb-common-2026`-Entscheidungen sind 216 Kandidaten entschieden. Im priorisierten `kldb-current`-Review-Pool verbleiben 1.779 noch nicht entschiedene Kandidaten.
 
 ## Nächste Arbeitseinheit
 
 Als nächster Quellenblock:
 
-1. `kldb-current-priority-3` mit standardmäßig 50 Kandidaten reproduzierbar ableiten.
-2. Bereits entschiedene Kandidaten aus `kldb-common-2026`, Priority 1 und Priority 2 ausschließen.
+1. `kldb-current-priority-4` mit standardmäßig 50 Kandidaten reproduzierbar ableiten.
+2. Alle Entscheidungen aus `kldb-common-2026` sowie Priority 1 bis 3 ausschließen.
 3. BA-Paarevidenz sowie externe Wikidata-/Wikipedia-Evidenz erzeugen.
 4. Alle Kandidaten einzeln semantisch und morphologisch prüfen.
 5. Nur eindeutig abgesicherte Kandidaten als weitere konservative Produktwelle übernehmen.
