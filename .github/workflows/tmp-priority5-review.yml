@@ -1,0 +1,69 @@
+name: Temporärer Priority-5-Review
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Privaten Datastore auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HyperCriSiS/Generic-Datastore
+          ref: review/kldb-current-priority-5
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: true
+
+      - name: Priority 5 reproduzierbar erzeugen
+        shell: bash
+        run: |
+          python sprachverstand/scripts/select_and_review_kldb_priority5.py             sprachverstand/derived/candidates/kldb-current-unknown.txt             sprachverstand/derived/review             --decision sprachverstand/derived/review/kldb-common-2026-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-1-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-2-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-3-manual-decisions.json             --decision sprachverstand/derived/review/kldb-current-priority-4-manual-decisions.json
+
+          test "$(wc -l < sprachverstand/derived/candidates/kldb-current-priority-5.txt)" -eq 250
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d = json.loads(Path(
+              "sprachverstand/derived/review/"
+              "kldb-current-priority-5-manual-decisions.json"
+          ).read_text(encoding="utf-8"))
+          assert len(d["accepted"]) == 250
+          assert not d["rejected"]
+          assert not d["pending"]
+          assert not d["externalReviewCandidates"]
+          assert sum(d["classCounts"].values()) == 250
+          print(d["classCounts"])
+          PY
+
+      - name: Änderungen auf Priority 5 begrenzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t CHANGED < <(
+            { git diff --name-only; git ls-files --others --exclude-standard; } | sort -u
+          )
+          printf '%s\n' "${CHANGED[@]}"
+          for path in "${CHANGED[@]}"; do
+            case "$path" in
+              sprachverstand/derived/candidates/kldb-current-priority-5.txt|              sprachverstand/derived/candidates/kldb-current-priority-5-selection.json|              sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json|              sprachverstand/derived/review/kldb-current-priority-5-summary.json)
+                ;;
+              *)
+                echo "Unerwartete Änderung: $path"
+                exit 1
+                ;;
+            esac
+          done
+
+      - name: Private Review-Dateien festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add             sprachverstand/derived/candidates/kldb-current-priority-5.txt             sprachverstand/derived/candidates/kldb-current-priority-5-selection.json             sprachverstand/derived/review/kldb-current-priority-5-manual-decisions.json             sprachverstand/derived/review/kldb-current-priority-5-summary.json
+          git commit -m "Review: Priority 5 sprachmodellbasiert abschließen"
+          git push origin HEAD:review/kldb-current-priority-5
