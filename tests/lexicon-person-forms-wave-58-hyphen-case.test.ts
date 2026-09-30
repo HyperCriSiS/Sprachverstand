@@ -3,6 +3,7 @@ import { mappedPluralSeparatorsRule } from "../src/rules/mapped-plural-separator
 import { mapMappedSingularPair } from "../src/rules/person-lexicon";
 
 describe("Bindestrich-Großschreibung in Welle 58", () => {
+  // Jedes Bindestrichsegment behält seine eigene Groß-/Kleinschreibung.
   it.each([
     ["Kfz-Schlosser:innen", "Kfz-Schlosser"],
     ["Lkw-Schlosser:innen", "Lkw-Schlosser"],
