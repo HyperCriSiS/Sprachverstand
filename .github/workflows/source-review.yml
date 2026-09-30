@@ -7,10 +7,7 @@ on:
         description: "Private Prüfwarteschlange"
         required: true
         default: "kldb-common-2026"
-        type: choice
-        options:
-          - kldb-common-2026
-          - kldb-current-priority-1
+        type: string
 
 permissions:
   contents: read
@@ -55,23 +52,32 @@ jobs:
 
       - name: Review-Warteschlange auswählen
         id: queue
+        env:
+          QUEUE: ${{ inputs.queue }}
         shell: bash
         run: |
           set -euo pipefail
 
-          case "${{ inputs.queue }}" in
+          queue="$QUEUE"
+          case "$queue" in
             kldb-common-2026)
               echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt" >> "$GITHUB_OUTPUT"
               echo "review_prefix=kldb-common-2026" >> "$GITHUB_OUTPUT"
               echo "source_id=ba-kldb-2026+ba-dkz-current" >> "$GITHUB_OUTPUT"
+              echo "pairs_file=datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-pairs.json" >> "$GITHUB_OUTPUT"
               ;;
-            kldb-current-priority-1)
-              echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-current-priority-1.txt" >> "$GITHUB_OUTPUT"
-              echo "review_prefix=kldb-current-priority-1" >> "$GITHUB_OUTPUT"
+            kldb-current-priority-*)
+              if [[ ! "$queue" =~ ^kldb-current-priority-[1-9][0-9]*$ ]]; then
+                echo "Ungültige kldb-current-Warteschlange: $queue"
+                exit 1
+              fi
+              echo "candidate_file=datastore/sprachverstand/derived/candidates/${queue}.txt" >> "$GITHUB_OUTPUT"
+              echo "review_prefix=${queue}" >> "$GITHUB_OUTPUT"
               echo "source_id=ba-dkz-current" >> "$GITHUB_OUTPUT"
+              echo "pairs_file=datastore/sprachverstand/derived/candidates/kldb-current-pairs.json" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "Unbekannte Review-Warteschlange: ${{ inputs.queue }}"
+              echo "Unbekannte Review-Warteschlange: $queue"
               exit 1
               ;;
           esac
@@ -132,19 +138,26 @@ jobs:
                       "Die Common-Queue stimmt nicht mit der Snapshot-Queue überein."
                   )
           else:
-              decisions_file = Path(
-                  "datastore/sprachverstand/derived/review/"
-                  "kldb-common-2026-manual-decisions.json"
+              review_dir = Path(
+                  "datastore/sprachverstand/derived/review"
               )
-              decisions = json.loads(
-                  decisions_file.read_text(encoding="utf-8")
-              )
-              decided = {
-                  item["candidate"]
-                  for key in ("accepted", "rejected")
-                  for item in decisions.get(key, [])
-                  if item.get("candidate")
-              }
+              current_decisions_name = f"{queue}-manual-decisions.json"
+              decided: set[str] = set()
+              for decisions_file in sorted(
+                  review_dir.glob("kldb-*-manual-decisions.json")
+              ):
+                  if decisions_file.name == current_decisions_name:
+                      continue
+                  decisions = json.loads(
+                      decisions_file.read_text(encoding="utf-8")
+                  )
+                  decided.update(
+                      item["candidate"]
+                      for key in ("accepted", "rejected")
+                      for item in decisions.get(key, [])
+                      if item.get("candidate")
+                  )
+
               overlap = sorted(candidates & decided)
               if overlap:
                   raise SystemExit(
@@ -179,9 +192,10 @@ jobs:
           CANDIDATE_FILE: ${{ steps.queue.outputs.candidate_file }}
           REVIEW_PREFIX: ${{ steps.queue.outputs.review_prefix }}
           SOURCE_ID: ${{ steps.queue.outputs.source_id }}
+          PAIRS_FILE: ${{ steps.queue.outputs.pairs_file }}
         run: |
           mkdir -p datastore/sprachverstand/derived/review
-          python datastore/sprachverstand/scripts/assemble_review_queue.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/review/${REVIEW_PREFIX}-review.json"             --source-id "$SOURCE_ID"             --wikidata-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl"             --wikipedia-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl"             --product-commit "$PRODUCT_COMMIT"
+          python datastore/sprachverstand/scripts/assemble_review_queue.py             "$CANDIDATE_FILE"             "datastore/sprachverstand/derived/review/${REVIEW_PREFIX}-review.json"             --source-id "$SOURCE_ID"             --wikidata-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikidata.jsonl"             --wikipedia-jsonl "datastore/sprachverstand/derived/evidence/${REVIEW_PREFIX}-wikipedia.jsonl"             --pairs-json "$PAIRS_FILE"             --product-commit "$PRODUCT_COMMIT"
 
       - name: Kompakte Review-Zusammenfassung erzeugen
         env:
@@ -212,6 +226,13 @@ jobs:
               "otherHits": [],
               "noHits": [],
           }
+          source_pair_counts = {
+              "strong": 0,
+              "weak": 0,
+              "none": 0,
+          }
+          multiple_source_pair_candidates = []
+          missing_source_pair_candidates = []
 
           for item in candidates:
               candidate = item["candidate"]
@@ -220,6 +241,21 @@ jobs:
               wp_exact = bool(evidence.get("wikipediaExactTitle"))
               wd_hits = int(evidence.get("wikidataHitCount") or 0)
               wp_hits = int(evidence.get("wikipediaHitCount") or 0)
+              pair_hits = int(evidence.get("sourcePairCount") or 0)
+              strong_pair_hits = int(
+                  evidence.get("strongSourcePairCount") or 0
+              )
+
+              if pair_hits > 1:
+                  multiple_source_pair_candidates.append(candidate)
+
+              if strong_pair_hits:
+                  source_pair_counts["strong"] += 1
+              elif pair_hits:
+                  source_pair_counts["weak"] += 1
+              else:
+                  source_pair_counts["none"] += 1
+                  missing_source_pair_candidates.append(candidate)
 
               if wd_exact and wp_exact:
                   groups["bothExact"].append(candidate)
@@ -232,6 +268,12 @@ jobs:
               else:
                   groups["noHits"].append(candidate)
 
+          if missing_source_pair_candidates:
+              raise SystemExit(
+                  "BA-Quellpaare fehlen für Review-Kandidaten: "
+                  + ", ".join(missing_source_pair_candidates)
+              )
+
           payload = {
               "version": 1,
               "sourceId": queue.get("sourceId"),
@@ -242,6 +284,8 @@ jobs:
                   name: len(values)
                   for name, values in groups.items()
               },
+              "sourcePairCounts": source_pair_counts,
+              "multipleSourcePairCandidates": multiple_source_pair_candidates,
               "autoApprovalAllowed": False,
           }
           output_path.write_text(
