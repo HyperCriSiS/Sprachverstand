@@ -530,6 +530,10 @@ export class DomProcessor {
   }
 
   private processTraversalStep(state: TraversalState): boolean {
+    if (!this.isProcessableRoot(state.root)) {
+      return true;
+    }
+
     if (!state.rootProcessed) {
       state.rootProcessed = true;
       if (state.root.nodeType === Node.TEXT_NODE) {
@@ -834,6 +838,10 @@ export class DomProcessor {
     element: Element,
     attributeName: string
   ): void {
+    if (!element.isConnected) {
+      return;
+    }
+
     const value = element.getAttribute(attributeName);
     if (value === null || isSubtitleContent(element)) {
       return;
@@ -998,7 +1006,6 @@ export class DomProcessor {
           this.forgetRoot(currentNode.shadowRoot);
         }
       }
-
       currentNode = walker.nextNode();
     }
   }

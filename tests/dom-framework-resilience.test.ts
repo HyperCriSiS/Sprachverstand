@@ -96,6 +96,55 @@ describe("DomProcessor Framework-Resilienz", () => {
     expect(section.textContent).not.toContain("Nutzer:innen");
   });
 
+  it("bricht eine laufende Traversierung ab, wenn der Teilbaum entfernt wird", async () => {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processAccessibleAttributes: false
+    });
+    processor.start();
+
+    const section = document.createElement("section");
+    for (let index = 0; index < 4_000; index += 1) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = `Nutzer:innen ${index}`;
+      section.append(paragraph);
+    }
+    document.body.append(section);
+    queueNode(processor, section);
+
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    const beforeRemoval = processor.getReplacementCount();
+    expect(beforeRemoval).toBeGreaterThan(0);
+    expect(beforeRemoval).toBeLessThan(4_000);
+
+    section.remove();
+    await new Promise((resolve) => window.setTimeout(resolve, 20));
+    processor.flush();
+
+    expect(processor.getReplacementCount()).toBe(0);
+  });
+
+  it("verarbeitet keine ausstehenden Attribute entfernter Elemente", async () => {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative"
+    });
+    processor.start();
+
+    const element = document.createElement("button");
+    document.body.append(element);
+    element.setAttribute("aria-label", "Nutzer:innen öffnen");
+    element.remove();
+
+    await new Promise((resolve) => window.setTimeout(resolve, 20));
+    processor.flush();
+
+    expect(processor.getReplacementCount()).toBe(0);
+    expect(element.getAttribute("aria-label")).toBe("Nutzer:innen öffnen");
+  });
+
   it("unterdrückt eigene MutationObserver-Rückläufer", async () => {
     let ruleCalls = 0;
     const countingRule: Rule = {
