@@ -1,16 +1,25 @@
 # AI Session State
 
-Stand: 2026-09-26  
+Stand: 2026-09-30  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `b75a9f2e91fe0a6926a8069dc9f56467dc22f89f`
-- Letzte Produktänderung: PR #235 „Lexikon: dreiundfünfzigste konservative Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 53
-- PR #235: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security und Sammelcheck grün.
-- Es wurde bewusst **keine** generische `-log`- oder ähnliche Suffixregel ergänzt. Neue Personenformen werden nur als explizite, geprüfte `exact`-Mappings übernommen.
+- Produktbaseline: `513ea3bedfe3e6b5af30f966e6c59545f58793cc`
+- Letzte Produktänderung: PR #238 „Lexikon: vierundfünfzigste konservative Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 54
+- PR #238: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security und Sammelcheck grün.
+- Es wurde bewusst **keine** generische Suffixregel ergänzt. Neue Personenformen werden nur als explizite, geprüfte `exact`-Mappings übernommen.
+
+Welle 54 übernahm sechs Kandidaten aus dem ersten `kldb-current`-Pilotbatch:
+
+- Akrobat
+- Aktienanalyst
+- Aktuar
+- Altbierbrauer
+- Anatom
+- Anästhesist
 
 ## Abgeschlossener KldB/DKZ-Reviewblock
 
@@ -28,22 +37,47 @@ Die drei verworfenen Kandidaten bleiben:
 - `möller`
 - `polster`
 
-Welle 53 schloss die letzten sechs Fälle ab:
-
-- Fernheiler
-- Gerontagoge
-- Oecologe
-- Paradontologe
-- Wirtschaftsmalaiologe
-- Wirtschaftssinologe
-
-Auch ungewohnte beobachtete Schreibungen werden nur dann exakt abgebildet, wenn sie durch die Quellen als Personen-/Berufsbezeichnung gestützt sind. Sprachverstand nimmt dabei keine stillschweigende Rechtschreibnormalisierung vor.
-
 Hinweis zur früheren Welle 48:
 
 - `Ethnologe` und `Gynäkologe` waren bereits über das generierte Produktlexikon abgedeckt.
 - Die versehentliche Doppelzählung wurde mit PR #225 und dem privaten Korrektur-PR #20 behoben.
 - Sie gehören nicht zu den 93 angenommenen Entscheidungen der 96er Review-Queue.
+
+## Aktiver kldb-current-Reviewblock
+
+Aktive Queue: `kldb-current-priority-1`
+
+- 20 Kandidaten insgesamt
+- 15 angenommen
+- 0 verworfen
+- 5 offen
+- Status: `in_progress`
+- Auswahl-Commit im privaten Datastore: `541a357338e2a229c95fdbe623113e30638a2d59`
+- Evidenz-Commit: `71ffa13ef11ba5d3751d5af5a6ac6c394fdeb647`
+- Letzter privater Review-Abschluss: Generic-Datastore PR #28
+- Merge-Commit: `e3a7781d684f0d21e05308d92f8fd1ec446a26a5`
+
+Neun weitere Kandidaten sind semantisch und morphologisch geprüft und für Welle 55 vorbereitet:
+
+- Adremadrucker
+- Adressendrucker
+- Akquisiteur
+- Akustikschreiner
+- Aluminiumdrucker
+- Anilindrucker
+- Antikschreiner
+- Anzeigenakquisiteur
+- Aquarelldrucker
+
+Die fünf verbleibenden Fälle bleiben bewusst separat offen:
+
+- `ackerbäuer`
+- `ackergehilf`
+- `alleinköch`
+- `almbäuer`
+- `anwaltsgehilf`
+
+Für alle fünf liegt ein direkter Berufsbeleg im BA-Schlüsselverzeichnis 02/2026 vor. Offen ist nur noch die konservative Einzelprüfung der zusammengesetzten Bauer-/Gehilfe-/Koch-Flexion.
 
 ## Privater Quellenstand
 
@@ -52,16 +86,9 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-common-2026-manual-decisions.json`
-3. `sprachverstand/derived/review/kldb-common-2026-summary.json`
+2. `sprachverstand/derived/review/kldb-current-priority-1-manual-decisions.json`
+3. `sprachverstand/derived/review/kldb-current-priority-1-summary.json`
 4. `sprachverstand/sources/registry.json`
-
-Letzter privater Abschluss:
-
-- Generic-Datastore PR #25
-- Merge-Commit: `09e4cea9e5dd587ee772774263edf0de2a1fe19c`
-- Reviewstatus: `completed`
-- Kein technischer Blocker
 
 Private Rohquellen, URLs und Herkunftsmetadaten bleiben außerhalb des öffentlichen Produkt-Repositories.
 
@@ -81,18 +108,15 @@ Aktuelle DKZ:
 - 1.995 unbekannt
 - Coverage: 80,82 %
 
+Die Coverage-Werte beschreiben den Importstand vor den manuellen Produktwellen. Die akzeptierten Review-Kandidaten werden nicht stillschweigend aus diesen historischen Importstatistiken herausgerechnet.
+
 ## Nächste Arbeitseinheit
 
-Der Block `kldb-common-2026` ist beendet.
-
-Als nächste Quellenarbeit:
-
-1. Die 1.995 noch unbekannten Kandidaten aus `kldb-current` priorisieren.
-2. Daraus einen neuen, kleinen und reproduzierbaren Review-Batch ableiten.
-3. Kandidaten vor Produktänderungen gegen manuelles **und** generiertes Personenlexikon prüfen.
-4. Semantik und Flexion separat belegen.
-5. Nur eindeutig abgesicherte Teilmengen als weitere konservative Lexikonwellen übernehmen.
-6. Mehrdeutige oder nicht belegte Fälle offen lassen oder explizit verwerfen.
+1. Welle 55 mit den neun bereits vollständig geprüften Kandidaten als exakte Produktmappings integrieren.
+2. Regressionstests für Plural, Singular/Kasus und explizite Singularpaare ergänzen.
+3. Produkt-PR vollständig durch Kernprüfung, Gecko CI, Chromium CI, CodeQL und GitHub Advanced Security laufen lassen.
+4. Nach Merge privaten Reviewstand mit Produkt-PR und Merge-Commit verknüpfen.
+5. Danach die fünf verbleibenden Umlaut-/Schwachflexionsfälle einzeln prüfen.
 
 ## Verbindliche Wiederaufnahme-Regel
 
