@@ -3,6 +3,7 @@ import {
   type GeneratedPersonForms
 } from "./generated-person-lexicon";
 import { nationalityPersonForms } from "./nationality-person-forms";
+import { getReviewedPersonForms } from "./reviewed-person-forms";
 
 export type GrammaticalCase =
   | "nominative"
@@ -25,6 +26,15 @@ interface PersonForms {
 }
 
 const locale = "de-DE";
+
+function getExactPersonForms(
+  normalizedBase: string
+): GeneratedPersonForms | undefined {
+  return (
+    getGeneratedPersonForms(normalizedBase) ??
+    getReviewedPersonForms(normalizedBase)
+  );
+}
 
 function weak(
   stem: string,
@@ -760,7 +770,7 @@ function hasMatchingShortenedFeminine(
 
 export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
 
   if (generated) {
     return applyCase(base, generated.plural);
@@ -813,7 +823,7 @@ export function mapMappedSingular(
   grammaticalCase: GrammaticalCase
 ): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
   const generatedReplacement = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
@@ -840,7 +850,7 @@ function mapGeneratedSingularPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   if (
     !generated?.singular ||
     !generated.feminineSingular ||
@@ -933,7 +943,7 @@ function mapGeneratedInflectedPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   const expectedMasculine = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
