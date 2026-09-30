@@ -6,12 +6,12 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `09179e6d8c384a170003c438966de80f8a9f8d3c`
-- Letzte Produktänderung: PR #261 „DOM-Verarbeitung für dynamische Framework-Seiten härten“
-- Abgeschlossene Lexikon-Ausbauwellen: 64
-- PR #266: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Welle 64 integriert ausschließlich eine quellenneutrale Exact-Allow-List; es gibt weiterhin keine generische Personen-Suffixregel.
-- PR #261 ist als Squash-Commit `09179e6d8c384a170003c438966de80f8a9f8d3c` auf `main` integriert.
+- Produktbaseline: `fa11c7dd49dd35af02b4c4303dcd1ce2b5303b42`
+- Letzte Produktänderung: PR #269 „Lexikon: fünfundsechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 65
+- PR #269: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Welle 65 integriert ausschließlich eine quellenneutrale Exact-Allow-List; es gibt weiterhin keine generische Personen-Suffixregel.
+- PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 
 ## DOM-/Framework-Härtung (PR #261)
 
@@ -37,6 +37,20 @@ Autorität: `main`
 - `kldb-current-priority-8`: 250 angenommen, Welle 62 / PR #260
 - `kldb-current-priority-9`: 246 angenommen, Welle 63 / PR #264
 - `kldb-current-priority-10`: 20 angenommen, Welle 64 / PR #266
+- `kldb-current-priority-11`: 2 angenommen, Welle 65 / PR #269
+
+### Priority 11 im Detail
+
+- 2 Kandidaten
+- 2 angenommen: `registrar`, `substitut`
+- 0 verworfen
+- 0 offen
+- 0 externe Recherchefälle
+- vollständig mit `language_model_first` geprüft
+- Flexionsklasse: `plural_e` (2)
+- die neun separat zurückgestellten Grenzfälle bleiben unverändert offen
+- Welle 65 enthält ausschließlich Exact-Allow-List plus Positiv-, Negativ-, Paar- und Kasusregressionen
+- Merge-Commit: `fa11c7dd49dd35af02b4c4303dcd1ce2b5303b42`
 
 ### Priority 10 im Detail
 
@@ -72,8 +86,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-10-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-10-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-11-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-11-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -85,7 +99,7 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.704 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **291 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.706 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **289 noch nicht entschiedene Kandidaten**.
 
 Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
 
@@ -93,12 +107,13 @@ Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin s
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 291 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
-2. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
-3. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-11` aufnehmen; der Batch darf sehr klein sein.
-4. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
-5. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
-6. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
+1. Die verbleibenden 289 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
+2. Die neun separat zurückgestellten Grenzfälle weiterhin getrennt behandeln.
+3. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
+4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-12` aufnehmen; der Batch darf sehr klein sein.
+5. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
+6. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
+7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 
