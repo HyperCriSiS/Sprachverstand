@@ -9,6 +9,7 @@ import { getReviewedPersonFormsWave60 } from "./reviewed-person-forms-wave-60";
 import { getReviewedPersonFormsWave61 } from "./reviewed-person-forms-wave-61";
 import { getReviewedPersonFormsWave62 } from "./reviewed-person-forms-wave-62";
 import { getReviewedPersonFormsWave63 } from "./reviewed-person-forms-wave-63";
+import { getReviewedPersonFormsWave64 } from "./reviewed-person-forms-wave-64";
 
 export type GrammaticalCase =
   | "nominative"
@@ -42,7 +43,8 @@ function getExactPersonForms(
     getReviewedPersonFormsWave60(normalizedBase) ??
     getReviewedPersonFormsWave61(normalizedBase) ??
     getReviewedPersonFormsWave62(normalizedBase) ??
-    getReviewedPersonFormsWave63(normalizedBase)
+    getReviewedPersonFormsWave63(normalizedBase) ??
+    getReviewedPersonFormsWave64(normalizedBase)
   );
 }
 
