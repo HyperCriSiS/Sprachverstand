@@ -32,6 +32,12 @@ sind:
 7. Bei mehrdeutigen Formen wird entweder ein sicherer Kontext verlangt oder auf
    eine automatische Ersetzung verzichtet.
 
+## Prüfprinzip für Quellenkandidaten
+
+Externe Wortlisten und Klassifikationen dienen ausschließlich zur Kandidatengewinnung. Die Herkunft eines deutschen Wortes ist keine Freigabevoraussetzung. Neue Kandidaten werden standardmäßig semantisch und morphologisch intern bewertet; eindeutige Formen benötigen keinen zusätzlichen Webbeleg. Externe Recherche ist nur für Mehrdeutigkeiten, ungewöhnliche Fachsprache oder widersprüchliche Befunde vorgesehen.
+
+Unabhängig davon gelten für jede produktive Aufnahme weiterhin die oben beschriebenen Kontext-, Flexions- und Regressionsanforderungen.
+
 ## Aktuelle Abdeckung
 
 Der Bestand umfasst unter anderem:
