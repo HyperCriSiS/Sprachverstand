@@ -7,10 +7,7 @@ on:
         description: "Private Prüfwarteschlange"
         required: true
         default: "kldb-common-2026"
-        type: choice
-        options:
-          - kldb-common-2026
-          - kldb-current-priority-1
+        type: string
 
 permissions:
   contents: read
@@ -59,19 +56,24 @@ jobs:
         run: |
           set -euo pipefail
 
-          case "${{ inputs.queue }}" in
+          queue="${{ inputs.queue }}"
+          case "$queue" in
             kldb-common-2026)
               echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-snapshot-2026-unknown.txt" >> "$GITHUB_OUTPUT"
               echo "review_prefix=kldb-common-2026" >> "$GITHUB_OUTPUT"
               echo "source_id=ba-kldb-2026+ba-dkz-current" >> "$GITHUB_OUTPUT"
               ;;
-            kldb-current-priority-1)
-              echo "candidate_file=datastore/sprachverstand/derived/candidates/kldb-current-priority-1.txt" >> "$GITHUB_OUTPUT"
-              echo "review_prefix=kldb-current-priority-1" >> "$GITHUB_OUTPUT"
+            kldb-current-priority-*)
+              if [[ ! "$queue" =~ ^kldb-current-priority-[1-9][0-9]*$ ]]; then
+                echo "Ungültige kldb-current-Warteschlange: $queue"
+                exit 1
+              fi
+              echo "candidate_file=datastore/sprachverstand/derived/candidates/${queue}.txt" >> "$GITHUB_OUTPUT"
+              echo "review_prefix=${queue}" >> "$GITHUB_OUTPUT"
               echo "source_id=ba-dkz-current" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "Unbekannte Review-Warteschlange: ${{ inputs.queue }}"
+              echo "Unbekannte Review-Warteschlange: $queue"
               exit 1
               ;;
           esac
@@ -132,19 +134,26 @@ jobs:
                       "Die Common-Queue stimmt nicht mit der Snapshot-Queue überein."
                   )
           else:
-              decisions_file = Path(
-                  "datastore/sprachverstand/derived/review/"
-                  "kldb-common-2026-manual-decisions.json"
+              review_dir = Path(
+                  "datastore/sprachverstand/derived/review"
               )
-              decisions = json.loads(
-                  decisions_file.read_text(encoding="utf-8")
-              )
-              decided = {
-                  item["candidate"]
-                  for key in ("accepted", "rejected")
-                  for item in decisions.get(key, [])
-                  if item.get("candidate")
-              }
+              current_decisions_name = f"{queue}-manual-decisions.json"
+              decided: set[str] = set()
+              for decisions_file in sorted(
+                  review_dir.glob("kldb-*-manual-decisions.json")
+              ):
+                  if decisions_file.name == current_decisions_name:
+                      continue
+                  decisions = json.loads(
+                      decisions_file.read_text(encoding="utf-8")
+                  )
+                  decided.update(
+                      item["candidate"]
+                      for key in ("accepted", "rejected")
+                      for item in decisions.get(key, [])
+                      if item.get("candidate")
+                  )
+
               overlap = sorted(candidates & decided)
               if overlap:
                   raise SystemExit(
