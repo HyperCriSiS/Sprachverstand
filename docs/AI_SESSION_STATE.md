@@ -6,12 +6,11 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `7ff05d9c75ecf76fdf1018fca3fc330c28f38930`
-- Letzte Produktänderung: PR #264 „Lexikon: dreiundsechzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 63
-- PR #264: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Post-Merge auf `main`: vollständige CI und CodeQL grün.
-- Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden ausschließlich als explizit geprüfte Exact-Allow-Lists bzw. `exact`-Mappings übernommen.
+- Produktbaseline: `2f69a81991ce0c126878efe0f2ec553e35dbd3eb`
+- Letzte Produktänderung: PR #266 „Lexikon: vierundsechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 64
+- PR #266: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Welle 64 integriert ausschließlich eine quellenneutrale Exact-Allow-List; es gibt weiterhin keine generische Personen-Suffixregel.
 
 ## Abgeschlossene kldb-current-Blöcke
 
@@ -24,28 +23,23 @@ Autorität: `main`
 - `kldb-current-priority-7`: 250 angenommen, Welle 61 / PR #258
 - `kldb-current-priority-8`: 250 angenommen, Welle 62 / PR #260
 - `kldb-current-priority-9`: 246 angenommen, Welle 63 / PR #264
+- `kldb-current-priority-10`: 20 angenommen, Welle 64 / PR #266
 
-### Priority 9 im Detail
+### Priority 10 im Detail
 
-- 246 Kandidaten
-- 246 angenommen
+- 20 Kandidaten
+- 20 angenommen
 - 0 verworfen
 - 0 offen
 - 0 externe Recherchefälle
 - vollständig mit `language_model_first` geprüft
-- explizite Flexionsklassen:
-  - `unchanged`: 140
-  - `plural_e`: 66
-  - `weak_e`: 13
-  - `weak_en`: 13
-  - `plural_en`: 12
-  - `plural_s`: 2
-- der Batch wurde bewusst bei 246 beendet statt mit schwächeren Kandidaten auf 250 aufgefüllt
-- `bildmischer` wurde bei der Validierung wieder entfernt, weil die Form unter die bewusst ausgeschlossene mehrdeutige Sach-/Geräteklasse `-mischer` fällt
-- die neun bereits in Priority 6 zurückgestellten Grenzfälle blieben ausgeschlossen
-- Welle 63 enthält eine quellenneutrale Exact-Allow-List und 503 dedizierte Regressionen
-- keine generische Suffixregel
-- Merge-Commit: `7ff05d9c75ecf76fdf1018fca3fc330c28f38930`
+- Flexionsklassen:
+  - `unchanged`: 18
+  - `plural_e`: 2
+- bewusst kleine Einzelfallwelle; kein künstliches Auffüllen
+- bekannte Priority-6-Grenzfälle und mehrdeutige Geräte-/Sachklassen bleiben ausgeschlossen
+- Welle 64 enthält eine Exact-Allow-List plus Positiv-, Negativ-, Paar-, Kasus- und Bindestrichregressionen
+- Merge-Commit: `2f69a81991ce0c126878efe0f2ec553e35dbd3eb`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
@@ -65,8 +59,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-9-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-9-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-10-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-10-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -78,21 +72,19 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.684 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **311 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.704 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **291 noch nicht entschiedene Kandidaten**.
 
-Der Restpool wird stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
+Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
 
 Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin separat offen.
 
 ## Nächste Arbeitseinheit
 
-Als nächster Block:
-
-1. Die verbleibenden 311 Kandidaten als Einzelfälle bzw. kleine semantisch klare Gruppen prüfen.
-2. Keinen weiteren breiten Suffixselektor über die dominierenden Geräte-/Sachklassen legen.
-3. Nur explizit eindeutige Personen-/Berufsbezeichnungen als `kldb-current-priority-10` aufnehmen; der Batch darf deutlich kleiner als 250 sein.
-4. Ungewöhnliche oder morphologisch unsichere Formen zurückstellen statt den Batch künstlich aufzufüllen.
-5. Nur echte Grenzfälle bei Bedarf extern nachprüfen.
+1. Die verbleibenden 291 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
+2. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
+3. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-11` aufnehmen; der Batch darf sehr klein sein.
+4. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
+5. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
 6. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
 
 ## Verbindliche Wiederaufnahme-Regel
