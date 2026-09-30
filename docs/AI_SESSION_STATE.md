@@ -47,13 +47,13 @@ Autorität: `main`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt unverändert bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
-## Quellenreview-Infrastruktur
+## Kandidatenprüfung
 
-- PR #244 unterstützt validierte generische Queues nach dem Muster `kldb-current-priority-N`.
-- PR #245 fragt Wikidata- und Wikipedia-Evidenz parallel ab.
-- Der Abstand zwischen Kandidaten bleibt je externem Dienst bei mindestens 2 Sekunden.
-- Beide Evidenzprozesse müssen erfolgreich enden; Retry/Backoff und manuelle Freigabepolitik bleiben erhalten.
-- Größere Batches werden nicht automatisch freigegeben.
+- Externe Web-Evidenz ist **keine Freigabevoraussetzung mehr**. KldB, ESCO und andere Quellen dienen nur als Kandidatenlieferanten.
+- Standard ist `language_model_first`: Kandidaten werden semantisch und morphologisch intern geprüft; eindeutige Formen dürfen ohne Wikidata-, Wikipedia-, Duden- oder DWDS-Recherche in die Produktprüfung gehen.
+- Lokal vorhandene Paarinformationen dürfen als Hinweis genutzt werden, sind aber keine Pflicht.
+- Externe Recherche wird nur noch für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde zugeschaltet.
+- Der Standardbatch für `kldb-current` wird von 50 auf 250 erhöht; die produktive Aufnahme bleibt durch exakte Mappings und Regressionstests abgesichert.
 
 ## Privater Quellenstand
 
@@ -89,12 +89,12 @@ Zusammen mit den zuvor ausgeschlossenen 96 `kldb-common-2026`-Entscheidungen sin
 
 Als nächster Quellenblock:
 
-1. `kldb-current-priority-4` mit standardmäßig 50 Kandidaten reproduzierbar ableiten.
-2. Alle Entscheidungen aus `kldb-common-2026` sowie Priority 1 bis 3 ausschließen.
-3. BA-Paarevidenz sowie externe Wikidata-/Wikipedia-Evidenz erzeugen.
-4. Alle Kandidaten einzeln semantisch und morphologisch prüfen.
-5. Nur eindeutig abgesicherte Kandidaten als weitere konservative Produktwelle übernehmen.
-6. Keine generische Suffixregel aus dem Batch ableiten.
+1. `kldb-current-priority-4` mit bis zu 250 Kandidaten reproduzierbar ableiten und bereits entschiedene Kandidaten ausschließen.
+2. Den gesamten Batch intern semantisch und morphologisch prüfen.
+3. Eindeutige Kandidaten ohne externe Webrecherche für exakte Produkt-Mappings vorbereiten.
+4. Nur echte Grenzfälle separat markieren und bei Bedarf gezielt extern nachprüfen.
+5. Positiv-/Negativregressionen und die vollständige Produktprüfung ausführen.
+6. Keine generische Suffixregel allein aus dem Batch ableiten.
 
 ## Verbindliche Wiederaufnahme-Regel
 
