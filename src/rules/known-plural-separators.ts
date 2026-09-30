@@ -72,6 +72,7 @@ const safePluralSuffixes = [
   "lehrer",
   "leiter",
   "leser",
+  "liebhaber",
   "makler",
   "manager",
   "mathematiker",

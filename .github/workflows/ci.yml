@@ -198,9 +198,42 @@ jobs:
       - name: Chromium-Icons vollständig prüfen
         run: node scripts/validate-icons.mjs dist/chromium/icons
 
+  performance:
+    name: Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Node.js einrichten und npm-Cache laden
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: DOM-Performance messen
+        env:
+          PERFORMANCE_REPORT_PATH: performance-report.json
+        run: npm run benchmark:dom
+
+      - name: Performance-Report archivieren
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dom-performance-${{ github.sha }}
+          path: performance-report.json
+          if-no-files-found: error
+          retention-days: 90
+
   check:
     name: check
-    needs: [core, gecko, chromium]
+    needs: [core, gecko, chromium, performance]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -211,3 +244,4 @@ jobs:
           test "${{ needs.core.result }}" = "success"
           test "${{ needs.gecko.result }}" = "success"
           test "${{ needs.chromium.result }}" = "success"
+          test "${{ needs.performance.result }}" = "success"
