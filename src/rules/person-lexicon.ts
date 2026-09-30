@@ -683,6 +683,17 @@ const personForms: readonly PersonForms[] = [
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
+  if (source.includes("-") && replacement.includes("-")) {
+    const sourceParts = source.split("-");
+    const replacementParts = replacement.split("-");
+
+    if (sourceParts.length === replacementParts.length) {
+      return replacementParts
+        .map((part, index) => applyCase(sourceParts[index] ?? "", part))
+        .join("-");
+    }
+  }
+
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
