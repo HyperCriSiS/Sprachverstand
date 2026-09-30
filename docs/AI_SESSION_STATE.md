@@ -6,11 +6,24 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `2f69a81991ce0c126878efe0f2ec553e35dbd3eb`
-- Letzte Produktänderung: PR #266 „Lexikon: vierundsechzigste Ausbauwelle“
+- Produktbaseline: `09179e6d8c384a170003c438966de80f8a9f8d3c`
+- Letzte Produktänderung: PR #261 „DOM-Verarbeitung für dynamische Framework-Seiten härten“
 - Abgeschlossene Lexikon-Ausbauwellen: 64
 - PR #266: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 - Welle 64 integriert ausschließlich eine quellenneutrale Exact-Allow-List; es gibt weiterhin keine generische Personen-Suffixregel.
+- PR #261 ist als Squash-Commit `09179e6d8c384a170003c438966de80f8a9f8d3c` auf `main` integriert.
+
+## DOM-/Framework-Härtung (PR #261)
+
+- Framework-Hydrierung: überlappende Mutation-Roots werden vor der Verarbeitung konsolidiert.
+- Große dynamische Teilbäume werden mit einem Zeitbudget über mehrere Tasks verteilt.
+- Eigene MutationObserver-Rückläufer werden unterdrückt; wiederholte externe Text-Rewrites erhalten einen kurzen Backoff.
+- Entfernte Teilbäume und entfernte Elemente mit ausstehender Attributarbeit werden nicht weiterverarbeitet.
+- Offene Shadow Roots werden beobachtet und verarbeitet; geschlossene Shadow Roots bleiben unangetastet.
+- Regression `Technoliebhaber:innen` ist über die sichere `Liebhaber`-Pluralform abgedeckt.
+- Deterministische Performance-Garantie: `overlapping-roots-1500` benötigt genau einen Root-Durchlauf statt zuvor 3.001.
+- GitHub-Actions-Messung: Median dieses Hydrierungsfalls von 39,804 ms auf 20,457 ms reduziert (rund 49 %); absolute Zeitwerte dienen wegen Runner-Schwankungen nur der Beobachtung.
+- PR-CI: Kernprüfung, Performance, Gecko CI, Chromium CI, Sammelcheck, GitHub Advanced Security und beide CodeQL/Analyze-Prüfungen grün.
 
 ## Abgeschlossene kldb-current-Blöcke
 
