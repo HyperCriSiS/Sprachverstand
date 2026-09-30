@@ -10,6 +10,7 @@ import { getReviewedPersonFormsWave61 } from "./reviewed-person-forms-wave-61";
 import { getReviewedPersonFormsWave62 } from "./reviewed-person-forms-wave-62";
 import { getReviewedPersonFormsWave63 } from "./reviewed-person-forms-wave-63";
 import { getReviewedPersonFormsWave64 } from "./reviewed-person-forms-wave-64";
+import { getReviewedPersonFormsWave65 } from "./reviewed-person-forms-wave-65";
 
 export type GrammaticalCase =
   | "nominative"
@@ -44,7 +45,8 @@ function getExactPersonForms(
     getReviewedPersonFormsWave61(normalizedBase) ??
     getReviewedPersonFormsWave62(normalizedBase) ??
     getReviewedPersonFormsWave63(normalizedBase) ??
-    getReviewedPersonFormsWave64(normalizedBase)
+    getReviewedPersonFormsWave64(normalizedBase) ??
+    getReviewedPersonFormsWave65(normalizedBase)
   );
 }
 
@@ -998,58 +1000,3 @@ export function mapMappedInflectedSingularPair(
   const generatedReverse = mapGeneratedInflectedPairOrientation(
     right,
     left,
-    grammaticalCase
-  );
-  if (generatedReverse) {
-    return generatedReverse;
-  }
-
-  for (const mapping of personForms) {
-    if (!mapping.singular) {
-      continue;
-    }
-
-    const masculine =
-      grammaticalCase === "nominative"
-        ? mapping.singular
-        : grammaticalCase === "genitive"
-          ? mapping.genitiveSingular ??
-            mapping.obliqueSingular ??
-            `${mapping.singular}s`
-          : mapping.obliqueSingular ?? mapping.singular;
-    const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
-
-    if (hasMatchingPrefixes(left, right, feminine, masculine)) {
-      return right;
-    }
-    if (hasMatchingPrefixes(right, left, feminine, masculine)) {
-      return left;
-    }
-
-    if (!mapping.compoundFeminineSingular) {
-      continue;
-    }
-    if (
-      hasMatchingPrefixes(
-        left,
-        right,
-        mapping.compoundFeminineSingular,
-        masculine
-      )
-    ) {
-      return right;
-    }
-    if (
-      hasMatchingPrefixes(
-        right,
-        left,
-        mapping.compoundFeminineSingular,
-        masculine
-      )
-    ) {
-      return left;
-    }
-  }
-
-  return undefined;
-}
