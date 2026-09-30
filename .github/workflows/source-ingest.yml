@@ -1,4 +1,4 @@
-name: Temporärer Welle-56-Patcher
+name: Temporärer Workflow-Restore
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  anwenden:
+  wiederherstellen:
     runs-on: ubuntu-latest
     steps:
       - name: Repository auschecken
@@ -19,16 +19,13 @@ jobs:
       - name: Main-Referenz laden
         run: git fetch origin main
 
-      - name: Welle 56 anwenden
-        run: python scripts/tmp-apply-wave56.py
-
-      - name: Temporären Workflow zurücksetzen
+      - name: Source-Ingest auf Main-Stand zurücksetzen
         run: git checkout origin/main -- .github/workflows/source-ingest.yml
 
-      - name: Änderungen committen
+      - name: Wiederherstellung committen
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Lexikon: sechsundfünfzigste konservative Ausbauwelle"
+          git add .github/workflows/source-ingest.yml
+          git commit -m "ci: temporären Workflow zurücksetzen"
           git push origin HEAD:lexicon/kldb-current-wave-56-v2
