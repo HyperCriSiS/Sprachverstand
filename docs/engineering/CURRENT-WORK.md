@@ -6,42 +6,42 @@ Autorität: `main`
 ## Produktbaseline
 
 - Moderne Produktlinie: `main`
-- Letzte integrierte Lexikon-Ausbauwelle: **62**
-- Letzter integrierter Produkt-PR: **#260 — zweiundsechzigste Ausbauwelle**
-- Verifizierter Produktbaseline-Commit: `ec0e7d904626d88d4307ec55f0565347536347c0`
-- Welle 62 integriert 250 intern geprüfte exakte Personenbasen der regulären `-er`-Flexionsklasse.
-- PR-CI: Kernprüfung, Gecko, Chromium, GitHub Advanced Security und Sammelcheck grün.
-- Post-Merge-CI: Kernprüfung, Gecko, Chromium, Sammelcheck und beide CodeQL-Analysen grün.
+- Letzte integrierte Lexikon-Ausbauwelle: **63**
+- Letzter integrierter Produkt-PR: **#264 — dreiundsechzigste Ausbauwelle**
+- Verifizierter Produktbaseline-Commit: `7ff05d9c75ecf76fdf1018fca3fc330c28f38930`
+- Welle 63 integriert 246 intern geprüfte exakte Personenbasen in sechs expliziten Flexionsklassen.
+- PR-CI und Post-Merge-CI einschließlich Gecko, Chromium und CodeQL sind vollständig grün.
+- Keine generische Suffixregel; die neuen Formen liegen ausschließlich in einer Exact-Allow-List.
 
 ## Aktiver Arbeitsstrom
 
-### Priorität 1 — verbleibende KldB/DKZ-Kandidaten sprachmodellbasiert erschließen
+### Priorität 1 — verbleibende KldB/DKZ-Kandidaten als Einzelfälle erschließen
 
-`kldb-current-priority-8` ist abgeschlossen und in Welle 62 integriert:
+`kldb-current-priority-9` ist abgeschlossen und in Welle 63 integriert:
 
-- 250 Kandidaten
-- 250 angenommen
+- 246 Kandidaten
+- 246 angenommen
 - 0 verworfen
 - 0 offen
 - 0 externe Grenzfälle
-- Flexionsklasse: 250 × `unchanged`
+- Klassen: 140 `unchanged`, 66 `plural_e`, 13 `weak_e`, 13 `weak_en`, 12 `plural_en`, 2 `plural_s`
+- 503 dedizierte Welle-63-Regressionen
 - keine generische Suffixregel
-- 505 dedizierte Welle-62-Regressionen; zusammen mit Welle 61: 1.010/1.010 gezielte Tests grün
 
-Von den ursprünglich 1.995 unbekannten Kandidaten sind inzwischen **1.438 entschieden**; **557 bleiben offen**.
+Von den ursprünglich 1.995 unbekannten Kandidaten sind **1.684 entschieden**; **311 bleiben offen**.
 
-Die neun in Priority 6 zurückgestellten Formen bleiben weiterhin separat offen: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`.
+Der Restpool besteht überwiegend aus bewusst nicht pauschal freigegebenen Geräte-/Sachbezeichnungen. Besonders häufig sind `Bohrer`, `Presser`, `Stanzer`, `Walzer`, `Wickler`, `Brenner`, `Sortierer`, `Kopierer`, `Rechner`, `Mischer` und ähnliche Endglieder.
+
+Die neun in Priority 6 zurückgestellten Formen bleiben separat offen: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`.
 
 Nächster Schritt:
 
-1. Restbestand von 557 Kandidaten erneut nach Wortbildungs- und Flexionsmustern analysieren.
-2. Einen neuen konservativen Priority-9-Batch definieren.
-3. Verbliebene klare `-er`-Personenformen und eindeutige Personenformen mit anderen Flexionsklassen untersuchen.
-4. Mehrdeutige Maschinen-/Sachklassen wie `Bohrer`, `Presser`, `Stanzer`, `Walzer`, `Wickler` und `Brenner` nicht pauschal freigeben.
-5. Bis zu 250 Kandidaten als Priority 9 ableiten.
-6. Standardmäßig intern semantisch und morphologisch prüfen.
-7. Externe Recherche nur für echte Mehrdeutigkeiten oder widersprüchliche Befunde.
-8. Produktiv weiterhin nur exakte Allow-Lists bzw. Mappings plus Regressionen; keine generische Suffixregel aus einem Batch ableiten.
+1. Restbestand von 311 Kandidaten einzeln bzw. in kleinen eindeutigen Gruppen prüfen.
+2. Priority 10 ausschließlich aus explizit sicheren Personenformen bilden; kein Ziel von 250 erzwingen.
+3. Mehrdeutige Geräte-/Sachklassen weiterhin nicht pauschal freigeben.
+4. Morphologisch ungewöhnliche Formen zurückstellen, sofern die interne Bewertung nicht eindeutig ist.
+5. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
+6. Produktiv weiterhin nur exakte Allow-Lists bzw. Mappings plus Regressionen.
 
 ## Prüfprinzip
 
@@ -56,8 +56,8 @@ Nächster Schritt:
 Aktuell maßgeblich:
 
 - `sprachverstand/CURRENT-STATE.json`
-- `sprachverstand/derived/review/kldb-current-priority-8-summary.json`
-- `sprachverstand/derived/review/kldb-current-priority-8-manual-decisions.json`
+- `sprachverstand/derived/review/kldb-current-priority-9-summary.json`
+- `sprachverstand/derived/review/kldb-current-priority-9-manual-decisions.json`
 
 ## Wiederaufnahmeprotokoll
 
