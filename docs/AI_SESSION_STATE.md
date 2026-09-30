@@ -1,16 +1,16 @@
 # AI Session State
 
-Stand: 2026-09-30  
+Stand: 2026-10-01  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `3af2988677736e44c5585c957c84d96cd9371aef`
-- Letzte Produktänderung: PR #271 „Lexikon: sechsundsechzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 66
-- PR #271: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün; der anschließende `main`-CI-Lauf ist ebenfalls vollständig grün.
-- Welle 66 integriert ausschließlich quellenneutrale Exact-Mappings; es gibt weiterhin keine generische Personen-Suffixregel.
+- Produktbaseline: `f50e7f61a5153f18bd42c55e63f082641c889881`
+- Letzte Produktänderung: PR #273 „Lexikon: siebenundsechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 67
+- PR #273: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün; der anschließende `main`-CI-Lauf ist ebenfalls vollständig grün.
+- Welle 67 integriert ausschließlich ein quellenneutrales Exact-Mapping; es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 
 ## DOM-/Framework-Härtung (PR #261)
@@ -39,6 +39,19 @@ Autorität: `main`
 - `kldb-current-priority-10`: 20 angenommen, Welle 64 / PR #266
 - `kldb-current-priority-11`: 2 angenommen, Welle 65 / PR #269
 - `kldb-current-priority-12`: 5 angenommen, Welle 66 / PR #271
+- `kldb-current-priority-13`: 1 angenommen, Welle 67 / PR #273
+
+### Priority 13 im Detail
+
+- 1 Kandidat
+- 1 angenommen: `archäometer`
+- 0 verworfen
+- 0 offen
+- vollständig mit `language_model_first` semantisch geprüft; seltene Fachbezeichnung gezielt extern gegengeprüft
+- Flexionsklasse: `unchanged` (1)
+- die neun separat zurückgestellten Grenzfälle bleiben unverändert offen
+- Welle 67 enthält ausschließlich ein Exact-Mapping plus Positiv-, Negativ-, Paar- und Kasusregressionen
+- Merge-Commit: `f50e7f61a5153f18bd42c55e63f082641c889881`
 
 ### Priority 12 im Detail
 
@@ -103,8 +116,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-12-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-12-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-13-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-13-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -116,7 +129,7 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.711 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **284 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.712 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **283 noch nicht entschiedene Kandidaten**.
 
 Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
 
@@ -124,10 +137,10 @@ Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin s
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 284 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
+1. Die verbleibenden 283 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
 2. Die neun separat zurückgestellten Grenzfälle weiterhin getrennt behandeln.
 3. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
-4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-13` aufnehmen; der Batch darf sehr klein sein.
+4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-14` aufnehmen; der Batch darf sehr klein sein.
 5. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
 6. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
 7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
