@@ -1006,6 +1006,7 @@ export class DomProcessor {
           this.forgetRoot(currentNode.shadowRoot);
         }
       }
+
       currentNode = walker.nextNode();
     }
   }
