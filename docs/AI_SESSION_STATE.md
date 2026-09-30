@@ -6,10 +6,11 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `609798ba0207454439dfcfbf8cd6a29c4f6e2dff`
-- Letzte Produktänderung: PR #256 „Lexikon: sechzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 60
-- PR #256: Kernprüfung, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Produktbaseline: `28989e8fb8558cdff9f4e8486f9d3539cd3b9dd3`
+- Letzte Produktänderung: PR #258 „Lexikon: einundsechzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 61
+- PR #258: Kernprüfung, Gecko CI, Chromium CI, GitHub Advanced Security und Sammelcheck grün.
+- Post-Merge auf `main`: Kernprüfung, Gecko CI, Chromium CI, Sammelcheck sowie beide CodeQL-Analysen grün.
 - Es gibt weiterhin keine generische Personen-Suffixregel. Neue Personenformen werden nur als explizit geprüfte, quellenneutrale Exact-Allow-Lists bzw. `exact`-Mappings übernommen.
 
 ## Abgeschlossene kldb-current-Blöcke
@@ -57,8 +58,6 @@ Autorität: `main`
   - `plural_e`: 28
   - `plural_en`: 20
   - `loge`: 15
-- morphologisch heikle `Modelleur`-/`Dompteur`-/`Magister`-Fälle sowie `Mikrograf` und `Xerograf` wurden bewusst nicht aufgenommen
-- 511 dedizierte Welle-59-Regressionen
 - vollständig in Welle 59 integriert
 - Integrations-PR: #254
 
@@ -73,13 +72,24 @@ Autorität: `main`
   - `weak_en`: 47
   - `plural_e`: 26
   - `loge`: 20
-- klar personenbezogene Endgliedklassen umfassen u. a. `Wart`, `Schiffer`, `Gerber`, `Schnitzer`, `Ansager`, `Schätzer`, `Steiger`, `Flechter`, `Stricker`, `Spinner`, `Montierer`, `-ist`, `-log` und `-graph`
-- neun weniger klare Formen wurden vor der Batchbildung bewusst zurückgestellt: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`
-- mehrdeutige Geräte-/Werkzeugklassen wie `Bohrer`, `Brenner`, `Presser`, `Stanzer`, `Walzer` und `Wickler` blieben weiterhin draußen
-- 510 dedizierte Welle-60-Regressionen
+- neun weniger klare Formen wurden bewusst zurückgestellt: `computervisualist`, `eri-wart`, `eutonist`, `fennist`, `mindermaschinenstricker`, `modellist`, `tapisserist`, `verschmelzer`, `wäscher`
 - vollständig in Welle 60 integriert
 - Integrations-PR: #256
-- Merge-Commit: `609798ba0207454439dfcfbf8cd6a29c4f6e2dff`
+
+### `kldb-current-priority-7`
+
+- 250 Kandidaten
+- 250 angenommen
+- 0 verworfen, 0 offen, 0 externe Grenzfälle
+- vollständig mit `language_model_first` geprüft
+- alle 250 Kandidaten gehören zur regulären `-er`-Flexionsklasse mit unverändertem Plural
+- Auswahl ausschließlich über eine intern geprüfte Exaktliste; keine neue Suffixregel
+- die neun Priority-6-Grenzfälle blieben weiterhin ausgeschlossen
+- mehrdeutige Sach-/Geräteformen wurden ebenfalls nicht pauschal übernommen
+- 505 dedizierte Welle-61-Regressionen; zusammen mit Welle 60 waren 1.015 gezielte Tests grün
+- vollständig in Welle 61 integriert
+- Integrations-PR: #258
+- Merge-Commit: `28989e8fb8558cdff9f4e8486f9d3539cd3b9dd3`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
@@ -90,6 +100,7 @@ Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davo
 - Quellenherkunft und lokale Paarinformationen dürfen Hinweise liefern, haben aber kein Freigabegewicht.
 - Externe Recherche wird nur für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde zugeschaltet.
 - Produktseitige Sicherheitsgrenzen bleiben exakte Allow-Lists bzw. Mappings, Positiv-/Negativregressionen und vollständige CI.
+- Ein Batch darf keine generische Suffixfreigabe implizieren.
 
 ## Privater Quellenstand
 
@@ -98,8 +109,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-6-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-6-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-7-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-7-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -120,20 +131,21 @@ Abgeschlossene Entscheidungen aus dem unbekannten Pool:
 - `kldb-current-priority-4`: 222
 - `kldb-current-priority-5`: 250
 - `kldb-current-priority-6`: 250
+- `kldb-current-priority-7`: 250
 
-Damit sind **938 von 1.995** ursprünglich unbekannten Kandidaten entschieden. Es verbleiben **1.057 noch nicht entschiedene Kandidaten**.
+Damit sind **1.188 von 1.995** ursprünglich unbekannten Kandidaten entschieden. Es verbleiben **807 noch nicht entschiedene Kandidaten**.
 
-Der Priority-6-Selektor liefert im Restbestand nur noch die neun bewusst zurückgestellten Grenzfälle. Für Priority 7 muss daher eine neue konservative Auswahlstrategie definiert werden.
+Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin separat offen.
 
 ## Nächste Arbeitseinheit
 
 Als nächster Block:
 
-1. Die verbleibenden 1.057 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
-2. Die neun zurückgestellten Priority-6-Grenzfälle separat behandeln und nicht automatisch freigeben.
-3. Neue klar personenbezogene Klassen aus dem Restbestand definieren; besonders häufig sind noch produktive `-ierer`-Klassen, daneben `Binder`, `Halter`, `Hauer` und weitere Handwerks-/Bedienerbezeichnungen.
-4. Mehrdeutige Geräte-/Werkzeugklassen weiterhin nicht pauschal freigeben.
-5. Bis zu 250 Kandidaten reproduzierbar als `kldb-current-priority-7` ableiten.
+1. Die verbleibenden 807 Kandidaten erneut nach Wortbildungs- und Endgliedmustern gruppieren.
+2. Die neun zurückgestellten Priority-6-Grenzfälle weiterhin separat behandeln und nicht automatisch freigeben.
+3. Verbleibende klare `-ierer`-Formen sowie weitere eindeutig personenbezogene Handwerks-, Bediener- und Berufsbezeichnungen identifizieren.
+4. Mehrdeutige Geräte-/Sachklassen weiterhin nicht pauschal freigeben.
+5. Bis zu 250 Kandidaten reproduzierbar als `kldb-current-priority-8` ableiten.
 6. Den gesamten Batch intern semantisch und morphologisch prüfen.
 7. Nur echte Grenzfälle gezielt extern nachprüfen.
 8. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
