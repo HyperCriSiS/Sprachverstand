@@ -1,16 +1,16 @@
 # AI Session State
 
-Stand: 2026-10-01  
+Stand: 2026-10-02  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `2bf78931955ddb14a1a589b97c19dfe9453d8178`
-- Letzte Produktänderung: PR #280 „Lexikon: einundsiebzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 71
-- PR #280: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Welle 71 integriert ausschließlich quellenneutrale Exact-Mappings; es gibt weiterhin keine generische Personen-Suffixregel.
+- Produktbaseline: `05141f64706580d5fda6b5c4401b9aedad93be53`
+- Letzte Produktänderung: PR #282 „Lexikon: zweiundsiebzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 72
+- PR #282: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
+- Welle 72 integriert ausschließlich 24 quellenneutrale Exact-Mappings aus Priority 18; es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 - Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
 - PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
@@ -46,6 +46,20 @@ Autorität: `main`
 - `kldb-current-priority-15`: 5 angenommen, Welle 69 / PR #277
 - `kldb-current-priority-16`: 8 angenommen, Welle 70 / PR #279
 - `kldb-current-priority-17`: 20 angenommen, Welle 71 / PR #280
+- `kldb-current-priority-18`: 24 angenommen, Welle 72 / PR #282
+
+### Priority 18 im Detail
+
+- 24 Kandidaten
+- 24 angenommen: `aluminiumspritzer`, `bandstanzer`, `bandwalzer`, `blechlocher`, `blechpresser`, `blechstanzer`, `blechwalzer`, `blechzieher`, `bodenlederstanzer`, `bolzenpresser`, `drahtwalzer`, `drahtwickler`, `drahtzieher`, `einlagenstanzer`, `eisenblechstanzer`, `eisendrahtzieher`, `federpresser`, `federwalzer`, `federwickler`, `feinblechwalzer`, `feindrahtzieher`, `feinstanzer`, `fertigwalzer`, `fleckstanzer`
+- 0 verworfen
+- 0 offen
+- vollständig mit `language_model_first` semantisch und morphologisch geprüft
+- Flexionsklasse: `unchanged` (24)
+- die neun separat zurückgestellten Grenzfälle bleiben unverändert offen
+- generische Basen wie `presser`, `stanzer`, `walzer`, `wickler`, `zieher` und `spritzer` bleiben ausdrücklich ausgeschlossen
+- Welle 72 enthält ausschließlich Exact-Mappings plus Positiv-, Negativ-, Paar- und Kasusregressionen
+- Merge-Commit: `05141f64706580d5fda6b5c4401b9aedad93be53`
 
 ### Priority 17 im Detail
 
@@ -174,8 +188,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-17-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-17-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-18-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-18-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -187,7 +201,7 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.747 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **248 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.771 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **224 noch nicht entschiedene Kandidaten**.
 
 Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
 
@@ -195,10 +209,10 @@ Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin s
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 248 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
+1. Die verbleibenden 224 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
 2. Die neun separat zurückgestellten Grenzfälle weiterhin getrennt behandeln.
 3. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
-4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-18` aufnehmen; der Batch darf sehr klein sein.
+4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-19` aufnehmen; der Batch darf sehr klein sein.
 5. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
 6. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
 7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
@@ -209,3 +223,4 @@ Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin s
 - Bei Quellenarbeit danach `CURRENT-STATE.json` und die dort referenzierten privaten Review-Dateien lesen.
 - Git-Checkpoints haben Vorrang vor alten Chats, Anhängen und historischen „als Nächstes“-Formulierungen.
 - Nach einer größeren abgeschlossenen Einheit diesen Checkpoint aktualisieren.
+- Reine Checkpoint-/Wiederaufnahmedateien wie `docs/AI_SESSION_STATE.md` werden direkt auf `main` aktualisiert; dafür keine eigenen PRs erzeugen. Produktcode, Tests, Workflows und fachliche Änderungen bleiben PR-pflichtig.
