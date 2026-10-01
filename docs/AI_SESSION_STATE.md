@@ -6,12 +6,14 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `9b474e0c383caad84c282a871449acd65bc04477`
+- Produktbaseline: `2bf78931955ddb14a1a589b97c19dfe9453d8178`
 - Letzte Produktänderung: PR #280 „Lexikon: einundsiebzigste Ausbauwelle“
 - Abgeschlossene Lexikon-Ausbauwellen: 71
 - PR #280: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
 - Welle 71 integriert ausschließlich quellenneutrale Exact-Mappings; es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
+- Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
+- PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
 
 ## DOM-/Framework-Härtung (PR #261)
 
