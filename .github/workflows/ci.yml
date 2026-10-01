@@ -192,6 +192,9 @@ jobs:
       - name: Chromium im echten Browser prüfen
         run: npm run test:browser:chromium
 
+      - name: Videowiedergabe unter DOM-Last prüfen
+        run: npm run test:browser:video:chromium
+
       - name: Chromium-Basisbuild und Familienkompatibilität prüfen
         run: npm run validate:browsers:chromium
 
