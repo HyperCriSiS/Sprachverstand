@@ -22,13 +22,13 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
 };
 
 describe("Real-World-Browsermatrix", () => {
-  it("hält genau die zehn dokumentierten Referenzseiten zentral fest", () => {
-    expect(sites).toHaveLength(10);
+  it("hält die zwölf dokumentierten Referenzseiten zentral fest", () => {
+    expect(sites).toHaveLength(12);
     expect(sites.map((site) => site.id)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
     ]);
-    expect(new Set(sites.map((site) => site.slug)).size).toBe(10);
-    expect(new Set(sites.map((site) => site.url)).size).toBe(10);
+    expect(new Set(sites.map((site) => site.slug)).size).toBe(12);
+    expect(new Set(sites.map((site) => site.url)).size).toBe(12);
 
     for (const site of sites) {
       expect(site.slug).toMatch(/^[a-z0-9-]+$/u);
@@ -56,6 +56,8 @@ describe("Real-World-Browsermatrix", () => {
     expect(workflow).toContain("longTaskDeltaMs=");
     expect(workflow).toContain("javascriptErrors=");
     expect(workflow).toContain("unhandledRejections=");
+    expect(workflow).toContain("videoFrameDelta=");
+    expect(workflow).toContain("videoLongGapDelta=");
   });
 
   it("erfasst Baseline und Erweiterung statt absolute Live-Grenzwerte zu erzwingen", () => {
@@ -66,6 +68,9 @@ describe("Real-World-Browsermatrix", () => {
     expect(runner).toContain("protectedBefore");
     expect(runner).toContain("protectedAfter");
     expect(runner).toContain("remainingPatterns");
+    expect(runner).toContain("requestVideoFrameCallback");
+    expect(runner).toContain("getVideoPlaybackQuality");
+    expect(runner).toContain("videoFrameDelta");
   });
 
   it("validiert die Konfiguration in der normalen Kernprüfung ohne Live-Netzwerk", () => {
