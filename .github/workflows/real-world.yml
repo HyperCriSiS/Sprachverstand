@@ -80,8 +80,8 @@ jobs:
             "",
             `Commit: \`${report.commit || "unbekannt"}\``,
             "",
-            "| Seite | Baseline | Erweiterung | Δ Laufzeit | Δ Long Tasks | Restmuster | JS/Promise | Geschützte Bereiche |",
-            "|---|---:|---:|---:|---:|---:|---:|---|"
+            "| Seite | Baseline | Erweiterung | Δ Laufzeit | Δ Long Tasks | Δ Video-Frames | Δ >120-ms-Lücken | Δ Dropped Frames | Restmuster | JS/Promise | Geschützte Bereiche |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"
           ];
 
           for (const result of report.results || []) {
@@ -117,6 +117,15 @@ jobs:
             const longTaskDelta = Number.isFinite(comparison.totalLongTaskDeltaMs)
               ? `${Math.round(comparison.totalLongTaskDeltaMs)} ms`
               : "–";
+            const videoFrameDelta = Number.isFinite(comparison.videoFrameDelta)
+              ? String(comparison.videoFrameDelta)
+              : "–";
+            const videoLongGapDelta = Number.isFinite(comparison.videoLongGapDelta)
+              ? String(comparison.videoLongGapDelta)
+              : "–";
+            const videoDroppedFrameDelta = Number.isFinite(comparison.videoDroppedFrameDelta)
+              ? String(comparison.videoDroppedFrameDelta)
+              : "–";
             const protectedLabel =
               extension.status !== "ok"
                 ? "nicht messbar"
@@ -132,6 +141,9 @@ jobs:
                 `extension=${extension.status || "unbekannt"}`,
                 `elapsedDeltaMs=${comparison.elapsedDeltaMs ?? "n/a"}`,
                 `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
+                `videoFrameDelta=${comparison.videoFrameDelta ?? "n/a"}`,
+                `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
+                `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,
                 `remainingPatterns=${patterns ?? "n/a"}`,
                 `javascriptErrors=${javascriptErrors}`,
                 `unhandledRejections=${rejections}`,
@@ -140,7 +152,7 @@ jobs:
             );
 
             summary.push(
-              `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`
+              `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${videoFrameDelta} | ${videoLongGapDelta} | ${videoDroppedFrameDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`
             );
           }
 
