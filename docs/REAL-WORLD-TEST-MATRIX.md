@@ -54,8 +54,8 @@ Webanwendungen, große DOMs und seitenbezogene Interaktionen abdeckt.
 
 Die normale Chromium-CI enthält zusätzlich einen lokalen Video-Regressionslauf.
 Er gehört bewusst **nicht** zum Benchmark-Job, sondern zu den echten Browser-Tests.
-Der lokale HTTP-Server liefert ein fest im Repository hinterlegtes, eine halbe
-Sekunde langes und gelooptes WebM-Testvideo mit 30 Bildern pro Sekunde aus.
+Der lokale HTTP-Server liefert ein fest im Repository hinterlegtes, zehn
+Sekunden langes WebM-Testvideo mit 30 Bildern pro Sekunde aus.
 Während acht Sekunden Wiedergabe erzeugt die Fixture fortlaufend normale
 DOM-Textmutationen mit `Nutzer:innen`. Derselbe Lauf wird einmal ohne und einmal
 mit Erweiterung in frischen Chromium-Sitzungen ausgeführt.
