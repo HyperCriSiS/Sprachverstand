@@ -144,7 +144,8 @@ describe("knownPluralSeparatorsRule", () => {
     ["Gegner*innenschaft", "Gegnerschaft"],
     ["Pförtner*innen", "Pförtner"],
     ["Spender*innen", "Spender"],
-    ["Tonmeister*innen", "Tonmeister"]
+    ["Tonmeister*innen", "Tonmeister"],
+    ["Technoliebhaber:innen", "Technoliebhaber"]
   ])("normalisiert den geprüften sicheren Fall %s", (input, expected) => {
     expect(knownPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
