@@ -119,6 +119,8 @@ describe("Popup-Anzeige", () => {
 
   it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {
     expect(popupHtml).toContain('id="add-current-domain"');
+    expect(popupHtml).toContain('id="domain-action-status"');
+    expect(popupHtml).toContain('aria-live="polite"');
     expect(popupHtml).toContain('data-popup-section="domain-action"');
   });
 
@@ -127,7 +129,7 @@ describe("Popup-Anzeige", () => {
     expect(optionsHtml).toContain('id="select-no-popup-rules"');
   });
 
-  it("stellt die Optionen aus Wo soll korrigiert werden im Popup bereit", () => {
+  it("stellt die Optionen für zusätzliche Korrekturen im Popup bereit", () => {
     expect(popupHtml).toContain('id="process-accessible-attributes"');
     expect(popupHtml).toContain('id="process-quoted-text"');
     expect(popupHtml).toContain('id="process-subtitles"');
@@ -157,7 +159,7 @@ describe("Popup-Anzeige", () => {
     expect(popupRulesBlock).not.toContain("max-height");
   });
 
-  it("zeigt bei Wo soll korrigiert werden keine Zeilentrenner", () => {
+  it("zeigt bei zusätzlichen Korrekturen keine Zeilentrenner", () => {
     const optionRowBlock =
       popupCss.match(/\.popup-option-row\s*\{([\s\S]*?)\}/u)?.[1] ?? "";
     expect(optionRowBlock).not.toContain("border");

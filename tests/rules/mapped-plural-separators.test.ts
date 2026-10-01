@@ -41,6 +41,8 @@ describe("mappedPluralSeparatorsRule", () => {
     ["Gäst:innen", "Gäste"],
     ["Pädagog:innen", "Pädagogen"],
     ["Psycholog:innen", "Psychologen"],
+    ["Psychiater:innen", "Psychiater"],
+    ["Kinderpsychiater:innen", "Kinderpsychiater"],
     ["Therapeut:innen", "Therapeuten"],
     ["Produzent:innen", "Produzenten"],
     ["Zeug:innen", "Zeugen"],
@@ -75,6 +77,15 @@ describe("mappedPluralSeparatorsRule", () => {
         "Co-Moderatoren, Ärztekammer, Mütterinitiative und " +
         "Messebauerverband",
       replacements: 8
+    });
+  });
+
+  it("deckt den gemeldeten taz-Titelfall ab", () => {
+    expect(
+      mappedPluralSeparatorsRule.apply("Psychiater:innen gegen Merz")
+    ).toEqual({
+      text: "Psychiater gegen Merz",
+      replacements: 1
     });
   });
 

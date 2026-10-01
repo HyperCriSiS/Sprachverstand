@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldProcessDomain } from "../src/settings/domain";
+import { shouldProcessDomain, toggleDomainListing } from "../src/settings/domain";
 import { defaultRules } from "../src/rules";
 import {
   defaultEnabledRuleGroupIds,
@@ -143,6 +143,20 @@ describe("Einstellungen", () => {
     expect(settings.excludedDomains).toHaveLength(122);
   });
 
+  it("schaltet die aktuelle Domain inklusive wirksamer Oberdomains um", () => {
+    expect(toggleDomainListing("www.example.org", [])).toEqual([
+      "www.example.org"
+    ]);
+    expect(toggleDomainListing("www.example.org", ["example.org"])).toEqual([]);
+    expect(
+      toggleDomainListing("www.example.org", [
+        "example.org",
+        "www.example.org",
+        "other.example"
+      ])
+    ).toEqual(["other.example"]);
+  });
+
   it("unterstützt Ausschluss- und Einschlussmodus mit Unterdomains", () => {
     const domains = ["example.org"];
 
@@ -151,8 +165,12 @@ describe("Einstellungen", () => {
     expect(shouldProcessDomain("www.example.org", domains, "include")).toBe(true);
     expect(shouldProcessDomain("other.example", domains, "include")).toBe(false);
 
-    expect(normalizeSettings({ domainListMode: "include" }).domainListMode).toBe("include");
-    expect(normalizeSettings({ domainListMode: "unbekannt" }).domainListMode).toBe("exclude");
+    expect(normalizeSettings({ domainListMode: "include" }).domainListMode).toBe(
+      "include"
+    );
+    expect(normalizeSettings({ domainListMode: "unbekannt" }).domainListMode).toBe(
+      "exclude"
+    );
   });
 
   it("übernimmt nur bekannte Synchronisierungskategorien", () => {
@@ -170,6 +188,7 @@ describe("Einstellungen", () => {
       "protected-terms"
     ]);
   });
+
   it("ordnet jede produktive Regel genau einer sichtbaren Gruppe zu", () => {
     const catalogRuleIds = ruleGroupDefinitions.flatMap(
       (group) => group.ruleIds

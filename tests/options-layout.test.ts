@@ -14,7 +14,7 @@ describe("Einstellungsaufbau", () => {
       "Allgemein",
       "Popup-Menü",
       "Was soll korrigiert werden?",
-      "Wo soll korrigiert werden?",
+      "Wo sollen zusätzliche Korrekturen gelten?",
       "Persönliche Ausnahmen",
       "Eigene Ersetzungen",
       "Ausgeschlossene Domains",
