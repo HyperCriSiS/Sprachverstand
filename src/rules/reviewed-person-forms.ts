@@ -1,5 +1,6 @@
 import type { GeneratedPersonForms } from "./generated-person-lexicon";
 import { getReviewedPersonFormsWave70 } from "./reviewed-person-forms-wave-70";
+import { getReviewedPersonFormsWave71 } from "./reviewed-person-forms-wave-71";
 
 
 // Quellenneutraler, exakt freigegebener Zusatzbestand.
@@ -308,5 +309,8 @@ export function getReviewedPersonForms(
       genitiveSingular: inflected
     };
   }
-  return getReviewedPersonFormsWave70(normalizedBase);
+  return (
+    getReviewedPersonFormsWave70(normalizedBase) ??
+    getReviewedPersonFormsWave71(normalizedBase)
+  );
 }
