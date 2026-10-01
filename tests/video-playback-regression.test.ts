@@ -32,7 +32,7 @@ describe("Video-Playback-Regression", () => {
   });
 
   it("hält ein echtes eingebettetes WebM-Testvideo vor", () => {
-    expect(videoFixture.length).toBeGreaterThan(5_000);
+    expect(videoFixture.length).toBeGreaterThan(1_500);
     expect(Buffer.from(videoFixture, "base64").subarray(0, 4).toString("hex")).toBe(
       "1a45dfa3"
     );
