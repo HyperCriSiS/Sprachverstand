@@ -6,11 +6,11 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `d3b1815866d22525284a6d6962173a85c9831731`
-- Letzte Produktänderung: PR #279 „Lexikon: siebzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 70
-- PR #279: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
-- Welle 70 integriert ausschließlich quellenneutrale Exact-Mappings; es gibt weiterhin keine generische Personen-Suffixregel.
+- Produktbaseline: `9b474e0c383caad84c282a871449acd65bc04477`
+- Letzte Produktänderung: PR #280 „Lexikon: einundsiebzigste Ausbauwelle“
+- Abgeschlossene Lexikon-Ausbauwellen: 71
+- PR #280: Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck grün.
+- Welle 71 integriert ausschließlich quellenneutrale Exact-Mappings; es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 
 ## DOM-/Framework-Härtung (PR #261)
@@ -43,6 +43,20 @@ Autorität: `main`
 - `kldb-current-priority-14`: 2 angenommen, Welle 68 / PR #275
 - `kldb-current-priority-15`: 5 angenommen, Welle 69 / PR #277
 - `kldb-current-priority-16`: 8 angenommen, Welle 70 / PR #279
+- `kldb-current-priority-17`: 20 angenommen, Welle 71 / PR #280
+
+### Priority 17 im Detail
+
+- 20 Kandidaten
+- 20 angenommen: `branntsteinbrenner`, `destillatbrenner`, `einzieher`, `hammerdrücker`, `handflämmer`, `kakaomahler`, `kernschwärzer`, `kondensmilchsieder`, `maschinendrücker`, `metalldrücker`, `metallschläger`, `metallätzer`, `senger`, `universaldrücker`, `webgeschirreinzieher`, `weißbeizer`, `zapfer`, `zinkdrücker`, `zinndrücker`, `ätzer`
+- 0 verworfen
+- 0 offen
+- vollständig mit `language_model_first` semantisch und morphologisch geprüft
+- Flexionsklasse: `unchanged` (20)
+- die neun separat zurückgestellten Grenzfälle bleiben unverändert offen
+- generische Maschinen-/Sachklassen wie `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-sortierer`, `-mischer` und `-kopierer` bleiben ausgeschlossen
+- Welle 71 enthält ausschließlich Exact-Mappings plus Positiv-, Negativ-, Paar- und Kasusregressionen
+- Merge-Commit: `9b474e0c383caad84c282a871449acd65bc04477`
 
 ### Priority 16 im Detail
 
@@ -158,8 +172,8 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-16-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-16-manual-decisions.json`
+2. `sprachverstand/derived/review/kldb-current-priority-17-summary.json`
+3. `sprachverstand/derived/review/kldb-current-priority-17-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
 
 ## Quellenabdeckung und verbleibender Review-Pool
@@ -171,7 +185,7 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.727 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **268 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.747 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **248 noch nicht entschiedene Kandidaten**.
 
 Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
 
@@ -179,10 +193,10 @@ Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin s
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 268 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
+1. Die verbleibenden 248 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
 2. Die neun separat zurückgestellten Grenzfälle weiterhin getrennt behandeln.
 3. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
-4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-17` aufnehmen; der Batch darf sehr klein sein.
+4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-18` aufnehmen; der Batch darf sehr klein sein.
 5. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
 6. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
 7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
