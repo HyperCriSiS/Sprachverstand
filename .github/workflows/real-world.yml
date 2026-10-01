@@ -123,6 +123,10 @@ jobs:
             const videoFrameDelta = Number.isFinite(comparison.videoFrameDelta)
               ? String(comparison.videoFrameDelta)
               : "–";
+            const baselineVideos = baseline.snapshot?.videos || {};
+            const extensionVideos = extension.snapshot?.videos || {};
+            const videoElements = `${baselineVideos.count ?? "–"}/${extensionVideos.count ?? "–"}`;
+            const videoFrames = `${baselineVideos.frameCallbacks ?? "–"}/${extensionVideos.frameCallbacks ?? "–"}`;
             const videoLongGapDelta = Number.isFinite(comparison.videoLongGapDelta)
               ? String(comparison.videoLongGapDelta)
               : "–";
@@ -144,6 +148,8 @@ jobs:
                 `extension=${extension.status || "unbekannt"}`,
                 `elapsedDeltaMs=${comparison.elapsedDeltaMs ?? "n/a"}`,
                 `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
+                `videoElements=${videoElements}`,
+                `videoFrames=${videoFrames}`,
                 `videoFrameDelta=${comparison.videoFrameDelta ?? "n/a"}`,
                 `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
                 `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,
