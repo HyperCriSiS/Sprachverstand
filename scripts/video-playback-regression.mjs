@@ -115,7 +115,7 @@ function fixtureHtml() {
 <title>Sprachverstand Video-Regression</title>
 <body>
 <p id="static-target">Nutzer:innen</p>
-<video id="video" muted autoplay loop playsinline preload="auto" src="/video.webm"
+<video id="video" muted autoplay playsinline preload="auto" src="/video.webm"
   style="width:320px;height:180px;background:#111"></video>
 <div id="dynamic-root"></div>
 <script>
@@ -355,6 +355,11 @@ function validateRun(result) {
   if (result.errors.length) {
     throw new Error(`${result.mode}: Videofehler: ${result.errors.join(" | ")}`);
   }
+  if (result.currentTime < 5) {
+    throw new Error(
+      `${result.mode}: Video lief nicht ausreichend weit (${result.currentTime.toFixed(2)} s).`
+    );
+  }
   if (result.videoWidth <= 0 || result.videoHeight <= 0 || result.readyState < 2) {
     throw new Error(`${result.mode}: Video wurde nicht korrekt dekodiert.`);
   }
@@ -449,6 +454,27 @@ try {
 
   const baseline = await run(fixture.url, "baseline");
   const extension = await run(fixture.url, "extension");
+
+  console.log(
+    `Video-Rohmessung: ${JSON.stringify({
+      baseline: {
+        currentTime: baseline.currentTime,
+        callbacks: baseline.frames.callbacks,
+        p95GapMs: baseline.frames.p95GapMs,
+        maximumGapMs: baseline.frames.maximumGapMs,
+        gapsOver120Ms: baseline.frames.gapsOver120Ms,
+        droppedVideoFrames: baseline.droppedVideoFrames
+      },
+      extension: {
+        currentTime: extension.currentTime,
+        callbacks: extension.frames.callbacks,
+        p95GapMs: extension.frames.p95GapMs,
+        maximumGapMs: extension.frames.maximumGapMs,
+        gapsOver120Ms: extension.frames.gapsOver120Ms,
+        droppedVideoFrames: extension.droppedVideoFrames
+      }
+    })}`
+  );
 
   validateRun(baseline);
   validateRun(extension);
