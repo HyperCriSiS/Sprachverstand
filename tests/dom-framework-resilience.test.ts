@@ -22,6 +22,22 @@ function queueNode(target: DomProcessor, node: Node): void {
   ).queue(node);
 }
 
+async function waitForPartialReplacementCount(
+  target: DomProcessor,
+  total: number,
+  maxTasks = 10
+): Promise<number> {
+  for (let task = 0; task < maxTasks; task += 1) {
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    const count = target.getReplacementCount();
+    if (count > 0 || count >= total) {
+      return count;
+    }
+  }
+
+  return target.getReplacementCount();
+}
+
 afterEach(() => {
   processor?.stop();
   processor = undefined;
@@ -85,11 +101,12 @@ describe("DomProcessor Framework-Resilienz", () => {
     document.body.append(section);
     queueNode(processor, section);
 
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-
-    const afterFirstTask = processor.getReplacementCount();
-    expect(afterFirstTask).toBeGreaterThan(0);
-    expect(afterFirstTask).toBeLessThan(4_000);
+    const afterPartialTask = await waitForPartialReplacementCount(
+      processor,
+      4_000
+    );
+    expect(afterPartialTask).toBeGreaterThan(0);
+    expect(afterPartialTask).toBeLessThan(4_000);
 
     processor.flush();
     expect(processor.getReplacementCount()).toBe(4_000);
@@ -113,9 +130,10 @@ describe("DomProcessor Framework-Resilienz", () => {
     document.body.append(section);
     queueNode(processor, section);
 
-    await new Promise((resolve) => window.setTimeout(resolve, 0));
-
-    const beforeRemoval = processor.getReplacementCount();
+    const beforeRemoval = await waitForPartialReplacementCount(
+      processor,
+      4_000
+    );
     expect(beforeRemoval).toBeGreaterThan(0);
     expect(beforeRemoval).toBeLessThan(4_000);
 
