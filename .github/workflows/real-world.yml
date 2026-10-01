@@ -45,6 +45,9 @@ jobs:
       - name: Erweiterung lokal im echten Chromium beweisen
         run: npm run test:browser:chromium
 
+      - name: Lokale Videowiedergabe unter DOM-Last prüfen
+        run: npm run test:browser:video:chromium
+
       - name: Reale Webseiten diagnostisch prüfen
         env:
           SITE_FILTER: ${{ inputs.site }}
