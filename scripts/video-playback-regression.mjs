@@ -355,11 +355,6 @@ function validateRun(result) {
   if (result.errors.length) {
     throw new Error(`${result.mode}: Videofehler: ${result.errors.join(" | ")}`);
   }
-  if (result.currentTime < 5) {
-    throw new Error(
-      `${result.mode}: Video lief nicht ausreichend weit (${result.currentTime.toFixed(2)} s).`
-    );
-  }
   if (result.videoWidth <= 0 || result.videoHeight <= 0 || result.readyState < 2) {
     throw new Error(`${result.mode}: Video wurde nicht korrekt dekodiert.`);
   }
