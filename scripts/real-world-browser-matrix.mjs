@@ -242,6 +242,8 @@ async function createSession(withExtension) {
     "--disable-dev-shm-usage",
     "--no-first-run",
     "--disable-default-apps",
+    "--autoplay-policy=no-user-gesture-required",
+    "--mute-audio",
     "--window-size=1440,1200"
   ];
 
@@ -289,7 +291,13 @@ async function installObservers(sessionId) {
       window.__sprachverstandLiveMetrics = {
         errors: [],
         rejections: [],
-        longTasks: []
+        longTasks: [],
+        video: {
+          frameTimes: [],
+          waiting: 0,
+          stalled: 0,
+          playing: 0
+        }
       };
 
       window.addEventListener("error", (event) => {
@@ -320,6 +328,52 @@ async function installObservers(sessionId) {
       } catch {
         // Long-Task-Beobachtung wird nicht von jeder Browserkonfiguration bereitgestellt.
       }
+
+      const observedVideos = new WeakSet();
+      const registerVideo = (video) => {
+        if (!(video instanceof HTMLVideoElement) || observedVideos.has(video)) {
+          return;
+        }
+        observedVideos.add(video);
+        const metrics = window.__sprachverstandLiveMetrics.video;
+        for (const eventName of ["waiting", "stalled", "playing"]) {
+          video.addEventListener(eventName, () => {
+            metrics[eventName] += 1;
+          });
+        }
+
+        if (typeof video.requestVideoFrameCallback === "function") {
+          const onFrame = (now) => {
+            metrics.frameTimes.push(Number(now));
+            if (metrics.frameTimes.length > 4_000) {
+              metrics.frameTimes.splice(0, metrics.frameTimes.length - 4_000);
+            }
+            if (document.contains(video)) {
+              video.requestVideoFrameCallback(onFrame);
+            }
+          };
+          video.requestVideoFrameCallback(onFrame);
+        }
+      };
+
+      document.querySelectorAll("video").forEach(registerVideo);
+      const videoObserver = new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (!(node instanceof Element)) {
+              continue;
+            }
+            if (node.matches("video")) {
+              registerVideo(node);
+            }
+            node.querySelectorAll?.("video").forEach(registerVideo);
+          }
+        }
+      });
+      videoObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+      });
     `
   );
 }
@@ -400,6 +454,37 @@ async function collectSnapshot(sessionId) {
         0
       );
 
+      const videoMetrics = metrics.video || {
+        frameTimes: [],
+        waiting: 0,
+        stalled: 0,
+        playing: 0
+      };
+      const frameTimes = Array.isArray(videoMetrics.frameTimes)
+        ? videoMetrics.frameTimes.map(Number).filter(Number.isFinite)
+        : [];
+      const frameGaps = [];
+      for (let index = 1; index < frameTimes.length; index += 1) {
+        const gap = frameTimes[index] - frameTimes[index - 1];
+        if (gap >= 0) {
+          frameGaps.push(gap);
+        }
+      }
+      const settledFrameGaps = frameGaps.slice(Math.min(15, frameGaps.length));
+      const sortedFrameGaps = [...settledFrameGaps].sort(
+        (left, right) => left - right
+      );
+      const p95Index = Math.min(
+        sortedFrameGaps.length - 1,
+        Math.max(0, Math.ceil(sortedFrameGaps.length * 0.95) - 1)
+      );
+      const videos = [...document.querySelectorAll("video")];
+      const playbackQuality = videos.map((video) =>
+        typeof video.getVideoPlaybackQuality === "function"
+          ? video.getVideoPlaybackQuality()
+          : undefined
+      );
+
       const walker = document.createTreeWalker(
         document.body || document.documentElement,
         NodeFilter.SHOW_TEXT
@@ -437,6 +522,27 @@ async function collectSnapshot(sessionId) {
           count: longTasks.length,
           totalDurationMs: totalLongTaskDuration,
           maximumDurationMs: maximumLongTaskDuration
+        },
+        videos: {
+          count: videos.length,
+          playingCount: videos.filter((video) => !video.paused && !video.ended).length,
+          frameCallbacks: frameTimes.length,
+          p95FrameGapMs: sortedFrameGaps.length > 0 ? sortedFrameGaps[p95Index] : 0,
+          maximumFrameGapMs: settledFrameGaps.length > 0
+            ? Math.max(...settledFrameGaps)
+            : 0,
+          gapsOver120Ms: settledFrameGaps.filter((gap) => gap > 120).length,
+          waitingEvents: Number(videoMetrics.waiting || 0),
+          stalledEvents: Number(videoMetrics.stalled || 0),
+          playingEvents: Number(videoMetrics.playing || 0),
+          totalVideoFrames: playbackQuality.reduce(
+            (sum, quality) => sum + Number(quality?.totalVideoFrames || 0),
+            0
+          ),
+          droppedVideoFrames: playbackQuality.reduce(
+            (sum, quality) => sum + Number(quality?.droppedVideoFrames || 0),
+            0
+          )
         }
       };
     `
@@ -458,6 +564,17 @@ async function exercisePage(sessionId) {
   }
 
   await execute(sessionId, "window.scrollTo(0, 0);");
+  await execute(
+    sessionId,
+    `
+      for (const video of document.querySelectorAll("video")) {
+        video.muted = true;
+        video.volume = 0;
+        video.play().catch(() => undefined);
+      }
+      return document.querySelectorAll("video").length;
+    `
+  );
 }
 
 async function saveScreenshot(sessionId, filePath) {
@@ -507,6 +624,15 @@ function compareRuns(baseline, extension) {
     totalLongTaskDeltaMs:
       extension.snapshot.longTasks.totalDurationMs -
       baseline.snapshot.longTasks.totalDurationMs,
+    videoFrameDelta:
+      extension.snapshot.videos.frameCallbacks -
+      baseline.snapshot.videos.frameCallbacks,
+    videoLongGapDelta:
+      extension.snapshot.videos.gapsOver120Ms -
+      baseline.snapshot.videos.gapsOver120Ms,
+    videoDroppedFrameDelta:
+      extension.snapshot.videos.droppedVideoFrames -
+      baseline.snapshot.videos.droppedVideoFrames,
     patternDelta
   };
 }
@@ -596,10 +722,10 @@ const results = [];
 try {
   await waitForDriver(driverProcess, driverLogs);
 
-  for (const site of sites) {
-    console.log(`Prüfe ${site.id}/10 ${site.slug} ohne Erweiterung …`);
+  for (const [index, site] of sites.entries()) {
+    console.log(`Prüfe ${index + 1}/${sites.length} ${site.slug} ohne Erweiterung …`);
     const baseline = await runSiteMode(site, "baseline");
-    console.log(`Prüfe ${site.id}/10 ${site.slug} mit Erweiterung …`);
+    console.log(`Prüfe ${index + 1}/${sites.length} ${site.slug} mit Erweiterung …`);
     const extension = await runSiteMode(site, "extension");
 
     if (baseline.status === "error") {

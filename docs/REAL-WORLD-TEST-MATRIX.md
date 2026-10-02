@@ -1,6 +1,6 @@
 # Reale Webseiten – Testmatrix
 
-Stand: 2. September 2026
+Stand: 2. Oktober 2026
 
 Diese Matrix ergänzt die deterministischen Vitest-, Fixture- und echten
 Browser-Smoke-Tests um reale externe Webseiten. Die Seiten wurden so gewählt,
@@ -20,6 +20,8 @@ Für jeden Lauf werden mindestens folgende Werte erfasst:
   Binnen-I-Schreibweisen im sichtbaren Text
 - JavaScript-Fehler und nicht abgefangene Promise-Fehler
 - Long Tasks beziehungsweise auffällige Blockaden des Hauptthreads
+- bei vorhandenen HTML5-Videos: präsentierte Frames, P95- und Maximalabstand der
+  Frames, Frame-Lücken über 120 ms, Waiting-/Stalled-Ereignisse und verworfene Frames
 - Zustand geschützter Bereiche vor und nach dem Lauf
 - Ergebnis der seitenbezogenen Interaktionsprobe
 - soweit aus dem jeweiligen Browserpfad zuverlässig verfügbar: die von
@@ -48,7 +50,27 @@ Build in den realen Browsern geladen wird und die zentralen DOM-Invarianten häl
 Sie ersetzen nicht die folgende externe Real-World-Matrix, die komplexe
 Webanwendungen, große DOMs und seitenbezogene Interaktionen abdeckt.
 
-## Die zehn Referenzseiten
+## Deterministischer Video-Regressionslauf
+
+Die normale Chromium-CI enthält zusätzlich einen lokalen Video-Regressionslauf.
+Er gehört bewusst **nicht** zum Benchmark-Job, sondern zu den echten Browser-Tests.
+Der lokale HTTP-Server liefert ein fest im Repository hinterlegtes, zehn
+Sekunden langes WebM-Testvideo mit 30 Bildern pro Sekunde aus.
+Während acht Sekunden Wiedergabe erzeugt die Fixture fortlaufend normale
+DOM-Textmutationen mit `Nutzer:innen`. Derselbe Lauf wird einmal ohne und einmal
+mit Erweiterung in frischen Chromium-Sitzungen ausgeführt.
+
+Gemessen werden `requestVideoFrameCallback()`, `getVideoPlaybackQuality()`,
+Frame-Lücken und der tatsächliche Wiedergabefortschritt. Der Test schlägt nur bei
+klaren relativen Regressionen gegenüber der unmittelbar zuvor gemessenen Baseline
+fehl. Damit bleibt er reproduzierbar und erkennt gerade die Fehlerklasse
+„Erweiterung verursacht periodische Video-Hänger“, ohne von Internetgeschwindigkeit,
+Werbung oder Änderungen externer Videoplattformen abzuhängen.
+
+Die Real-World-Seiten 11 und 12 ergänzen diesen Pflichtlauf diagnostisch. Ihre
+absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
+
+## Die zwölf Referenzseiten
 
 | Nr. | Seite | Schwerpunkt | Konkrete Prüfung | Automatisierung |
 |---:|---|---|---|---|
@@ -62,6 +84,8 @@ Webanwendungen, große DOMs und seitenbezogene Interaktionen abdeckt.
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
 | 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
+| 11 | `https://www.yoga74.de/techno` | konkreter gemeldeter Video-Ruckel-Regressionsfall auf einer dynamischen Wix-Seite | vorhandenes Video stumm starten; Frame-Abstände, Long Tasks und Stalls zwischen Baseline und Erweiterung vergleichen; gleichzeitig normale Textverarbeitung beobachten | mittel bis hoch |
+| 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
 
 ## Automatisierbare Aussagen
 
@@ -78,7 +102,9 @@ Ein Browser-Test kann für diese Seiten sinnvoll und reproduzierbar prüfen:
    Diagnose ausgegeben.
 7. Performance-Metriken und – in Browserpfaden mit zuverlässig zugänglichem
    Erweiterungszähler – die Ersetzungszahl werden als Artefakt gespeichert.
-8. Ein kleiner Satz stabiler Interaktionen wie Accordion öffnen, scrollen oder
+8. Bei HTML5-Videos werden zusätzlich Frame-Takt, Lücken über 120 ms,
+   Waiting-/Stalled-Ereignisse sowie `getVideoPlaybackQuality()` erfasst.
+9. Ein kleiner Satz stabiler Interaktionen wie Accordion öffnen, scrollen oder
    einen Filter umschalten funktioniert weiterhin.
 
 ## Was ein Live-Test nicht zuverlässig allein entscheiden kann
@@ -127,8 +153,9 @@ Chromium-Sitzung geöffnet.
 
 Der Runner schreibt `artifacts/real-world/report.json` und Screenshots für beide
 Varianten. Der Report enthält insbesondere DOM- und Textknotenzahl,
-Navigationstiming, Restmuster, Long Tasks, nach Start der Messung beobachtete
-JavaScript- und Promise-Fehler sowie ausschließlich Hashes und Anzahlen
+Navigationstiming, Restmuster, Long Tasks, HTML5-Video- und Frame-Metriken, nach
+Start der Messung beobachtete JavaScript- und Promise-Fehler sowie ausschließlich
+Hashes und Anzahlen
 geschützter `input`-, `textarea`-, `contenteditable`-, `code`- und `pre`-Bereiche.
 Rohinhalte dieser geschützten Bereiche werden nicht in den Report übernommen.
 
