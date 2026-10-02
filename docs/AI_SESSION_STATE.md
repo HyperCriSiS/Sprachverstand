@@ -14,6 +14,21 @@ Autorität: `main`
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 - Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
 - PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
+- Test-/Browser-Härtung PR #283 „Tests: Videowiedergabe unter DOM-Last absichern“ ist integriert; Produktlogik und Lexikonbestand blieben unverändert.
+- PR #283 ergänzt einen deterministischen lokalen Chromium-Video-Test und Video-/Frame-Diagnostik für die Real-World-Matrix; `Yoga74/Techno` und `YouTube Big Buck Bunny` sind als diagnostische Live-Seiten aufgenommen.
+- PR #283 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI inklusive Video-Playback-Test, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
+
+## Video-/Real-World-Härtung (PR #283)
+
+- Der Video-Regressionslauf gehört zu den echten Chromium-Browser-Tests, nicht zum Benchmark-Job.
+- Eine lokale 10-Sekunden-WebM-Fixture mit 30 fps wird ohne externes Netzwerk abgespielt.
+- Während acht Sekunden Beobachtungszeit erzeugt die Fixture fortlaufend dynamische DOM-Textänderungen, damit Sprachverstand unter typischer MutationObserver-Last geprüft wird.
+- Baseline und Erweiterung laufen in getrennten frischen Chromium-Sitzungen.
+- Erfasst werden `requestVideoFrameCallback()`, `getVideoPlaybackQuality()`, P95-/Maximalabstand der Frames, Lücken über 120 ms, verworfene Frames und tatsächlicher Wiedergabefortschritt.
+- Die Real-World-Matrix erfasst dieselben Video-Signale auf zugänglichen HTML5-Videos zusätzlich zu Long Tasks; externe Seiten bleiben wegen Netzwerk, Werbung, Consent und Plattformänderungen bewusst diagnostisch und nicht Required-CI-blockierend.
+- `Yoga74/Techno` bildet den konkret gemeldeten Video-Ruckel-Fall ab; `YouTube Big Buck Bunny` ergänzt eine mutationsreiche lange Videoseite.
+- Der frühere seitenbezogene Einzelworttest für Yoga74 wurde entfernt. `Technoliebhaber:innen` wird stattdessen repräsentativ im allgemeinen sicheren `Liebhaber`-Regeltest abgesichert.
+- Merge-Commit: `3ba9d04f3eae9fd930e42d3a5bbd8ec83e7656a4`
 
 ## DOM-/Framework-Härtung (PR #261)
 
