@@ -12,6 +12,7 @@ on:
           - kldb-snapshot
           - kldb-current
           - esco-api
+          - wiktionary-flexion
 
 permissions:
   contents: read
@@ -87,6 +88,7 @@ jobs:
               "kldb-snapshot": "ba-kldb-2026",
               "kldb-current": "ba-dkz-current",
               "esco-api": "esco-de",
+              "wiktionary-flexion": "dewiktionary-wiktextract",
           }
           source = os.environ["SOURCE"]
           source_id = ids[source]
@@ -116,7 +118,7 @@ jobs:
           echo "::add-mask::$SOURCE_URL"
 
       - name: KldB/DKZ importieren und Coverage berechnen
-        if: inputs.source != 'esco-api'
+        if: inputs.source == 'kldb-snapshot' || inputs.source == 'kldb-current'
         env:
           SOURCE: ${{ inputs.source }}
         run: |
@@ -164,6 +166,113 @@ jobs:
             --output "$COVERAGE" \
             --output "$UNKNOWN" \
             --command "fetch_esco_api.py v1.2.0 + Kandidaten/Coverage" \
+            --normalizer-version "$PRIVATE_COMMIT" \
+            --manifest "$MANIFEST"
+
+      - name: Wiktionary-Flexionen importieren und gegen KldB prüfen
+        if: inputs.source == 'wiktionary-flexion'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DUMP="$RUNNER_TEMP/dewiktionary-2026-09-01.jsonl.gz"
+          FLEXION_DIR="datastore/sprachverstand/derived/flexion/dewiktionary-2026-09-01"
+          INDEX="$FLEXION_DIR/index.json"
+          SUMMARY="$FLEXION_DIR/summary.json"
+          VERIFY="datastore/sprachverstand/derived/review/wiktionary-kldb-current-flexion.json"
+          MANIFEST="datastore/sprachverstand/derived/manifests/dewiktionary-2026-09-01.json"
+          PRIVATE_COMMIT="$(git -C datastore rev-parse HEAD)"
+
+          SOURCE_URL="$(
+            python - <<'PY'
+          import json
+          from pathlib import Path
+
+          registry = json.loads(
+              Path("datastore/sprachverstand/sources/registry.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          for entry in registry["sources"]:
+              if entry.get("id") == "dewiktionary-wiktextract":
+                  print(entry["sourceFileUrl"], end="")
+                  break
+          else:
+              raise SystemExit("Wiktionary-Quelle fehlt in der privaten Registry.")
+          PY
+          )"
+
+          rm -rf "$FLEXION_DIR"
+          mkdir -p "$FLEXION_DIR" "$(dirname "$VERIFY")" "$(dirname "$MANIFEST")"
+
+          curl \
+            --fail \
+            --location \
+            --retry 4 \
+            --retry-delay 3 \
+            --connect-timeout 30 \
+            --max-time 1200 \
+            "$SOURCE_URL" \
+            --output "$DUMP"
+
+          python datastore/sprachverstand/scripts/normalize_wiktextract.py \
+            "$DUMP" \
+            "$FLEXION_DIR"
+
+          python - "$FLEXION_DIR" "$INDEX" <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          output = Path(sys.argv[2])
+          files = []
+          for path in sorted(root.glob("flexion-*.json")):
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              files.append(
+                  {
+                      "name": path.name,
+                      "bytes": path.stat().st_size,
+                      "sha256": digest,
+                  }
+              )
+
+          summary = json.loads((root / "summary.json").read_text(encoding="utf-8"))
+          payload = {
+              "version": 1,
+              "sourceId": "dewiktionary-wiktextract",
+              "dump": "2026-09-01",
+              "summary": summary,
+              "blocks": files,
+          }
+          output.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(
+              json.dumps(
+                  {
+                      "blocks": len(files),
+                      **summary,
+                  },
+                  ensure_ascii=False,
+              )
+          )
+          PY
+
+          node scripts/lexicon-verify-flexion.mjs \
+            datastore/sprachverstand/derived/candidates/kldb-current-pairs.json \
+            "$FLEXION_DIR" \
+            --output "$VERIFY"
+
+          python datastore/sprachverstand/scripts/record_ingestion.py \
+            --source-id dewiktionary-wiktextract \
+            --input "$DUMP" \
+            --output "$INDEX" \
+            --output "$SUMMARY" \
+            --output "$VERIFY" \
+            --command "normalize_wiktextract.py + lexicon-verify-flexion.mjs" \
             --normalizer-version "$PRIVATE_COMMIT" \
             --manifest "$MANIFEST"
 
