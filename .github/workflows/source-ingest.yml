@@ -11,6 +11,7 @@ on:
         options:
           - kldb-snapshot
           - kldb-current
+          - esco-api
 
 permissions:
   contents: read
@@ -85,6 +86,7 @@ jobs:
           ids = {
               "kldb-snapshot": "ba-kldb-2026",
               "kldb-current": "ba-dkz-current",
+              "esco-api": "esco-de",
           }
           source = os.environ["SOURCE"]
           source_id = ids[source]
@@ -94,9 +96,15 @@ jobs:
               )
           )
           for entry in registry["sources"]:
-              if entry.get("id") == source_id:
-                  print(entry["sourceFileUrl"], end="")
-                  break
+              if entry.get("id") != source_id:
+                  continue
+              source_url = entry.get("sourceFileUrl") or entry.get("url")
+              if not source_url:
+                  raise SystemExit(
+                      f"Quelle {source_id} enthält weder sourceFileUrl noch url."
+                  )
+              print(source_url, end="")
+              break
           else:
               raise SystemExit(f"Quelle {source_id} fehlt in der privaten Registry.")
           PY
@@ -108,12 +116,56 @@ jobs:
           echo "::add-mask::$SOURCE_URL"
 
       - name: KldB/DKZ importieren und Coverage berechnen
+        if: inputs.source != 'esco-api'
         env:
           SOURCE: ${{ inputs.source }}
         run: |
           python datastore/sprachverstand/scripts/run_kldb_ingest.py \
             --source "$SOURCE" \
             --product-dir "$GITHUB_WORKSPACE"
+
+      - name: ESCO über offizielle API importieren und Coverage berechnen
+        if: inputs.source == 'esco-api'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NORMALIZED="datastore/sprachverstand/normalized/esco-api-v1.2.0.txt"
+          PAIRS="datastore/sprachverstand/derived/candidates/esco-api-v1.2.0-pairs.json"
+          COVERAGE_INPUT="datastore/sprachverstand/derived/candidates/esco-api-v1.2.0-coverage-input.json"
+          COVERAGE="datastore/sprachverstand/derived/candidates/esco-api-v1.2.0-coverage.json"
+          UNKNOWN="datastore/sprachverstand/derived/candidates/esco-api-v1.2.0-unknown.txt"
+          MANIFEST="datastore/sprachverstand/derived/manifests/esco-api-v1.2.0.json"
+          PRODUCT_COMMIT="$(git rev-parse HEAD)"
+          PRIVATE_COMMIT="$(git -C datastore rev-parse HEAD)"
+
+          python datastore/sprachverstand/scripts/fetch_esco_api.py "$NORMALIZED"
+
+          node scripts/lexicon-candidates.mjs "$NORMALIZED" --output "$PAIRS"
+
+          python datastore/sprachverstand/scripts/prepare_pair_coverage.py \
+            "$PAIRS" \
+            "$COVERAGE_INPUT" \
+            --product-commit "$PRODUCT_COMMIT"
+
+          node scripts/lexicon-coverage.mjs \
+            "$COVERAGE_INPUT" \
+            --output "$COVERAGE"
+
+          python datastore/sprachverstand/scripts/prepare_unknown_candidates.py \
+            "$COVERAGE" \
+            "$UNKNOWN"
+
+          python datastore/sprachverstand/scripts/record_ingestion.py \
+            --source-id esco-de \
+            --input "$NORMALIZED" \
+            --output "$PAIRS" \
+            --output "$COVERAGE_INPUT" \
+            --output "$COVERAGE" \
+            --output "$UNKNOWN" \
+            --command "fetch_esco_api.py v1.2.0 + Kandidaten/Coverage" \
+            --normalizer-version "$PRIVATE_COMMIT" \
+            --manifest "$MANIFEST"
 
       - name: Änderungen auf erlaubte private Pfade begrenzen
         shell: bash
