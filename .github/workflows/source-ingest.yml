@@ -13,6 +13,7 @@ on:
           - kldb-current
           - esco-api
           - wiktionary-flexion
+          - wikidata-occupations
 
 permissions:
   contents: read
@@ -89,6 +90,7 @@ jobs:
               "kldb-current": "ba-dkz-current",
               "esco-api": "esco-de",
               "wiktionary-flexion": "dewiktionary-wiktextract",
+              "wikidata-occupations": "wikidata-occupations",
           }
           source = os.environ["SOURCE"]
           source_id = ids[source]
@@ -273,6 +275,55 @@ jobs:
             --output "$SUMMARY" \
             --output "$VERIFY" \
             --command "normalize_wiktextract.py + lexicon-verify-flexion.mjs" \
+            --normalizer-version "$PRIVATE_COMMIT" \
+            --manifest "$MANIFEST"
+
+      - name: Wikidata-Berufe importieren und Coverage berechnen
+        if: inputs.source == 'wikidata-occupations'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NORMALIZED="datastore/sprachverstand/normalized/wikidata-occupations-de.txt"
+          SUMMARY="datastore/sprachverstand/derived/candidates/wikidata-occupations-summary.json"
+          PAIRS="datastore/sprachverstand/derived/candidates/wikidata-occupations-pairs.json"
+          COVERAGE_INPUT="datastore/sprachverstand/derived/candidates/wikidata-occupations-coverage-input.json"
+          COVERAGE="datastore/sprachverstand/derived/candidates/wikidata-occupations-coverage.json"
+          UNKNOWN="datastore/sprachverstand/derived/candidates/wikidata-occupations-unknown.txt"
+          MANIFEST="datastore/sprachverstand/derived/manifests/wikidata-occupations.json"
+          PRODUCT_COMMIT="$(git rev-parse HEAD)"
+          PRIVATE_COMMIT="$(git -C datastore rev-parse HEAD)"
+
+          python datastore/sprachverstand/scripts/fetch_wikidata_occupations.py \
+            "$NORMALIZED" \
+            --summary "$SUMMARY"
+
+          node scripts/lexicon-candidates.mjs \
+            "$NORMALIZED" \
+            --output "$PAIRS"
+
+          python datastore/sprachverstand/scripts/prepare_pair_coverage.py \
+            "$PAIRS" \
+            "$COVERAGE_INPUT" \
+            --product-commit "$PRODUCT_COMMIT"
+
+          node scripts/lexicon-coverage.mjs \
+            "$COVERAGE_INPUT" \
+            --output "$COVERAGE"
+
+          python datastore/sprachverstand/scripts/prepare_unknown_candidates.py \
+            "$COVERAGE" \
+            "$UNKNOWN"
+
+          python datastore/sprachverstand/scripts/record_ingestion.py \
+            --source-id wikidata-occupations \
+            --input "$NORMALIZED" \
+            --output "$SUMMARY" \
+            --output "$PAIRS" \
+            --output "$COVERAGE_INPUT" \
+            --output "$COVERAGE" \
+            --output "$UNKNOWN" \
+            --command "fetch_wikidata_occupations.py + Kandidaten/Coverage" \
             --normalizer-version "$PRIVATE_COMMIT" \
             --manifest "$MANIFEST"
 
