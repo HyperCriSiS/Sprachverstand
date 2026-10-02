@@ -64,7 +64,18 @@ Autorität: `main`
 - `kldb-current-priority-18`: 24 angenommen, Welle 72 / PR #282
 - `kldb-current-priority-19`: 11 angenommen, Welle 73 / PR #284
 - `kldb-current-priority-20`: 148 angenommen, Welle 74 / PR #285
-- `kldb-current-priority-21`: 65 geprüft; 51 angenommen, 7 verworfen, 7 offen; Ziel Welle 75
+- `kldb-current-priority-21`: 65 geprüft; 51 angenommen, 7 verworfen, 7 zunächst offen; Ziel Welle 75
+- `kldb-current-priority-22`: letzte 7 geprüft; 5 angenommen, 2 verworfen, 0 offen; Ziel Welle 76
+
+### Priority 22 im Detail
+
+- 7 letzte Sonderfälle abschließend geprüft
+- 5 angenommen: `eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`
+- 2 verworfen: `printer`, `xerograf`
+- 0 offen
+- Flexionsklassen: `plural_e` (2), `weak_en` (2), `unchanged` (1)
+- Ziel: Welle 76
+- damit sind 1.995 von 1.995 ursprünglich unbekannten Kandidaten fachlich entschieden
 
 ### Priority 21 im Detail
 
@@ -246,19 +257,19 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.988 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben nur noch **7 offene Sonderfälle**.
+Entschieden sind inzwischen **1.995 von 1.995** ursprünglich unbekannten Kandidaten. Es gibt **keine offenen Kandidaten mehr**.
 
 Priority 19 und 20 haben 159 weitere sichere Exact-Mappings integriert. Priority 21 hat den kompletten verbleibenden 65er-Pool geprüft: 51 angenommen, 7 verworfen und 7 offen.
 
-Offen bleiben ausschließlich: `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf`.
+Priority 22 hat die letzten sieben Sonderfälle abgeschlossen: 5 angenommen (`eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`) und 2 verworfen (`printer`, `xerograf`).
 
 ## Nächste Arbeitseinheit
 
-1. Die 51 in Priority 21 angenommenen Formen als Welle 75 integrieren.
-2. Welle 75 ausschließlich als Exact-Mappings mit vollständiger Datenprüfung und repräsentativen End-to-End-Regressionen absichern.
-3. Danach die sieben verbleibenden Sonderfälle `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf` einzeln abschließend entscheiden.
-4. Keine breite Suffixfreigabe hinzufügen.
-5. Externe Recherche nur noch für diese echten Restgrenzfälle verwenden.
+1. Welle 75 mit den 51 in Priority 21 angenommenen Exact-Mappings integrieren.
+2. Danach Welle 76 mit den fünf final in Priority 22 angenommenen Formen integrieren.
+3. Nach Welle 76 den Importstand neu vermessen; der ursprüngliche 1.995er-Unbekanntpool ist dann vollständig abgearbeitet.
+4. Die insgesamt neun verworfenen Kandidaten bleiben bewusst außerhalb des Produktlexikons.
+5. Keine breite Suffixfreigabe hinzufügen.
 
 
 ## Verbindliche Wiederaufnahme-Regel
