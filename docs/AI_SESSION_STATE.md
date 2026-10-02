@@ -6,11 +6,11 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `05141f64706580d5fda6b5c4401b9aedad93be53`
-- Letzte Produktänderung: PR #282 „Lexikon: zweiundsiebzigste Ausbauwelle“
-- Abgeschlossene Lexikon-Ausbauwellen: 72
-- PR #282: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
-- Welle 72 integriert ausschließlich 24 quellenneutrale Exact-Mappings aus Priority 18; es gibt weiterhin keine generische Personen-Suffixregel.
+- Produktbaseline: `2f1287eaeddf637377614a534506b65c0cacd270`
+- Letzte Produktänderung: PR #285 „Lexikon: vierundsiebzigste Ausbauwelle vorbereiten“
+- Abgeschlossene Lexikon-Ausbauwellen: 74
+- PR #285: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI inklusive Video-Playback-Test, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
+- Welle 73 integriert 11 Exact-Mappings aus Priority 19; Welle 74 integriert 148 Exact-Mappings aus Priority 20. Es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 - Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
 - PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
@@ -62,6 +62,36 @@ Autorität: `main`
 - `kldb-current-priority-16`: 8 angenommen, Welle 70 / PR #279
 - `kldb-current-priority-17`: 20 angenommen, Welle 71 / PR #280
 - `kldb-current-priority-18`: 24 angenommen, Welle 72 / PR #282
+- `kldb-current-priority-19`: 11 angenommen, Welle 73 / PR #284
+- `kldb-current-priority-20`: 148 angenommen, Welle 74 / PR #285
+- `kldb-current-priority-21`: 65 geprüft; 51 angenommen, 7 verworfen, 7 offen; Ziel Welle 75
+
+### Priority 21 im Detail
+
+- 65 Restkandidaten vollständig geprüft
+- 51 angenommen: 48 reguläre `unchanged`-Formen und 3 schwach flektierte `-ist`-Formen (`computervisualist`, `modellist`, `tapisserist`)
+- 7 verworfen: `commercialmanger`, `euromaster`, `geschirrviz`, `ingenier`, `liegerviz`, `oralchirug`, `reiher`
+- 7 offen: `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf`
+- Ziel: Welle 75 mit den 51 angenommenen Exact-Mappings
+- keine generische Suffixregel
+
+### Priority 20 im Detail
+
+- 148 Kandidaten
+- 148 angenommen
+- 0 verworfen, 0 offen
+- vollständig mit `language_model_first` semantisch und morphologisch geprüft
+- Flexionsklasse: `unchanged` (148)
+- Welle 74 / PR #285 integriert; Merge-Commit `2f1287eaeddf637377614a534506b65c0cacd270`
+- PR-CI und anschließende `main`-CI vollständig grün
+
+### Priority 19 im Detail
+
+- 11 Kandidaten
+- 11 angenommen
+- 0 verworfen, 0 offen
+- konkrete Wickler-Berufsbezeichnungen; Flexionsklasse `unchanged`
+- Welle 73 / PR #284 integriert; Merge-Commit `fc7d3ac488b3f46f8262e227681548b5337edfbe`
 
 ### Priority 18 im Detail
 
@@ -216,21 +246,20 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.771 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben **224 noch nicht entschiedene Kandidaten**.
+Entschieden sind inzwischen **1.988 von 1.995** ursprünglich unbekannten Kandidaten. Es verbleiben nur noch **7 offene Sonderfälle**.
 
-Der Restpool wird weiterhin stark von bewusst mehrdeutigen Maschinen-/Sach-Endgliedern dominiert, insbesondere `-bohrer`, `-presser`, `-stanzer`, `-walzer`, `-wickler`, `-brenner`, `-sortierer`, `-kopierer`, `-rechner`, `-mischer` und `-spritzer`.
+Priority 19 und 20 haben 159 weitere sichere Exact-Mappings integriert. Priority 21 hat den kompletten verbleibenden 65er-Pool geprüft: 51 angenommen, 7 verworfen und 7 offen.
 
-Die neun bereits in Priority 6 zurückgestellten Grenzfälle bleiben weiterhin separat offen.
+Offen bleiben ausschließlich: `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf`.
 
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 224 Kandidaten einzeln bzw. in kleinen semantisch klaren Gruppen prüfen.
-2. Die neun separat zurückgestellten Grenzfälle weiterhin getrennt behandeln.
-3. Keine breite Suffixfreigabe über die dominierenden Geräte-/Sachklassen legen.
-4. Nur intern eindeutige Personen-/Berufsbezeichnungen in einen möglichen `kldb-current-priority-19` aufnehmen; der Batch darf sehr klein sein.
-5. Morphologisch ungewöhnliche oder semantisch mehrdeutige Formen zurückstellen.
-6. Externe Recherche nur für echte Grenzfälle oder widersprüchliche Befunde.
-7. Produktiv weiterhin ausschließlich exakte Freigaben plus Regressionen integrieren.
+1. Die 51 in Priority 21 angenommenen Formen als Welle 75 integrieren.
+2. Welle 75 ausschließlich als Exact-Mappings mit vollständiger Datenprüfung und repräsentativen End-to-End-Regressionen absichern.
+3. Danach die sieben verbleibenden Sonderfälle `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf` einzeln abschließend entscheiden.
+4. Keine breite Suffixfreigabe hinzufügen.
+5. Externe Recherche nur noch für diese echten Restgrenzfälle verwenden.
+
 
 ## Verbindliche Wiederaufnahme-Regel
 
