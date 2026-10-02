@@ -13,9 +13,14 @@ function parseArguments(argv) {
   const inputs = [];
   let candidates;
   let output;
+  let allowWeak = false;
 
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
+    if (argument === "--allow-weak") {
+      allowWeak = true;
+      continue;
+    }
     if (argument === "--output") {
       output = argv[index + 1];
       if (!output) {
@@ -37,7 +42,7 @@ function parseArguments(argv) {
     );
   }
 
-  return { candidates, inputs, output };
+  return { candidates, inputs, output, allowWeak };
 }
 
 async function collectJsonFiles(input) {
@@ -94,6 +99,18 @@ function strongCandidate(pair) {
   return pair?.confidence === "strong" || Number(pair?.strongConfirmations) > 0;
 }
 
+export function isCandidateEligible(pair, allowWeak = false) {
+  if (
+    !pair ||
+    typeof pair.base !== "string" ||
+    typeof pair.masculine !== "string" ||
+    typeof pair.feminine !== "string"
+  ) {
+    return false;
+  }
+  return allowWeak || strongCandidate(pair);
+}
+
 function normalizeFlexionRecord(record) {
   if (record?.type !== "noun" || record?.gender !== "m") {
     return undefined;
@@ -136,9 +153,15 @@ function signature(record) {
   ].join("\u0000");
 }
 
-export async function verifyCandidates(candidateSet, flexionFiles) {
+export async function verifyCandidates(
+  candidateSet,
+  flexionFiles,
+  { allowWeak = false } = {}
+) {
   const mapPlural = await loadRuntimePluralMapper();
-  const pairs = (candidateSet.pairs ?? []).filter(strongCandidate);
+  const pairs = (candidateSet.pairs ?? []).filter((pair) =>
+    isCandidateEligible(pair, allowWeak)
+  );
   const wantedMasculines = new Set(
     pairs
       .map((pair) => pair?.masculine)
@@ -214,7 +237,8 @@ export async function verifyCandidates(candidateSet, flexionFiles) {
     version: 1,
     stats: {
       candidatePairs: (candidateSet.pairs ?? []).length,
-      strongCandidatePairs: pairs.length,
+      selectedCandidatePairs: pairs.length,
+      candidateSelectionMode: allowWeak ? "all-pairs" : "strong-only",
       verified: entries.length,
       alreadyCovered,
       missingFlexion,
@@ -226,7 +250,7 @@ export async function verifyCandidates(candidateSet, flexionFiles) {
 }
 
 async function main(argv) {
-  const { candidates, inputs, output } = parseArguments(argv);
+  const { candidates, inputs, output, allowWeak } = parseArguments(argv);
   const candidateSet = JSON.parse(await readFile(resolve(candidates), "utf8"));
   const flexionFiles = (
     await Promise.all(inputs.map((input) => collectJsonFiles(input)))
@@ -238,7 +262,7 @@ async function main(argv) {
     throw new Error("Keine Flexions-JSON-Dateien gefunden.");
   }
 
-  const result = await verifyCandidates(candidateSet, flexionFiles);
+  const result = await verifyCandidates(candidateSet, flexionFiles, { allowWeak });
   const serialized = `${JSON.stringify(result, null, 2)}\n`;
   if (output) {
     await writeFile(resolve(output), serialized, "utf8");

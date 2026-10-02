@@ -160,6 +160,12 @@ jobs:
             "$COVERAGE" \
             "$UNKNOWN"
 
+          node scripts/lexicon-verify-flexion.mjs \
+            "$PAIRS" \
+            datastore/sprachverstand/derived/flexion/dewiktionary-2026-09-01 \
+            --allow-weak \
+            --output "$FLEXION_VERIFY"
+
           python datastore/sprachverstand/scripts/record_ingestion.py \
             --source-id esco-de \
             --input "$NORMALIZED" \
@@ -290,6 +296,7 @@ jobs:
           COVERAGE_INPUT="datastore/sprachverstand/derived/candidates/wikidata-occupations-coverage-input.json"
           COVERAGE="datastore/sprachverstand/derived/candidates/wikidata-occupations-coverage.json"
           UNKNOWN="datastore/sprachverstand/derived/candidates/wikidata-occupations-unknown.txt"
+          FLEXION_VERIFY="datastore/sprachverstand/derived/review/wikidata-occupations-wiktionary-flexion.json"
           MANIFEST="datastore/sprachverstand/derived/manifests/wikidata-occupations.json"
           PRODUCT_COMMIT="$(git rev-parse HEAD)"
           PRIVATE_COMMIT="$(git -C datastore rev-parse HEAD)"
@@ -323,7 +330,8 @@ jobs:
             --output "$COVERAGE_INPUT" \
             --output "$COVERAGE" \
             --output "$UNKNOWN" \
-            --command "fetch_wikidata_occupations.py + Kandidaten/Coverage" \
+            --output "$FLEXION_VERIFY" \
+            --command "fetch_wikidata_occupations.py + Kandidaten/Coverage + Wiktionary-Flexion" \
             --normalizer-version "$PRIVATE_COMMIT" \
             --manifest "$MANIFEST"
 
