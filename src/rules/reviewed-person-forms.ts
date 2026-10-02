@@ -2,6 +2,7 @@ import type { GeneratedPersonForms } from "./generated-person-lexicon";
 import { getReviewedPersonFormsWave70 } from "./reviewed-person-forms-wave-70";
 import { getReviewedPersonFormsWave71 } from "./reviewed-person-forms-wave-71";
 import { getReviewedPersonFormsWave72 } from "./reviewed-person-forms-wave-72";
+import { getReviewedPersonFormsWave73 } from "./reviewed-person-forms-wave-73";
 
 
 // Quellenneutraler, exakt freigegebener Zusatzbestand.
@@ -313,6 +314,7 @@ export function getReviewedPersonForms(
   return (
     getReviewedPersonFormsWave70(normalizedBase) ??
     getReviewedPersonFormsWave71(normalizedBase) ??
-    getReviewedPersonFormsWave72(normalizedBase)
+    getReviewedPersonFormsWave72(normalizedBase) ??
+    getReviewedPersonFormsWave73(normalizedBase)
   );
 }
