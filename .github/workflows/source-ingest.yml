@@ -160,12 +160,6 @@ jobs:
             "$COVERAGE" \
             "$UNKNOWN"
 
-          node scripts/lexicon-verify-flexion.mjs \
-            "$PAIRS" \
-            datastore/sprachverstand/derived/flexion/dewiktionary-2026-09-01 \
-            --allow-weak \
-            --output "$FLEXION_VERIFY"
-
           python datastore/sprachverstand/scripts/record_ingestion.py \
             --source-id esco-de \
             --input "$NORMALIZED" \
@@ -321,6 +315,12 @@ jobs:
           python datastore/sprachverstand/scripts/prepare_unknown_candidates.py \
             "$COVERAGE" \
             "$UNKNOWN"
+
+          node scripts/lexicon-verify-flexion.mjs \
+            "$PAIRS" \
+            datastore/sprachverstand/derived/flexion/dewiktionary-2026-09-01 \
+            --allow-weak \
+            --output "$FLEXION_VERIFY"
 
           python datastore/sprachverstand/scripts/record_ingestion.py \
             --source-id wikidata-occupations \
