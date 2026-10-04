@@ -160,7 +160,7 @@ describe("achtundsiebzigste Lexikon-Ausbauwelle", () => {
     ["typograph", "typographen", "typograph", "typographin", "typographen", "typographen"],
     ["untergrundkämpfer", "untergrundkämpfer", "untergrundkämpfer", "untergrundkämpferin", "untergrundkämpfer", "untergrundkämpfers"],
     ["viehhüter", "viehhüter", "viehhüter", "viehhüterin", "viehhüter", "viehhüters"],
-    ["virtuose", "virtuosen", "virtuose", "virtuosein", "virtuosen", "virtuosen"],
+    ["virtuose", "virtuosen", "virtuose", "virtuosin", "virtuosen", "virtuosen"],
     ["vogelfänger", "vogelfänger", "vogelfänger", "vogelfängerin", "vogelfänger", "vogelfängers"],
     ["vogelkundler", "vogelkundler", "vogelkundler", "vogelkundlerin", "vogelkundler", "vogelkundlers"],
     ["volksmusikant", "volksmusikanten", "volksmusikant", "volksmusikantin", "volksmusikanten", "volksmusikanten"],
