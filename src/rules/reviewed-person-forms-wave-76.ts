@@ -1,7 +1,7 @@
 import type { GeneratedPersonForms } from "./generated-person-lexicon";
 
 // Quellenneutraler, exakt freigegebener Zusatzbestand aus Welle 76.
-// Die letzten fünf geprüften Sonderformen werden ausschließlich exakt freigegeben.
+// Die Formen sind explizit hinterlegt; daraus wird keine generische Suffixregel abgeleitet.
 const reviewedForms: ReadonlyMap<string, GeneratedPersonForms> = new Map([
   [
     "eri-wart",

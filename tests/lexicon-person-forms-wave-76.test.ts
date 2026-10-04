@@ -10,39 +10,39 @@ import {
 } from "../src/rules/reviewed-person-forms-wave-76";
 
 describe("sechsundsiebzigste Lexikon-Ausbauwelle", () => {
-  it("enthält genau die fünf final angenommenen Sonderformen", () => {
+  it("enthält alle fünf abschließend geprüften Exaktmappings vollständig", () => {
     expect(reviewedPersonFormCountWave76).toBe(5);
 
-    for (const [base, plural, singular, feminine, oblique, genitive] of [
-    ["eri-wart", "eri-warte", "eri-wart", "eri-wartin", "eri-wart", "eri-warts"],
-    ["eutonist", "eutonisten", "eutonist", "eutonistin", "eutonisten", "eutonisten"],
-    ["fennist", "fennisten", "fennist", "fennistin", "fennisten", "fennisten"],
-    ["monitor", "monitore", "monitor", "monitorin", "monitor", "monitors"],
-    ["vermessinger", "vermessinger", "vermessinger", "vermessingerin", "vermessinger", "vermessingers"]
+    for (const [base, plural, oblique, genitive] of [
+      ["eri-wart", "eri-warte", "eri-wart", "eri-warts"],
+      ["eutonist", "eutonisten", "eutonisten", "eutonisten"],
+      ["fennist", "fennisten", "fennisten", "fennisten"],
+      ["monitor", "monitore", "monitor", "monitors"],
+      ["vermessinger", "vermessinger", "vermessinger", "vermessingers"]
     ] as const) {
       expect(getReviewedPersonFormsWave76(base), base).toEqual({
         plural,
-        singular,
-        feminineSingular: feminine,
+        singular: base,
+        feminineSingular: `${base}in`,
         obliqueSingular: oblique,
         genitiveSingular: genitive
       });
     }
   });
 
-  it("lässt die beiden final verworfenen Formen außerhalb des Lexikons", () => {
+  it("lässt die beiden verworfenen Restformen weiterhin außerhalb der Welle", () => {
     for (const base of ["printer", "xerograf"]) {
       expect(getReviewedPersonFormsWave76(base), base).toBeUndefined();
     }
   });
 
   it.each([
-    ["Eri-wart:innen", "Eri-warte"],
+    ["Eri-Wart:innen", "Eri-Warte"],
     ["Eutonist:innen", "Eutonisten"],
     ["Fennist:innen", "Fennisten"],
     ["Monitor:innen", "Monitore"],
     ["Vermessinger:innen", "Vermessinger"]
-  ])("ersetzt den geprüften Plural %s", (input, expected) => {
+  ])("ersetzt geprüfte Plurale %s", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
       replacements: 1
@@ -50,12 +50,12 @@ describe("sechsundsiebzigste Lexikon-Ausbauwelle", () => {
   });
 
   it.each([
-    ["Eri-wart", "Eri-wartin", "Eri-wart"],
+    ["Eri-Wart", "Eri-Wartin", "Eri-Wart"],
     ["Eutonist", "Eutonistin", "Eutonist"],
     ["Fennist", "Fennistin", "Fennist"],
     ["Monitor", "Monitorin", "Monitor"],
     ["Vermessinger", "Vermessingerin", "Vermessinger"]
-  ])("erkennt das geprüfte Paar %s/%s", (masculine, feminine, expected) => {
+  ])("erkennt geprüfte Paare %s/%s", (masculine, feminine, expected) => {
     expect(mapMappedSingularPair(masculine, feminine)).toBe(expected);
   });
 
@@ -71,7 +71,7 @@ describe("sechsundsiebzigste Lexikon-Ausbauwelle", () => {
     ["vermessinger", "nominative", "vermessinger"],
     ["vermessinger", "genitive", "vermessingers"]
   ] as const)(
-    "bildet die Basis %s im Kasus %s korrekt ab",
+    "bildet geprüfte Basis %s im Kasus %s korrekt ab",
     (base, grammaticalCase, expected) => {
       expect(mapMappedSingular(base, grammaticalCase)).toBe(expected);
     }
