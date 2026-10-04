@@ -7,6 +7,7 @@ import { getReviewedPersonFormsWave74 } from "./reviewed-person-forms-wave-74";
 import { getReviewedPersonFormsWave75 } from "./reviewed-person-forms-wave-75";
 import { getReviewedPersonFormsWave76 } from "./reviewed-person-forms-wave-76";
 import { getReviewedPersonFormsWave77 } from "./reviewed-person-forms-wave-77";
+import { getReviewedPersonFormsWave78 } from "./reviewed-person-forms-wave-78";
 
 
 // Quellenneutraler, exakt freigegebener Zusatzbestand.
@@ -323,6 +324,7 @@ export function getReviewedPersonForms(
     getReviewedPersonFormsWave74(normalizedBase) ??
     getReviewedPersonFormsWave75(normalizedBase) ??
     getReviewedPersonFormsWave76(normalizedBase) ??
-    getReviewedPersonFormsWave77(normalizedBase)
+    getReviewedPersonFormsWave77(normalizedBase) ??
+    getReviewedPersonFormsWave78(normalizedBase)
   );
 }
