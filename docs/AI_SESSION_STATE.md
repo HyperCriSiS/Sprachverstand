@@ -6,21 +6,21 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `3fa06d4a1fcbda1b670738373cd2dc1e9dc1d922`
-- Letzte Produktänderung: PR #289 „Lexikon: achtundsiebzigste Ausbauwelle aus Wikidata vorbereiten“
-- Abgeschlossene Lexikon-Ausbauwellen: 78
+- Produktbaseline: `4b8c75f38ecf2ebfa585914755a154e9e3e1e937`
+- Letzte Produktänderung: PR #290 „Lexikon: neunundsiebzigste Ausbauwelle aus Wikidata vorbereiten“
+- Abgeschlossene Lexikon-Ausbauwellen: 79
 - Welle 77 / PR #288 integriert 17 vollständig geprüfte ESCO-Exaktmappings; Merge-Commit `bdccc38b7f80ccf52259b73af3dbfe6bce665568`.
 - Welle 78 / PR #289 integriert 155 vollständig geprüfte Wikidata-Exaktmappings; Merge-Commit `3fa06d4a1fcbda1b670738373cd2dc1e9dc1d922`.
-- Bei der Übernahme von Welle 78 wurde die fehlerhafte feminine Form `virtuosein` vor dem Merge zu `virtuosin` korrigiert und die Regression entsprechend angepasst.
-- PR #289 war vollständig grün: Kernprüfung, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs erfolgreich.
-- Die anschließende `main`-CI #1039 war vollständig grün; insbesondere Kernprüfung, gesamte Testsuite, Performance, echter Firefox-Lauf, echter Chromium-Lauf und Videowiedergabe unter DOM-Last erfolgreich. Der separate CodeQL-Push-Lauf auf `main` war ebenfalls grün.
-- Welle 75 / PR #286 integriert 51 Exact-Mappings aus Priority 21.
-- Welle 76 / PR #287 integriert die fünf final angenommenen Priority-22-Exaktmappings: `eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`.
-- `printer` und `xerograf` bleiben bewusst ausgeschlossen; der ursprüngliche Pool von 1.995 unbekannten KldB-Kandidaten ist vollständig fachlich entschieden und produktseitig abgearbeitet.
+- Welle 79 / PR #290 integriert 189 vollständig geprüfte Wikidata-Exaktmappings; sechs Kandidaten bleiben bewusst ausgeschlossen: `der`, `fachmänn`, `kanoniss`, `militant`, `tertiar`, `vorsitzender`.
+- Die historische Negativregression für `Portier:innen` wurde entfernt, weil Welle 79 die Flexion `Portier → Portiers` nun explizit freigibt; `Nachtportier:innen` bleibt weiterhin unangetastet.
+- Bei Welle 78 wurde vor dem Merge die fehlerhafte feminine Form `virtuosein` zu `virtuosin` korrigiert.
+- PR #290 war vollständig grün: Kernprüfung, Performance, Gecko CI, Chromium CI inklusive Video-Regressionsprüfung, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs erfolgreich.
+- Die anschließende `main`-CI #1043 war vollständig grün; Kernprüfung, gesamte Testsuite, Performance, echter Firefox-Lauf, echter Chromium-Lauf und Videowiedergabe unter DOM-Last waren erfolgreich. Der separate CodeQL-Push-Lauf auf `main` war ebenfalls grün.
+- Der ursprüngliche Pool von 1.995 unbekannten KldB-Kandidaten ist vollständig fachlich entschieden und produktseitig bis Welle 76 abgearbeitet.
+- Der Wikidata-Occupations-Pool ist ebenfalls vollständig entschieden und produktseitig bis Welle 79 integriert.
 - Es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
-- Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
-- Test-/Browser-Härtung PR #283 „Tests: Videowiedergabe unter DOM-Last absichern“ ist integriert; Produktlogik und Lexikonbestand blieben unverändert.
+- Nachlauf-Härtung PR #281 und Test-/Browser-Härtung PR #283 bleiben unverändert integriert.
 
 ## Video-/Real-World-Härtung (PR #283)
 
@@ -234,12 +234,15 @@ Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davo
 
 ## Wikidata-Occupations-Ausbau
 
-- Priority 1: 155 Kandidaten, 155 angenommen, 0 verworfen, 0 offen; vollständig als Exact-Mappings in Welle 78 / PR #289 integriert.
-- Priority 2: 195 Kandidaten, 189 angenommen, 6 verworfen, 0 offen; Ziel ist Welle 79.
+- Priority 1: 155 Kandidaten, 155 angenommen, 0 verworfen, 0 offen; als Exact-Mappings in Welle 78 / PR #289 integriert.
+- Priority 2: 195 Kandidaten, 189 angenommen, 6 verworfen, 0 offen; als Exact-Mappings in Welle 79 / PR #290 integriert.
+- Insgesamt: 350 Kandidaten geprüft, 344 angenommen, 6 verworfen, 0 offen.
 - Verworfene Priority-2-Kandidaten: `der`, `fachmänn`, `kanoniss`, `militant`, `tertiar`, `vorsitzender`.
-- Alle 189 angenommenen Priority-2-Einträge sind mit `confidence: high` geprüft.
-- Die Flexionsklassen umfassen reguläre unveränderte Formen sowie explizite Sonderklassen wie `weak_e`, `weak_en`, `plural_e`, `plural_en`, `plural_s`, `gehilf`, `koech`, `baeuer`, `umlaut_plural_e` und einzelne Sonderformen.
-- Auch für Welle 79 gilt: ausschließlich exakte Mappings; keine generische Suffixregel.
+- Alle 189 angenommenen Priority-2-Einträge wurden mit hoher fachlicher Sicherheit geprüft.
+- Die elf Flexionsklassen von Priority 2 werden repräsentativ durch Plural-, Paar- und Kasusregressionen abgesichert.
+- Sonderformen wie `fernsehköch → Fernsehkoch`, `pröpst → Propst/Pröpstin`, die drei `-gehilf`-Fälle sowie `mudschahed` sind explizit hinterlegt.
+- `Portier:innen` wird nun zu `Portiers` aufgelöst; `Nachtportier:innen` bleibt als nicht freigegebene Komposita-Form geschützt.
+- Der Wikidata-Restpool ist leer; keine generische Suffixregel wurde eingeführt.
 
 ## Kandidatenprüfung
 
@@ -257,9 +260,11 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 Kanonische Dateien für Quellenarbeit:
 
 1. `sprachverstand/CURRENT-STATE.json`
-2. `sprachverstand/derived/review/kldb-current-priority-18-summary.json`
-3. `sprachverstand/derived/review/kldb-current-priority-18-manual-decisions.json`
+2. `sprachverstand/derived/review/wikidata-occupations-priority-2-summary.json`
+3. `sprachverstand/derived/review/wikidata-occupations-priority-2-manual-decisions.json`
 4. `sprachverstand/sources/registry.json`
+
+Der private Checkpoint und die Quellen-Registry wurden am 2026-10-04 auf den abgeschlossenen Stand nach Welle 79 aktualisiert.
 
 ## Quellenabdeckung und verbleibender Review-Pool
 
@@ -270,21 +275,25 @@ Importbaseline der aktuellen DKZ:
 - 1.995 ursprünglich unbekannt
 - Coverage der Importbaseline: 80,82 %
 
-Entschieden sind inzwischen **1.995 von 1.995** ursprünglich unbekannten Kandidaten. Es gibt **keine offenen Kandidaten mehr**.
+Der ursprüngliche KldB-Unbekanntpool ist vollständig entschieden: **1.995 von 1.995**, kein offener Kandidat.
 
-Priority 19 und 20 haben 159 weitere sichere Exact-Mappings integriert. Priority 21 hat den kompletten verbleibenden 65er-Pool geprüft: 51 angenommen, 7 verworfen und 7 offen.
+Zusätzlich ist die Wikidata-Occupations-Discovery vollständig abgearbeitet:
 
-Priority 22 hat die letzten sieben Sonderfälle abgeschlossen: 5 angenommen (`eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`) und 2 verworfen (`printer`, `xerograf`).
+- 350 Kandidaten in zwei Blöcken
+- 344 angenommen und in Welle 78/79 integriert
+- 6 verworfen
+- 0 offen
+
+Damit existiert aktuell weder im KldB-Prioritätspool noch im Wikidata-Occupations-Pool ein ungeprüfter Restbestand. Vor dem nächsten großen Lexikonblock soll die Produktcoverage mit dem aktuellen Welle-79-Stand neu vermessen werden.
 
 ## Nächste Arbeitseinheit
 
-1. Welle 79 aus `wikidata-occupations-priority-2` auf einer frischen Basis des aktuellen `main` aufbauen.
-2. Die 189 angenommenen Exact-Mappings vollständig übernehmen und die sechs verworfenen Kandidaten mit Negativregressionen abgesichert außerhalb des Produktlexikons halten.
-3. Positiv-, Paar-, Kasus- und repräsentative Pluralregressionen ergänzen; Sonderflexionen explizit testen.
-4. PR-CI vollständig abwarten und erst bei grünem Stand mergen.
-5. Anschließend `main`-CI prüfen und den Checkpoint auf Welle 79 aktualisieren.
+1. Produktcoverage und noch unbekannte Personen-/Berufsformen nach Welle 79 neu vermessen.
+2. Danach die nächste tatsächlich kandidatenliefernde offene Quelle aus der privaten Registry auswählen; Wikidata hat keinen offenen Restpool mehr.
+3. Priorität haben offene reale Nutzungs-/Kandidatenquellen vor reinen Bestätigungsquellen; mögliche nächste Blöcke sind insbesondere Wikipedia-Realnutzung bzw. die noch offenen Genderwörterbuch-Audits.
+4. Neue Kandidaten erneut `language_model_first` semantisch und morphologisch prüfen; Quellenherkunft hat kein Freigabegewicht.
+5. Produktseitig nur exakte Mappings mit Positiv-, Negativ-, Paar- und Kasusregressionen integrieren.
 6. Keine breite Suffixfreigabe hinzufügen.
-
 
 ## Verbindliche Wiederaufnahme-Regel
 
