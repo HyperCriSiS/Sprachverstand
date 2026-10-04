@@ -997,7 +997,8 @@ const reviewedForms: ReadonlyMap<string, GeneratedPersonForms> = new Map([
     "marineflieger",
     {
       plural: "marineflieger",
-      singular: "marineflieger",      feminineSingular: "marinefliegerin",
+      singular: "marineflieger",
+      feminineSingular: "marinefliegerin",
       obliqueSingular: "marineflieger",
       genitiveSingular: "marinefliegers"
     }
