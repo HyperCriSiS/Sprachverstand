@@ -1468,7 +1468,7 @@ const reviewedForms: ReadonlyMap<string, GeneratedPersonForms> = new Map([
     {
       plural: "virtuosen",
       singular: "virtuose",
-      feminineSingular: "virtuosein",
+      feminineSingular: "virtuosin",
       obliqueSingular: "virtuosen",
       genitiveSingular: "virtuosen"
     }
