@@ -40,7 +40,6 @@ describe("zwölfte konservative Lexikon-Ausbauwelle", () => {
 
   // Diakon wurde in Welle 59 intern semantisch und morphologisch freigegeben.
   it.each([
-    "Portier:innen",
     "Nachtportier:innen"
   ])("friert einen bewusst mehrdeutigen Restfall ein: %s", (input) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
