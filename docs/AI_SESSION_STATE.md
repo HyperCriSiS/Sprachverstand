@@ -1,16 +1,19 @@
 # AI Session State
 
-Stand: 2026-10-02  
+Stand: 2026-10-04  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `2f1287eaeddf637377614a534506b65c0cacd270`
-- Letzte Produktänderung: PR #285 „Lexikon: vierundsiebzigste Ausbauwelle vorbereiten“
-- Abgeschlossene Lexikon-Ausbauwellen: 74
-- PR #285: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI inklusive Video-Playback-Test, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
-- Welle 73 integriert 11 Exact-Mappings aus Priority 19; Welle 74 integriert 148 Exact-Mappings aus Priority 20. Es gibt weiterhin keine generische Personen-Suffixregel.
+- Produktbaseline: `822924a40f7ffba91f51671a566bc02f64d61ac5`
+- Letzte Produktänderung: PR #287 „Lexikon: sechsundsiebzigste Ausbauwelle vorbereiten“
+- Abgeschlossene Lexikon-Ausbauwellen: 76
+- PR #287: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
+- Welle 75 / PR #286 integriert 51 Exact-Mappings aus Priority 21.
+- Welle 76 / PR #287 integriert die fünf final angenommenen Priority-22-Exaktmappings: `eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`.
+- `printer` und `xerograf` bleiben bewusst ausgeschlossen; der ursprüngliche Pool von 1.995 unbekannten Kandidaten ist vollständig fachlich entschieden und produktseitig abgearbeitet.
+- Es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 - Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
 - PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
@@ -64,8 +67,8 @@ Autorität: `main`
 - `kldb-current-priority-18`: 24 angenommen, Welle 72 / PR #282
 - `kldb-current-priority-19`: 11 angenommen, Welle 73 / PR #284
 - `kldb-current-priority-20`: 148 angenommen, Welle 74 / PR #285
-- `kldb-current-priority-21`: 65 geprüft; 51 angenommen, 7 verworfen, 7 zunächst offen; Ziel Welle 75
-- `kldb-current-priority-22`: letzte 7 geprüft; 5 angenommen, 2 verworfen, 0 offen; Ziel Welle 76
+- `kldb-current-priority-21`: 65 geprüft; 51 angenommen, 7 verworfen, 7 zunächst offen; Welle 75 / PR #286 integriert
+- `kldb-current-priority-22`: letzte 7 geprüft; 5 angenommen, 2 verworfen, 0 offen; Welle 76 / PR #287 integriert
 
 ### Priority 22 im Detail
 
@@ -74,7 +77,7 @@ Autorität: `main`
 - 2 verworfen: `printer`, `xerograf`
 - 0 offen
 - Flexionsklassen: `plural_e` (2), `weak_en` (2), `unchanged` (1)
-- Ziel: Welle 76
+- Welle 76 / PR #287 integriert; Merge-Commit `822924a40f7ffba91f51671a566bc02f64d61ac5`
 - damit sind 1.995 von 1.995 ursprünglich unbekannten Kandidaten fachlich entschieden
 
 ### Priority 21 im Detail
@@ -83,7 +86,7 @@ Autorität: `main`
 - 51 angenommen: 48 reguläre `unchanged`-Formen und 3 schwach flektierte `-ist`-Formen (`computervisualist`, `modellist`, `tapisserist`)
 - 7 verworfen: `commercialmanger`, `euromaster`, `geschirrviz`, `ingenier`, `liegerviz`, `oralchirug`, `reiher`
 - 7 offen: `eri-wart`, `eutonist`, `fennist`, `monitor`, `printer`, `vermessinger`, `xerograf`
-- Ziel: Welle 75 mit den 51 angenommenen Exact-Mappings
+- Welle 75 / PR #286 integriert; Merge-Commit `0c0dd9ba29b4bcf2580b752b7cf4f52fc96407dd`
 - keine generische Suffixregel
 
 ### Priority 20 im Detail
@@ -265,11 +268,11 @@ Priority 22 hat die letzten sieben Sonderfälle abgeschlossen: 5 angenommen (`er
 
 ## Nächste Arbeitseinheit
 
-1. Welle 75 mit den 51 in Priority 21 angenommenen Exact-Mappings integrieren.
-2. Danach Welle 76 mit den fünf final in Priority 22 angenommenen Formen integrieren.
-3. Nach Welle 76 den Importstand neu vermessen; der ursprüngliche 1.995er-Unbekanntpool ist dann vollständig abgearbeitet.
-4. Die insgesamt neun verworfenen Kandidaten bleiben bewusst außerhalb des Produktlexikons.
-5. Keine breite Suffixfreigabe hinzufügen.
+1. Importstand nach Welle 76 neu vermessen und die erreichte Coverage gegen den aktuellen Produktstand dokumentieren.
+2. Prüfen, ob aus der vollständigen Abarbeitung des 1.995er-Unbekanntpools noch quellenneutrale Folgearbeiten für Flexion, Realtext-Evidenz oder Negativregressionen entstehen.
+3. Die verworfenen Kandidaten weiterhin bewusst außerhalb des Produktlexikons halten.
+4. Keine breite Suffixfreigabe hinzufügen.
+5. Danach einen stabilen Produktcheckpoint für die nächste größere Roadmap-Einheit festlegen.
 
 
 ## Verbindliche Wiederaufnahme-Regel
