@@ -6,20 +6,21 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Produktbaseline: `822924a40f7ffba91f51671a566bc02f64d61ac5`
-- Letzte Produktänderung: PR #287 „Lexikon: sechsundsiebzigste Ausbauwelle vorbereiten“
-- Abgeschlossene Lexikon-Ausbauwellen: 76
-- PR #287: PR-CI und anschließende `main`-CI vollständig grün; Kernprüfung, Performance, Gecko CI, Chromium CI, CodeQL, GitHub Advanced Security, beide Analyze-Jobs und Sammelcheck erfolgreich.
+- Produktbaseline: `3fa06d4a1fcbda1b670738373cd2dc1e9dc1d922`
+- Letzte Produktänderung: PR #289 „Lexikon: achtundsiebzigste Ausbauwelle aus Wikidata vorbereiten“
+- Abgeschlossene Lexikon-Ausbauwellen: 78
+- Welle 77 / PR #288 integriert 17 vollständig geprüfte ESCO-Exaktmappings; Merge-Commit `bdccc38b7f80ccf52259b73af3dbfe6bce665568`.
+- Welle 78 / PR #289 integriert 155 vollständig geprüfte Wikidata-Exaktmappings; Merge-Commit `3fa06d4a1fcbda1b670738373cd2dc1e9dc1d922`.
+- Bei der Übernahme von Welle 78 wurde die fehlerhafte feminine Form `virtuosein` vor dem Merge zu `virtuosin` korrigiert und die Regression entsprechend angepasst.
+- PR #289 war vollständig grün: Kernprüfung, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs erfolgreich.
+- Die anschließende `main`-CI #1039 war vollständig grün; insbesondere Kernprüfung, gesamte Testsuite, Performance, echter Firefox-Lauf, echter Chromium-Lauf und Videowiedergabe unter DOM-Last erfolgreich. Der separate CodeQL-Push-Lauf auf `main` war ebenfalls grün.
 - Welle 75 / PR #286 integriert 51 Exact-Mappings aus Priority 21.
 - Welle 76 / PR #287 integriert die fünf final angenommenen Priority-22-Exaktmappings: `eri-wart`, `eutonist`, `fennist`, `monitor`, `vermessinger`.
-- `printer` und `xerograf` bleiben bewusst ausgeschlossen; der ursprüngliche Pool von 1.995 unbekannten Kandidaten ist vollständig fachlich entschieden und produktseitig abgearbeitet.
+- `printer` und `xerograf` bleiben bewusst ausgeschlossen; der ursprüngliche Pool von 1.995 unbekannten KldB-Kandidaten ist vollständig fachlich entschieden und produktseitig abgearbeitet.
 - Es gibt weiterhin keine generische Personen-Suffixregel.
 - PR #261 bleibt als DOM-/Framework-Härtung in `main` integriert.
 - Nachlauf-Härtung PR #281: Der Framework-Resilienztest wartet bei langsamen Runnern über wenige Event-Loop-Tasks auf den ersten messbaren Teilfortschritt, statt schon im ersten 4-ms-Task eine Ersetzung zu verlangen. Die Produktlogik blieb unverändert.
-- PR #281 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
 - Test-/Browser-Härtung PR #283 „Tests: Videowiedergabe unter DOM-Last absichern“ ist integriert; Produktlogik und Lexikonbestand blieben unverändert.
-- PR #283 ergänzt einen deterministischen lokalen Chromium-Video-Test und Video-/Frame-Diagnostik für die Real-World-Matrix; `Yoga74/Techno` und `YouTube Big Buck Bunny` sind als diagnostische Live-Seiten aufgenommen.
-- PR #283 ist in PR-CI und anschließend auf `main` vollständig grün: Kernprüfung, gesamte Testsuite, Performance, Gecko CI, Chromium CI inklusive Video-Playback-Test, Sammelcheck, CodeQL, GitHub Advanced Security und beide Analyze-Jobs.
 
 ## Video-/Real-World-Härtung (PR #283)
 
@@ -231,6 +232,15 @@ Autorität: `main`
 
 Der zuvor abgeschlossene Block `kldb-common-2026` bleibt bei 96 Kandidaten, davon 93 angenommen und 3 verworfen.
 
+## Wikidata-Occupations-Ausbau
+
+- Priority 1: 155 Kandidaten, 155 angenommen, 0 verworfen, 0 offen; vollständig als Exact-Mappings in Welle 78 / PR #289 integriert.
+- Priority 2: 195 Kandidaten, 189 angenommen, 6 verworfen, 0 offen; Ziel ist Welle 79.
+- Verworfene Priority-2-Kandidaten: `der`, `fachmänn`, `kanoniss`, `militant`, `tertiar`, `vorsitzender`.
+- Alle 189 angenommenen Priority-2-Einträge sind mit `confidence: high` geprüft.
+- Die Flexionsklassen umfassen reguläre unveränderte Formen sowie explizite Sonderklassen wie `weak_e`, `weak_en`, `plural_e`, `plural_en`, `plural_s`, `gehilf`, `koech`, `baeuer`, `umlaut_plural_e` und einzelne Sonderformen.
+- Auch für Welle 79 gilt: ausschließlich exakte Mappings; keine generische Suffixregel.
+
 ## Kandidatenprüfung
 
 - Externe Web-Evidenz ist **keine Freigabevoraussetzung**.
@@ -268,11 +278,12 @@ Priority 22 hat die letzten sieben Sonderfälle abgeschlossen: 5 angenommen (`er
 
 ## Nächste Arbeitseinheit
 
-1. Importstand nach Welle 76 neu vermessen und die erreichte Coverage gegen den aktuellen Produktstand dokumentieren.
-2. Prüfen, ob aus der vollständigen Abarbeitung des 1.995er-Unbekanntpools noch quellenneutrale Folgearbeiten für Flexion, Realtext-Evidenz oder Negativregressionen entstehen.
-3. Die verworfenen Kandidaten weiterhin bewusst außerhalb des Produktlexikons halten.
-4. Keine breite Suffixfreigabe hinzufügen.
-5. Danach einen stabilen Produktcheckpoint für die nächste größere Roadmap-Einheit festlegen.
+1. Welle 79 aus `wikidata-occupations-priority-2` auf einer frischen Basis des aktuellen `main` aufbauen.
+2. Die 189 angenommenen Exact-Mappings vollständig übernehmen und die sechs verworfenen Kandidaten mit Negativregressionen abgesichert außerhalb des Produktlexikons halten.
+3. Positiv-, Paar-, Kasus- und repräsentative Pluralregressionen ergänzen; Sonderflexionen explizit testen.
+4. PR-CI vollständig abwarten und erst bei grünem Stand mergen.
+5. Anschließend `main`-CI prüfen und den Checkpoint auf Welle 79 aktualisieren.
+6. Keine breite Suffixfreigabe hinzufügen.
 
 
 ## Verbindliche Wiederaufnahme-Regel
