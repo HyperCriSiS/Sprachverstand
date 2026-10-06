@@ -1,6 +1,6 @@
 # AI Session State
 
-Stand: 2026-10-04  
+Stand: 2026-10-06  
 Autorität: `main`
 
 ## Kanonischer Produktstand
@@ -91,23 +91,39 @@ Für Priority 23 entsteht **keine Produktwelle**, weil 0 Kandidaten angenommen w
 - Positiv-, Negativ-, Paar- und Kasusregressionen beibehalten.
 - Keine breite oder generische Personen-Suffixfreigabe hinzufügen.
 
+## Wikipedia-Realnutzungs-Discovery – vorbereiteter Stand
+
+Die Discovery-Pipeline wurde im privaten Datastore mit Commit `bbe8093d580d1ce2085d10b7d13a74a5eb70cf91` vorbereitet. Neu bzw. dafür vorhanden sind insbesondere:
+
+- `sprachverstand/scripts/discover_wikipedia_real_usage.py`
+- `sprachverstand/scripts/run_wikipedia_discovery.py`
+- `sprachverstand/tests/test_wikipedia_real_usage_discovery.py`
+- `sprachverstand/tests/test_run_wikipedia_discovery.py`
+
+Eigenschaften der Pipeline:
+
+- Wikipedia-Seitentexte werden nur transient über die MediaWiki-API geladen.
+- Persistiert werden keine Artikeltexte, Snippets, Seitentitel, Seiten-IDs oder vollständigen Seiten-URLs.
+- Persistiert werden nur aggregierte Formen, technische Zählwerte, Coverage und unbekannte Kandidaten.
+- Discovery-Kandidaten werden gegen den echten Sprachverstand-Produktstand geprüft.
+- Die vorhandene MediaWiki-Hilfe erzwingt robuste API-Behandlung; die Discovery erzwingt mindestens 1 Sekunde Pause zwischen Anfragen.
+- Gezielte lokale Regression am 2026-10-06: **7/7 Tests grün** für Discovery und Runner.
+
+### Aktueller Infrastrukturblocker
+
+Die produktive Ausführung ist noch nicht erfolgt. Der bestehende öffentliche Workflow `.github/workflows/source-ingest.yml` akzeptiert derzeit nur `kldb-snapshot` und `kldb-current`.
+
+Ein sauberer Workflow-Zweig für `wikipedia-real-usage` wurde konzeptionell vorbereitet, konnte aber mit dem aktuell verbundenen GitHub-Tunnel nicht geschrieben werden:
+
+- Öffentlicher Workflow-Patch wurde vom Sicherheitsfilter blockiert, weil die bestehende Workflow-Datei ein Repository-Secret referenziert.
+- Das Anlegen eines neuen privaten Workflows in `Generic-Datastore` scheiterte mit GitHub `403 Resource not accessible by personal access token` für `.github/workflows/*`.
+- Fachcode und Regressionstests selbst sind nicht blockiert; betroffen ist nur die Workflow-Schreibberechtigung.
+
 ## Nächste Arbeitseinheit
 
-Der nächste tatsächlich kandidatenliefernde offene Block ist **Wikipedia-Realnutzung** (`wikipedia-real-usage`).
-
-Im privaten Datastore existieren bereits:
-
-- `scripts/query_wikipedia_candidates.py`: Titelevidenz für bereits bekannte Kandidaten
-- `scripts/mediawiki_api.py`: rate-limit-feste MediaWiki-Hilfe
-- Regressionstests für Wikipedia-Titelevidenz
-
-Diese bestehende Logik ist **noch keine Discovery-Pipeline**, weil sie nur vorgegebene Kandidaten gegen Wikipedia prüft.
-
-Nächster sinnvoller Schritt:
-
-1. Eine konservative Wikipedia-Realnutzungs-Discovery definieren, die reale Genderformen/Kandidaten findet, ohne Artikeltexte dauerhaft zu speichern.
-2. Nur aggregierte bzw. minimale Evidenz privat persistieren.
-3. Discovery-Kandidaten gegen den aktuellen Produktstand deduplizieren.
+1. GitHub-Tunnel/Token für Workflow-Dateien mit der nötigen `workflow`-Berechtigung verbinden **oder** den vorbereiteten Workflow-Patch einmal über einen entsprechend berechtigten GitHub-Zugang einspielen.
+2. Danach einen kleinen ersten Lauf von `wikipedia-real-usage` starten (`max-pages-per-pattern=100`, `min-count=1`, Pause 1,0 s).
+3. Persistierte aggregierte Evidenz, Coverage und Unknown-Liste prüfen.
 4. Einen kleinen ersten Review-Block erzeugen und `language_model_first` prüfen.
 5. Nur tatsächlich sichere neue Personenformen als nächste Produktwelle integrieren.
 6. Falls Wikipedia keine brauchbaren neuen Kandidaten liefert, danach die offenen Genderwörterbuch-Audits (`scribbr-genderwoerterbuch`, `genderator-genderwoerterbuch`) angehen.
