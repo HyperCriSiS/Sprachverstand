@@ -26,10 +26,11 @@ Der manuell gestartete Workflow `.github/workflows/source-ingest.yml`:
 2. richtet Node.js 24 ein und installiert die Produktabhängigkeiten,
 3. checkt den privaten Datastore mit `GENERIC_DATASTORE_TOKEN` in `datastore/` aus,
 4. installiert und prüft die privaten Importskripte,
-5. maskiert die aus der privaten Registry gelesene Quell-URL für öffentliche Workflow-Logs,
-6. führt den privaten KldB-/DKZ-Import gegen die aktuelle öffentliche Produkt-Runtime aus,
-7. erlaubt Änderungen ausschließlich unter `sprachverstand/raw/`, `sprachverstand/normalized/` und `sprachverstand/derived/`,
-8. committed und pusht die privaten Ergebnisse direkt nach `Generic-Datastore/main`.
+5. maskiert bei KldB-/DKZ-Quellen die aus der privaten Registry gelesene Quell-URL für öffentliche Workflow-Logs,
+6. führt abhängig von der gewählten Quelle entweder den privaten KldB-/DKZ-Import oder die Wikipedia-Realnutzungs-Discovery gegen die aktuelle öffentliche Produkt-Runtime aus,
+7. speichert bei Wikipedia ausschließlich aggregierte Evidenz, Coverage und Kandidaten; Artikeltexte, Snippets, Seitentitel und Seiten-IDs werden nicht dauerhaft persistiert,
+8. erlaubt Änderungen ausschließlich unter `sprachverstand/raw/`, `sprachverstand/normalized/` und `sprachverstand/derived/`,
+9. committed und pusht die privaten Ergebnisse direkt nach `Generic-Datastore/main`.
 
 Es werden **keine privaten Rohdaten als Actions-Artefakt** im öffentlichen Repository hochgeladen.
 
@@ -41,5 +42,6 @@ Aktuell unterstützte Quellen:
 
 - `kldb-snapshot`
 - `kldb-current`
+- `wikipedia-real-usage`
 
 Weitere private Quellen werden erst ergänzt, wenn deren bestehende Importstrecke denselben Schutz gegen öffentliche Logs und Artefakte erfüllt.
