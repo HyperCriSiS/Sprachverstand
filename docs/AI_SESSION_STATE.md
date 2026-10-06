@@ -6,21 +6,23 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produkt-/Workflow-HEAD vor dieser Checkpoint-Aktualisierung: `a769d65da1be668202dd21b137c5971a88f6191c`
-- Abgeschlossene Lexikon-Ausbauwellen: 79
+- Aktueller Produktbaseline-Commit: `5b6a4f70371c9da87bcfcbf0ad0b7e13ce048db8`
+- Abgeschlossene Lexikon-Ausbauwellen: **80**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
-- Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 Kandidaten verworfen
+- Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
+- Welle 80 / PR #294: 14 geprüfte Wikipedia-Realnutzungs-Exaktmappings
 - Keine generische Personen-Suffixregel.
-- DOM-/Framework-Härtung aus PR #261 sowie Video-/Browser-Härtung aus PR #283 bleiben integriert.
-- PR #292 „Wikipedia-Realnutzung im Quellenimport aktivieren“ wurde als `a769d65da1be668202dd21b137c5971a88f6191c` gemergt.
-- Die anschließende `main`-CI für PR #292 war vollständig grün, einschließlich Kernprüfung, Performance, Gecko, Chromium und CodeQL.
 
-## Quellen- und Coverage-Stand
+Die 14 in Welle 80 integrierten Basen sind:
 
-Privates Repository: `HyperCriSiS/Generic-Datastore`
+`fachschaftler`, `titelhalter`, `baron`, `bergkamerad`, `diplomgeograph`,
+`ehrensenator`, `familienernährer`, `fcsp-teqballer`, `föderalist`, `knüpfer`,
+`stadtzürcher`, `superintendent`, `teufel`, `uigur`.
 
-### KldB/DKZ
+PR #294 war vollständig grün. Nach dem Merge trat im ersten `main`-Chromium-Job ein Runner-/Browserstart-Flake auf (`DevToolsActivePort file doesn't exist`); der unveränderte Rerun war vollständig grün. Kernprüfung, Performance, Gecko, Chromium, Video-Regressionsprüfung, CodeQL und Sammelcheck sind damit für den integrierten Stand bestätigt.
+
+## KldB/DKZ
 
 Letzte vollständige Nachmessung nach Welle 79:
 
@@ -29,73 +31,131 @@ Letzte vollständige Nachmessung nach Welle 79:
 - Bewusst unbekannt: 12
 - Eindeutige Coverage: **99,88 %**
 - Unentschiedene DKZ-Kandidaten: **0**
-- Priority 23: `möller`, `polster`, `steuer`; alle drei geprüft und verworfen.
+- Priority 23: `möller`, `polster`, `steuer`; alle verworfen.
 - Privater Review-Commit: `a9de5d70a3be2a7658da3911c1de08bbcc24e33e`
 
-### ESCO
+## ESCO
 
 - API v1.2.0: 17 neue Kandidaten
 - 17 angenommen
 - Produktintegration: Welle 77 / PR #288
 - Kein offener Review-Rest.
 
-### Wikidata Occupations
+## Wikidata Occupations
 
-- 350 Kandidaten in zwei Prioritätsblöcken
+- 350 Kandidaten
 - 344 angenommen
 - 6 verworfen
 - 0 offen
 - Produktintegration: Wellen 78 und 79 / PR #289 und #290
 - Kein offener Restpool.
 
-## Kandidatenprüfung – verbindliche Regeln
+## Wikipedia-Realnutzung
 
-- Standard: `language_model_first`.
-- Quellen liefern Kandidaten; Quellenherkunft besitzt kein Freigabegewicht.
-- Externe Recherche nur für echte Grenzfälle, Mehrdeutigkeiten oder widersprüchliche Befunde.
-- Produktseitig nur sichere Exact-Mappings bzw. eng begrenzte Regeln.
-- Positiv-, Negativ-, Paar- und Kasusregressionen beibehalten.
-- Keine breite oder generische Personen-Suffixfreigabe hinzufügen.
+### Pipeline
 
-## Wikipedia-Realnutzungs-Discovery – erster produktiver Lauf abgeschlossen
+- Öffentlicher Workflow: `.github/workflows/source-ingest.yml`
+- Quelle: `wikipedia-real-usage`
+- Wikipedia-Seitentexte werden ausschließlich transient gelesen.
+- Persistiert werden keine Artikeltexte, Snippets, Seitentitel, Seiten-IDs oder vollständigen Seiten-URLs.
+- Dauerhaft bleiben nur aggregierte Formen, technische Zählwerte, Coverage, Kandidaten und Review-Ergebnisse.
 
-Die Discovery-Pipeline liegt privat im `Generic-Datastore`. Wikipedia-Seitentexte werden nur transient über die MediaWiki-API gelesen. Persistiert werden keine Artikeltexte, Snippets, Seitentitel, Seiten-IDs oder vollständigen Seiten-URLs.
+Der ursprünglich beim ersten produktiven Versuch gefundene CirrusSearch-/PCRE-Fehler wurde privat mit Commit `7dddead58c1e15eef13ebf58e880e3419c72a229` behoben und regressionsgesichert.
 
-Der erste produktive Workflow-Lauf (#17 / Run-ID `37541613824`) erreichte die Discovery, scheiterte dort aber an PCRE-Konstrukten (`\b`, `(?:...)`), die CirrusSearch/Lucene nicht unterstützt. Die Suchmuster wurden privat mit Commit `7dddead58c1e15eef13ebf58e880e3419c72a229` auf Lucene-kompatible Syntax korrigiert und durch eine Regression abgesichert.
+### Erster erfolgreicher Lauf
 
-Der Wiederholungslauf (#18 / Run-ID `37541905780`) war vollständig erfolgreich. Privater Import-Commit: `626148693b1f9fbdd27d225df2f88d9a61660c84`.
+- Run #18 / Run-ID `37541905780`
+- Produktcommit: `a769d65da1be668202dd21b137c5971a88f6191c`
+- Privater Import-Commit: `626148693b1f9fbdd27d225df2f88d9a61660c84`
+- 530 eindeutige Seiten
+- 225 beobachtete Basen
+- 578 relevante Vorkommen
+- 182 bekannte Basen
+- 43 Unknowns
+- eindeutige Coverage: **80,89 %**
+- vorkommensgewichtete Coverage: **89,97 %**
 
-Ergebnis:
+### Priority 1
 
-- 530 eindeutige Wikipedia-Seiten transient gelesen; 530 davon mit Text.
-- 324 aggregierte Oberflächenformen aus 628 Extraktionsvorkommen.
-- Nach Coverage-Normalisierung 225 beobachtete Basen / 578 relevante Vorkommen.
-- 182 Basen bereits produktseitig erkannt.
-- 43 Basen unbekannt und fachlich zu prüfen.
-- Eindeutige Coverage: **80,89 %**
-- Vorkommensgewichtete Coverage: **89,97 %**
-- Unbekannte Vorkommen: 58.
+- Privater Review-Commit: `f94bec9f5863459fdb1c195e13cb7a8cdc868016`
+- 43 geprüft
+- 14 angenommen
+- 29 verworfen
+- 0 offen
+- Produktintegration: Welle 80 / PR #294 / Merge `5b6a4f70371c9da87bcfcbf0ad0b7e13ce048db8`
 
-Kanonische private Ergebnisdateien:
+Nicht als neue Lexeme behandelt wurden insbesondere:
 
-1. `sprachverstand/derived/evidence/wikipedia-real-usage-forms.json`
-2. `sprachverstand/derived/candidates/wikipedia-real-usage-coverage-input.json`
-3. `sprachverstand/derived/candidates/wikipedia-real-usage-coverage.json`
-4. `sprachverstand/derived/candidates/wikipedia-real-usage-unknown.txt`
-5. `sprachverstand/derived/manifests/wikipedia-real-usage.json`
+- `Bürgermeisters/in`
+- `Athleten*innen`
+- `Physikingenieure/innen`
+
+Diese drei sind Flexions-/Oberflächenfälle bereits bekannter Lexeme. `Gewerkschaftern/innen` ist eine fehlerhafte Oberflächenbildung und ebenfalls kein neues Lexem.
+
+### Nachmessung nach Welle 80
+
+- Run #19 / Run-ID `37544813498`
+- Ergebnis: erfolgreich
+- Produktcommit: `5b6a4f70371c9da87bcfcbf0ad0b7e13ce048db8`
+- Privater Import-Commit: `ac43b6808cdd3c18b7c8037822845c7b1fd96cd7`
+- 527 eindeutige Seiten
+- 227 beobachtete Basen
+- 578 relevante Vorkommen
+- 201 bekannte Basen
+- 26 Unknowns
+- eindeutige Coverage: **88,55 %**
+- vorkommensgewichtete Coverage: **93,08 %**
+
+Die zweite Messung ist wegen der Live-Suche keine identische Stichprobe zum ersten Lauf.
+
+### Priority 2 / Live-Delta
+
+Durch Stichprobendrift erschien neu `panther`. Der Treffer wurde als Eigennamen-/Organisationsschreibweise und nicht als generische Personenbasis bewertet.
+
+- 1 geprüft
+- 0 angenommen
+- 1 verworfen
+- 0 offen
+- Privater Review-Commit: `8ee7a61e5a37efa0f27b434ddf548ece45536902`
+- Keine Produktwelle.
+
+Aktuell gibt es **0 unentschiedene Wikipedia-Kandidaten**.
+
+Der aktuelle 26er-Rest besteht aus:
+
+- 22 bereits verworfenen Nicht-Lexemen/Artefakten
+- 3 echten Runtime-/Flexionslücken
+- 1 fehlerhaften Oberflächenform
+
+## Kanonischer privater Stand
+
+Privates Repository: `HyperCriSiS/Generic-Datastore`
+
+- Aktueller Status-/Registry-Commit nach Abschluss dieser Einheit: `8386719ccb9102e1c7fba9a6243e679e2aea63e7`
+- Maßgeblich: `sprachverstand/CURRENT-STATE.json`
+- Registry: `sprachverstand/sources/registry.json`
+- Priority-1-Review:
+  - `sprachverstand/derived/review/wikipedia-real-usage-priority-1-summary.json`
+  - `sprachverstand/derived/review/wikipedia-real-usage-priority-1-manual-decisions.json`
+- Priority-2-Review:
+  - `sprachverstand/derived/review/wikipedia-real-usage-priority-2-summary.json`
+  - `sprachverstand/derived/review/wikipedia-real-usage-priority-2-manual-decisions.json`
 
 ## Nächste Arbeitseinheit
 
-1. Die 43 Wikipedia-Unknowns als Review-Block `language_model_first` prüfen.
-2. Echte neue Personenbasen von bereits bekannten Flexions-/Kasusformen und eindeutigen Wikitext-/Namens-/URL-Artefakten trennen.
-3. Nur sichere neue bzw. exakt modellierbare Formen als Produktwelle 80 integrieren.
-4. Falls Wikipedia danach keinen sinnvollen Rest mehr hat, die offenen Genderwörterbuch-Audits (`scribbr-genderwoerterbuch`, `genderator-genderwoerterbuch`) fortsetzen.
+Aufgrund der inzwischen langen GitHub-/CI-Historie diese Einheit in einem **frischen Chat** fortsetzen:
+
+1. `Bürgermeisters/in`, `Athleten*innen` und `Physikingenieure/innen` ausschließlich mit engen/exakten Regeln behandeln.
+2. Realnutzungs-Coverage oberflächenbewusst gegen die tatsächliche Produkt-Runtime prüfen, statt nur die rekonstruierte Basis über den Pluralmapper zu vermessen.
+3. `Gewerkschaftern/innen` unverändert als fehlerhafte Form belassen.
+4. Wikipedia danach erneut vermessen.
+5. Anschließend die nächsten tatsächlich kandidatenliefernden offenen Quellen aus der Registry bearbeiten.
 
 ## Verbindliche Wiederaufnahme-Regel
 
-- Bei einem neuen Sprachverstand-Chat zuerst diese Datei lesen.
-- Bei Quellenarbeit danach `HyperCriSiS/Generic-Datastore:sprachverstand/CURRENT-STATE.json` sowie die dort referenzierten Review-Dateien lesen.
+- Bei einem neuen Sprachverstand-Chat zuerst `docs/engineering/CURRENT-WORK.md` lesen.
+- Danach aktuellen `main`-HEAD live verifizieren.
+- Bei Quellenarbeit zusätzlich `HyperCriSiS/Generic-Datastore:sprachverstand/CURRENT-STATE.json` lesen.
 - Git-Checkpoints haben Vorrang vor alten Chats und früheren „als Nächstes“-Formulierungen.
-- Nach größeren abgeschlossenen Einheiten diesen Checkpoint aktualisieren.
-- Reine Checkpoint-Dateien wie `docs/AI_SESSION_STATE.md` direkt auf `main` aktualisieren; dafür keinen eigenen PR erzeugen.
-- Produktcode, Tests, Workflows und fachliche Produktänderungen bleiben PR-pflichtig.
+- Nach einer größeren abgeschlossenen Einheit diesen Checkpoint aktualisieren.
+- Reine Checkpoint-Dateien direkt auf `main` aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben PR-pflichtig.
