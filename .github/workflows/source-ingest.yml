@@ -11,6 +11,7 @@ on:
         options:
           - kldb-snapshot
           - kldb-current
+          - wikipedia-real-usage
 
 permissions:
   contents: read
@@ -71,6 +72,7 @@ jobs:
         run: python -m pytest -q datastore/sprachverstand/tests
 
       - name: Private Quell-URL in Logs maskieren
+        if: startsWith(inputs.source, 'kldb-')
         env:
           SOURCE: ${{ inputs.source }}
         shell: bash
@@ -108,11 +110,18 @@ jobs:
           echo "::add-mask::$SOURCE_URL"
 
       - name: KldB/DKZ importieren und Coverage berechnen
+        if: startsWith(inputs.source, 'kldb-')
         env:
           SOURCE: ${{ inputs.source }}
         run: |
           python datastore/sprachverstand/scripts/run_kldb_ingest.py \
             --source "$SOURCE" \
+            --product-dir "$GITHUB_WORKSPACE"
+
+      - name: Wikipedia-Realnutzung entdecken und Coverage berechnen
+        if: inputs.source == 'wikipedia-real-usage'
+        run: |
+          python datastore/sprachverstand/scripts/run_wikipedia_discovery.py \
             --product-dir "$GITHUB_WORKSPACE"
 
       - name: Änderungen auf erlaubte private Pfade begrenzen
