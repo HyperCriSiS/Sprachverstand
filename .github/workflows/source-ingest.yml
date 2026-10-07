@@ -13,6 +13,7 @@ on:
           - kldb-current
           - wikipedia-real-usage
           - scribbr-genderwoerterbuch
+          - genderator-genderwoerterbuch
 
 permissions:
   contents: read
@@ -129,6 +130,12 @@ jobs:
         if: inputs.source == 'scribbr-genderwoerterbuch'
         run: |
           python datastore/sprachverstand/scripts/run_scribbr_audit.py \
+            --product-dir "$GITHUB_WORKSPACE"
+
+      - name: GENDERATOR-Genderwörterbuch entdecken und Coverage berechnen
+        if: inputs.source == 'genderator-genderwoerterbuch'
+        run: |
+          python datastore/sprachverstand/scripts/run_genderator_audit.py \
             --product-dir "$GITHUB_WORKSPACE"
 
       - name: Änderungen auf erlaubte private Pfade begrenzen
