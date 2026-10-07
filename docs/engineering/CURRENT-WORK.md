@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
+- Aktueller integrierter Produktstand: `f02722b92155fd352d094836ed0fd11b3efc2045`
 - Abgeschlossene Lexikon-Ausbauwellen: **80**
 - Letzter integrierter Produkt-PR: **#296 — weitere Wikipedia-Klammerformen exakt abdecken**
 - Welle 80 enthält 14 vollständig geprüfte, ausschließlich exakte Personenmappings aus der Wikipedia-Realnutzungsprüfung.
@@ -113,13 +113,29 @@ Workflow Run #21 / Run-ID `37554564519`, Attempt 2:
 
 Der verbleibende 25er-Rest enthält nach Sichtprüfung keinen neuen offensichtlichen Produktkandidaten. Er besteht aus bereits verworfenen Nicht-Lexemen/Artefakten, Eigennamen/Fremdformen, Schreibfehlern sowie der bewusst unveränderten fehlerhaften Form `Gewerkschaftern/innen`.
 
+## Scribbr-Genderwörterbuch
+
+Der erste vollständige Audit ist abgeschlossen:
+
+- Workflow Run #22 / Run-ID `37558921474`
+- 1.706 Detailseiten gelesen
+- 1.479 lexikalische Paarbasen
+- 1.034 bekannt / 445 unbekannt
+- Basen-Coverage: **69,91 %**
+- Privater Import-Commit: `e89b415`
+- Priority-1-Review-Batch: 250 Kandidaten
+- Privater Review-Queue-Commit: `400b7d9d6410336da0f4f760836a31ffc4d35052`
+- 195 Kandidaten bleiben für Priority 2 offen.
+
+Keine Scribbr-Form ist automatisch freigegeben; die Queue bleibt vollständig `language_model_first`.
+
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Genderwörterbuch (Registry-Priorität 6) gegen den aktuellen Produktstand auditieren.
-2. Nur tatsächlich neue, morphologisch und semantisch sichere Kandidaten in eine private Review-Queue übernehmen; keine automatische Freigabe.
+1. Scribbr-Priority-1-Batch mit 250 Kandidaten vollständig fachlich prüfen.
+2. Verbleibende 195 Scribbr-Unknowns als Priority 2 aufbereiten und prüfen.
 3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
 4. Erst nach abgeschlossener fachlicher Review sichere Exact-Mappings bzw. eng begrenzte Regeln produktseitig per PR integrieren.
-5. Nach Abschluss der Quellen-Einheit Registry, privaten CURRENT-STATE und diesen Checkpoint aktualisieren.
+5. Nach Abschluss der Scribbr-Review Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Prüfprinzip
 
