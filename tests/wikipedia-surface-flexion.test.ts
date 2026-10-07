@@ -11,7 +11,11 @@ const disabledRuleIds = disabledRuleIdsForGroups(defaultEnabledRuleGroupIds);
 const cases = [
   ["Bürgermeisters/in", "Bürgermeisters"],
   ["Athleten*innen", "Athleten"],
-  ["Physikingenieure/innen", "Physikingenieure"]
+  ["Physikingenieure/innen", "Physikingenieure"],
+  ["Ortsvorsteher(in)", "Ortsvorsteher"],
+  ["Benediktiner(innen)", "Benediktiner"],
+  ["Nachwuchssportler(in)", "Nachwuchssportler"],
+  ["Tennisspieler(in)", "Tennisspieler"]
 ] as const;
 
 describe("enge Wikipedia-Oberflächenflexionen", () => {
@@ -24,12 +28,15 @@ describe("enge Wikipedia-Oberflächenflexionen", () => {
     ).toBe(expected);
   });
 
-  it("lässt die fehlerhafte Oberflächenform Gewerkschaftern/innen unverändert", () => {
-    expect(
-      transformText("Gewerkschaftern/innen", defaultRules, {
-        profile: "aggressive",
-        disabledRuleIds
-      }).text
-    ).toBe("Gewerkschaftern/innen");
-  });
+  it.each(["Gewerkschaftern/innen", "Check-In"])(
+    "lässt die bewusst nicht freigegebene Form %s unverändert",
+    (input) => {
+      expect(
+        transformText(input, defaultRules, {
+          profile: "aggressive",
+          disabledRuleIds
+        }).text
+      ).toBe(input);
+    }
+  );
 });
