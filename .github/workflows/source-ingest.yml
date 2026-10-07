@@ -186,4 +186,11 @@ jobs:
           fi
 
           git commit -m "data: private Quelle $SOURCE aktualisieren"
+
+          # Zwischen Checkout und Import können unabhängige Checkpoint- oder
+          # Wartungscommits im privaten Datastore landen. Diese sicher
+          # übernehmen; echte Konflikte an denselben Importdateien bleiben
+          # absichtlich hart fehlschlagend.
+          git fetch origin main
+          git rebase origin/main
           git push origin HEAD:main
