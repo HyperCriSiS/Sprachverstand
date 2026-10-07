@@ -75,19 +75,33 @@ function normalizeObserved(candidateSet) {
   throw new Error("Die Kandidatendatei enthält keine beobachteten Genderformen.");
 }
 
-async function loadRuntimePluralMapper() {
-  // Der Audit bündelt exakt die drei produktiven Pluralpfade. So werden sowohl
-  // zusätzliche Personenformen als auch bekannte und gemappte Flexionen gezählt.
+function normalizeObservedSurfaces(candidateSet) {
+  if (!Array.isArray(candidateSet.observedGenderedForms)) {
+    return undefined;
+  }
+
+  return candidateSet.observedGenderedForms
+    .filter(
+      (entry) =>
+        entry &&
+        typeof entry.base === "string" &&
+        typeof entry.surface === "string" &&
+        Number.isFinite(entry.count)
+    )
+    .map((entry) => ({
+      base: entry.base,
+      surface: entry.surface,
+      count: Math.max(1, entry.count)
+    }));
+}
+
+async function buildRuntimeModule(contents, sourcefile) {
   const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
   const bundle = await build({
     stdin: {
-      contents: `
-        export { additionalPersonPluralRule } from "./src/rules/additional-person-forms.ts";
-        export { mapKnownPlural } from "./src/rules/known-plural-separators.ts";
-        export { mapMappedPlural } from "./src/rules/mapped-plural-separators.ts";
-      `,
+      contents,
       resolveDir: repositoryRoot,
-      sourcefile: "lexicon-coverage-entry.ts",
+      sourcefile,
       loader: "ts"
     },
     bundle: true,
@@ -99,12 +113,25 @@ async function loadRuntimePluralMapper() {
   });
   const output = bundle.outputFiles[0]?.text;
   if (!output) {
-    throw new Error("Die produktiven Pluralregeln konnten nicht gebündelt werden.");
+    throw new Error("Die produktive Sprachverstand-Runtime konnte nicht gebündelt werden.");
   }
 
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
+  return import(moduleUrl);
+}
+
+async function loadRuntimePluralMapper() {
+  // Legacy-Modus für Quellen, die nur rekonstruierte Basen liefern. Dieser Pfad
+  // bleibt bewusst unverändert, damit bestehende KldB-/DKZ-Audits stabil bleiben.
   const { additionalPersonPluralRule, mapKnownPlural, mapMappedPlural } =
-    await import(moduleUrl);
+    await buildRuntimeModule(
+      `
+        export { additionalPersonPluralRule } from "./src/rules/additional-person-forms.ts";
+        export { mapKnownPlural } from "./src/rules/known-plural-separators.ts";
+        export { mapMappedPlural } from "./src/rules/mapped-plural-separators.ts";
+      `,
+      "lexicon-coverage-entry.ts"
+    );
 
   return (base) => {
     const mapped = mapKnownPlural(base) ?? mapMappedPlural(base);
@@ -118,7 +145,125 @@ async function loadRuntimePluralMapper() {
   };
 }
 
-export async function buildCoverageReport(candidateSet) {
+async function loadRuntimeSurfaceTransformer() {
+  const {
+    transformText,
+    defaultRules,
+    defaultEnabledRuleGroupIds,
+    disabledRuleIdsForGroups
+  } = await buildRuntimeModule(
+    `
+      export { transformText } from "./src/core/transform-text.ts";
+      export { defaultRules } from "./src/rules/index.ts";
+      export {
+        defaultEnabledRuleGroupIds,
+        disabledRuleIdsForGroups
+      } from "./src/rules/catalog.ts";
+    `,
+    "surface-coverage-entry.ts"
+  );
+
+  const disabledRuleIds = disabledRuleIdsForGroups(defaultEnabledRuleGroupIds);
+  return (surface) =>
+    transformText(surface, defaultRules, {
+      profile: "aggressive",
+      disabledRuleIds
+    });
+}
+
+function sortByCountAndBase(entries) {
+  entries.sort(
+    (left, right) =>
+      right.count - left.count || left.base.localeCompare(right.base, "de-DE")
+  );
+}
+
+function buildSurfaceReport(observed, transformSurface) {
+  const groups = new Map();
+  let knownSurfaces = 0;
+  let knownOccurrences = 0;
+
+  for (const entry of observed) {
+    const result = transformSurface(entry.surface);
+    const covered = result.replacements > 0 && result.text !== entry.surface;
+    const group = groups.get(entry.base) ?? {
+      base: entry.base,
+      count: 0,
+      knownOccurrences: 0,
+      unknownOccurrences: 0,
+      replacements: new Set(),
+      unknownSurfaces: []
+    };
+
+    group.count += entry.count;
+    if (covered) {
+      group.knownOccurrences += entry.count;
+      group.replacements.add(result.text);
+      knownSurfaces += 1;
+      knownOccurrences += entry.count;
+    } else {
+      group.unknownOccurrences += entry.count;
+      group.unknownSurfaces.push({ surface: entry.surface, count: entry.count });
+    }
+    groups.set(entry.base, group);
+  }
+
+  const known = [];
+  const unknown = [];
+  for (const group of groups.values()) {
+    if (group.unknownOccurrences > 0) {
+      unknown.push({
+        base: group.base,
+        count: group.unknownOccurrences,
+        totalCount: group.count,
+        knownOccurrences: group.knownOccurrences,
+        surfaces: group.unknownSurfaces
+      });
+      continue;
+    }
+
+    const replacements = [...group.replacements].sort((left, right) =>
+      left.localeCompare(right, "de-DE")
+    );
+    const entry = {
+      base: group.base,
+      count: group.count
+    };
+    if (replacements.length === 1) {
+      entry.replacement = replacements[0];
+    } else if (replacements.length > 1) {
+      entry.replacements = replacements;
+    }
+    known.push(entry);
+  }
+
+  sortByCountAndBase(unknown);
+  sortByCountAndBase(known);
+
+  const totalOccurrences = observed.reduce((sum, entry) => sum + entry.count, 0);
+  return {
+    version: 2,
+    coverageMode: "surface-runtime",
+    stats: {
+      uniqueObserved: groups.size,
+      knownUnique: known.length,
+      unknownUnique: unknown.length,
+      uniqueCoveragePercent: percentage(known.length, groups.size),
+      observedOccurrences: totalOccurrences,
+      knownOccurrences,
+      unknownOccurrences: totalOccurrences - knownOccurrences,
+      occurrenceCoveragePercent: percentage(knownOccurrences, totalOccurrences),
+      distinctSurfaces: observed.length,
+      knownSurfaces,
+      unknownSurfaces: observed.length - knownSurfaces,
+      surfaceCoveragePercent: percentage(knownSurfaces, observed.length)
+    },
+    unknown,
+    known
+  };
+}
+
+async function buildLegacyBaseReport(candidateSet) {
   const mapPlural = await loadRuntimePluralMapper();
   const observed = normalizeObserved(candidateSet);
   const known = [];
@@ -133,20 +278,15 @@ export async function buildCoverageReport(candidateSet) {
     known.push({ ...entry, replacement });
   }
 
-  unknown.sort(
-    (left, right) =>
-      right.count - left.count || left.base.localeCompare(right.base, "de-DE")
-  );
-  known.sort(
-    (left, right) =>
-      right.count - left.count || left.base.localeCompare(right.base, "de-DE")
-  );
+  sortByCountAndBase(unknown);
+  sortByCountAndBase(known);
 
   const totalOccurrences = observed.reduce((sum, entry) => sum + entry.count, 0);
   const knownOccurrences = known.reduce((sum, entry) => sum + entry.count, 0);
 
   return {
     version: 1,
+    coverageMode: "base-plural-legacy",
     stats: {
       uniqueObserved: observed.length,
       knownUnique: known.length,
@@ -160,6 +300,16 @@ export async function buildCoverageReport(candidateSet) {
     unknown,
     known
   };
+}
+
+export async function buildCoverageReport(candidateSet) {
+  const observedSurfaces = normalizeObservedSurfaces(candidateSet);
+  if (observedSurfaces !== undefined) {
+    const transformSurface = await loadRuntimeSurfaceTransformer();
+    return buildSurfaceReport(observedSurfaces, transformSurface);
+  }
+
+  return buildLegacyBaseReport(candidateSet);
 }
 
 function assertThreshold(name, actual, threshold) {
