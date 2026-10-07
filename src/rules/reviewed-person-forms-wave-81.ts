@@ -287,16 +287,6 @@ const specialForms: ReadonlyMap<string, GeneratedPersonForms> = new Map([
       obliqueSingular: "grafen",
       genitiveSingular: "grafen"
     }
-  ],
-  [
-    "general",
-    {
-      plural: "generäle",
-      singular: "general",
-      feminineSingular: "generalin",
-      obliqueSingular: "general",
-      genitiveSingular: "generals"
-    }
   ]
 ]);
 

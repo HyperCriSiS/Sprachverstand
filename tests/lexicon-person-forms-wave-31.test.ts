@@ -18,7 +18,7 @@ describe("einunddreißigste konservative Lexikon-Ausbauwelle", () => {
     expect(mapMappedSingular("malteser", "genitive")).toBe("maltesers");
   });
 
-  it.each(["Chilen:innen", "Myanmare:innen", "Israeli:innen"])(
+  it.each(["Myanmare:innen", "Israeli:innen"])(
     "erfindet keine nicht belastbare Separatorform: %s",
     (input) => {
       expect(mappedPluralSeparatorsRule.apply(input)).toEqual({

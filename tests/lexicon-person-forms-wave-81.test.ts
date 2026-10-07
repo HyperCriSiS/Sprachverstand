@@ -18,8 +18,9 @@ const cases = [
   ["bastard", "bastarde", "bastard", "bastardin", "bastard", "bastards"],
   ["bergbäuer", "bergbauern", "bergbauer", "bergbäuerin", "bergbauern", "bergbauern"],
   ["bürg", "bürgen", "bürge", "bürgin", "bürgen", "bürgen"],
+  ["chilen", "chilenen", "chilene", "chilenin", "chilenen", "chilenen"],
   ["destinatär", "destinatäre", "destinatär", "destinatärin", "destinatär", "destinatärs"],
-  ["general", "generäle", "general", "generalin", "general", "generals"],
+  ["dompteur", "dompteure", "dompteur", "dompteurin", "dompteur", "dompteurs"],
   ["gräf", "grafen", "graf", "gräfin", "grafen", "grafen"],
   ["greis", "greise", "greis", "greisin", "greis", "greises"],
   ["myanmar", "myanmaren", "myanmare", "myanmarin", "myanmaren", "myanmaren"],
@@ -28,8 +29,8 @@ const cases = [
 ] as const;
 
 describe("einundachtzigste Lexikon-Ausbauwelle", () => {
-  it("enthält exakt 249 vollständig geprüfte Scribbr-Mappings", () => {
-    expect(reviewedPersonFormCountWave81).toBe(249);
+  it("enthält exakt 248 vollständig geprüfte Scribbr-Mappings", () => {
+    expect(reviewedPersonFormCountWave81).toBe(248);
   });
 
   it.each(cases)(
@@ -45,13 +46,22 @@ describe("einundachtzigste Lexikon-Ausbauwelle", () => {
     }
   );
 
-  it("hält den verworfenen Organisations-Treffer aus dem Lexikon heraus", () => {
-    expect(getReviewedPersonFormsWave81("mieterinnenvere")).toBeUndefined();
-    expect(mappedPluralSeparatorsRule.apply("mieterinnenvere:innen")).toEqual({
-      text: "mieterinnenvere:innen",
-      replacements: 0
-    });
-  });
+  it.each(["general", "mieterinnenvere"])(
+    "hält den verworfenen Kandidaten %s aus Welle 81 heraus",
+    (base) => {
+      expect(getReviewedPersonFormsWave81(base)).toBeUndefined();
+    }
+  );
+
+  it.each(["General:innen", "mieterinnenvere:innen"])(
+    "lässt den verworfenen Separatorfall %s unverändert",
+    (input) => {
+      expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
+        text: input,
+        replacements: 0
+      });
+    }
+  );
 
   it.each(cases)(
     "ersetzt den geprüften Plural für %s",

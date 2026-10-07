@@ -56,8 +56,7 @@ describe("neununddreißigste konservative Lexikon-Ausbauwelle", () => {
 
   it.each([
     "Alumnus:innen",
-    "Connaisseur:innen",
-    "Dompteur:innen"
+    "Connaisseur:innen"
   ])("lässt unregelmäßige, nicht abgesicherte Kurzformen unverändert: %s", (input) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: input,
