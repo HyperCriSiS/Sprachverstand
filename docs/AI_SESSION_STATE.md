@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `5b6a4f70371c9da87bcfcbf0ad0b7e13ce048db8`
+- Aktueller Produktbaseline-Commit: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
 - Abgeschlossene Lexikon-Ausbauwellen: **80**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -141,15 +141,35 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
   - `sprachverstand/derived/review/wikipedia-real-usage-priority-2-summary.json`
   - `sprachverstand/derived/review/wikipedia-real-usage-priority-2-manual-decisions.json`
 
+## Wikipedia-Runtime-/Surface-Abschluss
+
+- PR #295 / Merge `1a77e5ce4195ac6aca7672530d37ab52715b115f`: Surface-Runtime-Coverage aktiviert und `Bürgermeisters/in`, `Athleten*innen`, `Physikingenieure/innen` ausschließlich exakt abgedeckt.
+- PR #296 / Merge `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`: `Ortsvorsteher(in)`, `Benediktiner(innen)`, `Nachwuchssportler(in)`, `Tennisspieler(in)` ausschließlich exakt abgedeckt.
+- `Gewerkschaftern/innen` und `Check-In` bleiben unverändert.
+- `main`-CI und CodeQL für #295 und #296: grün.
+
+Letzte Surface-Nachmessung:
+
+- Run #21 / Run-ID `37554564519`, Attempt 2
+- Produktcommit: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
+- Privater Import-Commit: `bb0c68d9f20cd7fc07fe4b7e23bef2cd717c6496`
+- 524 eindeutige Seiten
+- 223 Basen / 599 Vorkommen
+- 198 bekannte / 25 unbekannte Basen
+- Basen-Coverage: **88,79 %**
+- vorkommensgewichtete Coverage: **94,82 %**
+- 280 verschiedene Oberflächen
+- 255 bekannte / 25 unbekannte Oberflächen
+- Surface-Coverage: **91,07 %**
+- Kein neuer offensichtlicher Produktkandidat im verbleibenden 25er-Rest.
+
 ## Nächste Arbeitseinheit
 
-Aufgrund der inzwischen langen GitHub-/CI-Historie diese Einheit in einem **frischen Chat** fortsetzen:
-
-1. `Bürgermeisters/in`, `Athleten*innen` und `Physikingenieure/innen` ausschließlich mit engen/exakten Regeln behandeln.
-2. Realnutzungs-Coverage oberflächenbewusst gegen die tatsächliche Produkt-Runtime prüfen, statt nur die rekonstruierte Basis über den Pluralmapper zu vermessen.
-3. `Gewerkschaftern/innen` unverändert als fehlerhafte Form belassen.
-4. Wikipedia danach erneut vermessen.
-5. Anschließend die nächsten tatsächlich kandidatenliefernden offenen Quellen aus der Registry bearbeiten.
+1. Scribbr-Genderwörterbuch (Registry-Priorität 6) gegen den aktuellen Produktstand auditieren.
+2. Nur neue, morphologisch und semantisch sichere Kandidaten in eine private Review-Queue übernehmen; keine automatische Freigabe.
+3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
+4. Sichere Ergebnisse anschließend per PR mit positiven und negativen Regressionen integrieren.
+5. Nach Abschluss Registry, privaten CURRENT-STATE und diesen Checkpoint aktualisieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 

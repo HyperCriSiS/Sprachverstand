@@ -6,9 +6,9 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `5b6a4f70371c9da87bcfcbf0ad0b7e13ce048db8`
+- Aktueller integrierter Produktstand: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
 - Abgeschlossene Lexikon-Ausbauwellen: **80**
-- Letzter integrierter Produkt-PR: **#294 — achtzigste Ausbauwelle**
+- Letzter integrierter Produkt-PR: **#296 — weitere Wikipedia-Klammerformen exakt abdecken**
 - Welle 80 enthält 14 vollständig geprüfte, ausschließlich exakte Personenmappings aus der Wikipedia-Realnutzungsprüfung.
 - Keine generische Personen-Suffixregel.
 
@@ -71,31 +71,55 @@ Durch die Live-Stichprobe erschien genau ein neuer Unknown `panther`. Dieser wur
 - Privater Review-Commit: `8ee7a61e5a37efa0f27b434ddf548ece45536902`
 - Daraus entsteht keine Produktwelle.
 
-## Aktueller Wikipedia-Restpool
+## Wikipedia-Runtime-/Surface-Abschluss
 
-Es gibt **0 unentschiedene Kandidaten**.
+Nach Welle 80 wurden zwei weitere Produkt-PRs integriert:
 
-Die 26 aktuell unbekannten Basen zerfallen in:
+- PR #295 / Merge `1a77e5ce4195ac6aca7672530d37ab52715b115f`
+  - drei bereits bekannte Wikipedia-Flexionsoberflächen ausschließlich per Exact-Replacement abgedeckt:
+    - `Bürgermeisters/in`
+    - `Athleten*innen`
+    - `Physikingenieure/innen`
+  - `Gewerkschaftern/innen` bleibt explizit unverändert.
+  - Realnutzungs-Coverage kann seitdem die tatsächlich beobachteten Oberflächen gegen die vollständige Default-Runtime prüfen.
+- PR #296 / Merge `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
+  - vier weitere, durch die Surface-Runtime-Nachmessung sichtbar gewordene echte Personenformen ausschließlich exakt abgedeckt:
+    - `Ortsvorsteher(in)`
+    - `Benediktiner(innen)`
+    - `Nachwuchssportler(in)`
+    - `Tennisspieler(in)`
+  - `Check-In` und `Gewerkschaftern/innen` bleiben als Negativfälle unverändert.
 
-- 22 bereits geprüfte und verworfene Nicht-Lexeme, Eigennamen-, Marken-, Titel-, Englisch- oder Parserartefakte
-- 3 echte Runtime-/Flexionslücken bereits bekannter Lexeme:
-  - `Bürgermeisters/in`
-  - `Athleten*innen`
-  - `Physikingenieure/innen`
-- 1 fehlerhafte Oberflächenform:
-  - `Gewerkschaftern/innen`
+Für beide PRs waren die `main`-CI- und CodeQL-Läufe grün.
 
-`Gewerkschaftern/innen` wird nicht als neues Lexem oder automatische Korrektur freigegeben.
+### Aktuelle Wikipedia-Nachmessung
+
+Workflow Run #21 / Run-ID `37554564519`, Attempt 2:
+
+- Ergebnis: erfolgreich
+- Produktcommit: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
+- Privater Import-Commit: `bb0c68d9f20cd7fc07fe4b7e23bef2cd717c6496`
+- 524 eindeutige Seiten
+- 223 beobachtete Basen
+- 599 relevante Vorkommen
+- 198 bekannte Basen
+- 25 unbekannte Basen
+- eindeutige Basen-Coverage: **88,79 %**
+- vorkommensgewichtete Coverage: **94,82 %**
+- 280 verschiedene beobachtete Oberflächen
+- 255 bekannte Oberflächen
+- 25 unbekannte Oberflächen
+- Surface-Coverage: **91,07 %**
+
+Der verbleibende 25er-Rest enthält nach Sichtprüfung keinen neuen offensichtlichen Produktkandidaten. Er besteht aus bereits verworfenen Nicht-Lexemen/Artefakten, Eigennamen/Fremdformen, Schreibfehlern sowie der bewusst unveränderten fehlerhaften Form `Gewerkschaftern/innen`.
 
 ## Nächste Arbeitseinheit
 
-Die nächste größere Einheit soll **separat** erfolgen:
-
-1. Die drei echten Oberflächenlücken ausschließlich mit engen/exakten Regeln abdecken.
-2. Den Wikipedia-Realnutzungs-Coverage-Audit oberflächenbewusst machen, damit nicht nur eine rekonstruierte Basis, sondern die tatsächlich beobachtete Form gegen die reale Produkt-Runtime geprüft wird.
-3. `Gewerkschaftern/innen` als fehlerhafte Form unverändert lassen.
-4. Danach Wikipedia erneut vermessen.
-5. Anschließend die nächsten offenen Quellen aus der Registry bearbeiten, insbesondere die noch offenen Genderwörterbuch-Audits.
+1. Scribbr-Genderwörterbuch (Registry-Priorität 6) gegen den aktuellen Produktstand auditieren.
+2. Nur tatsächlich neue, morphologisch und semantisch sichere Kandidaten in eine private Review-Queue übernehmen; keine automatische Freigabe.
+3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
+4. Erst nach abgeschlossener fachlicher Review sichere Exact-Mappings bzw. eng begrenzte Regeln produktseitig per PR integrieren.
+5. Nach Abschluss der Quellen-Einheit Registry, privaten CURRENT-STATE und diesen Checkpoint aktualisieren.
 
 ## Prüfprinzip
 
