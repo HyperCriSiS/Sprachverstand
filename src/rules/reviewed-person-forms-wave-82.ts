@@ -210,8 +210,7 @@ const erVsInForms: ReadonlySet<string> = new Set([
   "zuwander"
 ]);
 
-const specialForms: ReadonlyMap<string, GeneratedPersonForms> = new Map(
-  [
+const specialForms: ReadonlyMap<string, GeneratedPersonForms> = new Map<string, GeneratedPersonForms>([
   [
     "niedersächs",
     {
@@ -262,8 +261,7 @@ const specialForms: ReadonlyMap<string, GeneratedPersonForms> = new Map(
       "genitiveSingular": "westfalen"
     }
   ]
-]
-);
+]);
 
 export const reviewedPersonFormCountWave82 =
   unchangedForms.size +
