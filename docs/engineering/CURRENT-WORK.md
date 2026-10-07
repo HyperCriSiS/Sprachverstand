@@ -6,10 +6,10 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `f02722b92155fd352d094836ed0fd11b3efc2045`
-- Abgeschlossene Lexikon-Ausbauwellen: **80**
-- Letzter integrierter Produkt-PR: **#296 — weitere Wikipedia-Klammerformen exakt abdecken**
-- Welle 80 enthält 14 vollständig geprüfte, ausschließlich exakte Personenmappings aus der Wikipedia-Realnutzungsprüfung.
+- Aktueller integrierter Produktstand: `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`
+- Abgeschlossene Lexikon-Ausbauwellen: **81**
+- Letzter integrierter Produkt-PR: **#298 — Scribbr-Priority-1 als Welle 81 integrieren**
+- Welle 81 enthält 248 vollständig geprüfte, ausschließlich exakte Personenmappings aus Scribbr-Priority-1; 2 Kandidaten wurden verworfen.
 - Keine generische Personen-Suffixregel.
 
 ## Validierung von Welle 80
@@ -120,22 +120,24 @@ Der erste vollständige Audit ist abgeschlossen:
 - Workflow Run #22 / Run-ID `37558921474`
 - 1.706 Detailseiten gelesen
 - 1.479 lexikalische Paarbasen
-- 1.034 bekannt / 445 unbekannt
-- Basen-Coverage: **69,91 %**
+- 1.034 vor Scribbr-Welle 81 bekannt / 445 unbekannt
+- Ausgangs-Coverage: **69,91 %**
 - Privater Import-Commit: `e89b415`
-- Priority-1-Review-Batch: 250 Kandidaten
-- Privater Review-Queue-Commit: `400b7d9d6410336da0f4f760836a31ffc4d35052`
-- 195 Kandidaten bleiben für Priority 2 offen.
+- Priority 1: **250 geprüft, 248 angenommen, 2 verworfen, 0 offen**
+- Produktintegration: **Welle 81 / PR #298 / Merge `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`**
+- Verworfen: `mieterinnenvere` als Organisationsartefakt und `general` wegen konkurrierender korrekter Plurale `Generale` / `Generäle`
+- `chilen` und `dompteur` wurden wegen früherer Negativregressionen extern gegengeprüft und anschließend exakt freigegeben
+- Post-Merge-`main`-CI und CodeQL: vollständig grün
+- 195 noch nicht geprüfte Unknowns bleiben für Priority 2
 
-Keine Scribbr-Form ist automatisch freigegeben; die Queue bleibt vollständig `language_model_first`.
+Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generische Personen-Suffixregel ergänzt.
 
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Priority-1-Batch mit 250 Kandidaten vollständig fachlich prüfen.
-2. Verbleibende 195 Scribbr-Unknowns als Priority 2 aufbereiten und prüfen.
+1. Die verbleibenden 195 Scribbr-Unknowns als Priority 2 aufbereiten und vollständig fachlich prüfen.
+2. Sichere Priority-2-Ergebnisse anschließend ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
 3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Erst nach abgeschlossener fachlicher Review sichere Exact-Mappings bzw. eng begrenzte Regeln produktseitig per PR integrieren.
-5. Nach Abschluss der Scribbr-Review Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+4. Nach Abschluss der Scribbr-Quelle Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Prüfprinzip
 

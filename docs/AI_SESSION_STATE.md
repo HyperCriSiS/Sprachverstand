@@ -6,12 +6,13 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `f02722b92155fd352d094836ed0fd11b3efc2045`
-- Abgeschlossene Lexikon-Ausbauwellen: **80**
+- Aktueller Produktbaseline-Commit: `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`
+- Abgeschlossene Lexikon-Ausbauwellen: **81**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
 - Welle 80 / PR #294: 14 geprüfte Wikipedia-Realnutzungs-Exaktmappings
+- Welle 81 / PR #298: 248 geprüfte Scribbr-Exaktmappings; 2 verworfen
 - Keine generische Personen-Suffixregel.
 
 Die 14 in Welle 80 integrierten Basen sind:
@@ -166,23 +167,26 @@ Letzte Surface-Nachmessung:
 ## Scribbr-Genderwörterbuch
 
 - Workflow Run #22 / Run-ID `37558921474` erfolgreich.
-- Produktcommit: `f02722b92155fd352d094836ed0fd11b3efc2045`
-- Privater Import-Commit: `e89b415`
-- 1.706 Detailseiten gelesen; 1.479 lexikalische Paarbasen.
-- 1.034 Basen bekannt, 445 unbekannt; Coverage **69,91 %**.
-- 672 Einträge benötigen laut Audit manuelle Prüfung, darunter 445 unbekannte Basen.
-- Priority-1-Review-Batch mit 250 Kandidaten angelegt: privater Commit `400b7d9d6410336da0f4f760836a31ffc4d35052`.
-- Review-Modus: `language_model_first`; automatische Freigabe ist deaktiviert.
-- 195 Unknowns bleiben für einen zweiten Batch offen.
-- Noch keine Produktwelle aus Scribbr freigegeben.
+- Audit-Baseline: Produktcommit `f02722b92155fd352d094836ed0fd11b3efc2045`.
+- Privater Import-Commit: `e89b415`.
+- 1.706 Detailseiten; 1.479 lexikalische Paarbasen.
+- Vor Review: 1.034 bekannt, 445 unbekannt; Coverage **69,91 %**.
+- Priority 1: 250 geprüft, **248 angenommen**, **2 verworfen**, **0 offen**.
+- Produktintegration: **Welle 81 / PR #298 / Merge `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`**.
+- `mieterinnenvere` bleibt als Nicht-Person verworfen.
+- `general` bleibt wegen der zwei korrekten Plurale `Generale` und `Generäle` bewusst unverändert.
+- `chilen` und `dompteur` wurden extern gegengeprüft und exakt freigegeben.
+- Keine generische Personen-Suffixregel.
+- Post-Merge-`main`-CI einschließlich Kernprüfung, Performance, Gecko, Chromium, Video und CodeQL: grün.
+- Für Priority 2 bleiben **195** noch nicht geprüfte Scribbr-Unknowns.
+
 
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Priority-1-Batch (250 Kandidaten) morphologisch und semantisch prüfen; keine automatische Freigabe.
-2. Danach die verbleibenden 195 Scribbr-Unknowns als Priority 2 aufbereiten und prüfen.
-3. GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Erst vollständig geprüfte sichere Ergebnisse per PR mit positiven und negativen Regressionen integrieren.
-5. Nach Abschluss der Scribbr-Review Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+1. Scribbr-Priority-2 mit den verbleibenden 195 Unknowns vollständig morphologisch und semantisch prüfen.
+2. Sichere Ergebnisse anschließend konservativ per PR integrieren.
+3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
+4. Nach Abschluss der Scribbr-Quelle Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 
