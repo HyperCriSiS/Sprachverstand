@@ -6,13 +6,14 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`
-- Abgeschlossene Lexikon-Ausbauwellen: **81**
+- Aktueller Produktbaseline-Commit: `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`
+- Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
 - Welle 80 / PR #294: 14 geprüfte Wikipedia-Realnutzungs-Exaktmappings
 - Welle 81 / PR #298: 248 geprüfte Scribbr-Exaktmappings; 2 verworfen
+- Welle 82 / PR #299: 195 geprüfte Scribbr-Priority-2-Mappings; 0 verworfen
 - Keine generische Personen-Suffixregel.
 
 Die 14 in Welle 80 integrierten Basen sind:
@@ -178,7 +179,10 @@ Letzte Surface-Nachmessung:
 - `chilen` und `dompteur` wurden extern gegengeprüft und exakt freigegeben.
 - Keine generische Personen-Suffixregel.
 - Post-Merge-`main`-CI einschließlich Kernprüfung, Performance, Gecko, Chromium, Video und CodeQL: grün.
-- Für Priority 2 bleiben **195** noch nicht geprüfte Scribbr-Unknowns.
+- Priority 2: **195 geprüft, 195 angenommen, 0 verworfen, 0 offen**.
+- Produktintegration: **Welle 82 / PR #299 / Merge `bc12e3aa7919920a47ae3a9b7ab9a9b53ec1a4a5`**.
+- Post-Wave-82-Nachmessung: 1.479 lexikalische Paarbasen, 1.477 bekannt, 2 bewusst verworfen, Coverage **99,86 %**.
+- Quellenimport Run `37673725483` erfolgreich; privater Import-Commit `ddc784c18065aa6fe45257f0c2b37e923444e5cd`.
 
 ## GitHub-Repository-Audit
 
@@ -197,12 +201,21 @@ Abgeschlossene Infrastruktur-Einheit vom 2026-10-07:
 
 Nächster GitHub-Infrastruktur-Schritt: Actions-Verwendungen gezielt auf unpinned Referenzen und zu breite Berechtigungen prüfen; danach Forks mit eigenen Regeln separat bewerten.
 
+## GENDERATOR
+
+- Öffentlicher Quellenimport via PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe` integriert.
+- Private Auditpipeline und Pager-Tests in `Generic-Datastore` vorhanden.
+- ASP.NET-WebForms-Pagination wird über Hidden-State und `__doPostBack` durchlaufen; Listeneinträge werden direkt aus den paginierten Buchstabenlisten gelesen.
+- Private Importtests sind im aktuellen Auditlauf grün.
+- Aktiver Vollaudit: Workflow-Run `37687074270`.
+- Frühere Läufe waren gezielte Diagnosezwischenstände für die Pagination und sind durch den aktuellen Collector-Fix überholt.
+
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Priority-2 mit den verbleibenden 195 Unknowns vollständig morphologisch und semantisch prüfen.
-2. Sichere Ergebnisse anschließend konservativ per PR integrieren.
-3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Nach Abschluss der Scribbr-Quelle Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+1. GENDERATOR-Vollaudit Run `37687074270` abschließen und Coverage/Unknown-Pool auswerten.
+2. GENDERATOR-Unknowns vollständig semantisch und morphologisch prüfen.
+3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren; keine generische Personen-Suffixregel.
+4. Danach Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 

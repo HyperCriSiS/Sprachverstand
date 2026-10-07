@@ -6,10 +6,10 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`
-- Abgeschlossene Lexikon-Ausbauwellen: **81**
-- Letzter integrierter Produkt-PR: **#298 — Scribbr-Priority-1 als Welle 81 integrieren**
-- Welle 81 enthält 248 vollständig geprüfte, ausschließlich exakte Personenmappings aus Scribbr-Priority-1; 2 Kandidaten wurden verworfen.
+- Aktueller integrierter Produktstand: `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`
+- Abgeschlossene Lexikon-Ausbauwellen: **82**
+- Letzter integrierter Lexikon-PR: **#299 — Scribbr-Priority-2 als Welle 82 integrieren**
+- Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
 ## Validierung von Welle 80
@@ -128,16 +128,27 @@ Der erste vollständige Audit ist abgeschlossen:
 - Verworfen: `mieterinnenvere` als Organisationsartefakt und `general` wegen konkurrierender korrekter Plurale `Generale` / `Generäle`
 - `chilen` und `dompteur` wurden wegen früherer Negativregressionen extern gegengeprüft und anschließend exakt freigegeben
 - Post-Merge-`main`-CI und CodeQL: vollständig grün
-- 195 noch nicht geprüfte Unknowns bleiben für Priority 2
+- Priority 2: **195 geprüft, 195 angenommen, 0 verworfen, 0 offen**
+- Produktintegration: **Welle 82 / PR #299 / Merge `bc12e3aa7919920a47ae3a9b7ab9a9b53ec1a4a5`**
+- Post-Wave-82-Nachmessung: **1.477 / 1.479 bekannt = 99,86 % Coverage**
+- Die zwei verbleibenden Unknowns sind die bereits bewusst verworfenen Fälle `general` und `mieterinnenvere`
 
 Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generische Personen-Suffixregel ergänzt.
 
+## GENDERATOR
+
+- Quellenimport-Unterstützung: PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`.
+- Private Collector-/Runner-Logik liegt in `Generic-Datastore`.
+- Paginiertes ASP.NET-WebForms-Wörterbuch wird über `__doPostBack` vollständig durchlaufen; Paarformen und interne Quellpfade werden aus den Listen gewonnen.
+- Private Parser-/Pager-Tests sind grün.
+- Aktiver Vollaudit: Workflow-Run `37687074270`.
+
 ## Nächste Arbeitseinheit
 
-1. Die verbleibenden 195 Scribbr-Unknowns als Priority 2 aufbereiten und vollständig fachlich prüfen.
-2. Sichere Priority-2-Ergebnisse anschließend ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
-3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Nach Abschluss der Scribbr-Quelle Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+1. GENDERATOR-Vollaudit Run `37687074270` abschließen und den Unknown-Pool bestimmen.
+2. Neue Kandidaten vollständig fachlich prüfen; externe Evidenz nur bei echten Grenzfällen.
+3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
+4. Anschließend Registry, privaten CURRENT-STATE und beide öffentlichen Checkpoints aktualisieren.
 
 ## Prüfprinzip
 
