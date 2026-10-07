@@ -12,6 +12,7 @@ on:
           - kldb-snapshot
           - kldb-current
           - wikipedia-real-usage
+          - scribbr-genderwoerterbuch
 
 permissions:
   contents: read
@@ -122,6 +123,12 @@ jobs:
         if: inputs.source == 'wikipedia-real-usage'
         run: |
           python datastore/sprachverstand/scripts/run_wikipedia_discovery.py \
+            --product-dir "$GITHUB_WORKSPACE"
+
+      - name: Scribbr-Genderwörterbuch entdecken und Coverage berechnen
+        if: inputs.source == 'scribbr-genderwoerterbuch'
+        run: |
+          python datastore/sprachverstand/scripts/run_scribbr_audit.py \
             --product-dir "$GITHUB_WORKSPACE"
 
       - name: Änderungen auf erlaubte private Pfade begrenzen
