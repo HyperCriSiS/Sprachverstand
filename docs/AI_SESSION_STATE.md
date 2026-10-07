@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`
+- Aktueller Produktbaseline-Commit: `f02722b92155fd352d094836ed0fd11b3efc2045`
 - Abgeschlossene Lexikon-Ausbauwellen: **80**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -163,13 +163,26 @@ Letzte Surface-Nachmessung:
 - Surface-Coverage: **91,07 %**
 - Kein neuer offensichtlicher Produktkandidat im verbleibenden 25er-Rest.
 
+## Scribbr-Genderwörterbuch
+
+- Workflow Run #22 / Run-ID `37558921474` erfolgreich.
+- Produktcommit: `f02722b92155fd352d094836ed0fd11b3efc2045`
+- Privater Import-Commit: `e89b415`
+- 1.706 Detailseiten gelesen; 1.479 lexikalische Paarbasen.
+- 1.034 Basen bekannt, 445 unbekannt; Coverage **69,91 %**.
+- 672 Einträge benötigen laut Audit manuelle Prüfung, darunter 445 unbekannte Basen.
+- Priority-1-Review-Batch mit 250 Kandidaten angelegt: privater Commit `400b7d9d6410336da0f4f760836a31ffc4d35052`.
+- Review-Modus: `language_model_first`; automatische Freigabe ist deaktiviert.
+- 195 Unknowns bleiben für einen zweiten Batch offen.
+- Noch keine Produktwelle aus Scribbr freigegeben.
+
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Genderwörterbuch (Registry-Priorität 6) gegen den aktuellen Produktstand auditieren.
-2. Nur neue, morphologisch und semantisch sichere Kandidaten in eine private Review-Queue übernehmen; keine automatische Freigabe.
-3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Sichere Ergebnisse anschließend per PR mit positiven und negativen Regressionen integrieren.
-5. Nach Abschluss Registry, privaten CURRENT-STATE und diesen Checkpoint aktualisieren.
+1. Scribbr-Priority-1-Batch (250 Kandidaten) morphologisch und semantisch prüfen; keine automatische Freigabe.
+2. Danach die verbleibenden 195 Scribbr-Unknowns als Priority 2 aufbereiten und prüfen.
+3. GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
+4. Erst vollständig geprüfte sichere Ergebnisse per PR mit positiven und negativen Regressionen integrieren.
+5. Nach Abschluss der Scribbr-Review Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 
