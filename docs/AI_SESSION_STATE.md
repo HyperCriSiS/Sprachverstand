@@ -180,6 +180,22 @@ Letzte Surface-Nachmessung:
 - Post-Merge-`main`-CI einschließlich Kernprüfung, Performance, Gecko, Chromium, Video und CodeQL: grün.
 - Für Priority 2 bleiben **195** noch nicht geprüfte Scribbr-Unknowns.
 
+## GitHub-Repository-Audit
+
+Abgeschlossene Infrastruktur-Einheit vom 2026-10-07:
+
+- `AI Scan for pull requests` ist auf den acht zuvor betroffenen öffentlichen Repositories deaktiviert und per API verifiziert: `Sprachverstand`, `pi-hole-client`, `ReAppzuku`, `GUI-Framework`, `requestcontrol-rules`, `Request-Control-Evo`, `OpenDeezer`, `Cookie-AutoDelete`.
+- Private Repositories liefern für diese konkrete AI-Scan-Konfiguration HTTP 404; dort ist die Funktion nicht aktivierbar.
+- Auf den sechs eigenen, nicht geforkten öffentlichen Repositories `Home-Assistant-Addons`, `Sprachverstand`, `GUI-Framework`, `requestcontrol-rules`, `Toolz` und `Bubble-Card-Modules` ist das aktive Ruleset `Default branch baseline` gesetzt.
+- Die Baseline schützt den Default-Branch vor Löschung und Force-Pushes, verlangt Pull Requests, fordert keine Reviews und erlaubt im Ruleset nur Squash-Merges. Es gibt keinen Bypass.
+- Repository-Defaults derselben sechs Repositories: Squash Merge an, Merge Commit aus, Rebase Merge aus, Branch nach Merge löschen, Update Branch an.
+- Dependabot Vulnerability Alerts und Dependabot Security Updates sind auf allen sechs aktiviert und verifiziert.
+- `Sprachverstand` und `GUI-Framework` behalten ihre vorhandenen zusätzlichen Pflichtchecks. Die neue Baseline schließt dort den persönlichen `always`-Bypass der älteren Rulesets für direkte Pushes praktisch aus.
+- Bei den bereits kontrollierten Actions-Einstellungen gilt `default_workflow_permissions=read` und Workflows dürfen keine PR-Freigaben erteilen.
+- Globale SHA-Pinning-Pflicht für Actions wurde noch nicht aktiviert. `Home-Assistant-Addons` verwendet bereits SHA-gepinnte `actions/checkout`-Referenzen; weitere Workflows werden gezielt geprüft, damit keine CI unbeabsichtigt bricht.
+- Forks sowie private Repositories wurden in dieser Einheit bewusst nicht pauschal verändert.
+
+Nächster GitHub-Infrastruktur-Schritt: Actions-Verwendungen gezielt auf unpinned Referenzen und zu breite Berechtigungen prüfen; danach Forks mit eigenen Regeln separat bewerten.
 
 ## Nächste Arbeitseinheit
 
