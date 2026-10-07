@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`
+- Aktueller Produktbaseline-Commit: `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`
 - Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -225,4 +225,4 @@ Nächster GitHub-Infrastruktur-Schritt: Actions-Verwendungen gezielt auf unpinne
 - Bei Quellenarbeit zusätzlich `HyperCriSiS/Generic-Datastore:sprachverstand/CURRENT-STATE.json` lesen.
 - Git-Checkpoints haben Vorrang vor alten Chats und früheren „als Nächstes“-Formulierungen.
 - Nach einer größeren abgeschlossenen Einheit diesen Checkpoint aktualisieren.
-- Reine Checkpoint-Dateien direkt auf `main` aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben PR-pflichtig.
+- Wegen des aktiven Default-Branch-Rulesets auch reine öffentliche Checkpoint-Dateien per PR aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben ebenfalls PR-pflichtig.

@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`
+- Aktueller integrierter Produktstand: `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`
 - Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Letzter integrierter Lexikon-PR: **#299 — Scribbr-Priority-2 als Welle 82 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
