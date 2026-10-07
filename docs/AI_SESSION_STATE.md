@@ -207,12 +207,13 @@ Nächster GitHub-Infrastruktur-Schritt: Actions-Verwendungen gezielt auf unpinne
 - Private Auditpipeline und Pager-Tests in `Generic-Datastore` vorhanden.
 - ASP.NET-WebForms-Pagination wird über Hidden-State und `__doPostBack` durchlaufen; Listeneinträge werden direkt aus den paginierten Buchstabenlisten gelesen.
 - Private Importtests sind im aktuellen Auditlauf grün.
-- Aktiver Vollaudit: Workflow-Run `37687074270`.
+- Aktiver Vollaudit: Workflow-Run `37689617319`.
 - Frühere Läufe waren gezielte Diagnosezwischenstände für die Pagination und sind durch den aktuellen Collector-Fix überholt.
+- PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`: Vor dem privaten Push wird `origin/main` gefetcht und der Import-Commit rebasiert; damit sind unabhängige Checkpoint-/Wartungscommits während langer Audits kein Non-Fast-Forward-Race mehr.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37687074270` abschließen und Coverage/Unknown-Pool auswerten.
+1. GENDERATOR-Vollaudit Run `37689617319` abschließen und Coverage/Unknown-Pool auswerten.
 2. GENDERATOR-Unknowns vollständig semantisch und morphologisch prüfen.
 3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren; keine generische Personen-Suffixregel.
 4. Danach Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.

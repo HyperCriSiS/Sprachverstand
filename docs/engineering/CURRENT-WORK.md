@@ -141,11 +141,12 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Private Collector-/Runner-Logik liegt in `Generic-Datastore`.
 - Paginiertes ASP.NET-WebForms-Wörterbuch wird über `__doPostBack` vollständig durchlaufen; Paarformen und interne Quellpfade werden aus den Listen gewonnen.
 - Private Parser-/Pager-Tests sind grün.
-- Aktiver Vollaudit: Workflow-Run `37687074270`.
+- Aktiver Vollaudit: Workflow-Run `37689617319`.
+- PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc` behebt den Race zwischen langem Audit und parallelen unabhängigen Datastore-Commits durch `fetch` + `rebase` direkt vor dem privaten Push.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37687074270` abschließen und den Unknown-Pool bestimmen.
+1. GENDERATOR-Vollaudit Run `37689617319` abschließen und den Unknown-Pool bestimmen.
 2. Neue Kandidaten vollständig fachlich prüfen; externe Evidenz nur bei echten Grenzfällen.
 3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
 4. Anschließend Registry, privaten CURRENT-STATE und beide öffentlichen Checkpoints aktualisieren.
