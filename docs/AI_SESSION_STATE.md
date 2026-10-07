@@ -6,13 +6,14 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `8f922fc6e3cba033b2797fedfea74914a3e1dfb5`
-- Abgeschlossene Lexikon-Ausbauwellen: **81**
+- Aktueller Produktbaseline-Commit: `7515eb7abcab9163cfa34d2032a00b718808c9b4`
+- Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
 - Welle 80 / PR #294: 14 geprüfte Wikipedia-Realnutzungs-Exaktmappings
 - Welle 81 / PR #298: 248 geprüfte Scribbr-Exaktmappings; 2 verworfen
+- Welle 82 / PR #299: 195 geprüfte Scribbr-Priority-2-Mappings; 0 verworfen
 - Keine generische Personen-Suffixregel.
 
 Die 14 in Welle 80 integrierten Basen sind:
@@ -178,15 +179,28 @@ Letzte Surface-Nachmessung:
 - `chilen` und `dompteur` wurden extern gegengeprüft und exakt freigegeben.
 - Keine generische Personen-Suffixregel.
 - Post-Merge-`main`-CI einschließlich Kernprüfung, Performance, Gecko, Chromium, Video und CodeQL: grün.
-- Für Priority 2 bleiben **195** noch nicht geprüfte Scribbr-Unknowns.
+- Priority 2: **195 geprüft, 195 angenommen, 0 verworfen, 0 offen**.
+- Produktintegration: **Welle 82 / PR #299 / Merge `bc12e3aa7919920a47ae3a9b7ab9a9b53ec1a4a5`**.
+- Post-Wave-82-Nachmessung: 1.479 lexikalische Paarbasen, 1.477 bekannt, 2 bewusst verworfen, Coverage **99,86 %**.
+- Quellenimport Run `37673725483` erfolgreich; privater Import-Commit `ddc784c18065aa6fe45257f0c2b37e923444e5cd`.
 
+## GENDERATOR
+
+- Öffentlicher Quellenimport via PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe` integriert.
+- Private Auditpipeline und Pager-Tests in `Generic-Datastore` vorhanden.
+- ASP.NET-WebForms-Pagination wird über Hidden-State und `__doPostBack` durchlaufen; Listeneinträge werden direkt aus den paginierten Buchstabenlisten gelesen.
+- Private Importtests sind im aktuellen Auditlauf grün.
+- Vollaudit Run `37689617319` technisch erfolgreich, aber **unvollständig**: 14 fehlgeschlagene Listenseiten (unter anderem B, K, P und S); 2.728 Einträge, 2.358 lexikalische Paarbasen und 441 Unknowns bei **vorläufig 81,30 % Coverage**.
+- Der private Collector akzeptiert Teilmessungen nach PR #66 (`Generic-Datastore`, Merge `b6abc28aa0a3912ab5ff2a5bef74a7bafff8b8ea`) nicht mehr als erfolgreichen Audit: fehlgeschlagene Buchstaben werden vollständig erneut gelesen; wiederholte Pagerseiten sowie bleibende Ausfälle führen zum Abbruch.
+- Neuer Vollaudit: Workflow-Run `37700259912` gestartet; Gesamtergebnis noch offen. Die privaten Importtests sind im neuen Runnerlauf grün.
+- PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`: Vor dem privaten Push wird `origin/main` gefetcht und der Import-Commit rebasiert; damit sind unabhängige Checkpoint-/Wartungscommits während langer Audits kein Non-Fast-Forward-Race mehr.
 
 ## Nächste Arbeitseinheit
 
-1. Scribbr-Priority-2 mit den verbleibenden 195 Unknowns vollständig morphologisch und semantisch prüfen.
-2. Sichere Ergebnisse anschließend konservativ per PR integrieren.
-3. Danach GENDERATOR als zweite offene Priorität-6-Quelle auditieren.
-4. Nach Abschluss der Scribbr-Quelle Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+1. GENDERATOR-Vollaudit Run `37700259912` auf `failedPages = 0` prüfen; erst danach Coverage und den vollständigen Unknown-Pool auswerten.
+2. GENDERATOR-Unknowns vollständig semantisch und morphologisch prüfen.
+3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren; keine generische Personen-Suffixregel.
+4. Danach Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
 
 ## Verbindliche Wiederaufnahme-Regel
 
@@ -195,4 +209,4 @@ Letzte Surface-Nachmessung:
 - Bei Quellenarbeit zusätzlich `HyperCriSiS/Generic-Datastore:sprachverstand/CURRENT-STATE.json` lesen.
 - Git-Checkpoints haben Vorrang vor alten Chats und früheren „als Nächstes“-Formulierungen.
 - Nach einer größeren abgeschlossenen Einheit diesen Checkpoint aktualisieren.
-- Reine Checkpoint-Dateien direkt auf `main` aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben PR-pflichtig.
+- Wegen des aktiven Default-Branch-Rulesets auch reine öffentliche Checkpoint-Dateien per PR aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben ebenfalls PR-pflichtig.
