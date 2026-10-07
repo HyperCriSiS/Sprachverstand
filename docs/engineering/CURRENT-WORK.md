@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`
+- Aktueller integrierter Produktstand: `7515eb7abcab9163cfa34d2032a00b718808c9b4`
 - Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Letzter integrierter Lexikon-PR: **#299 — Scribbr-Priority-2 als Welle 82 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -139,14 +139,15 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 
 - Quellenimport-Unterstützung: PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`.
 - Private Collector-/Runner-Logik liegt in `Generic-Datastore`.
-- Paginiertes ASP.NET-WebForms-Wörterbuch wird über `__doPostBack` vollständig durchlaufen; Paarformen und interne Quellpfade werden aus den Listen gewonnen.
-- Private Parser-/Pager-Tests sind grün.
-- Aktiver Vollaudit: Workflow-Run `37689617319`.
+- ASP.NET-WebForms-Pagination erfolgt über `__doPostBack`; Paarformen und interne Quellpfade werden aus den paginierten Buchstabenlisten gewonnen.
+- Run `37689617319` war technisch grün, aber fachlich unvollständig: 14 fehlgeschlagene Seiten, 2.728 Einträge, 2.358 lexikalische Paarbasen, 441 Unknowns, vorläufig 81,30 % Coverage.
+- Privater Collector-Fix: `Generic-Datastore` PR #66 / Merge `b6abc28aa0a3912ab5ff2a5bef74a7bafff8b8ea`. Vollständiger Neuabruf fehlgeschlagener Buchstaben, Erkennung wiederholter Pagerseiten und harter Abbruch bei Restfehlern; drei neue Regressionstests.
+- Neuer Vollaudit Run `37700259912` aktiv; private Importtests im Runner grün. Fachliche Kandidatenprüfung erst bei `failedPages = 0`.
 - PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc` behebt den Race zwischen langem Audit und parallelen unabhängigen Datastore-Commits durch `fetch` + `rebase` direkt vor dem privaten Push.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37689617319` abschließen und den Unknown-Pool bestimmen.
+1. GENDERATOR-Vollaudit Run `37700259912` auf vollständige 26 Buchstabenlisten und `failedPages = 0` prüfen; danach den vollständigen Unknown-Pool bestimmen.
 2. Neue Kandidaten vollständig fachlich prüfen; externe Evidenz nur bei echten Grenzfällen.
 3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
 4. Anschließend Registry, privaten CURRENT-STATE und beide öffentlichen Checkpoints aktualisieren.

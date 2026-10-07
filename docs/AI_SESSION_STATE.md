@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`
+- Aktueller Produktbaseline-Commit: `7515eb7abcab9163cfa34d2032a00b718808c9b4`
 - Abgeschlossene Lexikon-Ausbauwellen: **82**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -190,13 +190,14 @@ Letzte Surface-Nachmessung:
 - Private Auditpipeline und Pager-Tests in `Generic-Datastore` vorhanden.
 - ASP.NET-WebForms-Pagination wird über Hidden-State und `__doPostBack` durchlaufen; Listeneinträge werden direkt aus den paginierten Buchstabenlisten gelesen.
 - Private Importtests sind im aktuellen Auditlauf grün.
-- Aktiver Vollaudit: Workflow-Run `37689617319`.
-- Frühere Läufe waren gezielte Diagnosezwischenstände für die Pagination und sind durch den aktuellen Collector-Fix überholt.
+- Vollaudit Run `37689617319` technisch erfolgreich, aber **unvollständig**: 14 fehlgeschlagene Listenseiten (unter anderem B, K, P und S); 2.728 Einträge, 2.358 lexikalische Paarbasen und 441 Unknowns bei **vorläufig 81,30 % Coverage**.
+- Der private Collector akzeptiert Teilmessungen nach PR #66 (`Generic-Datastore`, Merge `b6abc28aa0a3912ab5ff2a5bef74a7bafff8b8ea`) nicht mehr als erfolgreichen Audit: fehlgeschlagene Buchstaben werden vollständig erneut gelesen; wiederholte Pagerseiten sowie bleibende Ausfälle führen zum Abbruch.
+- Neuer Vollaudit: Workflow-Run `37700259912` gestartet; Gesamtergebnis noch offen. Die privaten Importtests sind im neuen Runnerlauf grün.
 - PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`: Vor dem privaten Push wird `origin/main` gefetcht und der Import-Commit rebasiert; damit sind unabhängige Checkpoint-/Wartungscommits während langer Audits kein Non-Fast-Forward-Race mehr.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37689617319` abschließen und Coverage/Unknown-Pool auswerten.
+1. GENDERATOR-Vollaudit Run `37700259912` auf `failedPages = 0` prüfen; erst danach Coverage und den vollständigen Unknown-Pool auswerten.
 2. GENDERATOR-Unknowns vollständig semantisch und morphologisch prüfen.
 3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren; keine generische Personen-Suffixregel.
 4. Danach Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
