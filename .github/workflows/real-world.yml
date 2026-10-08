@@ -103,17 +103,9 @@ jobs:
             const rejections = Array.isArray(extension.snapshot?.unhandledRejections)
               ? extension.snapshot.unhandledRejections.length
               : 0;
-            const protectedBefore = extension.protectedBefore || {};
-            const protectedAfter = extension.protectedAfter || {};
-            const protectedKeys = new Set([
-              ...Object.keys(protectedBefore),
-              ...Object.keys(protectedAfter)
-            ]);
-            const changedProtected = [...protectedKeys].filter(
-              (key) =>
-                JSON.stringify(protectedBefore[key]) !==
-                JSON.stringify(protectedAfter[key])
-            );
+            const protectedBaselineChanged = comparison.protectedBaselineChanged || [];
+            const protectedExtensionChanged = comparison.protectedExtensionChanged || [];
+            const protectedOnlyExtensionChanged = comparison.protectedOnlyExtensionChanged || [];
             const elapsedDelta = Number.isFinite(comparison.elapsedDeltaMs)
               ? `${Math.round(comparison.elapsedDeltaMs)} ms`
               : "–";
@@ -134,11 +126,9 @@ jobs:
               ? String(comparison.videoDroppedFrameDelta)
               : "–";
             const protectedLabel =
-              extension.status !== "ok"
+              baseline.status !== "ok" || extension.status !== "ok"
                 ? "nicht messbar"
-                : changedProtected.length === 0
-                  ? "stabil"
-                  : `geändert: ${changedProtected.join(", ")}`;
+                : `Basis: ${protectedBaselineChanged.join(",") || "-"}; Erweiterung: ${protectedExtensionChanged.join(",") || "-"}; nur Erweiterung: ${protectedOnlyExtensionChanged.join(",") || "-"}`;
 
             console.log(
               [
@@ -156,6 +146,9 @@ jobs:
                 `remainingPatterns=${patterns ?? "n/a"}`,
                 `javascriptErrors=${javascriptErrors}`,
                 `unhandledRejections=${rejections}`,
+                `protectedBaselineChanged=${protectedBaselineChanged.join(",") || "none"}`,
+                `protectedExtensionChanged=${protectedExtensionChanged.join(",") || "none"}`,
+                `protectedOnlyExtensionChanged=${protectedOnlyExtensionChanged.join(",") || "none"}`,
                 `protected=${protectedLabel}`
               ].join(" ")
             );
