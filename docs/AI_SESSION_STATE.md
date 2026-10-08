@@ -275,12 +275,22 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - KorAP-Releasenotizen waren der Anlass; **keine** selbst erhobenen Korpusbelege. Private Evidenznotiz `sprachverstand/derived/review/korap-2026-ii-marker-compatibility-review.json` im Generic-Datastore.
 - ESCO 1.2.1 benötigt für ein echtes deutsches Labeldelta weiterhin den autorisierten Download; Pale Moon bleibt bis nach den modernen Releases zurückgestellt.
 
+## Unabhängige Real-Web-/Kontext-Gegenprobe – PR #328 und #329
+
+- PR #328 / Merge `01801d9cc6469bae3143b2c1f556249f4d2dc00d`: kurze veröffentlichte Duden-/Wörterbuch-Beispiele zu Schrägstrich- und Klammer-Pluralformen mit Singular-, Paar- und Soft-Hyphen-Negativgrenzen. Kernprüfung, Performance, Gecko, Chromium/Video und CodeQL im PR und danach auf `main` grün.
+- PR #329 / Merge `a71d5b41a2f547998c4f0479145b8751c3d430eb`: fünf Positiv- und sechs Negativregressionen aus einer **gezielten, unabhängigen Real-Web-Stichprobe** auf Schul-, Verlags-, Veranstaltungs- und Navigationsseiten. Gesamte PR-CI einschließlich Chromium/Video, Gecko, Performance und CodeQL grün; Post-Merge-`main`-CI getrennt verifizieren.
+- **Kein neues Lexikonmapping und keine Produktlogikänderung.** Der Bestand bleibt bei 88 freigegebenen Lexikon-Ausbauwellen.
+- Private Herkunfts- und Grenzfalldokumentation in `HyperCriSiS/Generic-Datastore`, PR #78 / Merge `d4e1a0e4711d4edc751870d04ba19edc27fdb590`: `sprachverstand/derived/review/real-web-shortforms-20261008.json` und `context-dictionary-boundaries-20261008.json`. Keine Quell-URLs oder Rohtexte im öffentlichen Produkt.
+- Genderleicht-Kontextfälle sowie die kuratierte Greifswald-Glossarauswahl (57 überprüfte Einträge, 52 reguläre bereits bekannte Basen und 5 einzeln begründete Sonderfälle) ergeben **keine neue automatisch sichere Regel**. Zwei konkrete Duden-Grenzfälle gesondert geprüft; unklarer Bindestrich-Kompositakontext bleibt bewusst zurückgestellt.
+- **Methodische Grenze:** Reale Web-Verwendungen sind keine repräsentative DeReKo-/KorAP-Korpusabfrage. Keine authentifizierten KorAP-KWIC-Primärbelege, keine belastbare Häufigkeitsaussage und kein Nachweis für seltene Unicode-Schrägstriche aus dieser kleinen Stichprobe. KorAP-Zugriff für echte KWIC-Texte und ESCO-v1.2.1-CSV bleiben externe Zugangsfragen. GENDERATOR-Vollaudit bleibt ausgeschlossen.
+- Reihenfolge unverändert: Quellen begrenzt abschließen bzw. Zugangsblocker explizit dokumentieren, danach moderne Browser-Releases, Pale Moon zuletzt.
+
 ## Nächste Arbeitseinheit
 
-1. Begrenzte echte Real-Web-/KorAP-Stichprobe zu Unicode-Markern, Negativfällen und Kontextvarianten prüfen und konkrete Ergebnisse dokumentieren.
-2. Noch offene Genderleicht-/DWDS-/Duden-Sonderfälle anhand belegter Problemfälle abschließen, GENDERATOR nicht erneut vollständig bearbeiten.
-3. ESCO 1.2.1 deutsches Label-Delta nur nach tatsächlichem CSV-Zugang auswerten; Blocker bei fehlendem Download korrekt offen lassen.
-4. Nach definiertem Quellenschluss die vorgesehenen modernen Browser-Releases finalisieren; **Pale Moon zuletzt**.
+1. Post-Merge-`main`-CI und CodeQL für PR #329 prüfen und den Quellencheckpoint finalisieren. Die neue Real-Web-Probe deckt die öffentlich zugänglichen Oberflächenfälle ab, nicht die weiterhin zugangsbeschränkte KorAP-KWIC-Gegenprobe.
+2. ESCO-v1.2.1-Labeldelta ohne autorisierten CSV-Download nicht als geprüft markieren. KorAP-KWIC ohne authentifizierte Textbelege als extern offen belassen. Weitere Genderleicht-/Greifswald-/Duden-Arbeit nur bei konkretem neuen Kandidaten; kein neues Vollscraping.
+3. Freigabeblockaden, Artefakte, Versions-/Store-Metadaten, Browser-/Video-/Untertiteltests und Store-`validate` der modernen Chrome/Chromium- und Firefox-Linie gezielt prüfen; Edge/Opera nur soweit der Veröffentlichungsweg vorbereitet ist. Kein Store-`submit` ohne explizite Freigabe.
+4. Pale Moon einschließlich des bekannten Paritätsproblems erst nach den modernen Releases bearbeiten. PR #311 bleibt geschlossen.
 
 ## Verbindliche Wiederaufnahme-Regel
 
