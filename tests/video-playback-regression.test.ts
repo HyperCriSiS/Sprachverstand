@@ -41,6 +41,18 @@ describe("Video-Playback-Regression", () => {
     expect(runner).not.toContain("measureVideoPair(fixture.url, 3)");
   });
 
+  it("testet im realen Chromium-Browser Videountertitel bei Aus/An/Aus", () => {
+    expect(runner).toContain('url.pathname === "/subtitle-video.html"');
+    expect(runner).toContain('class="ytp-caption-segment"');
+    expect(runner).toContain('window.__videoTimeUpdates += 1;');
+    expect(runner).toContain('document.querySelector("#process-subtitles")');
+    expect(runner).toContain("await setSubtitleCheckbox(id, true)");
+    expect(runner).toContain("await setSubtitleCheckbox(id, false)");
+    expect(runner).toContain("await waitSubtitle(id, true)");
+    expect(runner).toContain("await waitSubtitle(id, false)");
+    expect(runner).toContain("validateSubtitleToggle(fixture.subtitleUrl)");
+  });
+
   it("hält ein echtes eingebettetes WebM-Testvideo vor", () => {
     expect(videoFixture.length).toBeGreaterThan(1_500);
     expect(Buffer.from(videoFixture, "base64").subarray(0, 4).toString("hex")).toBe(

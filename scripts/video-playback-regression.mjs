@@ -181,8 +181,36 @@ function fixtureHtml() {
 </html>`;
 }
 
+function subtitleFixtureHtml() {
+  return `<!doctype html>
+<html lang="de"><meta charset="utf-8">
+<title>Untertitel mit Videowiedergabe</title>
+<p id="static-target">Nutzer:innen</p>
+<video id="video" muted autoplay loop playsinline preload="auto" src="/video.webm"></video>
+<div class="ytp-caption-window-container" aria-label="Untertitel">
+  <span id="subtitle-target" class="ytp-caption-segment">Nutzer:innen im Untertitel 0</span>
+</div>
+<script>
+(() => {
+  const video = document.querySelector("#video");
+  const subtitle = document.querySelector("#subtitle-target");
+  window.__subtitleTicks = 0;
+  window.__videoTimeUpdates = 0;
+  video.addEventListener("timeupdate", () => {
+    window.__videoTimeUpdates += 1;
+    if (window.__videoTimeUpdates % 2 === 0) {
+      window.__subtitleTicks += 1;
+      subtitle.textContent = "Nutzer:innen im Untertitel " + window.__subtitleTicks;
+    }
+  });
+  video.play().catch(error => { window.__subtitlePlaybackError = String(error); });
+})();
+</script>`;
+}
+
 function startServer() {
   const html = Buffer.from(fixtureHtml(), "utf8");
+  const subtitles = Buffer.from(subtitleFixtureHtml(), "utf8");
   const video = Buffer.from(readFileSync(videoPath, "utf8").trim(), "base64");
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -192,6 +220,11 @@ function startServer() {
         "cache-control": "no-store"
       });
       res.end(html);
+      return;
+    }
+    if (url.pathname === "/subtitle-video.html") {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end(subtitles);
       return;
     }
     if (url.pathname === "/video.webm") {
@@ -217,7 +250,8 @@ function startServer() {
       }
       resolve({
         server,
-        url: `http://127.0.0.1:${address.port}/video-playback.html`
+        url: `http://127.0.0.1:${address.port}/video-playback.html`,
+        subtitleUrl: `http://127.0.0.1:${address.port}/subtitle-video.html`
       });
     });
   });
@@ -458,6 +492,132 @@ async function measureVideoPair(url, attempt) {
   return { baseline, extension };
 }
 
+async function subtitleState(id) {
+  return execute(id, `
+    const video = document.querySelector("#video");
+    return {
+      normal: document.querySelector("#static-target")?.textContent,
+      subtitle: document.querySelector("#subtitle-target")?.textContent,
+      timeUpdates: window.__videoTimeUpdates ?? 0,
+      ticks: window.__subtitleTicks ?? 0,
+      ready: video?.readyState ?? 0,
+      paused: video?.paused ?? true,
+      error: window.__subtitlePlaybackError ?? null
+    };
+  `);
+}
+
+async function waitSubtitle(id, corrected) {
+  const deadline = Date.now() + 8_000;
+  let state;
+  while (Date.now() < deadline) {
+    state = await subtitleState(id);
+    const expected = corrected
+      ? /^Nutzer im Untertitel \d+$/u
+      : /^Nutzer:innen im Untertitel \d+$/u;
+    if (state.normal === "Nutzer" && expected.test(state.subtitle ?? "") &&
+        state.ready >= 2 && !state.paused && state.ticks >= 1) {
+      return state;
+    }
+    await sleep(100);
+  }
+  throw new Error(`Untertitelzustand ${corrected} nicht erreicht: ${JSON.stringify(state)}`);
+}
+
+async function extensionId(id) {
+  const result = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+    cmd: "Target.getTargets",
+    params: {}
+  })).value;
+  const urls = (result?.targetInfos ?? []).map(target => target.url);
+  const origin = urls.find(url => /^chrome-extension:\/\/[a-p]{32}\/background\.js/u.test(url));
+  if (!origin) {
+    throw new Error(`Erweiterungs-Serviceworker nicht gefunden: ${JSON.stringify(urls)}`);
+  }
+  return origin.split("/")[2];
+}
+
+async function setSubtitleCheckbox(id, enabled) {
+  const switched = await execute(id, `
+    const input = document.querySelector("#process-subtitles");
+    const save = document.querySelector("#save-settings");
+    if (!input || !save) return false;
+    if (input.checked !== ${enabled}) input.click();
+    save.click();
+    return input.checked === ${enabled};
+  `);
+  if (!switched) throw new Error("Untertitel-Schalter konnte nicht bedient werden.");
+
+  const deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    const saved = (await request("POST", `/session/${id}/execute/async`, {
+      script: `
+        const done = arguments[arguments.length - 1];
+        chrome.storage.local.get("settings").then(
+          result => done(result.settings?.processSubtitles),
+          error => done(String(error))
+        );
+      `,
+      args: []
+    })).value;
+    if (saved === enabled) return;
+    await sleep(100);
+  }
+  throw new Error(`Untertitel-Einstellung ${enabled} nicht gespeichert.`);
+}
+
+async function validateSubtitleToggle(url) {
+  const id = await createSession(true);
+  try {
+    const extension = await extensionId(id);
+    await request("POST", `/session/${id}/url`, { url });
+    const off = await waitSubtitle(id, false);
+    const videoWindow = (await request("GET", `/session/${id}/window`)).value;
+
+    const optionsWindow = (await request("POST", `/session/${id}/window/new`, {
+      type: "tab"
+    })).value.handle;
+    if (!optionsWindow) throw new Error("Einstellungsfenster fehlt.");
+    await request("POST", `/session/${id}/url`, {
+      url: `chrome-extension://${extension}/options/options.html`
+    });
+    const deadline = Date.now() + 8_000;
+    while (Date.now() < deadline) {
+      if (await execute(id, 'return document.querySelector("#enabled")?.checked === true;')) break;
+      await sleep(100);
+    }
+    if (!await execute(id, 'return document.querySelector("#enabled")?.checked === true;')) {
+      throw new Error("Optionsseite nicht initialisiert.");
+    }
+    if (await execute(id, 'return document.querySelector("#process-subtitles")?.checked;')) {
+      throw new Error("Untertitel sind nicht standardmäßig ausgeschaltet.");
+    }
+    await setSubtitleCheckbox(id, true);
+    await request("POST", `/session/${id}/window`, { handle: videoWindow });
+    const on = await waitSubtitle(id, true);
+    if (on.timeUpdates <= off.timeUpdates) {
+      throw new Error("Video wurde beim Einschalten unterbrochen.");
+    }
+
+    await request("POST", `/session/${id}/window`, { handle: optionsWindow });
+    await setSubtitleCheckbox(id, false);
+    await request("POST", `/session/${id}/window`, { handle: videoWindow });
+    const againOff = await waitSubtitle(id, false);
+    if (againOff.timeUpdates <= on.timeUpdates || againOff.ticks <= on.ticks) {
+      throw new Error("Video oder Untertitel wurden beim Ausschalten unterbrochen.");
+    }
+    console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
+      off, on, againOff
+    })}`);
+  } finally {
+    try {
+      await request("DELETE", `/session/${id}`);
+    } catch (error) {
+      console.error(String(error));
+    }
+  }
+}
+
 async function stopDriver(handle) {
   if (handle.exitCode !== null) {
     return;
@@ -524,6 +684,8 @@ try {
       }
     })}`
   );
+
+  await validateSubtitleToggle(fixture.subtitleUrl);
 } finally {
   if (server) {
     await new Promise((resolve, reject) =>
