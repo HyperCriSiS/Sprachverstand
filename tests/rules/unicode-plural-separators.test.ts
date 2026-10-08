@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mappedPluralSeparatorsRule } from "../../src/rules/mapped-plural-separators";
+import { knownPluralSeparatorsRule } from "../../src/rules/known-plural-separators";
 
 // Explizite Regressionen real vorkommender Unicode- und Marker-Schreibweisen.
 // Ein Treffer ist weiterhin nur mit bereits validierter Lexikonbasis zulässig.
@@ -29,6 +30,17 @@ describe("Unicode-Marker in bekannten Personenpluralen", () => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
       replacements: 1
+    });
+  });
+
+  it("behandelt bekannte zusammengesetzte Endungen über die eigene Suffixregel", () => {
+    expect(knownPluralSeparatorsRule.apply("Online-Nutzer∕innenkonto")).toEqual({
+      text: "Online-Nutzerkonto",
+      replacements: 1
+    });
+    expect(knownPluralSeparatorsRule.apply("Robot∕innenkonto")).toEqual({
+      text: "Robot∕innenkonto",
+      replacements: 0
     });
   });
 
