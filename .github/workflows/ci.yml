@@ -24,28 +24,6 @@ jobs:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Gemeinsame Produktfunktionen bei aktivem Paritätsadapter mit main abgleichen
-        shell: bash
-        run: |
-          set -euo pipefail
-          if test -s legacy/palemoon/palemoon/parity-api.js; then
-            git fetch --depth=1 origin main
-            git diff --exit-code origin/main -- \
-              src/core \
-              src/i18n.ts \
-              src/options.ts \
-              src/popup.ts \
-              src/rules \
-              src/settings \
-              static/_locales \
-              static/i18n-bootstrap.js \
-              static/legal \
-              static/options \
-              static/popup
-          else
-            echo "Legacy-Stand ohne Paritätsadapter: Main-Abgleich wird erst mit dem Paritätsport aktiviert."
-          fi
-
       - name: Node.js einrichten und npm-Cache laden
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -188,6 +166,28 @@ jobs:
 
       - name: Firefox Desktop und Android linten
         run: npm run lint:firefox
+
+      - name: Gemeinsame Produktfunktionen nach den Laufzeittests mit main abgleichen
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -s legacy/palemoon/palemoon/parity-api.js; then
+            git fetch --depth=1 origin main
+            git diff --quiet origin/main -- \
+              src/core \
+              src/i18n.ts \
+              src/options.ts \
+              src/popup.ts \
+              src/rules \
+              src/settings \
+              static/_locales \
+              static/i18n-bootstrap.js \
+              static/legal \
+              static/options \
+              static/popup
+          else
+            echo "Legacy-Stand ohne Paritätsadapter: Main-Abgleich wird erst mit dem Paritätsport aktiviert."
+          fi
 
       - name: Release-Pakete erstellen und prüfen
         shell: bash
