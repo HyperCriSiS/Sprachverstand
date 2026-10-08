@@ -11,7 +11,7 @@ describe("Manuelle Vorabprüfung moderner Releases", () => {
     expect(workflow).not.toMatch(/^\s*schedule:/mu);
     expect(workflow).toContain("contents: read");
     expect(workflow).not.toContain("contents: write");
-    expect(workflow).toContain("ref: main");
+    expect(workflow).toContain("ref: ${{ github.sha }}");
     expect(workflow).toContain("refs/heads/main");
   });
 
