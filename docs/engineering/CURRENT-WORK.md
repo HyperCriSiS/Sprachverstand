@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `4065ee2312d09428ce4e7a3692b4f51b98cb6f39`
+- Aktueller integrierter Produktstand: `6afbbd850b099900bb24edc1207958011c44446b`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Letzter integrierter Lexikon-PR: **#305 — 142 geprüfte Personenformen als Welle 83 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -152,6 +152,14 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - PR #307 / Merge `4065ee2312d09428ce4e7a3692b4f51b98cb6f39` bestätigt ausschließlich eine Unterschreitung des vorhandenen 80-%-Grenzwerts durch **eine** zusätzliche vollständige Baseline-/Erweiterungsmessung. Andere Fehlschläge bleiben sofortige Fehlschläge. Video-Schranken wurden nicht gelockert.
 - PR #307: Kernprüfung, Performance, Gecko, Chromium inklusive Video, CodeQL und Sammelcheck vollständig grün.
 - Post-Merge-`main`-CI **vollständig grün**: Run `37786658417` (Kernprüfung, Performance, Gecko, Chromium samt Videotest und Sammelcheck); CodeQL-Run `37786658368` erfolgreich.
+
+## Untertitel-Videointegrationstest
+
+- PR #309 / Merge `6afbbd850b099900bb24edc1207958011c44446b`: Chromium-Regression mit echtem, lokalem WebM-Video und zeitgebunden wechselnden DOM-Untertitel-Overlays (YouTube-ähnliche DOM-Captions).
+- Echter Schalter in der Optionsseite: **Aus → An → Aus**, jeweils während derselbe Videotab weiterspielt; Standardtext wird unabhängig weiter korrigiert. Untertitel bleiben bei Aus original, werden bei An korrigiert und bei erneutem Aus wiederhergestellt.
+- In der PR-CI erfolgreich: Kernprüfung, Performance, realer Chromium-Test mit Videowiedergabe, Gecko-Smoke, CodeQL und Sammelcheck (Run `37790232285`).
+- Dies deckt **keine** systemeigenen, browserintern gerenderten WebVTT-Untertitel und noch keine Live-Streamingportale ab. Die tatsächliche DOM-Overlay-Integration wird geprüft.
+- Post-Merge-`main`-CI ist separat zu prüfen.
 
 ## Nächste Arbeitseinheit
 
