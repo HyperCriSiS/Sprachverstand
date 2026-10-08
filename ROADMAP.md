@@ -13,7 +13,31 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 - [ ] Weitere priorisierte Berufs-, Lexikon-, Flexions- und Realtext-Evidenz systematisch gegen den aktuellen Produktstand auswerten.
 - [ ] Kandidaten nur nach morphologischer, semantischer und kontextueller Absicherung produktiv übernehmen; mehrdeutige Fälle zurückhalten oder kontextgebunden modellieren.
 - [ ] Quellen-/Evidenzarbeit so fortführen, dass private Rohdaten, URLs und Herkunftsmetadaten nicht in das öffentliche Produktrepository gelangen.
-- [ ] Nach stabilen `main`-Checkpoints gemeinsame Produktänderungen in einem getrennten Schritt in den Pale-Moon-Port synchronisieren.
+- [ ] **Erst nach Quellenabschluss und den Releases aller vorgesehenen modernen Browser** den eigenständigen Pale-Moon-Port auf den dann aktuellen Produktstand synchronisieren.
+
+### Verbindliche Reihenfolge der verbleibenden Arbeiten
+
+**Phase 1 – Quellen vor Releases** (endlicher, nachvollziehbarer Quellenabschluss):
+
+- [x] Quellenregister für BA-KldB-2026 und DKZ-Current anhand der nachweislich erfolgreichen Importe und aller 22 Reviewblöcke korrigiert; der gemeinsame unbekannte Kandidatenpool ist vollständig entschieden.
+- [ ] ESCO v1.2.1 als Delta-/Vollständigkeitsprüfung gegenüber dem bereits importierten und geprüften v1.2.0-API-Bestand bearbeiten.
+- [ ] Hunspell DE quellen-, lizenz- und qualitätsgeprüft gegen das bestehende Lexikon abgleichen.
+- [ ] IDS ReCKS und IDS KoRaP/Gender-Foundry auf tatsächliche Verfügbarkeit und relevante neue Realtext-/Annotierungsfälle prüfen; nur belastbare Daten übernehmen.
+- [ ] Noch nicht abgeschlossene Kontext-/Glossar- und Wörterbuchfälle gezielt prüfen, insbesondere Genderleicht, Greifswald sowie DWDS/Duden **nur bei konkretem Klärungsbedarf**.
+- [ ] Vor den Releases eine begrenzte Real-Web-/Flexions-/Negativregression mit nachvollziehbarer Ergebnisdokumentation durchführen.
+- [ ] Alle daraus entstandenen sicheren Kandidaten nach unabhängiger lexikalischer Prüfung in `main` integrieren und Quellen einzeln mit Ergebnis/Verzicht als abgearbeitet kennzeichnen.
+
+**Sonderfälle:** GENDERATOR ist nach der früheren ausdrücklichen Entscheidung **nicht** erneut vollständig zu scrapen. Die 142 freigegebenen Basen sind integriert, 449 weitere Kandidaten bleiben bewusst ungeprüft zurückgestellt. Laufende Real-Web-Messungen und manuelle Nachschlagequellen brauchen einen definierten Release-Stichtag und blockieren nicht unbegrenzt.
+
+**Phase 2 – Moderne Browser-Releases**:
+
+- [ ] Chromium/Chrome, Firefox und die weiteren vorgesehenen modernen Browserziele (Edge, Opera, soweit Releasekanäle vorbereitet sind) mit finalem Quellenschluss, CI, Browser-, Video- und Untertitelregression prüfen.
+- [ ] Versions-/Paket-/Store-Metadaten sowie die geplanten Store-Freigaben und Veröffentlichungen abschließen bzw. deren externe Freigabe dokumentieren.
+
+**Phase 3 – Pale Moon ausdrücklich zuletzt**:
+
+- [ ] Erst nach Phase 2 das Legacy-Portierungsdelta neu bestimmen, den bestehenden Paritätskonflikt sauber lösen, Goanna-/Pale-Moon-Build und Runtime prüfen und einen neuen, aktuell basierten PR erstellen.
+- [x] Den vorzeitig eröffneten Pale-Moon-PR #311 ohne Merge schließen und seinen Feature-Branch als Referenz erhalten; `palemoon` selbst bleibt unangetastet.
 
 Der detaillierte nicht öffentliche Quellen- und Abarbeitungsstand wird nur bei Aufgaben geladen, die Quellenimport, Audit, Provenienz/Lizenz, Kandidatengenerierung oder Coverage/Evidenz betreffen. Die sichere Wiederaufnahme- und Lookup-Regel steht in `docs/engineering/CURRENT-WORK.md`.
 

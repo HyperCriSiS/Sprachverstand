@@ -161,19 +161,25 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Dies deckt **keine** systemeigenen, browserintern gerenderten WebVTT-Untertitel und noch keine Live-Streamingportale ab. Die tatsächliche DOM-Overlay-Integration wird geprüft.
 - Post-Merge-`main`-CI vollständig grün: Run `37790612790` einschließlich Kernprüfung, Performance, Firefox, Chromium mit Videountertiteln und Sammelcheck; CodeQL-Lauf `37790611441` erfolgreich.
 
-## Pale-Moon-Portierung – PR #311 noch blockiert
+## Verbindliche Priorisierung: Quellen → moderne Releases → Pale Moon
 
-- Der dauerhafte, geschützte `palemoon`-Branch basiert beim Portierungsstart auf `b3e530d8b063db25de979c67bcfcd2b2dffd7d31`; Produktversion dort weiterhin `0.7.0`.
-- **PR #311** (`sync/palemoon-lexikon-welle-83-20261008`, Basis `palemoon`): 142 geprüfte Exaktmappings aus Welle 83, vollständige Positiv-/Negativ-, Plural-, Singular- und Kasusregressionen. Nur diese Welle portiert, nicht die vorherigen fehlenden Wellen. Kein generischer Suffix und keine Änderungen an der Legacy-Browserarchitektur.
-- CI Run `37792732910`: TypeScript, Gesamttests, Browser-Builds, Pale-Moon-Build, Oberfläche, Icons und Firefox-Lint **erfolgreich**.
-- Die bisherige **strenge Byte-Paritätsprüfung gemeinsamer Dateien gegen `main` schlägt weiterhin fehl**. Das tat sie bereits auf unverändertem `palemoon`-Basisstand (Run `36933485416`). Ihre Position wurde nur hinter die funktionalen Tests verschoben, sie bleibt verpflichtend und unverändert streng (`git diff --quiet` statt `--exit-code` zur Logbegrenzung).
-- **PR #311 nicht mergen**, bevor die Architektur-/Paritätsdifferenzen bewusst geprüft und die CI ohne pauschale Deaktivierung der Schutzprüfung in einen zulässigen Zustand gebracht wurden.
+Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee6a173b7183b124a3020ae2925716ec2cc3f`.
+
+**Entscheidung vom 08.10.2026:** Zuerst alle noch relevanten, begrenzt prüfbaren Quellen bearbeiten und sichere Produktkandidaten in `main` abschließen; danach die geplanten Releases für Chrome/Chromium, Firefox und weitere moderne Browserkanäle abschließen; **Pale Moon zuletzt**.
+
+- Quellenregister mit 24 Einträgen ist Grundlage. BA-KldB-2026 und DKZ-Current sind anhand erfolgreicher Importe und sämtlicher 22 abgeschlossener Reviews im privaten Register bereits als erledigt nachgetragen. Wikidata, Wikipedia und Scribbr ebenfalls nicht blind wiederholen.
+- Offene abgegrenzte Arbeit: ESCO-v1.2.1-Delta, Hunspell DE, IDS ReCKS / KoRaP/Gender-Foundry, verbliebene Kontext-/Glossarfragen (Genderleicht/Greifswald), DWDS/Duden bei Zweifelsfällen und begrenzte Real-Web-/Flexions-Regressionsnachmessung.
+- **GENDERATOR-Ausnahme bleibt bestehen:** Keine erneute Vollerfassung. 142 sicher geprüfte Formen integriert, 449 Kandidaten ohne Entscheidung zurückgestellt.
+- Abgeschlossene Quellen nicht mit Prozentzahlen überbewerten: Jeder Quellenschritt endet mit einem nachvollziehbaren Ergebnis (Integration, kein Mehrwert, zurückgestellt oder externer Zugriff nicht möglich), ohne fiktive Vollständigkeitsbehauptungen.
+- Nach Quellenabschluss Release-Sperren, echte Browser-/Video-/Untertiteltests, Paket- und Store-Prüfungen der modernen Browser abschließen. Dauerhaft offene Real-Web- und manuelle Referenzquellen erhalten einen Release-Stichtag.
+- **PR #311 ist ohne Merge geschlossen**. Der getestete Referenzstand liegt weiterhin auf `sync/palemoon-lexikon-welle-83-20261008`, der permanente Branch `palemoon` bleibt unverändert. Die in diesem PR bekannte strenge Paritäts-CI-Sperre wird erst in Phase 3 bearbeitet.
 
 ## Nächste Arbeitseinheit
 
-1. PR #311 und den nachgewiesenen Alt-Blocker in der `palemoon`-Paritäts-CI auflösen; Unterschiede zwischen Shared UI/API und unabhängig gepflegtem Lexikon präzise abgrenzen. Nicht mit blindem `main`-Merge oder großzügigem Ausschalten der Prüfung arbeiten.
-2. Danach CI vollständig grün und Port auf `palemoon` mergen; Legacy-Pale-Moon-Browserlauf weiterhin gesondert prüfen (Build allein ist kein Runtime-Nachweis).
-3. Keine weiteren GENDERATOR-Vollaudits und kein engmaschiges CI-Polling.
+1. Abgeglichenes privates Register als Basis verwenden (KldB-/DKZ-Status bereits korrigiert) und **ESCO v1.2.1 als nächsten endlichen Delta-Check** bearbeiten, danach Hunspell-DE-Machbarkeit; Wikidata-/Scribbr-Reviews nicht wiederholen.
+2. Weitere offene Quellen in begrenzten, einzeln getesteten Arbeitseinheiten abarbeiten. Sichere Änderungen mit Regressionstests in `main` integrieren, private Roh-/Evidenzdaten im Datastore belassen.
+3. Nach dokumentiertem Quellenabschluss die modernen Releases prüfen und abschließen. Pale Moon bis dahin nicht bearbeiten oder ungeprüft aktualisieren.
+4. Erst nach Abschluss der übrigen Releases Pale Moon neu planen und CI-Paritätskonflikt beheben.
 
 ## Prüfprinzip
 
