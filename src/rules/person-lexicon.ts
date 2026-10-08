@@ -2,6 +2,7 @@ import {
   getGeneratedPersonForms,
   type GeneratedPersonForms
 } from "./generated-person-lexicon";
+import { getReviewedPersonFormsWave83 } from "./reviewed-person-forms-wave-83";
 
 export type GrammaticalCase =
   | "nominative"
@@ -24,6 +25,12 @@ interface PersonForms {
 }
 
 const locale = "de-DE";
+
+// Der Legacy-Port übernimmt nur die explizit kuratierten Personenbasen dieser Welle.
+function getExactPersonForms(normalizedBase: string): GeneratedPersonForms | undefined {
+  return getGeneratedPersonForms(normalizedBase) ??
+    getReviewedPersonFormsWave83(normalizedBase);
+}
 
 function weak(
   stem: string,
@@ -330,7 +337,7 @@ function hasMatchingPrefixes(
 
 export function mapMappedPlural(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
 
   if (generated) {
     return applyCase(base, generated.plural);
@@ -383,7 +390,7 @@ export function mapMappedSingular(
   grammaticalCase: GrammaticalCase
 ): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
   const generatedReplacement = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
@@ -410,7 +417,7 @@ function mapGeneratedSingularPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   if (
     !generated?.singular ||
     !generated.feminineSingular ||
@@ -497,7 +504,7 @@ function mapGeneratedInflectedPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   const expectedMasculine = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
