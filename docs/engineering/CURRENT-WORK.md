@@ -159,7 +159,7 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Echter Schalter in der Optionsseite: **Aus → An → Aus**, jeweils während derselbe Videotab weiterspielt; Standardtext wird unabhängig weiter korrigiert. Untertitel bleiben bei Aus original, werden bei An korrigiert und bei erneutem Aus wiederhergestellt.
 - In der PR-CI erfolgreich: Kernprüfung, Performance, realer Chromium-Test mit Videowiedergabe, Gecko-Smoke, CodeQL und Sammelcheck (Run `37790232285`).
 - Dies deckt **keine** systemeigenen, browserintern gerenderten WebVTT-Untertitel und noch keine Live-Streamingportale ab. Die tatsächliche DOM-Overlay-Integration wird geprüft.
-- Post-Merge-`main`-CI ist separat zu prüfen.
+- Post-Merge-`main`-CI vollständig grün: Run `37790612790` einschließlich Kernprüfung, Performance, Firefox, Chromium mit Videountertiteln und Sammelcheck; CodeQL-Lauf `37790611441` erfolgreich.
 
 ## Nächste Arbeitseinheit
 

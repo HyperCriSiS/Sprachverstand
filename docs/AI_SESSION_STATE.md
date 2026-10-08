@@ -206,7 +206,7 @@ Letzte Surface-Nachmessung:
 
 - PR #309 / Merge `6afbbd850b099900bb24edc1207958011c44446b`: lokales WebM mit dynamischen DOM-Captions, echter Optionen-Schalter Aus/An/Aus ohne Neustart der Videoseite.
 - Chromium-Integration bestätigt unveränderten Untertitel bei Aus, Korrektur bei An, Wiederherstellung bei Aus sowie fortlaufende Videowiedergabe und neue Cues. Regulärer Seitentext bleibt korrigiert.
-- PR-CI (Run `37790232285`) vollständig grün einschließlich Browser, Video, Performance, Kernprüfung und CodeQL. Post-Merge-`main`-CI noch offen.
+- PR-CI (Run `37790232285`) vollständig grün einschließlich Browser, Video, Performance, Kernprüfung und CodeQL. Post-Merge-`main`-CI vollständig grün (Run `37790612790`); CodeQL `37790611441` erfolgreich.
 - Grenzen: kein Test der nativen WebVTT-Texttracks oder externer Streamingportale; die tatsächlichen HTML-/DOM-Untertitel-Overlays sind abgedeckt.
 
 ## Nächste Arbeitseinheit
