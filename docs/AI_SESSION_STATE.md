@@ -236,7 +236,7 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 
 - Produkt-PR **#317** / Merge `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`: **552** neue, explizit geprüfte Herkunfts- und Einwohnerbasen mit unverändertem Plural, femininer `-in`-Form sowie Singular-, Paar- und vier Kasusregressionen.
 - Welle 84 (399) + Welle 85 (552) = **951** hinzugefügte Personenbasen aus dem zuvor 1.936 Basen umfassenden Hunspell-Unknown-Pool. **985** sind ohne weitere Entscheidung zurückgestellt. Diese wurden nicht als ungeeignet klassifiziert.
-- CI des Produkt-PR grün: Kernprüfung, Performance, Chromium, Gecko, CodeQL und Gesamtcheck (Run `37802067353`). Nach-Merge-`main`-CI `37802473812` und CodeQL `37802474320` bei diesem Checkpoint noch gesondert zu kontrollieren.
+- CI des Produkt-PR grün: Kernprüfung, Performance, Chromium, Gecko, CodeQL und Gesamtcheck (Run `37802067353`). Nach-Merge-`main`-CI `37802473812` und CodeQL `37802474320` ebenfalls vollständig erfolgreich.
 - Drei private Review-Listen A–F, G–M und N–Z sowie Ergebniszusammenfassung unter `HyperCriSiS/Generic-Datastore`. Privater Checkpoint-Commit `664b5da94b656fc3a6d75f2ad5422a380b968333`.
 - Keine generische `-er`-Regel. Die Wellen ändern keine unmarkierten Wörter und enthalten keine Rohquellen-/Herkunftsmetadaten.
 - Weitere Quellen gemäß Roadmap und privatem Quellenregister; ESCO-v1.2.1-Delta bleibt offen. Pale Moon ausschließlich nach den Releases der modernen Browser.
