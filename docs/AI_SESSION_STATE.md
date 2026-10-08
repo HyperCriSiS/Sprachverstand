@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`
+- Aktueller Produktbaseline-Commit: `4065ee2312d09428ce4e7a3692b4f51b98cb6f39`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -194,12 +194,20 @@ Letzte Surface-Nachmessung:
 - Private Review-Dateien: `sprachverstand/derived/review/genderator-partial-merge-priority-1-manual-decisions.json` und `-summary.json` in `Generic-Datastore`.
 - Privater Status und Register aktualisiert: Commit `c21d85ce741f9cf1e2ec8a69683ae6c010e51ed0`.
 
+## CI-Stabilisierung nach Welle 83
+
+- PR #307 / Merge `4065ee2312d09428ce4e7a3692b4f51b98cb6f39`: Auf die schwankenden Chromium-Video-Frame-Verhältnisse reagiert die Videoprüfung nur bei einer erstmaligen Unterschreitung von 80 % mit einer einzigen vollständigen erneuten Baseline-/Erweiterungsmessung.
+- Die bisherige 80-%-Schwelle sowie Videozeit-, Frame-Lücken-, P95-, Decoder-, DOM-Last- und Drop-Frame-Prüfungen bleiben unverändert.
+- Beide Messungen werden protokolliert; wiederholte Unterschreitung bleibt ein CI-Fehler.
+- PR-CI grün: Kernprüfung, Performance, Gecko, Chromium mit Video, CodeQL, Gesamtstatus.
+- Post-Merge-`main`-Validierung noch zu prüfen.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-`main`-CI und CodeQL für PR #305 verifizieren.
-2. Reguläre Roadmap ohne weitere GENDERATOR-Vollaudits fortsetzen. Die 449 Restkandidaten bleiben zunächst zurückgestellt.
-3. Stabilen `main`-Produktstand separat in den Pale-Moon-Port synchronisieren, wenn priorisiert.
-4. Nach der nächsten größeren Einheit wieder einen kompakten Checkpoint schreiben.
+1. Nach-Merge-`main`-CI und CodeQL zu #307 bestätigen.
+2. Getrennten `palemoon`-Branch als eigenen Legacy-Port gegen den stabilen modernen `main` auf konkrete gemeinsame Produktänderungen prüfen; nicht blind mergen.
+3. Bei klar abgegrenztem Portierungsumfang eigene Pale-Moon-PR(s) und Browser-/Buildprüfungen durchführen.
+4. GENDERATOR bleibt mit 142 integrierten Mappings und 449 zurückgestellten Kandidaten abgeschlossen.
 
 ## Verbindliche Wiederaufnahme-Regel
 

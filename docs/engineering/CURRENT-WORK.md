@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`
+- Aktueller integrierter Produktstand: `4065ee2312d09428ce4e7a3692b4f51b98cb6f39`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Letzter integrierter Lexikon-PR: **#305 — 142 geprüfte Personenformen als Welle 83 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -145,12 +145,20 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Private Review- und Registerdaten: `HyperCriSiS/Generic-Datastore`, Commit `c21d85ce741f9cf1e2ec8a69683ae6c010e51ed0`.
 - **Kein GENDERATOR-Blocker** für die weitere Sprachverstand-Roadmap.
 
+## CI-Abschluss und Stabilisierung nach Welle 83
+
+- Produktwelle 83: PR #305 / Merge `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`.
+- Im ersten `main`-Lauf kam es bei identischem Produktcode zu schwankenden Frame-Messungen (78,2 % und 79,6 % der Baseline); der PR-Browserlauf und ein Wiederholungslauf hatten die Videoregression bestanden.
+- PR #307 / Merge `4065ee2312d09428ce4e7a3692b4f51b98cb6f39` bestätigt ausschließlich eine Unterschreitung des vorhandenen 80-%-Grenzwerts durch **eine** zusätzliche vollständige Baseline-/Erweiterungsmessung. Andere Fehlschläge bleiben sofortige Fehlschläge. Video-Schranken wurden nicht gelockert.
+- PR #307: Kernprüfung, Performance, Gecko, Chromium inklusive Video, CodeQL und Sammelcheck vollständig grün.
+- Post-Merge-`main`-CI und CodeQL für #307 noch separat zu verifizieren.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-`main`-CI von Welle 83 abschließend kontrollieren.
-2. Die reguläre `ROADMAP.md` fortsetzen; Quellenvollaudits nur bei konkretem Mehrwert erneut priorisieren.
-3. Nach einem stabilen `main`-Checkpoint den getrennten Pale-Moon-Port bei Bedarf synchronisieren.
-4. Private Quellenstände nur für ausdrückliche Quellen-/Evidenzarbeit laden; keine umfangreichen Audit- oder CI-Schleifen ohne Bedarf.
+1. Post-Merge-`main`-CI und CodeQL von PR #307 abschließend prüfen; bei weiteren Videoproblemen Messprotokolle statt Testgrenzen analysieren.
+2. Danach gezieltes Pale-Moon-Portierungsdelta bestimmen. `palemoon` ist ein eigenständiger Branch **im gleichen Repository** (zuletzt geprüft: `b3e530d8b063db25de979c67bcfcd2b2dffd7d31`), kein eigenes Repository. Keine vollständigen Merges von `main` nach `palemoon`.
+3. Nur nach Kompatibilitätsprüfung gemeinsame und relevante Produktregeln in einem separaten PR auf Basis von `palemoon` portieren und den Goanna-/Legacy-Build regressionsprüfen.
+4. Keine erneuten GENDERATOR-Vollaudits oder unbegrenztes CI-Polling.
 
 ## Prüfprinzip
 
