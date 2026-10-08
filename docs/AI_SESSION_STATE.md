@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `4065ee2312d09428ce4e7a3692b4f51b98cb6f39`
+- Aktueller Produktbaseline-Commit: `6afbbd850b099900bb24edc1207958011c44446b`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -201,6 +201,13 @@ Letzte Surface-Nachmessung:
 - Beide Messungen werden protokolliert; wiederholte Unterschreitung bleibt ein CI-Fehler.
 - PR-CI grün: Kernprüfung, Performance, Gecko, Chromium mit Video, CodeQL, Gesamtstatus.
 - Post-Merge-`main`-CI **grün**: Run `37786658417` inklusive echter Browser und Videotest; CodeQL `37786658368` erfolgreich.
+
+## Untertitel-Integration bei laufendem Video
+
+- PR #309 / Merge `6afbbd850b099900bb24edc1207958011c44446b`: lokales WebM mit dynamischen DOM-Captions, echter Optionen-Schalter Aus/An/Aus ohne Neustart der Videoseite.
+- Chromium-Integration bestätigt unveränderten Untertitel bei Aus, Korrektur bei An, Wiederherstellung bei Aus sowie fortlaufende Videowiedergabe und neue Cues. Regulärer Seitentext bleibt korrigiert.
+- PR-CI (Run `37790232285`) vollständig grün einschließlich Browser, Video, Performance, Kernprüfung und CodeQL. Post-Merge-`main`-CI vollständig grün (Run `37790612790`); CodeQL `37790611441` erfolgreich.
+- Grenzen: kein Test der nativen WebVTT-Texttracks oder externer Streamingportale; die tatsächlichen HTML-/DOM-Untertitel-Overlays sind abgedeckt.
 
 ## Nächste Arbeitseinheit
 
