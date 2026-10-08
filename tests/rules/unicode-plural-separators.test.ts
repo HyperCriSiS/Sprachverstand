@@ -24,7 +24,7 @@ describe("Unicode-Marker in bekannten Personenpluralen", () => {
     ["Student*innen", "Studenten"],
     ["Kolleg_innen", "Kollegen"],
     ["NUTZER／INNEN", "NUTZER"],
-    ["Online-Nutzer∕innenkonto", "Online-Nutzerkonto"]
+    ["Mutter∕inneninitiative", "Mütterinitiative"]
   ])("bildet %s ausschließlich per Lexikontreffer zu %s ab", (input, expected) => {
     expect(mappedPluralSeparatorsRule.apply(input)).toEqual({
       text: expected,
