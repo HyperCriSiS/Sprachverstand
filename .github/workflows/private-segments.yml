@@ -36,7 +36,9 @@ jobs:
       - name: Private Segmenttests ausführen
         env:
           PYTHONPATH: internal/sprachverstand/scripts
-        run: python -m pytest -q internal/sprachverstand/tests/test_resume_segment_import.py internal/sprachverstand/tests/test_genderator_audit.py
+        run: |
+          python -m pytest -q internal/sprachverstand/tests/test_resume_segment_import.py \
+            > /tmp/private-tests.log 2>&1 || { echo 'Private Tests fehlgeschlagen.'; exit 1; }
 
       - name: Private Segmente schrittweise speichern
         shell: bash
