@@ -28,7 +28,8 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 - [x] Vierte Hunspell-Welle: 231 geprüfte regionale Personenbasen in Welle 87 / PR #322 integriert; danach verblieben 204 offene Fälle.
 - [x] Hunspell-Abschlussblock / Welle 88 / PR #324: 71 sichere Exaktmappings integriert; den 204er Rest vollständig triagiert (71 angenommen, 51 ausgeschlossen, 82 ausdrücklich zurückgestellt). Aus dem ursprünglichen 1.936er Unknown-Pool sind insgesamt 1.803 Basen in fünf Wellen integriert, ohne generische Endungsregel.
 - [x] IDS ReCKS-Veröffentlichung und DeReKo-KorAP-2026-II-Release mit experimenteller Gender-Foundry auf Verfügbarkeit und methodische Grenzen prüfen; kein unvalidierter Import.
-- [ ] Neue KorAP-Tokenisierungs-/Unicode-Schreibvarianten in einer begrenzten Realtext- und Negativregression gegen Sprachverstand prüfen; nur belastbare Fälle übernehmen.
+- [x] Releasebasierte Unicode-Markerregressionen für ∕, ⁄, ／, `(-innen)` und Soft-Hyphen-Grenzen lexikongebunden ergänzen (PR #326, PR- und main-CI grün).
+- [ ] Unabhängige **echte** Korpus-/Realtext-Gegenprobe mit Negativ- und Kontextfällen abschließen; bisherige Beispiele sind aus KorAP-Releasenotizen abgeleitet, keine eigenen Korpusabfragen.
 - [ ] Noch nicht abgeschlossene Kontext-/Glossar- und Wörterbuchfälle gezielt prüfen, insbesondere Genderleicht, Greifswald sowie DWDS/Duden **nur bei konkretem Klärungsbedarf**.
 - [ ] Vor den Releases eine begrenzte Real-Web-/Flexions-/Negativregression mit nachvollziehbarer Ergebnisdokumentation durchführen.
 - [ ] Alle daraus entstandenen sicheren Kandidaten nach unabhängiger lexikalischer Prüfung in `main` integrieren und Quellen einzeln mit Ergebnis/Verzicht als abgearbeitet kennzeichnen.
