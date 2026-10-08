@@ -7,8 +7,8 @@ Autorität: `main`
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
 - Aktueller integrierter Produktstand: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **85**
-- Letzter integrierter Lexikon-PR: **#317 — 552 geprüfte Einwohner- und Herkunftsformen als Welle 85 integrieren**
+- Abgeschlossene Lexikon-Ausbauwellen: **86**
+- Letzter integrierter Lexikon-PR: **#319 — 550 geprüfte Personenformen als Welle 86 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -193,12 +193,20 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Keine generische `-er`-Regel. Die Wellen ändern keine unmarkierten Wörter und enthalten keine Rohquellen-/Herkunftsmetadaten.
 - Weitere Quellen gemäß Roadmap und privatem Quellenregister; ESCO-v1.2.1-Delta bleibt offen. Pale Moon ausschließlich nach den Releases der modernen Browser.
 
+## Lexikon-Welle 86 abgeschlossen
+
+- PR #319 / Merge `a3257d00e4e7734fe81747817de9168bb53976ed`: 550 explizite Personenbasen, vollständige Positiv-, Negativ-, Paar- und Kasusregressionen. PR-CI einschließlich Chromium, Firefox, Performance und CodeQL grün.
+- Hunspell-Zwischenstand: 399 (Welle 84) + 552 (Welle 85) + 550 (Welle 86) = **1.501** neue Exaktmappings; **435 der ursprünglichen 1.936 unbekannten Basen ohne abschließende Reviewentscheidung**.
+- Keine generische Endungsregel, keine automatische Aufnahme; private Quelldaten nur in Generic-Datastore. Privater Checkpoint: `e277e4dcef8d83b373dacac8b26f54859c52a34b`.
+- Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
+- Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-CI von Welle 85 verifizieren. Danach den **verbliebenen Hunspell-Reviewpool (985)** und die ESCO-v1.2.1-Delta-Zugänglichkeit priorisiert abklären; nur semantisch und morphologisch sichere neue Blöcke integrieren. Bereits abgeschlossene KldB-/Wikidata-/Scribbr-Reviews nicht wiederholen.
-2. Weitere offene Quellen in begrenzten, einzeln getesteten Arbeitseinheiten abarbeiten. Sichere Änderungen mit Regressionstests in `main` integrieren, private Roh-/Evidenzdaten im Datastore belassen.
-3. Nach dokumentiertem Quellenabschluss die modernen Releases prüfen und abschließen. Pale Moon bis dahin nicht bearbeiten oder ungeprüft aktualisieren.
-4. Erst nach Abschluss der übrigen Releases Pale Moon neu planen und CI-Paritätskonflikt beheben.
+1. Nach-Merge-main-CI für PR #319 prüfen.
+2. Die 435 offenen Hunspell-Basen auf Bedeutung und Flexion prüfen.
+3. Danach ESCO-v1.2.1 und IDS-Korpora bearbeiten.
+4. Moderne Browser-Releases fertigstellen; Pale Moon zuletzt.
 
 ## Prüfprinzip
 

@@ -9,7 +9,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 ### Produkt- und Evidenzpipeline
 
 - [x] Kuratierte Aufnahme neuer Personenformen mit Positiv-/Negativregressionen und Flexionsprüfung etablieren.
-- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 85 in `main` integrieren.
+- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 86 in `main` integrieren.
 - [ ] Weitere priorisierte Berufs-, Lexikon-, Flexions- und Realtext-Evidenz systematisch gegen den aktuellen Produktstand auswerten.
 - [ ] Kandidaten nur nach morphologischer, semantischer und kontextueller Absicherung produktiv übernehmen; mehrdeutige Fälle zurückhalten oder kontextgebunden modellieren.
 - [ ] Quellen-/Evidenzarbeit so fortführen, dass private Rohdaten, URLs und Herkunftsmetadaten nicht in das öffentliche Produktrepository gelangen.
@@ -24,6 +24,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 - [ ] Hunspell DE quellen-, lizenz- und qualitätsgeprüft gegen das bestehende Lexikon abgleichen.
 - [x] Erste große Hunspell-Welle: 399 individuell geprüfte reguläre Personenbasen in Welle 84 / PR #315 integrieren; der Restpool bleibt ohne pauschale Freigabe zurückgestellt.
 - [x] Zweite große Hunspell-Welle: 552 exakt geprüfte Einwohner- und Herkunftsformen in Welle 85 / PR #317 integrieren; von 1.936 ursprünglich unbekannten Basen sind insgesamt 951 integriert und 985 bleiben ungeprüft.
+- [x] Dritte große Hunspell-Welle: 550 kuratierte Personen- und Herkunftsbasen als Welle 86 / PR #319 integrieren; insgesamt 1.501 Basen integriert, 435 für weitere Einzelentscheidungen offen.
 - [ ] IDS ReCKS und IDS KoRaP/Gender-Foundry auf tatsächliche Verfügbarkeit und relevante neue Realtext-/Annotierungsfälle prüfen; nur belastbare Daten übernehmen.
 - [ ] Noch nicht abgeschlossene Kontext-/Glossar- und Wörterbuchfälle gezielt prüfen, insbesondere Genderleicht, Greifswald sowie DWDS/Duden **nur bei konkretem Klärungsbedarf**.
 - [ ] Vor den Releases eine begrenzte Real-Web-/Flexions-/Negativregression mit nachvollziehbarer Ergebnisdokumentation durchführen.
