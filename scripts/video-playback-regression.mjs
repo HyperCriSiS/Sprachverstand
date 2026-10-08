@@ -496,6 +496,7 @@ async function subtitleState(id) {
   return execute(id, `
     const video = document.querySelector("#video");
     return {
+      url: location.href,
       normal: document.querySelector("#static-target")?.textContent,
       subtitle: document.querySelector("#subtitle-target")?.textContent,
       timeUpdates: window.__videoTimeUpdates ?? 0,
@@ -594,6 +595,13 @@ async function validateSubtitleToggle(url) {
     }
     await setSubtitleCheckbox(id, true);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
+    console.log("Video-Fenster nach Aktivierung:", JSON.stringify({
+      original: videoWindow,
+      options: optionsWindow,
+      active: (await request("GET", `/session/${id}/window`)).value,
+      url: (await request("GET", `/session/${id}/url`)).value,
+      handles: (await request("GET", `/session/${id}/window/handles`)).value
+    }));
     const on = await waitSubtitle(id, true);
     if (on.timeUpdates <= off.timeUpdates) {
       throw new Error("Video wurde beim Einschalten unterbrochen.");
