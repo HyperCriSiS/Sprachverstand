@@ -201,6 +201,14 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
 - Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
+## Lexikon-Welle 87 – Hunspell DE
+
+- PR #322 / Merge `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`: **231 weitere** ausdrücklich ausgewählte regionale Personenbasen, vollständige Positiv-, Paar-, Kasus- und Negativregressionen.
+- Wellen 84–87: **1.732** der 1.936 zuvor unbekannten Hunspell-Kandidaten integriert; **204** ohne Freigabe.
+- PR-CI und Post-Merge-`main`-CI mit Browsern, Video, Performance und CodeQL vollständig erfolgreich; Runs `37817862980`, `37818211722` und `37818211581`.
+- Privater Quellenstatus: `ec8126261b475d9dc3952b629b5f861f38800e7f`. Kein automatisches Suffixmapping und keine Rohquellen im öffentlichen Produkt.
+- Nächster endlicher Quellenblock: 204 Basen klassifizieren, danach ESCO-v1.2.1-Labeldelta und IDS-ReCKS/KoRaP. Moderne Browser-Releases vor Pale Moon.
+
 ## Nächste Arbeitseinheit
 
 1. Nach-Merge-main-CI für PR #322 ist vollständig grün.
