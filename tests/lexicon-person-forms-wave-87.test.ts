@@ -243,19 +243,20 @@ const basen = [
 
 // Hier ist ein reines Personenmapping ausdrücklich nicht freigegeben.
 const negativeBasen = [
-  "edamer",
-  "bernhardiner",
-  "bettwärmer",
-  "hammer",
-  "bestseller",
+  "sechziger",
+  "vierziger",
+  "strassburger",
+  "züricher",
+  "zeller",
+  "öffner",
+  "wittgensteinianer",
+  "welschtiroler",
+  "rorschacher",
+  "waldenser",
+  "schwarzwälder",
   "regenschauer",
-  "zauber",
-  "buhler",
-  "neunziger",
-  "neunundvierziger",
-  "hindenburger",
-  "radevormwalderfirma",
-  "nutzniesser"
+  "hammer",
+  "bettwärmer"
 ] as const;
 
 describe("Lexikon-Welle 87: 231 geprüfte Herkunfts- und Einwohnerbezeichnungen", () => {
