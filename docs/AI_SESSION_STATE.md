@@ -249,6 +249,14 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
 - Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
+## Lexikon-Welle 87 – Quelle Hunspell DE
+
+- PR #322 / Merge `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`: **231 neue explizite Exaktmappings**, vollständige Flexions-, Paar- und Negativregressionen.
+- Originaler Hunspell-Unknown-Pool: 1.936 Basen. Nach Wellen 84–87 wurden **1.732** integriert; **204 verbleiben ohne Freigabe**. Kein generisches Endungsmapping.
+- PR-CI und Post-Merge-`main`-CI samt Chromium-Video, Gecko, Performance und CodeQL **vollständig erfolgreich** (Runs `37817862980`, `37818211722`, CodeQL `37818211581`).
+- Privater Quellencheckpoint `ec8126261b475d9dc3952b629b5f861f38800e7f`; die Welle enthält keine Rohquellen.
+- Nächste Arbeit: 204 verbleibende Hunspell-Basen abschließend klassifizieren, dann ESCO-v1.2.1-**deutsches Label-Delta** und IDS-ReCKS-/KoRaP-Korpora. Pale Moon erst nach den modernen Releases.
+
 ## Nächste Arbeitseinheit
 
 1. Nach-Merge-main-CI von PR #319 abschließend prüfen.
