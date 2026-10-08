@@ -9,7 +9,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 ### Produkt- und Evidenzpipeline
 
 - [x] Kuratierte Aufnahme neuer Personenformen mit Positiv-/Negativregressionen und Flexionsprüfung etablieren.
-- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 87 in `main` integrieren.
+- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 88 in `main` integrieren.
 - [ ] Weitere priorisierte Berufs-, Lexikon-, Flexions- und Realtext-Evidenz systematisch gegen den aktuellen Produktstand auswerten.
 - [ ] Kandidaten nur nach morphologischer, semantischer und kontextueller Absicherung produktiv übernehmen; mehrdeutige Fälle zurückhalten oder kontextgebunden modellieren.
 - [ ] Quellen-/Evidenzarbeit so fortführen, dass private Rohdaten, URLs und Herkunftsmetadaten nicht in das öffentliche Produktrepository gelangen.
@@ -20,12 +20,15 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 **Phase 1 – Quellen vor Releases** (endlicher, nachvollziehbarer Quellenabschluss):
 
 - [x] Quellenregister für BA-KldB-2026 und DKZ-Current anhand der nachweislich erfolgreichen Importe und aller 22 Reviewblöcke korrigiert; der gemeinsame unbekannte Kandidatenpool ist vollständig entschieden.
-- [ ] ESCO v1.2.1 als Delta-/Vollständigkeitsprüfung gegenüber dem bereits importierten und geprüften v1.2.0-API-Bestand bearbeiten.
-- [ ] Hunspell DE quellen-, lizenz- und qualitätsgeprüft gegen das bestehende Lexikon abgleichen.
+- [ ] ESCO v1.2.1 als **deutsches Label-/Alternativlabel-Delta** gegenüber der abgeschlossenen v1.2.0-API-Basis prüfen; offizielles v1.2.1-CSV benötigt autorisierten E-Mail-Download (extern offen, keine erfundene Freigabe).
+- [x] Den Hunspell-DE-Frami-Movierungs-Vorfilterpool (3.502 Kandidaten, davon 1.936 damals unbekannt) quellen-, qualitäts- und flexionsgeprüft abschließend triagieren. Dies ist keine Vollabdeckung des Wörterbuchs.
 - [x] Erste große Hunspell-Welle: 399 individuell geprüfte reguläre Personenbasen in Welle 84 / PR #315 integrieren; der Restpool bleibt ohne pauschale Freigabe zurückgestellt.
 - [x] Zweite große Hunspell-Welle: 552 exakt geprüfte Einwohner- und Herkunftsformen in Welle 85 / PR #317 integrieren; von 1.936 ursprünglich unbekannten Basen sind insgesamt 951 integriert und 985 bleiben ungeprüft.
 - [x] Dritte große Hunspell-Welle: 550 kuratierte Personen- und Herkunftsbasen als Welle 86 / PR #319 integrieren; insgesamt 1.501 Basen integriert, 435 für weitere Einzelentscheidungen offen.
-- [ ] IDS ReCKS und IDS KoRaP/Gender-Foundry auf tatsächliche Verfügbarkeit und relevante neue Realtext-/Annotierungsfälle prüfen; nur belastbare Daten übernehmen.
+- [x] Vierte Hunspell-Welle: 231 geprüfte regionale Personenbasen in Welle 87 / PR #322 integriert; danach verblieben 204 offene Fälle.
+- [x] Hunspell-Abschlussblock / Welle 88 / PR #324: 71 sichere Exaktmappings integriert; den 204er Rest vollständig triagiert (71 angenommen, 51 ausgeschlossen, 82 ausdrücklich zurückgestellt). Aus dem ursprünglichen 1.936er Unknown-Pool sind insgesamt 1.803 Basen in fünf Wellen integriert, ohne generische Endungsregel.
+- [x] IDS ReCKS-Veröffentlichung und DeReKo-KorAP-2026-II-Release mit experimenteller Gender-Foundry auf Verfügbarkeit und methodische Grenzen prüfen; kein unvalidierter Import.
+- [ ] Neue KorAP-Tokenisierungs-/Unicode-Schreibvarianten in einer begrenzten Realtext- und Negativregression gegen Sprachverstand prüfen; nur belastbare Fälle übernehmen.
 - [ ] Noch nicht abgeschlossene Kontext-/Glossar- und Wörterbuchfälle gezielt prüfen, insbesondere Genderleicht, Greifswald sowie DWDS/Duden **nur bei konkretem Klärungsbedarf**.
 - [ ] Vor den Releases eine begrenzte Real-Web-/Flexions-/Negativregression mit nachvollziehbarer Ergebnisdokumentation durchführen.
 - [ ] Alle daraus entstandenen sicheren Kandidaten nach unabhängiger lexikalischer Prüfung in `main` integrieren und Quellen einzeln mit Ergebnis/Verzicht als abgearbeitet kennzeichnen.

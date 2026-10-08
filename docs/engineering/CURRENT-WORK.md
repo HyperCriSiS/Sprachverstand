@@ -6,9 +6,9 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`
-- Abgeschlossene Lexikon-Ausbauwellen: **87**
-- Letzter integrierter Lexikon-PR: **#322 — 231 geprüfte Regionalformen als Welle 87 integrieren**
+- Aktueller integrierter Produktstand: `bec8f0abc29437bf34aa9889811b82039d8fe61c`
+- Abgeschlossene Lexikon-Ausbauwellen: **88**
+- Letzter integrierter Lexikon-PR: **#324 — 71 abschließend geprüfte Hunspell-Personenbasen als Welle 88 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -209,12 +209,21 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Privater Quellenstatus: `ec8126261b475d9dc3952b629b5f861f38800e7f`. Kein automatisches Suffixmapping und keine Rohquellen im öffentlichen Produkt.
 - Nächster endlicher Quellenblock: 204 Basen klassifizieren, danach ESCO-v1.2.1-Labeldelta und IDS-ReCKS/KoRaP. Moderne Browser-Releases vor Pale Moon.
 
+## Quellencheckpoint nach Welle 88
+
+- **PR #324 / Merge `bec8f0abc29437bf34aa9889811b82039d8fe61c`:** 71 weitere sichere Hunspell-Personenbasen als exakte Lexikonmappings mit Positiv-, Paar-, Kasus- und Negativregressionen; vollständige PR-CI und Post-Merge-`main`-CI einschließlich Chromium, Firefox, Video, Performance und CodeQL grün (Runs `37822554136`, `37822935828`, `37822936389`).
+- Fünf Hunspell-Wellen 84–88: 399 + 552 + 550 + 231 + 71 = **1.803** produktiv aufgenommene Basen aus dem anfänglich unbekannten **1.936er** Vorfilterpool. Letzte 204 Fälle ausdrücklich klassifiziert: 71 integriert, **51 nicht freigegeben**, **82 mangels Beleg zurückgestellt**. Keine offenen unklassifizierten Basen *innerhalb dieses Vorfilters*, keine vollständige Hunspell-Lexikonabdeckung behauptet.
+- Privater Reviewabschluss: `HyperCriSiS/Generic-Datastore`, Commit `8f0c0c4d84ca0cc2822ee8a58b424ac3178fba18`. Keine Rohquellen oder unsicheren Listen in öffentlichen Produktdateien.
+- ESCO 1.2.1 bleibt als deutsches Label-Delta **extern offen**: API veröffentlicht weiterhin v1.2.0, offizielles v1.2.1-CSV-/Deltapaket über E-Mail-Autorisierung. Privat vermerkt: `fea1e3aeff91a1cd69d6fbea423fd67bb82c04d2`.
+- IDS ReCKS und DeReKo-KorAP-2026-II/Gender-Foundry methodisch und auf Verfügbarkeit geprüft. Die Foundry ist experimentell und rein musterorientiert, daher kein automatischer Produktimport. Private Evidenznotiz: `f1b3bfe266ff12610cffb2361450ec12ea3d9dc8`.
+- **Reihenfolge bleibt:** übrige Quellen und gezielte Realtext-Regression, moderne Browser-Releases, Pale Moon zuletzt.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-main-CI für PR #322 ist vollständig grün.
-2. Die 435 offenen Hunspell-Basen auf Bedeutung und Flexion prüfen.
-3. Danach ESCO-v1.2.1 und IDS-Korpora bearbeiten.
-4. Moderne Browser-Releases fertigstellen; Pale Moon zuletzt.
+1. ESCO 1.2.1: autorisierten deutschen CSV-/Delta-Download organisieren bzw. bis dahin als externen Blocker vermerken. Keine fiktive Delta-/Vollständigkeitsprüfung.
+2. Als ausführbare Quellenarbeit die IDS-KorAP-2026-II-Belege nutzen, um Tokenisierung, ASCII-/Unicode-Schrägstriche, Klammer- und getrennte Markerformen sowie Negativfälle gezielt zu testen.
+3. Restliche konkrete Genderleicht-/Glossar-/DWDS-/Duden-Grenzfälle und einen begrenzten Real-Web-Test vor dem Release-Stichtag abschließen.
+4. Erst nach Quellenschluss die modernen Browser-Releases prüfen und finalisieren; Pale Moon als letzte Phase.
 
 ## Prüfprinzip
 
