@@ -4,6 +4,7 @@ import { release as osRelease } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
+import { compareProtectedRuns } from "./real-world-protected-state.mjs";
 
 const projectRoot = process.cwd();
 const configPath = path.join(projectRoot, "config", "real-world-sites.json");
@@ -633,7 +634,8 @@ function compareRuns(baseline, extension) {
     videoDroppedFrameDelta:
       extension.snapshot.videos.droppedVideoFrames -
       baseline.snapshot.videos.droppedVideoFrames,
-    patternDelta
+    patternDelta,
+    ...compareProtectedRuns(baseline, extension)
   };
 }
 
