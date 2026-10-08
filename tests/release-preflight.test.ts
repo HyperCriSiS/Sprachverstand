@@ -32,6 +32,10 @@ describe("Manuelle Vorabprüfung moderner Releases", () => {
     expect(workflow).toContain("META-INF/");
     expect(workflow).toContain("sourceNotes.version");
     expect(workflow).toContain("sourcePackage.version");
+    expect(workflow).toContain("manifests/${target}.json");
+    expect(workflow).toContain('"$SOURCE_DIR/SOURCE_COMMIT.txt"');
+    expect(workflow).toContain('"$SOURCE_DIR/RELEASE_PROVENANCE.txt"');
+    expect(workflow).toContain("verify-release-packages.mjs");
     expect(workflow).toContain("manifest.version");
     expect(workflow).toContain("actions/upload-artifact@");
   });

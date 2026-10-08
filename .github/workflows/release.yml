@@ -254,6 +254,16 @@ jobs:
               cd dist/firefox
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
             )
+            for target in edge opera; do
+              TARGET_DIR=$(mktemp -d)
+              cp -a dist/chromium/. "$TARGET_DIR/"
+              cp "manifests/${target}.json" "$TARGET_DIR/manifest.json"
+              (
+                cd "$TARGET_DIR"
+                zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-${target}.zip" .
+              )
+              rm -rf "$TARGET_DIR"
+            done
             VERSION_FILES=(
               package.json
               package-lock.json
@@ -296,6 +306,18 @@ jobs:
           for path in "${VERSION_FILES[@]:2}"; do
             cp "$path" "$SOURCE_DIR/$path"
           done
+          if [[ "$PRODUCT_LINE" == "modern" ]]; then
+            printf '%s\n' "$RELEASE_SHA" > "$SOURCE_DIR/SOURCE_COMMIT.txt"
+            cat > "$SOURCE_DIR/RELEASE_PROVENANCE.txt" <<EOF
+          Produktlinie: modern
+          Tag: ${TAG}
+          Commit: ${RELEASE_SHA}
+          Version: ${VERSION}
+          Ausgangsbasis: git archive des angegebenen Commits.
+          Vorbereitung: Ausschließlich Versionsfelder der folgenden sechs Dateien angepasst.
+          Versionsdateien: package.json, package-lock.json, manifests/chromium.json, manifests/edge.json, manifests/opera.json, manifests/firefox.json
+          EOF
+          fi
           (
             cd "$SOURCE_DIR"
             zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip" .
@@ -313,6 +335,8 @@ jobs:
           if [[ "$PRODUCT_LINE" == "modern" ]]; then
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip"
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi"
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip"
+            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip"
             if unzip -l "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
               echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
               exit 1
@@ -321,6 +345,9 @@ jobs:
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-palemoon.xpi"
           fi
           unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-source.zip"
+          if [[ "$PRODUCT_LINE" == "modern" ]]; then
+            node scripts/verify-release-packages.mjs artifacts/public "$ASSET_LABEL" "$VERSION" "$RELEASE_SHA" "$TAG"
+          fi
 
       - name: Interne Release-Arbeitsartefakte sichern
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
