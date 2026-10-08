@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **86**
+- Aktueller Produktbaseline-Commit: `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`
+- Abgeschlossene Lexikon-Ausbauwellen: **87**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -249,10 +249,18 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
 - Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
+## Lexikon-Welle 87 – Quelle Hunspell DE
+
+- PR #322 / Merge `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`: **231 neue explizite Exaktmappings**, vollständige Flexions-, Paar- und Negativregressionen.
+- Originaler Hunspell-Unknown-Pool: 1.936 Basen. Nach Wellen 84–87 wurden **1.732** integriert; **204 verbleiben ohne Freigabe**. Kein generisches Endungsmapping.
+- PR-CI und Post-Merge-`main`-CI samt Chromium-Video, Gecko, Performance und CodeQL **vollständig erfolgreich** (Runs `37817862980`, `37818211722`, CodeQL `37818211581`).
+- Privater Quellencheckpoint `ec8126261b475d9dc3952b629b5f861f38800e7f`; die Welle enthält keine Rohquellen.
+- Nächste Arbeit: 204 verbleibende Hunspell-Basen abschließend klassifizieren, dann ESCO-v1.2.1-**deutsches Label-Delta** und IDS-ReCKS-/KoRaP-Korpora. Pale Moon erst nach den modernen Releases.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-main-CI von PR #319 abschließend prüfen.
-2. Verbleibende 435 Hunspell-Basen fachlich triagieren.
+1. Nach-Merge-main-CI von PR #322 ist bereits erfolgreich abgeschlossen.
+2. Verbleibende 204 Hunspell-Basen fachlich triagieren.
 3. ESCO-v1.2.1-Delta und IDS-Korpora auswerten.
 4. Releases für moderne Browser abschließen und erst danach Pale Moon bearbeiten.
 

@@ -6,9 +6,9 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **86**
-- Letzter integrierter Lexikon-PR: **#319 — 550 geprüfte Personenformen als Welle 86 integrieren**
+- Aktueller integrierter Produktstand: `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`
+- Abgeschlossene Lexikon-Ausbauwellen: **87**
+- Letzter integrierter Lexikon-PR: **#322 — 231 geprüfte Regionalformen als Welle 87 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -201,9 +201,17 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
 - Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
+## Lexikon-Welle 87 – Hunspell DE
+
+- PR #322 / Merge `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`: **231 weitere** ausdrücklich ausgewählte regionale Personenbasen, vollständige Positiv-, Paar-, Kasus- und Negativregressionen.
+- Wellen 84–87: **1.732** der 1.936 zuvor unbekannten Hunspell-Kandidaten integriert; **204** ohne Freigabe.
+- PR-CI und Post-Merge-`main`-CI mit Browsern, Video, Performance und CodeQL vollständig erfolgreich; Runs `37817862980`, `37818211722` und `37818211581`.
+- Privater Quellenstatus: `ec8126261b475d9dc3952b629b5f861f38800e7f`. Kein automatisches Suffixmapping und keine Rohquellen im öffentlichen Produkt.
+- Nächster endlicher Quellenblock: 204 Basen klassifizieren, danach ESCO-v1.2.1-Labeldelta und IDS-ReCKS/KoRaP. Moderne Browser-Releases vor Pale Moon.
+
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-main-CI für PR #319 prüfen.
+1. Nach-Merge-main-CI für PR #322 ist vollständig grün.
 2. Die 435 offenen Hunspell-Basen auf Bedeutung und Flexion prüfen.
 3. Danach ESCO-v1.2.1 und IDS-Korpora bearbeiten.
 4. Moderne Browser-Releases fertigstellen; Pale Moon zuletzt.
