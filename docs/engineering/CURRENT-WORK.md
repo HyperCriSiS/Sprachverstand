@@ -203,10 +203,10 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-CI von Welle 85 verifizieren. Danach den **verbliebenen Hunspell-Reviewpool (985)** und die ESCO-v1.2.1-Delta-Zugänglichkeit priorisiert abklären; nur semantisch und morphologisch sichere neue Blöcke integrieren. Bereits abgeschlossene KldB-/Wikidata-/Scribbr-Reviews nicht wiederholen.
-2. Weitere offene Quellen in begrenzten, einzeln getesteten Arbeitseinheiten abarbeiten. Sichere Änderungen mit Regressionstests in `main` integrieren, private Roh-/Evidenzdaten im Datastore belassen.
-3. Nach dokumentiertem Quellenabschluss die modernen Releases prüfen und abschließen. Pale Moon bis dahin nicht bearbeiten oder ungeprüft aktualisieren.
-4. Erst nach Abschluss der übrigen Releases Pale Moon neu planen und CI-Paritätskonflikt beheben.
+1. Nach-Merge-main-CI für PR #319 prüfen.
+2. Die 435 offenen Hunspell-Basen auf Bedeutung und Flexion prüfen.
+3. Danach ESCO-v1.2.1 und IDS-Korpora bearbeiten.
+4. Moderne Browser-Releases fertigstellen; Pale Moon zuletzt.
 
 ## Prüfprinzip
 
