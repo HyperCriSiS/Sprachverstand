@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **86**
+- Aktueller Produktbaseline-Commit: `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`
+- Abgeschlossene Lexikon-Ausbauwellen: **87**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
