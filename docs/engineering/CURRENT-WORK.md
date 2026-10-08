@@ -203,7 +203,7 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-main-CI für PR #319 prüfen.
+1. Nach-Merge-main-CI für PR #322 ist vollständig grün.
 2. Die 435 offenen Hunspell-Basen auf Bedeutung und Flexion prüfen.
 3. Danach ESCO-v1.2.1 und IDS-Korpora bearbeiten.
 4. Moderne Browser-Releases fertigstellen; Pale Moon zuletzt.
