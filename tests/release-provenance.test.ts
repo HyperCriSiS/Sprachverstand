@@ -14,12 +14,16 @@ const modernReleaseVersionFiles = [
 ] as const;
 
 describe("Release-Provenienz", () => {
-  it("hält Provenienz intern und veröffentlicht keine Provenienzdateien", () => {
+  it("behält interne Provenienz und liefert die dokumentierte AMO-Quellprovenienz", () => {
     expect(releaseWorkflow).toContain(
       `printf '%s\\n' "$RELEASE_SHA" > artifacts/internal/SOURCE_COMMIT.txt`
     );
     expect(releaseWorkflow).not.toContain("artifacts/public/RELEASE_PROVENANCE.txt");
-    expect(releaseWorkflow).not.toContain("RELEASE_PROVENANCE.txt");
+    expect(releaseWorkflow).toContain('"$SOURCE_DIR/SOURCE_COMMIT.txt"');
+    expect(releaseWorkflow).toContain('"$SOURCE_DIR/RELEASE_PROVENANCE.txt"');
+    expect(releaseWorkflow).toContain("Tag: ${TAG}");
+    expect(releaseWorkflow).toContain("Commit: ${RELEASE_SHA}");
+    expect(releaseWorkflow).toContain("Version: ${VERSION}");
     expect(releaseWorkflow).not.toContain(
       'cp artifacts/internal/SOURCE_COMMIT.txt "$SOURCE_DIR/"'
     );

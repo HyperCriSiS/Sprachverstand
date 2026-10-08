@@ -101,13 +101,14 @@ describe("Browser-Ziele", () => {
     expect(releaseWorkflow.toLowerCase()).not.toContain("orion");
   });
 
-  it("veröffentlicht für Chrome, Edge und Opera genau ein Chromium-Familienpaket", () => {
+  it("baut Edge- und Opera-ZIPs aus der gemeinsamen Chromium-Basis", () => {
     expect(releaseWorkflow).toContain("dist/chromium");
     expect(releaseWorkflow).toContain("-chromium.zip");
     expect(releaseWorkflow).not.toContain("dist/edge");
     expect(releaseWorkflow).not.toContain("dist/opera");
-    expect(releaseWorkflow).not.toContain("-edge.zip");
-    expect(releaseWorkflow).not.toContain("-opera.zip");
+    expect(releaseWorkflow).toContain("-edge.zip");
+    expect(releaseWorkflow).toContain("-opera.zip");
+    expect(releaseWorkflow).toContain('cp -a dist/chromium/. "$TARGET_DIR/"');
   });
 
   it("prüft standardmäßig nur die tatsächlich erzeugten Icon-Verzeichnisse", () => {

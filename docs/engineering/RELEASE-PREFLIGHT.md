@@ -10,12 +10,15 @@ Store-Einreichungen zu erstellen. Pale Moon ist ausdrücklich nicht beteiligt.
    den Branch `main` wählen.
 2. Der Workflow prüft die vollständige Produkt-, Store- und Browsermatrix
    einschließlich Chromium, Firefox, Video und DOM-Untertiteln.
-3. Für die aktuelle Paketversion entstehen **Chromium-ZIP**, **unsignierte
+3. Für die aktuelle Paketversion entstehen **Chromium-ZIP**, **Edge-ZIP**, **Opera-ZIP**, **unsignierte
    Firefox-XPI** und **Quell-ZIP** plus Prüfsummen und Store-Arbeitsunterlagen.
    Der Preflight-Suffix in den Dateinamen vermeidet Verwechslungen mit einem
    veröffentlichten Release.
 4. Der Workflow prüft Archivinhalte und Versionsgleichheit einschließlich
-   aller vier modernen Quellmanifeste und der Release-Notes.
+   aller vier modernen Quellmanifeste und der Release-Notes. Die Edge-/Opera-Pakete
+   müssen außerhalb von `manifest.json` bytegleich mit Chromium sein. Im
+   Source-ZIP liegen `SOURCE_COMMIT.txt` und `RELEASE_PROVENANCE.txt`
+   mit `Tag: preflight` statt eines veröffentlichten Release-Tags.
 5. Ergebnisse stehen in der Job-Zusammenfassung. Die Pakete werden für 14 Tage
    als **CI-Artefakt** hinterlegt, nicht als öffentliche GitHub-Release-Assets.
 

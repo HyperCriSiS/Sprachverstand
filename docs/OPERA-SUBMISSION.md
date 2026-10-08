@@ -137,8 +137,8 @@ Die aktuelle öffentliche Opera-Dokumentation beschreibt die Einreichung über d
 **Upload Extensions**-Formular, nennt auf der Publishing-Seite aber kein
 eindeutiges aktuelles Dateiformat. Das bereitgestellte ZIP ist deshalb das
 reproduzierbare Release- und Testartefakt. Falls das aktuelle Upload-Formular
-beim Einreichen ein von Opera gepacktes CRX verlangt, denselben geprüften
-`dist/opera`-Inhalt in Opera über **Pack Extension** paketieren. Es dürfen dabei
+beim Einreichen ein von Opera gepacktes CRX verlangt, den unveränderten Inhalt aus dem geprüften
+Opera-ZIP in Opera über **Pack Extension** paketieren. Es dürfen dabei
 keine Quell- oder Funktionsänderungen gegenüber dem geprüften ZIP erfolgen.
 
 ## Vor der Einreichung
