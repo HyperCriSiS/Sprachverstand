@@ -7,7 +7,7 @@ Autorität: `main`
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
 - Aktueller Produktbaseline-Commit: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **85**
+- Abgeschlossene Lexikon-Ausbauwellen: **86**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -240,6 +240,14 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Drei private Review-Listen A–F, G–M und N–Z sowie Ergebniszusammenfassung unter `HyperCriSiS/Generic-Datastore`. Privater Checkpoint-Commit `664b5da94b656fc3a6d75f2ad5422a380b968333`.
 - Keine generische `-er`-Regel. Die Wellen ändern keine unmarkierten Wörter und enthalten keine Rohquellen-/Herkunftsmetadaten.
 - Weitere Quellen gemäß Roadmap und privatem Quellenregister; ESCO-v1.2.1-Delta bleibt offen. Pale Moon ausschließlich nach den Releases der modernen Browser.
+
+## Lexikon-Welle 86 abgeschlossen
+
+- PR #319 / Merge `a3257d00e4e7734fe81747817de9168bb53976ed`: 550 explizite Personenbasen, vollständige Positiv-, Negativ-, Paar- und Kasusregressionen. PR-CI einschließlich Chromium, Firefox, Performance und CodeQL grün.
+- Hunspell-Zwischenstand: 399 (Welle 84) + 552 (Welle 85) + 550 (Welle 86) = **1.501** neue Exaktmappings; **435 der ursprünglichen 1.936 unbekannten Basen ohne abschließende Reviewentscheidung**.
+- Keine generische Endungsregel, keine automatische Aufnahme; private Quelldaten nur in Generic-Datastore. Privater Checkpoint: `e277e4dcef8d83b373dacac8b26f54859c52a34b`.
+- Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` separat verifizieren.
+- Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
 ## Nächste Arbeitseinheit
 
