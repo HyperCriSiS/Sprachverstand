@@ -579,6 +579,8 @@ async function validateSubtitleToggle(url) {
       type: "tab"
     })).value.handle;
     if (!optionsWindow) throw new Error("Einstellungsfenster fehlt.");
+    // ChromeDriver kann nach window/new weiterhin das ursprüngliche Tab aktiv lassen.
+    await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await request("POST", `/session/${id}/url`, {
       url: `chrome-extension://${extension}/options/options.html`
     });
@@ -595,13 +597,6 @@ async function validateSubtitleToggle(url) {
     }
     await setSubtitleCheckbox(id, true);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
-    console.log("Video-Fenster nach Aktivierung:", JSON.stringify({
-      original: videoWindow,
-      options: optionsWindow,
-      active: (await request("GET", `/session/${id}/window`)).value,
-      url: (await request("GET", `/session/${id}/url`)).value,
-      handles: (await request("GET", `/session/${id}/window/handles`)).value
-    }));
     const on = await waitSubtitle(id, true);
     if (on.timeUpdates <= off.timeUpdates) {
       throw new Error("Video wurde beim Einschalten unterbrochen.");
