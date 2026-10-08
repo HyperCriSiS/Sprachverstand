@@ -23,12 +23,22 @@ describe("Video-Playback-Regression", () => {
   });
 
   it("vergleicht lokale Baseline und Erweiterung ohne externes Videonetzwerk", () => {
-    expect(runner).toContain('run(fixture.url, "baseline")');
-    expect(runner).toContain('run(fixture.url, "extension")');
+    expect(runner).toContain('run(url, "baseline")');
+    expect(runner).toContain('run(url, "extension")');
+    expect(runner).toContain("measureVideoPair(fixture.url, 1)");
     expect(runner).toContain("requestVideoFrameCallback");
     expect(runner).toContain("getVideoPlaybackQuality");
     expect(runner).toContain("gapsOver120Ms");
     expect(runner).not.toMatch(/https:\/\//u);
+  });
+
+  it("bestätigt ausschließlich eine Frame-Ratio-Unterschreitung einmalig", () => {
+    expect(runner).toContain("class VideoFrameRatioError extends Error");
+    expect(runner).toContain("if (frameRatio < 0.8)");
+    expect(runner).toContain("if (!(error instanceof VideoFrameRatioError))");
+    expect(runner).toContain("measureVideoPair(fixture.url, 2)");
+    expect(runner).toContain("validateComparison(baseline, extension);");
+    expect(runner).not.toContain("measureVideoPair(fixture.url, 3)");
   });
 
   it("hält ein echtes eingebettetes WebM-Testvideo vor", () => {
