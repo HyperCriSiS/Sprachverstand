@@ -20,6 +20,17 @@ jobs:
     timeout-minutes: 35
 
     steps:
+      - name: Ausführung ausschließlich auf main zulassen
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
+            echo "Der Release-Preflight darf nur auf main gestartet werden."
+            exit 1
+          fi
+
       - name: Aktuellen modernen Hauptzweig auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

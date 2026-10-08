@@ -12,6 +12,7 @@ describe("Manuelle Vorabprüfung moderner Releases", () => {
     expect(workflow).toContain("contents: read");
     expect(workflow).not.toContain("contents: write");
     expect(workflow).toContain("ref: main");
+    expect(workflow).toContain("refs/heads/main");
   });
 
   it("prüft beide modernen Browser, Video und die vollständige Produktpipeline", () => {
