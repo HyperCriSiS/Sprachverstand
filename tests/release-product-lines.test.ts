@@ -37,7 +37,9 @@ describe("Gemeinsamer Release-Flow", () => {
     expect(releaseWorkflow).toContain("-firefox.xpi");
     expect(releaseWorkflow).not.toContain("dist/edge");
     expect(releaseWorkflow).not.toContain("dist/opera");
-    expect(releaseWorkflow).not.toContain("-edge.zip");
-    expect(releaseWorkflow).not.toContain("-opera.zip");
+    expect(releaseWorkflow).toContain("-edge.zip");
+    expect(releaseWorkflow).toContain("-opera.zip");
+    expect(releaseWorkflow).toContain('cp -a dist/chromium/. "$TARGET_DIR/"');
+    expect(releaseWorkflow).toContain('if [[ "$PRODUCT_LINE" == "modern" ]]');
   });
 });
