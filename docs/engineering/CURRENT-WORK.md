@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `bec8f0abc29437bf34aa9889811b82039d8fe61c`
+- Aktueller integrierter Produktstand: `45dcd9872910a2ca0fb8caf5b9aedd8c63cdb87f`
 - Abgeschlossene Lexikon-Ausbauwellen: **88**
 - Letzter integrierter Lexikon-PR: **#324 — 71 abschließend geprüfte Hunspell-Personenbasen als Welle 88 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -218,12 +218,21 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - IDS ReCKS und DeReKo-KorAP-2026-II/Gender-Foundry methodisch und auf Verfügbarkeit geprüft. Die Foundry ist experimentell und rein musterorientiert, daher kein automatischer Produktimport. Private Evidenznotiz: `f1b3bfe266ff12610cffb2361450ec12ea3d9dc8`.
 - **Reihenfolge bleibt:** übrige Quellen und gezielte Realtext-Regression, moderne Browser-Releases, Pale Moon zuletzt.
 
+## KorAP-2026-II-Markerkompatibilität – PR #326
+
+- PR #326 / Merge `45dcd9872910a2ca0fb8caf5b9aedd8c63cdb87f`: Unicode-Schrägstriche U+2215 `∕`, U+2044 `⁄` und U+FF0F `／` auch mit `-innen` und `inne/n`; zusätzlich `(-innen)`. Soft-Hyphen U+00AD verhindert falsche Teilwort-Treffer.
+- Weiterhin nur lexikalisch bekannte Personenbasen. Keine allgemeine Endungsregel und keine pauschale Singular-/Neopronomen-Konvertierung.
+- 20 positive Markerfälle, 13 Negativfälle, gemischter Satz und eigenständige Prüfung der bekannten Suffix-Kompositaregel. PR-CI `37828113849` und CodeQL `37828105854` vollständig grün.
+- Post-Merge-`main`-CI `37828788601`, CodeQL `37828789888` ebenfalls vollständig grün, einschließlich Chromium mit Video, Gecko und Performance.
+- KorAP-Releasenotizen waren der Anlass; **keine** selbst erhobenen Korpusbelege. Private Evidenznotiz `sprachverstand/derived/review/korap-2026-ii-marker-compatibility-review.json` im Generic-Datastore.
+- ESCO 1.2.1 benötigt für ein echtes deutsches Labeldelta weiterhin den autorisierten Download; Pale Moon bleibt bis nach den modernen Releases zurückgestellt.
+
 ## Nächste Arbeitseinheit
 
-1. ESCO 1.2.1: autorisierten deutschen CSV-/Delta-Download organisieren bzw. bis dahin als externen Blocker vermerken. Keine fiktive Delta-/Vollständigkeitsprüfung.
-2. Als ausführbare Quellenarbeit die IDS-KorAP-2026-II-Belege nutzen, um Tokenisierung, ASCII-/Unicode-Schrägstriche, Klammer- und getrennte Markerformen sowie Negativfälle gezielt zu testen.
-3. Restliche konkrete Genderleicht-/Glossar-/DWDS-/Duden-Grenzfälle und einen begrenzten Real-Web-Test vor dem Release-Stichtag abschließen.
-4. Erst nach Quellenschluss die modernen Browser-Releases prüfen und finalisieren; Pale Moon als letzte Phase.
+1. Begrenzte echte Real-Web-/KorAP-Stichprobe zu Unicode-Markern, Negativfällen und Kontextvarianten prüfen und konkrete Ergebnisse dokumentieren.
+2. Noch offene Genderleicht-/DWDS-/Duden-Sonderfälle anhand belegter Problemfälle abschließen, GENDERATOR nicht erneut vollständig bearbeiten.
+3. ESCO 1.2.1 deutsches Label-Delta nur nach tatsächlichem CSV-Zugang auswerten; Blocker bei fehlendem Download korrekt offen lassen.
+4. Nach definiertem Quellenschluss die vorgesehenen modernen Browser-Releases finalisieren; **Pale Moon zuletzt**.
 
 ## Prüfprinzip
 
