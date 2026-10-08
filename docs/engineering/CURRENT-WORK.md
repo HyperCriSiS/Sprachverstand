@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `6afbbd850b099900bb24edc1207958011c44446b`
+- Aktueller integrierter Produktstand: `2d5a2cd53aa521abc230d532965743a8e6bb159d`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Letzter integrierter Lexikon-PR: **#305 — 142 geprüfte Personenformen als Welle 83 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -161,12 +161,19 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Dies deckt **keine** systemeigenen, browserintern gerenderten WebVTT-Untertitel und noch keine Live-Streamingportale ab. Die tatsächliche DOM-Overlay-Integration wird geprüft.
 - Post-Merge-`main`-CI vollständig grün: Run `37790612790` einschließlich Kernprüfung, Performance, Firefox, Chromium mit Videountertiteln und Sammelcheck; CodeQL-Lauf `37790611441` erfolgreich.
 
+## Pale-Moon-Portierung – PR #311 noch blockiert
+
+- Der dauerhafte, geschützte `palemoon`-Branch basiert beim Portierungsstart auf `b3e530d8b063db25de979c67bcfcd2b2dffd7d31`; Produktversion dort weiterhin `0.7.0`.
+- **PR #311** (`sync/palemoon-lexikon-welle-83-20261008`, Basis `palemoon`): 142 geprüfte Exaktmappings aus Welle 83, vollständige Positiv-/Negativ-, Plural-, Singular- und Kasusregressionen. Nur diese Welle portiert, nicht die vorherigen fehlenden Wellen. Kein generischer Suffix und keine Änderungen an der Legacy-Browserarchitektur.
+- CI Run `37792732910`: TypeScript, Gesamttests, Browser-Builds, Pale-Moon-Build, Oberfläche, Icons und Firefox-Lint **erfolgreich**.
+- Die bisherige **strenge Byte-Paritätsprüfung gemeinsamer Dateien gegen `main` schlägt weiterhin fehl**. Das tat sie bereits auf unverändertem `palemoon`-Basisstand (Run `36933485416`). Ihre Position wurde nur hinter die funktionalen Tests verschoben, sie bleibt verpflichtend und unverändert streng (`git diff --quiet` statt `--exit-code` zur Logbegrenzung).
+- **PR #311 nicht mergen**, bevor die Architektur-/Paritätsdifferenzen bewusst geprüft und die CI ohne pauschale Deaktivierung der Schutzprüfung in einen zulässigen Zustand gebracht wurden.
+
 ## Nächste Arbeitseinheit
 
-1. Der stabile `main`-Checkpoint zu PR #307 ist vollständig grün. Bei künftigen Videoproblemen zuerst die protokollierten Rohmessungen analysieren statt Testgrenzen zu lockern.
-2. Danach gezieltes Pale-Moon-Portierungsdelta bestimmen. `palemoon` ist ein eigenständiger Branch **im gleichen Repository** (zuletzt geprüft: `b3e530d8b063db25de979c67bcfcd2b2dffd7d31`), kein eigenes Repository. Keine vollständigen Merges von `main` nach `palemoon`.
-3. Nur nach Kompatibilitätsprüfung gemeinsame und relevante Produktregeln in einem separaten PR auf Basis von `palemoon` portieren und den Goanna-/Legacy-Build regressionsprüfen.
-4. Keine erneuten GENDERATOR-Vollaudits oder unbegrenztes CI-Polling.
+1. PR #311 und den nachgewiesenen Alt-Blocker in der `palemoon`-Paritäts-CI auflösen; Unterschiede zwischen Shared UI/API und unabhängig gepflegtem Lexikon präzise abgrenzen. Nicht mit blindem `main`-Merge oder großzügigem Ausschalten der Prüfung arbeiten.
+2. Danach CI vollständig grün und Port auf `palemoon` mergen; Legacy-Pale-Moon-Browserlauf weiterhin gesondert prüfen (Build allein ist kein Runtime-Nachweis).
+3. Keine weiteren GENDERATOR-Vollaudits und kein engmaschiges CI-Polling.
 
 ## Prüfprinzip
 

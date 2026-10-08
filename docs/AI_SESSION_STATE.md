@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `6afbbd850b099900bb24edc1207958011c44446b`
+- Aktueller Produktbaseline-Commit: `2d5a2cd53aa521abc230d532965743a8e6bb159d`
 - Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -209,12 +209,18 @@ Letzte Surface-Nachmessung:
 - PR-CI (Run `37790232285`) vollständig grün einschließlich Browser, Video, Performance, Kernprüfung und CodeQL. Post-Merge-`main`-CI vollständig grün (Run `37790612790`); CodeQL `37790611441` erfolgreich.
 - Grenzen: kein Test der nativen WebVTT-Texttracks oder externer Streamingportale; die tatsächlichen HTML-/DOM-Untertitel-Overlays sind abgedeckt.
 
+## Pale-Moon-Portierung – offener PR #311
+
+- Port von 142 geprüften Lexikonbasen als Exaktmappings mit Regressionstests nach `palemoon`, Branch `sync/palemoon-lexikon-welle-83-20261008`; keine Übernahme älterer fehlender Wellen und kein großflächiger Merge.
+- CI Run `37792732910`: gesamte Testsuite, TypeScript, Browser-/Pale-Moon-Build, Oberfläche, Icons und Firefox-Lint grün; nur der schon vorher bestehende strenge Shared-Code-Paritätsvergleich `palemoon` vs. `main` schlägt fehl (Basislauf `36933485416`).
+- Die Paritätsprüfung wurde nach die funktionalen Tests verschoben, nicht deaktiviert; Meldungsumfang durch `git diff --quiet` reduziert. **PR #311 ungemergt**.
+- Neuester moderner Produktstand ist `2d5a2cd53aa521abc230d532965743a8e6bb159d`; Post-Merge-`main`-CI zu Dokumentations-PR #310 ist grün (CI `37791502618`, CodeQL `37791503169`).
+
 ## Nächste Arbeitseinheit
 
-1. Der Nach-Merge-`main`-Check zu #307 ist erfolgreich abgeschlossen. Bei wiederkehrenden Videoproblemen Messwerte prüfen.
-2. Getrennten `palemoon`-Branch als eigenen Legacy-Port gegen den stabilen modernen `main` auf konkrete gemeinsame Produktänderungen prüfen; nicht blind mergen.
-3. Bei klar abgegrenztem Portierungsumfang eigene Pale-Moon-PR(s) und Browser-/Buildprüfungen durchführen.
-4. GENDERATOR bleibt mit 142 integrierten Mappings und 449 zurückgestellten Kandidaten abgeschlossen.
+1. Den bereits bestehenden strukturellen Pale-Moon-Paritätsblocker beheben, ohne die Schutzprüfung unbegründet zu lockern; nötige Alt- und Neudifferenzen getrennt behandeln.
+2. PR #311 erst nach vollständig erfolgreicher CI und port-spezifischer Prüfung integrieren.
+3. Regelmäßig einen kompakten Checkpoint schreiben; GENDERATOR nicht erneut voll erfassen.
 
 ## Verbindliche Wiederaufnahme-Regel
 
