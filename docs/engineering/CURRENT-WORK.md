@@ -247,12 +247,21 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - **Issue #331** dokumentiert eine Konfigurationslücke: `store-production` wird im Workflow genutzt, ist aber unter den abrufbaren Repository-Environments nicht angelegt; Store-Secrets konnten mit dem vorhandenen GitHub-Token nicht gelesen werden. Vor produktiver Veröffentlichung erforderliche Umgebungs- und Rechteprüfung durchführen.
 - **Pale Moon bleibt unangetastet.** KorAP-KWIC und ESCO-v1.2.1 sind weiterhin externe Quellenzugangsfragen, kein automatisches erneutes Vollscraping.
 
+## Moderne Release-Vorabprüfung – abgeschlossen am 08.10.2026
+
+- PR **#334** / Merge `ea3910aabcb3c51cdfce9a72eb4ae9b279d2da95`: manueller, ausschließlich lesender GitHub-Actions-Preflight für den exakt ausgelösten modernen `main`-Commit. Prüft `npm run check`, echten Chromium-/Firefox-Browser, Video und DOM-Untertitel, baut Chromium-ZIP, unsignierte Firefox-XPI und Source-ZIP, validiert Manifest/Versionsdaten, Archive und SHA-256. Keine Tags oder Store-Aktionen.
+- Erster manueller Run `37842314563`: Browser- und Store-Prüfung bestanden, **Prüfsummendatei wurde irrtümlich selbst gehasht**; drei eigentliche Archiv-Prüfsummen waren korrekt. PR **#336** / Merge `9df39a65874614f0702c210ea537b9659b51eef0` behebt diese isolierte CI-Ursache durch Ausschluss von `SHA256SUMS.txt` und ergänzt die Regression. PR-CI einschließlich Chromium/Video, Gecko, Performance, CodeQL sowie nachgelagerte `main`-CI `37842979062` und CodeQL `37842978710` vollständig grün.
+- **Abschließender Preflight `37842986543`: vollständig erfolgreich.** Paketversion `0.7.2`, drei Archivprüfungen, Paket-/Quellmanifest-Versionen, Release-Notes und Checksummen erfolgreich. Temporäres GitHub-Actions-Artefakt `modern-release-preflight-9df39a65874614f0702c210ea537b9659b51eef0` (ID `11578592630`, 14 Tage Retention). Keine Veröffentlichung ausgelöst.
+- **Release-Blocker:** Issue **#335** – operative Edge-/Opera-Dokumentation verspricht eigene ZIP-Artefakte, die der echte Release-Workflow noch nicht erzeugt; außerdem fehlen die dokumentierten Source-Provenienzdateien im Release-Source-ZIP. Beide Punkte vor einem modernen stabilen Release korrigieren und denselben Preflight um Edge/Opera ergänzen.
+- **Store-Blocker:** Issue **#331** – `store-production`-Umgebung/Store-API-Berechtigungen gesondert absichern; `store-publish.yml` läuft für produktive Einreichungen nur nach eigenständiger expliziter Freigabe. Der letzte öffentliche stabile GitHub-Release bleibt `v0.7.1`, die letzte moderne Prerelease `v0.7.2-rc.12`. Es wurde weder ein neuer Release-Tag noch ein Store-Submission-Job gestartet.
+- Quellendelta ESCO 1.2.1 und authentifizierte KorAP-KWIC-Primärtexte bleiben externe Zugangsgrenzen. Keine Wiederholung abgeschlossener Vollimports; **Pale Moon zuletzt**.
+
 ## Nächste Arbeitseinheit
 
-1. Real-Web-Stichprobe und private Kontextentscheidungen sind abgeschlossen und durch grüne `main`-CI abgesichert; die zugangsbeschränkte KorAP-KWIC-Gegenprobe ist davon methodisch getrennt.
-2. ESCO-v1.2.1-Labeldelta ohne autorisierten CSV-Download nicht als geprüft markieren. KorAP-KWIC ohne authentifizierte Textbelege als extern offen belassen. Weitere Genderleicht-/Greifswald-/Duden-Arbeit nur bei konkretem neuen Kandidaten; kein neues Vollscraping.
-3. Freigabeblockaden, Artefakte, Versions-/Store-Metadaten, Browser-/Video-/Untertiteltests und Store-`validate` der modernen Chrome/Chromium- und Firefox-Linie gezielt prüfen; Edge/Opera nur soweit der Veröffentlichungsweg vorbereitet ist. Kein Store-`submit` ohne explizite Freigabe.
-4. Pale Moon einschließlich des bekannten Paritätsproblems erst nach den modernen Releases bearbeiten. PR #311 bleibt geschlossen.
+1. **Issue #335 bearbeiten:** Edge-/Opera-Manifestvarianten aus derselben geprüften Chromium-Buildbasis paketieren; ZIP- und Manifestprüfung in den echten Release-Workflow und den manuellen Preflight übernehmen. Dokumentierte Git-Commit-/Release-Provenienz im AMO-Source-ZIP tatsächlich erzeugen und validieren. Kein neuer Tag oder Store-Upload während der Korrektur.
+2. **Issue #331 prüfen:** `store-production` absichern, vorhandene Store-Variablennamen und API-Rechte bei dafür autorisiertem Zugriff prüfen. Ohne solche Rechte als Freigabeblocker dokumentieren, keine Zugangsdaten offenlegen oder künstlichen Schutz suggerieren.
+3. Nach vollständig grünen CI- und Browser-/Videotests sowie erfolgreichem Preflight einen **gesonderten Freigabeentscheid** über die geplanten modernen Browser-Releases treffen; Store-`submit` nur mit expliziter Freigabe. Pale Moon erst danach.
+4. ESCO-v1.2.1-CSV und KorAP-KWIC nur bei echtem autorisiertem Datenzugriff wieder aufnehmen; GENDERATOR-Restaudit bleibt zurückgestellt.
 
 ## Prüfprinzip
 
