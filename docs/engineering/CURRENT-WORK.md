@@ -237,6 +237,16 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - **Methodische Grenze:** Reale Web-Verwendungen sind keine repräsentative DeReKo-/KorAP-Korpusabfrage. Keine authentifizierten KorAP-KWIC-Primärbelege, keine belastbare Häufigkeitsaussage und kein Nachweis für seltene Unicode-Schrägstriche aus dieser kleinen Stichprobe. KorAP-Zugriff für echte KWIC-Texte und ESCO-v1.2.1-CSV bleiben externe Zugangsfragen. GENDERATOR-Vollaudit bleibt ausgeschlossen.
 - Reihenfolge unverändert: Quellen begrenzt abschließen bzw. Zugangsblocker explizit dokumentieren, danach moderne Browser-Releases, Pale Moon zuletzt.
 
+## Moderne Browser – gezielte Live-Gegenprobe und Schutzbereich-Auswertung
+
+- CI-Verbesserung **PR #332** / Merge `ee3901b906d0a0b40c6b56e5eea9a52a00742757`: Der diagnostische Real-Web-Bericht trennt Änderungen geschützter DOM-Selektoren im Basis- und im Erweiterungslauf. Gezielte Tests und PR-CI (Kernprüfung, Performance, Firefox/Gecko, Chromium/Video und CodeQL) vollständig grün. Daraus wird keine automatische Kausalitätsbehauptung abgeleitet.
+- Manueller `real-world.yml`-Lauf **37837774593** auf `main`: drei ausgewählte Websites (TAZ/Soft-Hyphen, Yoga74/Video, YouTube Big Buck Bunny), 3/3 Seiten erfolgreich; lokale Chromium-, Video- und Untertiteltests erfolgreich. Ursprüngliche Anzeige `pre`-/`input`-Änderung war auf den Erweiterungslauf beschränkt, nicht mit dem Basislauf verglichen.
+- Erneute diagnostische Messung mit neuer Auswertung: **Run 37838968882**, **3/3 erfolgreich**, kein JavaScript-Fehler, keine Restmuster innerhalb der begrenzten definierten Suchmuster. `taz-soft-hyphen`: geschützte Bereiche unverändert in beiden Modi; `yoga74-techno`: `pre` in Basis- **und** Erweiterungslauf dynamisch; `youtube-big-buck-bunny`: `input` in Basis- **und** Erweiterungslauf dynamisch. **Kein Selektor ausschließlich im Erweiterungslauf verändert.** Das ist keine generelle Unbedenklichkeitsgarantie; die Web-Metrik meldet für beide Videoseiten keine Frame-Callback-Ereignisse, weshalb das lokale Videoregressions-Gate weiterhin eigenständig erforderlich ist.
+- Nach-Merge-CodeQL von #332: `37838957815` grün; Nach-Merge-`main`-CI `37838958356` zum Zeitpunkt dieses Checkpoints noch nicht abschließend bewertet. Vor Freigabe separat verifizieren.
+- GitHub-Releases stehen derzeit zuletzt auf `v0.7.2-rc.12`; das Paket meldet Version `0.7.2`. **Kein neuer Tag, keine Store-Einreichung.** Der Store-Publish-Workflow hat einen separaten `validate`-Modus und fordert für `submit` explizite Tag/Ziel-Freigabe.
+- **Issue #331** dokumentiert eine Konfigurationslücke: `store-production` wird im Workflow genutzt, ist aber unter den abrufbaren Repository-Environments nicht angelegt; Store-Secrets konnten mit dem vorhandenen GitHub-Token nicht gelesen werden. Vor produktiver Veröffentlichung erforderliche Umgebungs- und Rechteprüfung durchführen.
+- **Pale Moon bleibt unangetastet.** KorAP-KWIC und ESCO-v1.2.1 sind weiterhin externe Quellenzugangsfragen, kein automatisches erneutes Vollscraping.
+
 ## Nächste Arbeitseinheit
 
 1. Real-Web-Stichprobe und private Kontextentscheidungen sind abgeschlossen und durch grüne `main`-CI abgesichert; die zugangsbeschränkte KorAP-KWIC-Gegenprobe ist davon methodisch getrennt.
