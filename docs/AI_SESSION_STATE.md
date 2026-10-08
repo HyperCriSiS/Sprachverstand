@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `f056be49438c12d7cba32d418dfc853249c58a89`
-- Abgeschlossene Lexikon-Ausbauwellen: **84**
+- Aktueller Produktbaseline-Commit: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
+- Abgeschlossene Lexikon-Ausbauwellen: **85**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -229,12 +229,21 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Welle 84 / **PR #315** / Merge `f056be49438c12d7cba32d418dfc853249c58a89`: **399** ausdrücklich ausgewählte reguläre Personenbasen mit Positiv-, Negativ-, Paar-, Plural- und Kasusregressionen in `main` integriert. Der PR einschließlich Kernprüfung, Performance, Chromium, Gecko und CodeQL war vollständig grün.
 - **1.537** zuvor unbekannte Kandidaten bleiben ungeprüft oder bewusst zurückgestellt, darunter zahlreiche Einwohnerbezeichnungen und Zweifelsfälle. Es wurde keine generische `-er`-Regel ergänzt und keine vollständige Quellen-Coverage behauptet.
 - Quelldateien und Reviewdokumentation bleiben privat unter `HyperCriSiS/Generic-Datastore`, Abschlusscommit `b67560efac168d6cee399e58956c701fbd264259`.
-- Post-Merge-`main`-CI für #315 läuft bei diesem Checkpoint noch: Run `37798840421`, CodeQL `37798843800`.
+- Post-Merge-`main`-CI für #315 erfolgreich: Run `37798840421`, CodeQL `37798843800`.
 - ESCO 1.2.1 bleibt als Delta-Prüfung offen. Der offizielle Download benötigt eine E-Mail-Freigabe; keinen geprüften Import behaupten.
+
+## Hunspell-DE: große Lexikon-Welle 85
+
+- Produkt-PR **#317** / Merge `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`: **552** neue, explizit geprüfte Herkunfts- und Einwohnerbasen mit unverändertem Plural, femininer `-in`-Form sowie Singular-, Paar- und vier Kasusregressionen.
+- Welle 84 (399) + Welle 85 (552) = **951** hinzugefügte Personenbasen aus dem zuvor 1.936 Basen umfassenden Hunspell-Unknown-Pool. **985** sind ohne weitere Entscheidung zurückgestellt. Diese wurden nicht als ungeeignet klassifiziert.
+- CI des Produkt-PR grün: Kernprüfung, Performance, Chromium, Gecko, CodeQL und Gesamtcheck (Run `37802067353`). Nach-Merge-`main`-CI `37802473812` und CodeQL `37802474320` bei diesem Checkpoint noch gesondert zu kontrollieren.
+- Drei private Review-Listen A–F, G–M und N–Z sowie Ergebniszusammenfassung unter `HyperCriSiS/Generic-Datastore`. Privater Checkpoint-Commit `664b5da94b656fc3a6d75f2ad5422a380b968333`.
+- Keine generische `-er`-Regel. Die Wellen ändern keine unmarkierten Wörter und enthalten keine Rohquellen-/Herkunftsmetadaten.
+- Weitere Quellen gemäß Roadmap und privatem Quellenregister; ESCO-v1.2.1-Delta bleibt offen. Pale Moon ausschließlich nach den Releases der modernen Browser.
 
 ## Nächste Arbeitseinheit
 
-1. Abgeglichenes privates Register als Basis verwenden (KldB-/DKZ-Status bereits korrigiert) und **ESCO v1.2.1 als nächsten endlichen Delta-Check** bearbeiten, danach Hunspell-DE-Machbarkeit; Wikidata-/Scribbr-Reviews nicht wiederholen.
+1. Nach-Merge-CI von Welle 85 verifizieren. Danach den **verbliebenen Hunspell-Reviewpool (985)** und die ESCO-v1.2.1-Delta-Zugänglichkeit priorisiert abklären; nur semantisch und morphologisch sichere neue Blöcke integrieren. Bereits abgeschlossene KldB-/Wikidata-/Scribbr-Reviews nicht wiederholen.
 2. Weitere offene Quellen in begrenzten, einzeln getesteten Arbeitseinheiten abarbeiten. Sichere Änderungen mit Regressionstests in `main` integrieren, private Roh-/Evidenzdaten im Datastore belassen.
 3. Nach dokumentiertem Quellenabschluss die modernen Releases prüfen und abschließen. Pale Moon bis dahin nicht bearbeiten oder ungeprüft aktualisieren.
 4. Erst nach Abschluss der übrigen Releases Pale Moon neu planen und CI-Paritätskonflikt beheben.
