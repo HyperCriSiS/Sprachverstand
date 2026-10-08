@@ -151,11 +151,11 @@ Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generi
 - Im ersten `main`-Lauf kam es bei identischem Produktcode zu schwankenden Frame-Messungen (78,2 % und 79,6 % der Baseline); der PR-Browserlauf und ein Wiederholungslauf hatten die Videoregression bestanden.
 - PR #307 / Merge `4065ee2312d09428ce4e7a3692b4f51b98cb6f39` bestätigt ausschließlich eine Unterschreitung des vorhandenen 80-%-Grenzwerts durch **eine** zusätzliche vollständige Baseline-/Erweiterungsmessung. Andere Fehlschläge bleiben sofortige Fehlschläge. Video-Schranken wurden nicht gelockert.
 - PR #307: Kernprüfung, Performance, Gecko, Chromium inklusive Video, CodeQL und Sammelcheck vollständig grün.
-- Post-Merge-`main`-CI und CodeQL für #307 noch separat zu verifizieren.
+- Post-Merge-`main`-CI **vollständig grün**: Run `37786658417` (Kernprüfung, Performance, Gecko, Chromium samt Videotest und Sammelcheck); CodeQL-Run `37786658368` erfolgreich.
 
 ## Nächste Arbeitseinheit
 
-1. Post-Merge-`main`-CI und CodeQL von PR #307 abschließend prüfen; bei weiteren Videoproblemen Messprotokolle statt Testgrenzen analysieren.
+1. Der stabile `main`-Checkpoint zu PR #307 ist vollständig grün. Bei künftigen Videoproblemen zuerst die protokollierten Rohmessungen analysieren statt Testgrenzen zu lockern.
 2. Danach gezieltes Pale-Moon-Portierungsdelta bestimmen. `palemoon` ist ein eigenständiger Branch **im gleichen Repository** (zuletzt geprüft: `b3e530d8b063db25de979c67bcfcd2b2dffd7d31`), kein eigenes Repository. Keine vollständigen Merges von `main` nach `palemoon`.
 3. Nur nach Kompatibilitätsprüfung gemeinsame und relevante Produktregeln in einem separaten PR auf Basis von `palemoon` portieren und den Goanna-/Legacy-Build regressionsprüfen.
 4. Keine erneuten GENDERATOR-Vollaudits oder unbegrenztes CI-Polling.

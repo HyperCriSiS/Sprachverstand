@@ -200,11 +200,11 @@ Letzte Surface-Nachmessung:
 - Die bisherige 80-%-Schwelle sowie Videozeit-, Frame-Lücken-, P95-, Decoder-, DOM-Last- und Drop-Frame-Prüfungen bleiben unverändert.
 - Beide Messungen werden protokolliert; wiederholte Unterschreitung bleibt ein CI-Fehler.
 - PR-CI grün: Kernprüfung, Performance, Gecko, Chromium mit Video, CodeQL, Gesamtstatus.
-- Post-Merge-`main`-Validierung noch zu prüfen.
+- Post-Merge-`main`-CI **grün**: Run `37786658417` inklusive echter Browser und Videotest; CodeQL `37786658368` erfolgreich.
 
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-`main`-CI und CodeQL zu #307 bestätigen.
+1. Der Nach-Merge-`main`-Check zu #307 ist erfolgreich abgeschlossen. Bei wiederkehrenden Videoproblemen Messwerte prüfen.
 2. Getrennten `palemoon`-Branch als eigenen Legacy-Port gegen den stabilen modernen `main` auf konkrete gemeinsame Produktänderungen prüfen; nicht blind mergen.
 3. Bei klar abgegrenztem Portierungsumfang eigene Pale-Moon-PR(s) und Browser-/Buildprüfungen durchführen.
 4. GENDERATOR bleibt mit 142 integrierten Mappings und 449 zurückgestellten Kandidaten abgeschlossen.
