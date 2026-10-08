@@ -1,0 +1,90 @@
+name: Private Segmentverarbeitung
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/private-segments.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-segmentverarbeitung
+  cancel-in-progress: false
+
+jobs:
+  segment:
+    name: Privates Segment ${{ matrix.segment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        segment: [a, b, k, s, x]
+    steps:
+      - name: Privaten Datenstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HyperCriSiS/Generic-Datastore
+          ref: main
+          path: internal
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: true
+
+      - name: Python-Abhängigkeiten installieren
+        run: python -m pip install --disable-pip-version-check -r internal/sprachverstand/requirements.txt
+
+      - name: Private Segmenttests ausführen
+        env:
+          PYTHONPATH: internal/sprachverstand/scripts
+        run: |
+          python -m pytest -q internal/sprachverstand/tests/test_resume_segment_import.py \
+            > /tmp/private-tests.log 2>&1 || { echo 'Private Tests fehlgeschlagen.'; exit 1; }
+
+      - name: Private Segmente schrittweise speichern
+        shell: bash
+        env:
+          SEGMENT: ${{ matrix.segment }}
+        run: |
+          set -euo pipefail
+          cd internal
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          STATUSDATEI="sprachverstand/derived/segments/${SEGMENT}.json"
+
+          for runde in $(seq 1 50); do
+            fehler=0
+            python sprachverstand/scripts/resume_segment_import.py \
+              --letter "$SEGMENT" --output "$STATUSDATEI" --limit 12 \
+              > /tmp/privater-segmentlauf.log 2>&1 || fehler=$?
+
+            git add "$STATUSDATEI"
+            if ! git diff --cached --quiet; then
+              git commit -m 'data: privaten Segmentfortschritt sichern'
+              for versuch in $(seq 1 6); do
+                git fetch origin main
+                git rebase origin/main
+                if git push origin HEAD:main; then
+                  break
+                fi
+                if [[ "$versuch" == 6 ]]; then
+                  echo 'Privater Checkpoint konnte nicht übertragen werden.' >&2
+                  exit 1
+                fi
+              done
+            fi
+
+            if [[ "$fehler" != 0 ]]; then
+              echo 'Segmentlauf mit technischem Fehler beendet; Checkpoint gesichert.' >&2
+              exit 1
+            fi
+            if python sprachverstand/scripts/resume_segment_import.py \
+              --letter "$SEGMENT" --output "$STATUSDATEI" --check-done; then
+              echo 'Segment abgeschlossen oder kontrolliert angehalten; Checkpoint gesichert.'
+              exit 0
+            fi
+          done
+          echo 'Segment nach 600 Seiten angehalten; Checkpoint gesichert.'
