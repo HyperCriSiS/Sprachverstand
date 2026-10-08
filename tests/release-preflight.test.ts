@@ -27,6 +27,7 @@ describe("Manuelle Vorabprüfung moderner Releases", () => {
   it("validiert konkrete Archive samt Version, AMO-Signaturgrenze und Checksummen", () => {
     expect(workflow).toContain("git archive HEAD");
     expect(workflow).toContain("sha256sum -c SHA256SUMS.txt");
+    expect(workflow).toContain("! -name SHA256SUMS.txt");
     expect(workflow).toContain("unzip -t");
     expect(workflow).toContain("META-INF/");
     expect(workflow).toContain("sourceNotes.version");
