@@ -14,6 +14,7 @@ on:
           - wikipedia-real-usage
           - scribbr-genderwoerterbuch
           - genderator-genderwoerterbuch
+          - genderator-recovery-14
 
 permissions:
   contents: read
@@ -137,6 +138,22 @@ jobs:
         run: |
           python datastore/sprachverstand/scripts/run_genderator_audit.py \
             --product-dir "$GITHUB_WORKSPACE"
+
+      - name: Browserbibliothek für gezielte GENDERATOR-Recovery einrichten
+        if: inputs.source == 'genderator-recovery-14'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check playwright==1.56.0
+          command -v google-chrome
+
+      - name: Ausschließlich die 14 dokumentierten Fehlseiten im Browser nachprüfen
+        if: inputs.source == 'genderator-recovery-14'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python datastore/sprachverstand/scripts/collect_genderator_targeted_recovery.py --dry-run
+          python datastore/sprachverstand/scripts/collect_genderator_targeted_recovery.py --delay 2.0
 
       - name: Änderungen auf erlaubte private Pfade begrenzen
         shell: bash
