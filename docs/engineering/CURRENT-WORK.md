@@ -1,14 +1,14 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-07  
+Stand: 2026-10-08  
 Autorität: `main`
 
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `7515eb7abcab9163cfa34d2032a00b718808c9b4`
-- Abgeschlossene Lexikon-Ausbauwellen: **82**
-- Letzter integrierter Lexikon-PR: **#299 — Scribbr-Priority-2 als Welle 82 integrieren**
+- Aktueller integrierter Produktstand: `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`
+- Abgeschlossene Lexikon-Ausbauwellen: **83**
+- Letzter integrierter Lexikon-PR: **#305 — 142 geprüfte Personenformen als Welle 83 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -135,22 +135,22 @@ Der erste vollständige Audit ist abgeschlossen:
 
 Die Freigaben bleiben vollständig `language_model_first`; es wurde keine generische Personen-Suffixregel ergänzt.
 
-## GENDERATOR
+## GENDERATOR – Teilbestand abgeschlossen, weitere Abrufe zurückgestellt
 
-- Quellenimport-Unterstützung: PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe`.
-- Private Collector-/Runner-Logik liegt in `Generic-Datastore`.
-- ASP.NET-WebForms-Pagination erfolgt über `__doPostBack`; Paarformen und interne Quellpfade werden aus den paginierten Buchstabenlisten gewonnen.
-- Run `37689617319` war technisch grün, aber fachlich unvollständig: 14 fehlgeschlagene Seiten, 2.728 Einträge, 2.358 lexikalische Paarbasen, 441 Unknowns, vorläufig 81,30 % Coverage.
-- Privater Collector-Fix: `Generic-Datastore` PR #66 / Merge `b6abc28aa0a3912ab5ff2a5bef74a7bafff8b8ea`. Vollständiger Neuabruf fehlgeschlagener Buchstaben, Erkennung wiederholter Pagerseiten und harter Abbruch bei Restfehlern; drei neue Regressionstests.
-- Neuer Vollaudit Run `37700259912` aktiv; private Importtests im Runner grün. Fachliche Kandidatenprüfung erst bei `failedPages = 0`.
-- PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc` behebt den Race zwischen langem Audit und parallelen unabhängigen Datastore-Commits durch `fetch` + `rebase` direkt vor dem privaten Push.
+- Historischer Teilimport: 14 fehlgeschlagene Listenseiten; der Vollaudit ist **nicht vollständig**.
+- Der spätere Vollaudit Run `37700259912` wurde abgebrochen; erneutes Komplettscraping wird nicht weiterverfolgt.
+- Zwei erfolgreiche private Bestandsprüfungen am 08.10.2026; aktuelle zusammengeführte Kandidatenliste: **591 vorläufige Unknowns**.
+- Davon wurden **142 reguläre Personenbasen eigenständig geprüft** und als Exaktmappings in **Welle 83 / PR #305** integriert (Merge `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`). Keine generische Suffixregel.
+- **449 Kandidaten** sind ohne fachliche Gesamtentscheidung zurückgestellt, nicht pauschal verworfen. Keine behauptete Voll-Coverage.
+- Private Review- und Registerdaten: `HyperCriSiS/Generic-Datastore`, Commit `c21d85ce741f9cf1e2ec8a69683ae6c010e51ed0`.
+- **Kein GENDERATOR-Blocker** für die weitere Sprachverstand-Roadmap.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37700259912` auf vollständige 26 Buchstabenlisten und `failedPages = 0` prüfen; danach den vollständigen Unknown-Pool bestimmen.
-2. Neue Kandidaten vollständig fachlich prüfen; externe Evidenz nur bei echten Grenzfällen.
-3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren.
-4. Anschließend Registry, privaten CURRENT-STATE und beide öffentlichen Checkpoints aktualisieren.
+1. Nach-Merge-`main`-CI von Welle 83 abschließend kontrollieren.
+2. Die reguläre `ROADMAP.md` fortsetzen; Quellenvollaudits nur bei konkretem Mehrwert erneut priorisieren.
+3. Nach einem stabilen `main`-Checkpoint den getrennten Pale-Moon-Port bei Bedarf synchronisieren.
+4. Private Quellenstände nur für ausdrückliche Quellen-/Evidenzarbeit laden; keine umfangreichen Audit- oder CI-Schleifen ohne Bedarf.
 
 ## Prüfprinzip
 

@@ -9,7 +9,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 ### Produkt- und Evidenzpipeline
 
 - [x] Kuratierte Aufnahme neuer Personenformen mit Positiv-/Negativregressionen und Flexionsprüfung etablieren.
-- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 43 in `main` integrieren.
+- [x] Konservative Lexikon-Ausbauwellen bis einschließlich Welle 83 in `main` integrieren.
 - [ ] Weitere priorisierte Berufs-, Lexikon-, Flexions- und Realtext-Evidenz systematisch gegen den aktuellen Produktstand auswerten.
 - [ ] Kandidaten nur nach morphologischer, semantischer und kontextueller Absicherung produktiv übernehmen; mehrdeutige Fälle zurückhalten oder kontextgebunden modellieren.
 - [ ] Quellen-/Evidenzarbeit so fortführen, dass private Rohdaten, URLs und Herkunftsmetadaten nicht in das öffentliche Produktrepository gelangen.

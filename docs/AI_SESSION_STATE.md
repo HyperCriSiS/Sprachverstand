@@ -1,19 +1,20 @@
 # AI Session State
 
-Stand: 2026-10-07  
+Stand: 2026-10-08  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `7515eb7abcab9163cfa34d2032a00b718808c9b4`
-- Abgeschlossene Lexikon-Ausbauwellen: **82**
+- Aktueller Produktbaseline-Commit: `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`
+- Abgeschlossene Lexikon-Ausbauwellen: **83**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
 - Welle 80 / PR #294: 14 geprüfte Wikipedia-Realnutzungs-Exaktmappings
 - Welle 81 / PR #298: 248 geprüfte Scribbr-Exaktmappings; 2 verworfen
 - Welle 82 / PR #299: 195 geprüfte Scribbr-Priority-2-Mappings; 0 verworfen
+- Welle 83 / PR #305: **142 eigenständig geprüfte Exaktmappings**, CI inkl. Browser und CodeQL im PR grün; Merge `230b67d3bc4a0d64714760a1f0e2fd5c9ea3cc23`.
 - Keine generische Personen-Suffixregel.
 
 Die 14 in Welle 80 integrierten Basen sind:
@@ -184,23 +185,21 @@ Letzte Surface-Nachmessung:
 - Post-Wave-82-Nachmessung: 1.479 lexikalische Paarbasen, 1.477 bekannt, 2 bewusst verworfen, Coverage **99,86 %**.
 - Quellenimport Run `37673725483` erfolgreich; privater Import-Commit `ddc784c18065aa6fe45257f0c2b37e923444e5cd`.
 
-## GENDERATOR
+## GENDERATOR – kein offener Produktblocker
 
-- Öffentlicher Quellenimport via PR #301 / Merge `7b85299ce74763fc8b6b23e37e91d162de3a1cbe` integriert.
-- Private Auditpipeline und Pager-Tests in `Generic-Datastore` vorhanden.
-- ASP.NET-WebForms-Pagination wird über Hidden-State und `__doPostBack` durchlaufen; Listeneinträge werden direkt aus den paginierten Buchstabenlisten gelesen.
-- Private Importtests sind im aktuellen Auditlauf grün.
-- Vollaudit Run `37689617319` technisch erfolgreich, aber **unvollständig**: 14 fehlgeschlagene Listenseiten (unter anderem B, K, P und S); 2.728 Einträge, 2.358 lexikalische Paarbasen und 441 Unknowns bei **vorläufig 81,30 % Coverage**.
-- Der private Collector akzeptiert Teilmessungen nach PR #66 (`Generic-Datastore`, Merge `b6abc28aa0a3912ab5ff2a5bef74a7bafff8b8ea`) nicht mehr als erfolgreichen Audit: fehlgeschlagene Buchstaben werden vollständig erneut gelesen; wiederholte Pagerseiten sowie bleibende Ausfälle führen zum Abbruch.
-- Neuer Vollaudit: Workflow-Run `37700259912` gestartet; Gesamtergebnis noch offen. Die privaten Importtests sind im neuen Runnerlauf grün.
-- PR #302 / Merge `0a2b5bad21180b8454ee4b6bd9b9d8e463a827fc`: Vor dem privaten Push wird `origin/main` gefetcht und der Import-Commit rebasiert; damit sind unabhängige Checkpoint-/Wartungscommits während langer Audits kein Non-Fast-Forward-Race mehr.
+- Der ältere Quellenabruf war mit 14 fehlgeschlagenen Listenseiten unvollständig; Run `37700259912` wurde abgebrochen. Ein erneuter Vollaudit ist zurückgestellt.
+- Die private zusammengeführte Teilmessung und die erfolgreichen Bestandsprüfungen vom 08.10.2026 ergeben **591 vorläufige Unknowns**.
+- **142 Personenbasen** vollständig eigenständig auf reguläre Flexion geprüft und als **Welle 83 / PR #305** integriert; **449 nicht geprüfte Restkandidaten** ohne Reviewentscheidung zurückgestellt.
+- Welle 83 enthält ausschließlich explizite Allow-List-Einträge mit Positiv-, Negativ-, Singular-, Plural- und Kasusregressionen. Kein generischer Personen-Suffix.
+- Private Review-Dateien: `sprachverstand/derived/review/genderator-partial-merge-priority-1-manual-decisions.json` und `-summary.json` in `Generic-Datastore`.
+- Privater Status und Register aktualisiert: Commit `c21d85ce741f9cf1e2ec8a69683ae6c010e51ed0`.
 
 ## Nächste Arbeitseinheit
 
-1. GENDERATOR-Vollaudit Run `37700259912` auf `failedPages = 0` prüfen; erst danach Coverage und den vollständigen Unknown-Pool auswerten.
-2. GENDERATOR-Unknowns vollständig semantisch und morphologisch prüfen.
-3. Sichere Ergebnisse ausschließlich als Exact-Mappings bzw. eng begrenzte Regeln integrieren; keine generische Personen-Suffixregel.
-4. Danach Registry, privaten CURRENT-STATE und diesen Checkpoint erneut aktualisieren.
+1. Nach-Merge-`main`-CI und CodeQL für PR #305 verifizieren.
+2. Reguläre Roadmap ohne weitere GENDERATOR-Vollaudits fortsetzen. Die 449 Restkandidaten bleiben zunächst zurückgestellt.
+3. Stabilen `main`-Produktstand separat in den Pale-Moon-Port synchronisieren, wenn priorisiert.
+4. Nach der nächsten größeren Einheit wieder einen kompakten Checkpoint schreiben.
 
 ## Verbindliche Wiederaufnahme-Regel
 
