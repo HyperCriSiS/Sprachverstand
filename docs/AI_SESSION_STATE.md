@@ -211,9 +211,11 @@ Letzte Surface-Nachmessung:
 
 ## Neue verbindliche Projektreihenfolge: Quellen → moderne Releases → Pale Moon
 
+KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigiert: privater Commit `163ee6a173b7183b124a3020ae2925716ec2cc3f`.
+
 **Entscheidung vom 08.10.2026:** Zuerst alle noch relevanten, begrenzt prüfbaren Quellen bearbeiten und sichere Produktkandidaten in `main` abschließen; danach die geplanten Releases für Chrome/Chromium, Firefox und weitere moderne Browserkanäle abschließen; **Pale Moon zuletzt**.
 
-- Quellenregister mit 24 Einträgen ist Grundlage; abgeschlossene Reviews (u. a. KldB-Reviewblöcke, Wikidata, Wikipedia und Scribbr) nicht blind wiederholen. Historisch ungenaue Registry-Statusangaben (besonders KldB/DKZ) vor neuen Importen abgleichen.
+- Quellenregister mit 24 Einträgen ist Grundlage. BA-KldB-2026 und DKZ-Current sind anhand erfolgreicher Importe und sämtlicher 22 abgeschlossener Reviews im privaten Register bereits als erledigt nachgetragen. Wikidata, Wikipedia und Scribbr ebenfalls nicht blind wiederholen.
 - Offene abgegrenzte Arbeit: ESCO-v1.2.1-Delta, Hunspell DE, IDS ReCKS / KoRaP/Gender-Foundry, verbliebene Kontext-/Glossarfragen (Genderleicht/Greifswald), DWDS/Duden bei Zweifelsfällen und begrenzte Real-Web-/Flexions-Regressionsnachmessung.
 - **GENDERATOR-Ausnahme bleibt bestehen:** Keine erneute Vollerfassung. 142 sicher geprüfte Formen integriert, 449 Kandidaten ohne Entscheidung zurückgestellt.
 - Abgeschlossene Quellen nicht mit Prozentzahlen überbewerten: Jeder Quellenschritt endet mit einem nachvollziehbaren Ergebnis (Integration, kein Mehrwert, zurückgestellt oder externer Zugriff nicht möglich), ohne fiktive Vollständigkeitsbehauptungen.
@@ -222,7 +224,7 @@ Letzte Surface-Nachmessung:
 
 ## Nächste Arbeitseinheit
 
-1. Privates Quellenregister und Quellen-Review-Status zur tatsächlichen offenen Queue konsolidieren (beginnend mit ESCO-v1.2.1-Delta und Hunspell-DE-Machbarkeit); bereits erledigte KldB-/Wikidata-/Scribbr-Arbeit nicht wiederholen.
+1. Abgeglichenes privates Register als Basis verwenden (KldB-/DKZ-Status bereits korrigiert) und **ESCO v1.2.1 als nächsten endlichen Delta-Check** bearbeiten, danach Hunspell-DE-Machbarkeit; Wikidata-/Scribbr-Reviews nicht wiederholen.
 2. Weitere offene Quellen in begrenzten, einzeln getesteten Arbeitseinheiten abarbeiten. Sichere Änderungen mit Regressionstests in `main` integrieren, private Roh-/Evidenzdaten im Datastore belassen.
 3. Nach dokumentiertem Quellenabschluss die modernen Releases prüfen und abschließen. Pale Moon bis dahin nicht bearbeiten oder ungeprüft aktualisieren.
 4. Erst nach Abschluss der übrigen Releases Pale Moon neu planen und CI-Paritätskonflikt beheben.

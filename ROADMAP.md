@@ -19,7 +19,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 
 **Phase 1 – Quellen vor Releases** (endlicher, nachvollziehbarer Quellenabschluss):
 
-- [ ] Quellenregister auf tatsächlich offene gegenüber bereits fachlich abgeschlossenen Quellen abgleichen, insbesondere die historischen KldB-/DKZ-Statusbezeichnungen.
+- [x] Quellenregister für BA-KldB-2026 und DKZ-Current anhand der nachweislich erfolgreichen Importe und aller 22 Reviewblöcke korrigiert; der gemeinsame unbekannte Kandidatenpool ist vollständig entschieden.
 - [ ] ESCO v1.2.1 als Delta-/Vollständigkeitsprüfung gegenüber dem bereits importierten und geprüften v1.2.0-API-Bestand bearbeiten.
 - [ ] Hunspell DE quellen-, lizenz- und qualitätsgeprüft gegen das bestehende Lexikon abgleichen.
 - [ ] IDS ReCKS und IDS KoRaP/Gender-Foundry auf tatsächliche Verfügbarkeit und relevante neue Realtext-/Annotierungsfälle prüfen; nur belastbare Daten übernehmen.
