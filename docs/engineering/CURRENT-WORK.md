@@ -6,9 +6,9 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `27cc7ba4983dd8452edbec4e9a6b3ddbea44c3b6`
-- Abgeschlossene Lexikon-Ausbauwellen: **86**
-- Letzter integrierter Lexikon-PR: **#319 — 550 geprüfte Personenformen als Welle 86 integrieren**
+- Aktueller integrierter Produktstand: `97ac85b18f2f46f4ffe09e5d75ae7e3c2ad34164`
+- Abgeschlossene Lexikon-Ausbauwellen: **87**
+- Letzter integrierter Lexikon-PR: **#322 — 231 geprüfte Regionalformen als Welle 87 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
