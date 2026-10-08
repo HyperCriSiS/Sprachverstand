@@ -246,7 +246,7 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - PR #319 / Merge `a3257d00e4e7734fe81747817de9168bb53976ed`: 550 explizite Personenbasen, vollständige Positiv-, Negativ-, Paar- und Kasusregressionen. PR-CI einschließlich Chromium, Firefox, Performance und CodeQL grün.
 - Hunspell-Zwischenstand: 399 (Welle 84) + 552 (Welle 85) + 550 (Welle 86) = **1.501** neue Exaktmappings; **435 der ursprünglichen 1.936 unbekannten Basen ohne abschließende Reviewentscheidung**.
 - Keine generische Endungsregel, keine automatische Aufnahme; private Quelldaten nur in Generic-Datastore. Privater Checkpoint: `e277e4dcef8d83b373dacac8b26f54859c52a34b`.
-- Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` separat verifizieren.
+- Nach-Merge-`main`-CI Run `37806661507` und CodeQL `37806661267` erfolgreich abgeschlossen.
 - Nächste Quellenarbeit: verbleibende 435 Hunspell-Kandidaten triagieren, dann ESCO v1.2.1 und IDS. Moderne Browser-Releases vor Pale Moon.
 
 ## Nächste Arbeitseinheit
