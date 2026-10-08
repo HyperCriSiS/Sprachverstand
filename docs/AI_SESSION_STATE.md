@@ -259,8 +259,8 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 
 ## Nächste Arbeitseinheit
 
-1. Nach-Merge-main-CI von PR #319 abschließend prüfen.
-2. Verbleibende 435 Hunspell-Basen fachlich triagieren.
+1. Nach-Merge-main-CI von PR #322 ist bereits erfolgreich abgeschlossen.
+2. Verbleibende 204 Hunspell-Basen fachlich triagieren.
 3. ESCO-v1.2.1-Delta und IDS-Korpora auswerten.
 4. Releases für moderne Browser abschließen und erst danach Pale Moon bearbeiten.
 
