@@ -1,0 +1,113 @@
+name: Privater Hunspell-DE-Kandidatenabgleich
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sprachverstand-private-source-ingest
+  cancel-in-progress: false
+
+jobs:
+  hunspell:
+    name: Hunspell DE mit Lexikon-Runtime abgleichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Sprachverstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Produktabhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Zugriff auf privaten Datastore prüfen
+        env:
+          DATASTORE_TOKEN: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$DATASTORE_TOKEN" ]]; then
+            echo "Das auf Generic-Datastore begrenzte Token fehlt."
+            exit 1
+          fi
+
+      - name: Privaten Datastore auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: HyperCriSiS/Generic-Datastore
+          ref: main
+          path: datastore
+          token: ${{ secrets.GENERIC_DATASTORE_TOKEN }}
+          persist-credentials: true
+
+      - name: Private Python-Tests durchführen
+        run: |
+          python -m pip install --disable-pip-version-check -r datastore/sprachverstand/requirements.txt
+          python -m pytest -q datastore/sprachverstand/tests
+
+      - name: Fest versionierte deutsche Hunspell-Quellen privat importieren
+        run: |
+          python datastore/sprachverstand/scripts/run_hunspell_discovery.py \
+            --private-root datastore/sprachverstand
+
+      - name: Produkt-Coverage ohne Rohquellen im öffentlichen Repository berechnen
+        run: |
+          node scripts/lexicon-coverage.mjs \
+            datastore/sprachverstand/derived/candidates/hunspell-de-frami-review.json \
+            --output datastore/sprachverstand/derived/candidates/hunspell-de-frami-coverage.json
+
+      - name: Offene Kandidaten für individuelle Review getrennt speichern
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          basis = Path("datastore/sprachverstand/derived/candidates")
+          daten = json.loads((basis / "hunspell-de-frami-coverage.json").read_text(encoding="utf-8"))
+          unknown = sorted({
+              row["base"] for row in daten.get("unknown", [])
+              if isinstance(row, dict) and isinstance(row.get("base"), str)
+          })
+          (basis / "hunspell-de-frami-unknown.txt").write_text(
+              "\n".join(unknown) + ("\n" if unknown else ""), encoding="utf-8"
+          )
+          status = basis / "hunspell-de-frami-summary.json"
+          bericht = json.loads(status.read_text(encoding="utf-8"))
+          bericht["unknownRuntimeBases"] = len(unknown)
+          bericht["coverage"] = daten.get("stats", {})
+          bericht["reviewStatus"] = "offen_einzeln_pruefen"
+          status.write_text(json.dumps(bericht, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(f"Unbekannte, ausdrücklich nicht automatisch freigegebene Basen: {len(unknown)}")
+          PY
+
+      - name: Nur private Importartefakte festschreiben
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd datastore
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- sprachverstand/raw/hunspell-de-frami \
+            sprachverstand/derived/candidates/hunspell-de-frami-review.json \
+            sprachverstand/derived/candidates/hunspell-de-frami-summary.json \
+            sprachverstand/derived/candidates/hunspell-de-frami-coverage.json \
+            sprachverstand/derived/candidates/hunspell-de-frami-unknown.txt
+          if git diff --cached --quiet; then
+            echo "Keine neuen Importdaten."
+            exit 0
+          fi
+          git commit -m "data: deutschen Hunspell-Bestand als ungeprüfte Review-Kandidaten importieren"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
