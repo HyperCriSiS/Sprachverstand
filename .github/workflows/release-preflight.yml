@@ -1,0 +1,175 @@
+name: Moderne Release-Vorabprüfung
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modern-release-preflight
+  cancel-in-progress: false
+
+env:
+  CI: true
+
+jobs:
+  preflight:
+    name: Browserpakete ohne Veröffentlichung prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Aktuellen modernen Hauptzweig auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+
+      - name: Node.js und npm-Cache einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Vollständige Produkt- und Storeprüfung
+        run: npm run check
+
+      - name: Echten Chromium-Browser prüfen
+        run: npm run test:browser:chromium
+
+      - name: Video und Untertitel in Chromium prüfen
+        run: npm run test:browser:video:chromium
+
+      - name: Echten Firefox-Browser prüfen
+        run: npm run test:browser:firefox
+
+      - name: Version und Store-Unterlagen vorbereiten
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          SHORT_SHA=$(git rev-parse --short=12 HEAD)
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "ASSET_LABEL=$VERSION-preflight-$SHORT_SHA" >> "$GITHUB_ENV"
+          node scripts/store-release-notes.mjs --release-version "$VERSION"
+          node scripts/generate-store-metadata.mjs --release-version "$VERSION"
+          node scripts/generate-chrome-dashboard.mjs --release-version "$VERSION"
+
+      - name: Chromium-, Firefox- und Quellpaket lokal erstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/preflight/internal
+          (
+            cd dist/chromium
+            zip -qr "../../artifacts/preflight/sprachverstand-$ASSET_LABEL-chromium.zip" .
+          )
+          (
+            cd dist/firefox
+            zip -qr "../../artifacts/preflight/sprachverstand-$ASSET_LABEL-firefox.xpi" .
+          )
+          SOURCE_DIR=$(mktemp -d)
+          trap 'rm -rf "$SOURCE_DIR"' EXIT
+          git archive HEAD | tar -x -C "$SOURCE_DIR"
+          (
+            cd "$SOURCE_DIR"
+            zip -qr "$GITHUB_WORKSPACE/artifacts/preflight/sprachverstand-$ASSET_LABEL-source.zip" .
+          )
+          cp store/generated/amo-metadata.json artifacts/preflight/internal/
+          cp store/generated/amo-release-notes.json artifacts/preflight/internal/
+          cp store/generated/chrome-dashboard.csv artifacts/preflight/internal/
+          cp store/generated/edge-worklist.csv artifacts/preflight/internal/
+          cp store/generated/opera-worklist.csv artifacts/preflight/internal/
+          printf '%s\n' "$GITHUB_SHA" > artifacts/preflight/internal/SOURCE_COMMIT.txt
+          (
+            cd artifacts/preflight
+            find . -maxdepth 1 -type f -printf '%f\0' | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+            sha256sum -c SHA256SUMS.txt
+          )
+
+      - name: Paketinhalt, Manifeste und Versionsgleichheit prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROMIUM="artifacts/preflight/sprachverstand-$ASSET_LABEL-chromium.zip"
+          FIREFOX="artifacts/preflight/sprachverstand-$ASSET_LABEL-firefox.xpi"
+          SOURCE="artifacts/preflight/sprachverstand-$ASSET_LABEL-source.zip"
+          unzip -t "$CHROMIUM" >/dev/null
+          unzip -t "$FIREFOX" >/dev/null
+          unzip -t "$SOURCE" >/dev/null
+          node <<'NODE'
+          const assert = require("node:assert/strict");
+          const fs = require("node:fs");
+          const { execFileSync } = require("node:child_process");
+
+          const version = process.env.RELEASE_VERSION;
+          const label = process.env.ASSET_LABEL;
+          const base = "artifacts/preflight/sprachverstand-" + label;
+          const chromium = base + "-chromium.zip";
+          const firefox = base + "-firefox.xpi";
+          const source = base + "-source.zip";
+          const readArchive = (file, entry) =>
+            execFileSync("unzip", ["-p", file, entry], { encoding: "utf8" });
+          const archiveFiles = (file) =>
+            execFileSync("unzip", ["-Z1", file], { encoding: "utf8" })
+              .split(/\r?\n/u).filter(Boolean);
+          const expected = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          assert.equal(expected.version, version);
+
+          for (const [file, family] of [[chromium, "chromium"], [firefox, "firefox"]]) {
+            const entries = archiveFiles(file);
+            for (const required of ["manifest.json", "content.js", "background.js",
+              "popup/popup.html", "options/options.html", "_locales/de/messages.json"]) {
+              assert(entries.includes(required), family + ": Datei fehlt: " + required);
+            }
+            const manifest = JSON.parse(readArchive(file, "manifest.json"));
+            assert.equal(manifest.version, version, family + ": falsche Version");
+            assert.equal(manifest.manifest_version, 3, family + ": falsche Manifest-Version");
+            if (family === "firefox") {
+              assert(manifest.browser_specific_settings?.gecko?.id, "Firefox-ID fehlt");
+              assert(!entries.some((entry) => entry.startsWith("META-INF/")),
+                "Firefox-XPI darf vor AMO-Signierung nicht signiert sein");
+            } else {
+              assert(manifest.background?.service_worker, "Chromium-Service-Worker fehlt");
+            }
+          }
+
+          const sourcePackage = JSON.parse(readArchive(source, "package.json"));
+          const sourceLock = JSON.parse(readArchive(source, "package-lock.json"));
+          const sourceNotes = JSON.parse(readArchive(
+            source, "store/release-notes/" + version + ".json"
+          ));
+          assert.equal(sourcePackage.version, version, "Quellpaket-Version abweichend");
+          assert.equal(sourceLock.version, version, "Quellpaket-Lock-Version abweichend");
+          assert.equal(sourceNotes.version, version, "Store-Notes-Version abweichend");
+          for (const name of ["chromium", "edge", "opera", "firefox"]) {
+            const manifest = JSON.parse(readArchive(source, "manifests/" + name + ".json"));
+            assert.equal(manifest.version, version, name + ": Quellmanifest-Version abweichend");
+          }
+          console.log("Release-Vorabprüfung bestanden: " + version + " / " + label);
+          NODE
+          (
+            cd artifacts/preflight
+            sha256sum -c SHA256SUMS.txt
+          )
+          {
+            echo "## Moderne Release-Vorabprüfung"
+            echo ""
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Paketversion: \`$RELEASE_VERSION\`"
+            echo "- Chromium, Firefox und Quellpaket: Archive, Manifeste und Versionen geprüft"
+            echo "- Browser-, Video-, Untertitel-, Store- und Kernprüfungen: erfolgreich"
+            echo "- **Keine Tags, GitHub-Releases oder Store-Einreichungen angelegt**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Vorabpakete und Prüfunterlagen als internes CI-Artefakt sichern
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: modern-release-preflight-${{ github.sha }}
+          path: artifacts/preflight/
+          retention-days: 14
+          if-no-files-found: error
