@@ -1,14 +1,14 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-08  
+Stand: 2026-10-09  
 Autorität: `main`
 
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `45dcd9872910a2ca0fb8caf5b9aedd8c63cdb87f`
-- Abgeschlossene Lexikon-Ausbauwellen: **88**
-- Letzter integrierter Lexikon-PR: **#324 — 71 abschließend geprüfte Hunspell-Personenbasen als Welle 88 integrieren**
+- Aktueller integrierter Produktstand: `feb8bda53081ac5ec4fbc157b521b5463021cbd5`
+- Abgeschlossene Lexikon-Ausbauwellen: **89**
+- Letzter integrierter Lexikon-PR: **#344 — 53 geprüfte Personenbasen als Welle 89 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -304,3 +304,10 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 3. Bei Quellenarbeit zusätzlich `HyperCriSiS/Generic-Datastore:sprachverstand/CURRENT-STATE.json` lesen.
 4. Git-Checkpoints haben Vorrang vor alten Chats.
 5. Nach einer abgeschlossenen größeren Einheit diesen Checkpoint aktualisieren.
+
+## Lexikonwelle 89 – 09.10.2026
+
+- **PR #344 / Merge `feb8bda53081ac5ec4fbc157b521b5463021cbd5`:** 53 morphologisch geprüfte Personenbasen als exakte Mappings, getrennte Positiv-, Singular-, Paar-, Kasus- und Negativtests; keine generische Personenendungsregel.
+- Vollständige PR-CI einschließlich Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL und Sammelcheck erfolgreich. Nach-Merge-Status wird über CI-Run `37872549550` und CodeQL `37872549623` überprüft.
+- Fachliche Herkunfts-/Kandidatenprüfungen bleiben privat in `HyperCriSiS/Generic-Datastore`. Keine Originalquellen und keine Herkunftsmetadaten in produktiven Lexikondateien.
+- Weitere Lexikonarbeit nur als begrenzte, eigenständig geprüfte Kandidatenchargen; externe KorAP-Primärbelege erfordern weiterhin berechtigten Zugang. GENDERATOR-Abrufstopp bleibt bestehen. Moderne Browser-Releases vor Pale Moon.

@@ -1,13 +1,13 @@
 # AI Session State
 
-Stand: 2026-10-08  
+Stand: 2026-10-09  
 Autorität: `main`
 
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `45dcd9872910a2ca0fb8caf5b9aedd8c63cdb87f`
-- Abgeschlossene Lexikon-Ausbauwellen: **88**
+- Aktueller Produktbaseline-Commit: `feb8bda53081ac5ec4fbc157b521b5463021cbd5`
+- Abgeschlossene Lexikon-Ausbauwellen: **89**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -344,3 +344,10 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Git-Checkpoints haben Vorrang vor alten Chats und früheren „als Nächstes“-Formulierungen.
 - Nach einer größeren abgeschlossenen Einheit diesen Checkpoint aktualisieren.
 - Wegen des aktiven Default-Branch-Rulesets auch reine öffentliche Checkpoint-Dateien per PR aktualisieren; Produktcode, Tests, Workflows und fachliche Änderungen bleiben ebenfalls PR-pflichtig.
+
+## Lexikonwelle 89 – 09.10.2026
+
+- **PR #344 / Merge `feb8bda53081ac5ec4fbc157b521b5463021cbd5`:** 53 morphologisch geprüfte Personenbasen als exakte Mappings, getrennte Positiv-, Singular-, Paar-, Kasus- und Negativtests; keine generische Personenendungsregel.
+- Vollständige PR-CI einschließlich Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL und Sammelcheck erfolgreich. Nach-Merge-Status wird über CI-Run `37872549550` und CodeQL `37872549623` überprüft.
+- Fachliche Herkunfts-/Kandidatenprüfungen bleiben privat in `HyperCriSiS/Generic-Datastore`. Keine Originalquellen und keine Herkunftsmetadaten in produktiven Lexikondateien.
+- Weitere Lexikonarbeit nur als begrenzte, eigenständig geprüfte Kandidatenchargen; externe KorAP-Primärbelege erfordern weiterhin berechtigten Zugang. GENDERATOR-Abrufstopp bleibt bestehen. Moderne Browser-Releases vor Pale Moon.
