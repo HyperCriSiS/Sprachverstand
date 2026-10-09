@@ -8,11 +8,16 @@ ein Repository-Administrator sie mit wirksamen Schutzregeln konfiguriert.
 
 1. GitHub → Sprachverstand → Settings → Environments → New environment:
    `store-production` anlegen.
-2. Unter `Settings → Collaborators` einen vertrauenswürdigen zweiten
-   GitHub-Account mit mindestens Lesezugriff einladen und die Annahme
-   abwarten. Stand 09.10.2026: ausschließlich `HyperCriSiS` ist Mitarbeiter.
-   Anschließend `Required reviewers` aktivieren, die zweite Person auswählen
-   und `Prevent self-review` einschalten.
+2. `Required reviewers` aktivieren und zuerst versuchen, eine
+   vertrauenswürdige zweite Person direkt als Reviewer auszuwählen
+   (GitHub verlangt mindestens Lesezugriff). `Prevent self-review` aktivieren.
+   Stand 09.10.2026: Die Mitarbeiterliste enthält nur `HyperCriSiS`.
+   Falls GitHub eine explizite Collaborator-Einladung verlangt, beachten:
+   Das Repository gehört einem **persönlichen GitHub-Konto**. Eingeladene
+   Collaborators erhalten dort auch **Schreibrechte**. Deshalb nur eine
+   Person einladen, der Du Codezugriff anvertrauen würdest. Für fein
+   abgestufte Rollen wäre ein Organisation-Repository nötig; ein Transfer
+   ist keine automatische Voraussetzung dieses Store-Gates.
 3. `Allow administrators to bypass configured protection rules` deaktivieren.
    Unter `Deployment branches` nur geschützte Branches erlauben.
 4. In `store-production` die unten benannten Environment-Secrets und
@@ -67,3 +72,16 @@ Hilfreiche Einstiegsseiten: https://github.com/HyperCriSiS/Sprachverstand/settin
 https://addons.mozilla.org/de/developers/addon/api/key/,
 https://developer.chrome.com/docs/webstore/service-accounts,
 https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines.
+
+## Reviewer-Rechte und Kontomodell
+
+Im persönlichen GitHub-Repository gibt es nur Eigentümer und Collaborator
+als Rollen. Eine Collaborator-Einladung ist keine reine Lesefreigabe;
+sie kann das Schreiben in das Repository ermöglichen. Der `main`-Schutz
+bleibt zwar wirksam, aber andere Branches und Repository-Aktionen sind
+nicht automatisch schreibgeschützt. Den Reviewer daher nicht allein für
+die formale Freigabe an einen unbekannten Account delegieren. Prüfe zuerst,
+ob GitHub die gewünschte Person beim Environment direkt akzeptiert.
+
+GitHub-Dokumentation:
+https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/repository-access-and-collaboration/permission-levels-for-a-personal-account-repository
