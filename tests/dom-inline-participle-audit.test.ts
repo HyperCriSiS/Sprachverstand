@@ -179,4 +179,35 @@ describe("Audit DOM-01: Partizip mit Inline-Markup", () => {
     expect(processor.getReplacementCount()).toBe(1);
   });
 
+  it.each([
+    ["<p>Die<em> </em><strong>Mitarbeitende</strong> wartet.</p>", "Die Mitarbeiterin wartet."],
+    ["<p>Eine<i> </i><strong>Studierende</strong> wartet.</p>", "Eine Studentin wartet."],
+    ["<p>Die<span>\u00a0</span><strong>Mitarbeitende</strong> wartet.</p>", "Die\u00a0Mitarbeiterin wartet."]
+  ])("berücksichtigt reine Leerraumknoten als Inline-Wortgrenze", (html, expected) => {
+    expect(transformieren(html)).toBe(expected);
+  });
+
+  it("bewertet eine dynamisch eingefügte Wortgrenze auf beiden Seiten neu", async () => {
+    document.body.innerHTML = "<p>Die<strong>Mitarbeitende</strong> wartet.</p>";
+    const paragraph = document.querySelector("p")!;
+    const participle = paragraph.querySelector("strong")!;
+    processor = new DomProcessor(document, {
+      rules: defaultRules, profile: "aggressive", processAccessibleAttributes: false
+    });
+    processor.start();
+    expect(paragraph.textContent).toBe("DieMitarbeitende wartet.");
+
+    const space = document.createElement("em");
+    space.textContent = " ";
+    paragraph.insertBefore(space, participle);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("Die Mitarbeiterin wartet.");
+
+    space.remove();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("DieMitarbeitende wartet.");
+  });
+
 });

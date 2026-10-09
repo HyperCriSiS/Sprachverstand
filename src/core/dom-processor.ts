@@ -1581,6 +1581,9 @@ export class DomProcessor {
     const readText = (text: Text): boolean => {
       if (!shouldProcessTextNode(text)) {
         if (text.data.trim() === "") {
+          // Auch reine Leerräume sind echte Wortgrenzen. Ihr Weglassen
+          // würde nicht zusammengehörige Inline-Fragmente verbinden.
+          chunks.push(text.data);
           return true;
         }
         const root = text.getRootNode();
