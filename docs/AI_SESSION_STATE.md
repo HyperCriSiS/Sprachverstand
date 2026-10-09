@@ -2,12 +2,12 @@
 
 ## Neuester kompakter Audit-Checkpoint (10.10.2026, Europe/Berlin)
 
-- **Neu integriert:** **#405 DOM-01-Teilwortschutz**, Merge `0f76f18ad85ebc02d2a1e42e976fab0cc044787e`: konservativer linker/rechter Inline-Wortgrenzschutz gegen fehlerhafte Teilkorrekturen (z. B. `Mitarbeitende` plus `n`), einschließlich dynamischer Einfüge-/Entfernregressionen. Acht neue Fälle, alle PR-CI-Gates grün: Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL, Sammelcheck.  **#403 DOM-01-Restfix**, Merge `daf57b6daf7b0a491035f9872c96e81916443eed`: Auf unmittelbar angrenzende Inline-Elemente begrenzte Neubewertung nach DOM-Mutationen; Schutz bei nachträglich eingefügten oder neu klassifizierten rechten Nomen sowie einbuchstabigen, sicheren Nomenfragmenten. Vier zusätzliche unabhängige Positiv-/Negativregressionen. PR-CI vollständig grün: Kernprüfung, Performance, CodeQL, Chromium/Video, Firefox. **#401 DOM-10** ebenfalls gemergt (`0c94e242`, komplette PR-CI grün).
+- **Neu integriert:** **#408 DOM-01-Leerraumgrenzen**, Merge `9809db09d07d6fff225dfa8c39cabc24a621dbc3`: Reine Leerraum-Textknoten werden beim Sammeln angrenzender Inline-Kontexte als echte Worttrennung behandelt; drei statische (inkl. NBSP) und ein dynamischer Insert-/Remove-Test. Vollständige PR-CI mit Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL und Sammelcheck grün. **#407 designMode-Off**, Merge `6a9add6f90cb40d3a67dd2d8e9e1930dc15639f0`, drei Unit-/echte Chromium-/Firefox-Grenzregressionen; PR- und Post-Merge-`main`-CI `38004321534` grün. Davor #405 `0f76f18a`, #403 `daf57b6d`, #401 `0c94e242` integriert.
 - Vorherige geprüfte Auditeinheiten: **#397 DOM-06** `3699903a`, **#398 DOM-12** `188b6bcb`, **#399 DOM-11** `320c2e3c`; alle PR-CI grün. Nachgelagerte `main`-CI getrennt prüfen.
-- **Weiterhin NO-GO:** Ausgangsaudit 29 Befunde (8 P1, 20 P2, 1 P3); unabhängige vollständige Revalidierung fehlt. DOM-01 verbleibende **vollständige** Umwandlung fragmentierter Partizipwörter (nur Schutz vor falschen Teilkorrekturen integriert), native/metamorphe Gegenproben, LANG/TEST-01, DesignMode-Off ohne Ereignis, REL-01-Video wiederholt nativ und DOM-02-1k/4k/10k-Nachmessungen, S3/S4.
+- **Weiterhin NO-GO:** Ausgangsaudit 29 Befunde (8 P1, 20 P2, 1 P3), unabhängige vollständige Abnahme fehlt. #408 ist nun **gemergt**, vorheriger Wartestatus für Run `38004401589` erledigt; Post-Merge-`main`-CI gesondert prüfen. Vollständige DOM-01-Worttransformation über beliebig getrennte Knoten, LANG-/TEST-01, REL-01-Video wiederholt nativ, DOM-02 1k/4k/10k gegen v0.7.1, S3/S4 und Gesamt-Reaudit weiter offen. Keine Releases, Tags, Store-Submissions oder Pale-Moon-Änderungen.
 - **Keine** Release-Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen. Native Windows/Edge/Opera- und Store-Environment-Prüfungen bleiben offen. Aktueller Arbeitspunkt: `docs/engineering/CURRENT-WORK.md` auf `main`.
 
-Stand: 2026-10-09  
+Stand: 2026-10-10  
 Autorität: `main`
 
 ## Kanonischer Produktstand
