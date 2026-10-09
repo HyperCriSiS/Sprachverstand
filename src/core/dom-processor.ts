@@ -108,6 +108,7 @@ export class DomProcessor {
   private observerOptions: MutationObserverInit | undefined;
   private observedShadowRoots = new WeakSet<ShadowRoot>();
   private readonly pendingNodes = new Set<Node>();
+  private readonly contextDirtyNodes = new Set<Text>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
@@ -187,6 +188,7 @@ export class DomProcessor {
     this.cancelRegularFlush();
     this.activeTraversal = undefined;
     this.pendingNodes.clear();
+    this.contextDirtyNodes.clear();
     this.pendingSubtitleTextNodes.clear();
     this.pendingAttributes.clear();
     this.cancelSubtitleFlush();
@@ -361,7 +363,11 @@ export class DomProcessor {
     if (node.nodeType === Node.TEXT_NODE) {
       const textNode = node as Text;
       const tracked = this.textChanges.get(textNode);
-      if (tracked && textNode.data === tracked.transformed) {
+      if (
+        tracked &&
+        textNode.data === tracked.transformed &&
+        !this.contextDirtyNodes.has(textNode)
+      ) {
         return;
       }
     }
@@ -689,6 +695,7 @@ export class DomProcessor {
           this.noteExternalTextRewrite(node);
         }
         this.queue(node);
+        this.invalidateFollowingContext(node);
         continue;
       }
 
@@ -723,6 +730,11 @@ export class DomProcessor {
       }
       for (const addedNode of record.addedNodes) {
         this.queue(addedNode);
+      }
+      if (record.target.isConnected) {
+        // Bei DOM-Insertionen und Entfernen des linken Präfixes
+        // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
+        this.invalidateFollowingContext(record.target, record.nextSibling);
       }
     }
   }
@@ -843,22 +855,94 @@ export class DomProcessor {
     return false;
   }
 
+  private invalidateFollowingContext(
+    node: Node,
+    immediateNext?: Node | null
+  ): void {
+    let scanned = 0;
+
+    const processText = (text: Text): boolean => {
+      if (!shouldProcessTextNode(text)) {
+        return text.data.trim() === "";
+      }
+      const original = this.textChanges.get(text)?.original ?? text.data;
+      if (this.needsLeadingContext(original)) {
+        this.contextDirtyNodes.add(text);
+        this.queue(text);
+      }
+      scanned += original.length;
+      return scanned < leadingContextLimit;
+    };
+
+    const processSibling = (sibling: Node): boolean => {
+      if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
+        return false;
+      }
+      if (sibling.nodeType === Node.TEXT_NODE) {
+        return processText(sibling as Text);
+      }
+      const walker = this.document.createTreeWalker(
+        sibling,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
+      );
+      let current = walker.nextNode();
+      while (current) {
+        if (
+          current instanceof Element &&
+          blockBoundaryTags.has(current.tagName)
+        ) {
+          return false;
+        }
+        if (current.nodeType === Node.TEXT_NODE && !processText(current as Text)) {
+          return false;
+        }
+        current = walker.nextNode();
+      }
+      return true;
+    };
+
+    let current: Node | null = node;
+    let next: Node | null = immediateNext ?? current.nextSibling;
+    while (current?.parentNode && scanned < leadingContextLimit) {
+      while (next) {
+        if (!processSibling(next)) {
+          return;
+        }
+        next = next.nextSibling;
+      }
+      const parent: Node = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        return;
+      }
+      current = parent;
+      next = current.nextSibling;
+    }
+  }
+
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
+    const contextDirty = this.contextDirtyNodes.delete(node);
     const tracked = this.textChanges.get(node);
+    let originalFromContext: string | undefined;
     if (tracked) {
       if (node.data === tracked.transformed) {
         if (
           !shouldProcessTextNode(node) ||
           (this.options.processSubtitles !== true && isSubtitleContent(node))
         ) {
-          // Vor dem Editorwechsel den letzten eigenen Schreibzugriff
-          // rückgängig machen, niemals fremde Änderungen überschreiben.
+          // Vor einem Editorwechsel nur eigene Änderungen restaurieren.
           this.forgetTrackedText(node);
+          return;
         }
-        return;
+        if (!contextDirty) {
+          return;
+        }
+        // Kontextabhängige Regeln werden immer am gespeicherten Original
+        // ausgewertet. Bereits flektierte Ausgaben sind keine Eingabe.
+        originalFromContext = tracked.original;
+        this.removeTextChange(node, tracked);
+      } else {
+        this.removeTextChange(node, tracked);
       }
-
-      this.removeTextChange(node, tracked);
     }
 
     if (!shouldProcessTextNode(node)) {
@@ -870,7 +954,7 @@ export class DomProcessor {
       return;
     }
 
-    const original = node.data;
+    const original = originalFromContext ?? node.data;
     const leadingContext = !subtitle && this.needsLeadingContext(original)
       ? this.collectLeadingContext(node)
       : undefined;
@@ -882,6 +966,9 @@ export class DomProcessor {
           this.shouldProtectFollowingParticiple(node, original)
         );
     if (result.replacements === 0 || result.text === original) {
+      if (originalFromContext !== undefined) {
+        node.data = original;
+      }
       return;
     }
 
