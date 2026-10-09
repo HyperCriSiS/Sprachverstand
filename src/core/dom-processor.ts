@@ -11,6 +11,11 @@ import {
 } from "./subtitles";
 import { transformTextWithSummary } from "./transform-text";
 import {
+  collectInlineProtection,
+  findInlineBoundary,
+  type InlineProtectionRange
+} from "./inline-protection";
+import {
   aggregateReplacementSummaries,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
@@ -109,6 +114,7 @@ export class DomProcessor {
   private observedShadowRoots = new WeakSet<ShadowRoot>();
   private readonly pendingNodes = new Set<Node>();
   private readonly contextDirtyNodes = new Set<Text>();
+  private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
@@ -151,6 +157,7 @@ export class DomProcessor {
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
+    this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
     const MutationObserverConstructor =
       this.document.defaultView?.MutationObserver ?? MutationObserver;
@@ -195,6 +202,7 @@ export class DomProcessor {
     this.subtitleTransformCache.clear();
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
+    this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
     if (options.restore) {
       this.restoreAll();
@@ -696,6 +704,7 @@ export class DomProcessor {
         }
         this.queue(node);
         this.invalidateFollowingContext(node);
+        this.invalidateInlineProtectionAround(node);
         continue;
       }
 
@@ -704,6 +713,7 @@ export class DomProcessor {
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
+            this.invalidateInlineProtectionAround(record.target);
             continue;
           }
           const tracked = this.attributeChanges
@@ -735,6 +745,7 @@ export class DomProcessor {
         // Bei DOM-Insertionen und Entfernen des linken Präfixes
         // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
         this.invalidateFollowingContext(record.target, record.nextSibling);
+        this.invalidateInlineProtectionAround(record.target);
       }
     }
   }
@@ -919,6 +930,99 @@ export class DomProcessor {
     }
   }
 
+
+  private requiresInlineProtection(): boolean {
+    return this.options.processQuotedText === false ||
+      (this.options.protectedTerms?.length ?? 0) > 0;
+  }
+
+  private invalidateInlineProtectionAround(node: Node): void {
+    if (!this.requiresInlineProtection()) {
+      return;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const invalidate = (text: Text): void => {
+      this.inlineProtectionCache.delete(text);
+      const tracked = this.textChanges.get(text);
+      if (tracked && text.data === tracked.transformed) {
+        this.contextDirtyNodes.add(text);
+      }
+    };
+
+    if (root.nodeType === Node.TEXT_NODE) {
+      invalidate(root as Text);
+    }
+    let current = walker.nextNode();
+    while (current) {
+      invalidate(current as Text);
+      current = walker.nextNode();
+    }
+    this.queue(root);
+  }
+
+  private getInlineProtectionRanges(
+    node: Text,
+    original: string
+  ): readonly InlineProtectionRange[] {
+    if (!this.requiresInlineProtection()) {
+      return [];
+    }
+    const cached = this.inlineProtectionCache.get(node);
+    if (cached) {
+      return cached;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const ranges = collectInlineProtection(
+      root,
+      blockBoundaryTags,
+      (text) => text === node
+        ? original
+        : this.textChanges.get(text)?.original ?? text.data,
+      this.options.protectedTerms ?? [],
+      this.options.processQuotedText === false
+    );
+    for (const [text, protectedRanges] of ranges) {
+      this.inlineProtectionCache.set(text, protectedRanges);
+    }
+    return ranges.get(node) ?? [];
+  }
+
+  private transformWithInlineProtection(
+    input: string,
+    ranges: readonly InlineProtectionRange[],
+    leadingContext?: string,
+    protectParticiple = false
+  ): ReturnType<typeof transformTextWithSummary> {
+    let cursor = 0;
+    let text = "";
+    let replacements = 0;
+    const summaries: ReplacementSummaryEntry[] = [];
+    const transformSegment = (end: number): void => {
+      if (end <= cursor) {
+        return;
+      }
+      const result = this.transformValue(
+        input.slice(cursor, end),
+        cursor === 0 ? leadingContext : undefined,
+        protectParticiple
+      );
+      text += result.text;
+      replacements += result.replacements;
+      summaries.push(...result.summaries);
+    };
+
+    for (const range of ranges) {
+      transformSegment(range.start);
+      text += input.slice(range.start, range.end);
+      cursor = range.end;
+    }
+    transformSegment(input.length);
+    return { text, replacements, summaries };
+  }
+
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
     const contextDirty = this.contextDirtyNodes.delete(node);
     const tracked = this.textChanges.get(node);
@@ -958,13 +1062,21 @@ export class DomProcessor {
     const leadingContext = !subtitle && this.needsLeadingContext(original)
       ? this.collectLeadingContext(node)
       : undefined;
+    const protectedRanges = subtitle
+      ? []
+      : this.getInlineProtectionRanges(node, original);
+    const protectParticiple = !subtitle &&
+      this.shouldProtectFollowingParticiple(node, original);
     const result = subtitle
       ? this.transformSubtitleValue(original)
-      : this.transformValue(
-          original,
-          leadingContext,
-          this.shouldProtectFollowingParticiple(node, original)
-        );
+      : protectedRanges.length > 0
+        ? this.transformWithInlineProtection(
+            original,
+            protectedRanges,
+            leadingContext,
+            protectParticiple
+          )
+        : this.transformValue(original, leadingContext, protectParticiple);
     if (result.replacements === 0 || result.text === original) {
       if (originalFromContext !== undefined) {
         node.data = original;
@@ -998,325 +1110,3 @@ export class DomProcessor {
 
     const value = element.getAttribute(attributeName);
     const tracked = this.attributeChanges.get(element)?.get(attributeName);
-
-    // Das Entfernen eines zuvor ersetzten Attributs invalidiert auch
-    // dessen Zähler und Übersicht. Vorher blieb der Record verwaist.
-    if (value === null) {
-      if (tracked) {
-        this.removeAttributeChange(element, attributeName, tracked);
-      }
-      return;
-    }
-    if (isSubtitleContent(element)) {
-      return;
-    }
-
-    if (tracked) {
-      if (value === tracked.transformed) {
-        if (!shouldProcessAccessibleAttribute(element, attributeName, value)) {
-          // Geschützte Attribute ebenso wie Text originalgetreu freigeben.
-          element.setAttribute(attributeName, tracked.original);
-          this.removeAttributeChange(element, attributeName, tracked);
-        }
-        return;
-      }
-
-      this.removeAttributeChange(element, attributeName, tracked);
-    }
-
-    if (
-      !shouldProcessAccessibleAttribute(element, attributeName, value)
-    ) {
-      return;
-    }
-
-    const result = this.transformValue(value);
-    if (result.replacements === 0 || result.text === value) {
-      return;
-    }
-
-    const changes =
-      this.attributeChanges.get(element) ?? new Map<string, ChangeRecord>();
-    changes.set(attributeName, {
-      original: value,
-      transformed: result.text,
-      replacements: result.replacements,
-      summaries: result.summaries
-    });
-    this.attributeChanges.set(element, changes);
-    this.adjustReplacementCount(result.replacements);
-    element.setAttribute(attributeName, result.text);
-  }
-
-  private transformValue(
-    input: string,
-    leadingContext?: string,
-    protectParticiple = false
-  ) {
-    const disabledRuleIds = protectParticiple
-      ? new Set([
-          ...(this.options.disabledRuleIds ?? []),
-          "salutation.participial-forms"
-        ])
-      : this.options.disabledRuleIds;
-    const transformOptions = {
-      profile: this.options.profile,
-      ...(disabledRuleIds
-        ? { disabledRuleIds }
-        : {}),
-      ...(this.options.protectedTerms
-        ? { protectedTerms: this.options.protectedTerms }
-        : {}),
-      ...(this.options.customReplacements
-        ? { customReplacements: this.options.customReplacements }
-        : {}),
-      processQuotedText: this.options.processQuotedText !== false,
-      ...(leadingContext ? { leadingContext } : {})
-    };
-
-    return transformTextWithSummary(input, this.options.rules, transformOptions);
-  }
-
-  private transformSubtitleValue(input: string) {
-    const cached = this.subtitleTransformCache.get(input);
-    if (cached) {
-      return cached;
-    }
-
-    const result = this.transformValue(input);
-    if (
-      this.subtitleTransformCache.size >= maximumSubtitleTransformCacheEntries
-    ) {
-      const oldestKey = this.subtitleTransformCache.keys().next().value;
-      if (oldestKey !== undefined) {
-        this.subtitleTransformCache.delete(oldestKey);
-      }
-    }
-    this.subtitleTransformCache.set(input, result);
-    return result;
-  }
-
-  private needsLeadingContext(input: string): boolean {
-    for (const rule of this.options.rules) {
-      if (
-        !rule.applyWithLeadingContext ||
-        !rule.leadingContextCandidate ||
-        this.options.disabledRuleIds?.has(rule.id) ||
-        !isRiskAllowed(rule.risk, this.options.profile)
-      ) {
-        continue;
-      }
-
-      rule.leadingContextCandidate.lastIndex = 0;
-      if (rule.leadingContextCandidate.test(input)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
-  private collectSafeContextSibling(sibling: Node): string | undefined {
-    if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
-      return undefined;
-    }
-
-    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
-    const walker = this.document.createTreeWalker(
-      sibling,
-      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
-    );
-    const chunks: string[] = [];
-
-    const readText = (text: Text): boolean => {
-      if (!shouldProcessTextNode(text)) {
-        return text.data.trim() === "";
-      }
-      chunks.push(this.textChanges.get(text)?.original ?? text.data);
-      return true;
-    };
-
-    if (sibling.nodeType === Node.TEXT_NODE && !readText(sibling as Text)) {
-      return undefined;
-    }
-
-    let current = walker.nextNode();
-    while (current) {
-      if (
-        current instanceof Element &&
-        blockBoundaryTags.has(current.tagName)
-      ) {
-        return undefined;
-      }
-      if (current.nodeType === Node.TEXT_NODE && !readText(current as Text)) {
-        return undefined;
-      }
-      current = walker.nextNode();
-    }
-
-    return chunks.join("");
-  }
-
-  private collectLeadingContext(node: Text): string | undefined {
-    const chunks: string[] = [];
-    let collectedLength = 0;
-    let current: Node | null = node;
-
-    while (current?.parentNode) {
-      let sibling = current.previousSibling;
-      while (sibling) {
-        const text = this.collectSafeContextSibling(sibling);
-        if (text === undefined) {
-          const context = chunks.join("").slice(-leadingContextLimit);
-          return context || undefined;
-        }
-        if (text) {
-          chunks.unshift(text);
-          collectedLength += text.length;
-          if (collectedLength >= leadingContextLimit) {
-            return chunks.join("").slice(-leadingContextLimit);
-          }
-        }
-        sibling = sibling.previousSibling;
-      }
-
-      const parent: Node | null = current.parentNode;
-      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
-        break;
-      }
-      current = parent;
-    }
-
-    const context = chunks.join("").slice(-leadingContextLimit);
-    return context || undefined;
-  }
-
-  // Beim endgültigen Entfernen eines Teilbaums eigene Textänderungen
-  // zurücknehmen. So erhalten Frameworks auch beim asynchronen Recyceln
-  // derselben Node den ursprünglichen Wert zurück.
-  private forgetTrackedText(node: Text): void {
-    const change = this.textChanges.get(node);
-    if (!change) {
-      return;
-    }
-    if (node.data === change.transformed) {
-      node.data = change.original;
-    }
-    this.removeTextChange(node, change);
-  }
-
-  private forgetTrackedAttributes(element: Element): void {
-    const changes = this.attributeChanges.get(element);
-    if (!changes) {
-      return;
-    }
-    for (const [name, change] of changes) {
-      if (element.getAttribute(name) === change.transformed) {
-        element.setAttribute(name, change.original);
-      }
-    }
-    this.removeAllAttributeChanges(element);
-  }
-
-  private forgetRoot(root: Node): void {
-    if (root.nodeType === Node.TEXT_NODE) {
-      this.forgetTrackedText(root as Text);
-      return;
-    }
-
-    if (root instanceof Element) {
-      this.forgetTrackedAttributes(root);
-      if (root.shadowRoot) {
-        this.forgetRoot(root.shadowRoot);
-      }
-    }
-
-    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
-    const walker = this.document.createTreeWalker(
-      root,
-      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
-    );
-
-    let currentNode = walker.nextNode();
-    while (currentNode) {
-      if (currentNode.nodeType === Node.TEXT_NODE) {
-        this.forgetTrackedText(currentNode as Text);
-      } else if (currentNode instanceof Element) {
-        this.forgetTrackedAttributes(currentNode);
-        if (currentNode.shadowRoot) {
-          this.forgetRoot(currentNode.shadowRoot);
-        }
-      }
-      currentNode = walker.nextNode();
-    }
-  }
-
-  private removeTextChange(node: Text, change: ChangeRecord): void {
-    this.textChanges.delete(node);
-    this.adjustReplacementCount(-change.replacements);
-  }
-
-  private removeAttributeChange(
-    element: Element,
-    attributeName: string,
-    change: ChangeRecord
-  ): void {
-    const changes = this.attributeChanges.get(element);
-    if (!changes) {
-      return;
-    }
-
-    changes.delete(attributeName);
-    if (changes.size === 0) {
-      this.attributeChanges.delete(element);
-    }
-    this.adjustReplacementCount(-change.replacements);
-  }
-
-  private removeAllAttributeChanges(element: Element): void {
-    const changes = this.attributeChanges.get(element);
-    if (!changes) {
-      return;
-    }
-
-    let removedReplacements = 0;
-    for (const change of changes.values()) {
-      removedReplacements += change.replacements;
-    }
-
-    this.attributeChanges.delete(element);
-    this.adjustReplacementCount(-removedReplacements);
-  }
-
-  private clearTracking(): void {
-    this.textChanges.clear();
-    this.attributeChanges.clear();
-    this.replacementCount = 0;
-    this.scheduleCountNotification();
-  }
-
-  private adjustReplacementCount(delta: number): void {
-    if (delta === 0) {
-      return;
-    }
-
-    this.replacementCount = Math.max(0, this.replacementCount + delta);
-    this.scheduleCountNotification();
-  }
-
-  private scheduleCountNotification(): void {
-    if (this.countNotificationScheduled) {
-      return;
-    }
-
-    this.countNotificationScheduled = true;
-    queueMicrotask(() => {
-      this.countNotificationScheduled = false;
-      this.options.onReplacementCountChange?.(
-        this.replacementCount,
-        this.getReplacementSummary()
-      );
-    });
-  }
-}
