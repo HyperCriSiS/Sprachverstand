@@ -97,6 +97,10 @@ interface TraversalState {
 }
 
 const regularWorkBudgetMs = 4;
+const shadowDiscoveryIntervalMs = 1_500;
+const shadowDiscoveryBatchSize = 256;
+const shadowDiscoveryBudgetMs = 2;
+const shadowDiscoveryYieldMs = 16;
 const frameworkRewriteWindowMs = 1_000;
 const frameworkRewriteThreshold = 5;
 const frameworkRewriteCooldownMs = 250;
@@ -116,6 +120,9 @@ export class DomProcessor {
   private observer: MutationObserver | undefined;
   private observerOptions: MutationObserverInit | undefined;
   private observedShadowRoots = new WeakSet<ShadowRoot>();
+  private shadowDiscoveryWalker: TreeWalker | undefined;
+  private shadowDiscoveryDocumentRoot: Element | undefined;
+  private shadowDiscoveryHandle: number | undefined;
   private readonly pendingNodes = new Set<Node>();
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
@@ -160,6 +167,8 @@ export class DomProcessor {
     this.running = true;
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
+    this.shadowDiscoveryWalker = undefined;
+    this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
@@ -188,6 +197,9 @@ export class DomProcessor {
       this.processRoot(root);
     }
 
+    // attachShadow() erzeugt kein Light-DOM-MutationRecord.
+    // Eine begrenzte Suche erkennt auch später erzeugte offene Wurzeln.
+    this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
     this.scheduleCountNotification();
   }
 
@@ -197,6 +209,7 @@ export class DomProcessor {
     this.observer?.disconnect();
     this.observer = undefined;
     this.observerOptions = undefined;
+    this.cancelShadowDiscovery();
     this.cancelRegularFlush();
     this.activeTraversal = undefined;
     this.pendingNodes.clear();
@@ -206,6 +219,8 @@ export class DomProcessor {
     this.cancelSubtitleFlush();
     this.subtitleTransformCache.clear();
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
+    this.shadowDiscoveryWalker = undefined;
+    this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
@@ -799,6 +814,90 @@ export class DomProcessor {
     } else {
       this.queue(shadowRoot);
     }
+  }
+
+  // Die kontinuierliche Discovery ist asynchron und durch Zeit-/Mengengrenzen
+  // begrenzt. Sie ersetzt ausdrücklich keinen Event-Hook in der Page-World.
+  private scheduleShadowDiscovery(delayMs: number): void {
+    if (!this.running || this.shadowDiscoveryHandle !== undefined) {
+      return;
+    }
+    const callback = (): void => {
+      this.shadowDiscoveryHandle = undefined;
+      this.discoverLateShadowRoots();
+    };
+    const view = this.document.defaultView;
+    this.shadowDiscoveryHandle = view
+      ? view.setTimeout(callback, delayMs)
+      : window.setTimeout(callback, delayMs);
+  }
+
+  private cancelShadowDiscovery(): void {
+    if (this.shadowDiscoveryHandle === undefined) {
+      return;
+    }
+    const view = this.document.defaultView;
+    if (view) {
+      view.clearTimeout(this.shadowDiscoveryHandle);
+    } else {
+      window.clearTimeout(this.shadowDiscoveryHandle);
+    }
+    this.shadowDiscoveryHandle = undefined;
+  }
+
+  private discoverLateShadowRoots(): void {
+    if (!this.running) {
+      return;
+    }
+
+    const root = this.document.documentElement;
+    if (!root) {
+      this.shadowDiscoveryWalker = undefined;
+      this.shadowDiscoveryDocumentRoot = undefined;
+      this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
+      return;
+    }
+
+    // Der TreeWalker wird über einzelne Eventloop-Durchläufe fortgesetzt.
+    // Entfernt die Seite seine aktuelle Position, beginnen wir neu.
+    if (
+      !this.shadowDiscoveryWalker ||
+      this.shadowDiscoveryDocumentRoot !== root ||
+      !this.shadowDiscoveryWalker.currentNode.isConnected
+    ) {
+      const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+      this.shadowDiscoveryWalker = this.document.createTreeWalker(
+        root,
+        filter.SHOW_ELEMENT
+      );
+      this.shadowDiscoveryDocumentRoot = root;
+    }
+
+    const deadline = this.now() + shadowDiscoveryBudgetMs;
+    let inspected = 0;
+    while (
+      this.running &&
+      inspected < shadowDiscoveryBatchSize &&
+      this.now() < deadline
+    ) {
+      const element = this.shadowDiscoveryWalker.nextNode() as Element | null;
+      if (!element) {
+        this.shadowDiscoveryWalker = undefined;
+        this.shadowDiscoveryDocumentRoot = undefined;
+        this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
+        return;
+      }
+
+      inspected += 1;
+      const shadowRoot = element.shadowRoot;
+      if (shadowRoot && !this.observedShadowRoots.has(shadowRoot)) {
+        this.observeShadowRoot(shadowRoot);
+        this.queue(shadowRoot);
+      }
+    }
+    // Auch auf riesigen Seiten nur kurze Scheiben, statt einen ganzen
+    // DOM-Durchlauf im MutationObserver oder am Stück auszuführen.
+    this.scheduleShadowDiscovery(shadowDiscoveryYieldMs);
   }
 
   private observeShadowRoot(root: ShadowRoot): void {
