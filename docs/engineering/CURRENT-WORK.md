@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-09  
+Stand: 2026-10-10  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -9,14 +9,14 @@ Autorität: `main`
 
 - Auditsnapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), **weiterhin NO-GO** bis zur neuen unabhängigen Abnahme.
 - **Gemergt und gesamte PR-CI grün:** #378 DOM-02, #379 DOM-13/05, #380 LANG-09, #381 S1, #382 LANG-02, #383 LANG-01/03, #384 S2, #386 DOM-04, #387 Worker-Discovery-Flake, #388 DOM-07, #389 DOM-01 (Teilkorrektur), #390 DOM-08, **#392 DOM-09** (`9615b4ff`) und **#394 DOM-03** (`6c030ead`). #393 wurde nach Squash-Merge-Konflikt durch #394 ersetzt; die letztgenannte PR-CI war vollständig grün. Aktuellen `main`-HEAD bei Wiederaufnahme live prüfen.
-- **Neu integriert, vollständige jeweilige PR-CI grün:** **#397 DOM-06** (Inline-Zitate und persönliche Mehrwortausnahmen, Merge `3699903a`), **#398 DOM-12** (Textauswahl mit lokaler `replaceData`-Differenz erhalten, Merge `188b6bcb`) und **#399 DOM-11** (tiefe/Shadow-Untertitel und dynamische Caption-Marker, Merge `320c2e3c`). Geprüft: Kernprüfung, Performance, Chromium einschließlich Video, Gecko und CodeQL. Nachgelagerte `main`-CI dieser Merges gesondert verifizieren.
-- **Nächste Einheit:** **DOM-10** (spät angehängte offene ShadowRoots) nach konkretem Repro und performanter Discovery; danach weitere Auditbefunde (insbesondere DOM-01-Rest, LANG, TEST-01, S3/S4). Reiner DesignMode-Off-Wechsel ohne DOM-Event gesondert prüfen. **REL-01**-Videogrenzwertgate unabhängig nativ wiederholt prüfen; **DOM-02** 1k/4k/10k nativ gegen v0.7.1 nachmessen. Unabhängige Gesamt-Revalidierung bleibt offen.
+- **Neu integriert, vollständige jeweilige PR-CI grün:** **#401 DOM-10** (nachträglich erzeugte offene ShadowRoots über 2-ms-/256-Knoten-Discovery-Scheiben, 64-ms-Atempausen und 1,5-s-Sweep-Abstand; JSdom und echte Chromium-/Firefox-Smokes einschließlich Video, Merge `0c94e242`). **#397 DOM-06** (Inline-Zitate und persönliche Mehrwortausnahmen, Merge `3699903a`), **#398 DOM-12** (Textauswahl mit lokaler `replaceData`-Differenz erhalten, Merge `188b6bcb`) und **#399 DOM-11** (tiefe/Shadow-Untertitel und dynamische Caption-Marker, Merge `320c2e3c`). Geprüft: Kernprüfung, Performance, Chromium einschließlich Video, Gecko und CodeQL. Nachgelagerte `main`-CI dieser Merges gesondert verifizieren.
+- **Nächste begrenzte Einheit:** verbleibenden **DOM-01-Inline-Kontext** mit unabhängigen Gegenbeispielen prüfen und präzise nachbessern; danach fehlende LANG-/TEST-01-Regressionsfälle priorisieren. Weitere offene Grenzen: DesignMode-Off ohne Event, REL-01-Video unabhängig nativ mehrfach nachmessen, DOM-02 1k/4k/10k gegen v0.7.1, S3/S4 und vollständige unabhängige Gesamt-Revalidierung. **NO-GO bleibt bestehen.**
 - **Später gesondert:** Security- und Releasegates S3/S4 sowie vollständige unabhängige Revalidierung. Keine Releases, Tags, Store-Einreichungen oder Pale-Moon-Änderungen.
 
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter Produkt-HEAD bei diesem Checkpoint: `320c2e3ce0c540e8ca14869e9ef38012edf0c1e1` (#399); vorher #397 `3699903a` und #398 `188b6bcb`. Vor jeder Wiederaufnahme gegen `main` prüfen. Historische Basis #372–#374 mit Welle 93 bleibt integriert.
+- Letzter integrierter Produkt-HEAD bei diesem Checkpoint: `0c94e2425eab28b96da1abc3ec910460bfa8790c` (**#401 DOM-10**); vorher #399 `320c2e3c`, #398 `188b6bcb`, #397 `3699903a`. Vor jeder Wiederaufnahme gegen `main` prüfen. Historische Basis #372–#374 mit Welle 93 bleibt integriert.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
