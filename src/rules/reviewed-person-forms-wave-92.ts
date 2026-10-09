@@ -4,9 +4,6 @@ import type { GeneratedPersonForms } from "./generated-person-lexicon";
 // Die Flexionsklassen gelten nur für exakt eingetragene Basen.
 // Maskuliner Plural ohne Endungsänderung.
 const unchanged: ReadonlySet<string> = new Set([
-  "3d-computer-aided-design-entwickler",
-  "3d-designer",
-  "3d-produktentwickler",
   "abfüllanlagenbediener",
   "abfüllanlagenfahrer",
   "aktionskünstler",
