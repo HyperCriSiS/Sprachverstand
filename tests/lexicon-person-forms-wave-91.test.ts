@@ -31,10 +31,10 @@ const sonderfaelle = [
 ] as const;
 
 describe("Lexikonwelle 91: besondere Pluralformen aus Einzelprüfungen", () => {
-  it("prüft genau 21 unterschiedliche Wörter", () => {
+  it("prüft genau 20 unterschiedliche Wörter", () => {
     expect(sonderfaelle).toHaveLength(20);
     expect(new Set(sonderfaelle.map(([basis]) => basis)).size).toBe(20);
-    expect(reviewedPersonFormCountWave91).toBe(21);
+    expect(reviewedPersonFormCountWave91).toBe(20);
   });
 
   it.each(sonderfaelle)("%s -> %s: Plural und alle Singularfälle", (basis, plural) => {
