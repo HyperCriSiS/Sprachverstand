@@ -526,16 +526,28 @@ async function waitSubtitle(id, corrected) {
 }
 
 async function extensionId(id) {
-  const result = (await request("POST", `/session/${id}/goog/cdp/execute`, {
-    cmd: "Target.getTargets",
-    params: {}
-  })).value;
-  const urls = (result?.targetInfos ?? []).map(target => target.url);
-  const origin = urls.find(url => /^chrome-extension:\/\/[a-p]{32}\/background\.js/u.test(url));
-  if (!origin) {
-    throw new Error(`Erweiterungs-Serviceworker nicht gefunden: ${JSON.stringify(urls)}`);
+  // Ein MV3-Serviceworker kann beim Sitzungsstart noch nicht registriert
+  // oder zwischenzeitlich wieder eingeschlafen sein. Erst nach dem
+  // erfolgreichen Content-Script-Smoke suchen und die Zielabfrage begrenzen.
+  const deadline = Date.now() + 8_000;
+  let urls = [];
+  while (Date.now() < deadline) {
+    const result = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+      cmd: "Target.getTargets",
+      params: {}
+    })).value;
+    urls = (result?.targetInfos ?? []).map((target) => target.url);
+    const origin = urls.find((url) =>
+      /^chrome-extension:\/\/[a-p]{32}\/(?:background\.js|.+)/u.test(url)
+    );
+    if (origin) {
+      return origin.split("/")[2];
+    }
+    await sleep(200);
   }
-  return origin.split("/")[2];
+  throw new Error(
+    `Extension-Target nach geprüftem Content-Script-Start nicht erreichbar: ${JSON.stringify(urls)}`
+  );
 }
 
 async function setSubtitleCheckbox(id, enabled) {
@@ -570,9 +582,11 @@ async function setSubtitleCheckbox(id, enabled) {
 async function validateSubtitleToggle(url) {
   const id = await createSession(true);
   try {
-    const extension = await extensionId(id);
+    // Die Navigation löst den Content-Script-Start aus. Das statische
+    // Transformationssignal belegt vor der ID-Suche die aktive Erweiterung.
     await request("POST", `/session/${id}/url`, { url });
     const off = await waitSubtitle(id, false);
+    const extension = await extensionId(id);
     const videoWindow = (await request("GET", `/session/${id}/window`)).value;
 
     const optionsWindow = (await request("POST", `/session/${id}/window/new`, {
