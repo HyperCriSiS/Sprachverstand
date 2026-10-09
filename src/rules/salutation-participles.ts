@@ -141,12 +141,13 @@ function transformStandaloneParticiples(input: string): TransformResult {
 }
 
 function transformParticiples(input: string): TransformResult {
-  const salutations = transformSalutations(input);
+  const contextual = transformContextualParticiples(input);
+  const salutations = transformSalutations(contextual.text);
   const standalone = transformStandaloneParticiples(salutations.text);
 
   return {
     text: standalone.text,
-    replacements: salutations.replacements + standalone.replacements
+    replacements: contextual.replacements + salutations.replacements + standalone.replacements
   };
 }
 
@@ -179,6 +180,99 @@ function transformWithLeadingContext(
     text: remaining.text,
     replacements: 1 + remaining.replacements
   };
+}
+
+
+// Die kontextuelle Flexion ist nur für bereits gelistete Personenwörter
+// freigegeben. Keine Ableitung für beliebige Partizip-Endungen.
+const participleStemSource = [...participleReplacements.keys()]
+  .map((form) => form.slice(0, -1))
+  .sort((left, right) => right.length - left.length)
+  .join("|");
+
+const contextualParticiplePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:(?:mit|bei|von|zu|aus|nach|seit)\s+den|die|den|der|dem|ein|eine|einen|einem|eines))(\s+)(${participleStemSource})(en|er|e)(?![\p{L}\p{M}-])`,
+  "giu"
+);
+
+const weakMasculineSingulars = new Set(["studierende", "dozierende"]);
+
+function transformContextualParticiples(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    contextualParticiplePattern,
+    (
+      match: string,
+      determiner: string,
+      whitespace: string,
+      stem: string,
+      ending: string,
+      offset: number,
+      source: string
+    ) => {
+      const term = (stem + "e").toLocaleLowerCase(locale);
+      const plural = participleReplacements.get(term);
+      if (!plural) return match;
+
+      // Kleingeschriebene Partizipien sind regelmäßig Adjektive.
+      // Ein nachfolgendes großgeschriebenes Substantiv wird geschützt.
+      const start = [...stem][0];
+      if (
+        !start ||
+        start === start.toLocaleLowerCase(locale) ||
+        followingNounPattern.test(source.slice(offset + match.length))
+      ) {
+        return match;
+      }
+
+      const weak = weakMasculineSingulars.has(term);
+      const masculine = weak ? plural.slice(0, -2) : plural;
+      const feminine = masculine + "in";
+      const normalizedDeterminer = determiner.toLocaleLowerCase(locale)
+        .replace(/\s+/gu, " ");
+      const normalizedEnding = ending.toLocaleLowerCase(locale);
+      let replacement: string | undefined;
+
+      if (/^(?:mit|bei|von|zu|aus|nach|seit) den$/u.test(normalizedDeterminer)) {
+        if (normalizedEnding === "en") {
+          replacement = /[ns]$/u.test(plural) ? plural : plural + "n";
+        }
+      } else if (normalizedDeterminer === "die") {
+        if (normalizedEnding === "en") replacement = plural;
+        if (normalizedEnding === "e") replacement = feminine;
+      } else if (normalizedDeterminer === "der" && normalizedEnding === "e") {
+        replacement = masculine;
+      } else if (normalizedDeterminer === "ein" && normalizedEnding === "er") {
+        replacement = masculine;
+      } else if (normalizedDeterminer === "eine" && normalizedEnding === "e") {
+        replacement = feminine;
+      } else if (
+        ["dem", "einem", "einen"].includes(normalizedDeterminer) &&
+        normalizedEnding === "en"
+      ) {
+        replacement = weak ? plural : masculine;
+      } else if (
+        normalizedDeterminer === "eines" &&
+        normalizedEnding === "en"
+      ) {
+        replacement = weak ? plural : masculine + "s";
+      } else if (
+        normalizedDeterminer === "den" &&
+        normalizedEnding === "en" &&
+        weak
+      ) {
+        // Bei starken Maskulina könnte "den Mitarbeitenden" auch
+        // Akkusativ Singular sein: ohne eindeutigere Signale schützen.
+        replacement = plural;
+      }
+
+      if (!replacement) return match;
+      replacements += 1;
+      return determiner + whitespace + applyTokenCase(stem, replacement);
+    }
+  );
+
+  return { text, replacements };
 }
 
 export const salutationParticiplesRule: Rule = {
