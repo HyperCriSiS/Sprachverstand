@@ -22,6 +22,19 @@ export function transformGenderedPlural(
 ): TransformResult {
   let replacements = 0;
 
+  // Die zu schützenden Artikelpaare werden genau einmal bestimmt.
+  // Vollständige Präfixscans je Pluraltreffer hätten quadratische Kosten.
+  const protectedOffsets = new Set<number>();
+  const articlePairs =
+    /(?:^|\s)(?:der|die|den|dem|des)[:*_/·•’‘](?:die|der|den|dem|des)(?=\s)/giu;
+  for (const match of input.matchAll(articlePairs)) {
+    let end = (match.index ?? 0) + match[0].length;
+    while (end < input.length && /\s/u.test(input[end] as string)) {
+      end += 1;
+    }
+    protectedOffsets.add(end);
+  }
+
   const text = input.replace(pattern, (
     match: string,
     base: string,
@@ -30,8 +43,7 @@ export function transformGenderedPlural(
   ) => {
     // Uneindeutige Mischformen aus Singularartikel und markiertem Plural
     // vollständig erhalten, statt nur das Substantiv zu verändern.
-    const vorangestellt = original.slice(0, offset);
-    if (/(?:^|\s)(?:der|die|den|dem|des)[:*_/·•’‘](?:die|der|den|dem|des)\s+$/iu.test(vorangestellt)) {
+    if (protectedOffsets.has(offset)) {
       return match;
     }
     const replacement = mapBase(base);
