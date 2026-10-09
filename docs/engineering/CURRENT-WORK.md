@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `5592de5f3cac5a2085f62ba6053da78d3f466b17`
+- Aktueller integrierter Produktstand: `800ecce757c45be218a158b4f32df69566939195`
 - Abgeschlossene Lexikon-Ausbauwellen: **91**
 - Letzter integrierter Lexikon-PR: **#348 — 20 sichere Sonderflexionen als Welle 91 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -325,3 +325,11 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Bereits vorhandene Ausschlussregressionen für `General:innen` (Wellen 13 und 81) bleiben unverändert; `General` wurde nach Regressionstreffer nicht freigegeben. `Stallknecht` bleibt ebenfalls für zusätzliche morphologisch-semantische Prüfung zurückgestellt.
 - Vollständige PR-Pflichtprüfungen einschließlich Kernprüfung, Performance, Chromium, Gecko, CodeQL und Sammelcheck erfolgreich. Nach-Merge-`main`-CI separat prüfen.
 - **Nächste Arbeitseinheit:** echte Textbeispiele und unabhängige Negativkorpora für Fehlkorrekturen prüfen. Die ESCO-Einzelwort-Abdeckung ist nicht mit einer allgemeinen Realtext-Erkennungs- oder Präzisionsquote gleichzusetzen.
+
+## Begrenztes Realtext-Qualitätsgate – 09.10.2026
+
+- **PR #350 / Merge `800ecce757c45be218a158b4f32df69566939195`:** `tests/realtext-quality-gate.test.ts` prüft die **gesamte Textpipeline** im aggressiven Profil, nicht nur eine einzelne Separatorregel.
+- **39 kuratierte Proben:** 5 kurze, unabhängig beobachtete positive Weboberflächen und 2 negative; zusätzlich 14 konstruierte positive und 18 konstruierte negative Fälle. Positiv **19/19** mit genauem Zieltext, negative **20/20** ohne unerwünschte Änderung. Kein repräsentativer Precision-/Recall-Nachweis für beliebige Webseiten.
+- `General:innen` und `Stallknecht:innen` bleiben unverändert; die ESCO-Einzelwort-Basenwellen enden bei **91**. Keine neue Produktregel oder allgemeine Personen-Suffixableitung.
+- **Live-Web Chromium Run `37876881000`, Attempt 2** auf altem Produkt-HEAD `382bd3b8`: drei von drei Seiten erfolgreich (GitHub, taz, Yoga74), keine JavaScript-/Promise-Fehler und keine nur durch die Erweiterung veränderten geschützten Bereiche. Der erste Versuch scheiterte bereits am lokalen Videogate mit 18 verworfenen Frames gegenüber 1 in der Baseline; unveränderter zweiter Lauf bestanden. GitHub lieferte 5 diagnostische Restmuster, taz und Yoga74 je 0. Yoga74-`pre` veränderte sich sowohl in Baseline als auch mit Erweiterung. Gemessene Laufzeiten sind keine signifikante Performance-Aussage.
+- **Nächster Schritt:** Post-Merge-main-CI/CodeQL für #350 bestätigen, dann Qualität unabhängig auf zusätzlichen realen Texten prüfen bzw. gezielte Auffälligkeiten nachverfolgen. Anschließend moderne Browser-Release-Gates (Issue #331); keine Tags, Store-Submissions oder Pale-Moon-Arbeit ohne ihre vorgesehenen Freigaben.
