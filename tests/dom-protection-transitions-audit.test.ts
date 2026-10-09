@@ -100,7 +100,7 @@ describe("Audit DOM-09: dynamischer Schutzstatus", () => {
     const p = document.createElement("p");
     p.textContent = "Nutzer:innen";
     const editor = document.createElement("div");
-    editor.contentEditable = "true";
+    editor.setAttribute("contenteditable", "true");
     document.body.append(p, editor);
     const dom = starten();
     expect(p.textContent).toBe("Nutzer");
