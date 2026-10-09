@@ -49,6 +49,23 @@ function identifierText(element: Element): string {
   return `${element.id} ${element.getAttribute("class") ?? ""}`.toLowerCase();
 }
 
+// Nur einschlägige Klassifikationsattribute lösen einen erneuten DOM-Scan aus.
+export function matchesSubtitleMarker(
+  attributeName: string,
+  value: string | null
+): boolean {
+  if (!value) {
+    return false;
+  }
+  if (attributeName === "class" || attributeName === "id") {
+    return subtitleIdentifierMarker.test(value.toLowerCase());
+  }
+  if (subtitleDataAttributeNames.some((name) => name === attributeName)) {
+    return subtitleDataMarker.test(value);
+  }
+  return attributeName === "aria-label" && subtitleAriaMarker.test(value);
+}
+
 export function isSubtitleContainer(element: Element): boolean {
   const identifiers = identifierText(element);
   if (subtitleIdentifierMarker.test(identifiers)) {
