@@ -105,6 +105,20 @@ function hasCommonExcludedAncestor(
   return false;
 }
 
+// Textknoten unmittelbar unter einem ShadowRoot besitzen kein parentElement.
+// Der Host muss trotzdem wie jeder andere Vorfahr geschützt werden.
+function textParentOrShadowHost(node: Text): Element | null {
+  if (node.parentElement) {
+    return node.parentElement;
+  }
+  const root = node.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
+}
+
+function isDocumentEditor(document: Document): boolean {
+  return document.designMode?.toLowerCase() === "on";
+}
+
 function hasExcludedTextAncestor(element: Element | null): boolean {
   let current = element;
 
@@ -167,11 +181,11 @@ export function isProbablyTechnicalText(input: string): boolean {
 }
 
 export function shouldProcessTextNode(node: Text): boolean {
-  if (!node.isConnected) {
+  if (!node.isConnected || isDocumentEditor(node.ownerDocument)) {
     return false;
   }
 
-  if (hasExcludedTextAncestor(node.parentElement)) {
+  if (hasExcludedTextAncestor(textParentOrShadowHost(node))) {
     return false;
   }
 
@@ -187,7 +201,7 @@ export function shouldProcessAccessibleAttribute(
     return false;
   }
 
-  if (!element.isConnected) {
+  if (!element.isConnected || isDocumentEditor(element.ownerDocument)) {
     return false;
   }
 
