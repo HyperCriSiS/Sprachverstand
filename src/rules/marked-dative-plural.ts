@@ -1,5 +1,6 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { mapMappedPlural } from "./mapped-plural-separators";
+import { mapKnownPlural } from "./known-plural-separators";
 
 // Nur lexikalisch bekannte, markierte Pluralformen werden in eindeutig
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
@@ -8,7 +9,7 @@ const dativePhrasePattern =
   /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
 
 function mapDativePlural(base: string): string | undefined {
-  const plural = mapMappedPlural(base);
+  const plural = mapMappedPlural(base) ?? mapKnownPlural(base);
   if (plural === undefined) return undefined;
   // Reguläre Dativplurale enden auf -n; die vorhandenen -n/-s-Plurale
   // bekommen keine zusätzliche Endung.

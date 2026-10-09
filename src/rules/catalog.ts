@@ -21,6 +21,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     ruleIds: [
       "plural.known-separator-innen",
       "plural.mapped-separator-innen",
+      "plural.marked-dative-context",
       "plural.additional-person-forms"
     ],
     defaultEnabled: true
