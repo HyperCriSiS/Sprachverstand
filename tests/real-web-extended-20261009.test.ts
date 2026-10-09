@@ -46,7 +46,6 @@ const negative = [
   ["n02b","Wissenschaft"],
   ["n03a","Teilnehmenden"],
   ["n03b","Anmeldebestätigung"],
-  ["n04a","die Teilnehmenden"],
   ["n04b","Anmeldeformular"],
   ["n05a","Kinder- und Jugendunterkünfte"],
   ["n05b","Führungskräfte"],
@@ -77,6 +76,7 @@ const bekannteDativLuecken = [
 // Beabsichtigte Richtlinie: substantivierte Partizipien werden normalisiert.
 // Diese Fälle zählen ausdrücklich NICHT als unveränderte Negativproben.
 const richtlinienUmformungen = [
+  ["n04a","die Teilnehmenden","die Teilnehmer"],
   ["n09a","Studierende","Studenten"],
   ["n12a","Studierende","Studenten"],
 ] as const;
@@ -122,7 +122,7 @@ describe("Offene grammatische und richtlinienbedingte Fälle", () => {
 describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
   it("zeigt Umfang und vermeidet Stichproben-Dopplungen", () => {
     expect(positive).toHaveLength(31);
-    expect(negative).toHaveLength(24);
+    expect(negative).toHaveLength(23);
     expect(new Set(positive.map(([id]) => id)).size).toBe(positive.length);
     expect(new Set(negative.map(([id]) => id)).size).toBe(negative.length);
 
@@ -134,7 +134,7 @@ describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
     expect(richtigePositivfälle).toBe(positive.length);
     expect(ungewollteÄnderungen).toBe(0);
     expect(bekannteDativLuecken).toHaveLength(1);
-    expect(richtlinienUmformungen).toHaveLength(2);
+    expect(richtlinienUmformungen).toHaveLength(3);
     expect(positive.length + negative.length +
       bekannteDativLuecken.length + richtlinienUmformungen.length).toBe(58);
     console.info(
