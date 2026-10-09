@@ -154,11 +154,13 @@ export class DomProcessor {
   >();
   private countNotificationScheduled = false;
   private running = false;
+  private observedDesignModeOn = false;
   private replacementCount = 0;
   private readonly beforeInputHandler = (): void => {
     // Ein reiner Wechsel von designMode löst keine DOM-Mutation aus.
     // Vor der tatsächlichen Eingabe eigene Änderungen zurücknehmen.
     if (this.running && this.document.designMode?.toLowerCase() === "on") {
+      this.observedDesignModeOn = true;
       this.restoreAll();
     }
   };
@@ -174,6 +176,7 @@ export class DomProcessor {
     }
 
     this.running = true;
+    this.observedDesignModeOn = this.document.designMode?.toLowerCase() === "on";
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.shadowDiscoveryWalker = undefined;
@@ -214,6 +217,7 @@ export class DomProcessor {
 
   public stop(options: StopOptions = {}): void {
     this.running = false;
+    this.observedDesignModeOn = false;
     this.document.removeEventListener("beforeinput", this.beforeInputHandler, true);
     this.observer?.disconnect();
     this.observer = undefined;
@@ -298,6 +302,7 @@ export class DomProcessor {
   }
 
   public flush(): void {
+    this.syncDesignModeTransition();
     this.cancelRegularFlush();
     this.flushRegularNodesSynchronously();
     this.cancelSubtitleFlush();
@@ -857,11 +862,38 @@ export class DomProcessor {
     this.shadowDiscoveryHandle = undefined;
   }
 
+  private syncDesignModeTransition(): void {
+    if (!this.running) {
+      return;
+    }
+    const isOn = this.document.designMode?.toLowerCase() === "on";
+    if (isOn === this.observedDesignModeOn) {
+      return;
+    }
+
+    this.observedDesignModeOn = isOn;
+    if (isOn) {
+      // Vor dem Bearbeiten keine eigene Korrektur im Dokument belassen.
+      // beforeinput bleibt der sofortige Schutz bei Benutzereingaben.
+      this.restoreAll();
+    } else {
+      // Beim Wechsel auf "off" fehlt ein DOM- oder Eingabeereignis.
+      // Einmalig den Dokumentinhalt zur zeitbudgetierten Prüfung einreihen.
+      const root = this.document.body ?? this.document.documentElement;
+      if (root) {
+        this.queue(root);
+      }
+    }
+  }
+
   private discoverLateShadowRoots(): void {
     if (!this.running) {
       return;
     }
 
+    // Den ohnehin laufenden Discovery-Timer auch für den ereignislosen
+    // Dokument-Editormodus nutzen, ohne zusätzliche Polling-Timer.
+    this.syncDesignModeTransition();
     const root = this.document.documentElement;
     if (!root) {
       this.shadowDiscoveryWalker = undefined;
@@ -1753,4 +1785,3 @@ export class DomProcessor {
       );
     });
   }
-}
