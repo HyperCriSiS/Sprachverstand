@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `8297686dc3f8ff58e2216c74bf290c46fbc8cc11`
+- Aktueller Produktbaseline-Commit: `91922cdf491a3075573cdf036113d1c054fbae7b`
 - Abgeschlossene Lexikon-Ausbauwellen: **91**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -381,3 +381,12 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - **Manueller Chromium-Live-Lauf `37878495919` auf PR-HEAD `b334f793`:** GitHub-Projektseite Baseline **8** Restmarker, Erweiterung **5**, Differenz **−3**. Wortproben `Nutzer:innen`, `Mitarbeiter*innen`, `Student*innen`; Status beider Modi erfolgreich, keine JavaScript-/Promise-Fehler, keine ausschließlich erweiterungsseitigen Änderungen geschützter Bereiche. Lokale Video-Regression erfolgreich.
 - Die README enthält diese Marker als Markdown-Inline-Codebeispiele, die geschützt bleiben müssen. Die Zuordnung **jedes einzelnen** der fünf verbliebenen DOM-Vorkommen zu einem geschützten Textknoten ist damit noch nicht nachgewiesen. Keine neuen Lexikoneinträge aus Restmustern ableiten; keine allgemeine Web-Fehlerquote behaupten.
 - **Nächste größere abgeschlossene Einheit:** bei Bedarf genaue DOM-Herkunft der fünf Restmarker anhand begrenzter Textknoten-Messung auf GitHub untersuchen; anschließend unabhängiges annotiertes Realtext-Sample für Fehlkorrekturen/Recall aufbauen und die modernen Release-Gates prüfen. Store-Environment #331 erfordert Admin-Rechte und gesonderte Freigaben. Keine Tag-/Store-Veröffentlichung oder Pale-Moon-Arbeit im Rahmen dieser Einheit.
+
+## Geschützte DOM-Restmarker eindeutig klassifiziert – 09.10.2026
+
+- **PR #354 / Squash-Merge `91922cdf491a3075573cdf036113d1c054fbae7b`:** Diagnose- und Regressionserweiterung ohne Änderung produktiver Regeln. Ein Live-Browser-Snapshot unterscheidet weiterhin den historischen `innerText`-Markerzähler, zählt aber zusätzlich einzelne sichtbare DOM-Textknoten und ordnet explizite Schutzbereiche (Code, Editoren, Ignore-Markierungen, ARIA und ausgeschlossene Rollen) separat zu.
+- **Gezielter Chromium-Live-Run `37879935003` auf Diagnose-HEAD `c6254cbe`:** GitHub-README Baseline 8 Marker, mit Erweiterung 5; **sämtliche fünf verbliebenen DOM-Vorkommen lagen in `<code>`-Bereichen, null in anderen Textknoten**. Vorkommensproben: zweimal `Nutzer:innen`, zweimal `Mitarbeiter*innen` und einmal `Student*innen`. Keine JavaScript-/Promise-Fehler oder ausschließlich im Erweiterungslauf veränderte geschützte Selektoren; lokaler Video-Gate grün.
+- Vor dem Produktmerge hat die zusätzliche Vitest-Grenzprüfung fehlerhafte ASCII-Wortgrenzen bei einem Unicode-Binnen-I-Marker aufgedeckt; in der **diagnostischen** Knotenroutine durch Unicode-Wortgrenzen korrigiert und Regression für vollständige Umlaute ergänzt. Bestehende Produktregeln und das bisherige `innerText`-Vergleichsmaß unverändert.
+- **PR #354 vollständig grün:** Kernprüfung (9.700+ Tests), Performance, Chromium, Gecko/Firefox, CodeQL und Sammelcheck. Nach-Merge-`main`-CI separat bestätigen.
+- Die fünf GitHub-Restmarker sind in dieser konkreten Live-Stichprobe **erwartete geschützte Beispiele, keine übersehenen Korrekturen**. Keine Repräsentativität für andere Webseiten, keine allgemeine False-Negative-/Precision-Quote. Keine Lexikonwelle, keine generische Suffixfreigabe, keine Rohdaten oder Quell-URLs im Produkt.
+- **Fortsetzung:** unabhängig annotierte Positiv-/Negativ-Realtexte erweitern; anschließend moderne Browser-Releases vorbereiten. Store-Production-Environment/Review-Rechte (Issue #331) bleiben Admin-/Freigabeblocker. Keine Store-Einreichung, Tags oder Pale-Moon-Arbeit in dieser Einheit.
