@@ -464,3 +464,11 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Alle drei PRs inklusive Kernprüfung, Performance, Chromium samt Video, Firefox, CodeQL und Sammelcheck **grün**. Endgültiger gemeinsamer Produktcommit: `b26f837e984de7bddd5fd8d7f6f93ba113b5f50c`.
 - **Nicht veröffentlichender moderner Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) erfolgreich** auf diesem Commit: vollständige Produktprüfung, Chromium, Video/DOM-Untertitel, Firefox sowie fünf moderne Archive einschließlich SHA-/Paketprüfung. Internes Artefakt `11638965688`, Ablauf 23.10.2026 18:48 UTC. Echte Edge-/Opera- und Windows-Browserläufe sind damit nicht behauptet.
 - Rest: Kasusfragment ohne eindeutigen Kontext (Issue #359), administrative Store-Konfiguration und explizite Veröffentlichungsfreigabe (Issue #331), eigenständige Release-/Versionsentscheidung. Keine Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen ausgeführt.
+
+## Unabhängiger Pre-Release-Audit – Korrektur-Checkpoint 09.10.2026
+
+- Externer Audit auf Produkt-Snapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), NO-GO. Nachweise und Fallreproduktionen liegen in den extern bereitgestellten Auditdateien; keine unvollständige juristische Freigabe ableiten.
+- In `main` nach vollständig grüner PR-CI: #378 (`a6bbcdf`, DOM-02), #379 (`ed47edc`, DOM-13/05), #380 (`960e2a9`, LANG-09), #381 (`8bb40fb`, S1), #383 (`cd3c869`, LANG-01/03) und #382 (`870c7b6`, LANG-02).
+- #384 (S2: Backup-/Formularvertrag) läuft separat durch CI und ist noch **nicht** als gemergt verifiziert.
+- Verbleibende Blocker: vor allem rechter DOM-Inlinekontext (DOM-01), vollständige Editor-/Restore-Lifecycle-Abdeckung, Video-Gate REL-01 und weitere P2 inklusive Securitygates S3/S4 sowie Lizenzprovenienz LIC-01. Kein Release-GO aus den bisherigen Teilkorrekturen ableiten.
+- Nächste Einheit: #384 abschließen oder Fehler beheben; DOM-01 und dynamische Restaurierung mit negativen/nativen Tests bearbeiten; danach erneute gezielte Audit-Gegenprüfung. Keine Tag-/Store-Publikation, private Quellen nur zur ausdrücklich erforderlichen Provenienzprüfung.
