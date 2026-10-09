@@ -1,11 +1,11 @@
 # AI Session State
 
-## Neuester kompakter Audit-Checkpoint (09.10.2026 UTC)
+## Neuester kompakter Audit-Checkpoint (10.10.2026, Europe/Berlin)
 
-- Auf `main` integrierte Korrekturen des unabhängigen 0.7.2-Audits: **#397 DOM-06** – zitat- und mehrwortsichere Inline-Textläufe, Mutationstests, Merge `3699903a52683a0fd7595c6e00000973f26b3de8`; **#398 DOM-12** – DOM-Ranges bei lokalen Textkorrekturen, Restore und dynamischen Updates erhalten, Merge `188b6bcb681c569e0c2a54bf2d0fb8d1f8225a14`; **#399 DOM-11** – Untertitel tief verschachtelt, im offenen ShadowRoot und nach Attributwechseln korrekt erkennen/restore, Merge `320c2e3ce0c540e8ca14869e9ef38012edf0c1e1`.
-- Für jede dieser drei PRs waren Kern-, Performance-, Chromium-/Video-, Gecko- und CodeQL-Checks inklusive Sammelcheck **vollständig grün**. Nachgelagerte `main`-CI ist keine stillschweigend mitbehauptete Prüfung.
-- **Noch NO-GO:** Unabhängiger Ausgangsaudit mit 29 Befunden (8 P1, 20 P2, 1 P3), ohne abgeschlossene Gesamt-Revalidierung. Nächste begrenzte Einheit **DOM-10** (spät angehängte offene ShadowRoots); außerdem DOM-01-Rest, DesignMode-Off ohne Event, nativ unabhängige REL-01-Video- und DOM-02-Performance-Nachmessungen, weitere Sprache/Release/S3/S4 und TEST-01.
-- Weiterhin **keine** Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen. Store-Production-Issue #331 und manuelle Edge/Opera/Windows-Prüfungen bleiben offen. Autoritativer kurzfristiger Stand: `docs/engineering/CURRENT-WORK.md` auf `main`.
+- **Neu integriert:** **#401 DOM-10**, Merge `0c94e2425eab28b96da1abc3ec910460bfa8790c`. Späte offene ShadowRoots werden ohne Page-World-Prototyp-Patch in kleinen zeit-/mengenbegrenzten DOM-Suchscheiben erkannt. Regressionen für Plain-Host, echtes Custom-Element-Upgrade, Änderungen, Editorgrenzen, geschlossene Roots und Stop/Restore. Gesamte PR-CI inklusive Kernprüfung, Performance, CodeQL, Chromium-/Video- und Firefox-Browserläufen **grün**.
+- Vorherige geprüfte Auditeinheiten: **#397 DOM-06** `3699903a`, **#398 DOM-12** `188b6bcb`, **#399 DOM-11** `320c2e3c`; alle PR-CI grün. Nachgelagerte `main`-CI getrennt prüfen.
+- **Weiterhin NO-GO:** Ausgangsaudit 29 Befunde (8 P1, 20 P2, 1 P3); noch keine unabhängige vollständige Abnahme. Als Nächstes den **DOM-01-Rest** mit unabhängigem Gegenbeispiel priorisieren, zusätzlich Sprachrestfehler/TEST-01, DesignMode-Off, REL-01-Nativvideo und DOM-02-1k/4k/10k-Nachmessungen sowie S3/S4 abarbeiten.
+- **Keine** Release-Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen. Native Windows/Edge/Opera- und Store-Environment-Prüfungen bleiben offen. Aktueller Arbeitspunkt: `docs/engineering/CURRENT-WORK.md` auf `main`.
 
 Stand: 2026-10-09  
 Autorität: `main`
