@@ -54,6 +54,11 @@ const leadingTokenPattern = new RegExp(
 const singularDeterminerPattern =
   /(?:^|\s)(?:eine|die|der|diese|dieser|jene|jener|welche|welcher|keine|meine|deine|seine|ihre|unsere|eure)\s*$/iu;
 const followingNounPattern = /^\s+[\p{Lu}][\p{Ll}\p{M}-]+/u;
+// Auch bei zwischenliegenden Adjektiven und Adverbien bleibt ein
+// singularisches Bezugswort vor einem substantivierten Partizip geschützt.
+const extendedSingularPrefixPattern =
+  /(?:^|\s)(?:eine|die|der|diese|dieser|jene|jener|welche|welcher|keine|meine|deine|seine|ihre|unsere|eure)\s+(?:[\p{L}\p{M}-]+\s+){1,6}$/iu;
+const singularRolePrefixPattern = /(?:^|\s)als\s*$/iu;
 
 function applyTokenCase(source: string, replacement: string): string {
   const lowerSource = source.toLocaleLowerCase(locale);
@@ -87,7 +92,16 @@ function transformSalutations(input: string): TransformResult {
 
   const text = input.replace(
     salutationPattern,
-    (match: string, salutation: string, participle: string) => {
+    (match: string, salutation: string, participle: string, offset: number, source: string) => {
+      // Anreden können auch attributive Adjektive einleiten.
+      // Das folgende Substantiv bzw. Kleinschreibung schützt diese Fälle.
+      if (
+        participle === participle.toLocaleLowerCase(locale) ||
+        followingNounPattern.test(source.slice(offset + match.length))
+      ) {
+        return match;
+      }
+
       const replacement = replacementFor(participle);
       if (!replacement) {
         return match;
@@ -127,6 +141,8 @@ function transformStandaloneParticiples(input: string): TransformResult {
         !persons &&
         (startsWithLowercase ||
           singularDeterminerPattern.test(before) ||
+          extendedSingularPrefixPattern.test(before) ||
+          singularRolePrefixPattern.test(before) ||
           followingNounPattern.test(after))
       ) {
         return match;
@@ -156,6 +172,21 @@ function transformWithLeadingContext(
   leadingContext: string
 ): TransformResult {
   if (!leadingSalutationPattern.test(leadingContext)) {
+    // Für Soft-Hyphen- und Inline-Textsegmente den vorangestellten
+    // Artikel in der Flexion berücksichtigen, ohne ihn selbst umzuschreiben.
+    const combined = transformContextualParticiples(leadingContext + input);
+    if (
+      combined.replacements > 0 &&
+      combined.text.startsWith(leadingContext)
+    ) {
+      const remainder = transformParticiples(
+        combined.text.slice(leadingContext.length)
+      );
+      return {
+        text: remainder.text,
+        replacements: combined.replacements + remainder.replacements
+      };
+    }
     return transformParticiples(input);
   }
 
