@@ -67,8 +67,20 @@ describe("Audit DOM-10: nachträglich angehängte offene ShadowRoots", () => {
     const host = document.createElement(name);
     document.body.append(host);
     starten();
-    const root = host.attachShadow({ mode: "open" });
-    root.textContent = "Nutzer:innen";
+    // Der Host existiert vor der Registrierung und erhält seine Root im Upgrade.
+    class NachtraeglicherHost extends HTMLElement {
+      connectedCallback(): void {
+        if (!this.shadowRoot) {
+          const root = this.attachShadow({ mode: "open" });
+          root.append(document.createTextNode("Nutzer:innen"));
+        }
+      }
+    }
+    customElements.define(name, NachtraeglicherHost);
+    const root = host.shadowRoot;
+    if (!root) {
+      throw new Error("Custom-Element-Upgrade hat keine ShadowRoot erzeugt.");
+    }
     await abwarten(() => root.textContent === "Nutzer");
     expect(root.textContent).toBe("Nutzer");
   });
