@@ -27,10 +27,10 @@ describe("DOM-02-Berichtsvergleich", () => {
     fehlend.scenarios.pop();
     expect(() => vergleicheDomSkalierung(fehlend, bericht())).toThrow();
     const doppelt = bericht();
-    doppelt.scenarios[1].nodes = 1000;
+    doppelt.scenarios[1]!.nodes = 1000;
     expect(() => vergleicheDomSkalierung(doppelt, bericht())).toThrow();
     const fehler = bericht();
-    fehler.scenarios[0].replacements = 0;
+    fehler.scenarios[0]!.replacements = 0;
     expect(() => vergleicheDomSkalierung(fehler, bericht())).toThrow();
   });
 });
