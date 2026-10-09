@@ -1,5 +1,12 @@
 # AI Session State
 
+## Neuester kompakter Audit-Checkpoint (09.10.2026 UTC)
+
+- Auf `main` integrierte Korrekturen des unabhängigen 0.7.2-Audits: **#397 DOM-06** – zitat- und mehrwortsichere Inline-Textläufe, Mutationstests, Merge `3699903a52683a0fd7595c6e00000973f26b3de8`; **#398 DOM-12** – DOM-Ranges bei lokalen Textkorrekturen, Restore und dynamischen Updates erhalten, Merge `188b6bcb681c569e0c2a54bf2d0fb8d1f8225a14`; **#399 DOM-11** – Untertitel tief verschachtelt, im offenen ShadowRoot und nach Attributwechseln korrekt erkennen/restore, Merge `320c2e3ce0c540e8ca14869e9ef38012edf0c1e1`.
+- Für jede dieser drei PRs waren Kern-, Performance-, Chromium-/Video-, Gecko- und CodeQL-Checks inklusive Sammelcheck **vollständig grün**. Nachgelagerte `main`-CI ist keine stillschweigend mitbehauptete Prüfung.
+- **Noch NO-GO:** Unabhängiger Ausgangsaudit mit 29 Befunden (8 P1, 20 P2, 1 P3), ohne abgeschlossene Gesamt-Revalidierung. Nächste begrenzte Einheit **DOM-10** (spät angehängte offene ShadowRoots); außerdem DOM-01-Rest, DesignMode-Off ohne Event, nativ unabhängige REL-01-Video- und DOM-02-Performance-Nachmessungen, weitere Sprache/Release/S3/S4 und TEST-01.
+- Weiterhin **keine** Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen. Store-Production-Issue #331 und manuelle Edge/Opera/Windows-Prüfungen bleiben offen. Autoritativer kurzfristiger Stand: `docs/engineering/CURRENT-WORK.md` auf `main`.
+
 Stand: 2026-10-09  
 Autorität: `main`
 
