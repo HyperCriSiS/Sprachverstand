@@ -938,6 +938,48 @@ export class DomProcessor {
     return false;
   }
 
+  // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
+  private collectSafeContextSibling(sibling: Node): string | undefined {
+    if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
+      return undefined;
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(
+      sibling,
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
+    );
+    const chunks: string[] = [];
+
+    const readText = (text: Text): boolean => {
+      if (!shouldProcessTextNode(text)) {
+        return text.data.trim() === "";
+      }
+      chunks.push(this.textChanges.get(text)?.original ?? text.data);
+      return true;
+    };
+
+    if (sibling.nodeType === Node.TEXT_NODE && !readText(sibling as Text)) {
+      return undefined;
+    }
+
+    let current = walker.nextNode();
+    while (current) {
+      if (
+        current instanceof Element &&
+        blockBoundaryTags.has(current.tagName)
+      ) {
+        return undefined;
+      }
+      if (current.nodeType === Node.TEXT_NODE && !readText(current as Text)) {
+        return undefined;
+      }
+      current = walker.nextNode();
+    }
+
+    return chunks.join("");
+  }
+
   private collectLeadingContext(node: Text): string | undefined {
     const chunks: string[] = [];
     let collectedLength = 0;
@@ -946,7 +988,11 @@ export class DomProcessor {
     while (current?.parentNode) {
       let sibling = current.previousSibling;
       while (sibling) {
-        const text = sibling.textContent ?? "";
+        const text = this.collectSafeContextSibling(sibling);
+        if (text === undefined) {
+          const context = chunks.join("").slice(-leadingContextLimit);
+          return context || undefined;
+        }
         if (text) {
           chunks.unshift(text);
           collectedLength += text.length;
