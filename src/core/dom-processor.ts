@@ -7,7 +7,9 @@ import {
 import type { CustomReplacement } from "../settings/defaults";
 import {
   isSubtitleContainer,
-  isSubtitleContent
+  isSubtitleContent,
+  matchesSubtitleMarker,
+  subtitleClassifierAttributeNames
 } from "./subtitles";
 import { transformTextWithSummary } from "./transform-text";
 import {
@@ -107,6 +109,8 @@ const protectionAttributeNames = new Set([
   "role",
   "data-sprachverstand-ignore"
 ]);
+const subtitleClassificationAttributeSet =
+  new Set<string>(subtitleClassifierAttributeNames);
 
 export class DomProcessor {
   private observer: MutationObserver | undefined;
@@ -170,10 +174,11 @@ export class DomProcessor {
       characterData: true,
       subtree: true,
       attributes: true,
+      attributeOldValue: true,
       attributeFilter:
         this.options.processAccessibleAttributes !== false
-          ? [...accessibleAttributeNames, ...protectionAttributeNames]
-          : [...protectionAttributeNames]
+          ? [...accessibleAttributeNames, ...protectionAttributeNames, ...subtitleClassifierAttributeNames]
+          : [...protectionAttributeNames, ...subtitleClassifierAttributeNames]
     };
     this.observerOptions = observerOptions;
     this.observeMutationTarget(this.document.documentElement);
@@ -249,7 +254,7 @@ export class DomProcessor {
   public restoreAll(): void {
     for (const [node, change] of this.textChanges) {
       if (node.isConnected && node.data === change.transformed) {
-        node.data = change.original;
+        this.replaceTextKeepingRanges(node, change.original);
       }
     }
 
@@ -710,6 +715,34 @@ export class DomProcessor {
 
       if (record.type === "attributes") {
         if (record.target instanceof Element && record.attributeName) {
+          if (subtitleClassificationAttributeSet.has(record.attributeName)) {
+            const previous = this.attributeChanges
+              .get(record.target)?.get(record.attributeName);
+            if (
+              previous &&
+              record.target.getAttribute(record.attributeName) === previous.transformed
+            ) {
+              continue;
+            }
+            const relevant = isSubtitleContent(record.target) ||
+              matchesSubtitleMarker(record.attributeName, record.oldValue);
+            if (relevant) {
+              if (
+                this.options.processSubtitles !== true &&
+                isSubtitleContent(record.target)
+              ) {
+                // Bei erstmaligem Captionstatus eigene Altänderungen restaurieren.
+                this.forgetRoot(record.target);
+              } else {
+                this.queue(record.target);
+              }
+              this.invalidateInlineProtectionAround(record.target);
+              continue;
+            }
+            if (record.attributeName !== "aria-label") {
+              continue;
+            }
+          }
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
@@ -1023,6 +1056,91 @@ export class DomProcessor {
     return { text, replacements, summaries };
   }
 
+
+  // Ersetzungsbereiche möglichst klein halten, damit DOM-Ranges in
+  // unveränderten Präfixen, Suffixen und Wortzwischenräumen bestehen bleiben.
+  private replaceTextSegment(
+    node: Text,
+    offset: number,
+    previous: string,
+    next: string
+  ): void {
+    if (previous === next) {
+      return;
+    }
+    let prefix = 0;
+    while (
+      prefix < previous.length &&
+      prefix < next.length &&
+      previous[prefix] === next[prefix]
+    ) {
+      prefix += 1;
+    }
+    let previousEnd = previous.length;
+    let nextEnd = next.length;
+    while (
+      previousEnd > prefix &&
+      nextEnd > prefix &&
+      previous[previousEnd - 1] === next[nextEnd - 1]
+    ) {
+      previousEnd -= 1;
+      nextEnd -= 1;
+    }
+    node.replaceData(
+      offset + prefix,
+      previousEnd - prefix,
+      next.slice(prefix, nextEnd)
+    );
+  }
+
+  private replaceTextKeepingRanges(node: Text, next: string): void {
+    const previous = node.data;
+    if (previous === next) {
+      return;
+    }
+    const tokensOf = (value: string) =>
+      [...value.matchAll(/\S+/gu)].map((match) => ({
+        index: match.index,
+        text: match[0]
+      }));
+    const previousTokens = tokensOf(previous);
+    const nextTokens = tokensOf(next);
+
+    if (previousTokens.length > 1 &&
+        previousTokens.length === nextTokens.length) {
+      // Nur bei identischen Trennstücken sind die Tokenpositionen eindeutig.
+      let previousCursor = 0;
+      let nextCursor = 0;
+      let separatorsUnchanged = true;
+      for (let index = 0; index < previousTokens.length; index += 1) {
+        const before = previousTokens[index]!;
+        const after = nextTokens[index]!;
+        if (
+          previous.slice(previousCursor, before.index) !==
+          next.slice(nextCursor, after.index)
+        ) {
+          separatorsUnchanged = false;
+          break;
+        }
+        previousCursor = before.index + before.text.length;
+        nextCursor = after.index + after.text.length;
+      }
+      if (
+        separatorsUnchanged &&
+        previous.slice(previousCursor) === next.slice(nextCursor)
+      ) {
+        // Rückwärts ersetzen: ältere Offsets bleiben bis zu ihrem Edit gültig.
+        for (let index = previousTokens.length - 1; index >= 0; index -= 1) {
+          const before = previousTokens[index]!;
+          const after = nextTokens[index]!;
+          this.replaceTextSegment(node, before.index, before.text, after.text);
+        }
+        return;
+      }
+    }
+    this.replaceTextSegment(node, 0, previous, next);
+  }
+
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
     const contextDirty = this.contextDirtyNodes.delete(node);
     const tracked = this.textChanges.get(node);
@@ -1079,7 +1197,7 @@ export class DomProcessor {
         : this.transformValue(original, leadingContext, protectParticiple);
     if (result.replacements === 0 || result.text === original) {
       if (originalFromContext !== undefined) {
-        node.data = original;
+        this.replaceTextKeepingRanges(node, original);
       }
       return;
     }
@@ -1091,7 +1209,7 @@ export class DomProcessor {
       summaries: result.summaries
     });
     this.adjustReplacementCount(result.replacements);
-    node.data = result.text;
+    this.replaceTextKeepingRanges(node, result.text);
   }
 
   private processAccessibleAttributes(element: Element): void {
@@ -1313,7 +1431,7 @@ export class DomProcessor {
       return;
     }
     if (node.data === change.transformed) {
-      node.data = change.original;
+      this.replaceTextKeepingRanges(node, change.original);
     }
     this.removeTextChange(node, change);
   }
