@@ -94,6 +94,15 @@ const frameworkRewriteWindowMs = 1_000;
 const frameworkRewriteThreshold = 5;
 const frameworkRewriteCooldownMs = 250;
 
+// Änderungen an diesen Attributen betreffen die Schutzentscheidung für
+// sämtliche untergeordneten Texte, auch bei deaktivierter Attributkorrektur.
+const protectionAttributeNames = new Set([
+  "contenteditable",
+  "aria-hidden",
+  "role",
+  "data-sprachverstand-ignore"
+]);
+
 export class DomProcessor {
   private observer: MutationObserver | undefined;
   private observerOptions: MutationObserverInit | undefined;
@@ -119,6 +128,13 @@ export class DomProcessor {
   private countNotificationScheduled = false;
   private running = false;
   private replacementCount = 0;
+  private readonly beforeInputHandler = (): void => {
+    // Ein reiner Wechsel von designMode löst keine DOM-Mutation aus.
+    // Vor der tatsächlichen Eingabe eigene Änderungen zurücknehmen.
+    if (this.running && this.document.designMode?.toLowerCase() === "on") {
+      this.restoreAll();
+    }
+  };
 
   public constructor(
     private readonly document: Document,
@@ -131,6 +147,7 @@ export class DomProcessor {
     }
 
     this.running = true;
+    this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
 
@@ -143,12 +160,13 @@ export class DomProcessor {
     const observerOptions: MutationObserverInit = {
       childList: true,
       characterData: true,
-      subtree: true
+      subtree: true,
+      attributes: true,
+      attributeFilter:
+        this.options.processAccessibleAttributes !== false
+          ? [...accessibleAttributeNames, ...protectionAttributeNames]
+          : [...protectionAttributeNames]
     };
-    if (this.options.processAccessibleAttributes !== false) {
-      observerOptions.attributes = true;
-      observerOptions.attributeFilter = [...accessibleAttributeNames];
-    }
     this.observerOptions = observerOptions;
     this.observeMutationTarget(this.document.documentElement);
 
@@ -162,6 +180,7 @@ export class DomProcessor {
 
   public stop(options: StopOptions = {}): void {
     this.running = false;
+    this.document.removeEventListener("beforeinput", this.beforeInputHandler, true);
     this.observer?.disconnect();
     this.observer = undefined;
     this.observerOptions = undefined;
@@ -675,6 +694,11 @@ export class DomProcessor {
 
       if (record.type === "attributes") {
         if (record.target instanceof Element && record.attributeName) {
+          if (protectionAttributeNames.has(record.attributeName)) {
+            // Schutzstatuswechsel betreffen ganze Unterbäume.
+            this.queue(record.target);
+            continue;
+          }
           const tracked = this.attributeChanges
             .get(record.target)
             ?.get(record.attributeName);
@@ -823,6 +847,14 @@ export class DomProcessor {
     const tracked = this.textChanges.get(node);
     if (tracked) {
       if (node.data === tracked.transformed) {
+        if (
+          !shouldProcessTextNode(node) ||
+          (this.options.processSubtitles !== true && isSubtitleContent(node))
+        ) {
+          // Vor dem Editorwechsel den letzten eigenen Schreibzugriff
+          // rückgängig machen, niemals fremde Änderungen überschreiben.
+          this.forgetTrackedText(node);
+        }
         return;
       }
 
@@ -894,6 +926,11 @@ export class DomProcessor {
 
     if (tracked) {
       if (value === tracked.transformed) {
+        if (!shouldProcessAccessibleAttribute(element, attributeName, value)) {
+          // Geschützte Attribute ebenso wie Text originalgetreu freigeben.
+          element.setAttribute(attributeName, tracked.original);
+          this.removeAttributeChange(element, attributeName, tracked);
+        }
         return;
       }
 
