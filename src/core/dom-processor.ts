@@ -99,6 +99,8 @@ interface TraversalState {
 
 const trailingParticiplePattern =
   /(?<![\p{L}\p{M}])(?:Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende|Lesende|Zuhörende|Arbeitnehmende|Arbeitgebende|Dozierende|Fördergebende|Theatermachende)\s*$/iu;
+const leadingParticiplePattern =
+  /^(?:Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende|Lesende|Zuhörende|Arbeitnehmende|Arbeitgebende|Dozierende|Fördergebende|Theatermachende)(?![\p{L}\p{M}])/iu;
 const followingInlineNounPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u;
 const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
 const maximumPreviousInlineNodes = 64;
@@ -977,6 +979,13 @@ export class DomProcessor {
   }
 
   private shouldProtectFollowingParticiple(node: Text, original: string): boolean {
+    // Ein links ohne Wortgrenze anliegender Text ist ein Teil desselben Wortes.
+    if (
+      leadingParticiplePattern.test(original) &&
+      /\p{L}$/u.test(this.collectLeadingContext(node, true) ?? "")
+    ) {
+      return true;
+    }
     if (!trailingParticiplePattern.test(original)) {
       return false;
     }
@@ -992,6 +1001,11 @@ export class DomProcessor {
           return false;
         }
         following += context;
+        // Bei direkt anhängenden Buchstaben die Teilwortkorrektur vermeiden.
+        // Beispiel: "Mitarbeitende" + <em>n</em>.
+        if (/\p{L}$/u.test(original) && /^\p{L}/u.test(following)) {
+          return true;
+        }
         if (followingInlineNounPattern.test(following)) {
           return true;
         }
@@ -1575,7 +1589,10 @@ export class DomProcessor {
     return chunks.join("");
   }
 
-  private collectLeadingContext(node: Text): string | undefined {
+  private collectLeadingContext(
+    node: Text,
+    allowShortFragment = false
+  ): string | undefined {
     const chunks: string[] = [];
     let collectedLength = 0;
     let current: Node | null = node;
@@ -1583,7 +1600,7 @@ export class DomProcessor {
     while (current?.parentNode) {
       let sibling = current.previousSibling;
       while (sibling) {
-        const text = this.collectSafeContextSibling(sibling);
+        const text = this.collectSafeContextSibling(sibling, allowShortFragment);
         if (text === undefined) {
           const context = chunks.join("").slice(-leadingContextLimit);
           return context || undefined;

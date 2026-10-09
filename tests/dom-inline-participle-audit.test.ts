@@ -119,4 +119,64 @@ describe("Audit DOM-01: Partizip mit Inline-Markup", () => {
     expect(first.textContent).toBe("Mitarbeiter ");
   });
 
+
+  it.each([
+    ["<p>Mitarbeitende<strong>n</strong> arbeiten.</p>", "Mitarbeitenden arbeiten."],
+    ["<p><em>Mitarbeitende</em>n arbeiten.</p>", "Mitarbeitenden arbeiten."],
+    ["<p><span>Un</span><strong>Mitarbeitende</strong> arbeiten.</p>", "UnMitarbeitende arbeiten."],
+    ["<p><em>U</em><strong>Mitarbeitende</strong> arbeiten.</p>", "UMitarbeitende arbeiten."],
+    ["<p>Mitarbeitende <em>Eltern</em> warten.</p>", "Mitarbeitende Eltern warten."],
+    ["<p>Mitarbeitende. <em>Eltern</em> warten.</p>", "Mitarbeiter. Eltern warten."]
+  ])("verhindert Teilwortkorrekturen an Inline-Grenzen", (html, expected) => {
+    expect(transformieren(html)).toBe(expected);
+  });
+
+  it("bewertet eine angehängte Endung und deren Entfernen erneut", async () => {
+    document.body.innerHTML = "<p>Mitarbeitende</p>";
+    const paragraph = document.querySelector("p")!;
+    processor = new DomProcessor(document, {
+      rules: defaultRules, profile: "aggressive", processAccessibleAttributes: false
+    });
+    processor.start();
+    expect(paragraph.textContent).toBe("Mitarbeiter");
+
+    const suffix = document.createElement("em");
+    suffix.textContent = "n";
+    paragraph.append(suffix);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("Mitarbeitenden");
+    expect(processor.getReplacementCount()).toBe(0);
+
+    suffix.remove();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("Mitarbeiter");
+    expect(processor.getReplacementCount()).toBe(1);
+  });
+
+  it("bewertet einen neu vorangestellten Wortteil erneut", async () => {
+    document.body.innerHTML = "<p><strong>Mitarbeitende</strong></p>";
+    const paragraph = document.querySelector("p")!;
+    processor = new DomProcessor(document, {
+      rules: defaultRules, profile: "aggressive", processAccessibleAttributes: false
+    });
+    processor.start();
+    expect(paragraph.textContent).toBe("Mitarbeiter");
+
+    const prefix = document.createElement("em");
+    prefix.textContent = "Un";
+    paragraph.prepend(prefix);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("UnMitarbeitende");
+    expect(processor.getReplacementCount()).toBe(0);
+
+    prefix.remove();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("Mitarbeiter");
+    expect(processor.getReplacementCount()).toBe(1);
+  });
+
 });
