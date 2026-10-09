@@ -465,10 +465,11 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - **Nicht veröffentlichender moderner Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) erfolgreich** auf diesem Commit: vollständige Produktprüfung, Chromium, Video/DOM-Untertitel, Firefox sowie fünf moderne Archive einschließlich SHA-/Paketprüfung. Internes Artefakt `11638965688`, Ablauf 23.10.2026 18:48 UTC. Echte Edge-/Opera- und Windows-Browserläufe sind damit nicht behauptet.
 - Rest: Kasusfragment ohne eindeutigen Kontext (Issue #359), administrative Store-Konfiguration und explizite Veröffentlichungsfreigabe (Issue #331), eigenständige Release-/Versionsentscheidung. Keine Tags, GitHub-Releases, Store-Einreichungen oder Pale-Moon-Änderungen ausgeführt.
 
-## Unabhängiger Pre-Release-Audit – Korrektur-Checkpoint 09.10.2026
+## Unabhängiger 0.7.2-Audit – verifizierter Fix-Checkpoint 09.10.2026
 
-- Externer Audit auf Produkt-Snapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), NO-GO. Nachweise und Fallreproduktionen liegen in den extern bereitgestellten Auditdateien; keine unvollständige juristische Freigabe ableiten.
-- In `main` nach vollständig grüner PR-CI: #378 (`a6bbcdf`, DOM-02), #379 (`ed47edc`, DOM-13/05), #380 (`960e2a9`, LANG-09), #381 (`8bb40fb`, S1), #383 (`cd3c869`, LANG-01/03) und #382 (`870c7b6`, LANG-02).
-- #384 (S2: Backup-/Formularvertrag) läuft separat durch CI und ist noch **nicht** als gemergt verifiziert.
-- Verbleibende Blocker: vor allem rechter DOM-Inlinekontext (DOM-01), vollständige Editor-/Restore-Lifecycle-Abdeckung, Video-Gate REL-01 und weitere P2 inklusive Securitygates S3/S4 sowie Lizenzprovenienz LIC-01. Kein Release-GO aus den bisherigen Teilkorrekturen ableiten.
-- Nächste Einheit: #384 abschließen oder Fehler beheben; DOM-01 und dynamische Restaurierung mit negativen/nativen Tests bearbeiten; danach erneute gezielte Audit-Gegenprüfung. Keine Tag-/Store-Publikation, private Quellen nur zur ausdrücklich erforderlichen Provenienzprüfung.
+- Ursprünglicher unabhängiger Snapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), NO-GO.
+- **Nach vollständiger PR-CI einschließlich beider nativer Browser, Video, Performance und CodeQL in `main` gemergt:** #378 DOM-02 (`a6bbcdf`), #379 DOM-13/05 (`ed47edc`), #380 LANG-09 (`960e2a9`), #381 S1 (`8bb40fb`), #382 LANG-02 (`870c7b6`), #383 LANG-01/03 (`cd3c869`), #384 S2 (`79dccf6`), #386 DOM-04 (`dd3f60e`), #387 REL-01 **nur Worker-Discovery-Flake** (`3eb1850`), #388 DOM-07 (`80f6df6`), #389 DOM-01 **konservativer Inline-Sofortschutz** (`9e45d0f`), #390 DOM-08 (`e19810c`).
+- Der ursprüngliche Video-Drop-/Frame-Grenzbefund **REL-01 bleibt offen**: Der Worker-Discovery-Fix ersetzt keine wiederholten unabhängigen Messungen. DOM-01 ist ebenfalls **nicht vollständig geschlossen**, solange der generelle Inline-Run-Vertrag samt Zitaten/Mehrwortschutz (DOM-06) fehlt.
+- Nächste abgeschlossene Einheit: DOM-09 dynamischer Schutzstatus/Editor-Restore, DOM-03 kontextabhängige Neuvalidierung bei Präfixmutation, DOM-06 Quote-/Mehrwort-Läufe; danach DOM-10/11/12 und übrige DOM/LANG-Befunde. Parallel unabhängige REL-01-/DOM-02-Browser-Benchmarks gegen stabilen Tag durchführen.
+- Danach S3/S4 Release- und Security-Gates sowie vollständige unabhängige Wiederholungsprüfung.
+- **NO-GO bis zur Revalidierung aller Releaseblocker.** Keine Tags, GitHub-Releases, Store-Submissions oder Pale-Moon-Änderungen in dieser Einheit.

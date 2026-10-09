@@ -5,14 +5,12 @@ Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
-## Unabhängiger 0.7.2-Audit: Korrekturwelle vom 09.10.2026
+## Unabhängiger 0.7.2-Audit: aktueller Korrekturstand
 
-- Audit-Snapshot `439a3e8` meldet 29 Findings (8 P1, 20 P2, 1 P3). Die ursprüngliche NO-GO-Entscheidung bleibt bis zur erneuten unabhängigen Gesamtabnahme bestehen.
-- **Gemergt, gesamte PR-CI grün:** DOM-02 (#378, `a6bbcdf`: MutationQueue ohne O(N²)); DOM-13/DOM-05 (#379, `ed47edc`: DesignMode-/Shadowhost-Schutz); LANG-09 (#380, `960e2a9`: linearer Artikelpaar-Index); S1 (#381, `8bb40fb`: lokaler Sync-Override); LANG-01/LANG-03 (#383, `cd3c869`: Partizipkontext); LANG-02 (#382, `870c7b6`: koordinierte Singularpersonen erhalten).
-- **In Prüfung:** S2 (#384): verlustbehaftete Backupfelder bei Import abweisen. Nicht als integriert markieren, bevor PR-CI und Merge bestätigt sind.
-- **Nächste sicherheitskritische Arbeiten:** DOM-01 noch fehlender rechter Inline-Kontext; vollständige dynamische DesignMode-/Schutzstatus-Restaurierung; REL-01 reproduzierbares Videogate; danach DOM-03/04/06/07/08/09/11/12, übrige LANG-/Settings-/Releasebefunde. Performance-DOM-02 zusätzlich nativ mit 1k/4k/10k Geschwistern gegen v0.7.1 nachmessen.
-- **Rechtliche Prüflücke LIC-01:** private Provenienz benötigt eigenen Abgleich, keine pauschale Lizenzfreigabe; Lizenzdatei und Rohdaten nicht beiläufig ändern.
-- Keine Tags, Releases, Store-Submissions oder Pale-Moon-Änderungen. Selbst erfolgreiche CI ersetzt nicht die vollständige unabhängige Audit-Revalidierung.
+- Auditsnapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), **weiterhin NO-GO** bis zur neuen unabhängigen Abnahme.
+- **Gemergt und gesamte PR-CI grün:** #378 DOM-02, #379 DOM-13/05, #380 LANG-09, #381 S1, #382 LANG-02, #383 LANG-01/03, #384 S2, #386 DOM-04, #387 Worker-Discovery-Flake, #388 DOM-07, #389 DOM-01 (Teilkorrektur), #390 DOM-08. Aktuellen `main`-HEAD bei Wiederaufnahme verifizieren.
+- **Nächste Einheit:** DOM-09 (Editor-/Schutzstatus-Transitions), DOM-03 (Kontextinvalidierung), DOM-06 (Zitate/Mehrwort-Schutz über Inline-Markup). Danach DOM-10/11/12 und übrige Befunde. **DOM-01** und ursprüngliche **REL-01**-Video-Grenzwertmessung trotz Teilfix noch offen. DOM-02 nativ mit 1k/4k/10k gegen stabilen Tag nachmessen.
+- **Später gesondert:** Security- und Releasegates S3/S4 sowie vollständige unabhängige Revalidierung. Keine Releases, Tags, Store-Einreichungen oder Pale-Moon-Änderungen.
 
 ## Zuletzt verifizierte Produktbaseline
 
