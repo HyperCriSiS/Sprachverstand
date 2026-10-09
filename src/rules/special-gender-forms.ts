@@ -16,6 +16,8 @@ const replacements = new Map<string, string>([
   ["benediktiner(innen)", "benediktiner"],
   ["nachwuchssportler(in)", "nachwuchssportler"],
   ["tennisspieler(in)", "tennisspieler"],
+  ["notfallsanitäter/-in", "notfallsanitäter"],
+  ["pflegefachassistent/-in", "pflegefachassistent"],
   ["studentys", "studenten"],
   ["lesys", "leser"],
   ["lehrys", "lehrer"],
