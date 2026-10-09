@@ -121,7 +121,7 @@ function hasExcludedTextAncestor(element: Element | null): boolean {
       return true;
     }
 
-    if (current.getAttribute("aria-hidden") === "true") {
+    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
       return true;
     }
 
@@ -130,7 +130,7 @@ function hasExcludedTextAncestor(element: Element | null): boolean {
       return true;
     }
 
-    current = current.parentElement;
+    current = parentElementOrShadowHost(current);
   }
 
   return false;
