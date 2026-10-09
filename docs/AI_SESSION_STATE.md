@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `800ecce757c45be218a158b4f32df69566939195`
+- Aktueller Produktbaseline-Commit: `8297686dc3f8ff58e2216c74bf290c46fbc8cc11`
 - Abgeschlossene Lexikon-Ausbauwellen: **91**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -373,3 +373,11 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - `General:innen` und `Stallknecht:innen` bleiben unverändert; die ESCO-Einzelwort-Basenwellen enden bei **91**. Keine neue Produktregel oder allgemeine Personen-Suffixableitung.
 - **Live-Web Chromium Run `37876881000`, Attempt 2** auf altem Produkt-HEAD `382bd3b8`: drei von drei Seiten erfolgreich (GitHub, taz, Yoga74), keine JavaScript-/Promise-Fehler und keine nur durch die Erweiterung veränderten geschützten Bereiche. Der erste Versuch scheiterte bereits am lokalen Videogate mit 18 verworfenen Frames gegenüber 1 in der Baseline; unveränderter zweiter Lauf bestanden. GitHub lieferte 5 diagnostische Restmuster, taz und Yoga74 je 0. Yoga74-`pre` veränderte sich sowohl in Baseline als auch mit Erweiterung. Gemessene Laufzeiten sind keine signifikante Performance-Aussage.
 - **Nächster Schritt:** Post-Merge-main-CI/CodeQL für #350 bestätigen, dann Qualität unabhängig auf zusätzlichen realen Texten prüfen bzw. gezielte Auffälligkeiten nachverfolgen. Anschließend moderne Browser-Release-Gates (Issue #331); keine Tags, Store-Submissions oder Pale-Moon-Arbeit ohne ihre vorgesehenen Freigaben.
+
+## Restmuster-Diagnose der Real-Web-Matrix – 09.10.2026
+
+- **PR #352 / Squash-Merge `8297686dc3f8ff58e2216c74bf290c46fbc8cc11`:** Der manuelle `real-world.yml`-Workflow zeigt für verbliebene Marker zusätzlich Baseline-Anzahl, Differenz und maximal 12 kurze Tokenproben zu je höchstens 64 Zeichen. Diese Daten lagen bereits im ausführlichen Laufbericht vor, waren aber in der kompakten CI-Ausgabe nicht sichtbar. Keine Änderung der Ersetzungsregeln oder Sicherheitsgrenzen.
+- **PR #352 vollständig grün:** Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL und Sammelcheck. Post-Merge-`main`-CI noch separat prüfen.
+- **Manueller Chromium-Live-Lauf `37878495919` auf PR-HEAD `b334f793`:** GitHub-Projektseite Baseline **8** Restmarker, Erweiterung **5**, Differenz **−3**. Wortproben `Nutzer:innen`, `Mitarbeiter*innen`, `Student*innen`; Status beider Modi erfolgreich, keine JavaScript-/Promise-Fehler, keine ausschließlich erweiterungsseitigen Änderungen geschützter Bereiche. Lokale Video-Regression erfolgreich.
+- Die README enthält diese Marker als Markdown-Inline-Codebeispiele, die geschützt bleiben müssen. Die Zuordnung **jedes einzelnen** der fünf verbliebenen DOM-Vorkommen zu einem geschützten Textknoten ist damit noch nicht nachgewiesen. Keine neuen Lexikoneinträge aus Restmustern ableiten; keine allgemeine Web-Fehlerquote behaupten.
+- **Nächste größere abgeschlossene Einheit:** bei Bedarf genaue DOM-Herkunft der fünf Restmarker anhand begrenzter Textknoten-Messung auf GitHub untersuchen; anschließend unabhängiges annotiertes Realtext-Sample für Fehlkorrekturen/Recall aufbauen und die modernen Release-Gates prüfen. Store-Environment #331 erfordert Admin-Rechte und gesonderte Freigaben. Keine Tag-/Store-Veröffentlichung oder Pale-Moon-Arbeit im Rahmen dieser Einheit.
