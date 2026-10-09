@@ -155,11 +155,17 @@ function transformInflectedPhrases(input: string): TransformResult {
       leftDeterminer: string,
       leftWhitespace: string,
       leftNoun: string,
-      _connector: string,
+      matchedConnector: string,
       rightDeterminer: string,
       rightWhitespace: string,
       rightNoun: string
     ) => {
+      // „und“ verbindet bei Singularpersonen potenziell zwei tatsächlich
+      // verschiedene Menschen. Ohne semantischen Beleg keine Zusammenziehung.
+      if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
+        return match;
+      }
+
       const normalizedLeftDeterminer = leftDeterminer.toLocaleLowerCase(locale);
       const normalizedRightDeterminer = rightDeterminer.toLocaleLowerCase(locale);
 
@@ -218,7 +224,11 @@ function transformSingularDoubleForms(input: string): TransformResult {
 
   const text = input.replace(
     singularDoubleFormPattern,
-    (match: string, left: string, _connector: string, right: string) => {
+    (match: string, left: string, matchedConnector: string, right: string) => {
+      if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
+        return match;
+      }
+
       const masculine = mapPair(left, right);
 
       if (!masculine) {

@@ -6,7 +6,6 @@ describe("singularDoubleFormsRule", () => {
     ["Kunde/Kundin", "Kunde"],
     ["Kunde:Kundin", "Kunde"],
     ["Kundin / Kunde", "Kunde"],
-    ["Arzt und Ärztin", "Arzt"],
     ["Arzt:Ärztin", "Arzt"],
     ["Studentin oder Student", "Student"],
     ["Kollege bzw. Kollegin", "Kollege"],
@@ -14,16 +13,11 @@ describe("singularDoubleFormsRule", () => {
     ["Online-Nutzer beziehungsweise Online-Nutzerin", "Online-Nutzer"],
     ["Privatkunde/Privatkundin", "Privatkunde"],
     ["Tierärztin/Tierarzt", "Tierarzt"],
-    ["Koautor und Koautorin", "Koautor"],
     ["Bauer/Bäuerin", "Bauer"],
     ["Messebauer/Messebauerin", "Messebauer"],
     ["KUNDE/KUNDIN", "KUNDE"],
     ["eine Nutzerin oder ein Nutzer", "ein Nutzer"],
-    ["einen Studenten und eine Studentin", "einen Studenten"],
-    ["einer Studentin und einem Studenten", "einem Studenten"],
-    ["eines Arztes oder einer Ärztin", "eines Arztes"],
-    ["meine Kundin und mein Kunde", "mein Kunde"],
-    ["unserem Piloten und unserer Pilotin", "unserem Piloten"]
+    ["eines Arztes oder einer Ärztin", "eines Arztes"]
   ])("führt %s zu %s zusammen", (input, expected) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({
       text: expected,
@@ -50,7 +44,16 @@ describe("singularDoubleFormsRule", () => {
     "Bauer/Bauerin",
     "Messebauer/Messebäuerin",
     "Innen- und Außendienst",
-    "Nutzerin und Nutzerin"
+    "Nutzerin und Nutzerin",
+    "Arzt und Ärztin",
+    "Koautor und Koautorin",
+    "einen Studenten und eine Studentin",
+    "einer Studentin und einem Studenten",
+    "meine Kundin und mein Kunde",
+    "unserem Piloten und unserer Pilotin",
+    "Die Kundin und der Kunde sind miteinander verheiratet.",
+    "Die Ärztin und der Arzt arbeiten an verschiedenen Kliniken.",
+    "Kundin und Kunde sind gemeinsam erschienen."
   ])("lässt %s unverändert", (input) => {
     expect(singularDoubleFormsRule.apply(input)).toEqual({
       text: input,
