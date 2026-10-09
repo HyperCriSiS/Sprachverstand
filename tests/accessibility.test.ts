@@ -99,8 +99,9 @@ describe("accessibility preflight", () => {
     const html = await readStaticPage("popup");
     const css = await readFile("static/popup/popup.css", "utf8");
 
-    expect(html).not.toContain('data-i18n="currentPage"');
-    expect(html).not.toContain("Diese Seite");
+    expect(html).toContain(
+      '<span class="visually-hidden" data-i18n="currentPage">Diese Seite</span>'
+    );
     expect(html).toContain(
       '<strong><output id="count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>'
     );
@@ -108,6 +109,7 @@ describe("accessibility preflight", () => {
     expect(html).toContain('class="page-summary-action"');
     expect(css).toMatch(/\.page-summary\s*\{[^}]*min-height:\s*44px;/u);
     expect(css).toMatch(/\.page-summary-copy\s*\{[^}]*display:\s*block;/u);
+    expect(css).toMatch(/\.page-summary-copy \.visually-hidden\s*\{[^}]*position:\s*absolute;/u);
   });
 
   it("keeps decorative brand icons out of the accessibility tree", async () => {

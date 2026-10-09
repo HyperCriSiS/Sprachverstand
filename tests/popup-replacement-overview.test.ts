@@ -19,7 +19,7 @@ describe("Popup-Ersetzungsübersicht", () => {
     expect(popupHtml).toContain('id="details-view"');
     expect(popupHtml).toContain('id="replacement-list"');
     expect(popupHtml).toContain('id="close-replacements"');
-    expect(popupHtml).not.toContain("Diese Seite");
+    expect(popupHtml).toContain('class="visually-hidden" data-i18n="currentPage"');
     expect(popupHtml).toContain('<strong><output id="count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>');
     expect(popupHtml).toContain("unterschiedliche Ersetzungen");
   });
