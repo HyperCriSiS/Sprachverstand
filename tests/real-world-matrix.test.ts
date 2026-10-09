@@ -79,6 +79,11 @@ describe("Real-World-Browsermatrix", () => {
     expect(workflow).toContain("protectedExtensionChanged=");
     expect(workflow).toContain("protectedOnlyExtensionChanged=");
     expect(runner).toContain("remainingPatterns");
+    expect(runner).toContain("nodePatternAudit");
+    expect(runner).toContain("classifyVisibleMarkerNodes.toString()");
+    expect(workflow).toContain("nodeExcludedMarkers=");
+    expect(workflow).toContain("nodeOtherMarkers=");
+    expect(workflow).toContain("nodeMarkerSamples=");
     expect(runner).toContain("requestVideoFrameCallback");
     expect(runner).toContain("getVideoPlaybackQuality");
     expect(runner).toContain("videoFrameDelta");

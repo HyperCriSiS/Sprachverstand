@@ -122,6 +122,14 @@ jobs:
               .map((sample) => sample.replace(/[^\p{L}\p{N}:*_·-]/gu, ""))
               .filter(Boolean)
               .join(",");
+            const nodeAudit = extension.snapshot?.nodePatternAudit;
+            const excludedNodeMarkers = nodeAudit?.excludedOccurrences ?? "n/a";
+            const otherNodeMarkers = nodeAudit?.otherOccurrences ?? "n/a";
+            const nodeSamples = Array.isArray(nodeAudit?.samples)
+              ? nodeAudit.samples.map(({ word, reason }) =>
+                  `${String(word).slice(0, 64)}:${String(reason).slice(0, 32)}`
+                ).slice(0, 12).join(",")
+              : "none";
             const javascriptErrors = Array.isArray(extension.snapshot?.javascriptErrors)
               ? extension.snapshot.javascriptErrors.length
               : 0;
@@ -172,6 +180,9 @@ jobs:
                 `remainingBaselinePatterns=${baselinePatternCount ?? "n/a"}`,
                 `remainingPatternDelta=${comparison.patternDelta ? patternDelta : "n/a"}`,
                 `remainingPatternSamples=${compactSamples || "none"}`,
+                `nodeExcludedMarkers=${excludedNodeMarkers}`,
+                `nodeOtherMarkers=${otherNodeMarkers}`,
+                `nodeMarkerSamples=${nodeSamples}`,
                 `javascriptErrors=${javascriptErrors}`,
                 `unhandledRejections=${rejections}`,
                 `protectedBaselineChanged=${protectedBaselineChanged.join(",") || "none"}`,
@@ -185,7 +196,9 @@ jobs:
               patternNotes.push(
                 `- **${result.slug}, Musterdiagnose:** Basis ${baselinePatternCount ?? "–"} → Erweiterung ${patterns}; ` +
                 `Differenz ${comparison.patternDelta ? patternDelta : "–"}; ` +
-                `kurze Wortformen: ${compactSamples || "keine"}`
+                `kurze Wortformen: ${compactSamples || "keine"}` +
+                `; DOM-Knoten: geschützt ${excludedNodeMarkers}, andere ${otherNodeMarkers}; ` +
+                `Wort-/Bereichsproben: ${nodeSamples}`
               );
             }
 
