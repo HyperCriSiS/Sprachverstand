@@ -1,4 +1,5 @@
 import { isProbablyTechnicalText, isProtectedTextSubtree } from "./text-safety";
+import { isSubtitleContent } from "./subtitles";
 
 export interface InlineProtectionRange {
   readonly start: number;
@@ -128,7 +129,11 @@ export function collectInlineProtection(
 
   const visit = (node: Node): void => {
     if (node instanceof Element && node !== root) {
-      if (boundaryTags.has(node.tagName) || isProtectedTextSubtree(node)) {
+      if (
+        boundaryTags.has(node.tagName) ||
+        isProtectedTextSubtree(node) ||
+        isSubtitleContent(node)
+      ) {
         finishRun();
         return;
       }
