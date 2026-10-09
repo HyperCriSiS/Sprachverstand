@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `feb8bda53081ac5ec4fbc157b521b5463021cbd5`
-- Abgeschlossene Lexikon-Ausbauwellen: **89**
+- Aktueller Produktbaseline-Commit: `d7ea0d9565cc160417371d4455917a4971acc75c`
+- Abgeschlossene Lexikon-Ausbauwellen: **90**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -351,3 +351,10 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Vollständige PR-CI einschließlich Kernprüfung, Performance, Chromium/Video, Gecko, CodeQL und Sammelcheck erfolgreich. Nach-Merge-Status wird über CI-Run `37872549550` und CodeQL `37872549623` überprüft.
 - Fachliche Herkunfts-/Kandidatenprüfungen bleiben privat in `HyperCriSiS/Generic-Datastore`. Keine Originalquellen und keine Herkunftsmetadaten in produktiven Lexikondateien.
 - Weitere Lexikonarbeit nur als begrenzte, eigenständig geprüfte Kandidatenchargen; externe KorAP-Primärbelege erfordern weiterhin berechtigten Zugang. GENDERATOR-Abrufstopp bleibt bestehen. Moderne Browser-Releases vor Pale Moon.
+
+## Lexikonwelle 90 – 09.10.2026
+
+- **PR #346 / Merge `d7ea0d9565cc160417371d4455917a4971acc75c`:** 336 weitere exakt definierte Personenbasen: 222 unveränderte Plurale, 25 Plurale auf `-e`, 26 Plurale auf `-en`, 63 schwache Flexionen. Keine generische Suffixfreigabe.
+- 336 positive Plural-, Singular-, Kasus- und Paarprüfungen sowie gezielte Negativtests; Kernprüfung, Performance, Chromium, Gecko, CodeQL und Sammelcheck auf PR #346 vollständig grün.
+- Herkunfts- und Kandidatenbewertungen bleiben ausschließlich im privaten Datenbestand; Produktcode enthält nur freigegebene exakte Formen.
+- Nachgelagerte `main`-CI gesondert überprüfen. Weitere Sonderfälle nur nach konkreter Flexionsprüfung integrieren. Moderne Releases weiter priorisieren.
