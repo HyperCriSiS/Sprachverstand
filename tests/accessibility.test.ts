@@ -95,6 +95,21 @@ describe("accessibility preflight", () => {
     expect(popupSource).toContain("label.append(input, content)");
   });
 
+  it("zeigt den Korrekturzähler im kompakten Popup weiter neben seinem Text", async () => {
+    const html = await readStaticPage("popup");
+    const css = await readFile("static/popup/popup.css", "utf8");
+
+    expect(html).not.toContain('data-i18n="currentPage"');
+    expect(html).not.toContain("Diese Seite");
+    expect(html).toContain(
+      '<strong><output id="count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>'
+    );
+    expect(html).toContain('id="open-replacements"');
+    expect(html).toContain('class="page-summary-action"');
+    expect(css).toMatch(/\.page-summary\s*\{[^}]*min-height:\s*44px;/u);
+    expect(css).toMatch(/\.page-summary-copy\s*\{[^}]*display:\s*block;/u);
+  });
+
   it("keeps decorative brand icons out of the accessibility tree", async () => {
     for (const page of ["popup", "options"] as const) {
       const html = await readStaticPage(page);

@@ -99,12 +99,12 @@ h2 {
 
 .page-summary {
   width: 100%;
-  min-height: 62px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, Canvas 94%, currentColor 6%);
@@ -113,11 +113,9 @@ h2 {
 }
 
 .page-summary-copy {
-  display: grid;
-  gap: 2px;
+  display: block;
 }
 
-.section-kicker,
 .page-summary-action,
 .popup-rule code,
 .details-summary,
@@ -125,7 +123,6 @@ h2 {
   font-size: 12px;
 }
 
-.section-kicker,
 .details-note {
   opacity: 0.72;
 }
