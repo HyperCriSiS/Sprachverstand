@@ -842,11 +842,19 @@ export class DomProcessor {
     }
 
     const value = element.getAttribute(attributeName);
-    if (value === null || isSubtitleContent(element)) {
+    const tracked = this.attributeChanges.get(element)?.get(attributeName);
+
+    // Das Entfernen eines zuvor ersetzten Attributs invalidiert auch
+    // dessen Zähler und Übersicht. Vorher blieb der Record verwaist.
+    if (value === null) {
+      if (tracked) {
+        this.removeAttributeChange(element, attributeName, tracked);
+      }
       return;
     }
-
-    const tracked = this.attributeChanges.get(element)?.get(attributeName);
+    if (isSubtitleContent(element)) {
+      return;
+    }
 
     if (tracked) {
       if (value === tracked.transformed) {
