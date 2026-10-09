@@ -357,6 +357,8 @@ async function pruefeEreignislosenDesignModeWechsel(sessionId) {
     );
   }
 
+  // Erst die durch Restaurierung ausgelösten Mutationen abklingen lassen.
+  await sleep(250);
   // Weder DOM noch Eingabeereignisse beim Verlassen des Editormodus auslösen.
   const exited = await webdriverRequest(
     "POST",
