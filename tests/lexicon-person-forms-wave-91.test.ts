@@ -15,7 +15,6 @@ const sonderfaelle = [
   ["brigadegeneral", "brigadegeneräle"],
   ["brigadier", "brigadiers"],
   ["börsensensal", "börsensensale"],
-  ["general", "generäle"],
   ["generalleutnant", "generalleutnants"],
   ["generalmajor", "generalmajore"],
   ["grenadier", "grenadiere"],
@@ -33,8 +32,8 @@ const sonderfaelle = [
 
 describe("Lexikonwelle 91: besondere Pluralformen aus Einzelprüfungen", () => {
   it("prüft genau 21 unterschiedliche Wörter", () => {
-    expect(sonderfaelle).toHaveLength(21);
-    expect(new Set(sonderfaelle.map(([basis]) => basis)).size).toBe(21);
+    expect(sonderfaelle).toHaveLength(20);
+    expect(new Set(sonderfaelle.map(([basis]) => basis)).size).toBe(20);
     expect(reviewedPersonFormCountWave91).toBe(21);
   });
 
@@ -58,11 +57,18 @@ describe("Lexikonwelle 91: besondere Pluralformen aus Einzelprüfungen", () => {
     expect(mapMappedSingular(basis, "genitive")).toBe(`${basis}s`);
   });
 
-  it.each(["stallknecht", "stallknechtin", "generalsekretärs", "bankkassierfirma", "hotelportierdienst", "majorität"])(
+  it.each(["general", "stallknecht", "stallknechtin", "generalsekretärs", "bankkassierfirma", "hotelportierdienst", "majorität"])(
     "leitet für %s keine zusätzliche Lexikonregel ab", (basis) => {
       expect(getReviewedPersonFormsWave91(basis)).toBeUndefined();
     }
   );
+  it("bewahrt den bisherigen Ausschluss von General:innen", () => {
+    expect(mappedPluralSeparatorsRule.apply("General:innen")).toEqual({
+      text: "General:innen",
+      replacements: 0
+    });
+  });
+
   it("ändert unmarkierte militärische Dienstgrade nicht", () => {
     expect(mappedPluralSeparatorsRule.apply("Die Generale treffen den Major.")).toEqual({
       text: "Die Generale treffen den Major.",

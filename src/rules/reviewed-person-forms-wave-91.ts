@@ -10,7 +10,6 @@ const sonderformen: ReadonlyMap<string, string> = new Map([
   ["brigadegeneral", "brigadegeneräle"],
   ["brigadier", "brigadiers"],
   ["börsensensal", "börsensensale"],
-  ["general", "generäle"],
   ["generalleutnant", "generalleutnants"],
   ["generalmajor", "generalmajore"],
   ["grenadier", "grenadiere"],
