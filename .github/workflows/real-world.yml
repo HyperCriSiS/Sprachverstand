@@ -97,6 +97,30 @@ jobs:
                   0
                 )
               : undefined;
+            // Nur kurze Marker-Wortformen aus dem ohnehin vorhandenen Report ausgeben.
+            // Keine Volltexte, HTML-Abschnitte oder URLs in den CI-Logs veröffentlichen.
+            const countPatterns = (snapshot) =>
+              Array.isArray(snapshot?.remainingPatterns)
+                ? snapshot.remainingPatterns.reduce(
+                    (sum, entry) => sum + Number(entry.count || 0),
+                    0
+                  )
+                : undefined;
+            const baselinePatternCount = countPatterns(baseline.snapshot);
+            const patternDelta = Object.values(comparison.patternDelta || {})
+              .reduce((sum, count) => sum + Number(count || 0), 0);
+            const samples = Array.isArray(extension.snapshot?.remainingPatterns)
+              ? extension.snapshot.remainingPatterns.flatMap((entry) =>
+                  (Array.isArray(entry.samples) ? entry.samples : [])
+                    .filter((sample) => typeof sample === "string")
+                    .slice(0, 8)
+                    .map((sample) => sample.slice(0, 64))
+                ).slice(0, 12)
+              : [];
+            const compactSamples = [...new Set(samples)]
+              .map((sample) => sample.replace(/[^\\p{L}\\p{N}:*_·-]/gu, ""))
+              .filter(Boolean)
+              .join(",");
             const javascriptErrors = Array.isArray(extension.snapshot?.javascriptErrors)
               ? extension.snapshot.javascriptErrors.length
               : 0;
@@ -144,6 +168,9 @@ jobs:
                 `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
                 `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,
                 `remainingPatterns=${patterns ?? "n/a"}`,
+                `remainingBaselinePatterns=${baselinePatternCount ?? "n/a"}`,
+                `remainingPatternDelta=${comparison.patternDelta ? patternDelta : "n/a"}`,
+                `remainingPatternSamples=${compactSamples || "none"}`,
                 `javascriptErrors=${javascriptErrors}`,
                 `unhandledRejections=${rejections}`,
                 `protectedBaselineChanged=${protectedBaselineChanged.join(",") || "none"}`,
@@ -152,6 +179,14 @@ jobs:
                 `protected=${protectedLabel}`
               ].join(" ")
             );
+
+            if (patterns > 0) {
+              summary.push(
+                `- **${result.slug}, Musterdiagnose:** Basis ${baselinePatternCount ?? "–"} → Erweiterung ${patterns}; ` +
+                `Differenz ${comparison.patternDelta ? patternDelta : "–"}; ` +
+                `kurze Wortformen: ${compactSamples || "keine"}`
+              );
+            }
 
             summary.push(
               `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${videoFrameDelta} | ${videoLongGapDelta} | ${videoDroppedFrameDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`

@@ -9,6 +9,18 @@ dass sie unterschiedliche Risiken der DOM-Verarbeitung abdecken. Live-Webseiten
 Integrations- und Lasttests gedacht und sollen normale Pull-Request-Tests nicht
 blockieren.
 
+## Diagnose verbliebener Sprachmuster (09.10.2026)
+
+Der Live-Test zählt bekannte Gender-Marker im sichtbaren Seitentext.
+Dieser Zähler allein bewertet nicht, ob es sich um einen echten
+Erkennungsfehler handelt: Geschützte Code-/Editorbereiche, absichtlich
+nicht freigegebene Formen und nachträglich geladene Inhalte können
+Restmuster erzeugen. Die Live-Zusammenfassung zeigt deshalb zusätzlich
+den Zähler **ohne** Erweiterung, die Differenz und maximal zwölf kurze
+Wortproben von je höchstens 64 Zeichen. Die Proben sind ausschließlich
+zur manuellen Klassifizierung bestimmt und ersetzen keine unabhängige
+Fehlerannotation. Sie enthalten keine Seitenauszüge.
+
 ## Zielbild
 
 Für jeden Lauf werden mindestens folgende Werte erfasst:
