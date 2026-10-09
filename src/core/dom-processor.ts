@@ -354,18 +354,9 @@ export class DomProcessor {
       return;
     }
 
-    for (const pending of this.pendingNodes) {
-      if (pending === node || pending.contains(node)) {
-        return;
-      }
-    }
-
-    for (const pending of [...this.pendingNodes]) {
-      if (node.contains(pending)) {
-        this.pendingNodes.delete(pending);
-      }
-    }
-
+    // Im Observer-Callback nur O(1)-Arbeit pro Knoten: keine paarweisen
+    // contains()-Prüfungen. Eltern/Kind-Überlappungen werden beim Entnehmen
+    // anhand der tatsächlichen DOM-Vorfahren zusammengefasst.
     this.pendingNodes.add(node);
     const delay =
       node.nodeType === Node.TEXT_NODE
@@ -580,6 +571,11 @@ export class DomProcessor {
         continue;
       }
 
+      if (this.hasPendingAncestor(node, this.pendingNodes)) {
+        this.pendingNodes.delete(node);
+        continue;
+      }
+
       const delay =
         node.nodeType === Node.TEXT_NODE
           ? this.getBackoffRemaining(node as Text, now)
@@ -762,23 +758,22 @@ export class DomProcessor {
     return state ? Math.max(0, state.backoffUntil - now) : 0;
   }
 
-  private coalesceRoots(nodes: readonly Node[]): Node[] {
-    const roots: Node[] = [];
-    for (const node of nodes) {
-      if (!this.isProcessableRoot(node)) {
-        continue;
+  private hasPendingAncestor(node: Node, pending: ReadonlySet<Node>): boolean {
+    let ancestor = node.parentNode;
+    while (ancestor) {
+      if (pending.has(ancestor)) {
+        return true;
       }
-      if (roots.some((root) => root === node || root.contains(node))) {
-        continue;
-      }
-      for (let index = roots.length - 1; index >= 0; index -= 1) {
-        if (node.contains(roots[index] as Node)) {
-          roots.splice(index, 1);
-        }
-      }
-      roots.push(node);
+      ancestor = ancestor.parentNode;
     }
-    return roots;
+    return false;
+  }
+
+  private coalesceRoots(nodes: readonly Node[]): Node[] {
+    // Jede Node genau einmal berücksichtigen. Die Prüfung läuft nur über
+    // DOM-Vorfahren, nicht über sämtliche bereits gesehenen Geschwister.
+    const pending = new Set(nodes.filter((node) => this.isProcessableRoot(node)));
+    return [...pending].filter((node) => !this.hasPendingAncestor(node, pending));
   }
 
   private isProcessableRoot(root: Node): boolean {

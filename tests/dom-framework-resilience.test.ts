@@ -84,6 +84,67 @@ describe("DomProcessor Framework-Resilienz", () => {
     expect(section.textContent).not.toContain("Nutzer:innen");
   });
 
+  it("nimmt 4.000 Geschwister ohne quadratische contains-Aufrufe auf", () => {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processAccessibleAttributes: false
+    });
+    processor.start();
+
+    const fragment = document.createDocumentFragment();
+    const siblings: HTMLParagraphElement[] = [];
+    for (let index = 0; index < 4_000; index += 1) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = `Nutzer:innen ${index}`;
+      fragment.append(paragraph);
+      siblings.push(paragraph);
+    }
+    document.body.append(fragment);
+
+    const originalContains = Node.prototype.contains;
+    let containsCalls = 0;
+    Node.prototype.contains = function (other: Node | null): boolean {
+      containsCalls += 1;
+      return originalContains.call(this, other);
+    };
+    try {
+      for (const sibling of siblings) {
+        queueNode(processor, sibling);
+      }
+    } finally {
+      Node.prototype.contains = originalContains;
+    }
+
+    expect(containsCalls).toBe(0);
+    processor.flush();
+    expect(processor.getReplacementCount()).toBe(4_000);
+    expect(siblings.every((node) => node.textContent?.startsWith("Nutzer "))).toBe(true);
+  });
+
+  it("fasst Nachkommen unabhängig von der Einfügereihenfolge zusammen", () => {
+    processor = new DomProcessor(document, {
+      rules: [rule],
+      profile: "conservative",
+      processAccessibleAttributes: false
+    });
+    processor.start();
+
+    const section = document.createElement("section");
+    section.innerHTML = "<p>Nutzer:innen</p><p>Nutzer:innen</p>";
+    document.body.append(section);
+    const paragraphs = [...section.querySelectorAll("p")];
+    for (const paragraph of paragraphs) {
+      queueNode(processor, paragraph.firstChild as Text);
+      queueNode(processor, paragraph);
+    }
+    queueNode(processor, section);
+
+    processor.flush();
+    expect(processor.getReplacementCount()).toBe(2);
+    expect(section.textContent).toBe("NutzerNutzer");
+  });
+
   it("teilt große dynamische Teilbäume auf mehrere Tasks auf", async () => {
     processor = new DomProcessor(document, {
       rules: [rule],
