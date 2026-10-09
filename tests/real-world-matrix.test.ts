@@ -53,6 +53,13 @@ describe("Real-World-Browsermatrix", () => {
     expect(workflow).toContain("REAL-WORLD");
     expect(workflow).toContain("GITHUB_STEP_SUMMARY");
     expect(workflow).toContain("remainingPatterns=");
+    expect(workflow).toContain("remainingBaselinePatterns=");
+    expect(workflow).toContain("remainingPatternDelta=");
+    expect(workflow).toContain("remainingPatternSamples=");
+    expect(workflow).toContain(".slice(0, 64)");
+    expect(workflow).toContain(".slice(0, 12)");
+    expect(workflow).toContain("Keine Volltexte, HTML-Abschnitte oder URLs");
+
     expect(workflow).toContain("longTaskDeltaMs=");
     expect(workflow).toContain("javascriptErrors=");
     expect(workflow).toContain("unhandledRejections=");
