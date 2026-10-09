@@ -25,3 +25,10 @@
 4. Edge/Opera in ihren eigenen Verfahren testen; Pale Moon bleibt eine spätere, unabhängige Phase.
 
 **In dieser Arbeitseinheit wurden weder Tag oder GitHub-Release angelegt noch Store-Credentials geändert oder Store-Einreichungen ausgelöst.**
+
+## Erneute technische Prüfung nach dem Release-Gate-Fix
+
+- Am 09.10.2026 wurde [Preflight #37962396400](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37962396400) auf Commit `28a8fbde517cfa33ad7f6496baeff6813800fee0` vollständig **erfolgreich** abgeschlossen. Der neu integrierte Browser-Gate-Fix ist damit im realen nicht veröffentlichenden Preflight enthalten.
+- Browser: Chromium inklusive Video/DOM-Untertitel und Firefox erfolgreich. Paketprüfung: Chromium, Edge, Opera, Firefox und Quellarchiv erfolgreich; **Edge und Opera nicht als echte Browserlaufzeiten getestet**.
+- Neues internes GitHub-Actions-Artefakt `11632486391`, Ablauf 23.10.2026 16:56 UTC. Das ersetzt die frühere technische Preflight-Baseline für den geprüften Commit, aber **keine** Freigabe zur Veröffentlichung.
+- Die Freigabeblocker für `store-production`, Store-Zugangsdaten, Versionsentscheidung sowie die manuellen Store-/Browserprüfungen gelten unverändert. Kein Release-Tag und keine Store-Einreichung.
