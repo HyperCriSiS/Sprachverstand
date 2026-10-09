@@ -326,6 +326,22 @@ describe("Lexikonwelle 92: Exaktformen aus mehrteiligen Berufsbezeichnungen", ()
       expect(getReviewedPersonFormsWave92(basis)).toBeUndefined();
     }
   );
+  // Eigenständig formulierte Mehrwortsätze testen den Erhalt des Kontextes.
+  it.each([
+    ["Anlagenmechaniker:innen für Heiztechnik","Anlagenmechaniker für Heiztechnik"],
+    ["Die Bauleiter:innen betreuen das Projekt.","Die Bauleiter betreuen das Projekt."],
+    ["Fachassistent:innen für Diagnostik","Fachassistenten für Diagnostik"],
+    ["Animator:innen im Hotel","Animatoren im Hotel"],
+    ["Die Polier:innen am Bau","Die Poliere am Bau"],
+    ["Sicherheitsingenieur:innen im Betrieb","Sicherheitsingenieure im Betrieb"],
+    ["Transportkoordinator:innen für Seefracht","Transportkoordinatoren für Seefracht"],
+    ["Finanzreferent:innen der Verwaltung","Finanzreferenten der Verwaltung"],
+    ["Zuchtassistent:innen für Aquakultur","Zuchtassistenten für Aquakultur"],
+    ["Fachlagerist:innen in der Logistik","Fachlageristen in der Logistik"]
+  ])("korrigiert eine markierte Mehrwortkonstruktion ohne den Kontext zu ändern", (eingabe, ziel) => {
+    expect(mappedPluralSeparatorsRule.apply(eingabe)).toEqual({ text: ziel, replacements: 1 });
+  });
+
   it("bewahrt normale nicht markierte Schreibweisen", () => {
     expect(mappedPluralSeparatorsRule.apply("Der Polier überprüft die Anlage.")).toEqual({
       text: "Der Polier überprüft die Anlage.", replacements: 0
