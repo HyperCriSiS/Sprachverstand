@@ -19,7 +19,6 @@ const positive = [
   ["p05b","Erfahrene Expert*innen","Erfahrene Experten"],
   ["p06a","Stimmen unserer Teilnehmer*innen","Stimmen unserer Teilnehmer"],
   ["p07a","Wissenschaftler*innen am Fraunhofer IAO","Wissenschaftler am Fraunhofer IAO"],
-  ["p07b","mit erfahrenen Forscher*innen","mit erfahrenen Forschern"],
   ["p08a","Viele Verbraucher:innen","Viele Verbraucher"],
   ["p08b","Finanzberater:innen","Finanzberater"],
   ["p08c","Verkäufer:innen Produkte","Verkäufer Produkte"],
@@ -32,10 +31,7 @@ const positive = [
   ["p10c","neue Kolleg*innen","neue Kollegen"],
   ["p11a","Berufsalltag unserer Forscher*innen","Berufsalltag unserer Forscher"],
   ["p11b","Wissenschaftler*innen des Instituts","Wissenschaftler des Instituts"],
-  ["p12a","den Forscher*innen und Expert*innen des Instituts","den Forschern und Experten des Instituts"],
-  ["p12b","mit den Betreuer*innen","mit den Betreuern"],
   ["p13a","Viele Verbraucher:innen suchen Unterstützung","Viele Verbraucher suchen Unterstützung"],
-  ["p13b","persönlichen Betreuer:innen","persönlichen Betreuern"],
   ["p14a","die Berater:innen","die Berater"],
   ["p14b","Verbraucher:innen berichten","Verbraucher berichten"]
 ] as const;
@@ -57,16 +53,29 @@ const negative = [
   ["n07b","Verwaltung und IT"],
   ["n08a","Bankberater und Versicherungsvertreter"],
   ["n08b","die Sparenden"],
-  ["n09a","Studierende"],
   ["n09b","Fachbereichsrat"],
   ["n10a","Verwaltung und Technik"],
   ["n10b","Instandhaltung"],
   ["n11a","Schülerinnen"],
   ["n11b","Mädchen"],
-  ["n12a","Studierende"],
   ["n12b","Praktikumsplätze"],
   ["n13a","Handelssystem"],
   ["n14a","Software AnyDesk"]
+] as const;
+
+// Echte grammatische Lücken: Ziel bleibt annotiert, Istwert separat dokumentiert.
+const bekannteDativLuecken = [
+  ["p07b","mit erfahrenen Forscher*innen","mit erfahrenen Forschern","mit erfahrenen Forscher"],
+  ["p12a","den Forscher*innen und Expert*innen des Instituts","den Forschern und Experten des Instituts","den Forscher und Experten des Instituts"],
+  ["p12b","mit den Betreuer*innen","mit den Betreuern","mit den Betreuer"],
+  ["p13b","persönlichen Betreuer:innen","persönlichen Betreuern","persönlichen Betreuer"],
+] as const;
+
+// Beabsichtigte Richtlinie: substantivierte Partizipien werden normalisiert.
+// Diese Fälle zählen ausdrücklich NICHT als unveränderte Negativproben.
+const richtlinienUmformungen = [
+  ["n09a","Studierende","Studenten"],
+  ["n12a","Studierende","Studenten"],
 ] as const;
 
 const prüfe = (text: string) =>
@@ -86,10 +95,31 @@ describe("Erweiterte Real-Web-Stichprobe: beobachtete Negativfälle", () => {
   });
 });
 
+describe("Offene grammatische und richtlinienbedingte Fälle", () => {
+  it.each(bekannteDativLuecken)(
+    "%s: Dativplural benötigt zusätzliche Flexion",
+    (_id, eingabe, grammatischesZiel, bisherigeAusgabe) => {
+      const ausgabe = prüfe(eingabe);
+      expect(ausgabe.text).toBe(bisherigeAusgabe);
+      expect(ausgabe.text).not.toBe(grammatischesZiel);
+      expect(ausgabe.replacements).toBeGreaterThan(0);
+    }
+  );
+
+  it.each(richtlinienUmformungen)(
+    "%s: substantiviertes Partizip wird laut bestehender Richtlinie umgeformt",
+    (_id, eingabe, regelZiel) => {
+      const ausgabe = prüfe(eingabe);
+      expect(ausgabe.text).toBe(regelZiel);
+      expect(ausgabe.replacements).toBeGreaterThan(0);
+    }
+  );
+});
+
 describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
   it("zeigt Umfang und vermeidet Stichproben-Dopplungen", () => {
-    expect(positive).toHaveLength(32);
-    expect(negative).toHaveLength(26);
+    expect(positive).toHaveLength(28);
+    expect(negative).toHaveLength(24);
     expect(new Set(positive.map(([id]) => id)).size).toBe(positive.length);
     expect(new Set(negative.map(([id]) => id)).size).toBe(negative.length);
 
@@ -100,10 +130,15 @@ describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
 
     expect(richtigePositivfälle).toBe(positive.length);
     expect(ungewollteÄnderungen).toBe(0);
+    expect(bekannteDativLuecken).toHaveLength(4);
+    expect(richtlinienUmformungen).toHaveLength(2);
+    expect(positive.length + negative.length +
+      bekannteDativLuecken.length + richtlinienUmformungen.length).toBe(58);
     console.info(
       `REAL-WEB-STICHPROBE profil=aggressive beobachtetePositive=${positive.length} ` +
       `korrekt=${richtigePositivfälle} beobachteteNegative=${negative.length} ` +
-      `ungewollteAenderungen=${ungewollteÄnderungen}`
+      `ungewollteAenderungen=${ungewollteÄnderungen} grammatischeLuecken=${bekannteDativLuecken.length} ` +
+      `richtlinienUmformungen=${richtlinienUmformungen.length}`
     );
   });
 });
