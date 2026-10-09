@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRegexRule } from "../src/core/rule";
 import { transformText } from "../src/core/transform-text";
+import { defaultRules } from "../src/rules";
 
 const safeRule = createRegexRule({
   id: "test.safe",
@@ -161,5 +162,56 @@ describe("transformText", () => {
       text: "„Nutzer:innen“ und \"Nutzer:innen\" sowie Nutzer",
       replacements: 1
     });
+  });
+});
+describe("Pre-Release P1: normale Feminina und finale Benutzerersetzungen", () => {
+  it.each([
+    "Die Studentin arbeitet.",
+    "Die Kundin arbeitet.",
+    "Wir sprechen mit der Ärztin.",
+    "Ohne die Kundin geht es nicht.",
+    "Wegen der Studentin bleibt die Schule geschlossen.",
+    "Die Kundin.",
+    "Ich besuche die Kundin.",
+    "Das ist eine Studentin."
+  ])("verändert ein nicht markiertes Femininum nicht: %s", (eingabe) => {
+    expect(transformText(eingabe, defaultRules, { profile: "aggressive" }).text).toBe(eingabe);
+  });
+
+  it("erhält ein durch Partizipkorrektur erzeugtes Femininum auch im zweiten Durchlauf", () => {
+    const optionen = { profile: "aggressive" as const };
+    const einmal = transformText("Die Studierende arbeitet.", defaultRules, optionen);
+    expect(einmal.text).toBe("Die Studentin arbeitet.");
+    expect(transformText(einmal.text, defaultRules, optionen)).toEqual({
+      text: einmal.text, replacements: 0
+    });
+  });
+
+  it("korrigiert ausdrücklich sichtbares Binnen-I weiterhin", () => {
+    expect(transformText("Die StudentIn arbeitet.", defaultRules, { profile: "aggressive" }).text)
+      .toBe("Der Student arbeitet.");
+  });
+
+  it("schützt eine vollständige Phrase mit weichem Trennzeichen", () => {
+    const eingabe = "geschützte Nutzer\u00ad:innen und weitere Nutzer\u00ad:innen";
+    expect(transformText(eingabe, [safeRule], {
+      profile: "conservative",
+      protectedTerms: ["geschützte Nutzer\u00ad:innen"]
+    })).toEqual({
+      text: "geschützte Nutzer\u00ad:innen und weitere Nutzer",
+      replacements: 1
+    });
+  });
+
+  it("wendet die eingebauten Regeln niemals erneut auf ein eigenes Ersetzungsziel an", () => {
+    expect(transformText("Hallo", [safeRule], {
+      profile: "conservative",
+      customReplacements: [{ source: "Hallo", replacement: "Nutzer\u00ad:innen" }]
+    })).toEqual({ text: "Nutzer\u00ad:innen", replacements: 1 });
+  });
+
+  it("korrigiert ungeschützte weiche Trennstellen weiterhin", () => {
+    expect(transformText("Nutzer\u00ad:innen", [safeRule], { profile: "conservative" }))
+      .toEqual({ text: "Nutzer", replacements: 1 });
   });
 });
