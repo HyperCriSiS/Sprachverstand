@@ -29,8 +29,14 @@ const subtitleDataAttributeNames = [
 
 const subtitleDataMarker = /(?:caption|timedtext|text-track|cue-(?:text|window)|(?:player|video)[-_ ]*subtitle|subtitle[-_ ]*(?:cue|overlay|container|renderer))/iu;
 const subtitleAriaMarker = /(?:untertitel|subtitles?|closed captions?)/iu;
-const maximumAncestorDepth = 12;
-const knownSubtitleElements = new WeakSet<Element>();
+export const subtitleClassifierAttributeNames = [
+  "class",
+  "id",
+  "data-purpose",
+  "data-testid",
+  "data-uia",
+  "aria-label"
+] as const;
 const escapedIdentifierMarkers = subtitleIdentifierMarkers.map((marker) =>
   marker.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
 );
@@ -44,30 +50,20 @@ function identifierText(element: Element): string {
 }
 
 export function isSubtitleContainer(element: Element): boolean {
-  if (knownSubtitleElements.has(element)) {
-    return true;
-  }
-
   const identifiers = identifierText(element);
   if (subtitleIdentifierMarker.test(identifiers)) {
-    knownSubtitleElements.add(element);
     return true;
   }
 
   for (const attributeName of subtitleDataAttributeNames) {
     const value = element.getAttribute(attributeName);
     if (value && subtitleDataMarker.test(value)) {
-      knownSubtitleElements.add(element);
-      return true;
+        return true;
     }
   }
 
   const ariaLabel = element.getAttribute("aria-label");
-  const subtitle = Boolean(ariaLabel && subtitleAriaMarker.test(ariaLabel));
-  if (subtitle) {
-    knownSubtitleElements.add(element);
-  }
-  return subtitle;
+  return Boolean(ariaLabel && subtitleAriaMarker.test(ariaLabel));
 }
 
 /**
@@ -75,22 +71,24 @@ export function isSubtitleContainer(element: Element): boolean {
  * `subtitle` oder `caption` werden nicht allein ausgewertet, weil sie auf
  * Nachrichtenseiten häufig normale Unterzeilen und Bildunterschriften meinen.
  */
+// Tief verschachtelte Untertitel und offene ShadowRoots behalten den Hostkontext.
 export function isSubtitleContent(node: Node): boolean {
-  let element =
-    node.nodeType === Node.ELEMENT_NODE
-      ? (node as Element)
-      : node.parentElement;
+  const hostOf = (current: Node): Element | null => {
+    const root = current.getRootNode();
+    return root instanceof ShadowRoot ? root.host : null;
+  };
+  let element: Element | null =
+    node instanceof Element ? node : node.parentElement ?? hostOf(node);
 
-  for (let depth = 0; element && depth < maximumAncestorDepth; depth += 1) {
+  while (element) {
     if (isSubtitleContainer(element)) {
       return true;
     }
-
     if (element.tagName === "BODY" || element.tagName === "HTML") {
-      break;
+      return false;
     }
-    element = element.parentElement;
+    const current: Element = element;
+    element = current.parentElement ?? hostOf(current);
   }
-
   return false;
 }
