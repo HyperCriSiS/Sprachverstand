@@ -325,6 +325,12 @@ const predicateNominativePattern = new RegExp(
   "giu"
 );
 
+function hatSichtbaresBinnenI(text: string): boolean {
+  // Das Binnen-I muss im Original groß sein; das i-Flag der Kontextsuche
+  // darf normale Feminina wie "Studentin" nicht umdeuten.
+  return /In(?:\s*[.!?])?$/u.test(text);
+}
+
 function applyTokenCase(source: string, replacement: string): string {
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
@@ -370,6 +376,7 @@ function transformPattern(input: string, pattern: RegExp): TransformResult {
       whitespace: string,
       base: string
     ) => {
+      if (pattern === binnenISingularPattern && !hatSichtbaresBinnenI(match)) return match;
       const normalizedDeterminer = determiner
         .toLocaleLowerCase(locale)
         .replaceAll("/-", "/");
@@ -459,6 +466,7 @@ function transformAttributivePhrases(
       secondWhitespace: string,
       base: string
     ) => {
+      if (pattern === attributiveBinnenISingularPattern && !hatSichtbaresBinnenI(match)) return match;
       const form = determinerForms.get(determiner.toLocaleLowerCase(locale));
       if (!form) {
         return match;
@@ -494,6 +502,7 @@ function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   const text = input.replace(
     ordinaryBinnenIPattern,
     (match: string, determiner: string, whitespace: string, base: string) => {
+      if (!hatSichtbaresBinnenI(match)) return match;
       const form = ordinaryMasculineDeterminers.get(
         determiner.toLocaleLowerCase(locale)
       );
@@ -528,6 +537,7 @@ function transformPrepositionalFeminine(
       secondWhitespace: string,
       base: string
     ) => {
+      if (!hatSichtbaresBinnenI(match)) return match;
       const masculineDeterminer = determinerMap.get(
         determiner.toLocaleLowerCase(locale)
       );
@@ -559,6 +569,7 @@ function transformNominativeSentence(input: string): TransformResult {
       whitespace: string,
       base: string
     ) => {
+      if (!hatSichtbaresBinnenI(match)) return match;
       const masculineDeterminer = nominativeFeminineDeterminers.get(
         determiner.toLocaleLowerCase(locale)
       );
@@ -590,6 +601,7 @@ function transformStandaloneNominative(input: string): TransformResult {
       base: string,
       punctuation: string
     ) => {
+      if (!hatSichtbaresBinnenI(match)) return match;
       const masculineDeterminer = nominativeFeminineDeterminers.get(
         determiner.toLocaleLowerCase(locale)
       );
@@ -627,6 +639,7 @@ function transformVerbContext(
       secondWhitespace: string,
       base: string
     ) => {
+      if (!hatSichtbaresBinnenI(match)) return match;
       const masculineDeterminer = determinerMap.get(
         determiner.toLocaleLowerCase(locale)
       );
