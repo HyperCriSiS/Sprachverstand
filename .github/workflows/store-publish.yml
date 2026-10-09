@@ -30,6 +30,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -225,6 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: store-production
     permissions:
+      actions: read
       contents: read
       id-token: write
 
