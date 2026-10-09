@@ -292,6 +292,47 @@ async function waitForExpectedState(sessionId) {
   return state;
 }
 
+async function pruefeSpaeteShadowRoot(sessionId) {
+  const creation = await webdriverRequest(
+    "POST",
+    \`/session/\${sessionId}/execute/sync\`,
+    {
+      script: \`
+        const host = document.querySelector("#late-shadow-host");
+        if (!host || host.shadowRoot) {
+          throw new Error("Vorhandener Shadow-Host fehlt oder ist nicht leer.");
+        }
+        const root = host.attachShadow({ mode: "open" });
+        root.textContent = "Nutzer:innen";
+        return root.textContent;
+      \`,
+      args: []
+    }
+  );
+  if (creation.value !== "Nutzer:innen") {
+    throw new Error("Der ShadowRoot-Ausgangszustand war unerwartet.");
+  }
+
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const result = await webdriverRequest(
+      "POST",
+      \`/session/\${sessionId}/execute/sync\`,
+      {
+        script: \`return document.querySelector("#late-shadow-host")?.shadowRoot?.textContent;\`,
+        args: []
+      }
+    );
+    if (result.value === "Nutzer") {
+      return;
+    }
+    await sleep(125);
+  }
+  throw new Error(
+    \`Eine spät angehängte ShadowRoot wurde im echten \${browser}-Browser nicht korrigiert.\`
+  );
+}
+
 async function stopDriver(driverProcess) {
   if (driverProcess.exitCode !== null) {
     return;
@@ -344,6 +385,7 @@ try {
   });
 
   const state = await waitForExpectedState(sessionId);
+  await pruefeSpaeteShadowRoot(sessionId);
   console.log(
     `Echter Browser-Smoke-Test erfolgreich: ${browser} ${JSON.stringify(state)}`
   );
