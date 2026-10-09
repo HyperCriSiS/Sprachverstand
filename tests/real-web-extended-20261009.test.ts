@@ -27,7 +27,7 @@ const positive = [
   ["p08e","Verbraucher:innen wenden sich","Verbraucher wenden sich"],
   ["p09a","Wissenschaftliche Mitarbeiter:innen","Wissenschaftliche Mitarbeiter"],
   ["p09b","Mitarbeiter:innen in Technik und Verwaltung","Mitarbeiter in Technik und Verwaltung"],
-  ["p10a","Unsere Wissenschaftler*innen","Unsere Wissenschaftler"],
+  ["p10a","unserer Wissenschaftler*innen","unserer Wissenschaftler"],
   ["p10b","Wir suchen Forscher*innen","Wir suchen Forscher"],
   ["p10c","neue Kolleg*innen","neue Kollegen"],
   ["p11a","Berufsalltag unserer Forscher*innen","Berufsalltag unserer Forscher"],
