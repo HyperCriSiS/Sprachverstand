@@ -1068,18 +1068,41 @@ export class DomProcessor {
     return context || undefined;
   }
 
+  // Beim endgültigen Entfernen eines Teilbaums eigene Textänderungen
+  // zurücknehmen. So erhalten Frameworks auch beim asynchronen Recyceln
+  // derselben Node den ursprünglichen Wert zurück.
+  private forgetTrackedText(node: Text): void {
+    const change = this.textChanges.get(node);
+    if (!change) {
+      return;
+    }
+    if (node.data === change.transformed) {
+      node.data = change.original;
+    }
+    this.removeTextChange(node, change);
+  }
+
+  private forgetTrackedAttributes(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+    for (const [name, change] of changes) {
+      if (element.getAttribute(name) === change.transformed) {
+        element.setAttribute(name, change.original);
+      }
+    }
+    this.removeAllAttributeChanges(element);
+  }
+
   private forgetRoot(root: Node): void {
     if (root.nodeType === Node.TEXT_NODE) {
-      const node = root as Text;
-      const change = this.textChanges.get(node);
-      if (change) {
-        this.removeTextChange(node, change);
-      }
+      this.forgetTrackedText(root as Text);
       return;
     }
 
     if (root instanceof Element) {
-      this.removeAllAttributeChanges(root);
+      this.forgetTrackedAttributes(root);
       if (root.shadowRoot) {
         this.forgetRoot(root.shadowRoot);
       }
@@ -1094,18 +1117,13 @@ export class DomProcessor {
     let currentNode = walker.nextNode();
     while (currentNode) {
       if (currentNode.nodeType === Node.TEXT_NODE) {
-        const textNode = currentNode as Text;
-        const change = this.textChanges.get(textNode);
-        if (change) {
-          this.removeTextChange(textNode, change);
-        }
+        this.forgetTrackedText(currentNode as Text);
       } else if (currentNode instanceof Element) {
-        this.removeAllAttributeChanges(currentNode);
+        this.forgetTrackedAttributes(currentNode);
         if (currentNode.shadowRoot) {
           this.forgetRoot(currentNode.shadowRoot);
         }
       }
-
       currentNode = walker.nextNode();
     }
   }
