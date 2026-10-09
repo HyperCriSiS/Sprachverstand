@@ -150,6 +150,11 @@ function hasExcludedTextAncestor(element: Element | null): boolean {
   return false;
 }
 
+// Zur Bestimmung durchgängiger sicherer Inline-Kontexte ohne technische Textheuristik.
+export function isProtectedTextSubtree(element: Element): boolean {
+  return isDocumentEditor(element.ownerDocument) || hasExcludedTextAncestor(element);
+}
+
 export function isProbablyTechnicalText(input: string): boolean {
   const text = input.trim();
 
