@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
 import type { Rule } from "../src/core/rule";
 
@@ -132,4 +132,57 @@ describe("Audit DOM-09: dynamischer Schutzstatus", () => {
     expect(p.textContent).toBe("Nutzer:innen");
     expect(dom.getReplacementCount()).toBe(0);
   });
+  it("korrigiert nach designMode-Off ohne Mutation erneut", async () => {
+    const p = document.createElement("p");
+    p.textContent = "Nutzer:innen";
+    document.body.append(p);
+    const dom = starten();
+    expect(p.textContent).toBe("Nutzer");
+
+    document.designMode = "on";
+    p.dispatchEvent(new Event("beforeinput", { bubbles: true }));
+    expect(p.textContent).toBe("Nutzer:innen");
+    expect(dom.getReplacementCount()).toBe(0);
+
+    document.designMode = "off";
+    // Kein Eingabe-, Änderungs- oder anderes DOM-Ereignis auslösen.
+    await vi.waitFor(() => {
+      expect(p.textContent).toBe("Nutzer");
+      expect(dom.getReplacementCount()).toBe(1);
+    }, { timeout: 4_500 });
+  });
+
+  it("korrigiert nach Verlassen eines bereits aktiven DesignMode", async () => {
+    document.designMode = "on";
+    const p = document.createElement("p");
+    p.textContent = "Nutzer:innen";
+    document.body.append(p);
+    const dom = starten();
+    expect(p.textContent).toBe("Nutzer:innen");
+
+    document.designMode = "off";
+    await vi.waitFor(() => {
+      expect(p.textContent).toBe("Nutzer");
+      expect(dom.getReplacementCount()).toBe(1);
+    }, { timeout: 4_500 });
+  });
+
+  it("übernimmt externe Texte nach DesignMode-Off, statt alte Fassungen zurückzuholen", async () => {
+    const p = document.createElement("p");
+    p.textContent = "Nutzer:innen";
+    document.body.append(p);
+    const dom = starten();
+    document.designMode = "on";
+    p.dispatchEvent(new Event("beforeinput", { bubbles: true }));
+    p.textContent = "Neue Nutzer:innen";
+    await abwarten();
+    expect(p.textContent).toBe("Neue Nutzer:innen");
+
+    document.designMode = "off";
+    await vi.waitFor(() => {
+      expect(p.textContent).toBe("Neue Nutzer");
+      expect(dom.getReplacementCount()).toBe(1);
+    }, { timeout: 4_500 });
+  });
+
 });
