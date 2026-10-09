@@ -51,6 +51,15 @@ jobs:
           fetch-depth: 0
           ref: main
 
+      - name: Produktionsumgebung vor Store-Einreichung prüfen
+        if: ${{ inputs.mode == 'submit' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/environments/store-production" |
+            node scripts/verify-store-production-environment.mjs
       - name: Release, Produktlinie und explizite Freigabe prüfen
         id: release
         env:
@@ -136,6 +145,15 @@ jobs:
         with:
           ref: main
 
+      - name: Produktionsschutz vor Store-Zugriff erneut prüfen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/environments/store-production" |
+            node scripts/verify-store-production-environment.mjs
+
       - name: Node.js einrichten
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -215,6 +233,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: main
+
+      - name: Produktionsschutz vor Store-Zugriff erneut prüfen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/environments/store-production" |
+            node scripts/verify-store-production-environment.mjs
 
       - name: Google-WIF-Konfiguration prüfen
         env:
