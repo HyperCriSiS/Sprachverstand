@@ -87,6 +87,7 @@ jobs:
             "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"
           ];
 
+          const patternNotes = [];
           for (const result of report.results || []) {
             const baseline = result.baseline || {};
             const extension = result.extension || {};
@@ -118,7 +119,7 @@ jobs:
                 ).slice(0, 12)
               : [];
             const compactSamples = [...new Set(samples)]
-              .map((sample) => sample.replace(/[^\\p{L}\\p{N}:*_·-]/gu, ""))
+              .map((sample) => sample.replace(/[^\p{L}\p{N}:*_·-]/gu, ""))
               .filter(Boolean)
               .join(",");
             const javascriptErrors = Array.isArray(extension.snapshot?.javascriptErrors)
@@ -181,7 +182,7 @@ jobs:
             );
 
             if (patterns > 0) {
-              summary.push(
+              patternNotes.push(
                 `- **${result.slug}, Musterdiagnose:** Basis ${baselinePatternCount ?? "–"} → Erweiterung ${patterns}; ` +
                 `Differenz ${comparison.patternDelta ? patternDelta : "–"}; ` +
                 `kurze Wortformen: ${compactSamples || "keine"}`
@@ -191,6 +192,10 @@ jobs:
             summary.push(
               `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${videoFrameDelta} | ${videoLongGapDelta} | ${videoDroppedFrameDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`
             );
+          }
+
+          if (patternNotes.length > 0) {
+            summary.push("", "### Restmuster: kurze Diagnose", "", ...patternNotes);
           }
 
           if (process.env.GITHUB_STEP_SUMMARY) {
