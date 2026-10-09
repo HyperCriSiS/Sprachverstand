@@ -6,7 +6,7 @@ const workflowDirectory = ".github/workflows";
 const workflowPaths = readdirSync(workflowDirectory)
   .filter((name) => name.endsWith(".yml") || name.endsWith(".yaml"))
   .sort()
-  .map((name) => path.join(workflowDirectory, name));
+  .map((name) => path.join(workflowDirectory, name).replaceAll("\\", "/"));
 const workflows = workflowPaths.map((workflowPath) => ({
   path: workflowPath,
   source: readFileSync(workflowPath, "utf8")

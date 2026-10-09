@@ -105,3 +105,30 @@ describe("shouldProcessAccessibleAttribute", () => {
     ).toBe(false);
   });
 });
+describe("Pre-Release: case-insensitive Editoren und Shadow-Hosts", () => {
+  it("erhält Text und zugängliche Attribute bei contenteditable=TRUE/PLAINTEXT-ONLY", () => {
+    document.body.innerHTML = `
+      <div contenteditable="TRUE" aria-label="Nutzer:innen">Nutzer:innen schreiben</div>
+      <div contenteditable="PLAINTEXT-ONLY">Nutzer:innen schreiben</div>
+      <div contenteditable="FALSE">Nutzer:innen schreiben</div>
+    `;
+    const nodes = [...document.querySelectorAll("div")];
+    expect(shouldProcessTextNode(nodes[0]?.firstChild as Text)).toBe(false);
+    expect(shouldProcessAccessibleAttribute(nodes[0] as Element, "aria-label", "Nutzer:innen")).toBe(false);
+    expect(shouldProcessTextNode(nodes[1]?.firstChild as Text)).toBe(false);
+    expect(shouldProcessTextNode(nodes[2]?.firstChild as Text)).toBe(true);
+  });
+
+  it("respektiert einen ignorierten Host über eine offene Shadow-DOM-Grenze", () => {
+    const host = document.createElement("div");
+    host.setAttribute("data-sprachverstand-ignore", "");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const span = document.createElement("span");
+    span.textContent = "Nutzer:innen schreiben";
+    span.setAttribute("title", "Nutzer:innen");
+    shadow.append(span);
+    expect(shouldProcessTextNode(span.firstChild as Text)).toBe(false);
+    expect(shouldProcessAccessibleAttribute(span, "title", "Nutzer:innen")).toBe(false);
+  });
+});

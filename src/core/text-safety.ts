@@ -62,7 +62,18 @@ const compactJsonPattern = /^(?:\{.*"[^"]+"\s*:.*\}|\[\s*\{.*\}\s*\])$/su;
 
 function isContentEditable(element: Element): boolean {
   const value = element.getAttribute("contenteditable");
-  return value === "" || value === "true" || value === "plaintext-only";
+  // Das HTML-Attribut ist ein ASCII-case-insensitives Schlüsselwort.
+  const normalized = value?.toLowerCase();
+  return normalized === "" || normalized === "true" || normalized === "plaintext-only";
+}
+
+// Bei offenem Shadow-DOM gehört auch der Host zur Schutzkette.
+function parentElementOrShadowHost(element: Element): Element | null {
+  if (element.parentElement) {
+    return element.parentElement;
+  }
+  const root = element.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
 }
 
 function hasCommonExcludedAncestor(
@@ -84,11 +95,11 @@ function hasCommonExcludedAncestor(
       return true;
     }
 
-    if (current.getAttribute("aria-hidden") === "true") {
+    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
       return true;
     }
 
-    current = current.parentElement;
+    current = parentElementOrShadowHost(current);
   }
 
   return false;
@@ -110,7 +121,7 @@ function hasExcludedTextAncestor(element: Element | null): boolean {
       return true;
     }
 
-    if (current.getAttribute("aria-hidden") === "true") {
+    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
       return true;
     }
 
@@ -119,7 +130,7 @@ function hasExcludedTextAncestor(element: Element | null): boolean {
       return true;
     }
 
-    current = current.parentElement;
+    current = parentElementOrShadowHost(current);
   }
 
   return false;

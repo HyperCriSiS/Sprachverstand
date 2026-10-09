@@ -647,8 +647,7 @@ export class DomProcessor {
     }, 16);
   }
 
-  private cancelSubtitleFlush(): void {
-    if (this.subtitleFlushHandle === undefined) {
+  private cancelSubtitleFlush(): void {    if (this.subtitleFlushHandle === undefined) {
       return;
     }
 
@@ -695,6 +694,11 @@ export class DomProcessor {
       }
 
       for (const removedNode of record.removedNodes) {
+        // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
+        // Andernfalls gingen sein Original und sein Korrekturzähler verloren.
+        if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
+          continue;
+        }
         this.forgetRoot(removedNode);
       }
       for (const addedNode of record.addedNodes) {
