@@ -647,8 +647,7 @@ export class DomProcessor {
     }, 16);
   }
 
-  private cancelSubtitleFlush(): void {
-    if (this.subtitleFlushHandle === undefined) {
+  private cancelSubtitleFlush(): void {    if (this.subtitleFlushHandle === undefined) {
       return;
     }
 
@@ -1003,3 +1002,84 @@ export class DomProcessor {
         const textNode = currentNode as Text;
         const change = this.textChanges.get(textNode);
         if (change) {
+          this.removeTextChange(textNode, change);
+        }
+      } else if (currentNode instanceof Element) {
+        this.removeAllAttributeChanges(currentNode);
+        if (currentNode.shadowRoot) {
+          this.forgetRoot(currentNode.shadowRoot);
+        }
+      }
+
+      currentNode = walker.nextNode();
+    }
+  }
+
+  private removeTextChange(node: Text, change: ChangeRecord): void {
+    this.textChanges.delete(node);
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAttributeChange(
+    element: Element,
+    attributeName: string,
+    change: ChangeRecord
+  ): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    changes.delete(attributeName);
+    if (changes.size === 0) {
+      this.attributeChanges.delete(element);
+    }
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAllAttributeChanges(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    let removedReplacements = 0;
+    for (const change of changes.values()) {
+      removedReplacements += change.replacements;
+    }
+
+    this.attributeChanges.delete(element);
+    this.adjustReplacementCount(-removedReplacements);
+  }
+
+  private clearTracking(): void {
+    this.textChanges.clear();
+    this.attributeChanges.clear();
+    this.replacementCount = 0;
+    this.scheduleCountNotification();
+  }
+
+  private adjustReplacementCount(delta: number): void {
+    if (delta === 0) {
+      return;
+    }
+
+    this.replacementCount = Math.max(0, this.replacementCount + delta);
+    this.scheduleCountNotification();
+  }
+
+  private scheduleCountNotification(): void {
+    if (this.countNotificationScheduled) {
+      return;
+    }
+
+    this.countNotificationScheduled = true;
+    queueMicrotask(() => {
+      this.countNotificationScheduled = false;
+      this.options.onReplacementCountChange?.(
+        this.replacementCount,
+        this.getReplacementSummary()
+      );
+    });
+  }
+}
