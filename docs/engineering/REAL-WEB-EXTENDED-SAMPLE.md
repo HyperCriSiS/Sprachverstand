@@ -45,3 +45,21 @@ normalisierte Positivfälle, 4 bekannte grammatische Abweichungen,
 Richtlinienumformungen**. Diese Kategorien haben verschiedene
 Nenner und dürfen nicht zu einer vermeintlichen Webgenauigkeit
 zusammengerechnet werden.
+
+## Eng begrenzte Dativ-Korrektur (Issue #359)
+
+Die Regel `plural.marked-dative-context` normalisiert ausdrücklich
+markierte und lexikalisch bekannte Pluralbasen innerhalb von
+Dativpräpositionalgruppen und nach `den`, auch in einer eng begrenzten
+koordinierten Zweiergruppe. Andere Kasus werden weiterhin unverändert
+der bisherigen Pluralregel überlassen.
+
+Drei der vier ursprünglich gefundenen Dativlücken sind damit korrigiert.
+Die Formulierung `persönlichen Betreuer:innen` bleibt mangels eindeutig
+nachweisbarem linken Kontext bewusst als offener Soll-/Ist-Unterschied
+erhalten. Keine pauschale `-n`-Endungsfreigabe und keine automatische
+Umformung unmarkierter Begriffe.
+
+Neue Stichprobenklassen: **31** richtige Positivfälle, **1** offene
+grammatische Dativlücke, **24** unveränderte Negativfälle und
+**2** bereits beabsichtigte Partizipumformungen.

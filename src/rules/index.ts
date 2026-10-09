@@ -5,6 +5,7 @@ import { explicitPronounsRule } from "./explicit-pronouns";
 import { jobAdSuffixesRule } from "./job-ad-suffixes";
 import { knownPluralSeparatorsRule } from "./known-plural-separators";
 import { mappedPluralSeparatorsRule } from "./mapped-plural-separators";
+import { markedDativePluralRule } from "./marked-dative-plural";
 import { neutralPersonTermsRule } from "./neutral-person-terms";
 import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
@@ -32,6 +33,7 @@ export const defaultRules: readonly Rule[] = [
   salutationParticiplesRule,
   neutralPersonTermsRule,
   doubleFormsRule,
+  markedDativePluralRule,
   additionalPersonPluralRule,
   knownPluralSeparatorsRule,
   mappedPluralSeparatorsRule,

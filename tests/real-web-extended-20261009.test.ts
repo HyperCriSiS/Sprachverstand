@@ -6,6 +6,9 @@ import { defaultRules } from "../src/rules";
 // Quellen-URLs, Abrufzeitpunkte und Herkunftsnachweise bleiben im privaten Prüfbericht.
 // Die Auswahl ist gezielt und NICHT repräsentativ für das gesamte Web.
 const positive = [
+  ["p12b","mit den Betreuer*innen","mit den Betreuern"],
+  ["p12a","den Forscher*innen und Expert*innen des Instituts","den Forschern und Experten des Instituts"],
+  ["p07b","mit erfahrenen Forscher*innen","mit erfahrenen Forschern"],
   ["p01a","Hinweise für aktive Teilnehmer:innen","Hinweise für aktive Teilnehmer"],
   ["p01b","Referent:innen-Verzeichnis","Referenten-Verzeichnis"],
   ["p02a","Student:innen","Studenten"],
@@ -65,9 +68,9 @@ const negative = [
 
 // Echte grammatische Lücken: Ziel bleibt annotiert, Istwert separat dokumentiert.
 const bekannteDativLuecken = [
-  ["p07b","mit erfahrenen Forscher*innen","mit erfahrenen Forschern","mit erfahrenen Forscher"],
-  ["p12a","den Forscher*innen und Expert*innen des Instituts","den Forschern und Experten des Instituts","den Forscher und Experten des Instituts"],
-  ["p12b","mit den Betreuer*innen","mit den Betreuern","mit den Betreuer"],
+
+
+
   ["p13b","persönlichen Betreuer:innen","persönlichen Betreuern","persönlichen Betreuer"],
 ] as const;
 
@@ -118,7 +121,7 @@ describe("Offene grammatische und richtlinienbedingte Fälle", () => {
 
 describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
   it("zeigt Umfang und vermeidet Stichproben-Dopplungen", () => {
-    expect(positive).toHaveLength(28);
+    expect(positive).toHaveLength(31);
     expect(negative).toHaveLength(24);
     expect(new Set(positive.map(([id]) => id)).size).toBe(positive.length);
     expect(new Set(negative.map(([id]) => id)).size).toBe(negative.length);
@@ -130,7 +133,7 @@ describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
 
     expect(richtigePositivfälle).toBe(positive.length);
     expect(ungewollteÄnderungen).toBe(0);
-    expect(bekannteDativLuecken).toHaveLength(4);
+    expect(bekannteDativLuecken).toHaveLength(1);
     expect(richtlinienUmformungen).toHaveLength(2);
     expect(positive.length + negative.length +
       bekannteDativLuecken.length + richtlinienUmformungen.length).toBe(58);
