@@ -230,6 +230,18 @@ jobs:
       - name: Vollständige Prüfung ausführen
         run: npm run check
 
+      - name: Modernen Chromium-Browser vor Veröffentlichung testen
+        if: ${{ env.PRODUCT_LINE == 'modern' }}
+        run: npm run test:browser:chromium
+
+      - name: Video und Untertitel im modernen Chromium vor Veröffentlichung testen
+        if: ${{ env.PRODUCT_LINE == 'modern' }}
+        run: npm run test:browser:video:chromium
+
+      - name: Modernen Firefox-Browser vor Veröffentlichung testen
+        if: ${{ env.PRODUCT_LINE == 'modern' }}
+        run: npm run test:browser:firefox
+
       - name: Store-Metadaten für die moderne Release-Version erzeugen
         if: ${{ env.PRODUCT_LINE == 'modern' }}
         shell: bash
