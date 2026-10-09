@@ -8,7 +8,7 @@ Autorität: `main`
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
 - Aktueller integrierter Produktstand: `c91b761754319bd51337ffbce9f367219695ae78`
 - Abgeschlossene Lexikon-Ausbauwellen: **92**
-- Letzter integrierter Lexikon-PR: **#348 — 20 sichere Sonderflexionen als Welle 91 integrieren**
+- Letzter integrierter Lexikon-PR: **#356 — 276 geprüfte Personenbasen als Welle 92 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
