@@ -33,9 +33,9 @@ export const defaultRules: readonly Rule[] = [
   salutationParticiplesRule,
   neutralPersonTermsRule,
   doubleFormsRule,
+  markedDativePluralRule,
   additionalPersonPluralRule,
   knownPluralSeparatorsRule,
-  markedDativePluralRule,
   mappedPluralSeparatorsRule,
   binnenIPluralRule,
   jobAdSuffixesRule
