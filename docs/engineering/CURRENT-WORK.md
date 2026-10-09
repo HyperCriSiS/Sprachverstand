@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `c91b761754319bd51337ffbce9f367219695ae78`
+- Aktueller integrierter Produktstand: `64825443e03d2482c65823f3e60986e11a10dbd0`
 - Abgeschlossene Lexikon-Ausbauwellen: **92**
 - Letzter integrierter Lexikon-PR: **#356 — 276 geprüfte Personenbasen als Welle 92 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -358,3 +358,11 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Das bereits vorliegende offizielle deutsche **ESCO-1.2.1-Classification-ZIP** (18 CSV-Dateien, 3.043 Berufe, 16.136 alternative Labelzeilen) wurde zusätzlich über bevorzugte **mehrteilige** Berufslabels und deren Alternativlabels untersucht: 375 mögliche bisher nicht aus direkten Paaren gewonnene Wortkopf-Kandidaten; 93 bereits wortwörtlich im geprüften Code-Snapshot, 276 ausdrücklich in Welle 92 aufgenommen, **6 bewusst zurückgestellt** (zwei auffällige Schreibweisen, `vormund` und drei numerische 3D-Komposita mit nicht unterstütztem Markerpfad). Vorherige Ausnahmen `General:innen` und `Stallknecht:innen` bleiben bestehen.
 - Methodische Grenze: Wortkopf-Erkennung ist **keine** grammatisch vollständige Umformung beliebiger Berufsphrasen; 251 bevorzugte nichtslash-getrennte Bezeichnungen und komplexe andere Paarungsstrukturen können nicht ungeprüft als Gender-Marker-Regeln übernommen werden. Ein genauer historischer deutscher Wort-für-Wort-Versionsvergleich 1.2.0→1.2.1 wurde mangels vollständigem 1.2.0-Paket bzw. Delta-Datei nicht durchgeführt. Kein neuer Download dafür angefordert.
 - Quellenrohtexte und detaillierter Quellenabgleich bleiben privat unter `HyperCriSiS/Generic-Datastore`. Keine neuen GENDERATOR-Abrufe. Weitere Quellen nur mit konkreter neuer Evidenz; anschließend moderne Browser-Releases. Store-Freigabe (Issue #331) weiterhin Admin-Aufgabe, Pale Moon zuletzt. Keine Tags oder Store-Einreichungen.
+
+## Unabhängige Real-Web-Stichprobe – 09.10.2026
+
+- **PR #358 / Merge `64825443e03d2482c65823f3e60986e11a10dbd0`:** 58 zusätzliche kurze, auf 14 öffentlich beobachteten Webseiten gezielt gesammelte Testoberflächen für die vollständige Textpipeline (aggressives Profil). 28 Positivfälle korrekt normalisiert, **4 reale Dativplural-Flexionslücken** mit unverfälschtem Soll-/Ist-Text, 24 unmarkierte Negativfälle unverändert und 2 als **beabsichtigte** `Studierende → Studenten`-Partizipumformungen getrennt bewertet. Kein neuer Produktregel-Eingriff.
+- Die vier Dativfehler sind in **Issue #359** als konkrete Fälle zur grammatischen Kontextprüfung erfasst. Die bisherige Regel soll nicht durch pauschale `-n`-Anfügung verändert werden; neue oder geänderte Produktregeln benötigen eigene Negativ- und Satztests.
+- Anfangs fielen die vier Zieltext-/Kasusfälle und zwei fälschlich als Negativproben klassifizierte Partizipfälle durch. Die abschließende Revision bewahrt die tatsächlichen Resultate in **verschiedenen Testkategorien**. Vollständige PR-Kern-, Gecko-, Chromium-, Performance-, CodeQL- und Sammelchecks grün. Ein Chromium-Testlauf war wegen nicht gefundener Erweiterungs-Serviceworker-Zielseite fehlgeschlagen und bestand bei unverändertem Wiederholungslauf; Sicherheitsgrenzen wurden nicht gelockert.
+- **Keine repräsentative Webgenauigkeit:** zielgerichtete Stichprobe, mehrere Fundstellen vom selben Herausgeber; DOM-Schutz wird separat geprüft. Herkunfts-URLs und Abrufinformationen liegen nur im privaten Quellenbestand. Nach-Merge-`main`-CI separat prüfen.
+- **Fortsetzung:** Issue #359 anhand Dativ-/Akkusativ-Kontext und Mehrwortsatzgrenzen sorgfältig bearbeiten; dann moderne Chromium-/Firefox-Releases vorbereiten. Store-Production-Issue #331 ist weiterhin eine administrative Freigabehürde. Keine Tags, Store-Einreichung oder Pale-Moon-Arbeit in dieser Einheit.
