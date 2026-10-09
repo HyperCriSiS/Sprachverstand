@@ -295,9 +295,9 @@ async function waitForExpectedState(sessionId) {
 async function pruefeSpaeteShadowRoot(sessionId) {
   const creation = await webdriverRequest(
     "POST",
-    \`/session/\${sessionId}/execute/sync\`,
+    `/session/${sessionId}/execute/sync`,
     {
-      script: \`
+      script: `
         const host = document.querySelector("#late-shadow-host");
         if (!host || host.shadowRoot) {
           throw new Error("Vorhandener Shadow-Host fehlt oder ist nicht leer.");
@@ -305,7 +305,7 @@ async function pruefeSpaeteShadowRoot(sessionId) {
         const root = host.attachShadow({ mode: "open" });
         root.textContent = "Nutzer:innen";
         return root.textContent;
-      \`,
+      `,
       args: []
     }
   );
@@ -317,9 +317,9 @@ async function pruefeSpaeteShadowRoot(sessionId) {
   while (Date.now() < deadline) {
     const result = await webdriverRequest(
       "POST",
-      \`/session/\${sessionId}/execute/sync\`,
+      `/session/${sessionId}/execute/sync`,
       {
-        script: \`return document.querySelector("#late-shadow-host")?.shadowRoot?.textContent;\`,
+        script: `return document.querySelector("#late-shadow-host")?.shadowRoot?.textContent;`,
         args: []
       }
     );
@@ -329,7 +329,7 @@ async function pruefeSpaeteShadowRoot(sessionId) {
     await sleep(125);
   }
   throw new Error(
-    \`Eine spät angehängte ShadowRoot wurde im echten \${browser}-Browser nicht korrigiert.\`
+    `Eine spät angehängte ShadowRoot wurde im echten ${browser}-Browser nicht korrigiert.`
   );
 }
 
