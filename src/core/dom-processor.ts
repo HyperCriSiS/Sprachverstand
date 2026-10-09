@@ -2,7 +2,8 @@ import { isRiskAllowed, type Rule, type RuleProfile } from "./rule";
 import {
   accessibleAttributeNames,
   shouldProcessAccessibleAttribute,
-  shouldProcessTextNode
+  shouldProcessTextNode,
+  isProtectedTextSubtree
 } from "./text-safety";
 import type { CustomReplacement } from "../settings/defaults";
 import {
@@ -95,6 +96,12 @@ interface TraversalState {
   readonly skipSubtitles: boolean;
   rootProcessed: boolean;
 }
+
+const trailingParticiplePattern =
+  /(?<![\p{L}\p{M}])(?:Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende|Lesende|Zuhörende|Arbeitnehmende|Arbeitgebende|Dozierende|Fördergebende|Theatermachende)\s*$/iu;
+const followingInlineNounPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u;
+const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
+const maximumPreviousInlineNodes = 64;
 
 const regularWorkBudgetMs = 4;
 const shadowDiscoveryIntervalMs = 1_500;
@@ -724,6 +731,7 @@ export class DomProcessor {
         }
         this.queue(node);
         this.invalidateFollowingContext(node);
+        this.invalidatePrecedingParticipleContext(node);
         this.invalidateInlineProtectionAround(node);
         continue;
       }
@@ -761,6 +769,7 @@ export class DomProcessor {
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
+            this.invalidatePrecedingParticipleContext(record.target);
             this.invalidateInlineProtectionAround(record.target);
             continue;
           }
@@ -790,6 +799,7 @@ export class DomProcessor {
         this.queue(addedNode);
       }
       if (record.target.isConnected) {
+        this.invalidatePrecedingParticipleContext(record.target, record.previousSibling);
         // Bei DOM-Insertionen und Entfernen des linken Präfixes
         // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
         this.invalidateFollowingContext(record.target, record.nextSibling);
@@ -967,35 +977,99 @@ export class DomProcessor {
   }
 
   private shouldProtectFollowingParticiple(node: Text, original: string): boolean {
-    // Kurzfristiger Schutz für splitierte Adjektiv-Nomen-Gruppen: Ohne
-    // vollständigen rechten Kontext keine substantivierende Ersetzung.
-    if (
-      !/(?<![\p{L}\p{M}])(?:Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende|Lesende|Zuhörende|Arbeitnehmende|Arbeitgebende|Dozierende|Fördergebende|Theatermachende)\s*$/iu.test(original)
-    ) {
+    if (!trailingParticiplePattern.test(original)) {
       return false;
     }
 
     let current: Node | null = node;
-    while (current?.parentNode) {
+    let following = "";
+    while (current?.parentNode && following.length < leadingContextLimit) {
       let sibling = current.nextSibling;
       while (sibling) {
-        const context = this.collectSafeContextSibling(sibling);
+        // Nur lesbare Inline-Texte dürfen den Schutz beeinflussen.
+        const context = this.collectSafeContextSibling(sibling, true);
         if (context === undefined) {
           return false;
         }
-        if (context.trim()) {
-          return /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u.test(context);
+        following += context;
+        if (followingInlineNounPattern.test(following)) {
+          return true;
+        }
+        // Auch "E" + "ltern" über getrennte Inline-Elemente erkennen.
+        if (following.trim() && !possibleInlineNounPrefixPattern.test(following)) {
+          return false;
+        }
+        if (following.length >= leadingContextLimit) {
+          return false;
         }
         sibling = sibling.nextSibling;
       }
-
-      const parent: Node | null = current.parentNode;
+      const parent: Node = current.parentNode;
       if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
         break;
       }
       current = parent;
     }
     return false;
+  }
+
+  // Nur den direkt vor der Mutation angrenzenden Inline-Kontext prüfen.
+  // So werden alte Entscheidungen neu bewertet, ohne große DOM-Scans.
+  private invalidatePrecedingParticipleContext(
+    node: Node,
+    immediatePrevious?: Node | null
+  ): void {
+    let visited = 0;
+    const inspect = (candidate: Node): boolean => {
+      visited += 1;
+      if (visited > maximumPreviousInlineNodes) {
+        return false;
+      }
+      if (
+        candidate instanceof Element &&
+        (blockBoundaryTags.has(candidate.tagName) ||
+          isProtectedTextSubtree(candidate))
+      ) {
+        return false;
+      }
+      if (candidate.nodeType === Node.TEXT_NODE) {
+        const text = candidate as Text;
+        if (!shouldProcessTextNode(text)) {
+          return text.data.trim() === "";
+        }
+        const original = this.textChanges.get(text)?.original ?? text.data;
+        if (trailingParticiplePattern.test(original)) {
+          this.contextDirtyNodes.add(text);
+          this.queue(text);
+        }
+        return original.trim() === "";
+      }
+      for (let index = candidate.childNodes.length - 1; index >= 0; index -= 1) {
+        const child = candidate.childNodes[index];
+        if (child && !inspect(child)) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    let current: Node | null = node;
+    let previous: Node | null =
+      immediatePrevious === undefined ? current.previousSibling : immediatePrevious;
+    while (current?.parentNode && visited < maximumPreviousInlineNodes) {
+      while (previous) {
+        if (!inspect(previous)) {
+          return;
+        }
+        previous = previous.previousSibling;
+      }
+      const parent: Node = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        return;
+      }
+      current = parent;
+      previous = current.previousSibling;
+    }
   }
 
   private invalidateFollowingContext(
@@ -1446,7 +1520,7 @@ export class DomProcessor {
   }
 
   // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
-  private collectSafeContextSibling(sibling: Node): string | undefined {
+  private collectSafeContextSibling(sibling: Node, allowShortFragment = false): string | undefined {
     if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
       return undefined;
     }
@@ -1460,7 +1534,21 @@ export class DomProcessor {
 
     const readText = (text: Text): boolean => {
       if (!shouldProcessTextNode(text)) {
-        return text.data.trim() === "";
+        if (text.data.trim() === "") {
+          return true;
+        }
+        const root = text.getRootNode();
+        const parent = text.parentElement ??
+          (root instanceof ShadowRoot ? root.host : null);
+        if (
+          !allowShortFragment ||
+          !text.isConnected ||
+          !parent ||
+          isProtectedTextSubtree(parent) ||
+          !/^\p{L}$/u.test(text.data.trim())
+        ) {
+          return false;
+        }
       }
       chunks.push(this.textChanges.get(text)?.original ?? text.data);
       return true;
