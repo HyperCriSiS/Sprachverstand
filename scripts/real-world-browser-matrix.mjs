@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { compareProtectedRuns } from "./real-world-protected-state.mjs";
+import { classifyVisibleMarkerNodes } from "./live-marker-dom-classification.mjs";
 
 const projectRoot = process.cwd();
 const configPath = path.join(projectRoot, "config", "real-world-sites.json");
@@ -439,6 +440,8 @@ async function collectSnapshot(sessionId) {
         };
       });
 
+      const nodePatternAudit = (${classifyVisibleMarkerNodes.toString()})(document);
+
       const navigation = performance.getEntriesByType("navigation")[0];
       const metrics = window.__sprachverstandLiveMetrics || {
         errors: [],
@@ -513,6 +516,7 @@ async function collectSnapshot(sessionId) {
           transferSize: navigation.transferSize
         } : undefined,
         remainingPatterns,
+        nodePatternAudit,
         javascriptErrors: Array.isArray(metrics.errors)
           ? metrics.errors.slice(0, 30)
           : [],

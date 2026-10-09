@@ -9,6 +9,23 @@ dass sie unterschiedliche Risiken der DOM-Verarbeitung abdecken. Live-Webseiten
 Integrations- und Lasttests gedacht und sollen normale Pull-Request-Tests nicht
 blockieren.
 
+## Textknoten-Klassifizierung (09.10.2026)
+
+Zusätzlich zum historischen `document.body.innerText`-Zähler prüft die
+manuelle Browserdiagnose passende Marker in **einzelnen sichtbaren
+DOM-Textknoten**. Sie zählt explizit geschützte Bereiche wie
+`code`/`pre`, Editoren, `data-sprachverstand-ignore` und
+`aria-hidden` getrennt von anderen Textknoten. Die Diagnose gibt
+maximal zwölf kurze Wort-/Bereichsproben aus, aber keine ganzen
+Webseitentexte, HTML-Pfade oder Quell-URLs.
+
+Wichtig: `innerText` und einzelne DOM-Textknoten besitzen nicht immer
+dieselben Wortgrenzen. Eine Abweichung ihrer Summen ist daher weder
+automatisch ein Fehler noch ein Beweis für vollständige Erkennung.
+Auch als „anderer Textknoten“ klassifizierte Treffer können aus
+weiteren Gründen von Sprachverstand bewusst übersprungen werden.
+Der DOM-Befund ändert **keine Produktregeln**.
+
 ## Diagnose verbliebener Sprachmuster (09.10.2026)
 
 Der Live-Test zählt bekannte Gender-Marker im sichtbaren Seitentext.
