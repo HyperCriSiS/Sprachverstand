@@ -10,7 +10,7 @@ Autorität: `main`
 - Auditsnapshot `439a3e8`: 29 Befunde (8 P1, 20 P2, 1 P3), **weiterhin NO-GO** bis zur neuen unabhängigen Abnahme.
 - **Gemergt und gesamte PR-CI grün:** #378 DOM-02, #379 DOM-13/05, #380 LANG-09, #381 S1, #382 LANG-02, #383 LANG-01/03, #384 S2, #386 DOM-04, #387 Worker-Discovery-Flake, #388 DOM-07, #389 DOM-01 (Teilkorrektur), #390 DOM-08. Aktuellen `main`-HEAD bei Wiederaufnahme verifizieren.
 - **Nächste Einheit:** DOM-09 (Editor-/Schutzstatus-Transitions), DOM-03 (Kontextinvalidierung), DOM-06 (Zitate/Mehrwort-Schutz über Inline-Markup). Danach DOM-10/11/12 und übrige Befunde. **DOM-01** und ursprüngliche **REL-01**-Video-Grenzwertmessung trotz Teilfix noch offen. DOM-02 nativ mit 1k/4k/10k gegen stabilen Tag nachmessen.
-- **Später gesondert:** Security- und Releasegates S3/S4; private Lizenz-/Provenienzprüfung LIC-01; vollständige unabhängige Revalidierung. Keine Releases, Tags, Store-Einreichungen oder Pale-Moon-Änderungen.
+- **Später gesondert:** Security- und Releasegates S3/S4 sowie vollständige unabhängige Revalidierung. Keine Releases, Tags, Store-Einreichungen oder Pale-Moon-Änderungen.
 
 ## Zuletzt verifizierte Produktbaseline
 
