@@ -241,6 +241,65 @@ describe("Einstellungsspeicher", () => {
     expect(local.values.get("settings")).toEqual(value);
   });
 
+  it("behält lokale Werte bei expliziter Synchronisierungsabwahl", async () => {
+    await local.set({
+      settings: settings({
+        protectedTerms: ["Alter Wert"],
+        syncCategoryIds: ["protected-terms"]
+      })
+    });
+    await sync.set({
+      "sync.selection": ["protected-terms"],
+      "sync.protected-terms": ["Veralteter Sync-Wert"]
+    });
+
+    const neu = settings({
+      protectedTerms: ["Nur lokal"],
+      syncCategoryIds: []
+    });
+    await saveSettings(neu);
+
+    expect(await loadSettings()).toEqual(neu);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+    expect(sync.values.get("sync.selection")).toEqual([]);
+  });
+
+  it("behält lokale Änderungen trotz fehlgeschlagener Sync-Schreiboperation", async () => {
+    await local.set({
+      settings: settings({
+        protectedTerms: ["Alt"],
+        syncCategoryIds: ["protected-terms"]
+      })
+    });
+    await sync.set({
+      "sync.selection": ["protected-terms"],
+      "sync.protected-terms": ["Veraltet"]
+    });
+
+    sync.failWrites = true;
+    const neu = settings({
+      protectedTerms: ["Neu und lokal"],
+      syncCategoryIds: []
+    });
+    await expect(saveSettings(neu)).rejects.toThrow(/lokal gespeichert/u);
+
+    expect(await loadSettings()).toEqual(neu);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+  });
+
+  it("übernimmt nach bestätigtem Sync-Abschluss wieder entfernte Änderungen", async () => {
+    const neu = settings({
+      protectedTerms: ["Synchronisiert"],
+      syncCategoryIds: ["protected-terms"]
+    });
+    await saveSettings(neu);
+    expect(local.values.has("settings.sync-local-override")).toBe(false);
+
+    await sync.set({ "sync.protected-terms": ["Von anderem Gerät"] });
+    const loaded = await loadSettings();
+    expect(loaded.protectedTerms).toEqual(["Von anderem Gerät"]);
+  });
+
   it("weist zu große Synchronisierungskategorien vor dem Speichern zurück", async () => {
     const replacements = Array.from({ length: 100 }, (_, index) => ({
       source: `Quelle ${index} ${"x".repeat(90)}`,

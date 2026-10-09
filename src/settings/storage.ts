@@ -7,6 +7,7 @@ import {
 } from "./defaults";
 
 const localSettingsKey = "settings";
+const localSyncOverrideKey = "settings.sync-local-override";
 const syncSelectionKey = "sync.selection";
 const maximumSyncItemBytes = 7500;
 const settingsRetryDelaysMs = [100, 500, 1500] as const;
@@ -151,11 +152,18 @@ async function loadSynchronizedValues(): Promise<Record<string, unknown>> {
 export async function loadSettings(): Promise<Settings> {
   const api = getExtensionApi();
   const [localResult, syncedResult] = await Promise.all([
-    api.storage.local.get(localSettingsKey),
+    api.storage.local.get([localSettingsKey, localSyncOverrideKey]),
     loadSynchronizedValues()
   ]);
 
   const localSettings = normalizeSettings(localResult[localSettingsKey]);
+
+  // Bei einem lokalen Speichervorgang oder ausdrücklich abgeschalteter
+  // Synchronisierung darf ein älterer Sync-Stand nicht zurückschreiben.
+  if (localResult[localSyncOverrideKey] === true) {
+    return localSettings;
+  }
+
   let settings = localSettings;
   const remoteSelection = synchronizedSelection(syncedResult[syncSelectionKey]);
   const selectedCategories = remoteSelection ?? settings.syncCategoryIds;
@@ -171,10 +179,8 @@ export async function loadSettings(): Promise<Settings> {
     }
   }
 
-  if (JSON.stringify(settings) !== JSON.stringify(localSettings)) {
-    await api.storage.local.set({ [localSettingsKey]: settings });
-  }
-
+  // Ein Lesevorgang darf nicht neben einem Speichervorgang alte
+  // Sync-Daten in den lokalen Speicher zurückschreiben.
   return settings;
 }
 
@@ -240,7 +246,13 @@ export async function saveSettings(settings: Settings): Promise<void> {
     syncItems[key] = value;
   }
 
-  await api.storage.local.set({ [localSettingsKey]: normalized });
+  // Beide Werte werden in einem lokalen Storage-Set geschrieben. Solange
+  // die Sync-Schreiboperation nicht vollständig bestätigt wurde, bleiben
+  // lokale Änderungen und der lokale Widerruf verbindlich.
+  await api.storage.local.set({
+    [localSettingsKey]: normalized,
+    [localSyncOverrideKey]: true
+  });
 
   if (!synchronizationWasOrIsEnabled) {
     return;
@@ -253,6 +265,19 @@ export async function saveSettings(settings: Settings): Promise<void> {
         ? api.storage.sync.remove(keysToRemove)
         : Promise.resolve()
     ]);
+
+    // Eine explizite Sync-Abwahl bleibt auf diesem Gerät dauerhaft lokal
+    // autoritativ. Bei aktiver Synchronisierung wird die Sperre dagegen
+    // erst nach bestätigtem Abschluss aufgehoben.
+    if (normalized.syncCategoryIds.length > 0) {
+      const current = await api.storage.local.get(localSettingsKey);
+      if (
+        JSON.stringify(normalizeSettings(current[localSettingsKey])) ===
+        JSON.stringify(normalized)
+      ) {
+        await api.storage.local.remove(localSyncOverrideKey);
+      }
+    }
   } catch (error) {
     throw new Error(
       "Die Einstellungen wurden lokal gespeichert, konnten aber nicht vollständig über den Browser synchronisiert werden. Bitte die Synchronisierung prüfen oder betroffene Kategorien lokal belassen.",
