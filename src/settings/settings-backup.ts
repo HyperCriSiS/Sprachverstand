@@ -226,6 +226,11 @@ function validateProtectedTerms(value: unknown): string[] {
       throw new Error("Die persönlichen Ausnahmen dürfen nur Textwerte enthalten.");
     }
     const normalized = entry.trim();
+    if (/[\r\n]/u.test(normalized)) {
+      throw new Error(
+        "Persönliche Ausnahmen mit Zeilenumbrüchen können im Formular nicht verlustfrei dargestellt werden."
+      );
+    }
     if (!normalized) {
       throw new Error("Die persönlichen Ausnahmen enthalten einen leeren Eintrag.");
     }
@@ -270,6 +275,13 @@ function validateCustomReplacements(value: unknown): CustomReplacement[] {
 
     const source = input.source.trim();
     const replacement = input.replacement.trim();
+    // Der Formularparser trennt Regeln zeilenweise am ersten => oder →.
+    // Bei nicht darstellbaren Strings darf kein stiller Datenverlust folgen.
+    if (/=>|→|[\r\n]/u.test(source) || /[\r\n]/u.test(replacement)) {
+      throw new Error(
+        "Diese eigene Ersetzung enthält Trennzeichen oder Zeilenumbrüche, die im Formular nicht verlustfrei darstellbar sind."
+      );
+    }
     if (!source) {
       throw new Error("Eine eigene Ersetzung besitzt einen leeren Ausgangstext.");
     }

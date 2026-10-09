@@ -32,6 +32,39 @@ function sampleSettings(overrides: Partial<Settings> = {}): Settings {
   };
 }
 
+describe("Audit S2: sichere Formular-Darstellung importierter Backups", () => {
+  it.each([
+    [{ source: "A=>B", replacement: "C" }],
+    [{ source: "A→B", replacement: "C" }],
+    [{ source: "A\nB", replacement: "C" }],
+    [{ source: "A", replacement: "B\nC" }]
+  ])("weist nicht darstellbare eigene Ersetzungen vor dem Import zurück", (entry) => {
+    const backup = createSettingsBackupDocument(
+      sampleSettings({ customReplacements: [entry] })
+    );
+    expect(() =>
+      parseSettingsBackupDocument(stringifySettingsBackupDocument(backup))
+    ).toThrow(/nicht verlustfrei/u);
+  });
+
+  it("weist mehrzeilige persönliche Ausnahmen vor dem Import zurück", () => {
+    const backup = createSettingsBackupDocument(
+      sampleSettings({ protectedTerms: ["A\nB"] })
+    );
+    expect(() =>
+      parseSettingsBackupDocument(stringifySettingsBackupDocument(backup))
+    ).toThrow(/nicht verlustfrei/u);
+  });
+
+  it("bewahrt gültige Zeilensyntax mit Trennern im Ersetzungsziel", () => {
+    const backup = createSettingsBackupDocument(
+      sampleSettings({ customReplacements: [{ source: "A", replacement: "B => C" }] })
+    );
+    expect(parseSettingsBackupDocument(stringifySettingsBackupDocument(backup))
+      .settings.customReplacements).toEqual([{ source: "A", replacement: "B => C" }]);
+  });
+});
+
 describe("Einstellungssicherung", () => {
   it("exportiert und importiert den vollständigen Einstellungsstand verlustfrei", () => {
     const settings = sampleSettings();
