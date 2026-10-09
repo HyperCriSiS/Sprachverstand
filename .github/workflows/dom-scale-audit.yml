@@ -1,0 +1,80 @@
+name: DOM-Skalierung Referenzvergleich
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: DOM-02 gegen v0.7.1 messen
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Ausgelösten Commit auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: aktuell
+          persist-credentials: false
+
+      - name: Historischen Referenz-Tag auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/tags/v0.7.1
+          path: baseline
+          persist-credentials: false
+
+      - name: Node.js für beide Stände einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Identischen Messvertrag bereitstellen
+        shell: bash
+        run: |
+          mkdir -p baseline/benchmarks reports
+          cp aktuell/benchmarks/dom-scale-audit.audit.ts baseline/benchmarks/
+          cp aktuell/vitest.dom-scale-audit.config.ts baseline/
+          echo "Referenz: $(git -C baseline rev-parse HEAD)"
+          echo "Aktuell: $(git -C aktuell rev-parse HEAD)"
+          echo "Referenz-Paket: $(node -p "require('./baseline/package.json').version")"
+          echo "Aktuelles Paket: $(node -p "require('./aktuell/package.json').version")"
+
+      - name: Referenz-Abhängigkeiten reproduzierbar installieren
+        working-directory: baseline
+        run: npm ci --no-audit --no-fund
+
+      - name: Aktuelle Abhängigkeiten reproduzierbar installieren
+        working-directory: aktuell
+        run: npm ci --no-audit --no-fund
+
+      - name: Historischen Initialscan messen
+        working-directory: baseline
+        shell: bash
+        run: |
+          export DOM_SCALE_SOURCE_SHA="$(git rev-parse HEAD)"
+          export DOM_SCALE_REPORT_PATH="../reports/baseline.json"
+          npx --no-install vitest run --config vitest.dom-scale-audit.config.ts
+
+      - name: Aktuellen Initialscan messen
+        working-directory: aktuell
+        shell: bash
+        run: |
+          export DOM_SCALE_SOURCE_SHA="$(git rev-parse HEAD)"
+          export DOM_SCALE_REPORT_PATH="../reports/current.json"
+          npx --no-install vitest run --config vitest.dom-scale-audit.config.ts
+
+      - name: Berichte validieren und vergleichen
+        shell: bash
+        run: |
+          node aktuell/scripts/compare-dom-scale-audit.mjs reports/baseline.json reports/current.json reports/comparison.md
+
+      - name: Messberichte archivieren
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dom-scale-audit-${{ github.sha }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 90
