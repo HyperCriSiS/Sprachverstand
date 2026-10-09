@@ -6,9 +6,9 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `5b901107e454ed8f278dd22b43a7310d0964ffc1`
-- Abgeschlossene Lexikon-Ausbauwellen: **92**
-- Letzter integrierter Lexikon-PR: **#356 — 276 geprüfte Personenbasen als Welle 92 integrieren**
+- Aktueller integrierter Produktstand: `b26f837e984de7bddd5fd8d7f6f93ba113b5f50c`
+- Abgeschlossene Lexikon-Ausbauwellen: **93**
+- Letzter integrierter Lexikon-PR: **#374 — Welle 93 mit zwei exakten Personenbasen und weiteren Grammatiktests**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
 - Keine generische Personen-Suffixregel.
 
@@ -395,3 +395,9 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Aktuelle ausdrückliche Nutzerentscheidung: Keine zweite Person als Required Reviewer; `Store Publish` darf nur **manuell** mit explizitem `submit`, Tag, Ziel und Bestätigungsphrase die Store-Schnittstellen auslösen. Ein Tag darf weiterhin die **GitHub-Release-Pakete** erzeugen, aber keinerlei Store-Publish starten.
 - Gate auf eine existierende `store-production`-Umgebung mit geschütztem Branch und ohne Admin-Bypass ausrichten, ohne Reviewer-Zwang. Im `submit`-Pfad zusätzlich Eigentümeridentität einschließlich Reruns prüfen. Read-only Prüfworkflow, CI und Regressionen behalten.
 - Noch von einem berechtigten Eigentümer einzurichten: `store-production`, AMO-Secrets und Google-CWS-OIDC/Variablen. Niemals eigenständig Tag, öffentliche Release- oder Store-Submission auslösen. Pale Moon weiterhin zuletzt.
+
+## Pre-Release-Audit-Fixes und gemeinsame Endprüfung – 09.10.2026
+
+- **Audit-Ausgangsbasis `94e6cb2`, gemeinsamer neuer Produktstand `b26f837e984de7bddd5fd8d7f6f93ba113b5f50c`.** Zwei bestätigte P1 und drei technische P2-Kategorien behoben: **#372** (Feminina/Soft-Hyphen), **#373** (DOM-Restore, Editor-/Shadow-Schutz, Windows-Pfade), **#374** (konservativer Dativ, gemischte Artikel, belegte Schreibweisen und exakte Personenwelle 93). Keine pauschale Suffixregel.
+- Sämtliche drei PRs mit Kernprüfung, Performance, Chromium/Video, Firefox, CodeQL und Sammelcheck erfolgreich. **Nicht veröffentlichender Preflight #37975520305 auf dem gemeinsamen Produktcommit vollständig erfolgreich** einschließlich sämtlicher moderner Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am 23.10.2026 18:48 UTC ab; keine Veröffentlichung.
+- **Offen:** isolierte mehrdeutige Dativform `persönlichen Betreuer:innen` (Issue #359), native Windows-/Edge-/Opera-Verifikation sowie eigenständige Entscheidung zur Veröffentlichung. Store-Environment, Zugangsdaten und ausdrückliche Store-Freigabe (Issue #331) weiterhin nicht als erledigt bestätigt. **Keine Tags, Releases oder Store-Einreichungen; Pale Moon zuletzt.**
