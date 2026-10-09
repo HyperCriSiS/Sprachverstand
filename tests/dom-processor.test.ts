@@ -386,3 +386,40 @@ describe("DomProcessor", () => {
     expect(paragraphs[1]?.textContent).toBe("Die Mitarbeitenden arbeiten.");
   });
 });
+describe("Pre-Release: Knotenbewegungen und Schutzgrenzen", () => {
+  it("behält Original, Zähler und Wiederherstellung beim Verschieben eines verbundenen Knotens", async () => {
+    document.body.innerHTML = "<section id='links'><p>Nutzer:innen</p></section><section id='rechts'></section>";
+    processor = new DomProcessor(document, { rules: [rule], profile: "conservative" });
+    processor.start();
+    const paragraph = document.querySelector("p") as HTMLParagraphElement;
+    expect(paragraph.textContent).toBe("Nutzer");
+    expect(processor.getReplacementCount()).toBe(1);
+
+    document.querySelector("#rechts")?.append(paragraph);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    processor.flush();
+    expect(paragraph.textContent).toBe("Nutzer");
+    expect(processor.getReplacementCount()).toBe(1);
+
+    processor.stop({ restore: true });
+    expect(paragraph.textContent).toBe("Nutzer:innen");
+    expect(processor.getReplacementCount()).toBe(0);
+  });
+
+  it("korrigiert weder Großschreibungs-Editoren noch Inhalte unter ignorierten Shadow-Hosts", () => {
+    document.body.innerHTML = "<div contenteditable='TRUE'>Nutzer:innen schreiben</div>";
+    const host = document.createElement("div");
+    host.setAttribute("data-sprachverstand-ignore", "");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const element = document.createElement("span");
+    element.textContent = "Nutzer:innen schreiben";
+    shadow.append(element);
+
+    processor = new DomProcessor(document, { rules: [rule], profile: "conservative" });
+    processor.start();
+    expect(document.querySelector("[contenteditable]")?.textContent).toBe("Nutzer:innen schreiben");
+    expect(element.textContent).toBe("Nutzer:innen schreiben");
+    expect(processor.getReplacementCount()).toBe(0);
+  });
+});
