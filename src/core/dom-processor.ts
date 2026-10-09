@@ -938,8 +938,7 @@ export class DomProcessor {
     return false;
   }
 
-  // Kontext aus geschützten oder technisch ausgeschlossenen DOM-Teilbäumen
-  // darf grammatische Entscheidungen sichtbarer Nachbarknoten nicht ändern.
+  // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
   private collectSafeContextSibling(sibling: Node): string | undefined {
     if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
       return undefined;
@@ -954,7 +953,6 @@ export class DomProcessor {
 
     const readText = (text: Text): boolean => {
       if (!shouldProcessTextNode(text)) {
-        // Whitespace ist kein eigenes Textziel und darf hier bleiben.
         return text.data.trim() === "";
       }
       chunks.push(this.textChanges.get(text)?.original ?? text.data);
@@ -1046,3 +1044,83 @@ export class DomProcessor {
         const change = this.textChanges.get(textNode);
         if (change) {
           this.removeTextChange(textNode, change);
+        }
+      } else if (currentNode instanceof Element) {
+        this.removeAllAttributeChanges(currentNode);
+        if (currentNode.shadowRoot) {
+          this.forgetRoot(currentNode.shadowRoot);
+        }
+      }
+
+      currentNode = walker.nextNode();
+    }
+  }
+
+  private removeTextChange(node: Text, change: ChangeRecord): void {
+    this.textChanges.delete(node);
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAttributeChange(
+    element: Element,
+    attributeName: string,
+    change: ChangeRecord
+  ): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    changes.delete(attributeName);
+    if (changes.size === 0) {
+      this.attributeChanges.delete(element);
+    }
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAllAttributeChanges(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    let removedReplacements = 0;
+    for (const change of changes.values()) {
+      removedReplacements += change.replacements;
+    }
+
+    this.attributeChanges.delete(element);
+    this.adjustReplacementCount(-removedReplacements);
+  }
+
+  private clearTracking(): void {
+    this.textChanges.clear();
+    this.attributeChanges.clear();
+    this.replacementCount = 0;
+    this.scheduleCountNotification();
+  }
+
+  private adjustReplacementCount(delta: number): void {
+    if (delta === 0) {
+      return;
+    }
+
+    this.replacementCount = Math.max(0, this.replacementCount + delta);
+    this.scheduleCountNotification();
+  }
+
+  private scheduleCountNotification(): void {
+    if (this.countNotificationScheduled) {
+      return;
+    }
+
+    this.countNotificationScheduled = true;
+    queueMicrotask(() => {
+      this.countNotificationScheduled = false;
+      this.options.onReplacementCountChange?.(
+        this.replacementCount,
+        this.getReplacementSummary()
+      );
+    });
+  }
+}
