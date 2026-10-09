@@ -4,7 +4,7 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
   const checkLayout = options.checkLayout !== false;
   const patterns = [
     { id: "separator-innen", expression: /[\p{L}\p{N}]+(?:[:*_·])innen\b/giu },
-    { id: "binnen-i", expression: /\b[\p{Ll}]+Innen\b/gu }
+    { id: "binnen-i", expression: /(?<![\p{L}\p{N}])[\p{L}]+Innen(?![\p{L}\p{N}])/gu }
   ];
   const excludedTags = new Set([
     "SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "TEXTAREA",
