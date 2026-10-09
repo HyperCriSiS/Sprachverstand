@@ -26,7 +26,7 @@ describe("Store-Produktionsschutz", () => {
     }] }],
     ["Selbstfreigabe", { ...valid, protection_rules: [{
       type: "required_reviewers", prevent_self_review: false,
-      reviewers: valid.protection_rules[0].reviewers
+      reviewers: [{ type: "User", reviewer: { id: 42 } }]
     }] }],
     ["Admin-Bypass", { ...valid, can_admins_bypass: true }],
     ["ungeschützte Branches", { ...valid, deployment_branch_policy: {
