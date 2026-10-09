@@ -6,9 +6,6 @@ import { getReviewedPersonFormsWave92, reviewedPersonFormCountWave92 } from "../
 // Unabhängige Zieltabellen statt unkontrollierter Wortendungsableitung.
 const erwartete = {
   unchanged: [
-  "3d-computer-aided-design-entwickler",
-  "3d-designer",
-  "3d-produktentwickler",
   "abfüllanlagenbediener",
   "abfüllanlagenfahrer",
   "aktionskünstler",
@@ -301,10 +298,10 @@ const cases = [
 ];
 
 describe("Lexikonwelle 92: Exaktformen aus mehrteiligen Berufsbezeichnungen", () => {
-  it("zählt 279 eindeutige, ausdrücklich freigegebene Personenbasen", () => {
-    expect(cases).toHaveLength(279);
-    expect(new Set(cases.map(({ basis }) => basis)).size).toBe(279);
-    expect(reviewedPersonFormCountWave92).toBe(279);
+  it("zählt 276 eindeutige, ausdrücklich freigegebene Personenbasen", () => {
+    expect(cases).toHaveLength(276);
+    expect(new Set(cases.map(({ basis }) => basis)).size).toBe(276);
+    expect(reviewedPersonFormCountWave92).toBe(276);
   });
 
   it.each(cases)("$basis: Plural, Singular, Paar und vier Fälle stimmen", ({basis, plural, weak}) => {
@@ -324,7 +321,7 @@ describe("Lexikonwelle 92: Exaktformen aus mehrteiligen Berufsbezeichnungen", ()
     expect(mapMappedSingular(basis, "genitive")).toBe(genitive);
   });
 
-  it.each(["vormund", "maschienenbediener", "fertigungsingenieuringenieur", "general", "stallknecht", "ordnerfirma", "anlagenmechanikerteam"])(
+  it.each(["3d-designer", "vormund", "maschienenbediener", "fertigungsingenieuringenieur", "general", "stallknecht", "ordnerfirma", "anlagenmechanikerteam"])(
     "leitet für %s keine neue Form ab", (basis) => {
       expect(getReviewedPersonFormsWave92(basis)).toBeUndefined();
     }
