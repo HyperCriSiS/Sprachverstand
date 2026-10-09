@@ -28,6 +28,9 @@ describe("Live-Diagnose: tatsächliche DOM-Textknoten", () => {
     ].join("");
     const result = classifyVisibleMarkerNodes(document, { checkLayout: false });
     expect(result.matchedTextNodeOccurrences).toBe(3);
+    expect(result.samples.map((sample) => sample.word)).toEqual([
+      "Leser:innen", "SchülerInnen", "LehrerInnen"
+    ]);
     expect(result.reasons).toEqual({ "aria-hidden": 1, "excluded-role": 1, other: 1 });
   });
 
