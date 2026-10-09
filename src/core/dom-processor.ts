@@ -787,6 +787,38 @@ export class DomProcessor {
     return this.document.defaultView?.performance.now() ?? performance.now();
   }
 
+  private shouldProtectFollowingParticiple(node: Text, original: string): boolean {
+    // Kurzfristiger Schutz für splitierte Adjektiv-Nomen-Gruppen: Ohne
+    // vollständigen rechten Kontext keine substantivierende Ersetzung.
+    if (
+      !/(?<![\p{L}\p{M}])(?:Mitarbeitende|Teilnehmende|Nutzende|Studierende|Forschende|Lehrende|Lesende|Zuhörende|Arbeitnehmende|Arbeitgebende|Dozierende|Fördergebende|Theatermachende)\s*$/iu.test(original)
+    ) {
+      return false;
+    }
+
+    let current: Node | null = node;
+    while (current?.parentNode) {
+      let sibling = current.nextSibling;
+      while (sibling) {
+        const context = this.collectSafeContextSibling(sibling);
+        if (context === undefined) {
+          return false;
+        }
+        if (context.trim()) {
+          return /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u.test(context);
+        }
+        sibling = sibling.nextSibling;
+      }
+
+      const parent: Node | null = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        break;
+      }
+      current = parent;
+    }
+    return false;
+  }
+
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
     const tracked = this.textChanges.get(node);
     if (tracked) {
@@ -812,7 +844,11 @@ export class DomProcessor {
       : undefined;
     const result = subtitle
       ? this.transformSubtitleValue(original)
-      : this.transformValue(original, leadingContext);
+      : this.transformValue(
+          original,
+          leadingContext,
+          this.shouldProtectFollowingParticiple(node, original)
+        );
     if (result.replacements === 0 || result.text === original) {
       return;
     }
@@ -888,11 +924,21 @@ export class DomProcessor {
     element.setAttribute(attributeName, result.text);
   }
 
-  private transformValue(input: string, leadingContext?: string) {
+  private transformValue(
+    input: string,
+    leadingContext?: string,
+    protectParticiple = false
+  ) {
+    const disabledRuleIds = protectParticiple
+      ? new Set([
+          ...(this.options.disabledRuleIds ?? []),
+          "salutation.participial-forms"
+        ])
+      : this.options.disabledRuleIds;
     const transformOptions = {
       profile: this.options.profile,
-      ...(this.options.disabledRuleIds
-        ? { disabledRuleIds: this.options.disabledRuleIds }
+      ...(disabledRuleIds
+        ? { disabledRuleIds }
         : {}),
       ...(this.options.protectedTerms
         ? { protectedTerms: this.options.protectedTerms }
