@@ -6,7 +6,7 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `351ed538697f56ae262a62206583acd427c7578b`
+- Aktueller Produktbaseline-Commit: `5b901107e454ed8f278dd22b43a7310d0964ffc1`
 - Abgeschlossene Lexikon-Ausbauwellen: **92**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
@@ -415,3 +415,11 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Produkt-PR-Kernprüfung (10.000+ Tests), Performance, Gecko/Firefox, Chromium/Video und CodeQL nach korrigierter Regelreihenfolge vollständig grün. Nachgelagerte `main`-CI und CodeQL separat nachweisen.
 - **Folgearbeit aus Nutzerentscheidung:** Issue **#362** für eindeutige substantivierte Partizipien außerhalb der bisherigen Anrede-/Alleinstellung (`die Studierenden`, `ein Studierender`, `eine Studierende`). Gewöhnliche attributive Adjektive (`studierende Kinder`) und mehrdeutige Kasusformen schützen. Eigene eng begrenzte Regel- und Negativtests, keine pauschale `-ende`-Ersetzung.
 - Verbindliche Reihenfolge bleibt: sichere Sprachqualitätskorrekturen und moderne Browser-Release-Gates, Pale Moon zuletzt. Store-Environment **Issue #331** erfordert weiterhin Admin/Reviewer-Rechte; keine neue Release-/Tag-/Store-Aktion.
+
+## Substantivierte Partizipien mit sicherem Satzkontext – 09.10.2026
+
+- **Produkt-PR #364 / Merge `5b901107e454ed8f278dd22b43a7310d0964ffc1`:** Vorhandene 13 explizit lexikalisch freigegebene substantivierte Partizip-Personenbezeichnungen erhalten eng gefasste Singular-, Plural-, Genitiv- und Dativkontexte nach Determinierern. Beispiele: `die Studierenden → die Studenten`, `eine Studierende → eine Studentin`, `ein Studierender → ein Student`, `mit den Mitarbeitenden → mit den Mitarbeitern` und `die Dozierenden → die Dozenten`.
+- **Schutzgrenzen:** attributive Partizipien wie `die studierenden Kinder` und `die forschenden Wissenschaftler` bleiben unangetastet, ebenso mehrdeutige Formen wie `der Studierenden` und `den Mitarbeitenden` ohne klare Dativpräposition. Keine generische `-ende`-Regel, keine zusätzlichen ungeprüften Wortstämme. Tests prüfen auch deaktivierte Regelgruppe, persönliche Ausnahmen, Großschreibung und die gesamte Pipeline.
+- Die im gezielten Realweb-Korpus beobachtete `die Teilnehmenden` (Beleg n04a) wird jetzt **gewollt** als `die Teilnehmer` verarbeitet und verbleibt mit unveränderter Beleg-ID in der Probe. Die weiterhin 58 Kurzproben verteilen sich auf **31** korrekt normalisierte andere Positiva, **1** offene Dativlücke (Issue #359), **23** unverändert erhaltene Negativformen und **3** beabsichtigte Partizipnormalisierungen. Keine repräsentative Precision-/Recall-Aussage.
+- Produkt-PR-Checks Kernprüfung, Performance, Chromium/Video, Gecko/Firefox und CodeQL vollständig grün. **Nachgelagerte `main`-CI und CodeQL getrennt bestätigen.** Öffentlicher Projektcheckpoint und privater Quellenstand aktualisieren. Issue #362 nach erfolgreicher Nach-Merge-Prüfung abschließen; Issue #359 bleibt partiell offen.
+- Release-Reihenfolge weiterhin moderne Browser zuerst, Pale Moon zuletzt. Store-Production-Environment Issue #331 benötigt Admin-/Reviewer-Freigaben. Keine Tags oder Store-Einreichung in dieser Arbeitseinheit.
