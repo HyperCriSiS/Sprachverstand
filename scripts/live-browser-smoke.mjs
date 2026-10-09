@@ -333,6 +333,66 @@ async function pruefeSpaeteShadowRoot(sessionId) {
   );
 }
 
+async function pruefeEreignislosenDesignModeWechsel(sessionId) {
+  const entered = await webdriverRequest(
+    "POST",
+    `/session/${sessionId}/execute/sync`,
+    {
+      script: `
+        const element = document.querySelector("#static-target");
+        if (!element || element.textContent !== "Nutzer") {
+          throw new Error("Vor dem Editormodus muss der Text korrigiert sein.");
+        }
+        document.designMode = "on";
+        element.dispatchEvent(new Event("beforeinput", { bubbles: true }));
+        return { mode: document.designMode, text: element.textContent };
+      `,
+      args: []
+    }
+  );
+  if (entered.value?.mode !== "on" ||
+      entered.value?.text !== "Nutzer:innen") {
+    throw new Error(
+      `Originaltext vor Editoreingabe in ${browser} nicht restauriert: ${JSON.stringify(entered.value)}`
+    );
+  }
+
+  // Weder DOM noch Eingabeereignisse beim Verlassen des Editormodus auslösen.
+  const exited = await webdriverRequest(
+    "POST",
+    `/session/${sessionId}/execute/sync`,
+    {
+      script: `
+        document.designMode = "off";
+        return document.designMode;
+      `,
+      args: []
+    }
+  );
+  if (exited.value !== "off") {
+    throw new Error(`designMode ließ sich in ${browser} nicht deaktivieren.`);
+  }
+
+  const deadline = Date.now() + 7_000;
+  while (Date.now() < deadline) {
+    const result = await webdriverRequest(
+      "POST",
+      `/session/${sessionId}/execute/sync`,
+      {
+        script: `return document.querySelector("#static-target")?.textContent;`,
+        args: []
+      }
+    );
+    if (result.value === "Nutzer") {
+      return;
+    }
+    await sleep(125);
+  }
+  throw new Error(
+    `designMode-Off ohne DOM-Ereignis wurde im echten ${browser}-Browser nicht erkannt.`
+  );
+}
+
 async function stopDriver(driverProcess) {
   if (driverProcess.exitCode !== null) {
     return;
@@ -386,6 +446,7 @@ try {
 
   const state = await waitForExpectedState(sessionId);
   await pruefeSpaeteShadowRoot(sessionId);
+  await pruefeEreignislosenDesignModeWechsel(sessionId);
   console.log(
     `Echter Browser-Smoke-Test erfolgreich: ${browser} ${JSON.stringify(state)}`
   );
