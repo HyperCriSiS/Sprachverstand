@@ -11,6 +11,11 @@ import {
 } from "./subtitles";
 import { transformTextWithSummary } from "./transform-text";
 import {
+  collectInlineProtection,
+  findInlineBoundary,
+  type InlineProtectionRange
+} from "./inline-protection";
+import {
   aggregateReplacementSummaries,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
@@ -109,6 +114,7 @@ export class DomProcessor {
   private observedShadowRoots = new WeakSet<ShadowRoot>();
   private readonly pendingNodes = new Set<Node>();
   private readonly contextDirtyNodes = new Set<Text>();
+  private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
@@ -151,6 +157,7 @@ export class DomProcessor {
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
+    this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
     const MutationObserverConstructor =
       this.document.defaultView?.MutationObserver ?? MutationObserver;
@@ -195,6 +202,7 @@ export class DomProcessor {
     this.subtitleTransformCache.clear();
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
+    this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
 
     if (options.restore) {
       this.restoreAll();
@@ -696,6 +704,7 @@ export class DomProcessor {
         }
         this.queue(node);
         this.invalidateFollowingContext(node);
+        this.invalidateInlineProtectionAround(node);
         continue;
       }
 
@@ -704,6 +713,7 @@ export class DomProcessor {
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
+            this.invalidateInlineProtectionAround(record.target);
             continue;
           }
           const tracked = this.attributeChanges
@@ -735,6 +745,7 @@ export class DomProcessor {
         // Bei DOM-Insertionen und Entfernen des linken Präfixes
         // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
         this.invalidateFollowingContext(record.target, record.nextSibling);
+        this.invalidateInlineProtectionAround(record.target);
       }
     }
   }
@@ -919,6 +930,99 @@ export class DomProcessor {
     }
   }
 
+
+  private requiresInlineProtection(): boolean {
+    return this.options.processQuotedText === false ||
+      (this.options.protectedTerms?.length ?? 0) > 0;
+  }
+
+  private invalidateInlineProtectionAround(node: Node): void {
+    if (!this.requiresInlineProtection()) {
+      return;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const invalidate = (text: Text): void => {
+      this.inlineProtectionCache.delete(text);
+      const tracked = this.textChanges.get(text);
+      if (tracked && text.data === tracked.transformed) {
+        this.contextDirtyNodes.add(text);
+      }
+    };
+
+    if (root.nodeType === Node.TEXT_NODE) {
+      invalidate(root as Text);
+    }
+    let current = walker.nextNode();
+    while (current) {
+      invalidate(current as Text);
+      current = walker.nextNode();
+    }
+    this.queue(root);
+  }
+
+  private getInlineProtectionRanges(
+    node: Text,
+    original: string
+  ): readonly InlineProtectionRange[] {
+    if (!this.requiresInlineProtection()) {
+      return [];
+    }
+    const cached = this.inlineProtectionCache.get(node);
+    if (cached) {
+      return cached;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const ranges = collectInlineProtection(
+      root,
+      blockBoundaryTags,
+      (text) => text === node
+        ? original
+        : this.textChanges.get(text)?.original ?? text.data,
+      this.options.protectedTerms ?? [],
+      this.options.processQuotedText === false
+    );
+    for (const [text, protectedRanges] of ranges) {
+      this.inlineProtectionCache.set(text, protectedRanges);
+    }
+    return ranges.get(node) ?? [];
+  }
+
+  private transformWithInlineProtection(
+    input: string,
+    ranges: readonly InlineProtectionRange[],
+    leadingContext?: string,
+    protectParticiple = false
+  ): ReturnType<typeof transformTextWithSummary> {
+    let cursor = 0;
+    let text = "";
+    let replacements = 0;
+    const summaries: ReplacementSummaryEntry[] = [];
+    const transformSegment = (end: number): void => {
+      if (end <= cursor) {
+        return;
+      }
+      const result = this.transformValue(
+        input.slice(cursor, end),
+        cursor === 0 ? leadingContext : undefined,
+        protectParticiple
+      );
+      text += result.text;
+      replacements += result.replacements;
+      summaries.push(...result.summaries);
+    };
+
+    for (const range of ranges) {
+      transformSegment(range.start);
+      text += input.slice(range.start, range.end);
+      cursor = range.end;
+    }
+    transformSegment(input.length);
+    return { text, replacements, summaries };
+  }
+
   private processTextNode(node: Text, subtitleOverride?: boolean): void {
     const contextDirty = this.contextDirtyNodes.delete(node);
     const tracked = this.textChanges.get(node);
@@ -958,13 +1062,21 @@ export class DomProcessor {
     const leadingContext = !subtitle && this.needsLeadingContext(original)
       ? this.collectLeadingContext(node)
       : undefined;
+    const protectedRanges = subtitle
+      ? []
+      : this.getInlineProtectionRanges(node, original);
+    const protectParticiple = !subtitle &&
+      this.shouldProtectFollowingParticiple(node, original);
     const result = subtitle
       ? this.transformSubtitleValue(original)
-      : this.transformValue(
-          original,
-          leadingContext,
-          this.shouldProtectFollowingParticiple(node, original)
-        );
+      : protectedRanges.length > 0
+        ? this.transformWithInlineProtection(
+            original,
+            protectedRanges,
+            leadingContext,
+            protectParticiple
+          )
+        : this.transformValue(original, leadingContext, protectParticiple);
     if (result.replacements === 0 || result.text === original) {
       if (originalFromContext !== undefined) {
         node.data = original;
