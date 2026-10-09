@@ -22,7 +22,18 @@ export function transformGenderedPlural(
 ): TransformResult {
   let replacements = 0;
 
-  const text = input.replace(pattern, (match: string, base: string) => {
+  const text = input.replace(pattern, (
+    match: string,
+    base: string,
+    offset: number,
+    original: string
+  ) => {
+    // Uneindeutige Mischformen aus Singularartikel und markiertem Plural
+    // vollständig erhalten, statt nur das Substantiv zu verändern.
+    const vorangestellt = original.slice(0, offset);
+    if (/(?:^|\s)(?:der|die|den|dem|des)[:*_/·•’‘](?:die|der|den|dem|des)\s+$/iu.test(vorangestellt)) {
+      return match;
+    }
     const replacement = mapBase(base);
 
     if (replacement === undefined) {

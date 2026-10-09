@@ -18,9 +18,43 @@ function mapDativePlural(base: string): string | undefined {
   return plural + (uppercase ? "N" : "n");
 }
 
-function transformMarkedDativePlural(input: string): TransformResult {
+// Aufzählungen werden nur bei eindeutigem Dativauslöser als Ganzes flexiert.
+const markedWord = String.raw`[\p{L}\p{M}’'-]+(?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n)`;
+const dativeEnumerationPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den)\s+)((?:${markedWord}[ \t]*,[ \t]*)+${markedWord}[ \t]+und[ \t]+${markedWord})(?![\p{L}\p{M}-])`,
+  "giu"
+);
+const markedWordPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)((?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n)`,
+  "giu"
+);
+const dativeLeadingContextPattern =
+  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
+const markedLeadingCandidate = new RegExp(String.raw`^\s*${markedWord}`, "iu");
+
+function transformDativeEnumeration(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
+    dativeEnumerationPattern,
+    (original: string, prefix: string, list: string) => {
+      const basen = [...list.matchAll(markedWordPattern)];
+      const flektiert = basen.map((match) => mapDativePlural(match[1] ?? ""));
+      if (basen.length < 3 || flektiert.some((wort) => wort === undefined)) {
+        return original;
+      }
+      let index = 0;
+      const ausgabe = list.replace(markedWordPattern, () => flektiert[index++] ?? "");
+      replacements += basen.length;
+      return prefix + ausgabe;
+    }
+  );
+  return { text, replacements };
+}
+
+function transformMarkedDativePlural(input: string): TransformResult {
+  const aufzählung = transformDativeEnumeration(input);
+  let replacements = aufzählung.replacements;
+  const text = aufzählung.text.replace(
     dativePhrasePattern,
     (
       original: string,
@@ -51,5 +85,14 @@ function transformMarkedDativePlural(input: string): TransformResult {
 export const markedDativePluralRule: Rule = {
   id: "plural.marked-dative-context",
   risk: "safe",
-  apply: transformMarkedDativePlural
+  apply: transformMarkedDativePlural,
+  leadingContextCandidate: markedLeadingCandidate,
+  applyWithLeadingContext(input, leadingContext) {
+    const auslöser = dativeLeadingContextPattern.exec(leadingContext)?.[1];
+    if (!auslöser) return transformMarkedDativePlural(input);
+
+    const result = transformMarkedDativePlural(auslöser + input);
+    if (!result.text.startsWith(auslöser)) return transformMarkedDativePlural(input);
+    return { text: result.text.slice(auslöser.length), replacements: result.replacements };
+  }
 };
