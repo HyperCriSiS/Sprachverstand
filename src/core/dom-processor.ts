@@ -7,7 +7,9 @@ import {
 import type { CustomReplacement } from "../settings/defaults";
 import {
   isSubtitleContainer,
-  isSubtitleContent
+  isSubtitleContent,
+  matchesSubtitleMarker,
+  subtitleClassifierAttributeNames
 } from "./subtitles";
 import { transformTextWithSummary } from "./transform-text";
 import {
@@ -107,6 +109,8 @@ const protectionAttributeNames = new Set([
   "role",
   "data-sprachverstand-ignore"
 ]);
+const subtitleClassificationAttributeSet =
+  new Set<string>(subtitleClassifierAttributeNames);
 
 export class DomProcessor {
   private observer: MutationObserver | undefined;
@@ -170,10 +174,11 @@ export class DomProcessor {
       characterData: true,
       subtree: true,
       attributes: true,
+      attributeOldValue: true,
       attributeFilter:
         this.options.processAccessibleAttributes !== false
-          ? [...accessibleAttributeNames, ...protectionAttributeNames]
-          : [...protectionAttributeNames]
+          ? [...accessibleAttributeNames, ...protectionAttributeNames, ...subtitleClassifierAttributeNames]
+          : [...protectionAttributeNames, ...subtitleClassifierAttributeNames]
     };
     this.observerOptions = observerOptions;
     this.observeMutationTarget(this.document.documentElement);
@@ -710,6 +715,34 @@ export class DomProcessor {
 
       if (record.type === "attributes") {
         if (record.target instanceof Element && record.attributeName) {
+          if (subtitleClassificationAttributeSet.has(record.attributeName)) {
+            const previous = this.attributeChanges
+              .get(record.target)?.get(record.attributeName);
+            if (
+              previous &&
+              record.target.getAttribute(record.attributeName) === previous.transformed
+            ) {
+              continue;
+            }
+            const relevant = isSubtitleContent(record.target) ||
+              matchesSubtitleMarker(record.attributeName, record.oldValue);
+            if (relevant) {
+              if (
+                this.options.processSubtitles !== true &&
+                isSubtitleContent(record.target)
+              ) {
+                // Bei erstmaligem Captionstatus eigene Altänderungen restaurieren.
+                this.forgetRoot(record.target);
+              } else {
+                this.queue(record.target);
+              }
+              this.invalidateInlineProtectionAround(record.target);
+              continue;
+            }
+            if (record.attributeName !== "aria-label") {
+              continue;
+            }
+          }
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
