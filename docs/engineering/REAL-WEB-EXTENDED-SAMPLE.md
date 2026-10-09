@@ -63,3 +63,26 @@ Umformung unmarkierter Begriffe.
 Neue Stichprobenklassen: **31** richtige Positivfälle, **1** offene
 grammatische Dativlücke, **24** unveränderte Negativfälle und
 **2** bereits beabsichtigte Partizipumformungen.
+
+## Kontextsichere substantivierte Partizipien (Issue #362)
+
+Die bestehende `salutation.participial-forms`-Regel wurde um enge
+Determiner- und Kasuskontexte ergänzt, ohne beliebige Wörter auf
+`-ende` zu erkennen. Beispiele: `die Studierenden → die Studenten`,
+`eine Studierende → eine Studentin`, `ein Studierender → ein Student`,
+`mit den Mitarbeitenden → mit den Mitarbeitern`. Kleingeschriebene
+Adjektive vor folgenden Personenwörtern bleiben unverändert. Die
+unaufgelöste Nominalgruppe `der Studierenden` sowie `den Mitarbeitenden`
+ohne weiteren Kontext werden bewusst nicht erzwungen.
+
+Die früher als unmarkierte Negativprobe gezählte Fundstelle
+`die Teilnehmenden` wird nun erwartungsgemäß zu `die Teilnehmer`
+normalisiert. Ihre **ID n04a bleibt nachvollziehbar erhalten**; sie
+gehört jetzt zu den dokumentierten gewünschten Partizipumformungen.
+Keine Stichprobe wurde weggelassen oder als unbelegter Erfolg umetikettiert.
+
+Aktueller Umfang derselben gezielt ausgewählten 58 Kurzproben:
+**31** richtige Positivnormalisierungen, **1** unverändert offene
+Dativlücke, **23** unverändert gebliebene Negativformen und **3**
+erwünschte Partizipumformungen. Diese Klassen sind weder eine
+repräsentative Webmessung noch eine allgemeine Genauigkeitsquote.
