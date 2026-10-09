@@ -1,32 +1,44 @@
 # Store-Produktionsfreigabe (Issue #331)
 
-Die GitHub-Umgebung `store-production` existiert bislang nicht. Der Workflow
-`store-publish.yml` verweigert deshalb eine echte Store-Einreichung, bis
-ein Repository-Administrator sie mit wirksamen Schutzregeln konfiguriert.
+Sprachverstand ist ein Einzelentwickler-Projekt. Ein zweiter GitHub-Reviewer
+wird **nicht** erzwungen. Store-Uploads werden trotzdem niemals durch einen
+Tag, Push, Pull Request oder ein GitHub-Release ausgelöst, sondern nur durch
+die ausdrückliche manuelle Aktion `Store Publish` (`workflow_dispatch`).
 
-## Einmalige Einrichtung
+## Einmalige Einrichtung für einen Einzelentwickler
 
 1. GitHub → Sprachverstand → Settings → Environments → New environment:
-   `store-production` anlegen.
-2. `Required reviewers` aktivieren und zuerst versuchen, eine
-   vertrauenswürdige zweite Person direkt als Reviewer auszuwählen
-   (GitHub verlangt mindestens Lesezugriff). `Prevent self-review` aktivieren.
-   Stand 09.10.2026: Die Mitarbeiterliste enthält nur `HyperCriSiS`.
-   Falls GitHub eine explizite Collaborator-Einladung verlangt, beachten:
-   Das Repository gehört einem **persönlichen GitHub-Konto**. Eingeladene
-   Collaborators erhalten dort auch **Schreibrechte**. Deshalb nur eine
-   Person einladen, der Du Codezugriff anvertrauen würdest. Für fein
-   abgestufte Rollen wäre ein Organisation-Repository nötig; ein Transfer
-   ist keine automatische Voraussetzung dieses Store-Gates.
+   `store-production` erstellen.
+2. **Keine Required Reviewers** aktivieren; vorhandene Required-Reviewer-Regeln
+   entfernen. Ein zweiter Account oder Collaborator ist nicht erforderlich.
 3. `Allow administrators to bypass configured protection rules` deaktivieren.
-   Unter `Deployment branches` nur geschützte Branches erlauben.
-4. In `store-production` die unten benannten Environment-Secrets und
-   Environment-Variablen einrichten. AMO-Zugang und Google-OIDC/
-   Workload-Identity zuerst in ihren jeweiligen Entwicklerkonten herstellen.
-   Geheimnisse niemals in Issues, Chat oder CI-Ausgaben kopieren.
-5. Vor `Store Publish` eine gesonderte Release-Freigabe erteilen.
-   Für `submit` sind ein stabiler Tag, Ziel, die exakte Bestätigungsphrase
-   `STORE-SUBMIT:<Tag>:<Ziel>` und eine GitHub-Reviewer-Freigabe nötig.
+   Unter `Deployment branches` **Protected branches only** einstellen
+   (das bestehende `main`-Ruleset schützt `main`).
+4. In `store-production` die unten genannten Secrets und Variablen hinterlegen.
+   Für AMO beziehungsweise Google zuerst die jeweiligen Entwicklerzugänge
+   konfigurieren, aber keine Geheimnisse in Logs, Issues oder Chat veröffentlichen.
+5. Den ausschließlich lesenden manuellen Workflow
+   **Store-Produktionsschutz prüfen** auf `main` erfolgreich ausführen.
+
+## Strikte Freigabetrennung
+
+- **Git-Tag**: Der bestehende `release.yml` kann einen öffentlichen
+  **GitHub-Release mit ZIP/XPI-Archiven** automatisch erstellen. Das ist **kein**
+  Store-Upload.
+- **Store Publish**: besitzt ausschließlich `workflow_dispatch`, standardmäßig
+  `mode: validate`. Es gibt **keinen** automatischen Store-Publisher bei Tags.
+- **Store submit**: Nur manuell auf dem geschützten `main`, durch den
+  Repository-Eigentümer selbst gestartet. Zusätzliche Prüfungen: stabiles
+  Tag, Ziel `amo`/`chrome`/`both`, exakte Bestätigung
+  `STORE-SUBMIT:<Tag>:<Ziel>`, vollständige Release-Artefakte mit SHA-256
+  und erneut validiertes `store-production` ohne Reviewer-Zwang.
+- `submit` greift nach diesen Prüfungen auf die erforderlichen
+  AMO-/Google-Zugangsdaten zu. Diese Aktion kann **wirklich veröffentlichen**.
+  Deswegen nie ohne zusätzliche ausdrückliche Produktfreigabe auslösen.
+- Kein GitHub-Reviewer-Approval-Dialog notwendig; GitHubs optionales
+  Reviewergate ist in dieser Einzelentwickler-Konfiguration bewusst aus.
+- Die geforderte Einmal-Bestätigungsphrase ist keine zweite unabhängige Person
+  und kein Ersatz für den Schutz Deines GitHub-Kontos.
 
 ## Konkret einzutragende Werte
 
@@ -49,14 +61,16 @@ Für Google: Chrome Web Store API V2 im Cloud-Projekt aktivieren, das Dienstkont
 
 Nach dem Anlegen der Umgebung GitHub → Actions → **Store-Produktionsschutz prüfen** → **Run workflow** auf `main` starten. Der manuelle Workflow führt ausschließlich eine API-Leseabfrage der Environment-Einstellungen und den bestehenden Fail-Closed-Validator aus. Es werden weder Store-Secrets geladen noch Tags, GitHub-Releases oder Store-Uploads ausgeführt.
 
-Die technische Leseberechtigung dafür ist `actions: read`. Der tatsächliche Zugang zu AMO und Google kann damit ausdrücklich **nicht** nachgewiesen werden. Fehlender zweiter Reviewer, falsche Variablen und Berechtigungen müssen vor einem echten `submit` gesondert ausgeschlossen werden.
+Die technische Leseberechtigung dafür ist `actions: read`. Der tatsächliche Zugang zu AMO und Google kann damit ausdrücklich **nicht** nachgewiesen werden. Fehlende Zugangsdaten oder Berechtigungen bleiben vor `submit` gesondert zu prüfen.
 
 ## Technische Schutzgrenzen
 
 - Schon im Vorbereitungsjob fragt `submit` die GitHub-REST-API ab. Fehlende,
   nicht lesbare oder ungeschützte Umgebungen blockieren die Einreichung.
-- Mindestens ein Required Reviewer, Selbstfreigabeverbot, abgeschalteter
-  Admin-Bypass und Beschränkung auf geschützte Branches sind Pflicht.
+- **Keine Required Reviewer**, abgeschalteter Admin-Bypass und
+  Beschränkung auf geschützte Branches sind für den Einzelentwickler-Modus Pflicht.
+- Nur der Repository-Eigentümer darf den `submit`-Workflow starten
+  beziehungsweise wiederholen, auch mit exakt passender Bestätigungsphrase.
 - Beide Publisherjobs kontrollieren die Umgebung nach der GitHub-Freigabe
   unmittelbar vor dem Zugriff auf AMO-Secrets beziehungsweise Google-OIDC.
 - `mode: validate` und der manuelle Release-Preflight bleiben unabhängig
@@ -73,15 +87,12 @@ https://addons.mozilla.org/de/developers/addon/api/key/,
 https://developer.chrome.com/docs/webstore/service-accounts,
 https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines.
 
-## Reviewer-Rechte und Kontomodell
+## Betrieb ohne zweiten Account
 
-Im persönlichen GitHub-Repository gibt es nur Eigentümer und Collaborator
-als Rollen. Eine Collaborator-Einladung ist keine reine Lesefreigabe;
-sie kann das Schreiben in das Repository ermöglichen. Der `main`-Schutz
-bleibt zwar wirksam, aber andere Branches und Repository-Aktionen sind
-nicht automatisch schreibgeschützt. Den Reviewer daher nicht allein für
-die formale Freigabe an einen unbekannten Account delegieren. Prüfe zuerst,
-ob GitHub die gewünschte Person beim Environment direkt akzeptiert.
+In einem persönlichen GitHub-Repository würde eine Collaborator-Einladung
+auch Schreibrechte ermöglichen. Deshalb bleibt das Repository bewusst
+ein Einzelentwickler-Projekt ohne künstlich eingeladenen Reviewer.
 
-GitHub-Dokumentation:
-https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/repository-access-and-collaboration/permission-levels-for-a-personal-account-repository
+Das manuelle Store-Gate ist eine Sicherheitsentscheidung für **dieses Projekt**:
+GitHub-Konto mit Passkey/2FA schützen und die `submit`-Bestätigung nur für
+die wirklich beabsichtigte Store-Veröffentlichung geben.

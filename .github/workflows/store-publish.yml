@@ -85,6 +85,12 @@ jobs:
           VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
 
           if [[ "$MODE" == "submit" ]]; then
+            # Nur der Repository-Eigentümer darf eine echte Einreichung anstoßen oder erneut starten.
+            OWNER="${GITHUB_REPOSITORY%%/*}"
+            if [[ "$GITHUB_ACTOR" != "$OWNER" || "$GITHUB_TRIGGERING_ACTOR" != "$OWNER" ]]; then
+              echo "Store-Einreichung ausschließlich durch den Repository-Eigentümer erlaubt."
+              exit 1
+            fi
             EXPECTED_APPROVAL="STORE-SUBMIT:${TAG}:${TARGET}"
             if [[ "$APPROVAL" != "$EXPECTED_APPROVAL" ]]; then
               echo "Keine explizite Store-Freigabe für genau diesen Tag und dieses Ziel."
