@@ -8,6 +8,8 @@ describe("Markierter Dativplural mit eindeutigem Kontext", () => {
     ["mit erfahrenen Forscher*innen","mit erfahrenen Forschern"],
     ["den Forscher*innen und Expert*innen des Instituts","den Forschern und Experten des Instituts"],
     ["mit den Betreuer*innen","mit den Betreuern"],
+    ["Wir sprechen mit persönlichen Betreuer:innen.", "Wir sprechen mit persönlichen Betreuern."],
+    ["Nach den persönlichen Betreuer:innen wurde gefragt.", "Nach den persönlichen Betreuern wurde gefragt."],
     ["bei den Ärzt:innen","bei den Ärzten"],
     ["von den Gäst:innen","von den Gästen"],
     ["zu den Mitarbeiter*innen","zu den Mitarbeitern"],
@@ -24,6 +26,9 @@ describe("Markierter Dativplural mit eindeutigem Kontext", () => {
   it.each([
     ["die Forscher*innen","die Forscher"],
     ["für die Betreuer:innen","für die Betreuer"],
+    ["Die persönlichen Betreuer:innen sprechen.", "Die persönlichen Betreuer sprechen."],
+    ["Wir begrüßen die persönlichen Betreuer:innen.", "Wir begrüßen die persönlichen Betreuer."],
+    ["persönlichen Betreuer:innen", "persönlichen Betreuer"],
     ["Forscher*innen arbeiten","Forscher arbeiten"],
     ["mit General:innen","mit General:innen"],
     ["den Stallknecht:innen","den Stallknecht:innen"],

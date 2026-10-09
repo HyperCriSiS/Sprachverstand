@@ -65,11 +65,9 @@ const negative = [
   ["n14a","Software AnyDesk"]
 ] as const;
 
-// Echte grammatische Lücken: Ziel bleibt annotiert, Istwert separat dokumentiert.
-const bekannteDativLuecken = [
-
-
-
+// Der isolierte Originalbeleg enthält keinen eindeutigen Kasusauslöser.
+// Die Dativform ist in einem passenden Satzkontext korrekt, hier aber nicht sicher ableitbar.
+const kontextarmeKasusFaelle = [
   ["p13b","persönlichen Betreuer:innen","persönlichen Betreuern","persönlichen Betreuer"],
 ] as const;
 
@@ -98,9 +96,9 @@ describe("Erweiterte Real-Web-Stichprobe: beobachtete Negativfälle", () => {
   });
 });
 
-describe("Offene grammatische und richtlinienbedingte Fälle", () => {
-  it.each(bekannteDativLuecken)(
-    "%s: Dativplural benötigt zusätzliche Flexion",
+describe("Mehrdeutige Kasusfragmente und richtlinienbedingte Fälle", () => {
+  it.each(kontextarmeKasusFaelle)(
+    "%s: ohne Kasuskontext keine sichere Dativflexion",
     (_id, eingabe, grammatischesZiel, bisherigeAusgabe) => {
       const ausgabe = prüfe(eingabe);
       expect(ausgabe.text).toBe(bisherigeAusgabe);
@@ -133,14 +131,14 @@ describe("Messgrenzen: getrennte Zähler und reproduzierbarer Umfang", () => {
 
     expect(richtigePositivfälle).toBe(positive.length);
     expect(ungewollteÄnderungen).toBe(0);
-    expect(bekannteDativLuecken).toHaveLength(1);
+    expect(kontextarmeKasusFaelle).toHaveLength(1);
     expect(richtlinienUmformungen).toHaveLength(3);
     expect(positive.length + negative.length +
-      bekannteDativLuecken.length + richtlinienUmformungen.length).toBe(58);
+      kontextarmeKasusFaelle.length + richtlinienUmformungen.length).toBe(58);
     console.info(
       `REAL-WEB-STICHPROBE profil=aggressive beobachtetePositive=${positive.length} ` +
       `korrekt=${richtigePositivfälle} beobachteteNegative=${negative.length} ` +
-      `ungewollteAenderungen=${ungewollteÄnderungen} grammatischeLuecken=${bekannteDativLuecken.length} ` +
+      `ungewollteAenderungen=${ungewollteÄnderungen} mehrdeutigeKasusfragmente=${kontextarmeKasusFaelle.length} ` +
       `richtlinienUmformungen=${richtlinienUmformungen.length}`
     );
   });
