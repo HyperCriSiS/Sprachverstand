@@ -22,6 +22,21 @@ Store-Einreichungen zu erstellen. Pale Moon ist ausdrücklich nicht beteiligt.
 5. Ergebnisse stehen in der Job-Zusammenfassung. Die Pakete werden für 14 Tage
    als **CI-Artefakt** hinterlegt, nicht als öffentliche GitHub-Release-Assets.
 
+## Browser-Prüfgates bei einem echten modernen Release
+
+Der Workflow `release.yml` verlangt jetzt **vor der Paketierung und
+Veröffentlichung** zusätzlich dieselben Live-Prüfungen wie der
+nicht veröffentlichende Preflight: Chromium-Smoke-Test, Chromium-Video-/
+Untertitelregression und Firefox-Smoke-Test. Sie laufen nur für
+`PRODUCT_LINE=modern`; für Pale Moon bleibt die getrennte ältere
+Release-Prozedur unverändert.
+
+Ein späterer Tag-Release muss diese Prüfungen **erneut auf dem tatsächlich
+ausgecheckten Release-Commit** bestehen. Ein früher grüner Preflight allein
+ist kein Ersatz. Ein fehlgeschlagener Browser- oder Videotest verhindert
+die nachfolgenden Schritte zur Paketerstellung und Veröffentlichung.
+Diese Änderung autorisiert keine Tags oder Store-Einreichungen.
+
 ## Freigabegrenzen
 
 - Ein grüner Preflight autorisiert **keine Veröffentlichung**.
