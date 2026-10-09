@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `91922cdf491a3075573cdf036113d1c054fbae7b`
-- Abgeschlossene Lexikon-Ausbauwellen: **91**
+- Aktueller Produktbaseline-Commit: `c91b761754319bd51337ffbce9f367219695ae78`
+- Abgeschlossene Lexikon-Ausbauwellen: **92**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -390,3 +390,11 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - **PR #354 vollständig grün:** Kernprüfung (9.700+ Tests), Performance, Chromium, Gecko/Firefox, CodeQL und Sammelcheck. Nach-Merge-`main`-CI separat bestätigen.
 - Die fünf GitHub-Restmarker sind in dieser konkreten Live-Stichprobe **erwartete geschützte Beispiele, keine übersehenen Korrekturen**. Keine Repräsentativität für andere Webseiten, keine allgemeine False-Negative-/Precision-Quote. Keine Lexikonwelle, keine generische Suffixfreigabe, keine Rohdaten oder Quell-URLs im Produkt.
 - **Fortsetzung:** unabhängig annotierte Positiv-/Negativ-Realtexte erweitern; anschließend moderne Browser-Releases vorbereiten. Store-Production-Environment/Review-Rechte (Issue #331) bleiben Admin-/Freigabeblocker. Keine Store-Einreichung, Tags oder Pale-Moon-Arbeit in dieser Einheit.
+
+## ESCO 1.2.1 – erweiterter Mehrwort-Label-Audit und Lexikonwelle 92 (09.10.2026)
+
+- **PR #356 / Merge `c91b761754319bd51337ffbce9f367219695ae78`:** 276 zusätzliche exakte Personenbasen in vier Flexionsklassen (215 unveränderte Plurale, 24 auf `-e`, 14 auf `-en`, 23 schwache Deklinationen) mit Positiv-, Singular-, Genitiv-, Plural-, Paar- und Negativregressionen. Zehn eigenständig formulierte Mehrwortsätze prüfen, dass der Satzkontext erhalten bleibt.
+- Vollständige PR-CI einschließlich Kernprüfung, Performance, Chromium samt Video, Gecko, CodeQL und Gesamtcheck erfolgreich. Post-Merge-`main`-CI folgt getrennt.
+- Das bereits vorliegende offizielle deutsche **ESCO-1.2.1-Classification-ZIP** (18 CSV-Dateien, 3.043 Berufe, 16.136 alternative Labelzeilen) wurde zusätzlich über bevorzugte **mehrteilige** Berufslabels und deren Alternativlabels untersucht: 375 mögliche bisher nicht aus direkten Paaren gewonnene Wortkopf-Kandidaten; 93 bereits wortwörtlich im geprüften Code-Snapshot, 276 ausdrücklich in Welle 92 aufgenommen, **6 bewusst zurückgestellt** (zwei auffällige Schreibweisen, `vormund` und drei numerische 3D-Komposita mit nicht unterstütztem Markerpfad). Vorherige Ausnahmen `General:innen` und `Stallknecht:innen` bleiben bestehen.
+- Methodische Grenze: Wortkopf-Erkennung ist **keine** grammatisch vollständige Umformung beliebiger Berufsphrasen; 251 bevorzugte nichtslash-getrennte Bezeichnungen und komplexe andere Paarungsstrukturen können nicht ungeprüft als Gender-Marker-Regeln übernommen werden. Ein genauer historischer deutscher Wort-für-Wort-Versionsvergleich 1.2.0→1.2.1 wurde mangels vollständigem 1.2.0-Paket bzw. Delta-Datei nicht durchgeführt. Kein neuer Download dafür angefordert.
+- Quellenrohtexte und detaillierter Quellenabgleich bleiben privat unter `HyperCriSiS/Generic-Datastore`. Keine neuen GENDERATOR-Abrufe. Weitere Quellen nur mit konkreter neuer Evidenz; anschließend moderne Browser-Releases. Store-Freigabe (Issue #331) weiterhin Admin-Aufgabe, Pale Moon zuletzt. Keine Tags oder Store-Einreichungen.
