@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(".github/workflows/store-publish.yml", "utf8");
+const audit = readFileSync(".github/workflows/store-production-audit.yml", "utf8");
 const tool = "scripts/verify-store-production-environment.mjs";
 const valid = { name: "store-production", can_admins_bypass: false,
   protection_rules: [{ type: "required_reviewers", prevent_self_review: true,
@@ -45,5 +46,24 @@ describe("Store-Produktionsschutz", () => {
     expect(workflow).toContain("environment: store-production");
     expect(workflow).toContain("STORE-SUBMIT:${TAG}:${TARGET}");
     expect(workflow).toContain('"validate"');
+  });
+  it("gewährt dem Store-Workflow nur die notwendige Leseberechtigung für GitHub-Umgebungen", () => {
+    expect(workflow).toContain("permissions:\n  actions: read\n  contents: read");
+    expect(workflow).toContain(
+      "    permissions:\n      actions: read\n      contents: read\n      id-token: write"
+    );
+  });
+
+  it("bietet einen manuellen, nicht veröffentlichenden Umgebungs-Audit ohne Secrets", () => {
+    expect(audit).toContain("workflow_dispatch:");
+    expect(audit).toContain("permissions:\n  actions: read\n  contents: read");
+    expect(audit).toContain('refs/heads/main');
+    expect(audit).toContain('gh api "repos/${GITHUB_REPOSITORY}/environments/store-production"');
+    expect(audit).toContain("node scripts/verify-store-production-environment.mjs");
+    expect(audit).not.toContain("environment: store-production");
+    expect(audit).not.toContain("secrets.");
+    expect(audit).not.toContain("id-token: write");
+    expect(audit).not.toContain("gh release ");
+    expect(audit).not.toContain("Store Publish");
   });
 });

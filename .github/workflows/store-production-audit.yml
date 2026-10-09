@@ -1,0 +1,47 @@
+name: Store-Produktionsschutz prüfen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  pruefen:
+    name: Produktionsumgebung ohne Veröffentlichung prüfen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Prüfung ausschließlich auf main zulassen
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$WORKFLOW_REF" != "refs/heads/main" ]]; then
+            echo "Der Store-Umgebungscheck darf nur auf main laufen."
+            exit 1
+          fi
+
+      - name: Prüfskript aus main auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+
+      - name: GitHub-Umgebung lesen und Schutzregeln validieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/environments/store-production" |
+            node scripts/verify-store-production-environment.mjs
+          {
+            echo "## Geschützter Store-Zugang"
+            echo ""
+            echo "- Die Umgebung \`store-production\` existiert und erfüllt die geprüften Schutzregeln."
+            echo "- Keine Store-Zugangsdaten gelesen und keine Veröffentlichungen ausgelöst."
+            echo "- API-Credentials, Reviewer-Zugriff und Store-Konten müssen unabhängig geprüft werden."
+          } >> "$GITHUB_STEP_SUMMARY"
