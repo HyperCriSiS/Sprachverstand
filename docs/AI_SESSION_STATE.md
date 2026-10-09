@@ -6,8 +6,8 @@ Autorität: `main`
 ## Kanonischer Produktstand
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller Produktbaseline-Commit: `d7ea0d9565cc160417371d4455917a4971acc75c`
-- Abgeschlossene Lexikon-Ausbauwellen: **90**
+- Aktueller Produktbaseline-Commit: `5592de5f3cac5a2085f62ba6053da78d3f466b17`
+- Abgeschlossene Lexikon-Ausbauwellen: **91**
 - Welle 77 / PR #288: 17 geprüfte ESCO-Exaktmappings
 - Welle 78 / PR #289: 155 geprüfte Wikidata-Exaktmappings
 - Welle 79 / PR #290: 189 geprüfte Wikidata-Exaktmappings; 6 verworfen
@@ -358,3 +358,10 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - 336 positive Plural-, Singular-, Kasus- und Paarprüfungen sowie gezielte Negativtests; Kernprüfung, Performance, Chromium, Gecko, CodeQL und Sammelcheck auf PR #346 vollständig grün.
 - Herkunfts- und Kandidatenbewertungen bleiben ausschließlich im privaten Datenbestand; Produktcode enthält nur freigegebene exakte Formen.
 - Nachgelagerte `main`-CI gesondert überprüfen. Weitere Sonderfälle nur nach konkreter Flexionsprüfung integrieren. Moderne Releases weiter priorisieren.
+
+## Lexikonwelle 91 – 09.10.2026
+
+- **PR #348 / Merge `5592de5f3cac5a2085f62ba6053da78d3f466b17`:** 20 explizite, geprüfte Sonderflexionen mit positivem Plural-/Kasus-/Paartest und negativen Sicherheitstests integriert.
+- Bereits vorhandene Ausschlussregressionen für `General:innen` (Wellen 13 und 81) bleiben unverändert; `General` wurde nach Regressionstreffer nicht freigegeben. `Stallknecht` bleibt ebenfalls für zusätzliche morphologisch-semantische Prüfung zurückgestellt.
+- Vollständige PR-Pflichtprüfungen einschließlich Kernprüfung, Performance, Chromium, Gecko, CodeQL und Sammelcheck erfolgreich. Nach-Merge-`main`-CI separat prüfen.
+- **Nächste Arbeitseinheit:** echte Textbeispiele und unabhängige Negativkorpora für Fehlkorrekturen prüfen. Die ESCO-Einzelwort-Abdeckung ist nicht mit einer allgemeinen Realtext-Erkennungs- oder Präzisionsquote gleichzusetzen.
