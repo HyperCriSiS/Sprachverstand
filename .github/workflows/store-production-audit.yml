@@ -43,5 +43,5 @@ jobs:
             echo ""
             echo "- Die Umgebung \`store-production\` existiert und erfüllt die geprüften Schutzregeln."
             echo "- Keine Store-Zugangsdaten gelesen und keine Veröffentlichungen ausgelöst."
-            echo "- API-Credentials, Reviewer-Zugriff und Store-Konten müssen unabhängig geprüft werden."
+            echo "- API-Credentials und Store-Konten müssen unabhängig geprüft werden."
           } >> "$GITHUB_STEP_SUMMARY"

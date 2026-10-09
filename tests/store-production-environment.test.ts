@@ -6,8 +6,7 @@ const workflow = readFileSync(".github/workflows/store-publish.yml", "utf8");
 const audit = readFileSync(".github/workflows/store-production-audit.yml", "utf8");
 const tool = "scripts/verify-store-production-environment.mjs";
 const valid = { name: "store-production", can_admins_bypass: false,
-  protection_rules: [{ type: "required_reviewers", prevent_self_review: true,
-    reviewers: [{ type: "User", reviewer: { id: 42 } }] }],
+  protection_rules: [],
   deployment_branch_policy: { protected_branches: true, custom_branch_policies: false }
 };
 function check(value: unknown) {
@@ -16,18 +15,17 @@ function check(value: unknown) {
   });
 }
 describe("Store-Produktionsschutz", () => {
-  it("lässt korrekt geschützte Umgebungen zu", () => {
+  it("lässt eine geschützte Umgebung ohne zweiten Reviewer zu", () => {
     expect(check(valid).status).toBe(0);
   });
   it.each([
     ["anderer Name", { ...valid, name: "copilot" }],
-    ["keine Regeln", { ...valid, protection_rules: [] }],
-    ["kein Reviewer", { ...valid, protection_rules: [{
-      type: "required_reviewers", prevent_self_review: true, reviewers: []
-    }] }],
-    ["Selbstfreigabe", { ...valid, protection_rules: [{
-      type: "required_reviewers", prevent_self_review: false,
+    ["erzwungener zweiter Reviewer", { ...valid, protection_rules: [{
+      type: "required_reviewers", prevent_self_review: true,
       reviewers: [{ type: "User", reviewer: { id: 42 } }]
+    }] }],
+    ["leere Reviewer-Regel", { ...valid, protection_rules: [{
+      type: "required_reviewers", prevent_self_review: false, reviewers: []
     }] }],
     ["Admin-Bypass", { ...valid, can_admins_bypass: true }],
     ["ungeschützte Branches", { ...valid, deployment_branch_policy: {
@@ -45,6 +43,9 @@ describe("Store-Produktionsschutz", () => {
     expect(workflow).toContain("if: ${{ inputs.mode == 'submit' }}");
     expect(workflow).toContain("environment: store-production");
     expect(workflow).toContain("STORE-SUBMIT:${TAG}:${TARGET}");
+    expect(workflow).toContain('"$GITHUB_ACTOR" != "$OWNER"');
+    expect(workflow).toContain('"$GITHUB_TRIGGERING_ACTOR" != "$OWNER"');
+    expect(workflow).toContain('"refs/heads/main"');
     expect(workflow).toContain('"validate"');
   });
   it("gewährt dem Store-Workflow nur die notwendige Leseberechtigung für GitHub-Umgebungen", () => {
@@ -65,5 +66,6 @@ describe("Store-Produktionsschutz", () => {
     expect(audit).not.toContain("id-token: write");
     expect(audit).not.toContain("gh release ");
     expect(audit).not.toContain("Store Publish");
+    expect(audit).not.toContain("push:");
   });
 });

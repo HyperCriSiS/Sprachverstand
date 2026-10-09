@@ -448,3 +448,9 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 
 - Nach PR #369 wurde eine Berechtigungsgrenze der GitHub-Personenrepositories ergänzt: Eine Collaborator-Einladung an `HyperCriSiS/Sprachverstand` kann Schreibrechte gewähren. Zuerst im öffentlichen Repository die Person direkt als Required Reviewer zu wählen versuchen; falls das nicht möglich ist, nur bewusst einem vertrauenswürdigen Collaborator Zugriff geben oder eine eigenständig entschiedene Organisationsmigration erwägen.
 - Die Anforderung an eine zweite unabhängige Deployment-Freigabe und das vorhandene fail-closed Produktgate bleiben unverändert. Keine Admin- oder Store-Aktion ausgelöst.
+
+## Manuelle Store-Freigabe ohne zweiten Reviewer – 09.10.2026
+
+- Nutzerpräferenz: Einzelentwickler `HyperCriSiS`, keine zweite Person zur GitHub-Freigabe, **kein automatischer Store-Upload bei Git-Tags**. `release.yml` behält die automatische GitHub-Release-Paketerstellung; `store-publish.yml` bleibt ausschließlich `workflow_dispatch`, mit `validate` als Standard und `submit` nur per exakter Tag-/Ziel-Phrase.
+- Anpassung des Gate-Validators für `store-production`: keine Required-Reviewer-Regel, kein Admin-Bypass, ausschließlich geschützte Branches; Umgebung muss existieren und vollständig lesbar sein. Zusätzliche `submit`-Kontrolle bindet Auslöser und Wiederauslöser an den Repository-Eigentümer. Das unterscheidet ausdrückliche Eigentümerfreigabe von einer früheren nicht erforderlichen Vieraugenregel.
+- Tests der positiven/negativen Environment-Regeln sowie des fehlenden `push`-Triggers bei Store-Publish ergänzt. Admin-Anleitung und read-only Audit aktualisiert. **Noch offen:** CI- und Merge-Bestätigung dieser Änderungen; tatsächliche Environment- und AMO-/Google-Einrichtung erfordert Adminzugriff. Kein Tag, Store-Submit oder GitHub-Release ausgelöst.

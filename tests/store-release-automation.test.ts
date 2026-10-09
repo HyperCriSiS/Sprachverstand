@@ -38,6 +38,16 @@ describe("Store-Release-Automatisierung", () => {
     }
   });
 
+  it("startet Store-Einreichungen nie durch neue Git-Tags", () => {
+    const trigger = storeWorkflow.slice(storeWorkflow.indexOf("on:"), storeWorkflow.indexOf("\npermissions:"));
+    expect(trigger).toContain("workflow_dispatch:");
+    expect(trigger).not.toContain("push:");
+    expect(trigger).not.toContain("release:");
+    expect(releaseWorkflow).toContain("push:");
+    expect(releaseWorkflow).toContain("tags:");
+    expect(storeWorkflow).toContain('default: "validate"');
+  });
+
   it("trennt Validierung von explizit freigegebener Store-Einreichung", () => {
     expect(storeWorkflow).toContain("mode:");
     expect(storeWorkflow).toContain('"validate"');
