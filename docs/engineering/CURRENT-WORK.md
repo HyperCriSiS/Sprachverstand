@@ -6,7 +6,7 @@ Autorität: `main`
 ## Produktbaseline
 
 - Öffentliches Repository: `HyperCriSiS/Sprachverstand`
-- Aktueller integrierter Produktstand: `64825443e03d2482c65823f3e60986e11a10dbd0`
+- Aktueller integrierter Produktstand: `351ed538697f56ae262a62206583acd427c7578b`
 - Abgeschlossene Lexikon-Ausbauwellen: **92**
 - Letzter integrierter Lexikon-PR: **#356 — 276 geprüfte Personenbasen als Welle 92 integrieren**
 - Welle 82 enthält 195 vollständig geprüfte Scribbr-Priority-2-Mappings; alle 195 wurden angenommen.
@@ -366,3 +366,12 @@ Privater KldB-/DKZ-Statusabgleich: `HyperCriSiS/Generic-Datastore` Commit `163ee
 - Anfangs fielen die vier Zieltext-/Kasusfälle und zwei fälschlich als Negativproben klassifizierte Partizipfälle durch. Die abschließende Revision bewahrt die tatsächlichen Resultate in **verschiedenen Testkategorien**. Vollständige PR-Kern-, Gecko-, Chromium-, Performance-, CodeQL- und Sammelchecks grün. Ein Chromium-Testlauf war wegen nicht gefundener Erweiterungs-Serviceworker-Zielseite fehlgeschlagen und bestand bei unverändertem Wiederholungslauf; Sicherheitsgrenzen wurden nicht gelockert.
 - **Keine repräsentative Webgenauigkeit:** zielgerichtete Stichprobe, mehrere Fundstellen vom selben Herausgeber; DOM-Schutz wird separat geprüft. Herkunfts-URLs und Abrufinformationen liegen nur im privaten Quellenbestand. Nach-Merge-`main`-CI separat prüfen.
 - **Fortsetzung:** Issue #359 anhand Dativ-/Akkusativ-Kontext und Mehrwortsatzgrenzen sorgfältig bearbeiten; dann moderne Chromium-/Firefox-Releases vorbereiten. Store-Production-Issue #331 ist weiterhin eine administrative Freigabehürde. Keine Tags, Store-Einreichung oder Pale-Moon-Arbeit in dieser Einheit.
+
+## Dativplural-Kontexte und substantivierte Partizipien – 09.10.2026
+
+- **Produkt-PR #361 / Squash-Merge `351ed538697f56ae262a62206583acd427c7578b`:** Enge neue Regel `plural.marked-dative-context` vor den gewöhnlichen Pluralregeln. Sie ergänzt für bereits lexikalisch bekannte, sichtbar markierte Pluralpersonenformen nach eindeutig dativischen Signalen (`mit`, `bei`, `von`, `zu`, `aus`, `nach`, `seit` und `den`) ein grammatisch erforderliches Dativ-`n`, soweit der bekannte Plural nicht schon `-n` oder `-s` trägt. Eine koordinierte Zweiergruppe wird gezielt unterstützt. Die Regel ist der vorhandenen sichtbaren Plural-Einstellungsgruppe zugeordnet; keine generische Wortendungs- oder unmarkierte Personenregel.
+- **Drei belegte Fehlkontexte behoben:** `mit erfahrenen Forscher*innen → mit erfahrenen Forschern`, `den Forscher*innen und Expert*innen → den Forschern und Experten`, `mit den Betreuer*innen → mit den Betreuern`. Die vierte Beobachtung `persönlichen Betreuer:innen` ohne ausreichenden linken Kasuskontext bleibt ausdrücklich als **offene grammatische Abweichung** in Test und **Issue #359**.
+- Die unabhängige, gezielte 58er-Webprobe enthält auf diesem Stand **31 richtige positive Normalisierungen, 1 offene Dativlücke, 24 unveränderte Negativfälle und 2 gewünschte Partizipumformungen**. Keine repräsentative Webpräzision oder generelle Fehlerquote ableiten. Bestehende Singular-, Schutzbereichs- und `General:innen`-/`Stallknecht:innen`-Regressionen bewahren.
+- Produkt-PR-Kernprüfung (10.000+ Tests), Performance, Gecko/Firefox, Chromium/Video und CodeQL nach korrigierter Regelreihenfolge vollständig grün. Nachgelagerte `main`-CI und CodeQL separat nachweisen.
+- **Folgearbeit aus Nutzerentscheidung:** Issue **#362** für eindeutige substantivierte Partizipien außerhalb der bisherigen Anrede-/Alleinstellung (`die Studierenden`, `ein Studierender`, `eine Studierende`). Gewöhnliche attributive Adjektive (`studierende Kinder`) und mehrdeutige Kasusformen schützen. Eigene eng begrenzte Regel- und Negativtests, keine pauschale `-ende`-Ersetzung.
+- Verbindliche Reihenfolge bleibt: sichere Sprachqualitätskorrekturen und moderne Browser-Release-Gates, Pale Moon zuletzt. Store-Environment **Issue #331** erfordert weiterhin Admin/Reviewer-Rechte; keine neue Release-/Tag-/Store-Aktion.
