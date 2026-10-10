@@ -106,6 +106,9 @@ const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
 const maximumPreviousInlineNodes = 64;
 
 const regularWorkBudgetMs = 4;
+// Dynamische Videountertitel erhalten nur kurze Arbeitsscheiben pro Frame.
+const subtitleWorkBudgetMs = 2;
+const maximumSubtitleStepsPerFrame = 12;
 const shadowDiscoveryIntervalMs = 1_500;
 const shadowDiscoveryBatchSize = 256;
 const shadowDiscoveryBudgetMs = 2;
@@ -136,6 +139,10 @@ export class DomProcessor {
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
+  private readonly pendingSubtitleRoots = new Set<Node>();
+  private activeSubtitleTraversal:
+    | { readonly root: Node; readonly walker: TreeWalker }
+    | undefined;
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private readonly textChanges = new Map<Text, ChangeRecord>();
   private readonly attributeChanges = new Map<
@@ -228,6 +235,8 @@ export class DomProcessor {
     this.pendingNodes.clear();
     this.contextDirtyNodes.clear();
     this.pendingSubtitleTextNodes.clear();
+    this.pendingSubtitleRoots.clear();
+    this.activeSubtitleTraversal = undefined;
     this.pendingAttributes.clear();
     this.cancelSubtitleFlush();
     this.subtitleTransformCache.clear();
@@ -334,18 +343,71 @@ export class DomProcessor {
     }
   }
 
-  private flushSubtitleNodes(): void {
+  private flushSubtitleNodes(budgeted = false): void {
     if (!this.running) {
       return;
     }
 
-    const nodes = [...this.pendingSubtitleTextNodes];
-    this.pendingSubtitleTextNodes.clear();
-
-    for (const node of nodes) {
-      if (node.isConnected && isSubtitleContent(node)) {
-        this.processTextNode(node, true);
+    // flush() bleibt ein expliziter synchroner Test-/Steuerungsaufruf.
+    // Automatische Frame-Callbacks erhalten dagegen eine harte Mengengrenze.
+    const deadline = budgeted ? this.now() + subtitleWorkBudgetMs : Infinity;
+    let steps = 0;
+    while (
+      this.running &&
+      (!budgeted ||
+        (steps < maximumSubtitleStepsPerFrame &&
+          (steps === 0 || this.now() < deadline)))
+    ) {
+      const node = this.pendingSubtitleTextNodes.values().next().value;
+      if (node) {
+        this.pendingSubtitleTextNodes.delete(node);
+        steps += 1;
+        if (node.isConnected && isSubtitleContent(node)) {
+          this.processTextNode(node, true);
+        }
+        continue;
       }
+
+      if (!this.activeSubtitleTraversal) {
+        const root = this.pendingSubtitleRoots.values().next().value;
+        if (!root) {
+          break;
+        }
+        this.pendingSubtitleRoots.delete(root);
+        steps += 1;
+        if (!this.isProcessableRoot(root)) {
+          continue;
+        }
+        const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+        this.activeSubtitleTraversal = {
+          root,
+          walker: this.document.createTreeWalker(root, filter.SHOW_TEXT)
+        };
+        continue;
+      }
+
+      const traversal = this.activeSubtitleTraversal;
+      if (!this.isProcessableRoot(traversal.root)) {
+        this.activeSubtitleTraversal = undefined;
+        steps += 1;
+        continue;
+      }
+      const next = traversal.walker.nextNode() as Text | null;
+      steps += 1;
+      if (!next) {
+        this.activeSubtitleTraversal = undefined;
+      } else if (next.isConnected && isSubtitleContent(next)) {
+        this.processTextNode(next, true);
+      }
+    }
+
+    if (
+      budgeted &&
+      (this.pendingSubtitleTextNodes.size > 0 ||
+        this.pendingSubtitleRoots.size > 0 ||
+        this.activeSubtitleTraversal)
+    ) {
+      this.scheduleSubtitleFlush();
     }
   }
 
@@ -433,23 +495,14 @@ export class DomProcessor {
   }
 
   private queueSubtitleTextNodes(root: Node): void {
+    // Im MutationObserver keinen vollständigen Caption-Unterbaum durchlaufen.
+    // Die Textsuche wird erst im budgetierten Frame-Callback fortgesetzt.
     if (root.nodeType === Node.TEXT_NODE) {
       this.pendingSubtitleTextNodes.add(root as Text);
-      this.scheduleSubtitleFlush();
-      return;
+    } else {
+      this.pendingSubtitleRoots.add(root);
     }
-
-    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
-    const walker = this.document.createTreeWalker(root, nodeFilter.SHOW_TEXT);
-    let currentNode = walker.nextNode();
-    while (currentNode) {
-      this.pendingSubtitleTextNodes.add(currentNode as Text);
-      currentNode = walker.nextNode();
-    }
-
-    if (this.pendingSubtitleTextNodes.size > 0) {
-      this.scheduleSubtitleFlush();
-    }
+    this.scheduleSubtitleFlush();
   }
 
   private queueAttribute(element: Element, attributeName: string): void {
@@ -695,7 +748,7 @@ export class DomProcessor {
       this.subtitleFlushHandle = view.requestAnimationFrame(() => {
         this.subtitleFlushHandle = undefined;
         this.subtitleFlushUsesAnimationFrame = false;
-        this.flushSubtitleNodes();
+        this.flushSubtitleNodes(true);
       });
       return;
     }
@@ -703,14 +756,15 @@ export class DomProcessor {
     this.subtitleFlushUsesAnimationFrame = false;
     this.subtitleFlushHandle = view?.setTimeout(() => {
       this.subtitleFlushHandle = undefined;
-      this.flushSubtitleNodes();
+      this.flushSubtitleNodes(true);
     }, 16) ?? window.setTimeout(() => {
       this.subtitleFlushHandle = undefined;
-      this.flushSubtitleNodes();
+      this.flushSubtitleNodes(true);
     }, 16);
   }
 
-  private cancelSubtitleFlush(): void {    if (this.subtitleFlushHandle === undefined) {
+  private cancelSubtitleFlush(): void {
+    if (this.subtitleFlushHandle === undefined) {
       return;
     }
 
@@ -998,7 +1052,6 @@ export class DomProcessor {
     const pending = new Set(nodes.filter((node) => this.isProcessableRoot(node)));
     return [...pending].filter((node) => !this.hasPendingAncestor(node, pending));
   }
-
   private isProcessableRoot(root: Node): boolean {
     if (root instanceof ShadowRoot) {
       return root.host.isConnected;
