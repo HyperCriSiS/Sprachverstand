@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createVerified60FpsWebm } from "../scripts/verified-60fps-media.mjs";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const original = readFileSync("scripts/video-playback-regression.mjs", "utf8");
 const workflow = readFileSync(".github/workflows/controlled-video-performance.yml", "utf8");
@@ -9,11 +9,19 @@ const mockMedia = Buffer.concat([header, Buffer.alloc(2000)]);
 
 describe("Manuelle lokale 60-FPS-Videodiagnose", () => {
   it("verifiziert die kodierte Framerate vor jedem Messlauf", () => {
-    const run = vi.fn((command: string) => command === "ffmpeg"
-      ? { status: 0, stdout: mockMedia }
-      : { status: 0, stdout: "60/1\n" });
+    const temporaryFiles: string[] = [];
+    const run = vi.fn((command: string, args: string[]) => {
+      if (command === "ffmpeg") return { status: 0, stdout: mockMedia };
+      const filename = args.at(-1);
+      expect(filename).toBeTruthy();
+      expect(readFileSync(filename!)).toEqual(mockMedia);
+      temporaryFiles.push(filename!);
+      return { status: 0, stdout: "60/1\n" };
+    });
     expect(createVerified60FpsWebm(run)).toEqual(mockMedia);
     expect(run).toHaveBeenCalledTimes(2);
+    expect(temporaryFiles).toHaveLength(1);
+    expect(existsSync(temporaryFiles[0]!)).toBe(false);
     expect(run.mock.calls[0]?.[0]).toBe("ffmpeg");
     expect(run.mock.calls[1]?.[0]).toBe("ffprobe");
   });
