@@ -226,6 +226,8 @@ async function browserlauf(url, modus) {
     await api("POST", "/session/" + id + "/url", { url });
     // Identisches warmes DOM vor Beginn der kontrollierten Last.
     await sleep(1_000);
+    const dynamicAtStart = await js(id,
+      'return document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0];');
     await js(id, "return window.__startSyntheticLoad(arguments[0]);", [dauerMs]);
     await sleep(250);
 
@@ -246,6 +248,22 @@ async function browserlauf(url, modus) {
     }
     if (!fertig) throw new Error("Synthetische Last nicht beendet.");
     await sleep(400);
+    const momentaufnahme = () => js(id,
+      'return document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0];');
+    const dynamicAt400Ms = await momentaufnahme();
+    const startDerNachprüfung = Date.now();
+    let dynamicAfterSettle = dynamicAt400Ms;
+    if (modus === "extension") {
+      // Verzögerte Verarbeitung ausdrücklich messen statt sofort als dauerhaften
+      // Erkennungsfehler zu klassifizieren. Timeout bleibt ein Funktionsfehler.
+      while (dynamicAfterSettle !== "Nutzer" &&
+             Date.now() - startDerNachprüfung < 3_500) {
+        await sleep(100);
+        dynamicAfterSettle = await momentaufnahme();
+      }
+    }
+    const dynamicSettleAfterMs = modus === "extension" ?
+      Date.now() - startDerNachprüfung : null;
 
     const details = await js(id, `
       const m = window.__perfMetrics;
@@ -280,7 +298,13 @@ async function browserlauf(url, modus) {
         inputNextFrameMs: percentile(m.inputFrameTimes)
       };
     `);
-    return { status: "ok", ...details };
+    return {
+      status: "ok", ...details,
+      dynamicAtStart, dynamicAt400Ms, dynamicAfterSettle,
+      dynamicCorrectedAt400Ms: modus === "extension" ?
+        dynamicAt400Ms === "Nutzer" : null,
+      dynamicSettleAfterMs
+    };
   } catch (error) {
     return { status: "error", error: String(error?.message ?? error) };
   } finally {
