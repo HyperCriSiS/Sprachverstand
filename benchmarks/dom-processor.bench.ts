@@ -152,8 +152,8 @@ afterAll(() => {
 });
 
 describe("DomProcessor Performance-Baseline", () => {
-  it("misst den vollständigen Initialscan mit 4.000 Textknoten", async () => {
-    const result = await measureScenario("initial-scan-4000", () => {
+  it("misst den explizit synchron abgeschlossenen Scan mit 4.000 Textknoten", async () => {
+    const result = await measureScenario("initial-scan-sync-flush-4000", () => {
       const ruleCounter = { value: 0 };
       const fragment = document.createDocumentFragment();
       for (let index = 0; index < 4_000; index += 1) {
@@ -171,6 +171,9 @@ describe("DomProcessor Performance-Baseline", () => {
       const rootCounter = instrumentRootCalls(processor);
       const startedAt = performance.now();
       processor.start();
+      // Der Produktstart ist auf großen Seiten absichtlich inkrementell.
+      // Für diesen historischen Durchsatztest den Abschluss explizit erzwingen.
+      processor.flush();
       const durationMs = performance.now() - startedAt;
       const replacements = processor.getReplacementCount();
       processor.stop();

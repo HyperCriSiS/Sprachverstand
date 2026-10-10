@@ -39,6 +39,8 @@ describe("DomProcessor Änderungsumfang", () => {
       profile: "conservative"
     });
     processor.start();
+    // Den großen Initialscan vor der gezielten Änderungsmessung abschließen.
+    processor.flush();
 
     ruleCalls = 0;
     const target = document.querySelectorAll("p")[500]?.firstChild as Text;
@@ -81,6 +83,8 @@ describe("DomProcessor Änderungsumfang", () => {
       profile: "conservative"
     });
     processor.start();
+    // Den großen Initialscan vor der gezielten Änderungsmessung abschließen.
+    processor.flush();
 
     ruleCalls = 0;
     const target = document.querySelectorAll("div")[500] as HTMLDivElement;
