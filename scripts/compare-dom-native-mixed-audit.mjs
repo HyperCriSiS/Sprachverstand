@@ -19,6 +19,7 @@ function validieren(bericht, bezeichnung) {
   }
   for (const durchlauf of bericht.passes) {
     if (durchlauf?.warmups !== 2 || durchlauf?.iterations !== 7 ||
+        durchlauf?.repetitionsPerSample !== 10 ||
         durchlauf.scenarios?.length !== groessen.length) {
       throw new Error(bezeichnung + ": falscher Messvertrag.");
     }
@@ -62,7 +63,7 @@ export function vergleichen(vorher, nachher) {
       " | " + a.toFixed(3) + " ms | " + b.toFixed(3) +
       " ms | " + (b / a).toFixed(3) + "× |");
   }
-  zeilen.push("", "Zwei gepaarte Messblöcke je Version, 7 Proben und 2 Warmups pro Block.",
+  zeilen.push("", "Zwei gepaarte Messblöcke je Version, 7 Proben und 2 Warmups pro Block; 10 Scans je Probe (arithmetisches Mittel).",
     "Reihenfolge Referenz/Aktuell/Aktuell/Referenz. Das separate 100-%-Stressprofil bleibt erhalten.", "");
   return zeilen.join("\n");
 }
