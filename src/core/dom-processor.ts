@@ -104,6 +104,7 @@ const leadingParticiplePattern =
 const followingInlineNounPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u;
 const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
 const maximumPreviousInlineNodes = 64;
+const inlineQuoteMarkerPattern = /["„“”‚‘«»‹›]/u;
 
 const regularWorkBudgetMs = 4;
 // Sehr kleine Startdokumente bleiben unmittelbar verfügbar. Große DOMs
@@ -895,6 +896,10 @@ export class DomProcessor {
         continue;
       }
 
+      // Das Ersetzen genau eines unzitierten Textknotens ändert weder
+      // die Quote-Paarung noch explizite Schutzbegriffe. Der neue Knoten
+      // wird bereits einzeln eingereiht; ein voller Inline-Rescan entfällt.
+      const simpleTextSwap = this.isSimpleInlineTextSwap(record);
       for (const removedNode of record.removedNodes) {
         // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
         // Andernfalls gingen sein Original und sein Korrekturzähler verloren.
@@ -911,7 +916,9 @@ export class DomProcessor {
         // Bei DOM-Insertionen und Entfernen des linken Präfixes
         // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
         this.invalidateFollowingContext(record.target, record.nextSibling);
-        this.invalidateInlineProtectionAround(record.target, invalidatedInlineRoots);
+        if (!simpleTextSwap) {
+          this.invalidateInlineProtectionAround(record.target, invalidatedInlineRoots);
+        }
       }
     }
   }
@@ -1285,6 +1292,23 @@ export class DomProcessor {
   private requiresInlineProtection(): boolean {
     return this.options.processQuotedText === false ||
       (this.options.protectedTerms?.length ?? 0) > 0;
+  }
+
+  private isSimpleInlineTextSwap(record: MutationRecord): boolean {
+    if ((this.options.protectedTerms?.length ?? 0) > 0 ||
+        record.type !== "childList" ||
+        record.removedNodes.length !== 1 ||
+        record.addedNodes.length !== 1) {
+      return false;
+    }
+    const removed = record.removedNodes.item(0);
+    const added = record.addedNodes.item(0);
+    if (removed?.nodeType !== Node.TEXT_NODE ||
+        added?.nodeType !== Node.TEXT_NODE) {
+      return false;
+    }
+    return !inlineQuoteMarkerPattern.test((removed as Text).data) &&
+      !inlineQuoteMarkerPattern.test((added as Text).data);
   }
 
   private invalidateInlineProtectionAround(
