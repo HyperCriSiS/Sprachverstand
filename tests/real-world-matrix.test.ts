@@ -77,8 +77,9 @@ describe("Real-World-Browsermatrix", () => {
   });
 
   it("erfasst Baseline und Erweiterung statt absolute Live-Grenzwerte zu erzwingen", () => {
-    expect(runner).toContain('runSiteMode(site, "baseline")');
-    expect(runner).toContain('runSiteMode(site, "extension")');
+    expect(runner).toContain('modes[mode] = await runSiteMode(site, mode, pairIndex)');
+    expect(runner).toContain('["baseline", "extension"]');
+    expect(runner).toContain('["extension", "baseline"]');
     expect(runner).toContain("elapsedDeltaMs");
     expect(runner).toContain("totalLongTaskDeltaMs");
     expect(runner).toContain("protectedBefore");

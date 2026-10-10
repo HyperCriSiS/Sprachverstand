@@ -59,6 +59,35 @@ Für jeden Lauf werden mindestens folgende Werte erfasst:
 Absolute Zeitgrenzen sind bei Live-Seiten ungeeignet. Für Leistungstests ist der
 Vergleich mit einem Lauf derselben Seite ohne Erweiterung aussagekräftiger.
 
+### Gepaarte Phasenmessung (10.10.2026)
+
+Der manuelle Workflow `Reale Webseiten` unterstützt optional `pairs=1..5`
+(`npm run test:real-world -- --site 9 --pairs 3`). Pro Paar werden
+frische Chromium-Sitzungen verglichen. Die Reihenfolge wechselt AB/BA;
+der Standard bleibt ein einziges Paar. Für mehrere Paare enthält der
+JSON-Report alle Einzelresultate samt Reihenfolge und Median der gültigen
+A/B-Paare. Fehlerhafte Paare zählen nicht zum Median und werden separat
+mitgezählt.
+
+Die Zeitmessung zerlegt die früher einzige Sitzungsdauer in
+**Browserstart**, WebDriver-Navigation, Observer-Einrichtung,
+Schutzbereichs-Snapshots, seitenbezogene Interaktion, optionale
+Playbacksynchronisierung, Beobachtungswartezeit, DOM-Diagnose und Screenshot.
+`visitDeltaMs` zieht nur den Browserstart von der Gesamtdauer ab und
+enthält weiterhin Beobachtungswartezeit, DOM-Diagnose sowie Screenshots.
+Daher sind weder Gesamtdauer noch `visitDeltaMs` reine
+Navigations- oder Core-DOM-Laufzeiten.
+
+Long Tasks werden ergänzend nach ihrem Startzeitpunkt vor beziehungsweise
+nach der Observer-Einrichtung aufgeteilt. `PerformanceObserver` verwendet
+gepufferte Einträge, soweit der Browser dies unterstützt; die Teilmengen
+sind **keine Kausalattribution** zu Sprachverstand. Öffentliche Webseiten,
+CDNs, Serverantworten und Runner-Auslastung sind nicht vollständig
+kontrolliert. Erst wiederholte, vergleichbar aufgebaute A/B-Reihen mit
+konsistenter Phasentrennung können einen belastbaren Fehlerverdacht
+begründen. Auch ein grüner Live-Report bleibt diagnostisch und ist keine
+Videofreigabe.
+
 ## Automatische echte Browser-Smoke-Tests
 
 Die Required-CI führt inzwischen für beide modernen Engine-Familien einen echten
