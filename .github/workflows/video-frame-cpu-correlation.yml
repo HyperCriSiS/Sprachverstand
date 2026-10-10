@@ -1,0 +1,51 @@
+name: Video-Frame-CPU-Korrelation
+
+on:
+  workflow_dispatch:
+    inputs:
+      pairs:
+        description: "Chromium A/B-Paare (1 bis 3)"
+        type: choice
+        options: ["1", "2", "3"]
+        default: "2"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  video-frame-cpu:
+    name: 60-FPS-Videoframe und V8-Samples korrelieren
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Abhängigkeiten installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Videoencoder installieren
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version
+          ffprobe -version
+      - name: Chromium-Erweiterung erstellen
+        run: npm run build:chromium
+      - name: CPU-Samples und reale Frame-Lücken vergleichen
+        env:
+          PAIRS: ${{ inputs.pairs }}
+        run: node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS"
+      - name: Profile und Messbericht archivieren
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: video-frame-cpu-${{ github.sha }}
+          path: artifacts/video-frame-cpu/
+          if-no-files-found: warn
+          retention-days: 14
