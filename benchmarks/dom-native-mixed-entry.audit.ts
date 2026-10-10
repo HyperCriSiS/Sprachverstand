@@ -52,6 +52,8 @@ function initialscan(anzahl: number) {
   });
   const anfang = performance.now();
   prozessor.start();
+  // Historische synthetische Durchsatzmessung: vollständig synchron abschließen.
+  prozessor.flush();
   const dauerMs = performance.now() - anfang;
   const ersetzungen = prozessor.getReplacementCount();
   const geschuetzt = code.textContent === "Nutzer:innen" &&

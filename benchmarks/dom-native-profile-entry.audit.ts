@@ -71,6 +71,8 @@ function measure(nodes: number) {
   const measured = instrument(processor);
   const start = performance.now();
   processor.start();
+  // Historischer Durchsatzscan: vollständigen Abschluss ausdrücklich erzwingen.
+  processor.flush();
   const duration = performance.now() - start;
   measured.restore();
   const replacements = processor.getReplacementCount();
