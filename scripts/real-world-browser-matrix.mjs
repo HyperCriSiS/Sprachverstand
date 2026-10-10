@@ -6,6 +6,7 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { compareProtectedRuns } from "./real-world-protected-state.mjs";
 import { classifyVisibleMarkerNodes } from "./live-marker-dom-classification.mjs";
+import { assessExternalVideoPlayback } from "./real-world-media-validation.mjs";
 
 const projectRoot = process.cwd();
 const configPath = path.join(projectRoot, "config", "real-world-sites.json");
@@ -688,24 +689,16 @@ async function runSiteMode(site, mode) {
     await installObservers(sessionId);
     const protectedBefore = await protectedState(sessionId);
     await exercisePage(sessionId, site);
-    const beforePlayback = site.slug === "videojs-player-demo"
+    const beforePlayback = site.slug === "videojs-player-demo" ||
+      site.slug === "youtube-big-buck-bunny"
       ? await execute(sessionId,
           'return Number(document.querySelector("video")?.currentTime || 0);')
       : undefined;
     await sleep(observationMs);
     const snapshot = await collectSnapshot(sessionId);
-    const mediaValidation = site.slug === "videojs-player-demo"
-      ? {
-          state: snapshot.videos.frameCallbacks >= 2 &&
-            Number.isFinite(snapshot.videos.currentTimeSeconds - beforePlayback) &&
-            snapshot.videos.currentTimeSeconds - beforePlayback >= 0.5
-            ? "measured" : "unavailable",
-          progressedSeconds: snapshot.videos.currentTimeSeconds - beforePlayback,
-          frameCallbacks: snapshot.videos.frameCallbacks,
-          textTracks: snapshot.videos.textTrackCount,
-          showingTextTracks: snapshot.videos.showingTextTrackCount
-        }
-      : undefined;
+    const mediaValidation = assessExternalVideoPlayback(
+      site.slug, snapshot.videos, beforePlayback
+    );
     if (mediaValidation?.state === "unavailable") {
       console.log("::warning title=Externes Videoplayback nicht messbar::" +
         site.slug + ": keine nachweisbare Wiedergabe. DOM-Ergebnis separat.");

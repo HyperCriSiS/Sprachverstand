@@ -152,6 +152,12 @@ jobs:
             const extensionVideos = extension.snapshot?.videos || {};
             const videoElements = `${baselineVideos.count ?? "–"}/${extensionVideos.count ?? "–"}`;
             const videoFrames = `${baselineVideos.frameCallbacks ?? "–"}/${extensionVideos.frameCallbacks ?? "–"}`;
+            // Ohne belegte Frames in beiden Sitzungen kein Live-Video-Nachweis.
+            const externalVideoSite = result.slug === "videojs-player-demo" ||
+              result.slug === "youtube-big-buck-bunny";
+            const videoMeasured = !externalVideoSite ? "n/a" :
+              baseline.mediaValidation?.state === "measured" &&
+              extension.mediaValidation?.state === "measured" ? "yes" : "no";
             const videoLongGapDelta = Number.isFinite(comparison.videoLongGapDelta)
               ? String(comparison.videoLongGapDelta)
               : "–";
@@ -173,7 +179,7 @@ jobs:
                 `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
                 `videoElements=${videoElements}`,
                 `videoFrames=${videoFrames}`,
-                `videoMeasured=${baseline.mediaValidation?.state === "unavailable" || extension.mediaValidation?.state === "unavailable" ? "no" : "yes"}`,
+                `videoMeasured=${videoMeasured}`,
                 `videoFrameDelta=${comparison.videoFrameDelta ?? "n/a"}`,
                 `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
                 `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,
