@@ -265,6 +265,59 @@ async function browserlauf(url, modus) {
     const dynamicSettleAfterMs = modus === "extension" ?
       Date.now() - startDerNachprüfung : null;
 
+    // Nur bei einer bereits festgestellten fehlenden Ersetzung nachtesten.
+    // Die Diagnose ändert weder das Messergebnis noch die Fail-Closed-Prüfung.
+    let recoveryProbe = null;
+    if (modus === "extension" && dynamicAfterSettle !== "Nutzer") {
+      const snapshot = () => js(id, `
+        const spans = [...document.querySelectorAll("#dynamic-root > span")];
+        const uncorrected = spans.filter((node) => node.textContent.includes("Nutzer:innen"));
+        const target = document.querySelector("#dynamic-target-0");
+        return {
+          spanCount: spans.length,
+          uncorrectedCount: uncorrected.length,
+          uncorrectedSample: uncorrected.slice(0, 8).map((node) => node.id),
+          targetText: target?.textContent ?? null,
+          targetConnected: target?.isConnected ?? false,
+          targetProtected: Boolean(target?.closest(
+            "code,pre,[contenteditable],[data-sprachverstand-ignore],[aria-hidden=true]"
+          )),
+          staticText: document.querySelector("#static-target")?.textContent ?? null,
+          documentHidden: document.hidden,
+          designMode: document.designMode
+        };
+      `);
+      const before = await snapshot();
+      await js(id, `
+        const target = document.querySelector("#dynamic-target-0");
+        const other = document.querySelector("#dynamic-target-1");
+        const statisch = document.querySelector("#static-target");
+        // Bestehenden Textknoten (characterData) ändern.
+        target.firstChild.data = "Nutzer:innen Diagnose Zeichen";
+        // Einen neuen Textknoten anstelle des vorhandenen erzeugen (childList).
+        other.textContent = "Nutzer:innen Diagnose Austausch";
+        // Unabhängigen Bereich außerhalb der laufenden Listenlast prüfen.
+        statisch.textContent = "Nutzer:innen Diagnose statisch";
+        // Neu angefügter Element-Unterbaum als weiterer Observer-Vertrag.
+        const added = document.createElement("span");
+        added.id = "recovery-new-target";
+        added.textContent = "Nutzer:innen Diagnose neu";
+        document.querySelector("#dynamic-root").append(added);
+      `);
+      await sleep(900);
+      const after = await snapshot();
+      const results = await js(id, `
+        return {
+          characterData: document.querySelector("#dynamic-target-0")?.textContent,
+          childList: document.querySelector("#dynamic-target-1")?.textContent,
+          staticChildList: document.querySelector("#static-target")?.textContent,
+          addedSubtree: document.querySelector("#recovery-new-target")?.textContent
+        };
+      `);
+      recoveryProbe = { before, after, results };
+      console.log("INTERAKTION-RECOVERY " + JSON.stringify(recoveryProbe));
+    }
+
     const details = await js(id, `
       const m = window.__perfMetrics;
       const gaps = [];
@@ -303,7 +356,8 @@ async function browserlauf(url, modus) {
       dynamicAtStart, dynamicAt400Ms, dynamicAfterSettle,
       dynamicCorrectedAt400Ms: modus === "extension" ?
         dynamicAt400Ms === "Nutzer" : null,
-      dynamicSettleAfterMs
+      dynamicSettleAfterMs,
+      recoveryProbe
     };
   } catch (error) {
     return { status: "error", error: String(error?.message ?? error) };
