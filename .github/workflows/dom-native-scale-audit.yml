@@ -1,0 +1,86 @@
+name: DOM-02 nativer Browservergleich
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: DOM-Skalierung in ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - name: Ausgelösten Produktstand auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: aktuell
+          persist-credentials: false
+
+      - name: Historischen Tag auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/tags/v0.7.1
+          path: baseline
+          persist-credentials: false
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Identischen Messvertrag für beide Quellen bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p baseline/benchmarks reports
+          cp aktuell/benchmarks/dom-native-scale-entry.audit.ts baseline/benchmarks/
+          echo "Baseline: $(git -C baseline rev-parse HEAD)"
+          echo "Aktuell: $(git -C aktuell rev-parse HEAD)"
+
+      - name: Abhängigkeiten der historischen Version installieren
+        working-directory: baseline
+        run: npm ci --no-audit --no-fund
+
+      - name: Aktuelle Abhängigkeiten installieren
+        working-directory: aktuell
+        run: npm ci --no-audit --no-fund
+
+      - name: Referenz-Quellcode für echten Browser bündeln
+        working-directory: baseline
+        run: >-
+          npx --no-install esbuild benchmarks/dom-native-scale-entry.audit.ts
+          --bundle --platform=browser --format=iife --target=es2022
+          --outfile=../baseline-native.js
+
+      - name: Aktuellen Quellcode für echten Browser bündeln
+        working-directory: aktuell
+        run: >-
+          npx --no-install esbuild benchmarks/dom-native-scale-entry.audit.ts
+          --bundle --platform=browser --format=iife --target=es2022
+          --outfile=../current-native.js
+
+      - name: Initialscan im nativen Browser zweimal je Quelle messen
+        run: node aktuell/scripts/dom-native-browser-audit.mjs ${{ matrix.browser }}
+
+      - name: Native Messergebnisse prüfen und vergleichen
+        shell: bash
+        run: |
+          node aktuell/scripts/compare-dom-native-audit.mjs \
+            "reports/native-${{ matrix.browser }}-baseline.json" \
+            "reports/native-${{ matrix.browser }}-current.json" \
+            "reports/native-${{ matrix.browser }}-vergleich.md"
+
+      - name: Messungen und Vergleich zur Nachprüfung sichern
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dom-native-${{ matrix.browser }}-${{ github.sha }}
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 90
