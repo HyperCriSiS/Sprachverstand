@@ -192,6 +192,9 @@ jobs:
       - name: Chromium im echten Browser prüfen
         run: npm run test:browser:chromium
 
+      - name: Kontrollierte Klick-/Eingabe- und Longtaskdiagnose prüfen
+        run: npm run test:browser:interaction:chromium -- --pairs 1
+
       - name: Videowiedergabe unter DOM-Last prüfen
         run: npm run test:browser:video:chromium
 

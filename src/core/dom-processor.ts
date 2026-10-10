@@ -824,6 +824,9 @@ export class DomProcessor {
   }
 
   private handleMutationRecords(records: readonly MutationRecord[]): void {
+    // Im Observer-Batch ist der finale DOM-Zustand bereits sichtbar.
+    // Gemeinsame Inline-Bereiche nur einmal statt pro Mutation traversieren.
+    const invalidatedInlineRoots = new Set<Node>();
     for (const record of records) {
       if (record.type === "characterData") {
         const node = record.target as Text;
@@ -837,7 +840,7 @@ export class DomProcessor {
         this.queue(node);
         this.invalidateFollowingContext(node);
         this.invalidatePrecedingParticipleContext(node);
-        this.invalidateInlineProtectionAround(node);
+        this.invalidateInlineProtectionAround(node, invalidatedInlineRoots);
         continue;
       }
 
@@ -864,7 +867,7 @@ export class DomProcessor {
               } else {
                 this.queue(record.target);
               }
-              this.invalidateInlineProtectionAround(record.target);
+              this.invalidateInlineProtectionAround(record.target, invalidatedInlineRoots);
               continue;
             }
             if (record.attributeName !== "aria-label") {
@@ -875,7 +878,7 @@ export class DomProcessor {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
             this.queue(record.target);
             this.invalidatePrecedingParticipleContext(record.target);
-            this.invalidateInlineProtectionAround(record.target);
+            this.invalidateInlineProtectionAround(record.target, invalidatedInlineRoots);
             continue;
           }
           const tracked = this.attributeChanges
@@ -908,7 +911,7 @@ export class DomProcessor {
         // Bei DOM-Insertionen und Entfernen des linken Präfixes
         // kann die nächste Inline-Node ihren grammatischen Kasus ändern.
         this.invalidateFollowingContext(record.target, record.nextSibling);
-        this.invalidateInlineProtectionAround(record.target);
+        this.invalidateInlineProtectionAround(record.target, invalidatedInlineRoots);
       }
     }
   }
@@ -1284,12 +1287,20 @@ export class DomProcessor {
       (this.options.protectedTerms?.length ?? 0) > 0;
   }
 
-  private invalidateInlineProtectionAround(node: Node): void {
+  private invalidateInlineProtectionAround(
+    node: Node,
+    invalidatedRoots?: Set<Node>
+  ): void {
     if (!this.requiresInlineProtection()) {
       return;
     }
 
     const root = findInlineBoundary(node, blockBoundaryTags);
+    if (invalidatedRoots?.has(root)) {
+      return;
+    }
+    // Im nächsten Observer-Batch dieselbe Wurzel erneut invalidieren dürfen.
+    invalidatedRoots?.add(root);
     const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const invalidate = (text: Text): void => {
       this.inlineProtectionCache.delete(text);
