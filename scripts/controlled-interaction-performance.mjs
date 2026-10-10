@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
-import { messfelder, pruefePaar, zusammenfassung } from "./interaction-performance-metrics.mjs";
+import { pruefePaar, zusammenfassung } from "./interaction-performance-metrics.mjs";
 
 // Ausschließlich lokale, synthetische Last. Keine fremden Seiten oder Mess-Drittdienste.
 const basis = process.cwd();
@@ -109,7 +109,7 @@ function html() {
   window.__perfDone = false;
   function nextFrame(target) {
     const start = performance.now();
-    requestAnimationFrame((now) => { target.push(now - start); });
+    requestAnimationFrame(() => { target.push(performance.now() - start); });
   }
   document.querySelector("#trigger-action").addEventListener("click", () => {
     m.clicks++;
@@ -217,12 +217,6 @@ async function element(id, selector) {
   const key = "element-6066-11e4-a52e-4f735466cecf";
   if (!wert?.[key]) throw new Error("WebDriver-Element fehlt: " + selector);
   return wert[key];
-}
-
-function p95(array) {
-  if (!array.length) return null;
-  const sorted = [...array].sort((a, b) => a - b);
-  return sorted[Math.ceil(sorted.length * 0.95) - 1];
 }
 
 async function browserlauf(url, modus) {
