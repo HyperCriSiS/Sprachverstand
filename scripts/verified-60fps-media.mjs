@@ -1,4 +1,7 @@
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 // Ein echter 60-FPS-Videostream statt verdoppelter 30-FPS-Frames.
 // Die Erzeugung erfolgt vor der Messung und zählt nicht zur Wiedergabezeit.
@@ -24,11 +27,21 @@ export function createVerified60FpsWebm(run = spawnSync) {
   }
 
   // Nicht nur den Quellparameter prüfen, sondern den kodierten Stream.
-  const probe = run("ffprobe", [
-    "-v", "error", "-select_streams", "v:0",
-    "-show_entries", "stream=avg_frame_rate", "-of",
-    "default=noprint_wrappers=1:nokey=1", "-i", "pipe:0"
-  ], { input: encoded.stdout, encoding: "utf8", timeout: 10_000 });
+  // FFprobe kann die Eingabepipe nach den Headern vorzeitig schließen (EPIPE).
+  // Eine kurzlebige lokale Datei macht die Erkennung unabhängig davon.
+  const directory = mkdtempSync(path.join(tmpdir(), "sprachverstand-60fps-"));
+  let probe;
+  try {
+    const filename = path.join(directory, "testvideo.webm");
+    writeFileSync(filename, encoded.stdout);
+    probe = run("ffprobe", [
+      "-v", "error", "-select_streams", "v:0",
+      "-show_entries", "stream=avg_frame_rate", "-of",
+      "default=noprint_wrappers=1:nokey=1", "-i", filename
+    ], { encoding: "utf8", timeout: 10_000 });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
   const rawRate = String(probe.stdout ?? "").trim();
   const match = /^(\d+)\/(\d+)$/u.exec(rawRate);
   const frameRate = match && Number(match[2]) !== 0
