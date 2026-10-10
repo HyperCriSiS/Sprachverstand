@@ -7,6 +7,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { compareProtectedRuns } from "./real-world-protected-state.mjs";
 import { classifyVisibleMarkerNodes } from "./live-marker-dom-classification.mjs";
 import { assessExternalVideoPlayback } from "./real-world-media-validation.mjs";
+import { comparePhaseDurations, summarizePairedRuns } from "./real-world-performance-phases.mjs";
 
 const projectRoot = process.cwd();
 const configPath = path.join(projectRoot, "config", "real-world-sites.json");
@@ -37,6 +38,10 @@ function positiveIntegerArgument(name, fallback) {
 
 const listOnly = process.argv.includes("--list");
 const observationMs = positiveIntegerArgument("--observation-ms", 3_500);
+const pairCount = positiveIntegerArgument("--pairs", 1);
+if (pairCount > 5) {
+  throw new Error("--pairs ist auf höchstens fünf kontrollierte Vergleichspaare begrenzt.");
+}
 const navigationTimeoutMs = positiveIntegerArgument(
   "--navigation-timeout-ms",
   45_000
@@ -295,6 +300,7 @@ async function installObservers(sessionId) {
         errors: [],
         rejections: [],
         longTasks: [],
+        longTaskObservationStartedAtMs: performance.now(),
         video: {
           frameTimes: [],
           waiting: 0,
@@ -458,6 +464,13 @@ async function collectSnapshot(sessionId) {
         (maximum, entry) => Math.max(maximum, Number(entry.duration || 0)),
         0
       );
+      // Buffered Long Tasks vor der Observer-Installation getrennt ausweisen.
+      // Dies ist eine Phasendiagnose, keine Attribution zum Erweiterungscode.
+      const observerStartedAt = Number(metrics.longTaskObservationStartedAtMs);
+      const earlyLongTaskDuration = Number.isFinite(observerStartedAt)
+        ? longTasks.filter((entry) => Number(entry.startTime) < observerStartedAt)
+          .reduce((sum, entry) => sum + Number(entry.duration || 0), 0)
+        : null;
 
       const videoMetrics = metrics.video || {
         frameTimes: [],
@@ -527,7 +540,10 @@ async function collectSnapshot(sessionId) {
         longTasks: {
           count: longTasks.length,
           totalDurationMs: totalLongTaskDuration,
-          maximumDurationMs: maximumLongTaskDuration
+          maximumDurationMs: maximumLongTaskDuration,
+          beforeObserverDurationMs: earlyLongTaskDuration,
+          afterObserverDurationMs: earlyLongTaskDuration === null
+            ? null : totalLongTaskDuration - earlyLongTaskDuration
         },
         videos: {
           count: videos.length,
@@ -650,6 +666,13 @@ function compareRuns(baseline, extension) {
 
   return {
     elapsedDeltaMs: extension.elapsedMs - baseline.elapsedMs,
+    // Browserstart getrennt von Seitenbesuch inkl. Messinstrumentierung erfassen.
+    visitDeltaMs: (extension.elapsedMs - extension.phasesMs.browserStartupMs) -
+      (baseline.elapsedMs - baseline.phasesMs.browserStartupMs),
+    phaseDeltaMs: comparePhaseDurations(baseline.phasesMs, extension.phasesMs),
+    afterObserverLongTaskDeltaMs:
+      Number(extension.snapshot.longTasks.afterObserverDurationMs ?? 0) -
+      Number(baseline.snapshot.longTasks.afterObserverDurationMs ?? 0),
     domContentLoadedDeltaMs:
       Number(extension.snapshot.navigation?.domContentLoadedMs || 0) -
       Number(baseline.snapshot.navigation?.domContentLoadedMs || 0),
@@ -676,26 +699,41 @@ function compareRuns(baseline, extension) {
   };
 }
 
-async function runSiteMode(site, mode) {
+async function runSiteMode(site, mode, pairIndex = 0) {
   const withExtension = mode === "extension";
   let sessionId;
   const startedAt = Date.now();
+  let phaseStartedAt = startedAt;
+  const phasesMs = {};
+  const endPhase = (phase) => {
+    const now = Date.now();
+    phasesMs[phase] = now - phaseStartedAt;
+    phaseStartedAt = now;
+  };
 
   try {
     sessionId = await createSession(withExtension);
+    endPhase("browserStartupMs");
     await webdriverRequest("POST", `/session/${sessionId}/url`, {
       url: site.url
     });
+    endPhase("navigationMs");
     await installObservers(sessionId);
+    endPhase("observerSetupMs");
     const protectedBefore = await protectedState(sessionId);
+    endPhase("initialProtectionSnapshotMs");
     await exercisePage(sessionId, site);
+    endPhase("interactionMs");
     const beforePlayback = site.slug === "videojs-player-demo" ||
       site.slug === "youtube-big-buck-bunny"
       ? await execute(sessionId,
           'return Number(document.querySelector("video")?.currentTime || 0);')
       : undefined;
+    endPhase("playbackSetupMs");
     await sleep(observationMs);
+    endPhase("observationWaitMs");
     const snapshot = await collectSnapshot(sessionId);
+    endPhase("domSnapshotMs");
     const mediaValidation = assessExternalVideoPlayback(
       site.slug, snapshot.videos, beforePlayback
     );
@@ -704,16 +742,20 @@ async function runSiteMode(site, mode) {
         site.slug + ": keine nachweisbare Wiedergabe. DOM-Ergebnis separat.");
     }
     const protectedAfter = await protectedState(sessionId);
+    endPhase("finalProtectionSnapshotMs");
+    const suffix = pairIndex === 0 ? "" : `-paar-${pairIndex + 1}`;
     const screenshotPath = path.join(
       screenshotDirectory,
-      `${String(site.id).padStart(2, "0")}-${site.slug}-${mode}.png`
+      `${String(site.id).padStart(2, "0")}-${site.slug}-${mode}${suffix}.png`
     );
     await saveScreenshot(sessionId, screenshotPath);
+    endPhase("screenshotMs");
 
     return {
       status: "ok",
       mediaValidation,
       elapsedMs: Date.now() - startedAt,
+      phasesMs,
       screenshot: path.relative(projectRoot, screenshotPath),
       protectedBefore,
       protectedAfter,
@@ -723,6 +765,7 @@ async function runSiteMode(site, mode) {
     return {
       status: "error",
       elapsedMs: Date.now() - startedAt,
+      phasesMs,
       error: normalizeError(error)
     };
   } finally {
@@ -775,27 +818,35 @@ try {
   await waitForDriver(driverProcess, driverLogs);
 
   for (const [index, site] of sites.entries()) {
-    console.log(`Prüfe ${index + 1}/${sites.length} ${site.slug} ohne Erweiterung …`);
-    const baseline = await runSiteMode(site, "baseline");
-    console.log(`Prüfe ${index + 1}/${sites.length} ${site.slug} mit Erweiterung …`);
-    const extension = await runSiteMode(site, "extension");
-
-    if (baseline.status === "error") {
-      console.log(
-        `::warning title=Baseline fehlgeschlagen::${site.slug}: ${baseline.error.split("\n")[0]}`
-      );
+    const pairs = [];
+    for (let pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
+      // Alternierende AB/BA-Reihenfolge reduziert systematische Aufwärmeffekte.
+      const order = pairIndex % 2 === 0
+        ? ["baseline", "extension"] : ["extension", "baseline"];
+      const modes = {};
+      for (const mode of order) {
+        console.log(`Prüfe ${index + 1}/${sites.length} ${site.slug}, Paar ${pairIndex + 1}/${pairCount}, ${mode} …`);
+        modes[mode] = await runSiteMode(site, mode, pairIndex);
+        if (modes[mode].status === "error") {
+          console.log(`::warning title=Live-Seitenlauf fehlgeschlagen::${site.slug}/Paar ${pairIndex + 1}/${mode}: ${modes[mode].error.split("\n")[0]}`);
+        }
+      }
+      pairs.push({
+        pair: pairIndex + 1,
+        order,
+        baseline: modes.baseline,
+        extension: modes.extension,
+        comparison: compareRuns(modes.baseline, modes.extension)
+      });
     }
-    if (extension.status === "error") {
-      console.log(
-        `::warning title=Erweiterungslauf fehlgeschlagen::${site.slug}: ${extension.error.split("\n")[0]}`
-      );
-    }
-
+    const first = pairs[0];
     results.push({
       ...site,
-      baseline,
-      extension,
-      comparison: compareRuns(baseline, extension)
+      baseline: first.baseline,
+      extension: first.extension,
+      comparison: first.comparison,
+      ...(pairCount > 1 ? { pairs } : {}),
+      aggregate: summarizePairedRuns(pairs)
     });
   }
 } finally {
@@ -813,6 +864,7 @@ const report = {
     chromium: commandVersion(chromiumExecutable),
     chromedriver: commandVersion(driverExecutable),
     observationMs,
+    pairCount,
     navigationTimeoutMs
   },
   results
@@ -821,7 +873,7 @@ const report = {
 await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`);
 
 const successfulExtensionRuns = results.filter(
-  (entry) => entry.extension.status === "ok"
+  (entry) => entry.aggregate.validPairs > 0
 ).length;
 const failedExtensionRuns = results.length - successfulExtensionRuns;
 console.log(
