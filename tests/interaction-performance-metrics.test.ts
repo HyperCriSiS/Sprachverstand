@@ -11,6 +11,8 @@ function lauf(erweitert: boolean, zusatz = 0) {
     mutationTicks: 100,
     rafCount: 190,
     longTaskSupported: true,
+    clickNextFrameMs: 5 + zusatz,
+    inputNextFrameMs: 8 + zusatz,
     rafP95Ms: 17 + zusatz,
     rafMaximumMs: 30 + zusatz,
     longTaskTotalMs: 50 + zusatz
@@ -30,6 +32,8 @@ describe("Kontrollierte Interaktions- und Longtask-Diagnose", () => {
     expect(pruefePaar({ baseline: lauf(false), extension: lauf(false) }).ok).toBe(false);
     expect(pruefePaar({ baseline: lauf(false), extension: { ...lauf(true), protectedOk: false } }).ok).toBe(false);
     expect(pruefePaar({ baseline: lauf(false), extension: { ...lauf(true), rafCount: 0 } }).ok).toBe(false);
+    expect(pruefePaar({ baseline: lauf(false), extension: { ...lauf(true), inputNextFrameMs: -2 } }).ok).toBe(false);
+    expect(pruefePaar({ baseline: lauf(false), extension: { ...lauf(true), clickNextFrameMs: null } }).ok).toBe(false);
   });
 
   it("ignoriert fehlgeschlagene Paare und mittelt keine Ausgangssitzung ein", () => {

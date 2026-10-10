@@ -37,6 +37,14 @@ export function pruefePaar(paar) {
   if (basis.rafCount < 50 || erweiterung.rafCount < 50) {
     return { ok: false, grund: "Zu wenige tatsächliche Animation-Frames erfasst." };
   }
+  // Negative Dauern entlarven unpassende rAF-Zeitstempel oder unvollständige Events.
+  const reaktionszeiten = [
+    basis.clickNextFrameMs, basis.inputNextFrameMs,
+    erweiterung.clickNextFrameMs, erweiterung.inputNextFrameMs
+  ];
+  if (!reaktionszeiten.every((wert) => Number.isFinite(wert) && wert >= 0)) {
+    return { ok: false, grund: "Ungültige oder negative Interaktionsreaktionsdauer." };
+  }
   return { ok: true };
 }
 
