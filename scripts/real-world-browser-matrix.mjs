@@ -531,6 +531,10 @@ async function collectSnapshot(sessionId) {
         videos: {
           count: videos.length,
           playingCount: videos.filter((video) => !video.paused && !video.ended).length,
+          currentTimeSeconds: Math.max(0, ...videos.map((video) => Number(video.currentTime || 0))),
+          textTrackCount: videos.reduce((sum, video) => sum + video.textTracks.length, 0),
+          showingTextTrackCount: videos.reduce((sum, video) =>
+            sum + [...video.textTracks].filter((track) => track.mode === "showing").length, 0),
           frameCallbacks: frameTimes.length,
           p95FrameGapMs: sortedFrameGaps.length > 0 ? sortedFrameGaps[p95Index] : 0,
           maximumFrameGapMs: settledFrameGaps.length > 0
@@ -554,7 +558,7 @@ async function collectSnapshot(sessionId) {
   );
 }
 
-async function exercisePage(sessionId) {
+async function exercisePage(sessionId, site) {
   const height = await execute(
     sessionId,
     "return Math.max(document.documentElement?.scrollHeight || 0, document.body?.scrollHeight || 0);"
@@ -580,6 +584,38 @@ async function exercisePage(sessionId) {
       return document.querySelectorAll("video").length;
     `
   );
+
+  if (site.slug === "shaka-player-angel-one") {
+    // Die URL wählt einen unverschlüsselten DASH-Stream. Nur tatsächlich
+    // dekodierte Videodaten erlauben die Aktivierung von Textspuren.
+    const deadline = Date.now() + 12_000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      const state = await execute(sessionId, `
+        const video = document.querySelector("#video[data-shaka-player]");
+        if (!video) return { playerFound: false };
+        video.muted = true;
+        if (video.readyState >= 2) {
+          video.play().catch(() => undefined);
+          for (const track of video.textTracks) {
+            if (track.kind === "subtitles" || track.kind === "captions") {
+              track.mode = "showing";
+              break;
+            }
+          }
+        }
+        return { playerFound: true, ready: video.readyState >= 2 };
+      `);
+      if (state?.ready) {
+        ready = true;
+        break;
+      }
+      await sleep(350);
+    }
+    if (!ready) {
+      throw new Error("Shaka-Video nicht bestätigt: Stream oder Codec nicht bereit.");
+    }
+  }
 }
 
 async function saveScreenshot(sessionId, filePath) {
@@ -655,9 +691,23 @@ async function runSiteMode(site, mode) {
     });
     await installObservers(sessionId);
     const protectedBefore = await protectedState(sessionId);
-    await exercisePage(sessionId);
+    await exercisePage(sessionId, site);
+    const beforePlayback = site.slug === "shaka-player-angel-one"
+      ? await execute(sessionId,
+          'return Number(document.querySelector("#video")?.currentTime || 0);')
+      : undefined;
     await sleep(observationMs);
     const snapshot = await collectSnapshot(sessionId);
+    if (site.slug === "shaka-player-angel-one") {
+      const playedSeconds = snapshot.videos.currentTimeSeconds - beforePlayback;
+      if (snapshot.videos.frameCallbacks < 2 || !Number.isFinite(playedSeconds) ||
+          playedSeconds < 0.5) {
+        throw new Error(
+          "Shaka-Video nicht bestätigt: " + snapshot.videos.frameCallbacks +
+          " Frames, " + String(playedSeconds) + " Sekunden Wiedergabefortschritt."
+        );
+      }
+    }
     const protectedAfter = await protectedState(sessionId);
     const screenshotPath = path.join(
       screenshotDirectory,

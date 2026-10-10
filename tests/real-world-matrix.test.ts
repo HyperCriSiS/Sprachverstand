@@ -38,6 +38,18 @@ describe("Real-World-Browsermatrix", () => {
     }
   });
 
+  it("ersetzt Yoga74 durch den nachvollziehbaren Shaka-Streamingfall", () => {
+    const shaka = sites.find((site) => site.id === 11);
+    expect(shaka?.slug).toBe("shaka-player-angel-one");
+    expect(shaka?.url).toContain("shaka-project.github.io/shaka-player/demo/");
+    expect(shaka?.url).toContain("angel-one/dash.mpd");
+    expect(sites.some((site) => /yoga74/iu.test(site.url))).toBe(false);
+    expect(documentation).toContain("WebVTT-Spur");
+    expect(runner).toContain('site.slug === "shaka-player-angel-one"');
+    expect(runner).toContain("Shaka-Video nicht bestätigt");
+    expect(runner).toContain("video.textTracks");
+  });
+
   it("bleibt ein bewusst manueller und nicht blockierender Live-Workflow", () => {
     expect(workflow).toContain("workflow_dispatch:");
     expect(workflow).not.toMatch(/^\s*pull_request:/mu);
