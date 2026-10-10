@@ -11,7 +11,8 @@ import { analysiereVideoCpu, frameLuecken } from "./video-frame-cpu-metrics.mjs"
 const basis = process.cwd();
 const extension = path.join(basis, "dist", "chromium");
 const base = "http://127.0.0.1:9518";
-const pairs = Number(process.argv[process.argv.indexOf("--pairs") + 1] || 2);
+const pairsIndex = process.argv.indexOf("--pairs");
+const pairs = pairsIndex === -1 ? 2 : Number(process.argv[pairsIndex + 1]);
 if (![1, 2, 3].includes(pairs)) throw new Error("--pairs erlaubt 1 bis 3.");
 const output = path.resolve(basis, "artifacts/video-frame-cpu");
 const html = "<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\">\n<title>Videoframe-CPU-Korrelation</title></head><body>\n<p id=\"static-target\">Nutzer:innen</p>\n<video id=\"video\" muted autoplay playsinline preload=\"auto\" src=\"/video.webm\"\nstyle=\"width:320px;height:180px;background:#111\"></video>\n<div id=\"dynamic-root\"></div>\n<script>\n(() => {\n  const video = document.querySelector(\"#video\");\n  const metrics = { frameTimes: [], frameMetadata: [], longTasks: [],\n    timerTicks: [], errors: [], framesSupported: typeof video.requestVideoFrameCallback === \"function\",\n    longTaskSupported: false, done: false };\n  window.__videoCpuMetrics = metrics;\n  const nodes = [];\n  const root = document.querySelector(\"#dynamic-root\");\n  for (let index = 0; index < 480; index++) {\n    const element = document.createElement(\"span\");\n    element.textContent = \"Neutraler Inhalt \" + index;\n    root.append(element);\n    nodes.push(element);\n  }\n  try {\n    const observer = new PerformanceObserver((list) => {\n      for (const task of list.getEntries()) {\n        metrics.longTasks.push({ startMs: task.startTime, dauerMs: task.duration });\n      }\n    });\n    observer.observe({type:\"longtask\"});\n    metrics.longTaskSupported = true;\n  } catch { /* Nicht unterstützte Long-Task-API bleibt unbewertet. */ }\n  if (metrics.framesSupported) {\n    const onFrame = (now, metadata) => {\n      metrics.frameTimes.push(Number(now));\n      metrics.frameMetadata.push({\n        nowMs: Number(now),\n        erwarteteAnzeigeMs: Number(metadata.expectedDisplayTime),\n        zeitImVideoS: Number(metadata.mediaTime),\n        angezeigteFrames: Number(metadata.presentedFrames)\n      });\n      if (!metrics.done) video.requestVideoFrameCallback(onFrame);\n    };\n    video.requestVideoFrameCallback(onFrame);\n  }\n  for (const event of [\"error\", \"stalled\", \"waiting\"]) {\n    video.addEventListener(event, () => {\n      metrics.errors.push(event + \" bei \" + performance.now().toFixed(1) + \" ms\");\n    });\n  }\n  video.play().catch(error => metrics.errors.push(\"play: \" + String(error)));\n  const startMs = performance.now();\n  const timer = setInterval(() => {\n    const tick = metrics.timerTicks.length;\n    const startedAt = performance.now();\n    for (let offset = 0; offset < 48; offset++) {\n      const index = (tick * 48 + offset) % nodes.length;\n      nodes[index].textContent = \"Nutzer:innen \" + tick + \" / \" + offset;\n    }\n    metrics.timerTicks.push({ atMs: startedAt,\n      workMs: performance.now() - startedAt });\n  }, 50);\n  setTimeout(() => {\n    clearInterval(timer);\n    metrics.done = true;\n  }, 8000);\n  window.__videoCpuState = () => {\n    const quality = video.getVideoPlaybackQuality?.();\n    return { ...metrics, staticText: document.querySelector(\"#static-target\").textContent,\n      currentTime: video.currentTime, readyState: video.readyState,\n      width: video.videoWidth, height: video.videoHeight,\n      dropped: quality?.droppedVideoFrames ?? null,\n      visibility: document.visibilityState };\n  };\n})();\n</script></body></html>";
@@ -179,6 +180,18 @@ async function browserlauf(url, mode, pair) {
       gapAb120: analyse.lueckenAb120Ms,
       top: analyse.topGesamt.slice(0, 4)
     }));
+    // Die wichtigsten Spike-Details im Joblog halten, auch ohne Artefaktdownload.
+    console.log("VIDEO-FRAME-CPU-SPITZEN " + JSON.stringify({
+      paar: pair, modus: mode,
+      topSpitzen: analyse.spitzen.slice(0, 5).map((gap) => ({
+        beginnMs: gap.startMs, endeMs: gap.endMs, dauerMs: gap.dauerMs,
+        tasks: gap.longTasks,
+        cpuMs: gap.sampledCpuMs,
+        funktionen: gap.topFunktionen.slice(0, 4)
+      })),
+      topLongTasks: [...state.longTasks]
+        .sort((a, b) => b.dauerMs - a.dauerMs).slice(0, 5)
+    }));
     return result;
   } finally {
     if (profileStarted) {
@@ -228,7 +241,7 @@ try {
     runs: runs.map((r) => ({
       modus: r.modus, paar: r.paar, maxGap: r.analyse.groessteLueckeMs,
       gapAb120: r.analyse.lueckenAb120Ms,
-      extensionCpuMs: r.analyse.topGesamt
+      top15ExtensionCpuMs: r.analyse.topGesamt
         .filter((x) => x.name.startsWith("erweiterung |"))
         .reduce((sum, x) => sum + x.ms, 0)
     }))
