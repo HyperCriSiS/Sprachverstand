@@ -119,7 +119,7 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 ### Externer Player-Stack (10.10.2026)
 
 Die offizielle Video.js-10-Webseite
-`https://videojs.org/` ersetzt. Er zeigt einen aktuellen HTML5-Player mit
+`https://videojs.org/` enthält eine HTML5-Player-Demo mit
 Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
 andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
 Er prüft nicht nur die Erreichbarkeit der Seite, sondern einen tatsächlichen
