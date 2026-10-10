@@ -6,6 +6,7 @@ const groessen = [200, 1000, 4000] as const;
 const abstand = 50; // 2 % der verarbeitbaren Textknoten benötigen eine Ersetzung.
 const aufwaermungen = 2;
 const messungen = 7;
+const wiederholungenProProbe = 10; // Kurze Scans auch bei grober Firefox-Uhrauflösung erfassen.
 
 function quantil(werte: readonly number[], anteil: number): number {
   const sortiert = [...werte].sort((a, b) => a - b);
@@ -66,12 +67,17 @@ function messen() {
     const erwartet = Math.ceil(anzahl / abstand);
     const proben: number[] = [];
     for (let index = 0; index < aufwaermungen + messungen; index++) {
-      const wert = initialscan(anzahl);
-      if (wert.aufrufe !== anzahl || wert.ersetzungen !== erwartet || !wert.geschuetzt) {
-        throw new Error("Mischlast-Vertrag verletzt: " + JSON.stringify({ anzahl, erwartet, wert }));
+      let gemesseneDauer = 0;
+      for (let wiederholung = 0; wiederholung < wiederholungenProProbe; wiederholung++) {
+        const wert = initialscan(anzahl);
+        if (wert.aufrufe !== anzahl || wert.ersetzungen !== erwartet || !wert.geschuetzt) {
+          throw new Error("Mischlast-Vertrag verletzt: " + JSON.stringify({ anzahl, erwartet, wert }));
+        }
+        gemesseneDauer += wert.dauerMs;
       }
       if (index >= aufwaermungen) {
-        proben.push(Math.round(wert.dauerMs * 1000) / 1000);
+        // Nur die reine Processor-Dauer mitteln, nicht den Fixture-DOM-Aufbau.
+        proben.push(Math.round(gemesseneDauer * 1000 / wiederholungenProProbe) / 1000);
       }
     }
     ergebnisse.push({
@@ -80,7 +86,7 @@ function messen() {
       ruleCalls: anzahl, replacements: erwartet
     });
   }
-  return { warmups: aufwaermungen, iterations: messungen, scenarios: ergebnisse };
+  return { warmups: aufwaermungen, iterations: messungen, repetitionsPerSample: wiederholungenProProbe, scenarios: ergebnisse };
 }
 
 // Einheitliche Browsertreiber-Schnittstelle; ausschließlich synthetische Fixture.
