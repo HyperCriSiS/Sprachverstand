@@ -613,7 +613,21 @@ async function exercisePage(sessionId, site) {
       await sleep(350);
     }
     if (!ready) {
-      throw new Error("Shaka-Video nicht bestätigt: Stream oder Codec nicht bereit.");
+      const diagnostics = await execute(sessionId, `
+        const video = document.querySelector("#video");
+        return {
+          title: document.title.slice(0, 100),
+          playerFound: Boolean(video),
+          readyState: video?.readyState ?? -1,
+          networkState: video?.networkState ?? -1,
+          srcPresent: Boolean(video?.currentSrc),
+          errorCode: video?.error?.code ?? null,
+          shakaFound: Boolean(window.shaka),
+          cardFound: Boolean(document.body?.innerText.includes("Angel One")),
+          errorText: document.querySelector("#error-display")?.textContent?.trim().slice(0, 120) ?? ""
+        };
+      `);
+      throw new Error("Shaka-Video nicht bestätigt: " + JSON.stringify(diagnostics));
     }
   }
 }
