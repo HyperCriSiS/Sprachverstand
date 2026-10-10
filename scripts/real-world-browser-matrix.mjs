@@ -585,49 +585,23 @@ async function exercisePage(sessionId, site) {
     `
   );
 
-  if (site.slug === "shaka-player-angel-one") {
-    // Die URL wählt einen unverschlüsselten DASH-Stream. Nur tatsächlich
-    // dekodierte Videodaten erlauben die Aktivierung von Textspuren.
-    const deadline = Date.now() + 25_000;
+  if (site.slug === "videojs-player-demo") {
+    // Nur eine tatsächlich gestartete HTML5-Medienquelle gilt als Video-Test.
+    const deadline = Date.now() + 12_000;
     let ready = false;
     while (Date.now() < deadline) {
       const state = await execute(sessionId, `
-        const video = document.querySelector("#video[data-shaka-player]");
+        const video = document.querySelector("video");
         if (!video) return { playerFound: false };
         video.muted = true;
-        if (video.readyState >= 2) {
-          video.play().catch(() => undefined);
-          for (const track of video.textTracks) {
-            if (track.kind === "subtitles" || track.kind === "captions") {
-              track.mode = "showing";
-              break;
-            }
-          }
-        }
+        video.play().catch(() => undefined);
         return { playerFound: true, ready: video.readyState >= 2 };
       `);
-      if (state?.ready) {
-        ready = true;
-        break;
-      }
+      if (state?.ready) { ready = true; break; }
       await sleep(350);
     }
     if (!ready) {
-      const diagnostics = await execute(sessionId, `
-        const video = document.querySelector("#video");
-        return {
-          title: document.title.slice(0, 100),
-          playerFound: Boolean(video),
-          readyState: video?.readyState ?? -1,
-          networkState: video?.networkState ?? -1,
-          srcPresent: Boolean(video?.currentSrc),
-          errorCode: video?.error?.code ?? null,
-          shakaFound: Boolean(window.shaka),
-          cardFound: Boolean(document.body?.innerText.includes("Angel One")),
-          errorText: document.querySelector("#error-display")?.textContent?.trim().slice(0, 120) ?? ""
-        };
-      `);
-      throw new Error("Shaka-Video nicht bestätigt: " + JSON.stringify(diagnostics));
+      throw new Error("Video.js-Playback nicht bestätigt: Stream oder Codec nicht bereit.");
     }
   }
 }
@@ -706,23 +680,19 @@ async function runSiteMode(site, mode) {
     await installObservers(sessionId);
     const protectedBefore = await protectedState(sessionId);
     await exercisePage(sessionId, site);
-    const beforePlayback = site.slug === "shaka-player-angel-one"
+    const beforePlayback = site.slug === "videojs-player-demo"
       ? await execute(sessionId,
-          'return Number(document.querySelector("#video")?.currentTime || 0);')
+          'return Number(document.querySelector("video")?.currentTime || 0);')
       : undefined;
     await sleep(observationMs);
     const snapshot = await collectSnapshot(sessionId);
-    if (site.slug === "shaka-player-angel-one") {
-      const playedSeconds = snapshot.videos.currentTimeSeconds - beforePlayback;
-      if (snapshot.videos.frameCallbacks < 2 || !Number.isFinite(playedSeconds) ||
-          playedSeconds < 0.5 || snapshot.videos.textTrackCount < 1 ||
-          snapshot.videos.showingTextTrackCount < 1) {
-        throw new Error(
-          "Shaka-Video nicht bestätigt: " + snapshot.videos.frameCallbacks +
-          " Frames, " + String(playedSeconds) + " Sekunden Videofortschritt, " +
-          String(snapshot.videos.showingTextTrackCount) + "/" +
-          String(snapshot.videos.textTrackCount) + " aktive/verfügbare Textspuren."
-        );
+    if (site.slug === "videojs-player-demo") {
+      const progressed = snapshot.videos.currentTimeSeconds - beforePlayback;
+      if (snapshot.videos.frameCallbacks < 2 || !Number.isFinite(progressed) ||
+          progressed < 0.5) {
+        throw new Error("Video.js-Playback nicht bestätigt: " +
+          snapshot.videos.frameCallbacks + " Frames und " + String(progressed) +
+          " Sekunden Wiedergabefortschritt.");
       }
     }
     const protectedAfter = await protectedState(sessionId);

@@ -113,28 +113,26 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
 | 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
-| 11 | `https://shaka-project.github.io/shaka-player/demo/#asset=https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd;build=compiled` | offizielle Shaka-Player-Demo: unverschlüsseltes adaptives MPEG-DASH, WebVTT-Spuren, dynamische Player-Oberfläche und Eingabefelder | Video und verfügbare Untertitelspur aktivieren; nur bei echtem Wiedergabefortschritt und präsentierten Frames als gemessen werten; geschützte Eingaben, Long Tasks, Frame-Abstände, Stalls und Drops im A/B-Lauf protokollieren | mittel (externes CDN) |
+| 11 | `https://videojs.org/` | offizielle Video.js-10-Webseite mit Player-Demo, dynamischer Steuerung und aktueller Player-UI | reale Wiedergabe mit Frame-Callbacks und messbarem Fortschritt nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls, geschützte DOM-Felder und Spielerinteraktionen gegenüber Baseline vergleichen; Textspuren nur bei tatsächlicher Verfügbarkeit zählen | mittel (externe Medien-CDN) |
 | 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
 
-### Ersatz der Yoga74-Stichprobe (10.10.2026)
+### Ersatz der Yoga74-Seite (10.10.2026)
 
-Die frühere Yoga74-Wix-Seite wird durch die offiziell gepflegte Shaka-Demo
-mit dem fest ausgewählten, unverschlüsselten MPEG-DASH-Beispiel *Angel One*
-ersetzt. Die öffentliche Shaka-Assetliste weist diesen Stream mit WebVTT-
-Untertiteln und mehreren Sprachen aus. Der Live-Runner aktiviert, falls
-verfügbar, eine Untertitelspur und verlangt **echten Videofortschritt** und
-präsentierte Frames. Ein nur erreichbares HTML-Dokument ist kein Videonachweis.
+Die Yoga74-Wix-Seite wird durch den offiziellen Video.js-10-Auftritt
+`https://videojs.org/` ersetzt. Er zeigt einen aktuellen HTML5-Player mit
+Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
+andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
+Er prüft nicht nur die Erreichbarkeit der Seite, sondern einen tatsächlichen
+Wiedergabefortschritt und Frame-Callbacks. Snapshotdaten enthalten zudem
+vorhandene und aktivierte Textspuren, ohne solche Spuren zu unterstellen.
+Externes Video kann durch Netzwerk, Codec oder CDN ausfallen; der Lauf gilt
+dann **nicht** als bestandener Videotest.
 
-Zusätzliche Prüfoberflächen: adaptive Stream-Wiedergabe, dynamische Player-
-Steuerelemente, geschützte Eingabefelder, Long Tasks, Frame-Lücken und Stalls.
-Die YouTube-Stichprobe bleibt als unabhängige Player-Familie erhalten.
-Fällt das externe CDN oder ein Codec aus, wird dieser Versuch als fehlgeschlagen
-und **nicht als erfolgreicher Videotest** berichtet. Die lokale deterministische
-30-FPS-/DOM-Caption-Regression bleibt daher unverändert verbindlich.
-
-**Grenze:** Eine aktive native WebVTT-Spur beweist nicht, dass Sprachverstand
-WebVTT-Cue-Inhalte verändert; DOM-Untertitelkorrektur und zusätzliche
-Performance-/Video-Freigabegates bleiben eigenständige Aufgaben (Issue #419).
+Zusätzliche harte Videolast- und DOM-Untertitelregressionen bleiben in der
+deterministischen lokalen Chromium-Fixture; dort hängen Ergebnisse nicht von
+externen Videodiensten ab. Ein einzelner Live-A/B-Lauf ist **keine**
+Freigabebestätigung für ungestörte 60-FPS-Videos und für native WebVTT-Cues
+(Issue #419).
 
 ## Automatisierbare Aussagen
 
