@@ -11,6 +11,8 @@ function lauf(erweitert: boolean, zusatz = 0) {
     mutationTicks: 100,
     rafCount: 190,
     longTaskSupported: true,
+    dynamicSettleAfterMs: erweitert ? 100 + zusatz : null,
+    dynamicCorrectedAt400Ms: true,
     clickNextFrameMs: 5 + zusatz,
     inputNextFrameMs: 8 + zusatz,
     rafP95Ms: 17 + zusatz,
@@ -48,6 +50,7 @@ describe("Kontrollierte Interaktions- und Longtask-Diagnose", () => {
     expect(ausgabe.gueltig).toBe(3);
     expect(ausgabe.phasen.rafP95Ms?.deltaMedian).toBe(8);
     expect(ausgabe.phasen.longTaskTotalMs?.deltaMedian).toBe(8);
+    expect(ausgabe.medianWartezeitDynamischMs).toBe(108);
   });
 
   it("kennzeichnet nicht ermittelte Messwerte ausdrücklich als null", () => {
@@ -57,5 +60,7 @@ describe("Kontrollierte Interaktions- und Longtask-Diagnose", () => {
       expect(ergebnis.phasen[name]?.deltaMedian).toBeNull();
     }
     expect(ergebnis.longTaskPaareMessbar).toBe(0);
+    expect(ergebnis.medianWartezeitDynamischMs).toBeNull();
+    expect(ergebnis.spaeteDynamischeKorrekturen).toBe(0);
   });
 });

@@ -22,4 +22,6 @@ export function zusammenfassung(paare: readonly InteraktionsPaar[]): {
   gueltig: number;
   phasen: Record<string, {deltaMedian: number | null}>;
   longTaskPaareMessbar: number;
+  medianWartezeitDynamischMs: number | null;
+  spaeteDynamischeKorrekturen: number;
 };

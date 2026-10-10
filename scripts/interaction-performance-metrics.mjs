@@ -62,6 +62,12 @@ export function zusammenfassung(paare) {
     phasen: Object.fromEntries(messfelder.map((feld) => [
       feld, { deltaMedian: medianDifferenz(feld) }
     ])),
+    medianWartezeitDynamischMs: median(gueltig.map((paar) =>
+      paar.extension?.dynamicSettleAfterMs
+    )),
+    spaeteDynamischeKorrekturen: gueltig.filter((paar) =>
+      paar.extension?.dynamicCorrectedAt400Ms === false
+    ).length,
     // Eine fehlende native Longtask-API wird niemals als „0 ms“ ausgegeben.
     longTaskPaareMessbar: gueltig.filter((paar) =>
       paar.baseline.longTaskSupported && paar.extension.longTaskSupported

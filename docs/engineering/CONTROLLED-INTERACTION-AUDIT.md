@@ -20,7 +20,13 @@ DOM-Arbeit auf `127.0.0.1`, ohne fremdes Netzwerk:
   Zeit von Klick-/Eingabehandler bis zum nächsten Frame sowie Mutations- und Interaktionszähler.
 
 **Vertragsprüfung:** statischer und dynamischer Text müssen nur mit Erweiterung
-transformiert werden; Eingabe und Code bleiben unverändert. Beide Sitzungen müssen
+transformiert werden; Eingabe und Code bleiben unverändert.
+Da die Erweiterung größere DOM-Arbeiten absichtlich in Zeitscheiben ausführt,
+wird die dynamische Korrektur zunächst circa 400 ms nach dem Lastende und
+anschließend höchstens 3,5 Sekunden lang erneut geprüft. Startzustand,
+Sofortzustand, spätere Korrektur und Nachlaufzeit werden separat ausgewiesen.
+Der spätere Erfolg wird **nicht** als sofortige Korrektur ausgegeben;
+ohne tatsächliche Fertigstellung bleibt die Funktionsprüfung rot. Beide Sitzungen müssen
 ausreichend Interaktionen, Mutationen und tatsächliche Frames nachweisen. Fehlende
 oder ungültige Paare führen zum Fehlschlag.
 
