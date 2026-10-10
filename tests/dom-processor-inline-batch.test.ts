@@ -41,8 +41,8 @@ function wurzelTraversierungen(
   spy: ReturnType<typeof vi.spyOn>,
   wurzel: Node
 ): number {
-  return spy.mock.calls.filter(([node, show]) =>
-    node === wurzel && show === NodeFilter.SHOW_TEXT
+  return spy.mock.calls.filter((args: unknown[]) =>
+    args[0] === wurzel && args[1] === NodeFilter.SHOW_TEXT
   ).length;
 }
 
