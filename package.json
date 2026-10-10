@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:browser:chromium": "node scripts/live-browser-smoke.mjs --browser chromium",
     "test:browser:video:chromium": "node scripts/video-playback-regression.mjs",
+    "test:browser:interaction:chromium": "node scripts/controlled-interaction-performance.mjs",
     "test:browser:firefox": "node scripts/live-browser-smoke.mjs --browser firefox",
     "test:real-world": "node scripts/real-world-browser-matrix.mjs",
     "validate:real-world": "node scripts/real-world-browser-matrix.mjs --list",
