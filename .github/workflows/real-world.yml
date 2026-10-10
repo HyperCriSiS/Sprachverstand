@@ -50,9 +50,6 @@ jobs:
       - name: Erweiterung lokal im echten Chromium beweisen
         run: npm run test:browser:chromium
 
-      - name: Lokale Videowiedergabe unter DOM-Last prüfen
-        run: npm run test:browser:video:chromium
-
       - name: Reale Webseiten diagnostisch prüfen
         env:
           SITE_FILTER: ${{ inputs.site }}
@@ -69,6 +66,11 @@ jobs:
           fi
           ARGS+=(--pairs "$PAIR_COUNT")
           npm run test:real-world -- "${ARGS[@]}"
+
+      # Die unabhängige Live-Diagnose darf durch einen Video-Regressionstest
+      # nicht vorzeitig verhindert werden. Der Videotest bleibt fail-closed.
+      - name: Lokale Videowiedergabe unter DOM-Last prüfen
+        run: npm run test:browser:video:chromium
 
       - name: Live-Ergebnisse kompakt ausgeben
         if: ${{ always() }}
