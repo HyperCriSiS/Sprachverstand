@@ -8,6 +8,10 @@ describe("Fail-Closed-Diagnose für dynamische Textmutationen", () => {
     expect(runner).toContain('if (modus === "extension" && dynamicAfterSettle !== "Nutzer")');
     expect(runner).toContain('console.log("INTERAKTION-RECOVERY "');
     expect(runner).toContain("recoveryProbe = { before, after, results }");
+    // Die ursprünglichen Messwerte werden vor den mutierenden Proben erfasst.
+    expect(runner.indexOf("const details = await js(id,")).toBeLessThan(
+      runner.indexOf("let recoveryProbe = null;")
+    );
     expect(runner).toContain("dynamicAfterSettle,");
     expect(runner).toContain("recoveryProbe");
   });

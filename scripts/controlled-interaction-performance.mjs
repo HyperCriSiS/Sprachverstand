@@ -265,6 +265,40 @@ async function browserlauf(url, modus) {
     const dynamicSettleAfterMs = modus === "extension" ?
       Date.now() - startDerNachprüfung : null;
 
+    const details = await js(id, `
+      const m = window.__perfMetrics;
+      const gaps = [];
+      for (let i = 16; i < m.rafTimes.length; i++) {
+        const diff = m.rafTimes[i] - m.rafTimes[i - 1];
+        if (Number.isFinite(diff) && diff >= 0) gaps.push(diff);
+      }
+      const sorted = [...gaps].sort((a, b) => a - b);
+      const percentile = (values) => {
+        if (!values.length) return null;
+        const ordered = [...values].sort((a, b) => a - b);
+        return ordered[Math.ceil(ordered.length * 0.95) - 1];
+      };
+      return {
+        staticText: document.querySelector("#static-target")?.textContent,
+        dynamicText: document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0],
+        protectedOk: document.querySelector("#protected-field")?.value === "Nutzer:innen test" &&
+          document.querySelector("#protected-code")?.textContent === "Nutzer:innen",
+        interactionCount: m.clicks + m.inputEvents,
+        mutationTicks: m.mutationTicks, rafCount: m.rafTimes.length,
+        rafP95Ms: percentile(gaps),
+        rafMaximumMs: gaps.length ? Math.max(...gaps) : null,
+        rafGapsOver120: gaps.filter((value) => value > 120).length,
+        longTaskSupported: m.longTaskSupported,
+        longTaskCount: m.longTaskSupported ? m.longTasks.length : null,
+        longTaskTotalMs: m.longTaskSupported ?
+          m.longTasks.reduce((sum, value) => sum + value, 0) : null,
+        longTaskMaximumMs: m.longTaskSupported ?
+          Math.max(0, ...m.longTasks) : null,
+        clickNextFrameMs: percentile(m.clickFrameTimes),
+        inputNextFrameMs: percentile(m.inputFrameTimes)
+      };
+    `);
+
     // Nur bei einer bereits festgestellten fehlenden Ersetzung nachtesten.
     // Die Diagnose ändert weder das Messergebnis noch die Fail-Closed-Prüfung.
     let recoveryProbe = null;
@@ -318,39 +352,7 @@ async function browserlauf(url, modus) {
       console.log("INTERAKTION-RECOVERY " + JSON.stringify(recoveryProbe));
     }
 
-    const details = await js(id, `
-      const m = window.__perfMetrics;
-      const gaps = [];
-      for (let i = 16; i < m.rafTimes.length; i++) {
-        const diff = m.rafTimes[i] - m.rafTimes[i - 1];
-        if (Number.isFinite(diff) && diff >= 0) gaps.push(diff);
-      }
-      const sorted = [...gaps].sort((a, b) => a - b);
-      const percentile = (values) => {
-        if (!values.length) return null;
-        const ordered = [...values].sort((a, b) => a - b);
-        return ordered[Math.ceil(ordered.length * 0.95) - 1];
-      };
-      return {
-        staticText: document.querySelector("#static-target")?.textContent,
-        dynamicText: document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0],
-        protectedOk: document.querySelector("#protected-field")?.value === "Nutzer:innen test" &&
-          document.querySelector("#protected-code")?.textContent === "Nutzer:innen",
-        interactionCount: m.clicks + m.inputEvents,
-        mutationTicks: m.mutationTicks, rafCount: m.rafTimes.length,
-        rafP95Ms: percentile(gaps),
-        rafMaximumMs: gaps.length ? Math.max(...gaps) : null,
-        rafGapsOver120: gaps.filter((value) => value > 120).length,
-        longTaskSupported: m.longTaskSupported,
-        longTaskCount: m.longTaskSupported ? m.longTasks.length : null,
-        longTaskTotalMs: m.longTaskSupported ?
-          m.longTasks.reduce((sum, value) => sum + value, 0) : null,
-        longTaskMaximumMs: m.longTaskSupported ?
-          Math.max(0, ...m.longTasks) : null,
-        clickNextFrameMs: percentile(m.clickFrameTimes),
-        inputNextFrameMs: percentile(m.inputFrameTimes)
-      };
-    `);
+
     return {
       status: "ok", ...details,
       dynamicAtStart, dynamicAt400Ms, dynamicAfterSettle,
