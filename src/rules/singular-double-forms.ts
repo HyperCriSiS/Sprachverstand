@@ -56,8 +56,8 @@ addDeterminerPair("jeder", "jedem", "dative");
 addDeterminerPair("jeder", "jedes", "genitive");
 addDeterminerPair("welche", "welcher", "nominative");
 addDeterminerPair("welche", "welchen", "accusative");
-addDeterminerPair("welcher", "welchem", "dative");
 addDeterminerPair("welcher", "welches", "genitive");
+addDeterminerPair("welcher", "welchem", "dative");
 addDeterminerPair("diese", "dieser", "nominative");
 addDeterminerPair("diese", "diesen", "accusative");
 addDeterminerPair("dieser", "diesem", "dative");
@@ -226,6 +226,15 @@ function transformSingularDoubleForms(input: string): TransformResult {
     singularDoubleFormPattern,
     (match: string, left: string, matchedConnector: string, right: string) => {
       if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
+        return match;
+      }
+
+      // Markersuffixe sind keine ausgeschriebenen Singularpaare.
+      // Die dafür zuständigen Regeln dürfen ohne Lexikon-Vollsuche übernehmen.
+      if (
+        (matchedConnector.trim() === ":" || matchedConnector.trim() === "/") &&
+        /^-?(?:in|innen)$/iu.test(right)
+      ) {
         return match;
       }
 
