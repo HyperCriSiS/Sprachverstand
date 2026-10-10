@@ -170,6 +170,7 @@ Privates Repository: `HyperCriSiS/Generic-Datastore`
 - PR #296 / Merge `10392e3f0adf3d8dae56b221a0a428c8a65e1cae`: `Ortsvorsteher(in)`, `Benediktiner(innen)`, `Nachwuchssportler(in)`, `Tennisspieler(in)` ausschließlich exakt abgedeckt.
 - `Gewerkschaftern/innen` und `Check-In` bleiben unverändert.
 - `main`-CI und CodeQL für #295 und #296: grün.
+
 Letzte Surface-Nachmessung:
 
 - Run #21 / Run-ID `37554564519`, Attempt 2
@@ -338,7 +339,8 @@ KldB-/DKZ-Registerstatus nach erfolgreichem Import und allen 22 Reviews korrigie
 - Privater, auf 14 historische Fehlerpositionen begrenzter Chromium-/WebForms-Abruf: erste Ausführung **37853305451** zeigte, dass die Startseiten von B/K/P/S erreichbar waren; ein direkter Legacy-Postback scheiterte jedoch. Navigation per echtem Playwright-Pagerklick korrigiert (private PRs #80–#82), öffentlicher manueller Quellenimport **PR #340** / Merge `5ff886fdfc1d9d0526fb1de82d7045b976a64d58`; vollständige Produkt-PR-CI grün.
 - Abschließender Run **37853899360** erfolgreich ausgeführt, Quellabdeckung **weiterhin unvollständig**: 9 von 10 einzeln nummerierten Fehlseiten erreicht, daraus **72 Quellpfade**, die im bislang privat zusammengeführten Teilbestand fehlten. Vier weitere Buchstaben B/K/P/S nur auf Seite 1 geprüft (insgesamt 32 Einträge), also **keine abgeschlossenen Segmente**. Die leere Seite X bleibt offen.
 - Reine Formanalyse der 72 Einträge: 58 direkte `-in`-Paare, sieben abweichende weibliche Formen, vier identische Formen, drei neutrale Bezeichnungen. **0 neue Produktfreigaben**: Quellpfade sind nicht gleich lexikalische Basen; semantische, morphologische und Produktregressionen nicht abgeschlossen. Die zuvor **449 zurückgestellten** GENDERATOR-Kandidaten bleiben eigenständig unverändert.
-- **Verbindliche Nutzerentscheidung:** Keine weiteren GENDERATOR-Web-/Browserabrufe und keine weiteren Wiederholungsversuche, auch nicht für die fünf verbliebenen Positionen. Privater Quellencheckpoint in `HyperCriSiS/Generic-Datastore` **PR #83**, Merge `7912f23f56a14bb9fd5ba54e187daac808743eff`. Private Rohdaten bleiben privat.- Quellenarbeit nur noch unabhängig von GENDERATOR und ohne erneute Vollimporte fortsetzen. Die 82 älteren Hunspell-Deferrals sind bereits als `requiresFurtherEvidence` fachlich klassifiziert (nicht ungeprüft); eine Aufnahme ohne neue belastbare Evidenz ist ausgeschlossen. ESCO-v1.2.1-Download und KorAP-KWIC bleiben separate Zugangsgrenzen. Modernes Release-Gate #331 und Pale-Moon-Priorität bleiben unverändert.
+- **Verbindliche Nutzerentscheidung:** Keine weiteren GENDERATOR-Web-/Browserabrufe und keine weiteren Wiederholungsversuche, auch nicht für die fünf verbliebenen Positionen. Privater Quellencheckpoint in `HyperCriSiS/Generic-Datastore` **PR #83**, Merge `7912f23f56a14bb9fd5ba54e187daac808743eff`. Private Rohdaten bleiben privat.
+- Quellenarbeit nur noch unabhängig von GENDERATOR und ohne erneute Vollimporte fortsetzen. Die 82 älteren Hunspell-Deferrals sind bereits als `requiresFurtherEvidence` fachlich klassifiziert (nicht ungeprüft); eine Aufnahme ohne neue belastbare Evidenz ist ausgeschlossen. ESCO-v1.2.1-Download und KorAP-KWIC bleiben separate Zugangsgrenzen. Modernes Release-Gate #331 und Pale-Moon-Priorität bleiben unverändert.
 
 ## Store-Produktionsschutz – 09.10.2026
 
