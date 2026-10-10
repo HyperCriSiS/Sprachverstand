@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
+import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 
 const root = process.cwd();
 const driverPort = 9515;
@@ -15,6 +16,13 @@ const videoPath = path.join(
   "video-playback-30fps.webm.b64"
 );
 const observationMs = 8_000;
+// Der Standard-CI-Vertrag bleibt 30 FPS; 60 FPS ist eine separate manuelle Diagnose.
+const fpsArgumentIndex = process.argv.indexOf("--fps");
+const diagnosticFps = fpsArgumentIndex < 0 ? 30 :
+  Number(process.argv[fpsArgumentIndex + 1]);
+if (diagnosticFps !== 30 && diagnosticFps !== 60) {
+  throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
+}
 
 if (!existsSync(path.join(extensionDir, "manifest.json"))) {
   throw new Error(
@@ -195,11 +203,28 @@ function subtitleFixtureHtml() {
   const video = document.querySelector("#video");
   const subtitle = document.querySelector("#subtitle-target");
   window.__subtitleTicks = 0;
+  window.__subtitleCueIssuedAt = null;
+  window.__subtitleCueLatenciesMs = [];
+  window.__subtitleCueObservedTicks = new Set();
+  // Die erste Mutation ist das originale Cue, die folgende nach Korrektur
+  // liefert die tatsächlich verstrichene Zeit bis zum korrigierten Text.
+  new MutationObserver(() => {
+    const tick = window.__subtitleTicks;
+    if (subtitle.textContent.startsWith("Nutzer im Untertitel ") &&
+        window.__subtitleCueIssuedAt !== null &&
+        !window.__subtitleCueObservedTicks.has(tick)) {
+      window.__subtitleCueObservedTicks.add(tick);
+      window.__subtitleCueLatenciesMs.push(
+        Math.max(0, performance.now() - window.__subtitleCueIssuedAt)
+      );
+    }
+  }).observe(subtitle, { subtree: true, characterData: true, childList: true });
   window.__videoTimeUpdates = 0;
   video.addEventListener("timeupdate", () => {
     window.__videoTimeUpdates += 1;
     if (window.__videoTimeUpdates % 2 === 0) {
       window.__subtitleTicks += 1;
+      window.__subtitleCueIssuedAt = performance.now();
       subtitle.textContent = "Nutzer:innen im Untertitel " + window.__subtitleTicks;
     }
   });
@@ -211,7 +236,9 @@ function subtitleFixtureHtml() {
 function startServer() {
   const html = Buffer.from(fixtureHtml(), "utf8");
   const subtitles = Buffer.from(subtitleFixtureHtml(), "utf8");
-  const video = Buffer.from(readFileSync(videoPath, "utf8").trim(), "base64");
+  const video = diagnosticFps === 60
+    ? createVerified60FpsWebm()
+    : Buffer.from(readFileSync(videoPath, "utf8").trim(), "base64");
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     if (url.pathname === "/video-playback.html") {
@@ -503,7 +530,8 @@ async function subtitleState(id) {
       ticks: window.__subtitleTicks ?? 0,
       ready: video?.readyState ?? 0,
       paused: video?.paused ?? true,
-      error: window.__subtitlePlaybackError ?? null
+      error: window.__subtitlePlaybackError ?? null,
+      cueLatenciesMs: [...(window.__subtitleCueLatenciesMs ?? [])]
     };
   `);
 }
@@ -612,6 +640,12 @@ async function validateSubtitleToggle(url) {
     await setSubtitleCheckbox(id, true);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
     const on = await waitSubtitle(id, true);
+    // In der optionalen 60-FPS-Diagnose weitere echte Untertitelwechsel abwarten.
+    if (diagnosticFps === 60) await sleep(2_200);
+    const onWithCues = diagnosticFps === 60 ? await subtitleState(id) : on;
+    if (diagnosticFps === 60 && onWithCues.cueLatenciesMs.length === 0) {
+      throw new Error("Aktive Untertitel konnten nicht mit Cue-Latenz erfasst werden.");
+    }
     if (on.timeUpdates <= off.timeUpdates) {
       throw new Error("Video wurde beim Einschalten unterbrochen.");
     }
@@ -624,7 +658,7 @@ async function validateSubtitleToggle(url) {
       throw new Error("Video oder Untertitel wurden beim Ausschalten unterbrochen.");
     }
     console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
-      off, on, againOff
+      fps: diagnosticFps, off, on: onWithCues, againOff
     })}`);
   } finally {
     try {
@@ -666,6 +700,7 @@ try {
   const fixture = await startServer();
   server = fixture.server;
 
+  console.log("Verifiziertes lokales Videomaterial:", diagnosticFps, "FPS");
   let { baseline, extension } = await measureVideoPair(fixture.url, 1);
   try {
     validateComparison(baseline, extension);
