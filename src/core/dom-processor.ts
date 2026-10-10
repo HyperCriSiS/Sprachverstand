@@ -505,7 +505,9 @@ export class DomProcessor {
   }
 
   private queue(node: Node): void {
-    if (!this.running) {
+    // Im selben MutationObserver-Batch können mehrfach ersetzte Texte
+    // bereits wieder abgetrennt sein. Solche Knoten nie vormerken.
+    if (!this.running || !this.isProcessableRoot(node)) {
       return;
     }
 
@@ -906,6 +908,14 @@ export class DomProcessor {
         if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
           continue;
         }
+        // Bei Framework-textContent-Austausch den alten, nun unerreichbaren
+        // Knoten direkt aus der Queue entfernen. Sonst bleiben unter hoher
+        // Mutationslast Tausende überholte Einträge bis zum späteren Scan.
+        this.pendingNodes.delete(removedNode);
+        if (removedNode.nodeType === Node.TEXT_NODE) {
+          this.contextDirtyNodes.delete(removedNode as Text);
+          this.pendingSubtitleTextNodes.delete(removedNode as Text);
+        }
         this.forgetRoot(removedNode);
       }
       for (const addedNode of record.addedNodes) {
@@ -998,7 +1008,6 @@ export class DomProcessor {
     if (!this.running) {
       return;
     }
-
     // Den ohnehin laufenden Discovery-Timer auch für den ereignislosen
     // Dokument-Editormodus nutzen, ohne zusätzliche Polling-Timer.
     this.syncDesignModeTransition();
