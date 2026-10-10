@@ -588,7 +588,7 @@ async function exercisePage(sessionId, site) {
   if (site.slug === "shaka-player-angel-one") {
     // Die URL wählt einen unverschlüsselten DASH-Stream. Nur tatsächlich
     // dekodierte Videodaten erlauben die Aktivierung von Textspuren.
-    const deadline = Date.now() + 12_000;
+    const deadline = Date.now() + 25_000;
     let ready = false;
     while (Date.now() < deadline) {
       const state = await execute(sessionId, `
@@ -715,10 +715,13 @@ async function runSiteMode(site, mode) {
     if (site.slug === "shaka-player-angel-one") {
       const playedSeconds = snapshot.videos.currentTimeSeconds - beforePlayback;
       if (snapshot.videos.frameCallbacks < 2 || !Number.isFinite(playedSeconds) ||
-          playedSeconds < 0.5) {
+          playedSeconds < 0.5 || snapshot.videos.textTrackCount < 1 ||
+          snapshot.videos.showingTextTrackCount < 1) {
         throw new Error(
           "Shaka-Video nicht bestätigt: " + snapshot.videos.frameCallbacks +
-          " Frames, " + String(playedSeconds) + " Sekunden Wiedergabefortschritt."
+          " Frames, " + String(playedSeconds) + " Sekunden Videofortschritt, " +
+          String(snapshot.videos.showingTextTrackCount) + "/" +
+          String(snapshot.videos.textTrackCount) + " aktive/verfügbare Textspuren."
         );
       }
     }
