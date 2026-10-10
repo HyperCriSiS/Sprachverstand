@@ -1342,8 +1342,8 @@ export class DomProcessor {
       nextEnd -= 1;
     }
     if (
-      !/\\s/u.test(previous.slice(prefix, previousEnd)) &&
-      !/\\s/u.test(next.slice(prefix, nextEnd))
+      !/\s/u.test(previous.slice(prefix, previousEnd)) &&
+      !/\s/u.test(next.slice(prefix, nextEnd))
     ) {
       node.replaceData(prefix, previousEnd - prefix, next.slice(prefix, nextEnd));
       return;
