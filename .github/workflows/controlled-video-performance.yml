@@ -38,4 +38,4 @@ jobs:
       - name: Erweiterten Chromium-Browser prüfen
         run: npm run test:browser:chromium
       - name: Echtes 60-FPS-WebM und dynamische Untertitel prüfen
-        run: npm run test:browser:video:chromium -- --fps 60
+        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-cue-phases

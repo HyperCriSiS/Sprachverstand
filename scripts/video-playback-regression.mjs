@@ -20,6 +20,8 @@ const observationMs = 8_000;
 const fpsArgumentIndex = process.argv.indexOf("--fps");
 const diagnosticFps = fpsArgumentIndex < 0 ? 30 :
   Number(process.argv[fpsArgumentIndex + 1]);
+// Nur manuelle Diagnose: Wechselkosten und tatsächliche Cue-Latenz trennen.
+const diagnoseCuePhases = process.argv.includes("--diagnose-cue-phases");
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
@@ -206,6 +208,35 @@ function subtitleFixtureHtml() {
   window.__subtitleCueIssuedAt = null;
   window.__subtitleCueLatenciesMs = [];
   window.__subtitleCueObservedTicks = new Set();
+  window.__subtitleCueRecords = [];
+  window.__subtitleLongTasks = [];
+  window.__controlledCueMode = false;
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        window.__subtitleLongTasks.push({
+          startMs: entry.startTime,
+          durationMs: entry.duration
+        });
+      }
+    }).observe({ type: "longtask" });
+  } catch { /* Fehlende Longtask-Unterstützung ist kein Testfehler. */ }
+  window.__issueSubtitleCue = (source) => {
+    window.__subtitleTicks += 1;
+    const tick = window.__subtitleTicks;
+    const issuedAt = performance.now();
+    window.__subtitleCueIssuedAt = issuedAt;
+    window.__subtitleCueRecords.push({
+      tick, source, issuedAt,
+      visibilityAtIssue: document.visibilityState,
+      focusAtIssue: document.hasFocus(),
+      correctedAt: null,
+      latencyMs: null,
+      visibilityAtCorrection: null
+    });
+    subtitle.textContent = "Nutzer:innen im Untertitel " + tick;
+    return tick;
+  };
   // Die erste Mutation ist das originale Cue, die folgende nach Korrektur
   // liefert die tatsächlich verstrichene Zeit bis zum korrigierten Text.
   new MutationObserver(() => {
@@ -214,18 +245,22 @@ function subtitleFixtureHtml() {
         window.__subtitleCueIssuedAt !== null &&
         !window.__subtitleCueObservedTicks.has(tick)) {
       window.__subtitleCueObservedTicks.add(tick);
-      window.__subtitleCueLatenciesMs.push(
-        Math.max(0, performance.now() - window.__subtitleCueIssuedAt)
-      );
+      const correctedAt = performance.now();
+      const latencyMs = Math.max(0, correctedAt - window.__subtitleCueIssuedAt);
+      window.__subtitleCueLatenciesMs.push(latencyMs);
+      const record = window.__subtitleCueRecords.find((item) => item.tick === tick);
+      if (record) {
+        record.correctedAt = correctedAt;
+        record.latencyMs = latencyMs;
+        record.visibilityAtCorrection = document.visibilityState;
+      }
     }
   }).observe(subtitle, { subtree: true, characterData: true, childList: true });
   window.__videoTimeUpdates = 0;
   video.addEventListener("timeupdate", () => {
     window.__videoTimeUpdates += 1;
-    if (window.__videoTimeUpdates % 2 === 0) {
-      window.__subtitleTicks += 1;
-      window.__subtitleCueIssuedAt = performance.now();
-      subtitle.textContent = "Nutzer:innen im Untertitel " + window.__subtitleTicks;
+    if (window.__videoTimeUpdates % 2 === 0 && !window.__controlledCueMode) {
+      window.__issueSubtitleCue("video-timeupdate");
     }
   });
   video.play().catch(error => { window.__subtitlePlaybackError = String(error); });
@@ -531,7 +566,10 @@ async function subtitleState(id) {
       ready: video?.readyState ?? 0,
       paused: video?.paused ?? true,
       error: window.__subtitlePlaybackError ?? null,
-      cueLatenciesMs: [...(window.__subtitleCueLatenciesMs ?? [])]
+      cueLatenciesMs: [...(window.__subtitleCueLatenciesMs ?? [])],
+      cueRecords: [...(window.__subtitleCueRecords ?? [])],
+      longTasks: [...(window.__subtitleLongTasks ?? [])],
+      visibilityState: document.visibilityState
     };
   `);
 }
@@ -607,6 +645,41 @@ async function setSubtitleCheckbox(id, enabled) {
   throw new Error(`Untertitel-Einstellung ${enabled} nicht gespeichert.`);
 }
 
+// WebDriver-Laufzeit fließt nicht in die Cue-Latenz ein: Die Zeitstempel
+// entstehen ausschließlich in der Video-Seite unmittelbar vor der DOM-Mutation
+// und im auf die Korrektur reagierenden MutationObserver.
+async function measureControlledSubtitleCues(id, number = 6) {
+  await execute(id, "window.__controlledCueMode = true; return true;");
+  const results = [];
+  try {
+    // Regelengine und Tabwechsel hatten hier bereits Zeit anzulaufen.
+    await sleep(250);
+    for (let index = 0; index < number; index += 1) {
+      const tick = await execute(id,
+        'return window.__issueSubtitleCue("kontrolliert");');
+      const deadline = Date.now() + 2_000;
+      let record;
+      while (Date.now() < deadline) {
+        const state = await subtitleState(id);
+        record = state.cueRecords.find((item) => item.tick === tick);
+        if (record?.correctedAt !== null && record?.correctedAt !== undefined) {
+          results.push(record);
+          break;
+        }
+        await sleep(25);
+      }
+      if (!results.some((item) => item.tick === tick)) {
+        throw new Error("Kontrollierter Cue wurde nicht korrigiert: " +
+          JSON.stringify({ tick, record }));
+      }
+      await sleep(125);
+    }
+  } finally {
+    await execute(id, "window.__controlledCueMode = false; return true;");
+  }
+  return results;
+}
+
 async function validateSubtitleToggle(url) {
   const id = await createSession(true);
   try {
@@ -643,6 +716,9 @@ async function validateSubtitleToggle(url) {
     // In der optionalen 60-FPS-Diagnose weitere echte Untertitelwechsel abwarten.
     if (diagnosticFps === 60) await sleep(2_200);
     const onWithCues = diagnosticFps === 60 ? await subtitleState(id) : on;
+    const controlledCues = diagnoseCuePhases
+      ? await measureControlledSubtitleCues(id)
+      : [];
     if (diagnosticFps === 60 && onWithCues.cueLatenciesMs.length === 0) {
       throw new Error("Aktive Untertitel konnten nicht mit Cue-Latenz erfasst werden.");
     }
@@ -658,7 +734,8 @@ async function validateSubtitleToggle(url) {
       throw new Error("Video oder Untertitel wurden beim Ausschalten unterbrochen.");
     }
     console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
-      fps: diagnosticFps, off, on: onWithCues, againOff
+      fps: diagnosticFps, off, on: onWithCues, againOff,
+      controlledCues
     })}`);
   } finally {
     try {

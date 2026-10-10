@@ -53,6 +53,17 @@ describe("Video-Playback-Regression", () => {
     expect(runner).toContain("validateSubtitleToggle(fixture.subtitleUrl)");
   });
 
+  it("protokolliert Cue-Phasen und misst kontrollierte Cues nur manuell", () => {
+    expect(runner).toContain('process.argv.includes("--diagnose-cue-phases")');
+    expect(runner).toContain('window.__issueSubtitleCue = (source) =>');
+    expect(runner).toContain('visibilityAtIssue: document.visibilityState');
+    expect(runner).toContain('window.__subtitleLongTasks.push(');
+    expect(runner).toContain('measureControlledSubtitleCues(id)');
+    expect(runner).toContain('window.__controlledCueMode = true;');
+    expect(runner).toContain('window.__controlledCueMode = false;');
+    expect(runner).toContain('const controlledCues = diagnoseCuePhases');
+  });
+
   it("hält ein echtes eingebettetes WebM-Testvideo vor", () => {
     expect(videoFixture.length).toBeGreaterThan(1_500);
     expect(Buffer.from(videoFixture, "base64").subarray(0, 4).toString("hex")).toBe(
