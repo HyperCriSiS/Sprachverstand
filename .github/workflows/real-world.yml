@@ -8,6 +8,11 @@ on:
         required: false
         default: ""
         type: string
+      pairs:
+        description: "Optionale gepaarte A/B-Durchläufe je Seite (1–5)"
+        required: false
+        default: "1"
+        type: string
 
 permissions:
   contents: read
@@ -51,6 +56,7 @@ jobs:
       - name: Reale Webseiten diagnostisch prüfen
         env:
           SITE_FILTER: ${{ inputs.site }}
+          PAIR_COUNT: ${{ inputs.pairs }}
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +67,7 @@ jobs:
           if [[ -n "$SITE_FILTER" ]]; then
             ARGS+=(--site "$SITE_FILTER")
           fi
+          ARGS+=(--pairs "$PAIR_COUNT")
           npm run test:real-world -- "${ARGS[@]}"
 
       - name: Live-Ergebnisse kompakt ausgeben
@@ -142,6 +149,8 @@ jobs:
             const elapsedDelta = Number.isFinite(comparison.elapsedDeltaMs)
               ? `${Math.round(comparison.elapsedDeltaMs)} ms`
               : "–";
+            const paired = result.aggregate || {};
+            const medianPhase = paired.medianPhaseDeltaMs || {};
             const longTaskDelta = Number.isFinite(comparison.totalLongTaskDeltaMs)
               ? `${Math.round(comparison.totalLongTaskDeltaMs)} ms`
               : "–";
@@ -177,6 +186,20 @@ jobs:
                 `extension=${extension.status || "unbekannt"}`,
                 `elapsedDeltaMs=${comparison.elapsedDeltaMs ?? "n/a"}`,
                 `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
+                `pairs=${paired.validPairs ?? 0}/${paired.requestedPairs ?? 0}`,
+                `startupDeltaMs=${comparison.phaseDeltaMs?.browserStartupMs ?? "n/a"}`,
+                `navigationDeltaMs=${comparison.phaseDeltaMs?.navigationMs ?? "n/a"}`,
+                `interactionDeltaMs=${comparison.phaseDeltaMs?.interactionMs ?? "n/a"}`,
+                `snapshotDeltaMs=${comparison.phaseDeltaMs?.domSnapshotMs ?? "n/a"}`,
+                `screenshotDeltaMs=${comparison.phaseDeltaMs?.screenshotMs ?? "n/a"}`,
+                `visitDeltaMs=${comparison.visitDeltaMs ?? "n/a"}`,
+                `afterObserverLongTaskDeltaMs=${comparison.afterObserverLongTaskDeltaMs ?? "n/a"}`,
+                `medianStartupDeltaMs=${medianPhase.browserStartupMs ?? "n/a"}`,
+                `medianNavigationDeltaMs=${medianPhase.navigationMs ?? "n/a"}`,
+                `medianInteractionDeltaMs=${medianPhase.interactionMs ?? "n/a"}`,
+                `medianVisitDeltaMs=${paired.medianVisitDeltaMs ?? "n/a"}`,
+                `medianLongTaskDeltaMs=${paired.medianLongTaskDeltaMs ?? "n/a"}`,
+                `medianAfterObserverLongTaskDeltaMs=${paired.medianAfterObserverLongTaskDeltaMs ?? "n/a"}`,
                 `videoElements=${videoElements}`,
                 `videoFrames=${videoFrames}`,
                 `videoMeasured=${videoMeasured}`,
