@@ -38,7 +38,7 @@ function appendParagraphs(target: ParentNode, count: number): void {
     p.textContent = "Nutzer:innen";
     fragment.append(p);
   }
-  target.appendChild(fragment);
+  target.append(fragment);
 }
 
 describe("Initialscan: begrenzter synchroner Start", () => {
