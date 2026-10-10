@@ -97,4 +97,29 @@ describe("Audit DOM-12: laufende Textauswahl schützen", () => {
     expect(node.data).toBe("Hallo Lehrer und Freunde.");
     expect(selection.toString()).toBe("Hallo");
   });
+
+  it("erhält die Auswahl im unveränderten Suffix bei einer einzelnen Wortänderung", () => {
+    document.body.innerHTML = "<p>Nutzer:innen im Unterricht</p>";
+    const node = document.querySelector("p")!.firstChild as Text;
+    const begin = node.data.indexOf("im Unterricht");
+    const selection = auswahl(node, begin, node, node.data.length);
+    starten();
+    expect(node.data).toBe("Nutzer im Unterricht");
+    expect(selection.toString()).toBe("im Unterricht");
+    processor?.stop({ restore: true });
+    processor = undefined;
+    expect(node.data).toBe("Nutzer:innen im Unterricht");
+    expect(selection.toString()).toBe("im Unterricht");
+  });
+
+  it("erhält getrennte Wortänderungen und eine Auswahl über NBSP hinweg", () => {
+    document.body.innerHTML = "<p>Nutzer:innen\u00a0und Lehrer:innen</p>";
+    const node = document.querySelector("p")!.firstChild as Text;
+    const begin = node.data.indexOf("und");
+    const selection = auswahl(node, begin, node, begin + 3);
+    starten();
+    expect(node.data).toBe("Nutzer\u00a0und Lehrer");
+    expect(selection.toString()).toBe("und");
+  });
+
 });
