@@ -106,6 +106,10 @@ const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
 const maximumPreviousInlineNodes = 64;
 
 const regularWorkBudgetMs = 4;
+// Sehr kleine Startdokumente bleiben unmittelbar verfügbar. Große DOMs
+// werden nach einer begrenzten Vorprüfung kooperativ abgearbeitet.
+const maximumImmediateInitialNodes = 64;
+const maximumImmediateInitialTextChars = 2_048;
 // Dynamische Videountertitel erhalten nur kurze Arbeitsscheiben pro Frame.
 const subtitleWorkBudgetMs = 2;
 const maximumSubtitleStepsPerFrame = 12;
@@ -213,7 +217,13 @@ export class DomProcessor {
 
     const root = this.document.body ?? this.document.documentElement;
     if (root) {
-      this.processRoot(root);
+      if (this.isSmallInitialTree(root)) {
+        this.processRoot(root);
+      } else {
+        // Die vollständige Initialisierung darf nicht den Hauptthread
+        // während eines einzigen start()-Aufrufs blockieren.
+        this.queue(root);
+      }
     }
 
     // attachShadow() erzeugt kein Light-DOM-MutationRecord.
@@ -457,6 +467,40 @@ export class DomProcessor {
 
       currentNode = walker.nextNode();
     }
+  }
+
+  private isSmallInitialTree(root: Node): boolean {
+    const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const mask = filter.SHOW_ELEMENT | filter.SHOW_TEXT;
+    const walkers: TreeWalker[] = [this.document.createTreeWalker(root, mask)];
+    if (root instanceof Element && root.shadowRoot) {
+      walkers.push(this.document.createTreeWalker(root.shadowRoot, mask));
+    }
+
+    let inspectedNodes = 0;
+    let textChars = 0;
+    while (walkers.length > 0) {
+      const node = walkers[walkers.length - 1]?.nextNode();
+      if (!node) {
+        walkers.pop();
+        continue;
+      }
+      inspectedNodes += 1;
+      if (inspectedNodes > maximumImmediateInitialNodes) {
+        return false;
+      }
+      if (node.nodeType === Node.TEXT_NODE) {
+        textChars += (node as Text).data.length;
+        if (textChars > maximumImmediateInitialTextChars) {
+          return false;
+        }
+      }
+      // Auch offene ShadowRoots zählen zum synchronen Gesamtbudget.
+      if (node instanceof Element && node.shadowRoot) {
+        walkers.push(this.document.createTreeWalker(node.shadowRoot, mask));
+      }
+    }
+    return true;
   }
 
   private queue(node: Node): void {
@@ -997,7 +1041,6 @@ export class DomProcessor {
     // DOM-Durchlauf im MutationObserver oder am Stück auszuführen.
     this.scheduleShadowDiscovery(shadowDiscoveryYieldMs);
   }
-
   private observeShadowRoot(root: ShadowRoot): void {
     if (this.observedShadowRoots.has(root)) {
       return;

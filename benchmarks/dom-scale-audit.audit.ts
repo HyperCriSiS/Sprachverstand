@@ -38,6 +38,8 @@ function durchlauf(anzahl: number) {
   });
   const anfang = performance.now();
   prozessor.start();
+  // Historische synthetische Durchsatzmessung: vollständig synchron abschließen.
+  prozessor.flush();
   const dauer = performance.now() - anfang;
   const ersetzungen = prozessor.getReplacementCount();
   prozessor.stop({ restore: true });
