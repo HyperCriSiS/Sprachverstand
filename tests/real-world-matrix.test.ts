@@ -42,7 +42,7 @@ describe("Real-World-Browsermatrix", () => {
     const videojs = sites.find((site) => site.id === 11);
     expect(videojs?.slug).toBe("videojs-player-demo");
     expect(videojs?.url).toBe("https://videojs.org/");
-    expect(documentation).toContain("Video.js-10-Auftritt");
+    expect(documentation).toContain("Externer Player-Stack");
     expect(runner).toContain('site.slug === "videojs-player-demo"');
     expect(runner).toContain("Video.js-Playback nicht bestätigt");
   });
