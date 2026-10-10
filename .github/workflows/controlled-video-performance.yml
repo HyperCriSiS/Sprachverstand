@@ -26,8 +26,11 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Abhängigkeiten installieren
         run: npm ci --prefer-offline --no-audit --no-fund
-      - name: Encoder-Verfügbarkeit prüfen
+      - name: Lokale Video-Encoder installieren und prüfen
         run: |
+          # Nicht alle GitHub-Runner enthalten FFmpeg/FFprobe ab Werk.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version
           ffprobe -version
       - name: Chromium-Erweiterung erstellen
