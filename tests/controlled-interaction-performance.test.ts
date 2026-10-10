@@ -24,6 +24,8 @@ describe("Lokale echte Chromium-Interaktionsdiagnose", () => {
     expect(runner).toContain('text: " test"');
     expect(runner).toContain('m.mutationTicks++');
     expect(runner).toContain('requestAnimationFrame');
+    expect(runner).toContain("target.push(performance.now() - start)");
+    expect(runner).not.toContain("target.push(now - start)");
   });
 
   it("wertet geschützte Bereiche, tatsächliche Frames und Long Tasks aus", () => {
