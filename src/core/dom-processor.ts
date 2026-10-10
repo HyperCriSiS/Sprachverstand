@@ -1317,6 +1317,38 @@ export class DomProcessor {
     if (previous === next) {
       return;
     }
+
+    // Eine einzelne Änderung innerhalb eines Tokens benötigt kein erneutes
+    // Zerlegen des kompletten Textes in Wörter. Das lokale replaceData()
+    // bewahrt unveränderte Präfix-/Suffixbereiche mitsamt ihren DOM-Ranges.
+    // Bei Leerraumänderungen oder mehreren Wortänderungen bleibt der
+    // bisherige tokenweise Rückwärts-Algorithmus maßgeblich.
+    let prefix = 0;
+    while (
+      prefix < previous.length &&
+      prefix < next.length &&
+      previous[prefix] === next[prefix]
+    ) {
+      prefix += 1;
+    }
+    let previousEnd = previous.length;
+    let nextEnd = next.length;
+    while (
+      previousEnd > prefix &&
+      nextEnd > prefix &&
+      previous[previousEnd - 1] === next[nextEnd - 1]
+    ) {
+      previousEnd -= 1;
+      nextEnd -= 1;
+    }
+    if (
+      !/\\s/u.test(previous.slice(prefix, previousEnd)) &&
+      !/\\s/u.test(next.slice(prefix, nextEnd))
+    ) {
+      node.replaceData(prefix, previousEnd - prefix, next.slice(prefix, nextEnd));
+      return;
+    }
+
     const tokensOf = (value: string) =>
       [...value.matchAll(/\S+/gu)].map((match) => ({
         index: match.index,
