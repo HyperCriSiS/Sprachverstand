@@ -1,0 +1,123 @@
+name: DOM-02 Range-Schnellpfad A/B
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: A/B mit ${{ matrix.browser }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - name: Optimierten Commit auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: aktuell
+          persist-credentials: false
+
+      - name: Festen Commit vor dem Range-Schnellpfad auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: aef8584db39cd2b19d5aa30a16b9966de8c61818
+          path: baseline
+          persist-credentials: false
+
+      - name: Node.js 24 einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Identischen, nicht instrumentierten Testvertrag bereitstellen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p baseline/benchmarks reports
+          cp aktuell/benchmarks/dom-native-scale-entry.audit.ts baseline/benchmarks/
+          echo "Vorher: $(git -C baseline rev-parse HEAD)"
+          echo "Nachher: $(git -C aktuell rev-parse HEAD)"
+
+      - name: Abhängigkeiten des unveränderten Referenzcommits installieren
+        working-directory: baseline
+        run: npm ci --no-audit --no-fund
+
+      - name: Abhängigkeiten des optimierten Commits installieren
+        working-directory: aktuell
+        run: npm ci --no-audit --no-fund
+
+      - name: Vorherige Implementation bündeln
+        working-directory: baseline
+        run: >-
+          npx --no-install esbuild benchmarks/dom-native-scale-entry.audit.ts
+          --bundle --platform=browser --format=iife --target=es2022
+          --outfile=../baseline-native.js
+
+      - name: Optimierte Implementation bündeln
+        working-directory: aktuell
+        run: >-
+          npx --no-install esbuild benchmarks/dom-native-scale-entry.audit.ts
+          --bundle --platform=browser --format=iife --target=es2022
+          --outfile=../current-native.js
+
+      - name: Direkten Browser-A/B-Vergleich durchführen
+        run: node aktuell/scripts/dom-native-browser-audit.mjs ${{ matrix.browser }}
+
+      - name: A/B-Berichte prüfen und vergleichebare Mediane ausgeben
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync, appendFileSync } from "node:fs";
+          import { vergleicheNativeDomBerichte } from "./aktuell/scripts/compare-dom-native-audit.mjs";
+
+          const browser = "${{ matrix.browser }}";
+          const base = JSON.parse(readFileSync("reports/native-" + browser + "-baseline.json", "utf8"));
+          const current = JSON.parse(readFileSync("reports/native-" + browser + "-current.json", "utf8"));
+          if (base.sourceSha !== "aef8584db39cd2b19d5aa30a16b9966de8c61818" ||
+              base.packageVersion !== current.packageVersion ||
+              base.packageVersion !== "0.7.2") {
+            throw new Error("A/B-Versionsvertrag nicht erfüllt.");
+          }
+          const result = vergleicheNativeDomBerichte(base, current);
+          const lines = [
+            "## Direkter DOM-02-Range-Schnellpfad-Vergleich: " + browser,
+            "",
+            "- Referenzcommit: " + base.sourceSha,
+            "- Neuer Commit: " + current.sourceSha,
+            "- Identischer Browser: " + base.browser + " " + base.browserVersion,
+            "- Beide Pakete: " + base.packageVersion,
+            "- Gleicher Testvertrag: 2 Messblöcke je Commit, je 2 Warmups und 7 Messungen",
+            "",
+            "| Textknoten | Vorher Median | Nachher Median | Faktor Nachher/Vorher |",
+            "| ---: | ---: | ---: | ---: |",
+            ...result.werte.map((row) => "| " + row.nodes + " | " +
+              row.referenzMedianMs.toFixed(3) + " ms | " +
+              row.aktuellMedianMs.toFixed(3) + " ms | " + row.medianFaktor + "× |"),
+            "",
+            "Faktor unter 1 bedeutet eine kürzere Medianlaufzeit nach der Änderung.",
+            "DOM-Aufbau ausgeschlossen, echte Browser ohne Erweiterungsinstallation und Video.",
+            "Ein einzelner CI-Lauf ist keine universelle Performancegarantie.",
+            ""
+          ];
+          const markdown = lines.join("\n");
+          writeFileSync("reports/fastpath-" + browser + ".md", markdown);
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+          }
+          console.log(markdown);
+          NODE
+
+      - name: Rohdaten und A/B-Vergleich zur Prüfung archivieren
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dom02-fastpath-ab-${{ matrix.browser }}-${{ github.sha }}
+          path: reports/
+          retention-days: 90
+          if-no-files-found: warn
