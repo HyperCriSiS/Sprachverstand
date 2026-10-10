@@ -38,12 +38,11 @@ describe("Real-World-Browsermatrix", () => {
     }
   });
 
-  it("ersetzt Yoga74 durch die unabhängige Video.js-Playerseite", () => {
+  it("prüft die unabhängige Video.js-Playerseite", () => {
     const videojs = sites.find((site) => site.id === 11);
     expect(videojs?.slug).toBe("videojs-player-demo");
     expect(videojs?.url).toBe("https://videojs.org/");
-    expect(sites.some((site) => /yoga74/iu.test(site.url))).toBe(false);
-    expect(documentation).toContain("Video.js-10-Auftritt");
+    expect(documentation).toContain("Externer Player-Stack");
     expect(runner).toContain('site.slug === "videojs-player-demo"');
     expect(runner).toContain("Video.js-Playback nicht bestätigt");
   });

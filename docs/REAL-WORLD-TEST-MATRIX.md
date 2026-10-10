@@ -116,9 +116,9 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 | 11 | `https://videojs.org/` | offizielle Video.js-10-Webseite mit Player-Demo, dynamischer Steuerung und aktueller Player-UI | reale Wiedergabe mit Frame-Callbacks und messbarem Fortschritt nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls, geschützte DOM-Felder und Spielerinteraktionen gegenüber Baseline vergleichen; Textspuren nur bei tatsächlicher Verfügbarkeit zählen | mittel (externe Medien-CDN) |
 | 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
 
-### Ersatz der Yoga74-Seite (10.10.2026)
+### Externer Player-Stack (10.10.2026)
 
-Die Yoga74-Wix-Seite wird durch den offiziellen Video.js-10-Auftritt
+Die offizielle Video.js-10-Webseite
 `https://videojs.org/` ersetzt. Er zeigt einen aktuellen HTML5-Player mit
 Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
 andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
