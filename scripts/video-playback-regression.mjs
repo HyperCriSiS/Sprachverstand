@@ -22,6 +22,8 @@ const diagnosticFps = fpsArgumentIndex < 0 ? 30 :
   Number(process.argv[fpsArgumentIndex + 1]);
 // Nur manuelle Diagnose: Wechselkosten und tatsächliche Cue-Latenz trennen.
 const diagnoseCuePhases = process.argv.includes("--diagnose-cue-phases");
+// Im manuellen Diagnoseworkflow auch bei rotem Frame-Gate getrennt messen.
+const subtitleOnly = process.argv.includes("--subtitle-only");
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
@@ -778,41 +780,43 @@ try {
   server = fixture.server;
 
   console.log("Verifiziertes lokales Videomaterial:", diagnosticFps, "FPS");
-  let { baseline, extension } = await measureVideoPair(fixture.url, 1);
-  try {
-    validateComparison(baseline, extension);
-  } catch (error) {
-    if (!(error instanceof VideoFrameRatioError)) {
-      throw error;
+  if (!subtitleOnly) {
+    let { baseline, extension } = await measureVideoPair(fixture.url, 1);
+    try {
+      validateComparison(baseline, extension);
+    } catch (error) {
+      if (!(error instanceof VideoFrameRatioError)) {
+        throw error;
+      }
+
+      // Nur die stark schwankende Frame-Anzahl durch einen zweiten Messlauf bestätigen.
+      // Alle bisherigen Grenzwerte gelten unverändert; ein zweiter Fehlschlag ist endgültig.
+      console.warn(`Erste Video-Frame-Prüfung fehlgeschlagen: ${error.message}`);
+      console.warn("Einmalige Bestätigungsmessung mit neuen Browser-Sitzungen.");
+
+      ({ baseline, extension } = await measureVideoPair(fixture.url, 2));
+      validateComparison(baseline, extension);
     }
 
-    // Nur die stark schwankende Frame-Anzahl durch einen zweiten Messlauf bestätigen.
-    // Alle bisherigen Grenzwerte gelten unverändert; ein zweiter Fehlschlag ist endgültig.
-    console.warn(`Erste Video-Frame-Prüfung fehlgeschlagen: ${error.message}`);
-    console.warn("Einmalige Bestätigungsmessung mit neuen Browser-Sitzungen.");
-
-    ({ baseline, extension } = await measureVideoPair(fixture.url, 2));
-    validateComparison(baseline, extension);
+    console.log(
+      `Video-Playback-Regression erfolgreich: ${JSON.stringify({
+        baseline: {
+          callbacks: baseline.frames.callbacks,
+          p95GapMs: baseline.frames.p95GapMs,
+          maximumGapMs: baseline.frames.maximumGapMs,
+          gapsOver120Ms: baseline.frames.gapsOver120Ms,
+          droppedVideoFrames: baseline.droppedVideoFrames
+        },
+        extension: {
+          callbacks: extension.frames.callbacks,
+          p95GapMs: extension.frames.p95GapMs,
+          maximumGapMs: extension.frames.maximumGapMs,
+          gapsOver120Ms: extension.frames.gapsOver120Ms,
+          droppedVideoFrames: extension.droppedVideoFrames
+        }
+      })}`
+    );
   }
-
-  console.log(
-    `Video-Playback-Regression erfolgreich: ${JSON.stringify({
-      baseline: {
-        callbacks: baseline.frames.callbacks,
-        p95GapMs: baseline.frames.p95GapMs,
-        maximumGapMs: baseline.frames.maximumGapMs,
-        gapsOver120Ms: baseline.frames.gapsOver120Ms,
-        droppedVideoFrames: baseline.droppedVideoFrames
-      },
-      extension: {
-        callbacks: extension.frames.callbacks,
-        p95GapMs: extension.frames.p95GapMs,
-        maximumGapMs: extension.frames.maximumGapMs,
-        gapsOver120Ms: extension.frames.gapsOver120Ms,
-        droppedVideoFrames: extension.droppedVideoFrames
-      }
-    })}`
-  );
 
   await validateSubtitleToggle(fixture.subtitleUrl);
 } finally {

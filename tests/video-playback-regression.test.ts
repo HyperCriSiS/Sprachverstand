@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 
 const runner = readFileSync("scripts/video-playback-regression.mjs", "utf8");
 const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
+const diagnoseWorkflow = readFileSync(
+  ".github/workflows/controlled-video-performance.yml", "utf8"
+);
 const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
   readonly scripts: Record<string, string>;
 };
@@ -62,6 +65,11 @@ describe("Video-Playback-Regression", () => {
     expect(runner).toContain('window.__controlledCueMode = true;');
     expect(runner).toContain('window.__controlledCueMode = false;');
     expect(runner).toContain('const controlledCues = diagnoseCuePhases');
+    expect(runner).toContain('process.argv.includes("--subtitle-only")');
+    expect(runner).toContain('if (!subtitleOnly) {');
+    expect(diagnoseWorkflow).toContain('run: npm run test:browser:video:chromium -- --fps 60\n');
+    expect(diagnoseWorkflow).toContain('if: ${{ !cancelled() && steps.erweiterung_build.outcome');
+    expect(diagnoseWorkflow).toContain('--fps 60 --subtitle-only --diagnose-cue-phases');
   });
 
   it("hält ein echtes eingebettetes WebM-Testvideo vor", () => {

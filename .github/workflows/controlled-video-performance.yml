@@ -34,8 +34,12 @@ jobs:
           ffmpeg -version
           ffprobe -version
       - name: Chromium-Erweiterung erstellen
+        id: erweiterung_build
         run: npm run build:chromium
       - name: Erweiterten Chromium-Browser prüfen
         run: npm run test:browser:chromium
       - name: Echtes 60-FPS-WebM und dynamische Untertitel prüfen
-        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-cue-phases
+        run: npm run test:browser:video:chromium -- --fps 60
+      - name: Untertitelphasen unabhängig vom Frame-Gate messen
+        if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases
