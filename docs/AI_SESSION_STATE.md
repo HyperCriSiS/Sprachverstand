@@ -1,5 +1,11 @@
 # AI Session State
 
+## Neuester Arbeitscheckpoint: Video-CPU-Korrelation (11.10.2026)
+
+- **Integration:** [#444](https://github.com/HyperCriSiS/Sprachverstand/pull/444) Merge `31da6573`: manuelle, lokal isolierte 60-FPS-V8-CPU-/Long-Task-/Frame-Timeline mit Rohprofilen; [#445](https://github.com/HyperCriSiS/Sprachverstand/pull/445) Merge `3212701b`: Spike-Details direkt im Actions-Log und CLI-Korrekturen. Ganze PR-CI jeweils grün, keine Produkt- oder Gate-Änderung.
+- **Belege:** [2× AB/BA auf main 38091874100](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38091874100) und [3× AB/BA auf PR-Head 38092085857](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38092085857) mit echtem 60-FPS-WebM und 480 dynamischen Spans. Im 3-Paar-Lauf drei Baselines mit **0 Long Tasks**, Erweiterung mit **4/1/2**; eine **83,2-ms-Frame-Lücke** überlappt einen **80-ms-Long-Task**, dabei **74,09 ms V8-Samples `replaceTextKeepingRanges`**. Historische 300–350-ms-Spitzen bisher nicht wiederholt; Instrumentierung verändert die Laufzeiten.
+- **Nächster begrenzter Schritt:** DOM-Rückschreiben / MutationObserver-Ketten und 4-ms-Scheduler-Scheiben gezielt analysieren; nur kausal abgesicherten Produktfix mit gleicher A/B-Fixture integrieren. Unabhängige 30-/60-FPS-Video- und Interaktionsabnahme offen. Issue [#419](https://github.com/HyperCriSiS/Sprachverstand/issues/419#issuecomment-6102949188) bleibt **Release-NO-GO**. Keine Tags, Releases, Store-Einreichungen. Main-HEAD vor weiteren Änderungen live prüfen.
+
 ## Neuester Arbeitscheckpoint: 60-FPS-Cue-Diagnose und Restblocker #419 (11.10.2026)
 
 - **HEAD nach Produkt- und Diagnoseintegration:** `b13f107f` ([PR #442](https://github.com/HyperCriSiS/Sprachverstand/pull/442), ausschließlich Fixture/Test/manueller Diagnoseworkflow); #440 Produktfix `bdfd3be3` bleibt erhalten. Offene PRs vor Wiederaufnahme live prüfen. Keine neuen Releases/Tags/Store-Aktionen.
