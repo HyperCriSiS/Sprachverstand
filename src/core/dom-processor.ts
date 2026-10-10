@@ -107,6 +107,9 @@ const maximumPreviousInlineNodes = 64;
 const inlineQuoteMarkerPattern = /["„“”‚‘«»‹›]/u;
 
 const regularWorkBudgetMs = 4;
+// Unter hoher DOM-Mutationslast nicht ausschließlich alte Traversal-Roots
+// abarbeiten: neue Textknoten erhalten je Zeitscheibe begrenzten Vorrang.
+const maximumPriorityTextMutationsPerSlice = 8;
 // Sehr kleine Startdokumente bleiben unmittelbar verfügbar. Große DOMs
 // werden nach einer begrenzten Vorprüfung kooperativ abgearbeitet.
 const maximumImmediateInitialNodes = 64;
@@ -618,8 +621,19 @@ export class DomProcessor {
 
     const deadline = this.now() + regularWorkBudgetMs;
     let nextDelay: number | undefined;
+    let priorityTextMutations = 0;
 
     while (this.now() < deadline) {
+      if (priorityTextMutations < maximumPriorityTextMutationsPerSlice) {
+        const text = this.takeNextReadyMutationTextNode();
+        if (text) {
+          // Direktes Neu-/Rewrite-Signal vor einem großflächigen Scan
+          // verarbeiten. Anschließend erhalten ältere Roots erneut Zeit.
+          this.processTextNode(text, false);
+          priorityTextMutations += 1;
+          continue;
+        }
+      }
       if (this.activeTraversal) {
         if (this.processTraversalStep(this.activeTraversal)) {
           this.activeTraversal = undefined;
@@ -723,6 +737,27 @@ export class DomProcessor {
       this.processElement(currentNode, false);
     }
     return false;
+  }
+
+  private takeNextReadyMutationTextNode(): Text | undefined {
+    for (const node of this.pendingNodes) {
+      if (node.nodeType !== Node.TEXT_NODE) {
+        continue;
+      }
+      if (!this.isProcessableRoot(node)) {
+        this.pendingNodes.delete(node);
+        continue;
+      }
+      const text = node as Text;
+      if (this.getBackoffRemaining(text) > 0) {
+        continue;
+      }
+      // Ein ebenfalls vorgemerkter Vorfahr darf die kurzfristige
+      // Einzelkorrektur nicht verdrängen; dessen Folgescan bleibt gültig.
+      this.pendingNodes.delete(node);
+      return text;
+    }
+    return undefined;
   }
 
   private takeNextReadyNode(): {
@@ -997,8 +1032,7 @@ export class DomProcessor {
     } else {
       // Beim Wechsel auf "off" fehlt ein DOM- oder Eingabeereignis.
       // Einmalig den Dokumentinhalt zur zeitbudgetierten Prüfung einreihen.
-      const root = this.document.body ?? this.document.documentElement;
-      if (root) {
+      const root = this.document.body ?? this.document.documentElement;      if (root) {
         this.queue(root);
       }
     }
