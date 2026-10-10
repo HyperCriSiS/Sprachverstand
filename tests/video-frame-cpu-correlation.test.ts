@@ -29,9 +29,9 @@ describe("Frame-Lücken und CPU-Samples zeitlich korrelieren", () => {
       [{ startMs: 200, dauerMs: 80 }]);
     expect(result.achsePlausibel).toBe(true);
     expect(result.lueckenAb120Ms).toBe(1);
-    expect(result.spitzen[0].longTasks).toHaveLength(1);
-    expect(result.spitzen[0].sampledCpuMs.erweiterung).toBe(190);
-    expect(result.spitzen[0].topFunktionen[0].name).toContain("beispiel");
+    expect(result.spitzen[0]!.longTasks).toHaveLength(1);
+    expect(result.spitzen[0]!.sampledCpuMs.erweiterung).toBe(190);
+    expect(result.spitzen[0]!.topFunktionen[0]!.name).toContain("beispiel");
   });
 
   it("meldet eine unplausible Zeitachse statt eine scheinbare Korrelation", () => {
