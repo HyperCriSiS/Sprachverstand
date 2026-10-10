@@ -1036,3 +1036,956 @@ export class DomProcessor {
     if (!this.running) {
       return;
     }
+    // Den ohnehin laufenden Discovery-Timer auch für den ereignislosen
+    // Dokument-Editormodus nutzen, ohne zusätzliche Polling-Timer.
+    this.syncDesignModeTransition();
+    const root = this.document.documentElement;
+    if (!root) {
+      this.shadowDiscoveryWalker = undefined;
+      this.shadowDiscoveryDocumentRoot = undefined;
+      this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
+      return;
+    }
+
+    // Der TreeWalker wird über einzelne Eventloop-Durchläufe fortgesetzt.
+    // Entfernt die Seite seine aktuelle Position, beginnen wir neu.
+    if (
+      !this.shadowDiscoveryWalker ||
+      this.shadowDiscoveryDocumentRoot !== root ||
+      !this.shadowDiscoveryWalker.currentNode.isConnected
+    ) {
+      const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+      this.shadowDiscoveryWalker = this.document.createTreeWalker(
+        root,
+        filter.SHOW_ELEMENT
+      );
+      this.shadowDiscoveryDocumentRoot = root;
+    }
+
+    const deadline = this.now() + shadowDiscoveryBudgetMs;
+    let inspected = 0;
+    while (
+      this.running &&
+      inspected < shadowDiscoveryBatchSize &&
+      this.now() < deadline
+    ) {
+      const element = this.shadowDiscoveryWalker.nextNode() as Element | null;
+      if (!element) {
+        this.shadowDiscoveryWalker = undefined;
+        this.shadowDiscoveryDocumentRoot = undefined;
+        this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
+        return;
+      }
+
+      inspected += 1;
+      const shadowRoot = element.shadowRoot;
+      if (shadowRoot && !this.observedShadowRoots.has(shadowRoot)) {
+        this.observeShadowRoot(shadowRoot);
+        this.queue(shadowRoot);
+      }
+    }
+    // Auch auf riesigen Seiten nur kurze Scheiben, statt einen ganzen
+    // DOM-Durchlauf im MutationObserver oder am Stück auszuführen.
+    this.scheduleShadowDiscovery(shadowDiscoveryYieldMs);
+  }
+  private observeShadowRoot(root: ShadowRoot): void {
+    if (this.observedShadowRoots.has(root)) {
+      return;
+    }
+    this.observedShadowRoots.add(root);
+    this.observeMutationTarget(root);
+  }
+
+  private observeMutationTarget(target: Node): void {
+    if (!this.observer || !this.observerOptions) {
+      return;
+    }
+    this.observer.observe(target, this.observerOptions);
+  }
+
+  private noteExternalTextRewrite(node: Text): void {
+    const now = this.now();
+    const previous = this.textRewriteStates.get(node);
+    const state =
+      previous && now - previous.windowStartedAt <= frameworkRewriteWindowMs
+        ? previous
+        : { count: 0, windowStartedAt: now, backoffUntil: 0 };
+
+    state.count += 1;
+    if (state.count >= frameworkRewriteThreshold) {
+      state.backoffUntil = now + frameworkRewriteCooldownMs;
+      state.count = 0;
+      state.windowStartedAt = now;
+    }
+    this.textRewriteStates.set(node, state);
+  }
+
+  private getBackoffRemaining(node: Text, now = this.now()): number {
+    const state = this.textRewriteStates.get(node);
+    return state ? Math.max(0, state.backoffUntil - now) : 0;
+  }
+
+  private hasPendingAncestor(node: Node, pending: ReadonlySet<Node>): boolean {
+    let ancestor = node.parentNode;
+    while (ancestor) {
+      if (pending.has(ancestor)) {
+        return true;
+      }
+      ancestor = ancestor.parentNode;
+    }
+    return false;
+  }
+
+  private coalesceRoots(nodes: readonly Node[]): Node[] {
+    // Jede Node genau einmal berücksichtigen. Die Prüfung läuft nur über
+    // DOM-Vorfahren, nicht über sämtliche bereits gesehenen Geschwister.
+    const pending = new Set(nodes.filter((node) => this.isProcessableRoot(node)));
+    return [...pending].filter((node) => !this.hasPendingAncestor(node, pending));
+  }
+  private isProcessableRoot(root: Node): boolean {
+    if (root instanceof ShadowRoot) {
+      return root.host.isConnected;
+    }
+    return root.isConnected;
+  }
+
+  private now(): number {
+    return this.document.defaultView?.performance.now() ?? performance.now();
+  }
+
+  private shouldProtectFollowingParticiple(node: Text, original: string): boolean {
+    // Ein links ohne Wortgrenze anliegender Text ist ein Teil desselben Wortes.
+    if (
+      leadingParticiplePattern.test(original) &&
+      /\p{L}$/u.test(this.collectLeadingContext(node, true) ?? "")
+    ) {
+      return true;
+    }
+    if (!trailingParticiplePattern.test(original)) {
+      return false;
+    }
+
+    let current: Node | null = node;
+    let following = "";
+    while (current?.parentNode && following.length < leadingContextLimit) {
+      let sibling = current.nextSibling;
+      while (sibling) {
+        // Nur lesbare Inline-Texte dürfen den Schutz beeinflussen.
+        const context = this.collectSafeContextSibling(sibling, true);
+        if (context === undefined) {
+          return false;
+        }
+        following += context;
+        // Bei direkt anhängenden Buchstaben die Teilwortkorrektur vermeiden.
+        // Beispiel: "Mitarbeitende" + <em>n</em>.
+        if (/\p{L}$/u.test(original) && /^\p{L}/u.test(following)) {
+          return true;
+        }
+        if (followingInlineNounPattern.test(following)) {
+          return true;
+        }
+        // Auch "E" + "ltern" über getrennte Inline-Elemente erkennen.
+        if (following.trim() && !possibleInlineNounPrefixPattern.test(following)) {
+          return false;
+        }
+        if (following.length >= leadingContextLimit) {
+          return false;
+        }
+        sibling = sibling.nextSibling;
+      }
+      const parent: Node = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        break;
+      }
+      current = parent;
+    }
+    return false;
+  }
+
+  // Nur den direkt vor der Mutation angrenzenden Inline-Kontext prüfen.
+  // So werden alte Entscheidungen neu bewertet, ohne große DOM-Scans.
+  private invalidatePrecedingParticipleContext(
+    node: Node,
+    immediatePrevious?: Node | null
+  ): void {
+    let visited = 0;
+    const inspect = (candidate: Node): boolean => {
+      visited += 1;
+      if (visited > maximumPreviousInlineNodes) {
+        return false;
+      }
+      if (
+        candidate instanceof Element &&
+        (blockBoundaryTags.has(candidate.tagName) ||
+          isProtectedTextSubtree(candidate))
+      ) {
+        return false;
+      }
+      if (candidate.nodeType === Node.TEXT_NODE) {
+        const text = candidate as Text;
+        if (!shouldProcessTextNode(text)) {
+          return text.data.trim() === "";
+        }
+        const original = this.textChanges.get(text)?.original ?? text.data;
+        if (trailingParticiplePattern.test(original)) {
+          this.contextDirtyNodes.add(text);
+          this.queue(text);
+        }
+        return original.trim() === "";
+      }
+      for (let index = candidate.childNodes.length - 1; index >= 0; index -= 1) {
+        const child = candidate.childNodes[index];
+        if (child && !inspect(child)) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    let current: Node | null = node;
+    let previous: Node | null =
+      immediatePrevious === undefined ? current.previousSibling : immediatePrevious;
+    while (current?.parentNode && visited < maximumPreviousInlineNodes) {
+      while (previous) {
+        if (!inspect(previous)) {
+          return;
+        }
+        previous = previous.previousSibling;
+      }
+      const parent: Node = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        return;
+      }
+      current = parent;
+      previous = current.previousSibling;
+    }
+  }
+
+  private invalidateFollowingContext(
+    node: Node,
+    immediateNext?: Node | null
+  ): void {
+    let scanned = 0;
+
+    const processText = (text: Text): boolean => {
+      if (!shouldProcessTextNode(text)) {
+        return text.data.trim() === "";
+      }
+      const original = this.textChanges.get(text)?.original ?? text.data;
+      if (this.needsLeadingContext(original)) {
+        this.contextDirtyNodes.add(text);
+        this.queue(text);
+      }
+      scanned += original.length;
+      return scanned < leadingContextLimit;
+    };
+
+    const processSibling = (sibling: Node): boolean => {
+      if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
+        return false;
+      }
+      if (sibling.nodeType === Node.TEXT_NODE) {
+        return processText(sibling as Text);
+      }
+      const walker = this.document.createTreeWalker(
+        sibling,
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
+      );
+      let current = walker.nextNode();
+      while (current) {
+        if (
+          current instanceof Element &&
+          blockBoundaryTags.has(current.tagName)
+        ) {
+          return false;
+        }
+        if (current.nodeType === Node.TEXT_NODE && !processText(current as Text)) {
+          return false;
+        }
+        current = walker.nextNode();
+      }
+      return true;
+    };
+
+    let current: Node | null = node;
+    let next: Node | null = immediateNext ?? current.nextSibling;
+    while (current?.parentNode && scanned < leadingContextLimit) {
+      while (next) {
+        if (!processSibling(next)) {
+          return;
+        }
+        next = next.nextSibling;
+      }
+      const parent: Node = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        return;
+      }
+      current = parent;
+      next = current.nextSibling;
+    }
+  }
+
+
+  private requiresInlineProtection(): boolean {
+    return this.options.processQuotedText === false ||
+      (this.options.protectedTerms?.length ?? 0) > 0;
+  }
+
+  private isSimpleInlineTextSwap(record: MutationRecord): boolean {
+    if ((this.options.protectedTerms?.length ?? 0) > 0 ||
+        record.type !== "childList" ||
+        record.removedNodes.length !== 1 ||
+        record.addedNodes.length !== 1) {
+      return false;
+    }
+    const removed = record.removedNodes.item(0);
+    const added = record.addedNodes.item(0);
+    if (removed?.nodeType !== Node.TEXT_NODE ||
+        added?.nodeType !== Node.TEXT_NODE) {
+      return false;
+    }
+    return !inlineQuoteMarkerPattern.test((removed as Text).data) &&
+      !inlineQuoteMarkerPattern.test((added as Text).data);
+  }
+
+  private invalidateInlineProtectionAround(
+    node: Node,
+    invalidatedRoots?: Set<Node>
+  ): void {
+    if (!this.requiresInlineProtection()) {
+      return;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    if (invalidatedRoots?.has(root)) {
+      return;
+    }
+    // Im nächsten Observer-Batch dieselbe Wurzel erneut invalidieren dürfen.
+    invalidatedRoots?.add(root);
+    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const invalidate = (text: Text): void => {
+      this.inlineProtectionCache.delete(text);
+      const tracked = this.textChanges.get(text);
+      if (tracked && text.data === tracked.transformed) {
+        this.contextDirtyNodes.add(text);
+      }
+    };
+
+    if (root.nodeType === Node.TEXT_NODE) {
+      invalidate(root as Text);
+    }
+    let current = walker.nextNode();
+    while (current) {
+      invalidate(current as Text);
+      current = walker.nextNode();
+    }
+    this.queue(root);
+  }
+
+  private getInlineProtectionRanges(
+    node: Text,
+    original: string
+  ): readonly InlineProtectionRange[] {
+    if (!this.requiresInlineProtection()) {
+      return [];
+    }
+    const cached = this.inlineProtectionCache.get(node);
+    if (cached) {
+      return cached;
+    }
+
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const ranges = collectInlineProtection(
+      root,
+      blockBoundaryTags,
+      (text) => text === node
+        ? original
+        : this.textChanges.get(text)?.original ?? text.data,
+      this.options.protectedTerms ?? [],
+      this.options.processQuotedText === false
+    );
+    for (const [text, protectedRanges] of ranges) {
+      this.inlineProtectionCache.set(text, protectedRanges);
+    }
+    return ranges.get(node) ?? [];
+  }
+
+  private transformWithInlineProtection(
+    input: string,
+    ranges: readonly InlineProtectionRange[],
+    leadingContext?: string,
+    protectParticiple = false
+  ): ReturnType<typeof transformTextWithSummary> {
+    let cursor = 0;
+    let text = "";
+    let replacements = 0;
+    const summaries: ReplacementSummaryEntry[] = [];
+    const transformSegment = (end: number): void => {
+      if (end <= cursor) {
+        return;
+      }
+      const result = this.transformValue(
+        input.slice(cursor, end),
+        cursor === 0 ? leadingContext : undefined,
+        protectParticiple
+      );
+      text += result.text;
+      replacements += result.replacements;
+      summaries.push(...result.summaries);
+    };
+
+    for (const range of ranges) {
+      transformSegment(range.start);
+      text += input.slice(range.start, range.end);
+      cursor = range.end;
+    }
+    transformSegment(input.length);
+    return { text, replacements, summaries };
+  }
+
+
+  // Ersetzungsbereiche möglichst klein halten, damit DOM-Ranges in
+  // unveränderten Präfixen, Suffixen und Wortzwischenräumen bestehen bleiben.
+  private replaceTextSegment(
+    node: Text,
+    offset: number,
+    previous: string,
+    next: string
+  ): void {
+    if (previous === next) {
+      return;
+    }
+    let prefix = 0;
+    while (
+      prefix < previous.length &&
+      prefix < next.length &&
+      previous[prefix] === next[prefix]
+    ) {
+      prefix += 1;
+    }
+    let previousEnd = previous.length;
+    let nextEnd = next.length;
+    while (
+      previousEnd > prefix &&
+      nextEnd > prefix &&
+      previous[previousEnd - 1] === next[nextEnd - 1]
+    ) {
+      previousEnd -= 1;
+      nextEnd -= 1;
+    }
+    node.replaceData(
+      offset + prefix,
+      previousEnd - prefix,
+      next.slice(prefix, nextEnd)
+    );
+  }
+
+  private replaceTextKeepingRanges(node: Text, next: string): void {
+    const previous = node.data;
+    if (previous === next) {
+      return;
+    }
+
+    // Eine einzelne Änderung innerhalb eines Tokens benötigt kein erneutes
+    // Zerlegen des kompletten Textes in Wörter. Das lokale replaceData()
+    // bewahrt unveränderte Präfix-/Suffixbereiche mitsamt ihren DOM-Ranges.
+    // Bei Leerraumänderungen oder mehreren Wortänderungen bleibt der
+    // bisherige tokenweise Rückwärts-Algorithmus maßgeblich.
+    let prefix = 0;
+    while (
+      prefix < previous.length &&
+      prefix < next.length &&
+      previous[prefix] === next[prefix]
+    ) {
+      prefix += 1;
+    }
+    let previousEnd = previous.length;
+    let nextEnd = next.length;
+    while (
+      previousEnd > prefix &&
+      nextEnd > prefix &&
+      previous[previousEnd - 1] === next[nextEnd - 1]
+    ) {
+      previousEnd -= 1;
+      nextEnd -= 1;
+    }
+    if (
+      !/\s/u.test(previous.slice(prefix, previousEnd)) &&
+      !/\s/u.test(next.slice(prefix, nextEnd))
+    ) {
+      node.replaceData(prefix, previousEnd - prefix, next.slice(prefix, nextEnd));
+      return;
+    }
+
+    const tokensOf = (value: string) =>
+      [...value.matchAll(/\S+/gu)].map((match) => ({
+        index: match.index,
+        text: match[0]
+      }));
+    const previousTokens = tokensOf(previous);
+    const nextTokens = tokensOf(next);
+
+    if (previousTokens.length > 1 &&
+        previousTokens.length === nextTokens.length) {
+      // Nur bei identischen Trennstücken sind die Tokenpositionen eindeutig.
+      let previousCursor = 0;
+      let nextCursor = 0;
+      let separatorsUnchanged = true;
+      for (let index = 0; index < previousTokens.length; index += 1) {
+        const before = previousTokens[index]!;
+        const after = nextTokens[index]!;
+        if (
+          previous.slice(previousCursor, before.index) !==
+          next.slice(nextCursor, after.index)
+        ) {
+          separatorsUnchanged = false;
+          break;
+        }
+        previousCursor = before.index + before.text.length;
+        nextCursor = after.index + after.text.length;
+      }
+      if (
+        separatorsUnchanged &&
+        previous.slice(previousCursor) === next.slice(nextCursor)
+      ) {
+        // Rückwärts ersetzen: ältere Offsets bleiben bis zu ihrem Edit gültig.
+        for (let index = previousTokens.length - 1; index >= 0; index -= 1) {
+          const before = previousTokens[index]!;
+          const after = nextTokens[index]!;
+          this.replaceTextSegment(node, before.index, before.text, after.text);
+        }
+        return;
+      }
+    }
+    this.replaceTextSegment(node, 0, previous, next);
+  }
+
+  private processTextNode(node: Text, subtitleOverride?: boolean): void {
+    const contextDirty = this.contextDirtyNodes.delete(node);
+    const tracked = this.textChanges.get(node);
+    let originalFromContext: string | undefined;
+    if (tracked) {
+      if (node.data === tracked.transformed) {
+        if (
+          !shouldProcessTextNode(node) ||
+          (this.options.processSubtitles !== true && isSubtitleContent(node))
+        ) {
+          // Vor einem Editorwechsel nur eigene Änderungen restaurieren.
+          this.forgetTrackedText(node);
+          return;
+        }
+        if (!contextDirty) {
+          return;
+        }
+        // Kontextabhängige Regeln werden immer am gespeicherten Original
+        // ausgewertet. Bereits flektierte Ausgaben sind keine Eingabe.
+        originalFromContext = tracked.original;
+        this.removeTextChange(node, tracked);
+      } else {
+        this.removeTextChange(node, tracked);
+      }
+    }
+
+    if (!shouldProcessTextNode(node)) {
+      return;
+    }
+
+    const subtitle = subtitleOverride ?? isSubtitleContent(node);
+    if (subtitle && this.options.processSubtitles !== true) {
+      return;
+    }
+
+    const original = originalFromContext ?? node.data;
+    const leadingContext = !subtitle && this.needsLeadingContext(original)
+      ? this.collectLeadingContext(node)
+      : undefined;
+    const protectedRanges = subtitle
+      ? []
+      : this.getInlineProtectionRanges(node, original);
+    const protectParticiple = !subtitle &&
+      this.shouldProtectFollowingParticiple(node, original);
+    const result = subtitle
+      ? this.transformSubtitleValue(original)
+      : protectedRanges.length > 0
+        ? this.transformWithInlineProtection(
+            original,
+            protectedRanges,
+            leadingContext,
+            protectParticiple
+          )
+        : this.transformValue(original, leadingContext, protectParticiple);
+    if (result.replacements === 0 || result.text === original) {
+      if (originalFromContext !== undefined) {
+        this.replaceTextKeepingRanges(node, original);
+      }
+      return;
+    }
+
+    this.textChanges.set(node, {
+      original,
+      transformed: result.text,
+      replacements: result.replacements,
+      summaries: result.summaries
+    });
+    this.adjustReplacementCount(result.replacements);
+    this.replaceTextKeepingRanges(node, result.text);
+  }
+
+  private processAccessibleAttributes(element: Element): void {
+    for (const attributeName of accessibleAttributeNames) {
+      this.processAccessibleAttribute(element, attributeName);
+    }
+  }
+
+  private processAccessibleAttribute(
+    element: Element,
+    attributeName: string
+  ): void {
+    if (!element.isConnected) {
+      return;
+    }
+
+    const value = element.getAttribute(attributeName);
+    const tracked = this.attributeChanges.get(element)?.get(attributeName);
+
+    // Das Entfernen eines zuvor ersetzten Attributs invalidiert auch
+    // dessen Zähler und Übersicht. Vorher blieb der Record verwaist.
+    if (value === null) {
+      if (tracked) {
+        this.removeAttributeChange(element, attributeName, tracked);
+      }
+      return;
+    }
+    if (isSubtitleContent(element)) {
+      return;
+    }
+
+    if (tracked) {
+      if (value === tracked.transformed) {
+        if (!shouldProcessAccessibleAttribute(element, attributeName, value)) {
+          // Geschützte Attribute ebenso wie Text originalgetreu freigeben.
+          element.setAttribute(attributeName, tracked.original);
+          this.removeAttributeChange(element, attributeName, tracked);
+        }
+        return;
+      }
+
+      this.removeAttributeChange(element, attributeName, tracked);
+    }
+
+    if (
+      !shouldProcessAccessibleAttribute(element, attributeName, value)
+    ) {
+      return;
+    }
+
+    const result = this.transformValue(value);
+    if (result.replacements === 0 || result.text === value) {
+      return;
+    }
+
+    const changes =
+      this.attributeChanges.get(element) ?? new Map<string, ChangeRecord>();
+    changes.set(attributeName, {
+      original: value,
+      transformed: result.text,
+      replacements: result.replacements,
+      summaries: result.summaries
+    });
+    this.attributeChanges.set(element, changes);
+    this.adjustReplacementCount(result.replacements);
+    element.setAttribute(attributeName, result.text);
+  }
+
+  private transformValue(
+    input: string,
+    leadingContext?: string,
+    protectParticiple = false
+  ) {
+    const disabledRuleIds = protectParticiple
+      ? new Set([
+          ...(this.options.disabledRuleIds ?? []),
+          "salutation.participial-forms"
+        ])
+      : this.options.disabledRuleIds;
+    const transformOptions = {
+      profile: this.options.profile,
+      ...(disabledRuleIds
+        ? { disabledRuleIds }
+        : {}),
+      ...(this.options.protectedTerms
+        ? { protectedTerms: this.options.protectedTerms }
+        : {}),
+      ...(this.options.customReplacements
+        ? { customReplacements: this.options.customReplacements }
+        : {}),
+      processQuotedText: this.options.processQuotedText !== false,
+      ...(leadingContext ? { leadingContext } : {})
+    };
+
+    return transformTextWithSummary(input, this.options.rules, transformOptions);
+  }
+
+  private transformSubtitleValue(input: string) {
+    const cached = this.subtitleTransformCache.get(input);
+    if (cached) {
+      return cached;
+    }
+
+    const result = this.transformValue(input);
+    if (
+      this.subtitleTransformCache.size >= maximumSubtitleTransformCacheEntries
+    ) {
+      const oldestKey = this.subtitleTransformCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.subtitleTransformCache.delete(oldestKey);
+      }
+    }
+    this.subtitleTransformCache.set(input, result);
+    return result;
+  }
+
+  private needsLeadingContext(input: string): boolean {
+    for (const rule of this.options.rules) {
+      if (
+        !rule.applyWithLeadingContext ||
+        !rule.leadingContextCandidate ||
+        this.options.disabledRuleIds?.has(rule.id) ||
+        !isRiskAllowed(rule.risk, this.options.profile)
+      ) {
+        continue;
+      }
+
+      rule.leadingContextCandidate.lastIndex = 0;
+      if (rule.leadingContextCandidate.test(input)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
+  private collectSafeContextSibling(sibling: Node, allowShortFragment = false): string | undefined {
+    if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
+      return undefined;
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(
+      sibling,
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
+    );
+    const chunks: string[] = [];
+
+    const readText = (text: Text): boolean => {
+      if (!shouldProcessTextNode(text)) {
+        if (text.data.trim() === "") {
+          // Auch reine Leerräume sind echte Wortgrenzen. Ihr Weglassen
+          // würde nicht zusammengehörige Inline-Fragmente verbinden.
+          chunks.push(text.data);
+          return true;
+        }
+        const root = text.getRootNode();
+        const parent = text.parentElement ??
+          (root instanceof ShadowRoot ? root.host : null);
+        if (
+          !allowShortFragment ||
+          !text.isConnected ||
+          !parent ||
+          isProtectedTextSubtree(parent) ||
+          !/^\p{L}$/u.test(text.data.trim())
+        ) {
+          return false;
+        }
+      }
+      chunks.push(this.textChanges.get(text)?.original ?? text.data);
+      return true;
+    };
+
+    if (sibling.nodeType === Node.TEXT_NODE && !readText(sibling as Text)) {
+      return undefined;
+    }
+
+    let current = walker.nextNode();
+    while (current) {
+      if (
+        current instanceof Element &&
+        blockBoundaryTags.has(current.tagName)
+      ) {
+        return undefined;
+      }
+      if (current.nodeType === Node.TEXT_NODE && !readText(current as Text)) {
+        return undefined;
+      }
+      current = walker.nextNode();
+    }
+
+    return chunks.join("");
+  }
+
+  private collectLeadingContext(
+    node: Text,
+    allowShortFragment = false
+  ): string | undefined {
+    const chunks: string[] = [];
+    let collectedLength = 0;
+    let current: Node | null = node;
+
+    while (current?.parentNode) {
+      let sibling = current.previousSibling;
+      while (sibling) {
+        const text = this.collectSafeContextSibling(sibling, allowShortFragment);
+        if (text === undefined) {
+          const context = chunks.join("").slice(-leadingContextLimit);
+          return context || undefined;
+        }
+        if (text) {
+          chunks.unshift(text);
+          collectedLength += text.length;
+          if (collectedLength >= leadingContextLimit) {
+            return chunks.join("").slice(-leadingContextLimit);
+          }
+        }
+        sibling = sibling.previousSibling;
+      }
+
+      const parent: Node | null = current.parentNode;
+      if (parent instanceof Element && blockBoundaryTags.has(parent.tagName)) {
+        break;
+      }
+      current = parent;
+    }
+
+    const context = chunks.join("").slice(-leadingContextLimit);
+    return context || undefined;
+  }
+
+  // Beim endgültigen Entfernen eines Teilbaums eigene Textänderungen
+  // zurücknehmen. So erhalten Frameworks auch beim asynchronen Recyceln
+  // derselben Node den ursprünglichen Wert zurück.
+  private forgetTrackedText(node: Text): void {
+    const change = this.textChanges.get(node);
+    if (!change) {
+      return;
+    }
+    if (node.data === change.transformed) {
+      this.replaceTextKeepingRanges(node, change.original);
+    }
+    this.removeTextChange(node, change);
+  }
+
+  private forgetTrackedAttributes(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+    for (const [name, change] of changes) {
+      if (element.getAttribute(name) === change.transformed) {
+        element.setAttribute(name, change.original);
+      }
+    }
+    this.removeAllAttributeChanges(element);
+  }
+
+  private forgetRoot(root: Node): void {
+    if (root.nodeType === Node.TEXT_NODE) {
+      this.forgetTrackedText(root as Text);
+      return;
+    }
+
+    if (root instanceof Element) {
+      this.forgetTrackedAttributes(root);
+      if (root.shadowRoot) {
+        this.forgetRoot(root.shadowRoot);
+      }
+    }
+
+    const nodeFilter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+    const walker = this.document.createTreeWalker(
+      root,
+      nodeFilter.SHOW_TEXT | nodeFilter.SHOW_ELEMENT
+    );
+
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      if (currentNode.nodeType === Node.TEXT_NODE) {
+        this.forgetTrackedText(currentNode as Text);
+      } else if (currentNode instanceof Element) {
+        this.forgetTrackedAttributes(currentNode);
+        if (currentNode.shadowRoot) {
+          this.forgetRoot(currentNode.shadowRoot);
+        }
+      }
+      currentNode = walker.nextNode();
+    }
+  }
+
+  private removeTextChange(node: Text, change: ChangeRecord): void {
+    this.textChanges.delete(node);
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAttributeChange(
+    element: Element,
+    attributeName: string,
+    change: ChangeRecord
+  ): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    changes.delete(attributeName);
+    if (changes.size === 0) {
+      this.attributeChanges.delete(element);
+    }
+    this.adjustReplacementCount(-change.replacements);
+  }
+
+  private removeAllAttributeChanges(element: Element): void {
+    const changes = this.attributeChanges.get(element);
+    if (!changes) {
+      return;
+    }
+
+    let removedReplacements = 0;
+    for (const change of changes.values()) {
+      removedReplacements += change.replacements;
+    }
+
+    this.attributeChanges.delete(element);
+    this.adjustReplacementCount(-removedReplacements);
+  }
+
+  private clearTracking(): void {
+    this.textChanges.clear();
+    this.attributeChanges.clear();
+    this.replacementCount = 0;
+    this.scheduleCountNotification();
+  }
+
+  private adjustReplacementCount(delta: number): void {
+    if (delta === 0) {
+      return;
+    }
+
+    this.replacementCount = Math.max(0, this.replacementCount + delta);
+    this.scheduleCountNotification();
+  }
+
+  private scheduleCountNotification(): void {
+    if (this.countNotificationScheduled) {
+      return;
+    }
+
+    this.countNotificationScheduled = true;
+    queueMicrotask(() => {
+      this.countNotificationScheduled = false;
+      this.options.onReplacementCountChange?.(
+        this.replacementCount,
+        this.getReplacementSummary()
+      );
+    });
+  }
+}
