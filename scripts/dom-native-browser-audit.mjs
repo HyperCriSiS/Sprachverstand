@@ -57,15 +57,19 @@ function serverStarten() {
       antwort.end(dateien[version]);
       return;
     }
-    if (adresse.pathname !== "/" || !["baseline", "current"].includes(adresse.searchParams.get("version"))) {
-      antwort.writeHead(404);
-      antwort.end();
+    // Keine Anfrageparameter in HTML interpolieren; ausschließlich feste Testseiten.
+    if (adresse.pathname === "/baseline.html") {
+      antwort.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      antwort.end('<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body><script src="/baseline.js"></script></body></html>');
       return;
     }
-    const gewaehlt = adresse.searchParams.get("version");
-    antwort.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-    antwort.end('<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body>' +
-      '<script src="/' + gewaehlt + '.js"></script></body></html>');
+    if (adresse.pathname === "/current.html") {
+      antwort.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      antwort.end('<!doctype html><html lang="de"><head><meta charset="utf-8"></head><body><script src="/current.js"></script></body></html>');
+      return;
+    }
+    antwort.writeHead(404);
+    antwort.end();
   });
   return new Promise((fertig, fehler) => {
     server.once("error", fehler);
@@ -127,7 +131,7 @@ try {
   const reihenfolge = ["baseline", "current", "current", "baseline"];
   for (const [index, quelle] of reihenfolge.entries()) {
     await webdriver("POST", "/session/" + sitzung + "/url", {
-      url: fixture.url + "/?version=" + quelle + "&runde=" + index
+      url: fixture.url + "/" + quelle + ".html"
     });
     const ergebnis = await webdriver("POST", "/session/" + sitzung + "/execute/sync", {
       script: "if (!window.__sprachverstandNativeScaleAudit) throw new Error('Test-Bundle fehlt'); return window.__sprachverstandNativeScaleAudit();",
