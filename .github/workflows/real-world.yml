@@ -173,6 +173,7 @@ jobs:
                 `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
                 `videoElements=${videoElements}`,
                 `videoFrames=${videoFrames}`,
+                `videoMeasured=${baseline.mediaValidation?.state === "unavailable" || extension.mediaValidation?.state === "unavailable" ? "no" : "yes"}`,
                 `videoFrameDelta=${comparison.videoFrameDelta ?? "n/a"}`,
                 `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
                 `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,

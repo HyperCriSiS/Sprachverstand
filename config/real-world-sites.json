@@ -61,9 +61,9 @@
   },
   {
     "id": 11,
-    "slug": "yoga74-techno",
-    "url": "https://www.yoga74.de/techno",
-    "focus": "Konkreter Video-Ruckel-Regressionsfall mit dynamischer Wix-Seite und sichtbarem Technoliebhaber-Kompositum"
+    "slug": "videojs-player-demo",
+    "url": "https://videojs.org/",
+    "focus": "Offizielle Video.js-10-Player-Demo: Video, dynamische Steuerelemente, geschützte UI-Bereiche und Frame-Regression"
   },
   {
     "id": 12,

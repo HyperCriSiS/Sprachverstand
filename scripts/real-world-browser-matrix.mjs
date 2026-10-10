@@ -531,6 +531,10 @@ async function collectSnapshot(sessionId) {
         videos: {
           count: videos.length,
           playingCount: videos.filter((video) => !video.paused && !video.ended).length,
+          currentTimeSeconds: Math.max(0, ...videos.map((video) => Number(video.currentTime || 0))),
+          textTrackCount: videos.reduce((sum, video) => sum + video.textTracks.length, 0),
+          showingTextTrackCount: videos.reduce((sum, video) =>
+            sum + [...video.textTracks].filter((track) => track.mode === "showing").length, 0),
           frameCallbacks: frameTimes.length,
           p95FrameGapMs: sortedFrameGaps.length > 0 ? sortedFrameGaps[p95Index] : 0,
           maximumFrameGapMs: settledFrameGaps.length > 0
@@ -554,7 +558,7 @@ async function collectSnapshot(sessionId) {
   );
 }
 
-async function exercisePage(sessionId) {
+async function exercisePage(sessionId, site) {
   const height = await execute(
     sessionId,
     "return Math.max(document.documentElement?.scrollHeight || 0, document.body?.scrollHeight || 0);"
@@ -580,6 +584,28 @@ async function exercisePage(sessionId) {
       return document.querySelectorAll("video").length;
     `
   );
+
+  if (site.slug === "videojs-player-demo") {
+    // Nur eine tatsächlich gestartete HTML5-Medienquelle gilt als Video-Test.
+    const deadline = Date.now() + 6_000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      const state = await execute(sessionId, `
+        const video = document.querySelector("video");
+        if (!video) return { playerFound: false };
+        video.muted = true;
+        video.play().catch(() => undefined);
+        return { playerFound: true, ready: video.readyState >= 2 };
+      `);
+      if (state?.ready) { ready = true; break; }
+      await sleep(350);
+    }
+    if (!ready) {
+      // Ein externer CDN-/Codecfehler ist kein Sprachverstand-Regressionstest.
+      // Die DOM-Diagnose bleibt nutzbar; Video wird separat als ungemessen markiert.
+      console.warn("Video.js-Playback nicht bestätigt: Stream oder Codec nicht bereit.");
+    }
+  }
 }
 
 async function saveScreenshot(sessionId, filePath) {
@@ -630,14 +656,20 @@ function compareRuns(baseline, extension) {
       extension.snapshot.longTasks.totalDurationMs -
       baseline.snapshot.longTasks.totalDurationMs,
     videoFrameDelta:
-      extension.snapshot.videos.frameCallbacks -
-      baseline.snapshot.videos.frameCallbacks,
+      baseline.mediaValidation?.state === "unavailable" ||
+      extension.mediaValidation?.state === "unavailable"
+        ? null : extension.snapshot.videos.frameCallbacks -
+          baseline.snapshot.videos.frameCallbacks,
     videoLongGapDelta:
-      extension.snapshot.videos.gapsOver120Ms -
-      baseline.snapshot.videos.gapsOver120Ms,
+      baseline.mediaValidation?.state === "unavailable" ||
+      extension.mediaValidation?.state === "unavailable"
+        ? null : extension.snapshot.videos.gapsOver120Ms -
+          baseline.snapshot.videos.gapsOver120Ms,
     videoDroppedFrameDelta:
-      extension.snapshot.videos.droppedVideoFrames -
-      baseline.snapshot.videos.droppedVideoFrames,
+      baseline.mediaValidation?.state === "unavailable" ||
+      extension.mediaValidation?.state === "unavailable"
+        ? null : extension.snapshot.videos.droppedVideoFrames -
+          baseline.snapshot.videos.droppedVideoFrames,
     patternDelta,
     ...compareProtectedRuns(baseline, extension)
   };
@@ -655,9 +687,29 @@ async function runSiteMode(site, mode) {
     });
     await installObservers(sessionId);
     const protectedBefore = await protectedState(sessionId);
-    await exercisePage(sessionId);
+    await exercisePage(sessionId, site);
+    const beforePlayback = site.slug === "videojs-player-demo"
+      ? await execute(sessionId,
+          'return Number(document.querySelector("video")?.currentTime || 0);')
+      : undefined;
     await sleep(observationMs);
     const snapshot = await collectSnapshot(sessionId);
+    const mediaValidation = site.slug === "videojs-player-demo"
+      ? {
+          state: snapshot.videos.frameCallbacks >= 2 &&
+            Number.isFinite(snapshot.videos.currentTimeSeconds - beforePlayback) &&
+            snapshot.videos.currentTimeSeconds - beforePlayback >= 0.5
+            ? "measured" : "unavailable",
+          progressedSeconds: snapshot.videos.currentTimeSeconds - beforePlayback,
+          frameCallbacks: snapshot.videos.frameCallbacks,
+          textTracks: snapshot.videos.textTrackCount,
+          showingTextTracks: snapshot.videos.showingTextTrackCount
+        }
+      : undefined;
+    if (mediaValidation?.state === "unavailable") {
+      console.log("::warning title=Externes Videoplayback nicht messbar::" +
+        site.slug + ": keine nachweisbare Wiedergabe. DOM-Ergebnis separat.");
+    }
     const protectedAfter = await protectedState(sessionId);
     const screenshotPath = path.join(
       screenshotDirectory,
@@ -667,6 +719,7 @@ async function runSiteMode(site, mode) {
 
     return {
       status: "ok",
+      mediaValidation,
       elapsedMs: Date.now() - startedAt,
       screenshot: path.relative(projectRoot, screenshotPath),
       protectedBefore,

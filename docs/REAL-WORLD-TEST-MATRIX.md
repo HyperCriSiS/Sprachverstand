@@ -113,8 +113,26 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
 | 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
-| 11 | `https://www.yoga74.de/techno` | konkreter gemeldeter Video-Ruckel-Regressionsfall auf einer dynamischen Wix-Seite | vorhandenes Video stumm starten; Frame-Abstände, Long Tasks und Stalls zwischen Baseline und Erweiterung vergleichen; gleichzeitig normale Textverarbeitung beobachten | mittel bis hoch |
+| 11 | `https://videojs.org/` | offizielle Video.js-10-Webseite mit Player-Demo, dynamischer Steuerung und aktueller Player-UI | reale Wiedergabe mit Frame-Callbacks und messbarem Fortschritt nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls, geschützte DOM-Felder und Spielerinteraktionen gegenüber Baseline vergleichen; Textspuren nur bei tatsächlicher Verfügbarkeit zählen | mittel (externe Medien-CDN) |
 | 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
+
+### Ersatz der Yoga74-Seite (10.10.2026)
+
+Die Yoga74-Wix-Seite wird durch den offiziellen Video.js-10-Auftritt
+`https://videojs.org/` ersetzt. Er zeigt einen aktuellen HTML5-Player mit
+Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
+andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
+Er prüft nicht nur die Erreichbarkeit der Seite, sondern einen tatsächlichen
+Wiedergabefortschritt und Frame-Callbacks. Snapshotdaten enthalten zudem
+vorhandene und aktivierte Textspuren, ohne solche Spuren zu unterstellen.
+Externes Video kann durch Netzwerk, Codec oder CDN ausfallen; der Lauf gilt
+dann **nicht** als bestandener Videotest.
+
+Zusätzliche harte Videolast- und DOM-Untertitelregressionen bleiben in der
+deterministischen lokalen Chromium-Fixture; dort hängen Ergebnisse nicht von
+externen Videodiensten ab. Ein einzelner Live-A/B-Lauf ist **keine**
+Freigabebestätigung für ungestörte 60-FPS-Videos und für native WebVTT-Cues
+(Issue #419).
 
 ## Automatisierbare Aussagen
 
