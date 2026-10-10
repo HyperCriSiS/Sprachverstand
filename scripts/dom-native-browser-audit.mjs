@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 const browser = process.argv[2];
 if (!["chromium", "firefox"].includes(browser)) {
@@ -21,9 +21,23 @@ function programm(...namen) {
   throw new Error("Kein ausführbares Programm: " + namen.join(", "));
 }
 
+// CI kann sowohl die ausführbare Datei als auch deren Verzeichnis angeben.
+function treiberPfad(umgebungsvariable, dateiname) {
+  const konfiguriert = process.env[umgebungsvariable];
+  if (konfiguriert) {
+    if (existsSync(konfiguriert) && statSync(konfiguriert).isFile()) {
+      return konfiguriert;
+    }
+    const pfad = join(konfiguriert, dateiname);
+    if (existsSync(pfad) && statSync(pfad).isFile()) {
+      return pfad;
+    }
+  }
+  return programm(dateiname);
+}
 const treiber = browser === "chromium"
-  ? process.env.CHROMEWEBDRIVER ?? programm("chromedriver")
-  : process.env.GECKOWEBDRIVER ?? programm("geckodriver");
+  ? treiberPfad("CHROMEWEBDRIVER", "chromedriver")
+  : treiberPfad("GECKOWEBDRIVER", "geckodriver");
 const browserProgramm = browser === "chromium"
   ? process.env.CHROMIUM_BIN ?? programm("chromium", "chromium-browser")
   : process.env.FIREFOX_BIN ?? programm("firefox");
