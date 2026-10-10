@@ -1,0 +1,54 @@
+name: Kontrollierte Interaktionsperformance
+
+on:
+  workflow_dispatch:
+    inputs:
+      pairs:
+        description: "A/B-Paare mit abwechselnder Reihenfolge (1–5)"
+        type: choice
+        options: ["3", "5", "1"]
+        default: "3"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: controlled-interaction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interaction:
+    name: Echte Chromium-A/B-Interaktionen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Node.js einrichten
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Abhängigkeiten reproduzierbar installieren
+        run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Chromium-Erweiterung erstellen
+        run: npm run build:chromium
+      - name: Erweiterung im Browser prüfen
+        run: npm run test:browser:chromium
+      - name: Gepaarte Interaktions- und Longtaskmessung
+        env:
+          PAIR_COUNT: ${{ inputs.pairs }}
+        run: >
+          node scripts/controlled-interaction-performance.mjs
+          --pairs "$PAIR_COUNT"
+          --output artifacts/interaction-performance/report.json
+      - name: Diagnosebericht sichern
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: kontrollierte-interaktionsperformance-${{ github.sha }}
+          path: artifacts/interaction-performance/
+          if-no-files-found: warn
+          retention-days: 14
