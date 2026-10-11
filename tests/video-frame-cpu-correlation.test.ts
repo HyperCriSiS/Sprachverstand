@@ -43,6 +43,18 @@ describe("Frame-Lücken und CPU-Samples zeitlich korrelieren", () => {
     expect(result.achsePlausibel).toBe(false);
   });
 
+  it("misst Mutation-Batches auch ohne V8-Sampler", () => {
+    const runner = readFileSync("scripts/video-frame-cpu-correlation.mjs", "utf8");
+    const workflow = readFileSync(".github/workflows/video-frame-cpu-correlation.yml", "utf8");
+    expect(runner).toContain('cpuProfileMode === "on"');
+    expect(runner).toContain("if (cpuProfile) {");
+    expect(runner).toContain("mutationBatches");
+    expect(runner).toContain("tickIntervalMs");
+    expect(runner).toContain("run.clock === null");
+    expect(workflow).toContain("cpu_profile:");
+    expect(workflow).toContain('--cpu-profile "$CPU_PROFILE"');
+  });
+
   it("hält CI und Release-Gates unverändert", () => {
     const runner = readFileSync("scripts/video-frame-cpu-correlation.mjs", "utf8");
     const workflow = readFileSync(".github/workflows/video-frame-cpu-correlation.yml", "utf8");
