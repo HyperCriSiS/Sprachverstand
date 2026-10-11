@@ -2698,6 +2698,14 @@ export class DomProcessor {
       return;
     }
 
+    // A large removed subtree can contain no own writes at all. With only
+    // a few tracked entries, checking those is bounded and avoids walking
+    // tens of thousands of neutral descendants in the observer callback.
+    // Larger tracking sets retain the existing subtree traversal cost.
+    const trackedEntries = this.textChanges.size + this.attributeChanges.size +
+      this.pendingTextTransforms.size + this.pendingTextEdits.size;
+    if (trackedEntries <= 64 && !this.hasTrackedDescendant(root)) return;
+
     if (root instanceof Element) {
       this.forgetTrackedAttributes(root);
       if (root.shadowRoot) {
@@ -2723,6 +2731,22 @@ export class DomProcessor {
       }
       currentNode = walker.nextNode();
     }
+  }
+
+  private hasTrackedDescendant(root: Node): boolean {
+    for (const entries of [this.textChanges, this.attributeChanges,
+      this.pendingTextTransforms, this.pendingTextEdits]) {
+      for (const node of entries.keys()) {
+        let candidate: Node = node;
+        while (true) {
+          if (root.contains(candidate)) return true;
+          const tree = candidate.getRootNode();
+          if (!(tree instanceof ShadowRoot)) break;
+          candidate = tree.host;
+        }
+      }
+    }
+    return false;
   }
 
   private removeTextChange(node: Text, change: ChangeRecord): void {

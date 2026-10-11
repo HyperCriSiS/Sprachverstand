@@ -181,6 +181,60 @@ Die Summen sind Diagnosewerte eines Paars und keine allgemeine Hardwaregrenze.
 Der neue Auslaufnachweis und das rohe Framemaximum sind getrennte Berichtsfelder;
 ein gefiltertes Lückenmaximum von 0 ist kein rohes Maximum von 0.
 
+## Ergänzende Prüfungen und Korrekturen
+
+### Entfernen großer neutraler Unterbäume
+
+Ein weiterer Engpass wurde auf dem geprüften Arbeitsstand reproduziert:
+50.000 versteckte neutrale Elemente entfernen, während genau eine eigene
+Textänderung außerhalb dieses Unterbaums verfolgt wird. Drei frische CPU-4-
+Paare zeigen bis zum nächsten Bild Basis/Erweiterung rund 9,5/101,2,
+10,2/139,8 und 10,8/117,8 ms. Ursache ist der synchrone `forgetRoot()`-
+Vollscan, obwohl im entfernten Baum nichts zu restaurieren ist.
+Bei höchstens 64 verfolgten Einträgen prüft der Prozessor nun zuerst deren
+Zugehörigkeit einschließlich verschachtelter ShadowRoots. Ohne eigenen
+Eintrag entfällt der Vollscan; größere Trackingmengen behalten den bisherigen
+Traversierungspfad. Drei identische Nachher-Paare zeigen rund 10/12 ms;
+kein Textverlust, kein zusätzlicher Long-Task-Nachweis. Die reine Bildlatenz
+ist hier der maßgebliche Reproduktionswert. Fünf Regressionen sichern den
+ausbleibenden Scan, Restaurierung/Recycling, ShadowRoots, größere Mengen
+und verspätete Antworten nach Entfernen. Gesamtcheck: 229 Dateien / 10.612
+Tests, beide Builds und Firefox-Lint 0/0/0.
+
+### Unabhängige Prüfung der Draft-PR #451
+
+Commit `6bc2185` bestand die [vollständige PR-CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177127648)
+einschließlich Gecko-Video/Cues, Chromium, Performance und CodeQL.
+Firefox-Playback Basis/Erweiterung 193/198 Callbacks, Maximum 50,26/50,76 ms,
+je 0 Drops. [Fünf Interaktionspaare](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177136928)
+waren vollständig ohne verspätete Korrekturen; P95-Frame- und Long-Task-
+Mediandeltas 0, Eingabe +0,9 ms, Klick +10,7 ms.
+[60-FPS-Hauptprobe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177138445):
+379/366 Callbacks, P95 je 33,4 ms, Maximum 33,5/33,4 ms, Drops 2/1.
+Die separat kontrollierten Cues lagen bei 10,4–13,1 ms; der mit dem
+Einstellungswechsel vermischte erste Cue bei etwa 296 ms bleibt getrennt.
+
+**Gegenbefund trotz technisch grüner Diagnose:** Die
+[drei Video-A/B-Paare ohne Sampler](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177140195)
+auf Chromium 154.0.8037.0 zeigen Marker-Frames 391/329, 453/381 und 427/401.
+Im ersten Erweiterungslauf vier Long Tasks bis 221 ms und 250,1 ms rohe
+Frame-Lücke; Endtexte in allen Sitzungen vollständig. Der
+[nachfolgende profilierte Lauf](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177431232)
+zeigte Marker 394/372, 453/374, 392/374, eine Spitze von 83,3 ms und keine
+Lücke über 120 ms. Der frühere Gegenbefund wird dadurch nicht aufgehoben.
+Die Diagnose-Grenzen sind keine endgültige Performance-/Releasefreigabe.
+
+### Externe Wiedergabe auf Windows
+
+Video.js ist jetzt in zwei frischen 15-Sekunden-Paaren tatsächlich gemessen:
+Basis/Erweiterung 327/330 und 334/336 Framecallbacks, Videozeitfortschritt
+je etwa 15 Sekunden, 0 Lücken über 120 ms, Drops 32/32 und 32/29.
+Ein erstes Long-Task-Paar 52/164 ms ist noch nicht kausal zugeordnet;
+zweites Paar je 0. Untertitelspuren waren vorhanden, aber nicht eingeblendet:
+dieser Nachweis ersetzt keine externe Abnahme mit aktiven Untertiteln.
+YouTube lieferte wegen eines sichtbaren Consent-Dialogs keinen ausreichenden
+Zeitfortschritt; diese Besuche zählen weiterhin nur als DOM-Diagnose.
+
 ## Verworfene bzw. isolierte Versuche
 
 Einzelne Hintergrundanfragen für jeden kleinen Text verschlechterten Video
