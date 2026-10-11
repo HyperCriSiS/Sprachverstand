@@ -14,8 +14,13 @@ const base = "http://127.0.0.1:9518";
 const pairsIndex = process.argv.indexOf("--pairs");
 const pairs = pairsIndex === -1 ? 2 : Number(process.argv[pairsIndex + 1]);
 if (![1, 2, 3].includes(pairs)) throw new Error("--pairs erlaubt 1 bis 3.");
+const mutationModeIndex = process.argv.indexOf("--mutation-mode");
+const mutationMode = mutationModeIndex === -1 ? "marker" : process.argv[mutationModeIndex + 1];
+if (!["marker", "neutral", "both"].includes(mutationMode)) {
+  throw new Error("--mutation-mode erlaubt marker, neutral oder both.");
+}
 const output = path.resolve(basis, "artifacts/video-frame-cpu");
-const html = "<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\">\n<title>Videoframe-CPU-Korrelation</title></head><body>\n<p id=\"static-target\">Nutzer:innen</p>\n<video id=\"video\" muted autoplay playsinline preload=\"auto\" src=\"/video.webm\"\nstyle=\"width:320px;height:180px;background:#111\"></video>\n<div id=\"dynamic-root\"></div>\n<script>\n(() => {\n  const video = document.querySelector(\"#video\");\n  const metrics = { frameTimes: [], frameMetadata: [], longTasks: [],\n    timerTicks: [], errors: [], framesSupported: typeof video.requestVideoFrameCallback === \"function\",\n    longTaskSupported: false, done: false };\n  window.__videoCpuMetrics = metrics;\n  const nodes = [];\n  const root = document.querySelector(\"#dynamic-root\");\n  for (let index = 0; index < 480; index++) {\n    const element = document.createElement(\"span\");\n    element.textContent = \"Neutraler Inhalt \" + index;\n    root.append(element);\n    nodes.push(element);\n  }\n  try {\n    const observer = new PerformanceObserver((list) => {\n      for (const task of list.getEntries()) {\n        metrics.longTasks.push({ startMs: task.startTime, dauerMs: task.duration });\n      }\n    });\n    observer.observe({type:\"longtask\"});\n    metrics.longTaskSupported = true;\n  } catch { /* Nicht unterstützte Long-Task-API bleibt unbewertet. */ }\n  if (metrics.framesSupported) {\n    const onFrame = (now, metadata) => {\n      metrics.frameTimes.push(Number(now));\n      metrics.frameMetadata.push({\n        nowMs: Number(now),\n        erwarteteAnzeigeMs: Number(metadata.expectedDisplayTime),\n        zeitImVideoS: Number(metadata.mediaTime),\n        angezeigteFrames: Number(metadata.presentedFrames)\n      });\n      if (!metrics.done) video.requestVideoFrameCallback(onFrame);\n    };\n    video.requestVideoFrameCallback(onFrame);\n  }\n  for (const event of [\"error\", \"stalled\", \"waiting\"]) {\n    video.addEventListener(event, () => {\n      metrics.errors.push(event + \" bei \" + performance.now().toFixed(1) + \" ms\");\n    });\n  }\n  video.play().catch(error => metrics.errors.push(\"play: \" + String(error)));\n  const startMs = performance.now();\n  const timer = setInterval(() => {\n    const tick = metrics.timerTicks.length;\n    const startedAt = performance.now();\n    for (let offset = 0; offset < 48; offset++) {\n      const index = (tick * 48 + offset) % nodes.length;\n      nodes[index].textContent = \"Nutzer:innen \" + tick + \" / \" + offset;\n    }\n    metrics.timerTicks.push({ atMs: startedAt,\n      workMs: performance.now() - startedAt });\n  }, 50);\n  setTimeout(() => {\n    clearInterval(timer);\n    metrics.done = true;\n  }, 8000);\n  window.__videoCpuState = () => {\n    const quality = video.getVideoPlaybackQuality?.();\n    return { ...metrics, staticText: document.querySelector(\"#static-target\").textContent,\n      currentTime: video.currentTime, readyState: video.readyState,\n      width: video.videoWidth, height: video.videoHeight,\n      dropped: quality?.droppedVideoFrames ?? null,\n      visibility: document.visibilityState };\n  };\n})();\n</script></body></html>";
+const html = "<!doctype html><html lang=\"de\"><head><meta charset=\"utf-8\">\n<title>Videoframe-CPU-Korrelation</title></head><body>\n<p id=\"static-target\">Nutzer:innen</p>\n<video id=\"video\" muted autoplay playsinline preload=\"auto\" src=\"/video.webm\"\nstyle=\"width:320px;height:180px;background:#111\"></video>\n<div id=\"dynamic-root\"></div>\n<script>\n(() => {\n  const video = document.querySelector(\"#video\");\n  const mutationMode = new URL(location.href).searchParams.get(\"mutation-mode\");\n  if (mutationMode !== \"marker\" && mutationMode !== \"neutral\") {\n    throw new Error(\"Unbekannte Mutationslast: \" + mutationMode);\n  }\n  const metrics = { frameTimes: [], frameMetadata: [], longTasks: [],\n    timerTicks: [], errors: [], framesSupported: typeof video.requestVideoFrameCallback === \"function\",\n    longTaskSupported: false, done: false,\n    mutationMode, mutationRecords: {childList: 0, characterData: 0} };\n  window.__videoCpuMetrics = metrics;\n  const nodes = [];\n  const root = document.querySelector(\"#dynamic-root\");\n  for (let index = 0; index < 480; index++) {\n    const element = document.createElement(\"span\");\n    element.textContent = \"Neutraler Inhalt \" + index;\n    root.append(element);\n    nodes.push(element);\n  }\n  // Beide Lastformen erhalten denselben passiven Observer-Messaufwand.\n  new MutationObserver((records) => {\n    for (const record of records) {\n      if (record.type === \"childList\") metrics.mutationRecords.childList++;\n      if (record.type === \"characterData\") metrics.mutationRecords.characterData++;\n    }\n  }).observe(root, {subtree: true, characterData: true, childList: true});\n  try {\n    const observer = new PerformanceObserver((list) => {\n      for (const task of list.getEntries()) {\n        metrics.longTasks.push({ startMs: task.startTime, dauerMs: task.duration });\n      }\n    });\n    observer.observe({type:\"longtask\"});\n    metrics.longTaskSupported = true;\n  } catch { /* Nicht unterstützte Long-Task-API bleibt unbewertet. */ }\n  if (metrics.framesSupported) {\n    const onFrame = (now, metadata) => {\n      metrics.frameTimes.push(Number(now));\n      metrics.frameMetadata.push({\n        nowMs: Number(now),\n        erwarteteAnzeigeMs: Number(metadata.expectedDisplayTime),\n        zeitImVideoS: Number(metadata.mediaTime),\n        angezeigteFrames: Number(metadata.presentedFrames)\n      });\n      if (!metrics.done) video.requestVideoFrameCallback(onFrame);\n    };\n    video.requestVideoFrameCallback(onFrame);\n  }\n  for (const event of [\"error\", \"stalled\", \"waiting\"]) {\n    video.addEventListener(event, () => {\n      metrics.errors.push(event + \" bei \" + performance.now().toFixed(1) + \" ms\");\n    });\n  }\n  video.play().catch(error => metrics.errors.push(\"play: \" + String(error)));\n  const startMs = performance.now();\n  const timer = setInterval(() => {\n    const tick = metrics.timerTicks.length;\n    const startedAt = performance.now();\n    for (let offset = 0; offset < 48; offset++) {\n      const index = (tick * 48 + offset) % nodes.length;\n      nodes[index].textContent = (mutationMode === \"marker\" ? \"Nutzer:innen \" : \"Neutraler Inhalt \") + tick + \" / \" + offset;\n    }\n    metrics.timerTicks.push({ atMs: startedAt,\n      workMs: performance.now() - startedAt });\n  }, 50);\n  setTimeout(() => {\n    clearInterval(timer);\n    metrics.done = true;\n  }, 8000);\n  window.__videoCpuState = () => {\n    const quality = video.getVideoPlaybackQuality?.();\n    return { ...metrics, staticText: document.querySelector(\"#static-target\").textContent,\n      currentTime: video.currentTime, readyState: video.readyState,\n      width: video.videoWidth, height: video.videoHeight,\n      dropped: quality?.droppedVideoFrames ?? null,\n      visibility: document.visibilityState,\n      markersVerblieben: nodes.filter((node) => node.textContent.includes(\"Nutzer:innen\")).length,\n      korrigierteMarker: nodes.filter((node) => node.textContent.startsWith(\"Nutzer \")).length };\n  };\n})();\n</script></body></html>";
 if (!existsSync(path.join(extension, "manifest.json"))) {
   throw new Error("Chromium-Erweiterung fehlt: npm run build:chromium.");
 }
@@ -122,7 +127,7 @@ async function abgleichZeitachsen(id) {
   };
 }
 
-async function browserlauf(url, mode, pair) {
+async function browserlauf(url, mode, pair, lastart) {
   const id = await openSession(mode === "extension");
   let profileStarted = false;
   try {
@@ -143,7 +148,7 @@ async function browserlauf(url, mode, pair) {
     const response = await cdp(id, "Profiler.stop");
     profileStarted = false;
     const profile = response?.profile;
-    const dateiname = "cpu-" + pair + "-" + mode + ".json";
+    const dateiname = "cpu-" + pair + "-" + lastart + "-" + mode + ".json";
     if (!profile?.nodes) throw new Error("V8 lieferte kein CPU-Profil.");
     await writeFile(path.join(output, dateiname), JSON.stringify(profile));
     const analyse = analysiereVideoCpu(profile, clock.offsetMs,
@@ -154,15 +159,25 @@ async function browserlauf(url, mode, pair) {
     const valide = state.currentTime >= 5 && state.readyState >= 2 &&
       state.width > 0 && state.height > 0 && state.frameTimes.length >= 90 &&
       state.timerTicks.length >= 100 && state.framesSupported &&
-      state.staticText === (mode === "extension" ? "Nutzer" : "Nutzer:innen");
+      state.staticText === (mode === "extension" ? "Nutzer" : "Nutzer:innen") &&
+      state.mutationMode === lastart &&
+      state.mutationRecords?.childList > 100 &&
+      (lastart === "marker" ?
+        (mode === "extension" ? state.mutationRecords.characterData > 50 :
+          state.mutationRecords.characterData === 0) :
+        state.mutationRecords.characterData === 0) &&
+      (lastart === "neutral" ? state.markersVerblieben === 0 : true);
     const result = {
-      modus: mode, paar: pair, profil: dateiname,
+      modus: mode, paar: pair, lastart, profil: dateiname,
       gueltig: valide,
       frameCallbacks: state.frameTimes.length,
       p95FrameGapMs: p95,
       droppedVideoFrames: state.dropped,
       currentTime: state.currentTime,
       mutationTicks: state.timerTicks.length,
+      mutationRecords: state.mutationRecords,
+      markersVerblieben: state.markersVerblieben,
+      korrigierteMarker: state.korrigierteMarker,
       visibility: state.visibility,
       fehler: state.errors,
       clock,
@@ -173,7 +188,9 @@ async function browserlauf(url, mode, pair) {
       analyse
     };
     console.log("VIDEO-FRAME-CPU " + JSON.stringify({
-      paar: pair, modus: mode, gueltig: valide, frameCallbacks: result.frameCallbacks,
+      paar: pair, modus: mode, lastart, gueltig: valide,
+      mutationRecords: state.mutationRecords,
+      markersVerblieben: state.markersVerblieben, frameCallbacks: result.frameCallbacks,
       p95FrameGapMs: p95, dropped: state.dropped, longTasks: state.longTasks.length,
       clockUnschaerfeMs: clock.unschaerfeMs,
       maxGap: analyse.groessteLueckeMs,
@@ -182,7 +199,7 @@ async function browserlauf(url, mode, pair) {
     }));
     // Die wichtigsten Spike-Details im Joblog halten, auch ohne Artefaktdownload.
     console.log("VIDEO-FRAME-CPU-SPITZEN " + JSON.stringify({
-      paar: pair, modus: mode,
+      paar: pair, modus: mode, lastart,
       topSpitzen: analyse.spitzen.slice(0, 5).map((gap) => ({
         beginnMs: gap.startMs, endeMs: gap.endMs, dauerMs: gap.dauerMs,
         tasks: gap.longTasks,
@@ -219,8 +236,14 @@ try {
   for (let pair = 1; pair <= pairs; pair++) {
     const order = pair % 2 ? ["baseline", "extension"] :
       ["extension", "baseline"];
-    for (const mode of order) {
-      runs.push(await browserlauf(fixture.url, mode, pair));
+    const loadOrder = mutationMode === "both" ?
+      (pair % 2 ? ["marker", "neutral"] : ["neutral", "marker"]) :
+      [mutationMode];
+    for (const lastart of loadOrder) {
+      for (const mode of order) {
+        const url = fixture.url + "?mutation-mode=" + lastart;
+        runs.push(await browserlauf(url, mode, pair, lastart));
+      }
     }
   }
   const alleGueltig = runs.every((run) => run.gueltig &&
@@ -229,7 +252,7 @@ try {
     version: 1, generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA ?? null,
     chromium: spawnSync(chromium, ["--version"], { encoding: "utf8" }).stdout.trim(),
-    pairs, alleGueltig,
+    pairs, mutationMode, alleGueltig,
     hinweis: "Instrumentation und V8-Sampler verändern Laufzeiten. CPU-Aktivität im " +
       "Frame-Zeitfenster ist kein Kausalitätsbeweis; kein Performance-Freigabegate.",
     runs
@@ -239,7 +262,9 @@ try {
   console.log("VIDEO-FRAME-CPU-REPORT " + JSON.stringify({
     alleGueltig,
     runs: runs.map((r) => ({
-      modus: r.modus, paar: r.paar, maxGap: r.analyse.groessteLueckeMs,
+      modus: r.modus, paar: r.paar, lastart: r.lastart,
+      mutationRecords: r.mutationRecords,
+      markersVerblieben: r.markersVerblieben, maxGap: r.analyse.groessteLueckeMs,
       gapAb120: r.analyse.lueckenAb120Ms,
       top15ExtensionCpuMs: r.analyse.topGesamt
         .filter((x) => x.name.startsWith("erweiterung |"))
