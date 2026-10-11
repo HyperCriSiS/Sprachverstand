@@ -59,4 +59,19 @@ describe("Frame-Lücken und CPU-Samples zeitlich korrelieren", () => {
     expect(workflow).toContain("contents: read");
     expect(workflow).not.toMatch(/^\s*(push|pull_request|schedule):/mu);
   });
+
+  it("vergleicht neutrale DOM-Mutationen mit echten Marker-Korrekturen", () => {
+    const runner = readFileSync("scripts/video-frame-cpu-correlation.mjs", "utf8");
+    const workflow = readFileSync(".github/workflows/video-frame-cpu-correlation.yml", "utf8");
+    expect(runner).toContain('mutationMode === "both"');
+    expect(runner).toContain('"?mutation-mode=" + lastart');
+    expect(runner).toContain('mutationRecords.characterData > 50');
+    expect(runner).toContain('mutationRecords.characterData === 0');
+    expect(runner).toContain('markersVerblieben');
+    expect(runner).toContain('korrigierteMarker');
+    expect(runner).toContain('["marker", "neutral", "both"]');
+    expect(workflow).toContain('mutation_mode:');
+    expect(workflow).toContain('default: "both"');
+    expect(workflow).toContain('--mutation-mode "$MUTATION_MODE"');
+  });
 });

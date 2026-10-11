@@ -9,6 +9,12 @@ on:
         options: ["1", "2", "3"]
         default: "2"
         required: true
+      mutation_mode:
+        description: "DOM-Last: Marker, neutral oder beides"
+        type: choice
+        options: ["marker", "neutral", "both"]
+        default: "both"
+        required: true
 
 permissions:
   contents: read
@@ -40,7 +46,8 @@ jobs:
       - name: CPU-Samples und reale Frame-Lücken vergleichen
         env:
           PAIRS: ${{ inputs.pairs }}
-        run: node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS"
+          MUTATION_MODE: ${{ inputs.mutation_mode }}
+        run: node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE"
       - name: Profile und Messbericht archivieren
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
