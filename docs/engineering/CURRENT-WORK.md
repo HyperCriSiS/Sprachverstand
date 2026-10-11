@@ -1,11 +1,13 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-12  
+Stand: 2026-10-12
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **12.10.2026, weiterer verifizierter Performancefix:** Auch bei einer eigenen Änderung im ansonsten neutralen 50.000-Knoten-Baum entfällt jetzt der vollständige Entfernungsscan. Native CPU-4-Latenz 101–118 ms auf 12–15 ms reduziert, ursprünglicher Text in allen Läufen wiederhergestellt. Gesamtcheck 229 Dateien / 10.620 Tests und Chromium-/Firefox-/Waterfox-Smokes bestanden. Die CI auf `c60ebce` ist vollständig grün. Zusätzliche unabhängige Rendertraces zeigen weiterhin mehr Layoutarbeit, jedoch keinen erneuten 250-ms-Abstand; einmal 66 ms Endtext-Auslauf. Der externe CI-Workflow ist technisch grün, kann die Caption-Demo mangels Videofortschritt aber nicht abnehmen. Lokal sind aktive Captions belegt. **#419 bleibt NO-GO.**
 
 - **12.10.2026, ergänzter Messnachweis:** Der lokale Gesamtcheck besteht jetzt mit 229 Dateien / 10.619 Tests. Optionale Chromium-Rendertraces und eine harte Prüfung aller Endtexte ergänzen die Videodiagnose. Externe aktive Captions werden nur bei tatsächlichem Videozeitfortschritt und Caption-Wechseln als gemessen ausgewiesen. Die VideoJS-Startseite wurde nach Prüfung durch die offizielle WebVTT-Caption-Demo ersetzt; zwei frische Paare bestätigen eingeblendete Textspur, Caption-Wechsel und rund 15 Sekunden Wiedergabe. YouTube spielt nach Ablehnen optionaler Cookies, liefert mit der gewählten Quelle aber keinen aktiven Caption-Nachweis. Framekosten und der unabhängige 250-ms-Gegenbefund bleiben offen; andere Projektaufgaben wurden nicht begonnen.
 

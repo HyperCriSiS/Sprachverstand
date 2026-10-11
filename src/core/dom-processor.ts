@@ -2698,13 +2698,23 @@ export class DomProcessor {
       return;
     }
 
-    // A large removed subtree can contain no own writes at all. With only
-    // a few tracked entries, checking those is bounded and avoids walking
-    // tens of thousands of neutral descendants in the observer callback.
-    // Larger tracking sets retain the existing subtree traversal cost.
+    // With only a few tracked entries, restore those directly instead of
+    // walking tens of thousands of neutral descendants. Snapshot the keys:
+    // restoration can change the tracking maps while we visit them.
     const trackedEntries = this.textChanges.size + this.attributeChanges.size +
       this.pendingTextTransforms.size + this.pendingTextEdits.size;
-    if (trackedEntries <= 64 && !this.hasTrackedDescendant(root)) return;
+    if (trackedEntries <= 64) {
+      const trackedNodes = new Set<Node>([
+        ...this.textChanges.keys(), ...this.attributeChanges.keys(),
+        ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys()
+      ]);
+      for (const node of trackedNodes) {
+        if (!this.isTrackedDescendant(root, node)) continue;
+        if (node.nodeType === Node.TEXT_NODE) this.forgetTrackedText(node as Text);
+        else if (node instanceof Element) this.forgetTrackedAttributes(node);
+      }
+      return;
+    }
 
     if (root instanceof Element) {
       this.forgetTrackedAttributes(root);
@@ -2733,18 +2743,13 @@ export class DomProcessor {
     }
   }
 
-  private hasTrackedDescendant(root: Node): boolean {
-    for (const entries of [this.textChanges, this.attributeChanges,
-      this.pendingTextTransforms, this.pendingTextEdits]) {
-      for (const node of entries.keys()) {
-        let candidate: Node = node;
-        while (true) {
-          if (root.contains(candidate)) return true;
-          const tree = candidate.getRootNode();
-          if (!(tree instanceof ShadowRoot)) break;
-          candidate = tree.host;
-        }
-      }
+  private isTrackedDescendant(root: Node, node: Node): boolean {
+    let candidate = node;
+    while (true) {
+      if (root.contains(candidate)) return true;
+      const tree = candidate.getRootNode();
+      if (!(tree instanceof ShadowRoot)) break;
+      candidate = tree.host;
     }
     return false;
   }

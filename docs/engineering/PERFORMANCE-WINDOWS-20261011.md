@@ -271,7 +271,36 @@ nach 18 Sekunden alle 5.000 korrigierten Texte vor dem Entfernen. Der frühere
 7-Sekunden-Versuch hatte diesen Ausgangszustand noch nicht erreicht und wird
 nicht als vollständiger Wiederherstellungstest gewertet. Die Entfernung ergab
 bei vierfacher CPU-Drosselung 62,5 ms bis zum ersten Frame; die Messung enthält
-auch die eigene Zählprüfung. Eine getrennte Kostenmessung bleibt erforderlich.
+auch die eigene Zählprüfung. Die getrennte Kostenmessung ergibt 44,6 und
+45,1 ms bis zum ersten Frame; alle 5.000 entfernten Texte sind anschließend
+wiederhergestellt. Dies betrifft einen vollständig bearbeiteten Baum und wird
+getrennt vom neutralen Vollscan bewertet.
+
+Ein weiterer reproduzierbarer Vollscan trat bei einem überwiegend neutralen
+50.000-Knoten-Baum mit genau einer eigenen Textänderung auf: drei CPU-4-Läufe
+benötigten 118,3, 101,5 und 113,7 ms bis zum ersten Frame. Bei höchstens 64
+verfolgten Einträgen werden jetzt deren Knoten direkt geprüft und
+wiederhergestellt; auch verschachtelte offene ShadowRoots werden berücksichtigt.
+Die Tracking-Schlüssel werden vor Änderungen an den Maps gesichert. Der neue
+Regressionstest scheitert am vorherigen Stand und besteht mit dem Fix.
+Native Nachmessung: 11,8, 15,2 und 12,7 ms; in allen drei Erweiterungsläufen
+wurde der Text vor dem Entfernen korrigiert und danach vollständig restauriert.
+Gesamtcheck: 229 Dateien / 10.620 Tests, Firefox-Lint 0/0/0; native Chromium-,
+Firefox- und Waterfox-Smokes bestanden.
+
+Die unabhängige CI auf `c60ebce` bestand vollständig. Der zusätzliche
+Rendertrace-Lauf (38179728967) korrigiert alle Endtexte; einmal sind 66 ms
+zusätzlicher Auslauf erforderlich. Kein erneuter 250-ms-Frameabstand, erster
+Markermaximalabstand je 83,4 ms. Die erste Basis-Skriptbewertung dauert im Trace
+120,1 ms, die Content-Skriptbewertung mit Erweiterung 72,0 ms. Die größte
+Erweiterungsfunktion bleibt unter 3,4 ms; zusätzliche Layoutarbeit bleibt sichtbar
+(159/456 Layouts, 282/648 ms Gesamtzeit). Instrumentierung verändert Laufzeiten;
+der frühere Gegenbefund ist damit nicht als behoben nachgewiesen.
+
+Der externe CI-Lauf (38179730841) ist technisch grün, liefert aber in allen vier
+Sitzungen null Videofortschritt und null Caption-Wechsel. Diese Daten werden
+korrekt als nicht verfügbar ausgewiesen. Der aktive externe Caption-Nachweis
+ist damit lokal belegt; die unabhängige Runner-Abnahme bleibt offen.
 
 ## Verworfene bzw. isolierte Versuche
 

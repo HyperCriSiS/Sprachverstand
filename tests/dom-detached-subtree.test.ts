@@ -31,6 +31,17 @@ it("restores tracked text and attributes before a detached subtree is recycled",
   expect(root.textContent).toBe("Nutzer");expect(root.title).toBe("Lehrer");
 });
 
+it("restores sparse own changes without traversing the neutral removed descendants",async()=>{
+  document.body.innerHTML='<div title="Lehrer:innen"><p>Nutzer:innen</p>'+ '<span>Neutraler Text</span>'.repeat(100)+'</div>';
+  const root=document.querySelector("div")!;start();
+  const walk=vi.spyOn(document,"createTreeWalker");
+  root.remove();await flush();
+  expect(walk.mock.calls.filter(call=>call[0]===root)).toHaveLength(0);
+  expect(root.querySelector("p")!.textContent).toBe("Nutzer:innen");
+  expect(root.title).toBe("Lehrer:innen");
+  expect(processor!.getReplacementCount()).toBe(0);
+});
+
 it("includes tracked descendants inside nested open ShadowRoots",async()=>{
   const root=document.createElement("div");const host=document.createElement("span");
   const shadow=host.attachShadow({mode:"open"});const nested=document.createElement("span");
