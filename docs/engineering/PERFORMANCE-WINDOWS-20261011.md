@@ -356,6 +356,17 @@ korrigiert; der Versuch bleibt ausschließlich im ignorierten Artefaktverzeichni
 
 ## Offen und nächste Arbeit
 
+Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
+38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
+Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.
+Markerframes Basis/Erweiterung 451/426, 440/433, 443/420. Erster
+Erweiterungslauf erneut mit 166,7 ms maximalem Abstand ohne Long-Task-Eintrag;
+GC-Samplezeit erstes Paar 25,3/228,8 ms. Dies ist ein neuer instrumentierter
+Gegenbefund, keine nachgewiesene Ursache. Native Waterfox-60-FPS-Quelle:
+197/196 Callbacks, P95 51,3/47,5 ms, Maximum 57,6/48,2 ms, Drops je null;
+sechs kontrollierte Cues 14–15 ms. Die dort fehlende Long-Task-API bleibt
+unbewertet. Nutzergrenze bei 94 % Kontingent erreicht; Auftrag weiterhin offen.
+
 **#419 und Release bleiben NO-GO.** Die fehlende Durchsatzvollständigkeit und
 die großen bisherigen Start-/Frameblockaden sind deutlich verbessert.
 Verbleibender Frameverlust bei hoher Markerlast, anfängliche kleinere Long Tasks,
