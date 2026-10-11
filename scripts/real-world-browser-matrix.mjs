@@ -163,7 +163,7 @@ function findCommand(...names) {
 }
 
 function commandVersion(command, args = ["--version"]) {
-  const result = spawnSync(command, args, { encoding: "utf8" });
+  const result = spawnSync(command, args, { encoding: "utf8", timeout: 5_000 });
   if (result.status !== 0) {
     return undefined;
   }
@@ -173,6 +173,7 @@ function commandVersion(command, args = ["--version"]) {
 const driverExecutable = resolveExecutable("CHROMEWEBDRIVER", "chromedriver");
 const chromiumExecutable =
   process.env.CHROMIUM_BIN ?? findCommand("chromium", "chromium-browser");
+let browserVersion;
 
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -280,6 +281,7 @@ async function createSession(withExtension) {
     }
   });
 
+  browserVersion = response.value?.capabilities?.browserVersion ?? browserVersion;
   return sessionIdFrom(response);
 }
 
@@ -861,7 +863,7 @@ const report = {
     node: process.version,
     platform: process.platform,
     osRelease: osRelease(),
-    chromium: commandVersion(chromiumExecutable),
+    chromium: browserVersion,
     chromedriver: commandVersion(driverExecutable),
     observationMs,
     pairCount,

@@ -12,6 +12,8 @@ const erweiterung = path.join(basis, "dist", "chromium");
 const portTreiber = 9515;
 const serverTreiber = `http://127.0.0.1:${portTreiber}`;
 const anzahlPaare = positiveZahl("--pairs", 3, 1, 5);
+const cpuThrottle = positiveZahl("--cpu-throttle", 1, 1, 16);
+let browserVersion;
 const dauerMs = positiveZahl("--duration-ms", 4_000, 1_000, 10_000);
 const ausgabe = path.resolve(basis, argument("--output", "artifacts/interaction-performance/report.json"));
 
@@ -203,6 +205,7 @@ async function sitzung(mitErweiterung) {
   });
   const id = wert?.sessionId;
   if (typeof id !== "string" || !id) throw new Error("WebDriver-Sitzung ohne ID.");
+  browserVersion = wert.capabilities?.browserVersion;
   return id;
 }
 
@@ -223,6 +226,9 @@ async function browserlauf(url, modus) {
   let id;
   try {
     id = await sitzung(modus === "extension");
+    await api("POST", "/session/" + id + "/goog/cdp/execute", {
+      cmd: "Emulation.setCPUThrottlingRate", params: { rate: cpuThrottle }
+    });
     await api("POST", "/session/" + id + "/url", { url });
     // Identisches warmes DOM vor Beginn der kontrollierten Last.
     await sleep(1_000);
@@ -248,15 +254,19 @@ async function browserlauf(url, modus) {
     }
     if (!fertig) throw new Error("Synthetische Last nicht beendet.");
     await sleep(400);
-    const momentaufnahme = () => js(id,
-      'return document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0];');
+    const momentaufnahme = () => js(id, `
+      const nodes = [...document.querySelectorAll("#dynamic-root > span")];
+      return { first: nodes[0]?.textContent?.split(" ")[0], total: nodes.length,
+        corrected: nodes.filter(node => node.textContent.startsWith("Nutzer ")).length,
+        uncorrected: nodes.filter(node => node.textContent.startsWith("Nutzer:innen ")).length };
+    `);
     const dynamicAt400Ms = await momentaufnahme();
     const startDerNachprüfung = Date.now();
     let dynamicAfterSettle = dynamicAt400Ms;
     if (modus === "extension") {
       // Verzögerte Verarbeitung ausdrücklich messen statt sofort als dauerhaften
       // Erkennungsfehler zu klassifizieren. Timeout bleibt ein Funktionsfehler.
-      while (dynamicAfterSettle !== "Nutzer" &&
+      while ((dynamicAfterSettle.total !== 480 || dynamicAfterSettle.corrected !== 480) &&
              Date.now() - startDerNachprüfung < 3_500) {
         await sleep(100);
         dynamicAfterSettle = await momentaufnahme();
@@ -300,9 +310,13 @@ async function browserlauf(url, modus) {
     `);
     return {
       status: "ok", ...details,
-      dynamicAtStart, dynamicAt400Ms, dynamicAfterSettle,
+      dynamicAtStart, dynamicAt400Ms: dynamicAt400Ms.first,
+      dynamicAfterSettle: dynamicAfterSettle.first,
+      dynamicNodeCount: dynamicAfterSettle.total,
+      dynamicCorrectedCount: dynamicAfterSettle.corrected,
+      dynamicUncorrectedCount: dynamicAfterSettle.uncorrected,
       dynamicCorrectedAt400Ms: modus === "extension" ?
-        dynamicAt400Ms === "Nutzer" : null,
+        dynamicAt400Ms.total === 480 && dynamicAt400Ms.corrected === 480 : null,
       dynamicSettleAfterMs
     };
   } catch (error) {
@@ -371,14 +385,15 @@ try {
   const gesamt = zusammenfassung(paare);
   await mkdir(path.dirname(ausgabe), { recursive: true });
   await writeFile(ausgabe, JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA ?? null,
     environment: {
       node: process.version,
-      chromium: spawnSync(chromium, ["--version"], {encoding:"utf8"}).stdout.trim(),
+      chromium: browserVersion ?? null,
       durationMs: dauerMs,
-      pairs: anzahlPaare
+      pairs: anzahlPaare,
+      cpuThrottle
     },
     paare, gesamt
   }, null, 2) + "\n");

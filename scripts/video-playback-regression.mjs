@@ -1,14 +1,22 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
+import {mkdir} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 
 const root = process.cwd();
-const driverPort = 9515;
+const browserIndex = process.argv.indexOf("--browser");
+const browser = browserIndex === -1 ? "chromium" : process.argv[browserIndex + 1];
+if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser erlaubt chromium oder firefox.");
+const driverPort = Number(process.env.WEBDRIVER_PORT ?? 9515);
+if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) throw new Error("Ungültiger WEBDRIVER_PORT.");
 const driverBase = `http://127.0.0.1:${driverPort}`;
-const extensionDir = path.join(root, "dist", "chromium");
+const extensionDir = path.join(root, "dist", browser);
+const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
+const firefoxArtifacts = path.join(root, "artifacts/video-playback");
+const firefoxXpi = path.join(firefoxArtifacts, "firefox-video-probe.xpi");
 const videoPath = path.join(
   root,
   "tests",
@@ -30,7 +38,7 @@ if (diagnosticFps !== 30 && diagnosticFps !== 60) {
 
 if (!existsSync(path.join(extensionDir, "manifest.json"))) {
   throw new Error(
-    "Der Chromium-Build fehlt. Vor dem Videotest zuerst npm run build:chromium ausführen."
+    "Der Build fehlt. Vor dem Videotest zuerst npm run build:" + browser + " ausführen."
   );
 }
 
@@ -58,9 +66,9 @@ function executable(environmentName, fallback) {
   return fallback;
 }
 
-const driver = executable("CHROMEWEBDRIVER", "chromedriver");
-const chromium =
-  process.env.CHROMIUM_BIN ?? command("chromium", "chromium-browser");
+const driver = browser === "firefox" ? executable("GECKOWEBDRIVER", "geckodriver") : executable("CHROMEWEBDRIVER", "chromedriver");
+const chromium = browser === "chromium" ?
+  process.env.CHROMIUM_BIN ?? command("chromium", "chromium-browser") : undefined;
 
 const sleep = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -322,6 +330,31 @@ function startServer() {
 }
 
 async function createSession(withExtension) {
+  if (browser === "firefox") {
+    const addonId = JSON.parse(readFileSync(path.join(extensionDir, "manifest.json"), "utf8"))
+      .browser_specific_settings.gecko.id;
+    const response = await request("POST", "/session", {capabilities: {alwaysMatch: {
+      browserName: "firefox", pageLoadStrategy: "eager",
+      timeouts: {implicit: 0, pageLoad: 20_000, script: 15_000},
+      "moz:firefoxOptions": {
+        ...(process.env.FIREFOX_BIN ? {binary: process.env.FIREFOX_BIN} : {}),
+        args: ["-headless"], prefs: {
+          "media.autoplay.default": 0,
+          "extensions.webextensions.uuids": JSON.stringify({[addonId]: firefoxUuid})
+        }
+      }
+    }}});
+    const id = sessionId(response);
+    try {
+      if (withExtension) await request("POST", `/session/${id}/moz/addon/install`, {
+        addon: readFileSync(firefoxXpi).toString("base64"), temporary: true
+      });
+      return id;
+    } catch (error) {
+      try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
+      throw error;
+    }
+  }
   const args = [
     "--headless=new",
     "--no-sandbox",
@@ -594,6 +627,7 @@ async function waitSubtitle(id, corrected) {
 }
 
 async function extensionId(id) {
+  if (browser === "firefox") return firefoxUuid;
   // Ein MV3-Serviceworker kann beim Sitzungsstart noch nicht registriert
   // oder zwischenzeitlich wieder eingeschlafen sein. Erst nach dem
   // erfolgreichen Content-Script-Smoke suchen und die Zielabfrage begrenzen.
@@ -634,7 +668,7 @@ async function setSubtitleCheckbox(id, enabled) {
     const saved = (await request("POST", `/session/${id}/execute/async`, {
       script: `
         const done = arguments[arguments.length - 1];
-        chrome.storage.local.get("settings").then(
+        (globalThis.browser ?? globalThis.chrome).storage.local.get("settings").then(
           result => done(result.settings?.processSubtitles),
           error => done(String(error))
         );
@@ -699,7 +733,7 @@ async function validateSubtitleToggle(url) {
     // ChromeDriver kann nach window/new weiterhin das ursprüngliche Tab aktiv lassen.
     await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await request("POST", `/session/${id}/url`, {
-      url: `chrome-extension://${extension}/options/options.html`
+      url: `${browser === "firefox" ? "moz-extension" : "chrome-extension"}://${extension}/options/options.html`
     });
     const deadline = Date.now() + 8_000;
     while (Date.now() < deadline) {
@@ -763,7 +797,10 @@ async function stopDriver(handle) {
 }
 
 const logs = [];
-const driverProcess = spawn(driver, [`--port=${driverPort}`], {
+// Gecko requires this for navigating to its installed addon's options page.
+// It applies only to the fresh local test browser, not extension permissions.
+const driverProcess = spawn(driver, [`--port=${driverPort}`,
+  ...(browser === "firefox" ? ["--allow-system-access"] : [])], {
   stdio: ["ignore", "pipe", "pipe"]
 });
 driverProcess.on("error", (error) => {
@@ -776,6 +813,12 @@ driverProcess.stderr.on("data", (chunk) => logs.push(chunk.toString()));
 let server;
 try {
   await waitForDriver(driverProcess, logs);
+  if (browser === "firefox") {
+    await mkdir(firefoxArtifacts, {recursive: true});
+    const {cmd} = await import("web-ext");
+    await cmd.build({sourceDir: extensionDir, artifactsDir: firefoxArtifacts,
+      filename: path.basename(firefoxXpi), overwriteDest: true}, {showReadyMessage: false});
+  }
   const fixture = await startServer();
   server = fixture.server;
 

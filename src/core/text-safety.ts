@@ -55,10 +55,22 @@ const excludedRoles = new Set([
 ]);
 
 const urlPattern = /(?:(?:https?|ftp|data):\/\/|www\.)\S+/iu;
-const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/u;
+// A match can always include the complete non-space/non-@ run before @.
+// Starting within that same run only repeated failing searches quadratically.
+const emailPattern = /(?<![^\s@])[^\s@]+@[^\s@]+\.[^\s@]+/u;
+const technicalPunctuationCharacter = /[^\p{L}\p{N}]/u;
 const base64Pattern = /^(?:[A-Za-z0-9+/]{4}){12,}(?:==|=)?$/u;
 const longHexPattern = /^(?:0x)?[A-Fa-f0-9]{32,}$/u;
-const compactJsonPattern = /^(?:\{.*"[^"]+"\s*:.*\}|\[\s*\{.*\}\s*\])$/su;
+const compactJsonKeyPattern = /"[^"]+"\s*:/u;
+const compactJsonArrayStartPattern = /^\[\s*\{/u;
+const compactJsonArrayEndPattern = /\}\s*\]$/u;
+
+function isCompactJson(text: string): boolean {
+  // Check delimiters before looking for a key. The former greedy whole-text
+  // expression rescanned every possible key when the final brace was absent.
+  return (text.startsWith("{") && text.endsWith("}") && compactJsonKeyPattern.test(text)) ||
+    (compactJsonArrayStartPattern.test(text) && compactJsonArrayEndPattern.test(text));
+}
 
 function isContentEditable(element: Element): boolean {
   const value = element.getAttribute("contenteditable");
@@ -119,35 +131,29 @@ function isDocumentEditor(document: Document): boolean {
   return document.designMode?.toLowerCase() === "on";
 }
 
-function hasExcludedTextAncestor(element: Element | null): boolean {
+// For a traversal that has already established the ancestor protection.
+export function hasOwnTextProtection(element: Element): boolean {
+  if (excludedTags.has(element.tagName) || isContentEditable(element) ||
+      element.hasAttribute("data-sprachverstand-ignore") ||
+      element.getAttribute("aria-hidden")?.toLowerCase() === "true") return true;
+  const role = element.getAttribute("role")?.toLowerCase();
+  return Boolean(role && excludedRoles.has(role));
+}
+
+function hasExcludedTextAncestor(element: Element | null,
+  cache?: WeakMap<Element, boolean>): boolean {
   let current = element;
-
+  const visited: Element[] | undefined = cache ? [] : undefined;
+  let protectedText = false;
   while (current) {
-    if (excludedTags.has(current.tagName)) {
-      return true;
-    }
-
-    if (isContentEditable(current)) {
-      return true;
-    }
-
-    if (current.hasAttribute("data-sprachverstand-ignore")) {
-      return true;
-    }
-
-    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
-      return true;
-    }
-
-    const role = current.getAttribute("role")?.toLowerCase();
-    if (role && excludedRoles.has(role)) {
-      return true;
-    }
-
+    const cached = cache?.get(current);
+    if (cached !== undefined) {protectedText = cached; break;}
+    visited?.push(current);
+    if (hasOwnTextProtection(current)) {protectedText = true; break;}
     current = parentElementOrShadowHost(current);
   }
-
-  return false;
+  if (visited) for (const ancestor of visited) cache!.set(ancestor, protectedText);
+  return protectedText;
 }
 
 // Zur Bestimmung durchgängiger sicherer Inline-Kontexte ohne technische Textheuristik.
@@ -163,38 +169,38 @@ export function isProbablyTechnicalText(input: string): boolean {
   }
 
   if (
-    urlPattern.test(text) ||
-    emailPattern.test(text) ||
-    base64Pattern.test(text) ||
-    longHexPattern.test(text) ||
-    compactJsonPattern.test(text)
+    ((text.includes("/") || text.includes(".")) && urlPattern.test(text)) ||
+    (text.includes("@") && emailPattern.test(text)) ||
+    (text.length >= 48 && base64Pattern.test(text)) ||
+    (text.length >= 32 && longHexPattern.test(text)) ||
+    isCompactJson(text)
   ) {
     return true;
   }
 
-  if (!/\s/u.test(text) && text.length >= 24) {
-    const punctuationCount = [...text].filter((character) =>
-      /[^\p{L}\p{N}]/u.test(character)
-    ).length;
-
-    if (punctuationCount / text.length > 0.35) {
-      return true;
+  if (text.length >= 24 && !/\s/u.test(text)) {
+    let punctuationCount = 0;
+    for (const character of text) {
+      if (technicalPunctuationCharacter.test(character)) {
+        punctuationCount += 1;
+        if (punctuationCount / text.length > 0.35) return true;
+      }
     }
   }
 
   return false;
 }
 
-export function shouldProcessTextNode(node: Text): boolean {
-  if (!node.isConnected || isDocumentEditor(node.ownerDocument)) {
-    return false;
-  }
+export function shouldProcessTextNode(node: Text,
+  cache?: WeakMap<Element, boolean>): boolean {
+  return node.isConnected && !hasTextNodeProtection(node, cache) &&
+    !isProbablyTechnicalText(node.data);
+}
 
-  if (hasExcludedTextAncestor(textParentOrShadowHost(node))) {
-    return false;
-  }
-
-  return !isProbablyTechnicalText(node.data);
+export function hasTextNodeProtection(node: Text,
+  cache?: WeakMap<Element, boolean>): boolean {
+  return isDocumentEditor(node.ownerDocument) ||
+    hasExcludedTextAncestor(textParentOrShadowHost(node), cache);
 }
 
 export function shouldProcessAccessibleAttribute(

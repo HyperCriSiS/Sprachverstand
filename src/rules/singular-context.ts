@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
 import {
   mapKnownPlural,
   mapKnownSingular
@@ -14,6 +15,9 @@ interface DeterminerForm {
 }
 
 const locale = "de-DE";
+// Every pattern below requires a singular in/In ending at a word boundary.
+// Plural markers and neutral texts need none of the twelve context scans.
+const singularEndingCandidate = /in(?![\p{L}\p{M}])/iu;
 const separators = [":", "*", "_", "/", "·", "•", ".", "’", "‘"] as const;
 const determinerForms = new Map<string, DeterminerForm>();
 
@@ -108,21 +112,21 @@ addDeterminer("seines", "ihres", "seines", "genitive", true);
 
 const determinerToken = String.raw`[\p{L}\p{M}:*_/·•.’‘-]+`;
 const nounBase = String.raw`[\p{L}\p{M}’'-]+`;
-const separatorSingularPattern = new RegExp(
+const separatorSingularPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
-const binnenISingularPattern = new RegExp(
+const binnenISingularPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "gu"
 );
 const adjectiveModifiers = String.raw`(?:${nounBase}\s+){0,2}`;
 const adjectiveMarker = String.raw`[:*_\/·•.’‘]`;
-const attributiveSeparatorSingularPattern = new RegExp(
+const attributiveSeparatorSingularPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${adjectiveModifiers})(${nounBase})(?:(${adjectiveMarker})([rnms]))?(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
-const attributiveBinnenISingularPattern = new RegExp(
+const attributiveBinnenISingularPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerToken})(\s+)(${adjectiveModifiers})(${nounBase})(?:(${adjectiveMarker})([rnms]))?(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "gu"
 );
@@ -214,7 +218,7 @@ addOrdinaryDeterminerSet("euer", "euren", "eurem", "eures", "eure", "eurer");
 const ordinaryDeterminerAlternation = [...ordinaryMasculineDeterminers.keys()]
   .sort((left, right) => right.length - left.length)
   .join("|");
-const ordinaryBinnenIPattern = new RegExp(
+const ordinaryBinnenIPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${ordinaryDeterminerAlternation})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -226,15 +230,15 @@ function mapAlternation(values: ReadonlyMap<string, string>): string {
 const accusativePrepositions = "für|durch|gegen|ohne|um";
 const dativePrepositions = "aus|außer|bei|gegenüber|mit|nach|seit|von|zu";
 const genitivePrepositions = "anstatt|außerhalb|innerhalb|statt|trotz|während|wegen";
-const accusativeFemininePattern = new RegExp(
+const accusativeFemininePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${accusativePrepositions})(\s+)(${mapAlternation(accusativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
-const dativeFemininePattern = new RegExp(
+const dativeFemininePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${dativePrepositions})(\s+)(${mapAlternation(dativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
-const genitiveFemininePattern = new RegExp(
+const genitiveFemininePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${genitivePrepositions})(\s+)(${mapAlternation(genitiveFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -261,11 +265,11 @@ const commonFiniteVerbs = [
   "wird",
   "will"
 ].join("|");
-const nominativeSentencePattern = new RegExp(
+const nominativeSentencePattern = lazyPattern(
   String.raw`(^|[.!?]\s+|[;:]\s+)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(?=\s+(?:${commonFiniteVerbs})\b)`,
   "giu"
 );
-const standaloneNominativePattern = new RegExp(
+const standaloneNominativePattern = lazyPattern(
   String.raw`^(\s*)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(\s*[.!?]?)$`,
   "giu"
 );
@@ -316,11 +320,11 @@ const accusativeVerbContext = [
   "wählen",
   "wählt"
 ].join("|");
-const accusativeVerbPattern = new RegExp(
+const accusativeVerbPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])((?:ich|du|er|sie|es|man|wir|ihr|Sie|jemand|niemand)\s+(?:${accusativeVerbContext})|es\s+gibt)(\s+)(${mapAlternation(accusativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
-const predicateNominativePattern = new RegExp(
+const predicateNominativePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])((?:das|dies|er|sie|es|wer)\s+(?:ist|war|wird|bleibt))(\s+)(${mapAlternation(nominativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -376,7 +380,7 @@ function transformPattern(input: string, pattern: RegExp): TransformResult {
       whitespace: string,
       base: string
     ) => {
-      if (pattern === binnenISingularPattern && !hatSichtbaresBinnenI(match)) return match;
+      if (pattern === binnenISingularPattern() && !hatSichtbaresBinnenI(match)) return match;
       const normalizedDeterminer = determiner
         .toLocaleLowerCase(locale)
         .replaceAll("/-", "/");
@@ -466,7 +470,7 @@ function transformAttributivePhrases(
       secondWhitespace: string,
       base: string
     ) => {
-      if (pattern === attributiveBinnenISingularPattern && !hatSichtbaresBinnenI(match)) return match;
+      if (pattern === attributiveBinnenISingularPattern() && !hatSichtbaresBinnenI(match)) return match;
       const form = determinerForms.get(determiner.toLocaleLowerCase(locale));
       if (!form) {
         return match;
@@ -500,7 +504,7 @@ function transformAttributivePhrases(
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    ordinaryBinnenIPattern,
+    ordinaryBinnenIPattern(),
     (match: string, determiner: string, whitespace: string, base: string) => {
       if (!hatSichtbaresBinnenI(match)) return match;
       const form = ordinaryMasculineDeterminers.get(
@@ -561,7 +565,7 @@ function transformPrepositionalFeminine(
 function transformNominativeSentence(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    nominativeSentencePattern,
+    nominativeSentencePattern(),
     (
       match: string,
       prefix: string,
@@ -592,7 +596,7 @@ function transformNominativeSentence(input: string): TransformResult {
 function transformStandaloneNominative(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    standaloneNominativePattern,
+    standaloneNominativePattern(),
     (
       match: string,
       leadingWhitespace: string,
@@ -665,49 +669,51 @@ export const singularContextRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
+    if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
     const attributiveSeparatorResult = transformAttributivePhrases(
       input,
-      attributiveSeparatorSingularPattern
+      attributiveSeparatorSingularPattern()
     );
     const attributiveBinnenIResult = transformAttributivePhrases(
       attributiveSeparatorResult.text,
-      attributiveBinnenISingularPattern
+      attributiveBinnenISingularPattern()
     );
     const separatorResult = transformPattern(
       attributiveBinnenIResult.text,
-      separatorSingularPattern
+      separatorSingularPattern()
     );
     const markedBinnenIResult = transformPattern(
       separatorResult.text,
-      binnenISingularPattern
+      binnenISingularPattern()
     );
     const accusativeResult = transformPrepositionalFeminine(
       markedBinnenIResult.text,
-      accusativeFemininePattern,
+      accusativeFemininePattern(),
       accusativeFeminineDeterminers,
       "accusative"
     );
     const dativeResult = transformPrepositionalFeminine(
       accusativeResult.text,
-      dativeFemininePattern,
+      dativeFemininePattern(),
       dativeFeminineDeterminers,
       "dative"
     );
     const genitiveResult = transformPrepositionalFeminine(
       dativeResult.text,
-      genitiveFemininePattern,
+      genitiveFemininePattern(),
       genitiveFeminineDeterminers,
       "genitive"
     );
     const accusativeVerbResult = transformVerbContext(
       genitiveResult.text,
-      accusativeVerbPattern,
+      accusativeVerbPattern(),
       accusativeFeminineDeterminers,
       "accusative"
     );
     const predicateResult = transformVerbContext(
       accusativeVerbResult.text,
-      predicateNominativePattern,
+      predicateNominativePattern(),
       nominativeFeminineDeterminers,
       "nominative"
     );

@@ -1,6 +1,10 @@
 import { getExtensionApi } from "./browser/api";
 import { badgeBackgroundColor, formatBadgeCount } from "./browser/badge";
 import { parseOptionsPageTabId } from "./browser/options";
+import {isLocalTransformRequest, isLocalTransformBatchRequest, type LocalTransformRequest} from "./core/local-transform-message";
+import {transformTextWithSummary} from "./core/transform-text";
+import {defaultRules} from "./rules";
+import {maximumReportedReplacementSummaries, aggregateReplacementSummaries} from "./core/replacement-summary";
 
 interface ReplacementSummaryEntry {
   readonly original: string;
@@ -118,7 +122,7 @@ function normalizedReplacementEntries(
       count: Math.max(1, Math.trunc(candidate.count))
     });
 
-    if (normalized.length >= 250) {
+    if (normalized.length >= maximumReportedReplacementSummaries) {
       break;
     }
   }
@@ -418,7 +422,25 @@ async function getCountState(tabId: number): Promise<{
   return { tabId, text: badgeText || "0" };
 }
 
+function transformLocalRequest(request: LocalTransformRequest) {
+  const {disabledRuleIds, ...options} = request.options;
+  const result = transformTextWithSummary(request.input, defaultRules, {
+    ...options, ...(disabledRuleIds ? {disabledRuleIds: new Set(disabledRuleIds)} : {})
+  });
+  // Repeated words need one counted entry, not thousands of objects cloned
+  // back into the page renderer. No distinct pair or count is discarded.
+  return {...result, summaries: aggregateReplacementSummaries(result.summaries)};
+}
+
 api.runtime.onMessage.addListener(async (message, sender) => {
+  if (isLocalTransformBatchRequest(message)) {
+    if (sender.tab?.id === undefined) return undefined;
+    return message.requests.map(transformLocalRequest);
+  }
+  if (isLocalTransformRequest(message)) {
+    if (sender.tab?.id === undefined) return undefined;
+    return transformLocalRequest(message);
+  }
   if (isReplacementStateMessage(message)) {
     const tabId = sender.tab?.id;
     if (tabId === undefined) {

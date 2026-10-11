@@ -13,6 +13,12 @@ dokumentiert.
 
 ### Leistung
 
+- Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
+  kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
+  Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und
+  begrenzte Kontextsuche reduzieren wiederholte Arbeit. Ersetzungszähler werden
+  inkrementell gepflegt. Die Performanceabnahme unter hoher dynamischer Last
+  ist weiterhin offen; diese Änderungen bedeuten keine Releasefreigabe.
 - Schnell wechselnde Untertitel werden pro Bild auf den zuletzt sichtbaren
   Textstand reduziert. Identische Zeilen verwenden einen begrenzten Cache;
   der normale Webseitenpfad bleibt unverändert.

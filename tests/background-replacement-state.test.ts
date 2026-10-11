@@ -76,6 +76,21 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
     await import("../src/background");
 
     expect(messageListener).toBeDefined();
+    const transformRequest = {type: "sprachverstand.transform-large-text", input: "mit Nutzer:innen",
+      options: {profile: "aggressive"}};
+    expect(await messageListener?.(transformRequest, {})).toBeUndefined();
+    expect(await messageListener?.(transformRequest, {tab: {id: 37}})).toEqual({
+      text: "mit Nutzern", replacements: 1,
+      summaries: [{original: "Nutzer:innen", replacement: "Nutzern", count: 1}]
+    });
+    expect(await messageListener?.({type: "sprachverstand.transform-text-batch", requests: [transformRequest]}, {})).toBeUndefined();
+    expect(await messageListener?.({type: "sprachverstand.transform-text-batch", requests: [transformRequest]}, {tab: {id: 37}})).toEqual([{
+      text: "mit Nutzern", replacements: 1,
+      summaries: [{original: "Nutzer:innen", replacement: "Nutzern", count: 1}]
+    }]);
+    const repeated = await messageListener?.({...transformRequest, input: "Nutzer:innen ".repeat(5_000)}, {tab: {id: 37}});
+    expect(repeated).toEqual({text: "Nutzer ".repeat(5_000), replacements: 5_000,
+      summaries: [{original: "Nutzer:innen", replacement: "Nutzer", count: 5_000}]});
     const response = await messageListener?.(
       { type: "sprachverstand.get-replacement-state", tabId: 37 },
       {}

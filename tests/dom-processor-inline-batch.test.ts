@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
 import { createRegexRule } from "../src/core/rule";
+import { defaultRules } from "../src/rules";
 
 const regel = createRegexRule({
   id: "test.inline-observer-batch",
@@ -54,6 +55,59 @@ afterEach(() => {
 });
 
 describe("Inline-Schutzkontext bei MutationObserver-Mischlast", () => {
+  it("vereinigt überlappende Laufwege und erreicht den Kontext hinter der letzten Mutation", async () => {
+    const {elemente} = anlegen(128);
+    for (let index = 0; index < 47; index++) elemente[index]!.textContent = "Normaler Text " + index + " ";
+    elemente[47]!.textContent = "mit ";
+    processor = new DomProcessor(document, {profile: "aggressive", rules: defaultRules,
+      processAccessibleAttributes: false});
+    processor.start(); processor.flush(); await Promise.resolve();
+    expect(elemente[48]!.textContent).toBe("Nutzern 48");
+    const nextSibling = vi.spyOn(Node.prototype, "nextSibling", "get");
+    for (let index = 0; index < 47; index++) elemente[index]!.textContent = "Aktueller Text " + index + " ";
+    elemente[47]!.textContent = "für ";
+    await Promise.resolve();
+    expect(nextSibling.mock.calls.length).toBeLessThan(400);
+    processor.flush();
+    expect(elemente[48]!.textContent).toBe("Nutzer 48");
+    expect(processor.getReplacementCount()).toBe(80);
+  });
+  it("transformiert unveränderte Nachbarn ohne wirksamen Dativkontext nicht erneut", async () => {
+    const {elemente} = anlegen(128);
+    const apply = vi.fn((text: string) => ({text, replacements: 0}));
+    processor = new DomProcessor(document, {profile: "aggressive",
+      rules: [...defaultRules, {id: "test.transform-count", risk: "safe", apply}],
+      processAccessibleAttributes: false});
+    processor.start(); processor.flush(); await Promise.resolve();
+    apply.mockClear();
+    for (let index = 0; index < 48; index++) {
+      elemente[index]!.textContent = "Nutzer:innen " + (index + 10);
+    }
+    await Promise.resolve(); processor.flush(); await Promise.resolve();
+    expect(apply).toHaveBeenCalledTimes(48);
+    expect(processor.getReplacementCount()).toBe(128);
+    for (let index = 0; index < 128; index++) {
+      expect(elemente[index]!.textContent).toBe("Nutzer " + (index < 48 ? index + 10 : index));
+    }
+  });
+  it("prüft überlappende grammatische Nachbarfenster nur einmal pro Textknoten", async () => {
+    const {elemente} = anlegen(128);
+    const candidate = /^Nutzer/u;
+    const unchanged = (input: string) => ({text: input, replacements: 0});
+    processor = new DomProcessor(document, {profile: "conservative", rules: [{
+      id: "test.neighbor-windows", risk: "safe", leadingContextCandidate: candidate,
+      apply: unchanged, applyWithLeadingContext: unchanged
+    }], processAccessibleAttributes: false});
+    processor.start(); processor.flush();
+    await Promise.resolve();
+    const check = vi.spyOn(candidate, "test");
+    for (let index = 0; index < 48; index++) {
+      elemente[index]!.textContent = "Nutzer:innen " + (index + 10);
+    }
+    await Promise.resolve();
+    expect(check.mock.calls.length).toBeGreaterThan(48);
+    expect(check.mock.calls.length).toBeLessThanOrEqual(64);
+  });
   it("ersetzt gewöhnliche Textknoten, ohne ihren gesamten Inline-Block erneut zu scannen", async () => {
     const { wurzel, elemente } = anlegen(480);
     elemente[400]!.textContent = "„Nutzer:innen“";

@@ -150,6 +150,9 @@ jobs:
       - name: Firefox im echten Browser prüfen
         run: npm run test:browser:firefox
 
+      - name: Firefox-Video und echte Untertitel prüfen
+        run: node scripts/video-playback-regression.mjs --browser firefox --diagnose-cue-phases
+
       - name: Gecko-Build und Kompatibilität prüfen
         run: npm run validate:browsers:gecko
 

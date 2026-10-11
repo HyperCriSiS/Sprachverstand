@@ -25,6 +25,7 @@ export const specialSingularFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     const separatorResult = transformPattern(input, separatorPattern);
     const binnenIResult = transformPattern(separatorResult.text, binnenIPattern);
 

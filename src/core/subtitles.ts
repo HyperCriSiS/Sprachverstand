@@ -89,23 +89,31 @@ export function isSubtitleContainer(element: Element): boolean {
  * Nachrichtenseiten häufig normale Unterzeilen und Bildunterschriften meinen.
  */
 // Tief verschachtelte Untertitel und offene ShadowRoots behalten den Hostkontext.
-export function isSubtitleContent(node: Node): boolean {
+export function isSubtitleContent(node: Node,
+  cache?: WeakMap<Element, boolean>): boolean {
   const hostOf = (current: Node): Element | null => {
     const root = current.getRootNode();
     return root instanceof ShadowRoot ? root.host : null;
   };
   let element: Element | null =
     node instanceof Element ? node : node.parentElement ?? hostOf(node);
+  const visited: Element[] | undefined = cache ? [] : undefined;
+  let subtitle = false;
 
   while (element) {
+    const cached = cache?.get(element);
+    if (cached !== undefined) {subtitle = cached; break;}
+    visited?.push(element);
     if (isSubtitleContainer(element)) {
-      return true;
+      subtitle = true;
+      break;
     }
     if (element.tagName === "BODY" || element.tagName === "HTML") {
-      return false;
+      break;
     }
     const current: Element = element;
     element = current.parentElement ?? hostOf(current);
   }
-  return false;
+  if (visited) for (const ancestor of visited) cache!.set(ancestor, subtitle);
+  return subtitle;
 }
