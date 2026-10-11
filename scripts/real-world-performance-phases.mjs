@@ -2,6 +2,8 @@
 export const realWorldPhaseNames = Object.freeze([
   "browserStartupMs",
   "navigationMs",
+  "consentMs",
+  "subtitleSettingsMs",
   "observerSetupMs",
   "initialProtectionSnapshotMs",
   "interactionMs",

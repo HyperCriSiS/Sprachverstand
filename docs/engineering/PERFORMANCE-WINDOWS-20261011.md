@@ -224,6 +224,17 @@ zeigte Marker 394/372, 453/374, 392/374, eine Spitze von 83,3 ms und keine
 Lücke über 120 ms. Der frühere Gegenbefund wird dadurch nicht aufgehoben.
 Die Diagnose-Grenzen sind keine endgültige Performance-/Releasefreigabe.
 
+Die Video-Diagnose unterstützt zusätzlich `--browser-trace` (nur Chromium),
+um Layout, Paint und Compilerarbeit vor Navigation bis zum abgeschlossenen
+Last-/Auslauffenster zu sichern. Native CPU-4-A/B-Probe: zwei gültige JSON-
+Traces, vollständige Endtexte. Das Abrufen der Tracestreams liegt außerhalb
+der Auslauffrist und eines aktiven V8-Samplingfensters; Fehlerpfade besitzen
+Zeitlimits und schließen die lokale Verbindung. Der manuelle Workflow bietet
+die Option standardmäßig deaktiviert an. Trace-/Samplingwerte bleiben wegen
+zusätzlicher Instrumentierung von ungeprofilten Abnahmewerten getrennt.
+Unvollständige Endtexte nach dem begrenzten Auslauf lassen die Diagnose nun
+ausdrücklich fehlschlagen, zusätzlich zur Instrumentierungsvalidität.
+
 ### Externe Wiedergabe auf Windows
 
 Video.js ist jetzt in zwei frischen 15-Sekunden-Paaren tatsächlich gemessen:
@@ -232,8 +243,35 @@ je etwa 15 Sekunden, 0 Lücken über 120 ms, Drops 32/32 und 32/29.
 Ein erstes Long-Task-Paar 52/164 ms ist noch nicht kausal zugeordnet;
 zweites Paar je 0. Untertitelspuren waren vorhanden, aber nicht eingeblendet:
 dieser Nachweis ersetzt keine externe Abnahme mit aktiven Untertiteln.
-YouTube lieferte wegen eines sichtbaren Consent-Dialogs keinen ausreichenden
-Zeitfortschritt; diese Besuche zählen weiterhin nur als DOM-Diagnose.
+YouTube lieferte zunächst wegen eines sichtbaren Consent-Dialogs keinen
+ausreichenden Zeitfortschritt. Nach Ablehnen optionaler Cookies wurden in zwei
+frischen Paaren jeweils rund 15 Sekunden Wiedergabe nachgewiesen. Die Seite
+enthielt weiterhin große Frameabstände und Long Tasks in beiden Modi; ohne
+aktive Caption-Wechsel ist dies keine Untertitelabnahme.
+
+Die bisherige VideoJS-Startseite zeigte nur ein Hintergrundvideo. Der Matrixeintrag
+verweist deshalb jetzt auf die offizielle Caption-Anleitung mit WebVTT-Demo.
+Zwei frische A/B-Paare belegen jeweils eine eingeblendete Textspur, zwei
+Caption-Wechsel und rund 15 Sekunden Wiedergabe. Baseline/Erweiterung lieferten
+367/299 und 302/299 Framecallbacks, ohne Abstände über 120 ms oder Long Tasks.
+Der erste Vergleich hatte unterschiedliche Tabwechsel zur Optionsaktivierung;
+ein weiterer Lauf gleicht diese Sichtbarkeitswechsel an. Dieser bestätigt in
+allen vier Sitzungen aktive Captions und 15 Sekunden Fortschritt, mit
+366/298 und 298/297 Callbacks, P95 47,5/94,2 und 63,5/63,7 ms. Das zweite
+Paar reproduziert damit den großen ersten Paarunterschied nicht. Keine
+Long Tasks während der Beobachtung, jedoch vor dem Observer 0/116 und
+168/160 ms Gesamtzeit. Keine Lücke über 120 ms. Reihenfolge, Kaltstart und
+Seitenlast sind weiterhin getrennt zu beurteilen; der Frameunterschied darf
+nicht ohne Kausalitätsnachweis der Erweiterung zugeschrieben werden.
+Die Quelle und aktive Captions sind verifiziert, eine Performancefreigabe
+folgt daraus nicht.
+
+Ein zusätzlicher lokaler Test mit 5.000 bearbeiteten Absatzknoten bestätigte erst
+nach 18 Sekunden alle 5.000 korrigierten Texte vor dem Entfernen. Der frühere
+7-Sekunden-Versuch hatte diesen Ausgangszustand noch nicht erreicht und wird
+nicht als vollständiger Wiederherstellungstest gewertet. Die Entfernung ergab
+bei vierfacher CPU-Drosselung 62,5 ms bis zum ersten Frame; die Messung enthält
+auch die eigene Zählprüfung. Eine getrennte Kostenmessung bleibt erforderlich.
 
 ## Verworfene bzw. isolierte Versuche
 

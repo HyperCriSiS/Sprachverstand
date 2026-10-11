@@ -21,6 +21,12 @@ on:
         options: ["on", "off"]
         default: "on"
         required: true
+      browser_trace:
+        description: "Zusätzliche Chromium-Render-/Compilertrace (verändert Laufzeiten)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
 
 permissions:
   contents: read
@@ -54,7 +60,11 @@ jobs:
           PAIRS: ${{ inputs.pairs }}
           MUTATION_MODE: ${{ inputs.mutation_mode }}
           CPU_PROFILE: ${{ inputs.cpu_profile }}
-        run: node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE" --cpu-profile "$CPU_PROFILE"
+          BROWSER_TRACE: ${{ inputs.browser_trace }}
+        run: |
+          trace_args=()
+          if [ "$BROWSER_TRACE" = "on" ]; then trace_args+=(--browser-trace); fi
+          node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE" --cpu-profile "$CPU_PROFILE" "${trace_args[@]}"
       - name: Profile und Messbericht archivieren
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

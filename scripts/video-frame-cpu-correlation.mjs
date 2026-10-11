@@ -6,6 +6,7 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { analysiereVideoCpu, frameLuecken } from "./video-frame-cpu-metrics.mjs";
+import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 // Lokale gepaarte Videodiagnose; V8-Profilierung nur in Chromium.
 const basis = process.cwd();
@@ -30,6 +31,9 @@ if (!["on", "off"].includes(cpuProfileMode)) {
   throw new Error("--cpu-profile erlaubt on oder off.");
 }
 const cpuProfile = cpuProfileMode === "on";
+const browserTrace = process.argv.includes("--browser-trace");
+if (browserTrace && browser !== "chromium") throw new Error("--browser-trace erfordert Chromium.");
+const debuggerAddresses = new Map();
 const throttleIndex = process.argv.indexOf("--cpu-throttle");
 const cpuThrottle = throttleIndex === -1 ? 1 : Number(process.argv[throttleIndex + 1]);
 if (!Number.isInteger(cpuThrottle) || cpuThrottle < 1 || cpuThrottle > 16) {
@@ -128,6 +132,7 @@ async function openSession(withExtension) {
   if (!result?.sessionId) throw new Error("Sitzung ohne ID.");
   browserVersion = result.capabilities?.browserVersion;
   await cdp(result.sessionId, "Emulation.setCPUThrottlingRate", { rate: cpuThrottle });
+  if (browserTrace) debuggerAddresses.set(result.sessionId, result.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
   return result.sessionId;
 }
 async function openFixture() {
@@ -174,7 +179,9 @@ async function abgleichZeitachsen(id) {
 async function browserlauf(url, mode, pair, lastart) {
   const id = await openSession(mode === "extension");
   let profileStarted = false;
+  let trace;
   try {
+    if (browserTrace) trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
     await api("POST", "/session/" + id + "/url", { url });
     let clock = null;
     if (cpuProfile) {
@@ -192,6 +199,7 @@ async function browserlauf(url, mode, pair, lastart) {
     }
     const state = await js(id, "return window.__videoCpuState?.();");
     if (!state?.done) throw new Error("Video-Fixturn nicht abgeschlossen.");
+    const traceFile = browserTrace ? "trace-" + pair + "-" + lastart + "-" + mode + ".json" : null;
     // Keep frame/CPU metrics from the load window. Separately require the
     // final visible text to complete after writes stop, including all nodes.
     let settledState = state;
@@ -232,6 +240,9 @@ async function browserlauf(url, mode, pair, lastart) {
         topGesamt: []
       };
     }
+    // Fetching a trace stream can take time. Keep it outside both the
+    // completion deadline above and the active V8 sampling window.
+    if (trace) {await trace.save(path.join(output, traceFile)); trace = undefined;}
     const frames = frameLuecken(state.frameTimes, 16, 0);
     const sorted = [...frames].sort((a, b) => a.dauerMs - b.dauerMs);
     const p95 = sorted.length ? sorted[Math.ceil(sorted.length * 0.95) - 1].dauerMs : null;
@@ -260,6 +271,7 @@ async function browserlauf(url, mode, pair, lastart) {
       markersVerbliebenNachAuslauf: settledState.markersVerblieben,
       korrigierteMarkerNachAuslauf: settledState.korrigierteMarker,
       completeAfterLoad,
+      traceFile,
       settleAfterLoadMs,
       rawMaximumFrameGapMs: frameLuecken(state.frameTimes, 1, 0)[0]?.dauerMs ?? 0,
       korrigierteMarker: state.korrigierteMarker,
@@ -304,6 +316,8 @@ async function browserlauf(url, mode, pair, lastart) {
     }));
     return result;
   } finally {
+    trace?.cancel();
+    debuggerAddresses.delete(id);
     if (profileStarted) {
       try { await cdp(id, "Profiler.stop"); } catch { /* Sitzung wird verworfen. */ }
     }
@@ -348,13 +362,15 @@ try {
     (cpuProfile ? (run.analyse.achsePlausibel === true &&
       run.clock?.unschaerfeMs <= 100) :
       (run.clock === null && run.analyse.achsePlausibel === null)));
+  const alleTexteNachAuslaufVollstaendig = runs.every(run => run.completeAfterLoad);
   const report = {
     version: 2, generatedAt: new Date().toISOString(),
-    alleTexteNachAuslaufVollstaendig: runs.every(run => run.completeAfterLoad),
+    alleTexteNachAuslaufVollstaendig,
     commit: process.env.GITHUB_SHA ?? null,
     browser, browserVersion: browserVersion ?? null,
     chromium: browser === "chromium" ? browserVersion ?? null : null,
-    pairs, mutationMode, cpuProfileMode, cpuThrottle, alleGueltig,
+    pairs, mutationMode, cpuProfileMode, browserTrace, cpuThrottle, alleGueltig,
+    traceHinweis: browserTrace ? "Browsertrace aktiv; Render-/Compilerdiagnostik verändert Laufzeiten." : null,
     hinweis: cpuProfile ?
       "V8-Sampling und Observer verändern Laufzeiten; keine automatische Freigabe." :
       "Ohne V8-Sampler, aber mit passivem DOM-/Long-Task-Observer; " +
@@ -364,7 +380,7 @@ try {
   await writeFile(path.join(output, "report.json"),
     JSON.stringify(report, null, 2) + "\n");
   console.log("VIDEO-FRAME-CPU-REPORT " + JSON.stringify({
-    alleGueltig, cpuProfileMode,
+    alleGueltig, alleTexteNachAuslaufVollstaendig, cpuProfileMode, browserTrace,
     runs: runs.map((r) => ({
       modus: r.modus, paar: r.paar, lastart: r.lastart,
       mutationRecords: r.mutationRecords,
@@ -380,6 +396,9 @@ try {
   }));
   if (!alleGueltig) {
     throw new Error("Unvollständiger Browser- oder CPU-Zeitachsen-Nachweis; Rohdaten gesichert.");
+  }
+  if (!alleTexteNachAuslaufVollstaendig) {
+    throw new Error("Dynamische Texte nach Auslauf nicht vollständig korrigiert; Rohdaten gesichert.");
   }
 } finally {
   if (fixture?.server) {

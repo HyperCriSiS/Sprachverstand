@@ -142,20 +142,31 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
 | 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
-| 11 | `https://videojs.org/` | offizielle Video.js-10-Webseite mit Player-Demo, dynamischer Steuerung und aktueller Player-UI | reale Wiedergabe mit Frame-Callbacks und messbarem Fortschritt nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls, geschützte DOM-Felder und Spielerinteraktionen gegenüber Baseline vergleichen; Textspuren nur bei tatsächlicher Verfügbarkeit zählen | mittel (externe Medien-CDN) |
+| 11 | `https://videojs.org/docs/framework/html/guides/captions` | offizielle Video.js-10-Caption-Demo mit realer WebVTT-Spur und Player-Steuerung | reale Wiedergabe und Caption-Wechsel nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls und geschützte DOM-Felder gegenüber Baseline vergleichen | mittel (externe Medien-CDN) |
 | 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
 
 ### Externer Player-Stack (10.10.2026)
 
-Die offizielle Video.js-10-Webseite
-`https://videojs.org/` enthält eine HTML5-Player-Demo mit
-Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
+Die offizielle Video.js-10-Caption-Demo
+`https://videojs.org/docs/framework/html/guides/captions` enthält einen Player
+mit echter WebVTT-Spur und Untertitelschalter. Die Startseite zeigte in der
+nativen Prüfung nur ein Hintergrundvideo ohne aktive Caption-Spur und wurde
+deshalb als Quelle ersetzt. Dieser Test bietet eine
 andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
 Er prüft nicht nur die Erreichbarkeit der Seite, sondern einen tatsächlichen
 Wiedergabefortschritt und Frame-Callbacks. Snapshotdaten enthalten zudem
 vorhandene und aktivierte Textspuren, ohne solche Spuren zu unterstellen.
 Externes Video kann durch Netzwerk, Codec oder CDN ausfallen; der Lauf gilt
 dann **nicht** als bestandener Videotest.
+
+Mit `--active-subtitles` wird die Erweiterungsoption in frischen Testprofilen
+über die echte Optionsseite gespeichert. Beide Modi durchlaufen einen
+Tabwechsel vor der Beobachtung, damit die Video-Sichtbarkeit vergleichbar
+bleibt. `subtitleSettingsMs` erfasst diese Vorbereitung getrennt.
+Caption-Wechsel bei tatsächlich laufendem Video sind zusätzlich erforderlich;
+der gespeicherte Schalter allein gilt nicht als Nachweis. Bei YouTube werden
+optionale Cookies im temporären Profil abgelehnt und `consentMs` getrennt
+erfasst. Nicht verfügbare Untertitel bleiben ausdrücklich ungemessen.
 
 Zusätzliche harte Videolast- und DOM-Untertitelregressionen bleiben in der
 deterministischen lokalen Chromium-Fixture; dort hängen Ergebnisse nicht von

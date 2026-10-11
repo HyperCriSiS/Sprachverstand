@@ -1,11 +1,13 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-11  
+Stand: 2026-10-12  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **12.10.2026, ergänzter Messnachweis:** Der lokale Gesamtcheck besteht jetzt mit 229 Dateien / 10.619 Tests. Optionale Chromium-Rendertraces und eine harte Prüfung aller Endtexte ergänzen die Videodiagnose. Externe aktive Captions werden nur bei tatsächlichem Videozeitfortschritt und Caption-Wechseln als gemessen ausgewiesen. Die VideoJS-Startseite wurde nach Prüfung durch die offizielle WebVTT-Caption-Demo ersetzt; zwei frische Paare bestätigen eingeblendete Textspur, Caption-Wechsel und rund 15 Sekunden Wiedergabe. YouTube spielt nach Ablehnen optionaler Cookies, liefert mit der gewählten Quelle aber keinen aktiven Caption-Nachweis. Framekosten und der unabhängige 250-ms-Gegenbefund bleiben offen; andere Projektaufgaben wurden nicht begonnen.
 
 - **Neuester unabhängiger Prüfstand:** [Draft-PR #451](https://github.com/HyperCriSiS/Sprachverstand/pull/451), Commit `6bc2185`, vollständige [PR-CI grün](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38177127648), fünf Interaktionspaare vollständig, Gecko-Video/Cues und Chromium-60-FPS geprüft. Die eigenständige Video-Diagnose reproduziert aber weiterhin eine 250-ms-Frame-Lücke und Long Tasks bis 221 ms in einem der drei Markerpaare; kein Release-Go aus grünem Diagnosestatus ableiten. Danach ein weiterer belegter Fix: Ein großer entfernter neutraler Unterbaum wird bei wenigen verfolgten Änderungen außerhalb des Baums nicht mehr vollständig gescannt; native CPU-4-Bildlatenz rund 101–140 ms auf 12 ms reduziert. Neuer Gesamtcheck 229 Dateien / 10.612 Tests, native Chromium/Firefox/Waterfox-Smokes und Chromium-60-FPS/Cues bestanden, drei CPU-4-Interaktionspaare vollständig ohne verspätete Korrekturen, P95-Mehrkosten weiterhin etwa 8 ms. Weitere Markerlast-/Renderanalyse bleibt erste Priorität. Details: [Windows-Prüfstand](PERFORMANCE-WINDOWS-20261011.md).
 

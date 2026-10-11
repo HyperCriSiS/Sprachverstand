@@ -13,6 +13,11 @@ on:
         required: false
         default: "1"
         type: string
+      active_subtitles:
+        description: "Externe Player mit aktiven Untertiteln und Erweiterungsoption prüfen"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -54,6 +59,7 @@ jobs:
         env:
           SITE_FILTER: ${{ inputs.site }}
           PAIR_COUNT: ${{ inputs.pairs }}
+          ACTIVE_SUBTITLES: ${{ inputs.active_subtitles }}
         shell: bash
         run: |
           set -euo pipefail
@@ -65,6 +71,7 @@ jobs:
             ARGS+=(--site "$SITE_FILTER")
           fi
           ARGS+=(--pairs "$PAIR_COUNT")
+          if [[ "$ACTIVE_SUBTITLES" == "true" ]]; then ARGS+=(--active-subtitles); fi
           npm run test:real-world -- "${ARGS[@]}"
 
       # Die unabhängige Live-Diagnose darf durch einen Video-Regressionstest
