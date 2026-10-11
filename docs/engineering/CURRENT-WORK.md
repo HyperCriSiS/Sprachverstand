@@ -1,11 +1,14 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-10  
+Stand: 2026-10-11  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **11.10.2026, neuester Befund:** [#447](https://github.com/HyperCriSiS/Sprachverstand/pull/447) Merge `c4b042dc`, ausschließlich diagnostisch; ganze PR-CI grün. [Gepaarter Chromium-60-FPS-/CPU-Test 38097454828](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38097454828), 8/8 Sitzungen: neutral bei vergleichbarer `childList`-Last **0 zusätzliche `characterData`-Writes**, Marker + Erweiterung **6.816/7.323 Writes**; einmal **133,3-ms-Frame-Lücke** überlappt **131-ms-Long-Task** und **111,94 ms `replaceData`-Samples**. [Nicht profilierte 60-FPS-Hauptprobe 38097646207](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38097646207) grün: Frames Basis/Erweiterung 374/431, P95 33,4/33,3 ms, Maximum 33,5/100 ms, Drops 2/5; 6 kontrollierte Cues 1,0–1,5 ms. **Keine Produkt- oder Gate-Änderung.** Nächste Arbeit: `replaceData`-Aufrufdauer/Batch-Fairness unabhängig nachmessen; Durchsatz, DOM-Ranges und Video mit und ohne Profiling sichern. [#419](https://github.com/HyperCriSiS/Sprachverstand/issues/419#issuecomment-6103633541) bleibt **Release-NO-GO**.
+
 
 - **11.10.2026 (neuester Stand):** [#444](https://github.com/HyperCriSiS/Sprachverstand/pull/444) `31da6573` und [#445](https://github.com/HyperCriSiS/Sprachverstand/pull/445) `3212701b`: ausschließlich manuelle echte 60-FPS-/V8-CPU-/Long-Task-Korrelation integriert, ganze PR-CI grün. [2× A/B 38091874100](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38091874100) und [3× A/B 38092085857](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38092085857) gültig; 3 Baselines 0 Long Tasks, Erweiterung 4/1/2. Eine 83,2-ms-Frame-Lücke überlappt 80-ms-Long-Task und 74,09-ms-Samples in `replaceTextKeepingRanges`. Ältere 300–350-ms-Spitzen nicht erneut gesehen, Instrumentierung verfälscht Timing. **Nächster Schritt:** DOM-Rückschreib-Batches/Observer gezielt untersuchen. **#419/Release NO-GO**, keine Tags/Storeaktionen.
 
