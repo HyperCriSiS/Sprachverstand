@@ -297,10 +297,42 @@ Erweiterungsfunktion bleibt unter 3,4 ms; zusätzliche Layoutarbeit bleibt sicht
 (159/456 Layouts, 282/648 ms Gesamtzeit). Instrumentierung verändert Laufzeiten;
 der frühere Gegenbefund ist damit nicht als behoben nachgewiesen.
 
+Die V8-Profilierung begann bisher erst nach Navigation und konnte die
+Content-Skript-Initialisierung deshalb verpassen. Sie startet jetzt vorher;
+der Uhrabgleich erfolgt weiterhin gegen das neu geladene Dokument. Ein nativer
+Versuch lieferte drei zeitlich vertauschte Samples (-17, -19, -30 µs), die der
+bisherige Parser zurückwies. Die Auswertung rekonstruiert jetzt die Zeitstempel
+und sortiert Samples samt Funktionszuordnung wie
+[Chrome DevTools](https://github.com/ChromeDevTools/devtools-frontend/blob/main/front_end/models/cpu_profile/CPUProfileDataModel.ts).
+CPU-Zeiten bleiben nicht negativ, Samples außerhalb des Profilzeitraums und
+nicht endliche Zeitwerte werden abgewiesen. Das ursprüngliche Rohprofil bleibt
+unverändert gesichert; die Korrektur erweitert keine Video-Freigabegrenzen.
+Verifiziert: Gesamtcheck 229 Dateien / 10.625 Tests, Firefox-Lint 0/0/0;
+native Startprofilierung mit Browsertrace, plausible Zeitachsen und vollständige
+Endtexte ohne zusätzlichen Auslauf. Callbacks 447/403, P95 29,3/31,3 ms,
+Drops 28/47, keine Long Tasks. Dies ist instrumentierte Ursachendiagnose und
+kein Ersatz für die weiterhin roten lokalen 60-FPS-Paare.
+
 Der externe CI-Lauf (38179730841) ist technisch grün, liefert aber in allen vier
 Sitzungen null Videofortschritt und null Caption-Wechsel. Diese Daten werden
 korrekt als nicht verfügbar ausgewiesen. Der aktive externe Caption-Nachweis
 ist damit lokal belegt; die unabhängige Runner-Abnahme bleibt offen.
+
+Neuester Produktstand `2e9e7ca`: unabhängige PR-CI (38180206078) vollständig
+grün. Fünf Interaktionspaare (38180318763) korrigieren alle 480 Texte ohne
+zusätzlichen Auslauf, ohne verspätete Korrekturen, Median-P95-/Maximalframe-
+und Long-Task-Mehrkosten jeweils null; Klick-/Eingabeframe -5,1/-3,7 ms.
+Unabhängige 60-FPS-Prüfung (38180316535): 354/367 Callbacks, P95 je 33,4 ms,
+Maximum 33,4/99,9 ms, verworfene Frames je 1.
+
+Zwei frische lokale 60-FPS-Paare desselben Produktstands scheitern dagegen am
+unveränderten Drop-Grenzwert: 54/62 und 45/51 verworfene Frames. Callbacks
+425/394 und 431/396, P95 24,1/31,8 und 24,0/31,7 ms, maximale Abstände
+31,8/47,7 und 32,0/48,0 ms. Dies ist ein verbleibender lokaler Gegenbefund;
+die unabhängige grüne Probe hebt ihn nicht auf. Eine getrennte native
+Untertitelprobe besteht mit sechs kontrollierten Cue-Latenzen 9,4–17,4 ms,
+ohne Long Tasks. Der erste Schalterwechsel enthält zusätzliche Optionskosten
+(350,2 ms) und wird nicht als reine Cue-Latenz ausgegeben.
 
 ## Verworfene bzw. isolierte Versuche
 
@@ -310,6 +342,13 @@ Durchsatz; Vollminifizierung beseitigte die alten Startblockaden nicht.
 Frameweise Ergebnisanwendung und unverzögerte Microtask-Bündelung wurden
 isoliert verglichen, ohne belastbaren zusätzlichen Framegewinn. Beide bleiben
 außerhalb des Produktcodes. Die Produktbündelung behält ihre geprüfte 8-ms-Frist.
+Ein neuer direkter Vergleich aktueller Erweiterung gegen eine isolierte
+2-ms-Batch-Wartezeit liefert 437/396, 399/370 und 400/369 Callbacks.
+P95 aktuell/Versuch 30,0/32,0, 32,0/45,8 und 31,7/37,1 ms.
+Alle Endtexte werden korrigiert; die kürzere Frist wird wegen des fehlenden
+Gewinns nicht übernommen. Ein isolierter Konstruktionstest in sechs frischen
+Chromium-Prozessen findet für den Unicode-Leading-Kandidaten nur 0,5–0,6 ms
+mit `iu` unter CPU-4; dies erklärt den 72-ms-Start-Long-Task nicht.
 Ein erneuter direkter Vergleich auf der aktuellen Architektur mit einem
 6-ms-Rückschreibbudget am Bildbeginn zeigte ebenfalls keinen stabilen Gewinn:
 bisher/Versuch 423/363, 372/364 und 361/365 Callbacks. Alle Endtexte wurden

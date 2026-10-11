@@ -182,16 +182,17 @@ async function browserlauf(url, mode, pair, lastart) {
   let trace;
   try {
     if (browserTrace) trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
-    await api("POST", "/session/" + id + "/url", { url });
-    let clock = null;
     if (cpuProfile) {
       await cdp(id, "Performance.enable");
       await cdp(id, "Profiler.enable");
       await cdp(id, "Profiler.setSamplingInterval", { interval: 1000 });
       await cdp(id, "Profiler.start");
       profileStarted = true;
-      clock = await abgleichZeitachsen(id);
     }
+    // Start sampling before navigation so content-script initialization and
+    // early page Long Tasks are covered. Align to the new document's clock.
+    await api("POST", "/session/" + id + "/url", { url });
+    const clock = cpuProfile ? await abgleichZeitachsen(id) : null;
     const deadline = Date.now() + 21_000;
     while (Date.now() < deadline) {
       if (await js(id, "return window.__videoCpuMetrics?.done === true;")) break;
@@ -369,7 +370,8 @@ try {
     commit: process.env.GITHUB_SHA ?? null,
     browser, browserVersion: browserVersion ?? null,
     chromium: browser === "chromium" ? browserVersion ?? null : null,
-    pairs, mutationMode, cpuProfileMode, browserTrace, cpuThrottle, alleGueltig,
+    pairs, mutationMode, cpuProfileMode, profileIncludesNavigation: cpuProfile,
+    browserTrace, cpuThrottle, alleGueltig,
     traceHinweis: browserTrace ? "Browsertrace aktiv; Render-/Compilerdiagnostik verändert Laufzeiten." : null,
     hinweis: cpuProfile ?
       "V8-Sampling und Observer verändern Laufzeiten; keine automatische Freigabe." :
