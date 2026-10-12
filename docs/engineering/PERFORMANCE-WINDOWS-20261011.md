@@ -470,7 +470,41 @@ der Fix beseitigt die belegte ungebundene Zählung, ohne Texte oder Ranges zu
 verändern. Gesamtcheck 230 Dateien / 10.630 Tests, Firefox-Lint 0/0/0 und
 native Chromium-/Firefox-Smokes bestanden.
 
-Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
+Auf `09afb7b` besteht die vollständige CI (38201323062). Die unabhängige
+CfT-155-Serie (38201321898, drei Marker-/Neutralpaare, ohne Sampler/Trace,
+asynchrones Warten) hat alle zwölf Läufe gültig, alle 480 Endtexte vollständig,
+null zusätzlichen Auslauf, keine Long Tasks und Maxima von 33,4–33,5 ms.
+Die System-Chromium-154-Interaktionsreihe (38201319618, fünf Paare) zeigt
+dagegen im ersten Erweiterungslauf eine 152-ms-Long-Task und zwei Frameabstände
+über 120 ms. Ein grüner Diagnoseworkflow hebt diesen Gegenbefund nicht auf.
+
+Die native lange 30-FPS-Quelle unter 60 Sekunden Markerlast verarbeitet alle
+480 Endtexte: Basis/Erweiterung 1792/1772 Callbacks, P95 44,8/47,4 ms,
+Drops 7/20, keine Long Tasks. Dies ist ein einzelnes Paar, keine allgemeine
+Performanceabnahme.
+
+Die neue optionale `--subtitle-dom-load`-Probe ergänzt den bestehenden echten
+Aus/An/Aus-Schalter um 30 Sekunden natürliche Video-Cues und 960 normale
+Textänderungen pro Sekunde. Native 60-FPS-Quelle:
+
+| Browser | Cues vollständig | Normale Endtexte | Cue P95 / Maximum | Video-Callbacks / Drops |
+| --- | --- | --- | --- | --- |
+| CfT Chromium 155 | 57/57 | 480/480 | 24,0 / 29,9 ms | 1653 / 145 |
+| Firefox 157 | 54/54 | 480/480 | 43 / 45 ms | 729 / 2 |
+| Waterfox 153.4 | 54/54 | 480/480 | 36 / 44 ms | 730 / 2 |
+
+Keine Frameabstände über 120 ms. Chromium meldet keine Long Tasks; Gecko hat
+diese API nicht und bleibt dafür unbewertet. Cue-Latenzen entstehen direkt
+in der Seite zwischen Original-DOM-Cue und korrigierendem MutationObserver,
+ohne WebDriver-Zeit. Alle Frame-Metadaten und Cue-Zeitstempel bleiben im
+synthetischen lokalen Rohbericht, die Standard-CI wird nicht verlängert.
+Zwei identische Chromium-Kontrollen ohne Erweiterung liefern 1658/1340
+Callbacks und 142/256 Drops. Die hohe Dropzahl des ersten Produktlaufs ist
+damit auch ohne Produkt vorhanden; die natürlichen 57 Cues bleiben in der
+Kontrolle erwartungsgemäß unverändert. Dies belegt Cue-Durchsatz unter Last,
+keine störungsfreie Videoausgabe für alle Plattformen oder native WebVTT-Cues.
+
+Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.
 Markerframes Basis/Erweiterung 451/426, 440/433, 443/420. Erster

@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import {mkdir} from "node:fs/promises";
+import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
@@ -32,6 +32,8 @@ const diagnosticFps = fpsArgumentIndex < 0 ? 30 :
 const diagnoseCuePhases = process.argv.includes("--diagnose-cue-phases");
 // Im manuellen Diagnoseworkflow auch bei rotem Frame-Gate getrennt messen.
 const subtitleOnly = process.argv.includes("--subtitle-only");
+// Separate, opt-in sustained load; ordinary video CI remains unchanged.
+const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
@@ -716,6 +718,96 @@ async function measureControlledSubtitleCues(id, number = 6) {
   return results;
 }
 
+async function measureSubtitleDomLoad(id) {
+  await request("POST", `/session/${id}/timeouts`, {script: 40_000});
+  const result = (await request("POST", `/session/${id}/execute/async`, {
+    script: `
+      const done = arguments[arguments.length - 1];
+      const video = document.querySelector("#video");
+      const root = document.createElement("div");
+      document.body.append(root);
+      const nodes = Array.from({length: 480}, (_, index) => {
+        const node = document.createElement("span");
+        node.textContent = "Neutraler Inhalt " + index;
+        root.append(node); return node;
+      });
+      const startedAt = performance.now();
+      const qualityBefore = video.getVideoPlaybackQuality?.();
+      const frames = [];
+      let ticks = 0, stopped = false;
+      const frame = (now, metadata) => {
+        if (stopped) return;
+        frames.push({nowMs: now, mediaTime: metadata.mediaTime,
+          presentedFrames: metadata.presentedFrames});
+        video.requestVideoFrameCallback(frame);
+      };
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback(frame);
+      }
+      const timer = setInterval(() => {
+        for (let offset = 0; offset < 48; offset++) {
+          const index = (ticks * 48 + offset) % nodes.length;
+          nodes[index].textContent = "Nutzer:innen " + ticks + " / " + offset;
+        }
+        ticks++;
+      }, 50);
+      setTimeout(() => {
+        clearInterval(timer); stopped = true;
+        const endedAt = performance.now();
+        const qualityAfter = video.getVideoPlaybackQuality?.();
+        // Freeze natural cues while checking the final cue and normal texts.
+        window.__controlledCueMode = true;
+        setTimeout(() => {
+          done({startedAt, endedAt, ticks, frames,
+            visibility: document.visibilityState, focused: document.hasFocus(),
+            paused: video.paused, readyState: video.readyState,
+            error: window.__subtitlePlaybackError ?? null,
+            droppedFrames: qualityBefore && qualityAfter
+              ? qualityAfter.droppedVideoFrames - qualityBefore.droppedVideoFrames : null,
+            cueRecords: window.__subtitleCueRecords.filter(record =>
+              record.issuedAt >= startedAt && record.issuedAt <= endedAt),
+            longTaskSupported: PerformanceObserver.supportedEntryTypes?.includes("longtask") === true,
+            longTasks: window.__subtitleLongTasks.filter(task =>
+              task.startMs >= startedAt && task.startMs <= endedAt),
+            normalCorrected: nodes.filter(node => node.textContent.startsWith("Nutzer ")).length,
+            subtitle: document.querySelector("#subtitle-target").textContent});
+          root.remove(); window.__controlledCueMode = false;
+        }, 350);
+      }, 30_000);
+    `,
+    args: []
+  })).value;
+  const latencies = result.cueRecords.map(record => record.latencyMs)
+    .filter(value => typeof value === "number" && Number.isFinite(value));
+  const report = {browser, fps: diagnosticFps, durationMs: 30_000,
+    cueCount: result.cueRecords.length, correctedCues: latencies.length,
+    cueP95Ms: percentile(latencies, 0.95),
+    cueP99Ms: percentile(latencies, 0.99),
+    cueMaximumMs: latencies.length ? Math.max(...latencies) : null,
+    frameSummary: summarize(result.frames.map(frame => frame.nowMs)),
+    ...result};
+  await mkdir(firefoxArtifacts, {recursive: true});
+  await writeFile(path.join(firefoxArtifacts,
+    `subtitle-dom-load-${browser}-${diagnosticFps}.json`), JSON.stringify(report, null, 2) + "\n");
+  console.log("Untertitel unter DOM-Last: " + JSON.stringify({
+    browser, fps: diagnosticFps, ticks: result.ticks,
+    cues: report.cueCount, correctedCues: report.correctedCues,
+    cueP95Ms: report.cueP95Ms, cueP99Ms: report.cueP99Ms,
+    cueMaximumMs: report.cueMaximumMs,
+    frames: report.frameSummary, droppedFrames: result.droppedFrames,
+    longTasks: result.longTaskSupported ? result.longTasks.length : null,
+    normalCorrected: result.normalCorrected
+  }));
+  if (result.ticks < 500 || report.cueCount < 30 ||
+      report.correctedCues !== report.cueCount || result.normalCorrected !== 480 ||
+      result.frames.length < 200 || result.visibility !== "visible" ||
+      result.paused || result.readyState < 2 || result.error ||
+      !/^Nutzer im Untertitel \d+$/u.test(result.subtitle)) {
+    throw new Error("Untertitel-/DOM-Lastprobe unvollständig; Rohbericht gespeichert.");
+  }
+  return report;
+}
+
 async function validateSubtitleToggle(url) {
   const id = await createSession(true);
   try {
@@ -761,6 +853,8 @@ async function validateSubtitleToggle(url) {
     if (on.timeUpdates <= off.timeUpdates) {
       throw new Error("Video wurde beim Einschalten unterbrochen.");
     }
+
+    if (subtitleDomLoad) await measureSubtitleDomLoad(id);
 
     await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await setSubtitleCheckbox(id, false);

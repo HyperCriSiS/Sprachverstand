@@ -42,4 +42,12 @@ jobs:
         run: npm run test:browser:video:chromium -- --fps 60
       - name: Untertitelphasen unabhängig vom Frame-Gate messen
         if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
-        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load
+      - name: Untertitel-Rohdaten archivieren
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: untertitel-dom-last-${{ github.sha }}
+          path: artifacts/video-playback/subtitle-dom-load-*.json
+          if-no-files-found: warn
+          retention-days: 14

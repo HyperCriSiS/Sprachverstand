@@ -202,6 +202,19 @@ externen Videodiensten ab. Ein einzelner Live-A/B-Lauf ist **keine**
 Freigabebestätigung für ungestörte 60-FPS-Videos und für native WebVTT-Cues
 (Issue #419).
 
+Die optionale lokale Probe
+`node scripts/video-playback-regression.mjs --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load`
+misst außerdem 30 Sekunden lang natürliche DOM-Cue-Wechsel aus laufendem Video
+bei 48 Textänderungen alle 50 ms auf 480 normalen Knoten. Sie speichert alle
+Cue-Zeitstempel, Frame-Metadaten, Drops und verfügbare Long Tasks unter
+`artifacts/video-playback/subtitle-dom-load-<browser>-<fps>.json`.
+Alle Cues und normalen Endtexte müssen vollständig korrigiert werden; die
+Performancewerte sind Diagnosewerte und keine zusätzliche Freigabegrenze.
+Der Standardtest bleibt unverändert, der manuelle 60-FPS-Workflow führt die
+Probe getrennt aus. Firefox/Waterfox können mit `--browser firefox` und ihren
+jeweiligen Browser-/Driverpfaden separat geprüft werden. Native WebVTT-Cues
+sind damit nicht als transformiert nachgewiesen.
+
 ## Automatisierbare Aussagen
 
 Ein Browser-Test kann für diese Seiten sinnvoll und reproduzierbar prüfen:
