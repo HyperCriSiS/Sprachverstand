@@ -110,6 +110,7 @@ interface DetachedCleanupState {
   index: number;
   started: boolean;
   repeat: boolean;
+  restoreExcludedSubtitles: boolean;
 }
 
 interface BudgetedRestoration {
@@ -1348,7 +1349,10 @@ export class DomProcessor {
                 this.isSubtitleContent(record.target)
               ) {
                 // Bei erstmaligem Captionstatus eigene Altänderungen restaurieren.
-                this.forgetRoot(record.target);
+                const entries = this.textChanges.size + this.attributeChanges.size +
+                  this.pendingTextTransforms.size + this.pendingTextEdits.size + this.pendingAttributeTransforms.size;
+                if (entries <= 64) this.forgetRoot(record.target);
+                else this.queueDetachedCleanup(true);
               } else {
                 this.queue(record.target);
               }
@@ -3067,15 +3071,16 @@ export class DomProcessor {
     } else this.queueDetachedCleanup();
   }
 
-  private queueDetachedCleanup(): void {
+  private queueDetachedCleanup(restoreExcludedSubtitles = false): void {
     if (this.detachedCleanup) {
       if (this.detachedCleanup.started) this.detachedCleanup.repeat = true;
+      this.detachedCleanup.restoreExcludedSubtitles ||= restoreExcludedSubtitles;
     } else {
       // Live ownership iterators avoid a large snapshot and remain independent
       // of detached subtree shape: pages may dismantle or reinsert it meanwhile.
       this.detachedCleanup = {iterators:[this.textChanges.keys(), this.attributeChanges.keys(),
         this.pendingTextTransforms.keys(), this.pendingTextEdits.keys(), this.pendingAttributeTransforms.keys()],
-      index:0, started:false, repeat:false};
+      index:0, started:false, repeat:false, restoreExcludedSubtitles};
     }
     this.scheduleFlush();
   }
@@ -3088,7 +3093,8 @@ export class DomProcessor {
       const entry = cleanup.iterators[cleanup.index]!.next();
       if (entry.done) {cleanup.index++; continue;}
       const node = entry.value;
-      if (this.isProcessableRoot(node)) return true;
+      if (this.isProcessableRoot(node) && !(cleanup.restoreExcludedSubtitles &&
+          this.options.processSubtitles !== true && this.isSubtitleContent(node))) return true;
       if (node.nodeType === Node.TEXT_NODE) {
         const text = node as Text;
         if (!this.pendingTextEdits.get(text)?.restoring) {
@@ -3102,7 +3108,7 @@ export class DomProcessor {
       return true;
     }
     this.detachedCleanup = undefined;
-    if (cleanup.repeat) {this.queueDetachedCleanup(); return true;}
+    if (cleanup.repeat) {this.queueDetachedCleanup(cleanup.restoreExcludedSubtitles); return true;}
     return false;
   }
 

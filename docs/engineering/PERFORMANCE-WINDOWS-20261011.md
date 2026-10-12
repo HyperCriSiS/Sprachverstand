@@ -1320,3 +1320,48 @@ neun Regressionen 241 Dateien / 10.715 Tests, beide Builds und Firefox-Lint
 erfolgreich; anschließend gesamte Testsuite mit Fairnessfall 10.716 Tests
 und Typecheck erfolgreich. Native Chromium-, Firefox- und Waterfox-Smokes
 einschließlich Ranges und Restore erfolgreich. #419 weiterhin offen.
+
+## Große nachträgliche Untertitelklassifikation bei ausgeschalteter Verarbeitung
+
+Weiterer verifizierter allgemeiner Restore-Engpass: 10.000 vorher normal
+korrigierte Texte erhalten nachträglich einen Captionmarker, während
+`processSubtitles=false` gilt. Native CPU-4-Reproduktion: Observer vorher
+235,4–249,1 ms, gleichzeitig geänderter normaler Außenknoten nach
+376–390,2 ms korrigiert. Die eigene Klassenmutation selbst dauert 0–0,2 ms.
+Der verbundene Captionroot lag weiterhin auf `forgetRoot` mit vollständigem
+Restore und großen anschließenden CharacterData-Batches.
+
+Große Bestände verwenden jetzt dieselbe Ownership-Bereinigung mit aktueller
+Caption-/Optionenprüfung. Kleine Bestände bleiben unmittelbar. Rücknahme des
+Markers vor der Bereinigung erhält eigene korrekte Änderungen; StopBudgeted
+übernimmt verbleibende Originale. Keine Transformation ausgeschlossener
+Captions und keine Änderung am aktivierten Untertitelpfad.
+
+Identischer nativer Nachlauf: Observer 1,6–2,4 ms, normaler Außenknoten nach
+7,9–14 ms, alle 10.000 Originale wiederhergestellt, späterer Frameabstand
+höchstens 10,1 ms. Drei fokussierte Regressionen, erste Budgetprüfung vorher
+rot. Gesamtcheck 242 Dateien / 10.719 Tests, beide Builds und Firefox-Lint
+erfolgreich. Native Chromium-, Firefox- und Waterfox-Smokes einschließlich
+Ranges/Restore erfolgreich. Rohlogs `artifacts/caption-reclassification-{before,after}.log`.
+
+Vollständiges Add-on mit echtem Video und normaler Hochlast: vor Klassifikation
+10.000/10.000 korrekt, danach 10.000/10.000 Originale. Direkte Chromium-
+Vorversion `f59620c`: normaler Außenknoten 92,4 ms, Long Task 82 ms bei der
+Klassifikation; aktueller Fix 12,2 ms, keine Long Tasks. **Tradeoff:** die
+Wiederherstellung ist verteilt: letzter beobachteter Captionknoten vorher
+nach 28,8 ms, nachher nach 137,4 ms. Dies ist die deaktivierte Verarbeitung
+eines ungewöhnlich großen Bereichs, kein Latenznachweis für aktive Cues.
+Beide unveränderten Drop-Gates rot (vorher 53/63, nachher 47/60); alle
+eingeschwungenen aktuellen Callback-Abstände unter 48 ms. Gesamt-NO-GO bleibt.
+
+Firefox-Funktionslauf: Außenknoten 18 ms, letzter beobachteter Captionknoten
+762 ms, alle Originale, Gate erfolgreich. Waterfox technische Funktionsaufnahme:
+Außenknoten 7 ms, letzter Knoten 743 ms, alle Originale und Gate erfolgreich;
+ein separater Chromium-Smoke lief teilweise gleichzeitig, deshalb keine
+isolierte Waterfox-Performancefreigabe daraus. Gecko verwendet den Timer-
+Fallback und unterstützt die Longtask-API nicht. Der große Restaurierungsauslauf
+bleibt als möglicher nächster Durchsatzpunkt messbar. Isolierte Variante nur
+unter `artifacts/`, Rohdaten `artifacts/caption-reclassification-video/`.
+
+Vollständige unabhängige CI 38305410844 auf dem vorigen Dense-Fix `f59620c`
+erfolgreich. Der Caption-Folgefix wird separat auf seinem Commit verifiziert.
