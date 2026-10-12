@@ -41,6 +41,14 @@ const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
 const browserTrace = process.argv.includes("--browser-trace");
 const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks");
+const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
+if (!domPhaseDiagnostics && existsSync(path.join(extensionDir, "dom-phase-diagnostic.json"))) {
+  throw new Error("Der DOM-Diagnosebuild muss ausdrücklich mit --diagnose-dom-phases gekennzeichnet werden.");
+}
+if (domPhaseDiagnostics && (browser !== "chromium" || subtitleOnly ||
+    !existsSync(path.join(extensionDir, "dom-phase-diagnostic.json")))) {
+  throw new Error("DOM-Phasendiagnose benötigt den isolierten Chromium-Diagnosebuild und den vollständigen Videostartvergleich.");
+}
 const focusedStart = process.argv.includes("--focused-start");
 if (mainTaskDiagnostics && subtitleOnly) throw new Error("Main-Task-Diagnose benötigt den vollständigen Videostartvergleich.");
 const debuggerAddresses = new Map();
@@ -490,12 +498,21 @@ async function collect(id, mode) {
   const state = await execute(
     id,
     `
+      let domPhases;
+      if (${domPhaseDiagnostics && mode === "extension"}) {
+        document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
+        domPhases = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic") || "null");
+        if (!domPhases?.methods?.start?.calls || domPhases.slow?.length > 128) {
+          throw new Error("DOM-Phasendaten fehlen oder sind ungültig.");
+        }
+      }
       const video = document.querySelector("#video");
       const metrics = window.__sprachverstandVideoMetrics || {};
       const quality = typeof video?.getVideoPlaybackQuality === "function"
         ? video.getVideoPlaybackQuality()
         : undefined;
       return {
+        ...(domPhases ? {domPhases} : {}),
         staticText: document.querySelector("#static-target")?.textContent || "",
         currentTime: Number(video?.currentTime || 0),
         readyState: Number(video?.readyState || 0),
@@ -546,8 +563,9 @@ async function run(url, mode, attempt) {
     }
     const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
-    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics,
+    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
+      domPhaseDiagnostics,
       focusedStart,
       ...(trace ? {traceFile, traceClock} : {})};
   } finally {

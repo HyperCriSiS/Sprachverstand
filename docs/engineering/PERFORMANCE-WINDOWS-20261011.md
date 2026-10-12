@@ -1092,3 +1092,24 @@ und ein grünes Gate. Erweiterung allein 55–59 Drops, Basis 41–68. Kein
 belastbarer Timergewinn; 8 ms beibehalten. Alle eingeschwungenen Maximalabstände
 unter 49 ms und keine Long Tasks in diesen nativen Reihen. Rohdaten
 `artifacts/normal-window-comparison/`; isolierte Variante nur unter `artifacts/`.
+
+## Begrenzte DOM-Phasendiagnose (12.10.2026, Wiederaufnahme)
+
+Ein ausdrücklich erzeugter separater Diagnosebuild unter
+`artifacts/dom-phase-diagnostic/chromium` misst sechs zentrale DOM-Einstiege.
+Nur numerische Zeiten und Methodennamen; maximal 128 langsame Proben ab 8 ms.
+Keine Text-/Knotenreferenzen, keine zusätzlichen Berechtigungen. Produktions-
+`content.js` wird nicht geändert und sein Hash wird im Diagnosemarker gespeichert.
+Der Videolauf verlangt den passenden Marker und die ausdrückliche Diagnoseflag;
+Standardbuild und Standardmessgrenzen bleiben erhalten. Separater manueller
+Workflowinput ermöglicht die gleiche Aufnahme auf dem unabhängigen Runner.
+
+Native technische Prüfung des endgültigen Diagnosewegs: Gate erfolgreich,
+Drops 55/59, eingeschwungene Maximalabstände 31,6/47,1 ms. Frühe Lücken
+151/158,2 ms jeweils ohne Long Task. Gemessene Observer-Eigenzeit höchstens
+1,4 ms, reguläre Scheibe 2,5 ms, Start 1,2 ms; keine langsame Methodenprobe.
+Zwei vorbereitende Archivdiagnosen waren am Drop-Gate rot; eine frühe
+457-ms-Lücke ohne Long Task wurde erfasst. Keine Entwarnung für #419 oder
+Erklärung des früheren unabhängigen 158-ms-Tasks. Rohdaten
+`artifacts/dom-phase-native-supported/` und `artifacts/phase-diagnostic-native/`.
+Gesamtcheck: 240 Dateien / 10.694 Tests, beide Builds und Firefox-Lint erfolgreich.

@@ -15,6 +15,10 @@ on:
         description: Frühen Videostart mit passiven Long-Task- und Sichtbarkeitsdaten prüfen
         type: boolean
         default: false
+      dom_phase_diagnostics:
+        description: Isolierten Diagnosebuild mit begrenzten DOM-Methodenzeiten verwenden
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -52,14 +56,22 @@ jobs:
       - name: Erweiterten Chromium-Browser prüfen
         run: npm run test:browser:chromium
       - name: Echtes 60-FPS-WebM und dynamische Untertitel prüfen
-        if: ${{ !inputs.browser_trace && !inputs.main_task_diagnostics }}
+        if: ${{ !inputs.browser_trace && !inputs.main_task_diagnostics && !inputs.dom_phase_diagnostics }}
         run: npm run test:browser:video:chromium -- --fps 60
       - name: Frühen Videostart mit Browsertrace prüfen
-        if: ${{ inputs.browser_trace }}
+        if: ${{ inputs.browser_trace && !inputs.dom_phase_diagnostics }}
         run: npm run test:browser:video:chromium -- --fps 60 --browser-trace
       - name: Frühen Videostart mit Long-Task-Daten prüfen
-        if: ${{ !inputs.browser_trace && inputs.main_task_diagnostics }}
+        if: ${{ !inputs.browser_trace && inputs.main_task_diagnostics && !inputs.dom_phase_diagnostics }}
         run: npm run test:browser:video:chromium -- --fps 60 --diagnose-main-tasks
+      - name: Isolierten DOM-Phasendiagnosebuild erstellen
+        if: ${{ inputs.dom_phase_diagnostics }}
+        run: node scripts/build-dom-phase-diagnostic.mjs
+      - name: Frühen Videostart mit DOM-Phasen prüfen
+        if: ${{ inputs.dom_phase_diagnostics }}
+        env:
+          VIDEO_EXTENSION_DIR: artifacts/dom-phase-diagnostic/chromium
+        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-main-tasks --diagnose-dom-phases
       - name: Untertitelphasen unabhängig vom Frame-Gate messen
         if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
         run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load
