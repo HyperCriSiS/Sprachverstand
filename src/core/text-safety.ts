@@ -142,7 +142,10 @@ export function hasOwnTextProtection(element: Element): boolean {
 
 function hasExcludedTextAncestor(element: Element | null,
   cache?: WeakMap<Element, boolean>): boolean {
-  let current = element;
+  if (!element) return false;
+  const hit = cache?.get(element);
+  if (hit !== undefined) return hit;
+  let current: Element | null = element;
   const visited: Element[] | undefined = cache ? [] : undefined;
   let protectedText = false;
   while (current) {

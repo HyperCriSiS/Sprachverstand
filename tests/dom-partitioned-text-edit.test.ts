@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
 import { defaultRules } from "../src/rules";
 
@@ -28,6 +28,7 @@ afterEach(() => {
   processor = undefined;
   document.getSelection()?.removeAllRanges();
   document.body.replaceChildren();
+  vi.useRealTimers();
 });
 
 describe("Lokale Textänderungen in großen Inline-Blöcken", () => {
@@ -73,12 +74,13 @@ describe("Lokale Textänderungen in großen Inline-Blöcken", () => {
   });
 
   it("ignoriert eigene temporäre Knoten und verarbeitet fremde spätere Textwechsel", async () => {
+    vi.useFakeTimers();
     const {span, text} = fixture("Hallo Nutzer:innen und Freunde.");
     start();
-    await new Promise(resolve => setTimeout(resolve, 25));
+    await vi.advanceTimersByTimeAsync(25);
     expect(processor?.getReplacementCount()).toBe(1);
     span.textContent = "Hallo Lehrer:innen und Freunde.";
-    await new Promise(resolve => setTimeout(resolve, 25));
+    await vi.advanceTimersByTimeAsync(25);
     expect(span.textContent).toBe("Hallo Lehrer und Freunde.");
     expect(span.childNodes).toHaveLength(1);
     expect(text.data).toBe("Hallo Nutzer:innen und Freunde.");

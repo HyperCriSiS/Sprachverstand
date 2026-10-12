@@ -356,6 +356,42 @@ korrigiert; der Versuch bleibt ausschließlich im ignorierten Artefaktverzeichni
 
 ## Offen und nächste Arbeit
 
+### Branch-Delta nach Kontingentreset am 12.10.2026
+
+Die Wiederaufnahme wurde gegen den aktuellen `main`-Checkpoint, den offenen
+Releaseblocker #419 und Draft-PR #451 verifiziert. Im unabhängigen Trace von
+`90f0a2e` liegt der 166,7-ms-Abstand bei 1398,5–1565,2 ms. `MinorGC` dauert
+166,2 ms, davon `V8.GC_TIME_TO_SAFEPOINT` 165,5 ms, gleichzeitig mit einem
+Maglev-Compilerthread. Die anschließende eigentliche Scavenger-Phase dauert
+0,6 ms. Die CPU-Samples im Framefenster enthalten 163,2 ms GC. Damit ist die
+Wartephase dieses konkreten Ausreißers belegt; eine allgemeine browserübergreifende
+Ursache oder Beseitigung folgt daraus nicht.
+
+Sampling inklusive gesammelter Objekte zeigt im lokalen direkten Vergleich
+vorher/Allokationsfix 57,9/53,1 MB bei Markerlast und 13,0/9,7 MB bei neutraler
+Last (Schätzwerte, jeweils acht Sekunden). NodeList-Kopien und Iteratoren in
+Mutation-Callbacks entfallen; Vorfahrenlisten und Hilfsfunktionen werden bei
+bereits bekannten Cache-Ergebnissen vermieden. Scope-Invalidierung und
+Schutzentscheidungen bleiben erhalten. Drei unprofilierte direkte Markerpaare
+zeigen keine stabile Frameverbesserung: 385/387, 397/383, 389/390 Callbacks.
+
+Der erste CPU-4-Interaktionsvergleich gegen keine Erweiterung zeigt zwei
+verspätete vollständige Korrekturen um rund 130 ms. Ein anschließender direkter
+Vergleich mit der vorherigen Erweiterung (`43d5285`) über fünf frische Paare
+zeigt zwei verspätete Läufe vorher und einen mit dem Fix (133/150 ms im dritten
+Paar, nur vorher 133 ms im fünften). Alle 480 Texte und Schutzprüfungen bestehen;
+keine Long Tasks. Dies ist kein Nachweis einer neuen Auslaufregression, aber
+auch keine generelle Latenzfreigabe. Chromium-, Firefox- und Waterfox-Smokes
+sowie Gesamtcheck 229 Dateien / 10.625 Tests und Firefox-Lint 0/0/0 bestehen.
+Der Funktionstest für temporäre Knoten verwendet kontrollierte Timer statt
+einer zufälligen 25-ms-Wallclock-Frist; alle bisherigen Ergebnisprüfungen bleiben.
+
+Die optionale Diagnose `--allocation-profile` speichert Samplingdateien bei
+16-KiB-Intervallen inklusive durch GC gesammelter Objekte. Sie ist standardmäßig
+aus, auf Chromium begrenzt und verändert Laufzeiten. Native Prüfung mit Marker-
+und neutraler Last: vier gültige Samplingdateien, alle Endtexte vollständig.
+Kein Freigabegate wird verändert.
+
 Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.

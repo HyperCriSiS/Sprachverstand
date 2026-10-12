@@ -1156,6 +1156,21 @@ export class DomProcessor {
     this.withTextSafetyScope(() => this.handleMutationRecordsScoped(records));
   }
 
+  private isOnlyTemporaryPartitionMutation(record: MutationRecord): boolean {
+    const added = record.addedNodes;
+    const removed = record.removedNodes;
+    if (added.length + removed.length === 0) return false;
+    // Normal child replacements usually fail on the first node. Avoid
+    // copying both NodeLists and creating iterators for every record.
+    for (let index = 0; index < added.length; index++) {
+      if (!this.isTemporaryPartitionNode(added[index]!)) return false;
+    }
+    for (let index = 0; index < removed.length; index++) {
+      if (!this.isTemporaryPartitionNode(removed[index]!)) return false;
+    }
+    return true;
+  }
+
   private handleMutationRecordsScoped(records: readonly MutationRecord[]): void {
     // Im Observer-Batch ist der finale DOM-Zustand bereits sichtbar.
     // Gemeinsame Inline-Bereiche nur einmal statt pro Mutation traversieren.
@@ -1165,9 +1180,7 @@ export class DomProcessor {
     for (const record of records) {
       if (this.isTemporaryPartitionNode(record.target)) continue;
       if (record.type === "childList" &&
-          record.addedNodes.length + record.removedNodes.length > 0 &&
-          [...record.addedNodes, ...record.removedNodes].every(node =>
-            this.isTemporaryPartitionNode(node))) continue;
+          this.isOnlyTemporaryPartitionMutation(record)) continue;
       if (record.type === "characterData") {
         const node = record.target as Text;
         const pending = this.pendingTextEdits.get(node);
@@ -1251,7 +1264,9 @@ export class DomProcessor {
       if (simpleTextSwap) {
         this.transferInlineProtectionForSimpleSwap(record, invalidatedInlineRoots);
       }
-      for (const removedNode of record.removedNodes) {
+      const removedNodes = record.removedNodes;
+      for (let index = 0; index < removedNodes.length; index++) {
+        const removedNode = removedNodes[index]!;
         // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
         // Andernfalls gingen sein Original und sein Korrekturzähler verloren.
         if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
@@ -1259,7 +1274,9 @@ export class DomProcessor {
         }
         this.forgetRoot(removedNode);
       }
-      for (const addedNode of record.addedNodes) {
+      const addedNodes = record.addedNodes;
+      for (let index = 0; index < addedNodes.length; index++) {
+        const addedNode = addedNodes[index]!;
         this.queue(addedNode);
       }
       if (record.target.isConnected) {
