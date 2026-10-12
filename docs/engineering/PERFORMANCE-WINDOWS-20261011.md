@@ -1358,10 +1358,56 @@ Firefox-Funktionslauf: Außenknoten 18 ms, letzter beobachteter Captionknoten
 762 ms, alle Originale, Gate erfolgreich. Waterfox technische Funktionsaufnahme:
 Außenknoten 7 ms, letzter Knoten 743 ms, alle Originale und Gate erfolgreich;
 ein separater Chromium-Smoke lief teilweise gleichzeitig, deshalb keine
-isolierte Waterfox-Performancefreigabe daraus. Gecko verwendet den Timer-
-Fallback und unterstützt die Longtask-API nicht. Der große Restaurierungsauslauf
+isolierte Waterfox-Performancefreigabe daraus. Gecko unterstützt die Longtask-API
+nicht. Die zunächst vermutete Nutzung des Timer-Fallbacks war falsch: Firefox
+157 stellt im isolierten Add-on-Kontext `scheduler.postTask` bereit; der
+bestehende Hintergrundpfad verwendet diese API. Der große Restaurierungsauslauf
 bleibt als möglicher nächster Durchsatzpunkt messbar. Isolierte Variante nur
 unter `artifacts/`, Rohdaten `artifacts/caption-reclassification-video/`.
 
 Vollständige unabhängige CI 38305410844 auf dem vorigen Dense-Fix `f59620c`
-erfolgreich. Der Caption-Folgefix wird separat auf seinem Commit verifiziert.
+erfolgreich. Auch CI 38307637382 auf Caption-Folgefix `c0c6e98` erfolgreich.
+
+## Observer-Rückläufer vollständig ausgeschlossener Captionblöcke
+
+Nach einem Restore ist die Textownership bereits freigegeben. Die anschließende
+CharacterData-Benachrichtigung führte trotzdem grammatische Nachbarscans aus.
+Bei unowned Texten ohne ausstehende Transformation in einem vollständig
+ausgeschlossenen Caption-Inlineboundary wird diese Arbeit jetzt übersprungen.
+Inlinecaptions innerhalb normaler Absätze bleiben kontextrelevant; eine
+Regression prüft den Wechsel von „mit Nutzer:innen“ zu „für Nutzer:innen“.
+Eine weitere Regression schützt vor Nachbarscans bei 256 ausgeschlossenen
+Captionänderungen. Eigene/pending Texte bleiben im bestehenden Prüfpfad.
+
+Direkter vollständiger Firefox-Add-on-Vergleich mit echtem 60-FPS-Video,
+normaler Hochlast und 10.000 nachträglich ausgeschlossenen Texten: Vorversion
+`c0c6e98` Außenknoten 16 ms / letzter beobachteter Restoreknoten 680 ms;
+aktueller Pfad 11 / 366 ms, Wiederholung 14 / 374 ms. Alle 10.000 Texte vorher
+korrigiert und danach original. Isolierter Waterfox-Nachlauf 9 / 357 ms,
+ebenfalls alle Originale. Die unveränderten relativen Videogates erfolgreich;
+hohe absolute Dropzahlen schon ohne Add-on (Firefox erster Nachlauf 188/188,
+Waterfox 197/195) erlauben keine allgemeine Aussage über flüssige Wiedergabe.
+Gecko bietet weiterhin keine Longtask-Beobachtung. Rohdaten unter
+`artifacts/excluded-caption-notifications/`.
+
+Die experimentelle MessageChannel-Variante wurde vollständig verworfen:
+Sie wurde wegen des bereits vorhandenen postTask-Pfads nicht verwendet und
+belegt daher keinen Timergewinn. Keine Änderung am Scheduler oder am aktiven
+Untertitelpfad. Die sporadische Store-Störung bleibt kausal offen; #419 NO-GO
+bleibt bestehen.
+
+Abschlussprüfung dieses Folgefixes: Gesamtcheck 242 Dateien / 10.721 Tests,
+beide Builds, Metadaten-/Locale-/Storeprüfungen und Firefox-Lint 0/0/0
+erfolgreich. Native Chromium-, Firefox- und Waterfox-Smokes einschließlich
+Inline-Ranges und großem Einzeltext mit Restore erfolgreich.
+
+Direkte Chromium-Kontrolle gegen `c0c6e98`: letzter beobachteter Restoreknoten
+vorher 103,1 ms, aktuell 60,0 ms, Wiederholung 63,3 ms; normaler Außenknoten
+14,4 / 14,4 / 14,6 ms. Alle 10.000 Originale in allen Läufen. **Alle drei
+unveränderten Videogates rot:** Drops Basis/Add-on vorher 31/114, aktuell
+38/122, Wiederholung 40/111. Frühe tatsächliche Callback-Lücken 398 / 243,9 /
+367,7 ms liegen jeweils weit vor der Klassifikation nach fünf Sekunden und
+haben keinen korrelierten Longtask-Eintrag. Dies ist ein erneut reproduzierter
+Startgegenbefund unter dieser großen Anfangslast, keine Performancefreigabe.
+Eine aktuelle Aufnahme enthält zusätzlich einen frühen 86-ms-Long-Task
+bei 48,3 ms; die beiden anderen nicht. Rohdaten bleiben vollständig erhalten.

@@ -1319,6 +1319,14 @@ export class DomProcessor {
           knownOwnWrites.set(node, tracked);
           continue;
         }
+        if (!tracked && !pending && !this.pendingTextTransforms.has(node) &&
+            this.options.processSubtitles !== true && this.isSubtitleContent(node) &&
+            this.isSubtitleContent(findInlineBoundary(node, blockBoundaryTags))) {
+          // An unowned text inside an excluded caption block cannot change
+          // ordinary grammar outside that boundary. Restored captions also
+          // arrive here after ownership was released; avoid rescanning them.
+          continue;
+        }
         handledExternalText.add(node);
         if (tracked) {
           this.noteExternalTextRewrite(node);

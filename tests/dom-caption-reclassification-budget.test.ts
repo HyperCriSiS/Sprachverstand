@@ -1,6 +1,7 @@
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {DomProcessor} from "../src/core/dom-processor";
 import type {Rule} from "../src/core/rule";
+import {defaultRules} from "../src/rules";
 const rule: Rule = {id:"test.caption-classification", risk:"safe", apply(input) {
   const text=input.replaceAll("Nutzer:innen", "Nutzer");
   return {text, replacements:text===input?0:1};
@@ -21,6 +22,30 @@ function fixture() {
 }
 afterEach(()=>{processor?.stop({restore:true});processor=undefined;vi.restoreAllMocks();document.body.replaceChildren();});
 describe("Budgetierter Restore nach Untertitelklassifikation",()=>{
+  it("scannt bei vielen Änderungen im vollständig ausgeschlossenen Captionblock keine Grammatiknachbarn",async()=>{
+    const {root,nodes}=fixture();await Promise.resolve();
+    root.className="ytp-caption-window-container";await Promise.resolve();processor!.flush();await Promise.resolve();
+    const contextProcessor=processor! as unknown as {
+      invalidatePrecedingParticipleContext(node:Node):void;
+      invalidateFollowingContext(node:Node):void;
+    };
+    const preceding=vi.spyOn(contextProcessor,"invalidatePrecedingParticipleContext");
+    const following=vi.spyOn(contextProcessor,"invalidateFollowingContext");
+    for(const node of nodes) node.data="Nutzer:innen extern";
+    await Promise.resolve();processor!.flush();
+    expect(preceding).not.toHaveBeenCalled();
+    expect(following).not.toHaveBeenCalled();
+    expect(nodes.every(node=>node.data==="Nutzer:innen extern")).toBe(true);
+  });
+  it("bewahrt grammatische Nachbarupdates bei inline ausgeschlossenen Captions",async()=>{
+    document.body.innerHTML='<p><span class="ytp-caption-segment">mit </span><span id="word">Nutzer:innen</span></p>';
+    processor=new DomProcessor(document,{rules:defaultRules,profile:"aggressive",processSubtitles:false});
+    processor.start();processor.flush();await Promise.resolve();
+    expect(document.querySelector('#word')!.textContent).toBe('Nutzern');
+    document.querySelector('span')!.firstChild!.textContent='für ';
+    await Promise.resolve();processor.flush();
+    expect(document.querySelector('#word')!.textContent).toBe('Nutzer');
+  });
   it("restauriert einen großen ausgeschlossenen Captionbereich ohne die normale Textarbeit zu blockieren",async()=>{
     const {root,nodes,outside}=fixture();await Promise.resolve();
     root.className="ytp-caption-window-container";outside.firstChild!.textContent="Nutzer:innen neu";
