@@ -867,3 +867,61 @@ Callback-Lücke je 50,1 ms, alle 345 aktiven Cues. Burst mit vollständiger
 Erweiterung: 58/58 Cues, Burst-Cue 10,5 ms, Tail 82,8 ms, maximaler
 Callback-Abstand 33,4 ms, keine Long Tasks. Der positive Lauf ersetzt die
 separat dokumentierten negativen Kurzlaufbefunde nicht.
+
+### Anfragenkapazität und getrennte Untertitelantworten
+
+Zwei weitere gezielte Regressionen reproduzieren die Prioritätsgrenze:
+32 laufende normale kleine Textanfragen verhindern jede neue Captionanfrage;
+ein gemischter Batch hält die Captionantwort bis zum Abschluss seiner normalen
+Einträge zurück. Bei aktivierter Untertitelverarbeitung bleibt jetzt ein Platz
+innerhalb der bestehenden Gesamtgrenze 32 frei. Captionbatches enthalten nur
+Captions; normale Texte benutzen den anderen Batch. Die Transportgrenze bleibt
+zwei gleichzeitig laufende Batches. Bereits laufende volle Batches werden
+nicht unterbrochen; dies ist keine Garantie sofortiger Antworten bei blockiertem
+Hintergrundprozess. Ohne aktivierte Untertitel bleibt die normale Core-Kapazität 32.
+
+Drei neue Core-Regressionen sichern frische Captions während ausstehender
+normaler Antworten, gemeinsame Kapazität und vollständigen normalen Auslauf
+mit Restore. Eine zusätzliche Transportregression hält die normale Antwort
+zurück und verlangt trotzdem eine abgeschlossene Captionantwort. Vorher rot,
+nachher grün. Gesamtcheck: 238 Dateien / 10.689 Tests, Builds, Typprüfung und
+Firefox-Lint erfolgreich. Native Chromium-/Firefox-/Waterfox-Smokes bestanden.
+
+Native CPU-4-Fixture mit absichtlich verzögerten normalen Antworten:
+Core allein vorher 191,9–291,4 ms, nachher 10,7–22,3 ms für die Caption.
+Core und echter lokaler Batchtransport gemeinsam, kontrollierter API-Adapter:
+vorher 563,7/843,7/626,7 ms, nachher 10,7/18,1/10,0 ms. Alle Sitzungen sichtbar
+und fokussiert, 40 normale Texte plus Caption vollständig korrigiert und
+zurückgesetzt. Konfigurierte Antwortverzögerung 200 ms; dies ist eine gezielte
+Backlog-Fixture, keine Messung gewöhnlicher Hintergrundlaufzeiten.
+Normale Gesamtausläufe schwanken überlappend (vorher 780–982, nachher 661–937 ms).
+
+Uninstrumentierte Alltagsgegenprobe mit vollständiger Erweiterung: je 120 s,
+60-FPS-Video und mäßige Last (acht Textänderungen/s), ohne/mit Erweiterung.
+Aktiv 230/230 Cues, maximale Cue-Latenz 16,1 ms, alle 480 Endtexte korrekt,
+keine Long Tasks. Qualitätsframes 7.197/7.198, Drops 560/563, größte
+Callback-Lücke 119,9/88,9 ms. Rohberichte
+`windows-caption-isolation-moderate-{baseline,extension}.json`.
+
+### Unabhängiger Gegenbefund außerhalb des Entfernungscallbacks
+
+PR-CI 38241425040 und Langdiagnose 38241569210 auf `d2d46c9` erfolgreich.
+Die unabhängige Entfernungsserie bleibt dennoch negativ: alle 59 Cues und
+Tail-Restore korrekt, Entfernung bis nächster Frame 28,3 ms, Cue danach 9,7 ms;
+aber größte Callback-Lücke 183,3 ms mit nur einem präsentierten neuen Frame.
+Zeitlich dazu passt ein 172-ms-Long-Task bei 7.589,8 ms, vor der Entfernung
+bei 8.056,8 ms. Ein weiterer 105-ms-Long-Task bei 29.522,1 ms verzögert einen
+Cue auf 125,3 ms. Keine dieser Pausen ist durch den kurzen Entfernungscallback
+erklärt. Der positive Workflowstatus hebt diesen Befund nicht auf.
+Rohdaten in `artifacts/ci-451-removal-download/`, Log `ci-451-removal-long.log`.
+
+Die neue separate `--browser-trace`-Diagnose korreliert die Trace-Zeitachse mit
+`performance.now()` einschließlich Abgleichunsicherheit. Sie archiviert die
+Browserereignisse zusätzlich und kennzeichnet Berichte als instrumentiert.
+Der manuelle Workflow kann Entfernungsgegenproben separat mit Trace ausführen;
+Standard und Alltagsgegenproben bleiben uninstrumentiert. Trace-Laufzeiten
+sind keine Grundlage einer Performancefreigabe. #419 bleibt offen.
+Native instrumentierte Gegenprobe technisch verifiziert: 59/59 aktive Cues,
+maximal 16,0 ms, keine Long Tasks, Trace enthält den Entfernungstimer mit
+27,0 ms. Zeitachsenunsicherheit 15,8 ms. Eine positive Trace-Wiederholung
+erklärt die unabhängig beobachtete seltene Pause nicht; ihre Ursache bleibt offen.

@@ -6,6 +6,7 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { videoGapEpisodes } from "./video-gap-episodes.mjs";
+import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
 const browserIndex = process.argv.indexOf("--browser");
@@ -37,6 +38,11 @@ const subtitleOnly = process.argv.includes("--subtitle-only");
 // Separate, opt-in sustained load; ordinary video CI remains unchanged.
 const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
+const browserTrace = process.argv.includes("--browser-trace");
+const debuggerAddresses = new Map();
+if (browserTrace && (browser !== "chromium" || !subtitleOnly || !subtitleDomLoad)) {
+  throw new Error("Browsertrace benötigt die separate Chromium-Untertitel-/DOM-Diagnose.");
+}
 if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
   throw new Error("--subtitle-baseline benötigt --subtitle-only --subtitle-dom-load.");
 }
@@ -388,8 +394,7 @@ async function createSession(withExtension) {
       `--load-extension=${extensionDir}`
     );
   }
-  return sessionId(
-    await request("POST", "/session", {
+  const response = await request("POST", "/session", {
       capabilities: {
         alwaysMatch: {
           browserName: "chrome",
@@ -398,8 +403,10 @@ async function createSession(withExtension) {
           "goog:chromeOptions": { binary: chromium, args }
         }
       }
-    })
-  );
+    });
+  const id = sessionId(response);
+  if (browserTrace) debuggerAddresses.set(id, response.value?.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
+  return id;
 }
 
 async function execute(id, script) {
@@ -751,6 +758,28 @@ async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
 }
 
 async function measureSubtitleDomLoad(id) {
+  if (!browserTrace) return measureSubtitleDomLoadResult(id, {instrumented: false});
+  await mkdir(firefoxArtifacts, {recursive: true});
+  const trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
+  const traceFile = `subtitle-browser-trace-${browser}-${diagnosticFps}-${subtitleBaseline ? "baseline" : "extension"}-${subtitleLoad}-${subtitleDurationMs}.json`;
+  try {
+    await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Performance.enable", params: {}});
+    const before = await execute(id, "return performance.now();");
+    const metrics = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+      cmd: "Performance.getMetrics", params: {}
+    })).value;
+    const after = await execute(id, "return performance.now();");
+    const timestamp = metrics?.metrics?.find(metric => metric.name === "Timestamp")?.value;
+    if (!Number.isFinite(timestamp) || !Number.isFinite(before) || !Number.isFinite(after) ||
+        after < before || after - before > 200) throw new Error("Trace-Zeitachsenabgleich fehlt oder ist zu ungenau.");
+    return await measureSubtitleDomLoadResult(id, {instrumented: true, traceFile,
+      traceClock: {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs: (after - before) / 2}});
+  } finally {
+    await trace.save(path.join(firefoxArtifacts, traceFile));
+  }
+}
+
+async function measureSubtitleDomLoadResult(id, diagnostics) {
   const mutationsPerTick = ["none", "burst", "removal"].includes(subtitleLoad) ? 0 : subtitleLoad === "moderate" ? 4 : 48;
   const mutationIntervalMs = subtitleLoad === "moderate" ? 500 : 50;
   await request("POST", `/session/${id}/timeouts`, {script: subtitleDurationMs + 10_000});
@@ -856,6 +885,7 @@ async function measureSubtitleDomLoad(id) {
   const latencies = result.cueRecords.map(record => record.latencyMs)
     .filter(value => typeof value === "number" && Number.isFinite(value));
   const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,
+    ...diagnostics,
     mode: subtitleBaseline ? "baseline" : "extension",
     load: subtitleLoad, mutationsPerTick, mutationIntervalMs,
     cueCount: result.cueRecords.length, correctedCues: latencies.length,
@@ -869,6 +899,7 @@ async function measureSubtitleDomLoad(id) {
   await writeFile(path.join(firefoxArtifacts,
     `subtitle-dom-load-${browser}-${diagnosticFps}-${report.mode}-${subtitleLoad}-${subtitleDurationMs}.json`), JSON.stringify(report, null, 2) + "\n");
   console.log("Untertitel unter DOM-Last: " + JSON.stringify({
+    ...diagnostics,
     browser, fps: diagnosticFps, mode: report.mode, load: subtitleLoad, durationMs: subtitleDurationMs, ticks: result.ticks,
     cues: report.cueCount, correctedCues: report.correctedCues,
     cueP95Ms: report.cueP95Ms, cueP99Ms: report.cueP99Ms,
