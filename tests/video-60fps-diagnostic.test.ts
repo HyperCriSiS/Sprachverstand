@@ -10,6 +10,14 @@ const header = Buffer.from("1a45dfa3", "hex");
 const mockMedia = Buffer.concat([header, Buffer.alloc(2000)]);
 
 describe("Manuelle lokale 60-FPS-Videodiagnose", () => {
+  it("verweigert eine unbekannte Messreihenfolge vor Media- oder Browserstart", () => {
+    const result = spawnSync(process.execPath, [path.resolve("scripts/video-playback-regression.mjs")], {
+      env:{...process.env, VIDEO_PAIR_ORDER:"unknown"}, encoding:"utf8", timeout:10_000
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("VIDEO_PAIR_ORDER");
+    expect(result.stdout).not.toContain("Verifiziertes lokales Videomaterial");
+  });
   it.each([
     {mode:"unknown", args:["--browser", "chromium", "--browser-trace"]},
     {mode:"no-concurrent-recompilation", args:["--browser", "chromium"]},

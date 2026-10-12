@@ -40,6 +40,10 @@ const subtitleOnly = process.argv.includes("--subtitle-only");
 const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
 const browserTrace = process.argv.includes("--browser-trace");
+const videoPairOrder = process.env.VIDEO_PAIR_ORDER || "baseline-first";
+if (!["baseline-first", "extension-first"].includes(videoPairOrder)) {
+  throw new Error("VIDEO_PAIR_ORDER erlaubt nur baseline-first oder extension-first.");
+}
 const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks");
 const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
 const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
@@ -684,15 +688,24 @@ function validateComparison(baseline, extension) {
 }
 
 async function measureVideoPair(url, attempt) {
-  const baseline = await run(url, "baseline", attempt);
-  const extension = await run(url, "extension", attempt);
+  // Keep labels independent of execution order. Both orders retain the same
+  // fixture and gates; the explicit control exposes native timing order bias.
+  let baseline, extension;
+  if (videoPairOrder === "extension-first") {
+    extension = await run(url, "extension", attempt);
+    baseline = await run(url, "baseline", attempt);
+  } else {
+    baseline = await run(url, "baseline", attempt);
+    extension = await run(url, "extension", attempt);
+  }
   await mkdir(firefoxArtifacts, {recursive: true});
   await writeFile(path.join(firefoxArtifacts,
     `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
-    JSON.stringify({baseline, extension}, null, 2) + "\n");
+    JSON.stringify({pairOrder: videoPairOrder, baseline, extension}, null, 2) + "\n");
 
   console.log(
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({
+      pairOrder: videoPairOrder,
       baseline: {
         currentTime: baseline.currentTime,
         callbacks: baseline.frames.callbacks,

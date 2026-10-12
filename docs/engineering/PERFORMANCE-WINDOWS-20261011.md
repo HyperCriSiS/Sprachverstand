@@ -1523,3 +1523,49 @@ Vergleich mit der normalen Browsersituation. Numerische Rohzusammenfassung
 
 CI 38313504100 auf Dokumentationscheckpoint `f66b11d` ebenfalls vollständig
 erfolgreich; finaler Code unverändert `47d15c5`.
+
+## Native VSync-Sleep-Quantisierung und bestätigter Reihenfolgeeffekt (13.10.)
+
+Letzter Checkpoint `f946894`, unabhängige CI 38314036816 erfolgreich.
+Produktionscode bleibt `47d15c5`. Installierte Chromium-Version 155.0.8059.39;
+die passende öffentliche [VSync-Implementierung](https://chromium.googlesource.com/chromium/src/+/refs/tags/155.0.8059.39/ui/gl/vsync_thread_win.cc)
+wurde versionsgenau geprüft. Der beobachtete Sleep-Pfad ersetzt erfolgloses
+oder unter 1 ms zurückkehrendes Hardware-Warten. In den erhaltenen Traces
+keine `WaitForVSyncImpl`-Fehlerereignisse und keine Fake-VSync-Argumente:
+das Warten kehrt erfolgreich, aber zu früh zurück. Das belegt den verwendeten
+Ersatzpfad, nicht den konkreten Grund der Desktop-/Hardware-Okklusion.
+
+Ruhender Standardlauf, native Sleep-Mediane früh/spät (500–4500 / 5500–8000 ms):
+Basis 17,628 / 17,680 ms, Erweiterung 17,574 / 31,308 ms. Reine frische
+Diagnosebrowser mit verifiziertem `--fake-vsync-rate=60` reproduzieren
+34/104 Drops. Gegenprobe mit 144 Hz: 55/54 Drops, native Sleeps in beiden
+Modi früh etwa 7,94 ms, spät etwa 15,52 ms. Der zusätzliche Modusunterschied
+verschwindet bei anderem nativen Warteintervall; absolute Drops bleiben.
+Diese Runtimegegenprobe bleibt ausschließlich unter `artifacts/`; kein
+Produkt-, Benutzerbrowser-, OS- oder Treiberfix und keine Freigabemessung.
+Rohdaten `artifacts/vsync-rate-control/{60,144}/`.
+
+**Wichtige Korrektur der Attribution:** Umkehr der festen Browserreihenfolge
+ohne Zusatzflags kehrt auch den Verlust um. Ruhend, Erweiterung zuerst:
+Drops Basis/Erweiterung 114/38, Wiederholung 115/42. Im ersten Reverse-Paar
+späte Sleep-Mediane Basis 31,254 ms / Erweiterung 17,586 ms. Der langsamere
+native Takt folgt dem zweiten Browser und nicht dauerhaft dem Add-on-Modus.
+Rohdaten `artifacts/video-quiet-reverse-order-{control,repeat}/`.
+
+Dieselbe Gegenprobe im unveränderten Produktionsfixture mit 960 Änderungen/s:
+Basis zuerst 40/105 Drops (Gate rot), Erweiterung zuerst 113/35 (Gate grün).
+Korrekte Ergebnislabels und ursprüngliche Gates verifiziert. Ein grüner
+Reverse-Lauf allein ist ebenso wenig eine Abnahme wie der vorherige rote
+feste Vorwärtsvergleich ein kausaler Add-on-Nachweis. Frühe tatsächliche
+Callback-Lücken bleiben teilweise bestehen, auch in der Basis. Originale
+Store-Störung und #419 NO-GO weiterhin offen. Die konkrete Ursache der
+Reihenfolgeabhängigkeit im nativen Sleep-/Timerverhalten bleibt zu prüfen.
+
+Wiederverwendbare Diagnoseoption: `VIDEO_PAIR_ORDER=extension-first`, Standard
+unverändert `baseline-first`. Manueller Workflow hat dieselbe explizite
+Auswahl. Rohdateien und Log enthalten `pairOrder`; Ergebnislabels bleiben
+unabhängig von der Ausführungsreihenfolge. Unbekannte Werte scheitern vor
+Media-/Browserstart. Keine geänderten Fixtures, Framegrenzen, Wiederholungs-
+oder Akzeptanzregeln. 31 fokussierte Tests in vier Dateien, Typprüfung und
+YAML-Parsing erfolgreich; beide native Reihenfolgen auf dem echten
+Produktionsbundle ausgeführt. Rohdaten `artifacts/video-pair-order-validation/`.

@@ -28,6 +28,11 @@ on:
         description: V8-Gegenprobe ohne parallele Optimierung (nur mit Trace; keine Freigabemessung)
         type: boolean
         default: false
+      video_pair_order:
+        description: Messreihenfolge als Gegenprobe für native Zeit-/Reihenfolgeeffekte (Grenzen unverändert)
+        type: choice
+        options: ["baseline-first", "extension-first"]
+        default: "baseline-first"
 
 permissions:
   contents: read
@@ -41,6 +46,8 @@ jobs:
     name: Lokales Chromium 60 FPS mit Untertiteln
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VIDEO_PAIR_ORDER: ${{ inputs.video_pair_order || 'baseline-first' }}
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
