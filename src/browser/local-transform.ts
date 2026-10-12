@@ -55,8 +55,10 @@ function dispatchBatches(): void {
   while (activeBatches < 2 && (smallRequests.length || subtitleRequests.length)) {
     const entries: PendingTransform[] = [];
     let characters = 0;
-    while ((smallRequests.length || subtitleRequests.length) && entries.length < maximumLocalTransformBatchSize) {
-      const queue = subtitleRequests.length ? subtitleRequests : smallRequests;
+    // A batch response arrives only after all entries have finished. Keep
+    // captions in their own batch so ordinary text cannot hold their result.
+    const queue = subtitleRequests.length ? subtitleRequests : smallRequests;
+    while (queue.length && entries.length < maximumLocalTransformBatchSize) {
       const next = queue[0]!;
       if (entries.length && characters + next.request.input.length > maximumLocalTransformBatchCharacters) break;
       entries.push(queue.shift()!); characters += next.request.input.length;
@@ -85,8 +87,8 @@ export function transformTextLocally(input: string,
       largeRequests.push(entry); dispatchLarge(); return;
     }
     (subtitle ? subtitleRequests : smallRequests).push(entry);
-    // Coalesce cues from the same turn, but do not make them wait for the
-    // regular text batching window. The shared concurrency limit still applies.
+    // Coalesce cues from the same turn in their own batch, without the regular
+    // text batching window. The shared concurrency limit still applies.
     if (subtitle && !subtitleDispatchScheduled) {
       subtitleDispatchScheduled = true;
       queueMicrotask(() => {

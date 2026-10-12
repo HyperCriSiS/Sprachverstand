@@ -19,6 +19,9 @@ dokumentiert.
 - Wiederkehrende Untertitel verwenden den begrenzten Cache auch bei lokaler
   Hintergrundverarbeitung. Veraltete Antworten und Ergebnisse aus früheren
   Einstellungen werden nicht wiederverwendet.
+- Bei aktivierter Untertitelverarbeitung bleibt ein kleiner Anfragenplatz für
+  neue Untertitel frei. Untertitel erhalten eigene lokale Batches, damit ihre
+  Antworten nicht auf normale Texte im selben Batch warten müssen.
 - Große Listen neu eingefügter DOM-Knoten werden in begrenzten Schritten
   eingereiht. Neutrale Textblätter erzeugen keine unnötigen Traversals;
   gleichzeitig eintreffende Untertitel behalten ihren eigenen priorisierten Pfad.

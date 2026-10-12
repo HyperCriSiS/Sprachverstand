@@ -2419,7 +2419,12 @@ export class DomProcessor {
 
   private dispatchSmallTransforms(): void {
     while (this.running && this.activeSmallTransforms < 32) {
-      const queue = this.queuedSubtitleTransforms.size ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
+      const hasSubtitle = this.queuedSubtitleTransforms.size > 0;
+      // Priority cannot help a new cue when ordinary requests occupy every
+      // slot. Keep one slot available while subtitle processing is enabled;
+      // captions still share the existing total limit of 32 requests.
+      if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= 31) return;
+      const queue = hasSubtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
       const first = queue.entries().next().value;
       if (!first) return;
       const [node, run] = first;
