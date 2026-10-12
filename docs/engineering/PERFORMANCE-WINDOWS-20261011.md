@@ -608,6 +608,31 @@ Die erneute Videoprobe 38205325223 ist technisch grün, zeigt aber erneut
 Maximum Cue 48,2 ms, maximaler Frameabstand 50 ms, zwei Drops, keine Long Tasks.
 Der 150-ms-Gegenbefund bleibt offen; kein permissives Grün wird zur Freigabe.
 
+Kontingentcheckpoint 12.10.2026, Schlussprüfung 07:39 Europe/Berlin bei 93 %
+Primärkontingent: Codecommit `cada78e` vollständig in CI 38208129056 grün,
+einschließlich Kern, Chromium, Gecko, Performance und CodeQL. Native finale
+30-/60-FPS-Untertitellast: jeweils 57/57 Cues und 480/480 normale Endtexte,
+keine Long Tasks. Bei 30 FPS 900 Callbacks / null Drops, Cue Maximum 31,5 ms;
+bei 60 FPS 1661 Callbacks / 139 Drops, Cue Maximum 26,7 ms. Die älteren
+Negativkontrollen zeigen ebenfalls hohe Drops, ersetzen aber keine aktuelle
+gepaarte Freigabe dieses Schlusslaufs.
+
+Die finale unabhängige Videodiagnose 38208125864 auf demselben Code ist
+technisch grün und korrigiert 57/57 Cues mit Maximum 49,8 ms sowie 480/480
+Endtexte (keine Long Tasks im Untertitel-Lastfenster). Die Hauptprobe zeigt
+jedoch **283,4 ms** maximales Erweiterungs-Frameintervall gegenüber 33,4 ms
+Basis. Dies liegt innerhalb des permissiven alten Gates und ist ausdrücklich
+keine Qualitätsfreigabe. Die Ursache dieser sporadischen Spitzen und die
+separate positive Windows-/Edge-/Opera-/Playerabnahme bleiben offen.
+Edge, Opera und Pale Moon wurden auch beim Schlusscheck weder über PATH noch
+die geprüften Windows-App-Pfade als nutzbare Installationen gefunden.
+
+Der Checkout ist gesichert; andere Projektaufgaben wurden wegen der offenen
+Performanceabnahme nicht begonnen. Der Nutzerauftrag bleibt unvollständig
+und wird wegen der ausdrücklich gewünschten Kontingentgrenze unterbrochen.
+Wiederaufnahme zuerst bei reproduzierbarer Zuordnung der großen
+System-Chromium-Frame-Spitzen, nicht bei Release oder weiteren Fachaufgaben.
+
 Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.
