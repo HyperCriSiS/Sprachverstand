@@ -19,6 +19,9 @@ dokumentiert.
 - Wiederkehrende Untertitel verwenden den begrenzten Cache auch bei lokaler
   Hintergrundverarbeitung. Veraltete Antworten und Ergebnisse aus früheren
   Einstellungen werden nicht wiederverwendet.
+- Große Listen neu eingefügter DOM-Knoten werden in begrenzten Schritten
+  eingereiht. Neutrale Textblätter erzeugen keine unnötigen Traversals;
+  gleichzeitig eintreffende Untertitel behalten ihren eigenen priorisierten Pfad.
 - Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
   kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
   Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und
