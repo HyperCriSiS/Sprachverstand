@@ -577,6 +577,37 @@ Traversierungsassertion aufgedeckt und wurde nach deren Verhaltensprüfung
 vollständig neu ausgeführt; der vorherige Smoke auf altem Build gilt nicht
 als Verifikation dieses Fixes.
 
+Die getrennte positive Extrem-Fixture belegt anschließend eine weitere
+Blockade in der eigentlichen Schutztextberechnung: Nach vollständig beendetem
+Initialscan führt ein echter Kandidat im 50.000-Kinder-Inline-Block unter CPU-4
+zu 179,7 ms Frameabstand. Kurze frühere Proben mit noch laufendem Initialscan
+waren dafür ungeeignet und werden nicht als Gegenbeweis verwendet.
+Große Schutzkontexte werden jetzt als resumierbare Traversierungs-/Ergebnis-
+Vorbereitung im bestehenden Budget verarbeitet. Kleine Kontexte behalten den
+synchronen Pfad; vollständige Schutzkarten werden in O(1) veröffentlicht,
+Originale und Dirty-Flags bleiben bis dahin erhalten. Versionierte
+Vorfahrengrenzen verhindern veraltete Karten nach Entfernen/Wiederanfügen,
+unabhängige Blockänderungen starten den anderen Kontext nicht ständig neu.
+Gültige gleichlange Textwechsel übertragen die Schutzkarte ohne alte Nodes
+festzuhalten; Größenwechsel prüfen den Kontext erneut. Abbruch löscht die Jobs.
+Dieselbe native CPU-4-Probe erreicht 11 ms Maximum im ersten Fenster; die
+zusätzliche Messung über den **gesamten** späteren Auslauf bleibt bei 32,6 ms,
+statt die Arbeit nur außerhalb des kurzen Fensters zu verschieben. Der
+absichtlich übergroße geschützte Run bleibt unverändert, Zähler null.
+Acht neue Regressionen sichern vollständige Korrektur/Schutz, Partial-Cancel,
+kontinuierliche Nachbarlast, Stop, expliziten Synchronflush, Größenwechsel und
+detached Mutation mit Wiederanfügen. Gesamtcheck 233 Dateien / 10.648 Tests,
+DOM-Performancecheck 3/3, native Chromium-/Firefox-/Waterfox-Smokes auf dem
+finalen Build bestanden. Diese isolierte Core-Fixture ersetzt keine vollständige
+Video-/Plattformabnahme.
+
+Auf dem vorherigen Code `e76eb5a` besteht die unabhängige CI 38204882652.
+Die erneute Videoprobe 38205325223 ist technisch grün, zeigt aber erneut
+150 ms maximales Erweiterungs-Frameintervall (Basis 33,4 ms). Die gesonderte
+30-Sekunden-Untertitellast ist vollständig: 57/57 Cues, 480/480 Endtexte,
+Maximum Cue 48,2 ms, maximaler Frameabstand 50 ms, zwei Drops, keine Long Tasks.
+Der 150-ms-Gegenbefund bleibt offen; kein permissives Grün wird zur Freigabe.
+
 Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.

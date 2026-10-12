@@ -96,6 +96,21 @@ export function collectInlineProtection(
   protectQuotes: boolean
 ): Map<Text, readonly InlineProtectionRange[]> {
   const results = new Map<Text, readonly InlineProtectionRange[]>();
+  for (const entry of iterateInlineProtection(root, boundaryTags, originalOf, protectedTerms, protectQuotes)) {
+    if (entry) results.set(entry[0], entry[1]);
+  }
+  return results;
+}
+
+// Yield on traversal and result preparation, including oversized runs.
+// Callers may drain synchronously or resume within their existing work budget.
+export function* iterateInlineProtection(
+  root: Node,
+  boundaryTags: ReadonlySet<string>,
+  originalOf: (node: Text) => string,
+  protectedTerms: readonly string[],
+  protectQuotes: boolean
+): Generator<readonly [Text, readonly InlineProtectionRange[]] | undefined> {
   let run: { node: Text; value: string; offset: number }[] = [];
   let length = 0;
   const rootElement = root instanceof Element ? root :
@@ -104,7 +119,7 @@ export function collectInlineProtection(
   const protectedRoot = owner?.designMode?.toLowerCase() === "on" ||
     Boolean(rootElement && (isProtectedTextSubtree(rootElement) || isSubtitleContent(rootElement)));
 
-  const finishRun = (): void => {
+  const finishRun = function* (): Generator<readonly [Text, readonly InlineProtectionRange[]]> {
     if (run.length === 0) {
       return;
     }
@@ -120,7 +135,7 @@ export function collectInlineProtection(
     for (const entry of run) {
       if (oversized) {
         // Bei extrem langen Inline-Runs nichts potenziell Geschütztes verändern.
-        results.set(entry.node, [{ start: 0, end: entry.value.length }]);
+        yield [entry.node, [{ start: 0, end: entry.value.length }]];
         continue;
       }
       const overlaps: InlineProtectionRange[] = [];
@@ -148,19 +163,19 @@ export function collectInlineProtection(
           overlaps.push({ start: localStart, end: localEnd });
         }
       }
-      results.set(entry.node, overlaps);
+      yield [entry.node, overlaps];
     }
     run = [];
     length = 0;
   };
 
-  const visit = (node: Node): boolean => {
+  const visit = function* (node: Node): Generator<readonly [Text, readonly InlineProtectionRange[]], boolean> {
     if (node instanceof Element && node !== root) {
       if (
         boundaryTags.has(node.tagName) ||
         protectedRoot || hasOwnTextProtection(node) || isSubtitleContainer(node)
       ) {
-        finishRun();
+        yield* finishRun();
         return false;
       }
     }
@@ -171,8 +186,8 @@ export function collectInlineProtection(
         !text.isConnected ||
         (value.length >= 6 && isProbablyTechnicalText(value))
       ) {
-        finishRun();
-        results.set(text, []);
+        yield* finishRun();
+        yield [text, []];
         return false;
       }
       run.push({ node: text, value, offset: length });
@@ -186,14 +201,18 @@ export function collectInlineProtection(
   // quadratic with depth; iterative traversal also avoids call-stack limits.
   let current: Node | null = root;
   while (current) {
-    if (visit(current) && current.firstChild) {
+    const descend = yield* visit(current);
+    yield;
+    if (descend && current.firstChild) {
       current = current.firstChild;
       continue;
     }
-    while (current && current !== root && !current.nextSibling) current = current.parentNode;
+    while (current && current !== root && !current.nextSibling) {
+      current = current.parentNode;
+      yield;
+    }
     if (!current || current === root) break;
     current = current.nextSibling;
   }
-  finishRun();
-  return results;
+  yield* finishRun();
 }

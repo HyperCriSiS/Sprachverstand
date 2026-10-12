@@ -17,6 +17,7 @@ import {
 import { transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
 import {
   collectInlineProtection,
+  iterateInlineProtection,
   findInlineBoundary,
   type InlineProtectionRange
 } from "./inline-protection";
@@ -142,6 +143,7 @@ const regularWorkBudgetMs = 4;
 // Time may be coarse or jump past a deadline before the first work unit.
 // Bound units as well as elapsed time, while guaranteeing forward progress.
 const maximumRegularStepsPerSlice = 128;
+const maximumImmediateInlineProtectionNodes = 2_048;
 const minimumPartitionedInlineChildren = 128;
 const minimumBudgetedTextEdits = 128;
 const maximumImmediateTextEditPreparationChars = 65_536;
@@ -187,6 +189,17 @@ export class DomProcessor {
   private readonly pendingNodes = new Set<Node>();
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
+  private readonly inlineProtectionVersions = new WeakMap<Node, object>();
+  private preparedInlineProtection = new WeakMap<Node, {
+    ancestry: readonly (readonly [Node, object | undefined])[];
+    ranges: Map<Text, readonly InlineProtectionRange[]>;
+  }>();
+  private readonly pendingInlineProtection = new Map<Node, {
+    iterator: ReturnType<typeof iterateInlineProtection>;
+    results: Map<Text, readonly InlineProtectionRange[]>;
+    ancestry: readonly (readonly [Node, object | undefined])[];
+    deferredNodes: Set<Text>;
+  }>();
   private leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
   private partitionTemporaryNodes = new WeakSet<Node>();
   private readonly pendingSubtitleTextNodes = new Set<Text>();
@@ -291,6 +304,9 @@ export class DomProcessor {
   }
 
   private cancelAsyncWork(): void {
+    this.pendingInlineProtection.clear();
+    this.preparedInlineProtection = new WeakMap();
+    this.inlineProtectionCache = new WeakMap();
     this.asyncGeneration += 1;
     this.activeSmallTransforms = 0;
     this.activeLargeTransforms = 0;
@@ -587,6 +603,7 @@ export class DomProcessor {
     if (!this.running) {
       return;
     }
+    while (this.processInlineProtectionStep()) { /* Explicit synchronous flush. */ }
     while (this.processTransformResult(this.pendingTransformResults)) { /* Explicit flush. */ }
     const awaiting = this.options.transformText ? [] : [...this.pendingTextTransforms.entries()];
     if (!this.options.transformText) {
@@ -931,6 +948,7 @@ export class DomProcessor {
       (this.now() < deadline || steps === 0)) {
       steps++;
       if (this.processTransformResult(this.pendingTransformResults)) continue;
+      if (this.processInlineProtectionStep()) continue;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
           nodeWorkDeferred || (!this.activeTraversal && this.pendingNodes.size === 0))) {
         this.processPendingTextEdit(validatedEdits);
@@ -1111,6 +1129,7 @@ export class DomProcessor {
   private hasRegularWork(): boolean {
     return Boolean(
       this.activeTraversal ||
+        this.pendingInlineProtection.size > 0 ||
         this.pendingTransformResults.size > 0 ||
         this.pendingTextEdits.size > 0 ||
         this.pendingNodes.size > 0 ||
@@ -1756,21 +1775,29 @@ export class DomProcessor {
 
   private transferInlineProtectionForSimpleSwap(
     record: MutationRecord,
-    invalidatedRoots: ReadonlySet<Node>
+    invalidatedRoots: Set<Node>
   ): void {
     if (!this.requiresInlineProtection()) return;
     const removed = record.removedNodes.item(0) as Text;
     const added = record.addedNodes.item(0) as Text;
     const previous = this.originalTextValue(removed);
-    const cached = this.inlineProtectionCache.get(removed);
+    const root = findInlineBoundary(added, blockBoundaryTags);
+    const prepared = this.getPreparedInlineProtection(root);
+    const cached = this.inlineProtectionCache.get(removed) ?? prepared?.get(removed);
     // Equal lengths also preserve the oversized-run safety boundary. With
     // no local quotes or personal terms, protection is either empty or full.
     // Any other change still gets the complete context calculation.
     if (!cached || previous.length !== added.length ||
         invalidatedRoots.has(findInlineBoundary(added, blockBoundaryTags)) ||
         (cached.length > 0 && !(cached.length === 1 &&
-          cached[0]!.start === 0 && cached[0]!.end === previous.length))) return;
+          cached[0]!.start === 0 && cached[0]!.end === previous.length))) {
+      if (prepared) {
+        this.invalidateInlineProtectionAround(added, invalidatedRoots);
+      }
+      return;
+    }
     this.inlineProtectionCache.set(added, cached);
+    if (prepared) {prepared.delete(removed); prepared.set(added, cached);}
   }
 
   private invalidateInlineProtectionAround(
@@ -1781,12 +1808,16 @@ export class DomProcessor {
       return;
     }
 
-    const root = findInlineBoundary(node, blockBoundaryTags);
+    const root = node instanceof Element && blockBoundaryTags.has(node.tagName)
+      ? node : findInlineBoundary(node, blockBoundaryTags);
     if (invalidatedRoots?.has(root)) {
       return;
     }
     // Im nächsten Observer-Batch dieselbe Wurzel erneut invalidieren dürfen.
     invalidatedRoots?.add(root);
+    this.pendingInlineProtection.delete(root);
+    this.preparedInlineProtection.delete(root);
+    this.inlineProtectionVersions.set(root, {});
     const invalidate = (text: Text): void => {
       this.inlineProtectionCache.delete(text);
       const tracked = this.textChanges.get(text);
@@ -1845,6 +1876,8 @@ export class DomProcessor {
     }
 
     const root = findInlineBoundary(node, blockBoundaryTags);
+    const prepared = this.getPreparedInlineProtection(root)?.get(node);
+    if (prepared) return prepared;
     const ranges = collectInlineProtection(
       root,
       blockBoundaryTags,
@@ -1858,6 +1891,79 @@ export class DomProcessor {
       this.inlineProtectionCache.set(text, protectedRanges);
     }
     return ranges.get(node) ?? [];
+  }
+
+  private deferInlineProtection(node: Text): boolean {
+    const root = findInlineBoundary(node, blockBoundaryTags);
+    const pending = this.pendingInlineProtection.get(root);
+    if (pending) {pending.deferredNodes.add(node); return true;}
+    if (this.getPreparedInlineProtection(root)?.has(node)) return false;
+    if (this.inlineProtectionCache.has(node)) return false;
+    // A capped structural preflight keeps ordinary paragraphs on the
+    // synchronous path, without computing a complete large protection map.
+    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    let inspected = 0;
+    while (inspected < maximumImmediateInlineProtectionNodes && walker.nextNode()) inspected++;
+    if (inspected < maximumImmediateInlineProtectionNodes) return false;
+    this.pendingInlineProtection.set(root, {iterator: iterateInlineProtection(root, blockBoundaryTags,
+      text => this.originalTextValue(text), this.options.protectedTerms ?? [],
+      this.options.processQuotedText === false), results: new Map(),
+      ancestry: this.inlineProtectionAncestry(root), deferredNodes: new Set([node])});
+    this.scheduleFlush();
+    return true;
+  }
+
+  private processInlineProtectionStep(): boolean {
+    const first = this.pendingInlineProtection.entries().next().value;
+    if (!first) return false;
+    const [root, preparation] = first;
+    if (!this.isProcessableRoot(root)) {
+      this.pendingInlineProtection.delete(root);
+      return true;
+    }
+    if (!this.validInlineProtectionAncestry(preparation.ancestry)) {
+      this.pendingInlineProtection.delete(root);
+      this.queue(root);
+      return true;
+    }
+    for (let index = 0; index < 16; index++) {
+      const step = preparation.iterator.next();
+      if (step.done) {
+        this.pendingInlineProtection.delete(root);
+        this.preparedInlineProtection.set(root, {ancestry: preparation.ancestry, ranges: preparation.results});
+        if (preparation.deferredNodes.size > maximumImmediateInitialNodes) this.queue(root);
+        else for (const node of preparation.deferredNodes) this.queue(node);
+        break;
+      } else if (step.value) {
+        preparation.results.set(step.value[0], step.value[1]);
+      }
+    }
+    return true;
+  }
+
+  private inlineProtectionAncestry(root: Node): (readonly [Node, object | undefined])[] {
+    const ancestry: (readonly [Node, object | undefined])[] = [];
+    let current: Node | null = root;
+    while (current) {
+      ancestry.push([current, this.inlineProtectionVersions.get(current)]);
+      current = current.parentNode ?? (current instanceof ShadowRoot ? current.host : null);
+    }
+    return ancestry;
+  }
+
+  private validInlineProtectionAncestry(ancestry: readonly (readonly [Node, object | undefined])[]): boolean {
+    for (const [node, version] of ancestry) {
+      if (this.inlineProtectionVersions.get(node) !== version) return false;
+    }
+    return true;
+  }
+
+  private getPreparedInlineProtection(root: Node): Map<Text, readonly InlineProtectionRange[]> | undefined {
+    const prepared = this.preparedInlineProtection.get(root);
+    if (!prepared) return undefined;
+    if (this.validInlineProtectionAncestry(prepared.ancestry)) return prepared.ranges;
+    this.preparedInlineProtection.delete(root);
+    return undefined;
   }
 
   private transformWithInlineProtection(
@@ -2069,6 +2175,11 @@ export class DomProcessor {
   }
 
   private processTextNode(node: Text, subtitleOverride?: boolean, budgeted = false): void {
+    // Preserve dirty flags and tracked originals until the complete context
+    // is ready. Partially populated caches must never authorize a correction.
+    if (budgeted && this.requiresInlineProtection() && this.shouldProcessTextNode(node) &&
+        !this.isSubtitleContent(node) && this.isTransformCandidate(this.originalTextValue(node)) &&
+        this.deferInlineProtection(node)) return;
     const contextDirty = this.contextDirtyNodes.delete(node);
     const pendingTransform = this.pendingTextTransforms.get(node);
     if (pendingTransform) {
@@ -2741,6 +2852,8 @@ export class DomProcessor {
   }
 
   private forgetRoot(root: Node): void {
+    this.pendingInlineProtection.delete(root);
+    this.preparedInlineProtection.delete(root);
     if (root.nodeType === Node.TEXT_NODE) {
       this.forgetTrackedText(root as Text);
       return;
