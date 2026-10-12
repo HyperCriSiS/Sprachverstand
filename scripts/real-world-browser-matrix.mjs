@@ -812,6 +812,10 @@ function compareRuns(baseline, extension) {
 async function runSiteMode(site, mode, pairIndex = 0) {
   const withExtension = mode === "extension";
   const subtitleSite = ["videojs-player-demo","youtube-big-buck-bunny"].includes(site.slug);
+  // Native WebVTT cues can remain unchanged for longer than the default
+  // short DOM visit. Active-caption proof needs an actual cue transition.
+  const measuredObservationMs = activeSubtitles && subtitleSite
+    ? Math.max(observationMs, 15_000) : observationMs;
   let sessionId;
   const startedAt = Date.now();
   let phaseStartedAt = startedAt;
@@ -849,7 +853,7 @@ async function runSiteMode(site, mode, pairIndex = 0) {
           'return Number(document.querySelector("video")?.currentTime || 0);')
       : undefined;
     endPhase("playbackSetupMs");
-    await sleep(observationMs);
+    await sleep(measuredObservationMs);
     endPhase("observationWaitMs");
     const snapshot = await collectSnapshot(sessionId);
     const captionObservations = activeSubtitles && subtitleSite ? await execute(sessionId,
@@ -879,6 +883,7 @@ async function runSiteMode(site, mode, pairIndex = 0) {
       mediaValidation,
       consentDismissed,
       subtitleValidation,
+      observationMs: measuredObservationMs,
       elapsedMs: Date.now() - startedAt,
       phasesMs,
       screenshot: path.relative(projectRoot, screenshotPath),

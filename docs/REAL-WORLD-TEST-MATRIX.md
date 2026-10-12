@@ -32,6 +32,10 @@ liefert die Caption-Demo Fehlercode 4, `readyState=0`, `networkState=3` und
 keine H.264-Unterstützung, während VP8 unterstützt wird. Der getrennte CfT-Lauf
 soll diese konkrete Messlücke prüfen; keine positive Wiedergabe wird vorab
 unterstellt.
+Bei aktiver Caption-Prüfung auf VideoJS oder YouTube beträgt die Beobachtung
+mindestens 15 Sekunden, damit längere WebVTT-Cues tatsächlich wechseln können.
+Andere Seiten behalten die angeforderte Dauer. Die tatsächlich verwendete
+Dauer steht im einzelnen Lauf und in dessen Phasenmessung.
 
 ## Textknoten-Klassifizierung (09.10.2026)
 
