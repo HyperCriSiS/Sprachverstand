@@ -22,6 +22,10 @@ dokumentiert.
 - Große Listen neu eingefügter DOM-Knoten werden in begrenzten Schritten
   eingereiht. Neutrale Textblätter erzeugen keine unnötigen Traversals;
   gleichzeitig eintreffende Untertitel behalten ihren eigenen priorisierten Pfad.
+- Große Entfernungen mit wenigen veränderten Texten setzen nur die tatsächlich
+  verfolgten Einträge zurück. Neutrale Textblätter lösen keine wiederholte Suche
+  durch die gesamte Änderungsübersicht aus; vollständig entfernte offene
+  Einfügelisten werden verworfen.
 - Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
   kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
   Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und

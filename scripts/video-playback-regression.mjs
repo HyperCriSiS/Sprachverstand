@@ -43,8 +43,8 @@ if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
 const subtitleDurationMs = Number(process.env.SUBTITLE_DURATION_MS ?? 30_000);
 const subtitleLoad = process.env.SUBTITLE_LOAD ?? "stress";
 if (!Number.isInteger(subtitleDurationMs) || subtitleDurationMs < 30_000 ||
-    subtitleDurationMs > 600_000 || !["none", "moderate", "stress", "burst"].includes(subtitleLoad)) {
-  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress/burst erforderlich.");
+    subtitleDurationMs > 600_000 || !["none", "moderate", "stress", "burst", "removal"].includes(subtitleLoad)) {
+  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress/burst/removal erforderlich.");
 }
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
@@ -751,7 +751,7 @@ async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
 }
 
 async function measureSubtitleDomLoad(id) {
-  const mutationsPerTick = ["none", "burst"].includes(subtitleLoad) ? 0 : subtitleLoad === "moderate" ? 4 : 48;
+  const mutationsPerTick = ["none", "burst", "removal"].includes(subtitleLoad) ? 0 : subtitleLoad === "moderate" ? 4 : 48;
   const mutationIntervalMs = subtitleLoad === "moderate" ? 500 : 50;
   await request("POST", `/session/${id}/timeouts`, {script: subtitleDurationMs + 10_000});
   const result = (await request("POST", `/session/${id}/execute/async`, {
@@ -766,7 +766,8 @@ async function measureSubtitleDomLoad(id) {
         root.append(node); return node;
       });
       let bulkRoot, bulkFragment, bulkTail, bulkAppliedAt = null, bulkCorrectedAt = null;
-      if (${subtitleLoad === "burst"}) {
+      let removal = null;
+      if (${["burst", "removal"].includes(subtitleLoad)}) {
         // Prepare outside the measured window; isolate extension intake rather
         // than the page's own allocation and visible layout cost.
         bulkRoot = document.createElement("div"); bulkRoot.style.display = "none"; root.append(bulkRoot);
@@ -806,14 +807,27 @@ async function measureSubtitleDomLoad(id) {
         bulkRoot.append(bulkFragment); bulkAppliedAt = performance.now();
         window.__issueSubtitleCue("dom-burst");
       }, 500) : null;
+      const removalTimer = ${subtitleLoad === "removal"} ? setTimeout(() => {
+        const startedAt = performance.now();
+        const correctedBefore = bulkTail.textContent === "Nutzer im normalen Text";
+        bulkRoot.replaceChildren();
+        const mutationFinishedAt = performance.now();
+        removal = {startedAt, pageMutationMs: mutationFinishedAt - startedAt,
+          correctedBefore, operationToFirstFrameMs: null};
+        window.__issueSubtitleCue("dom-removal");
+        requestAnimationFrame(() => {
+          removal.operationToFirstFrameMs = performance.now() - startedAt;
+        });
+      }, 5000) : null;
       setTimeout(() => {
         clearInterval(timer); if (burstTimer !== null) clearTimeout(burstTimer); stopped = true;
+        if (removalTimer !== null) clearTimeout(removalTimer);
         const endedAt = performance.now();
         const qualityAfter = video.getVideoPlaybackQuality?.();
         // Freeze natural cues while checking the final cue and normal texts.
         window.__controlledCueMode = true;
         setTimeout(() => {
-          done({startedAt, endedAt, ticks, frames,
+          done({startedAt, endedAt, ticks, frames, removal,
             bulk: bulkRoot ? {nodes: bulkRoot.childNodes.length,
               tail: bulkTail.textContent, appliedAt: bulkAppliedAt, correctedAt: bulkCorrectedAt,
               settleMs: bulkAppliedAt !== null && bulkCorrectedAt !== null
@@ -862,6 +876,8 @@ async function measureSubtitleDomLoad(id) {
     frames: report.frameSummary, droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
     gapEpisodes: report.gapEpisodes,
     bulk: result.bulk,
+    removal: result.removal,
+    removalCueMs: result.cueRecords.find(record => record.source === "dom-removal")?.latencyMs ?? null,
     burstCueMs: result.cueRecords.find(record => record.source === "dom-burst")?.latencyMs ?? null,
     longTasks: result.longTaskSupported ? result.longTasks.length : null,
     normalCorrected: result.normalCorrected
@@ -878,6 +894,10 @@ async function measureSubtitleDomLoad(id) {
       presentedFrames < subtitleDurationMs / 1000 * 10 ||
       (subtitleLoad === "burst" && (result.bulk?.nodes !== 50001 ||
         result.bulk.tail !== (subtitleBaseline ? "Nutzer:innen im normalen Text" : "Nutzer im normalen Text"))) ||
+      (subtitleLoad === "removal" && (result.bulk?.nodes !== 0 ||
+        result.bulk.tail !== "Nutzer:innen im normalen Text" ||
+        result.removal?.correctedBefore !== !subtitleBaseline ||
+        typeof result.removal?.operationToFirstFrameMs !== "number")) ||
       result.frames.length < 200 || result.visibility !== "visible" ||
       !result.focused || result.paused || result.readyState < 2 || result.error ||
       !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {

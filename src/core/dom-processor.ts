@@ -1336,14 +1336,19 @@ export class DomProcessor {
         this.transferInlineProtectionForSimpleSwap(record, invalidatedInlineRoots);
       }
       const removedNodes = record.removedNodes;
-      for (let index = 0; index < removedNodes.length; index++) {
-        const removedNode = removedNodes[index]!;
-        // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
-        // Andernfalls gingen sein Original und sein Korrekturzähler verloren.
-        if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
-          continue;
+      if (removedNodes.length > maximumRegularStepsPerSlice) {
+        this.discardRemovedAdditionBatch(record.target, removedNodes);
+      }
+      if (!(removedNodes.length > maximumRegularStepsPerSlice && this.forgetSparseDetachedNodes())) {
+        for (let index = 0; index < removedNodes.length; index++) {
+          const removedNode = removedNodes[index]!;
+          // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
+          // Andernfalls gingen sein Original und sein Korrekturzähler verloren.
+          if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
+            continue;
+          }
+          this.forgetRoot(removedNode);
         }
-        this.forgetRoot(removedNode);
       }
       const addedNodes = record.addedNodes;
       if (addedNodes.length > maximumRegularStepsPerSlice) {
@@ -2928,6 +2933,17 @@ export class DomProcessor {
       return;
     }
 
+    // A single text leaf has exactly one possible text entry. Avoid building
+    // a global tracking snapshot for every neutral leaf in a large removal.
+    // Tracked attributes and shadow descendants retain the general path.
+    if (root instanceof Element && !root.shadowRoot && !this.attributeChanges.has(root)) {
+      const child = root.firstChild;
+      if (child?.nodeType === Node.TEXT_NODE && child === root.lastChild) {
+        this.forgetTrackedText(child as Text);
+        return;
+      }
+    }
+
     // With only a few tracked entries, restore those directly instead of
     // walking tens of thousands of neutral descendants. Snapshot the keys:
     // restoration can change the tracking maps while we visit them.
@@ -2971,6 +2987,35 @@ export class DomProcessor {
       }
       currentNode = walker.nextNode();
     }
+  }
+
+  private discardRemovedAdditionBatch(root: Node, removed: NodeList): void {
+    for (const batch of this.pendingAddedNodeLists) {
+      if (batch.root === root && batch.nodes.length === removed.length &&
+          batch.nodes[0] === removed[0] && batch.nodes[batch.nodes.length - 1] === removed[removed.length - 1]) {
+        // Native child-list removal ranges cover these endpoints. Nodes moved
+        // out of that range have their own insertion records; partial matches
+        // keep the original batch so remaining nodes are never lost.
+        this.pendingAddedNodeLists.delete(batch);
+      }
+    }
+  }
+
+  private forgetSparseDetachedNodes(): boolean {
+    if (this.requiresInlineProtection() || this.pendingInlineProtection.size > 0) return false;
+    const entries = this.textChanges.size + this.attributeChanges.size +
+      this.pendingTextTransforms.size + this.pendingTextEdits.size;
+    if (entries > 64) return false;
+    const nodes = new Set<Node>([...this.textChanges.keys(), ...this.attributeChanges.keys(),
+      ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys()]);
+    for (const node of nodes) {
+      if (node.isConnected && node.getRootNode({composed: true}) === this.document) continue;
+      if (node.nodeType === Node.TEXT_NODE) {
+        // A detached original already being restored must keep its progress.
+        if (!this.pendingTextEdits.get(node as Text)?.restoring) this.forgetTrackedText(node as Text);
+      } else if (node instanceof Element) this.forgetTrackedAttributes(node);
+    }
+    return true;
   }
 
   private isTrackedDescendant(root: Node, node: Node): boolean {

@@ -72,6 +72,18 @@ jobs:
           SUBTITLE_DURATION_MS: 30000
           SUBTITLE_LOAD: burst
         run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --subtitle-dom-load
+      - name: Große DOM-Entfernung ohne Erweiterung
+        if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' && inputs.long_session }}
+        env:
+          SUBTITLE_DURATION_MS: 30000
+          SUBTITLE_LOAD: removal
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --subtitle-dom-load --subtitle-baseline
+      - name: Große DOM-Entfernung mit aktiven Untertiteln
+        if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' && inputs.long_session }}
+        env:
+          SUBTITLE_DURATION_MS: 30000
+          SUBTITLE_LOAD: removal
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --subtitle-dom-load
       - name: Untertitel-Rohdaten archivieren
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

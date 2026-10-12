@@ -811,3 +811,59 @@ vollständig, Burst-Cue 16/18 ms, Auslauf letzter Text 336/333 ms, je zwei
 Decoder-Drops, keine Lücke >120 ms. Long Tasks dort weiterhin unbewertet.
 Die ursprüngliche Store-Beobachtung und der frühere kurze Drop-Gegenbefund
 bleiben ohne gesonderte kausale Abnahme offen.
+
+### Große Entfernungen: eigener Callback und native Beobachtung getrennt
+
+Nach vollständigem Einfügen werden 50.000 neutrale Textblätter entfernt und
+gleichzeitig eine frische Caption ausgegeben. Der alte Core sucht für jedes
+Blatt erneut in der kleinen globalen Trackingübersicht: nativer CPU-4-Observer
+166,7/146,0/141,6 ms. Ein Blattpfad allein reicht nicht aus (117–133 ms).
+Große Entfernungen mit höchstens 64 Tracking-/Pending-Einträgen prüfen jetzt
+einmal die eigenen abgetrennten Einträge. Inline-Schutz und größere Trackingmengen
+behalten den allgemeinen Pfad; ShadowRoots, Attribute und fremde Dokumente
+werden weiterhin zurückgesetzt. Vollständig entfernte offene Added-NodeLists
+entfallen; teilweise verschobene Knoten bleiben verarbeitet.
+
+Der neue Core-Callback benötigt 2,1–2,8 ms. Das ist kein Nachweis, dass die
+gesamte Operation nur so lange dauert: Ab dem Beginn von `replaceChildren()`
+bis zum nächsten Frame bleiben in der CPU-4-Probe 131–155 ms gegenüber
+15–17 ms ohne Processor. Eine reine native MutationObserver-Kontrolle ohne
+Textverarbeitung benötigt bereits rund 90–104 ms; das Entfernen des
+Attributfilters löst diesen Anteil nicht (rund 95–96 ms). Beobachterkosten
+und eigene Verarbeitung dürfen nicht zusammen als vollständig behoben gelten.
+
+Die vollständige Erweiterung wurde separat mit 60-FPS-Video, ohne künstliche
+CPU-Drosselung, geprüft. Neuer Build / vorheriger `a7b9c5d` / ohne Erweiterung,
+jeweils frische 30-s-Sitzung, identische vorbereitete 50.001 Knoten:
+
+| Build | Entfernung bis nächster Frame | Native DOM-Mutation | Cue nach Entfernung | Long Tasks |
+| --- | ---: | ---: | ---: | ---: |
+| korrigiert | 29,0 ms | 22,8 ms | 14,9 ms | 0 |
+| vorher | 79,0 ms | 24,0 ms | 56,2 ms | 1 |
+| ohne Erweiterung | 3,5 ms | 3,4 ms | unbewertet | 0 |
+
+Alle 59/59 beziehungsweise 60/60 aktiven Cues korrigiert; der entfernte
+markierte Tail wird zurückgesetzt. Maximaler Video-Callback-Abstand 32,0 /
+73,9 / 31,1 ms, Decoder-Drops 145 / 138 / 143. Keine Verbesserung der
+Decoder-Drops behauptet. Rohberichte `windows-addon-removal-{new,old,baseline}.json`.
+Die neue opt-in Last `removal` misst den Beginn des DOM-Aufrufs, verlangt
+vollständige vorherige Korrektur und anschließende Rücksetzung. Der manuelle
+Langworkflow ergänzt unabhängige Entfernungsgegenproben.
+
+Gesamtcheck: 237 Dateien / 10.685 Tests, Typprüfung, Builds und Firefox-Lint
+0/0/0 erfolgreich. Zehn neue Regressionen schützen sparse und dichte Entfernung,
+eigene Attribute, ShadowRoots, Dokumentwechsel, offene Listen und Teilverschiebung.
+Die allgemeine Performanceabnahme #419 bleibt offen.
+
+Native Entfernungsprobe und Smokes auch in Firefox und Waterfox bestanden:
+je 56/56 Cues und Tail-Rücksetzung, Entfernung bis nächster Frame 34/35 ms,
+Cue danach 30/19 ms, maximales Cue 32 ms. Größte Video-Callback-Lücke im ganzen
+Lauf 88,9/70,6 ms, je zwei Decoder-Drops. Long Tasks in Gecko unbewertet.
+
+Unabhängige CI auf `a7b9c5d`: PR-Lauf 38231676039 und manuelle Langdiagnose
+38231670544 vollständig erfolgreich. Drei Minuten ohne zusätzliche Textlast:
+10.799/10.797 Qualitätsframes und 10/14 Drops (Baseline/Erweiterung), maximale
+Callback-Lücke je 50,1 ms, alle 345 aktiven Cues. Burst mit vollständiger
+Erweiterung: 58/58 Cues, Burst-Cue 10,5 ms, Tail 82,8 ms, maximaler
+Callback-Abstand 33,4 ms, keine Long Tasks. Der positive Lauf ersetzt die
+separat dokumentierten negativen Kurzlaufbefunde nicht.
