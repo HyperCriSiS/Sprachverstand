@@ -42,6 +42,13 @@ const subtitleBaseline = process.argv.includes("--subtitle-baseline");
 const browserTrace = process.argv.includes("--browser-trace");
 const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks");
 const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
+const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
+if (!["standard", "no-concurrent-recompilation"].includes(engineControl)) {
+  throw new Error("Unbekannte Engine-Gegenprobe.");
+}
+if (engineControl !== "standard" && (browser !== "chromium" || subtitleOnly || !browserTrace)) {
+  throw new Error("Engine-Gegenprobe benötigt einen ausdrücklich instrumentierten vollständigen Chromium-Videotrace.");
+}
 if (!domPhaseDiagnostics && existsSync(path.join(extensionDir, "dom-phase-diagnostic.json"))) {
   throw new Error("Der DOM-Diagnosebuild muss ausdrücklich mit --diagnose-dom-phases gekennzeichnet werden.");
 }
@@ -421,6 +428,7 @@ async function createSession(withExtension) {
     "--mute-audio",
     "--window-size=1280,720"
   ];
+  if (engineControl !== "standard") args.push("--js-flags=--no-concurrent-recompilation");
   if (withExtension) {
     args.push(
       `--disable-extensions-except=${extensionDir}`,
@@ -438,6 +446,18 @@ async function createSession(withExtension) {
       }
     });
   const id = sessionId(response);
+  if (browserTrace) {
+    try {
+      const commandLine = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+        cmd:"Browser.getBrowserCommandLine", params:{}
+      })).value;
+      const present = commandLine?.arguments?.includes("--js-flags=--no-concurrent-recompilation");
+      if (present !== (engineControl !== "standard")) throw new Error("Engine-Gegenprobe: Chromium-Argument nicht verifiziert.");
+    } catch (error) {
+      try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
+      throw error;
+    }
+  }
   if (browserTrace) debuggerAddresses.set(id, response.value?.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
   return id;
 }
@@ -576,7 +596,7 @@ async function run(url, mode, attempt) {
       mainTaskDiagnostics,
       domPhaseDiagnostics,
       focusedStart,
-      ...(trace ? {traceFile, traceClock} : {})};
+      ...(trace ? {traceFile, traceClock, engineControl, engineControlArgumentVerified:true} : {})};
   } finally {
     try {
       if (trace) await trace.save(path.join(firefoxArtifacts, traceFile));

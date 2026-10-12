@@ -1218,3 +1218,42 @@ interner Regex-Aufrufe bei Stackaufbereitung. Technischer nativer Uhrenlauf
 am Drop-Gate rot (44/63), frühe Lücke 126,4 ms Rendering / 127,3 ms Eintritt,
 ohne Long Task oder langsame Unterphase. Vorhandene Typdeklaration ergänzt;
 22 relevante Tests erfolgreich. Keine Produktions-DOM-Änderung in dieser Einheit.
+
+Unabhängige Unterphasenreihe 38295799463 auf `eb865a5`: technisch grün,
+Paar 1 mit zwei Textvorbereitungen 87,1/87,4 ms und passenden Long Tasks
+87/88 ms bei 720,1/814,6 ms. Observer maximal 3,5 ms, gemessene Kontext-
+und Restore-Unterphasen kurz, keine langsame Regex-Testprobe. Alle vier
+Folgepaare ohne langsame Proben/Long Tasks. Tatsächliche Callback-Eintritte
+807,6/903,3 ms gegenüber Rendering-Zeitstempeln 722,6/822,6 ms bestätigen
+die erforderliche Uhren-Trennung. Vollständige CI 38295807685 erfolgreich.
+Rohdaten `artifacts/ci-dom-observer-clock-five-download/`.
+
+Die kombinierte Fünfer-Trace 38296685464 auf demselben Commit erfasst den
+übrigen Pausenanteil konkreter: ein Observer-Aufruf 90,1 ms, dazu eigener
+`FunctionCall` 90,147 ms **bei 1,438 ms Thread-CPU-Zeit**. Darin
+`V8.OptimizeCode` 89,113 ms bei 0,408 ms CPU. Eine folgende reguläre Scheibe
+27,7 ms enthält MinorGC 26,637 ms bei 0,497 ms CPU. Später MinorGC 257,925 ms
+bei 0,847 ms CPU, davon `V8.GC_TIME_TO_SAFEPOINT` 257,226 ms bei 0,435 ms CPU.
+Hintergrundoptimierung 722,756 ms bei 3,155 ms CPU. Dies zeigt in dieser
+Aufnahme überwiegend Laufzeit-/Synchronisationspausen, keine entsprechende
+Menge an Hauptthread-Rechenarbeit. Der konkrete OS-/VM-/Browseranteil ist
+damit noch nicht bestimmt. [Chromium dokumentiert ThreadDuration als CPU-Zeit](https://chromium.googlesource.com/website/+/7f4f02c5e95202f51e31cd8a91df7898218177b0/site/developers/how-tos/trace-event-profiling-tool/trace-event-reading/index.md).
+
+Paar 1: späterer 284,2-ms-Callback-Eintrittsabstand mit **17** übergebenen
+Frames und 0,283 s Medienfortschritt; Drops Basis/Erweiterung 2/2. Dieser
+Callbackabstand ist kein Nachweis eines entsprechenden Bildstillstands.
+Alle Folgepaare ohne Long Tasks, höchste normale Abstände 33,4–33,5 ms;
+zwei frühe Observerproben 8,2/8,4 ms. Zeitachsenabgleich in Paar 1 ±25,9 ms;
+CPU-/Wanddauer innerhalb desselben Trace-Ereignisses benötigt keinen Abgleich.
+Rohdaten `artifacts/ci-dom-observer-cpu-five-download/`, begrenzte Auswertung
+`artifacts/ci-dom-observer-cpu-five-summary.jsonl`. #419 bleibt offen.
+
+Ausdrückliche Engine-Gegenprobe `no-concurrent-recompilation` nur mit vollständigem
+Chromium-Videotrace. Argument wird über den gestarteten Browser geprüft,
+Rohdaten kennzeichnen die Abweichung. Produktions-Traces können ohne die
+DOM-/Regex-Messwrapper ebenfalls in 1/3/5 getrennten Browserpaaren laufen.
+Vier Guards verhindern unbekannte, unmarkierte oder falsche Plattform-/Teilmodi.
+Native technische Gegenprobe: Argument verifiziert, keine Long Tasks oder
+langsamen Proben; Drop-Gate weiterhin rot (46/55). Keine Änderung am Add-on
+oder am Browser des Nutzers und kein Freigabenachweis durch Sonderflags.
+Gesamtcheck 240 Dateien / 10.706 Tests, beide Builds und Firefox-Lint erfolgreich.

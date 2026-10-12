@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createVerified60FpsWebm } from "../scripts/verified-60fps-media.mjs";
 import { existsSync, readFileSync } from "node:fs";
+import {spawnSync} from "node:child_process";
+import path from "node:path";
 
 const original = readFileSync("scripts/video-playback-regression.mjs", "utf8");
 const workflow = readFileSync(".github/workflows/controlled-video-performance.yml", "utf8");
@@ -8,6 +10,19 @@ const header = Buffer.from("1a45dfa3", "hex");
 const mockMedia = Buffer.concat([header, Buffer.alloc(2000)]);
 
 describe("Manuelle lokale 60-FPS-Videodiagnose", () => {
+  it.each([
+    {mode:"unknown", args:["--browser", "chromium", "--browser-trace"]},
+    {mode:"no-concurrent-recompilation", args:["--browser", "chromium"]},
+    {mode:"no-concurrent-recompilation", args:["--browser", "firefox", "--browser-trace"]},
+    {mode:"no-concurrent-recompilation", args:["--browser", "chromium", "--browser-trace", "--subtitle-only"]}
+  ])("verweigert unbekannte oder uninstrumentierte Engine-Gegenproben: $args", ({mode, args}) => {
+    const result = spawnSync(process.execPath, [path.resolve("scripts/video-playback-regression.mjs"), ...args], {
+      env:{...process.env, VIDEO_ENGINE_CONTROL:mode}, encoding:"utf8", timeout:10_000
+    });
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Engine-Gegenprobe");
+    expect(result.stdout).not.toContain("Verifiziertes lokales Videomaterial");
+  });
   it("verifiziert die kodierte Framerate vor jedem Messlauf", () => {
     const temporaryFiles: string[] = [];
     const run = vi.fn((command: string, args: string[]) => {
