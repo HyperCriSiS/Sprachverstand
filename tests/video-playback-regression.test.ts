@@ -58,7 +58,7 @@ describe("Video-Playback-Regression", () => {
 
   it("protokolliert Cue-Phasen und misst kontrollierte Cues nur manuell", () => {
     expect(runner).toContain('process.argv.includes("--diagnose-cue-phases")');
-    expect(runner).toContain('window.__issueSubtitleCue = (source) =>');
+    expect(runner).toContain('window.__issueSubtitleCue =');
     expect(runner).toContain('visibilityAtIssue: document.visibilityState');
     expect(runner).toContain('window.__subtitleLongTasks.push(');
     expect(runner).toContain('measureControlledSubtitleCues(id)');

@@ -2,6 +2,11 @@ name: Kontrollierte 60-FPS-Videodiagnose
 
 on:
   workflow_dispatch:
+    inputs:
+      long_session:
+        description: Drei Minuten aktive Untertitel ohne zusätzliche DOM-Last gegen Baseline prüfen
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -43,11 +48,25 @@ jobs:
       - name: Untertitelphasen unabhängig vom Frame-Gate messen
         if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
         run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load
+      - name: Lange Untertitel-Baseline ohne zusätzliche Textlast
+        if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' && inputs.long_session }}
+        env:
+          SUBTITLE_DURATION_MS: 180000
+          SUBTITLE_LOAD: none
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --subtitle-dom-load --subtitle-baseline
+      - name: Lange aktive Untertitel ohne zusätzliche Textlast
+        if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' && inputs.long_session }}
+        env:
+          SUBTITLE_DURATION_MS: 180000
+          SUBTITLE_LOAD: none
+        run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --subtitle-dom-load
       - name: Untertitel-Rohdaten archivieren
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: untertitel-dom-last-${{ github.sha }}
-          path: artifacts/video-playback/subtitle-dom-load-*.json
+          path: |
+            artifacts/video-playback/subtitle-dom-load-*.json
+            artifacts/video-playback/video-pair-*.json
           if-no-files-found: warn
           retention-days: 14

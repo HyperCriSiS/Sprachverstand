@@ -671,3 +671,79 @@ node scripts/controlled-interaction-performance.mjs --pairs 3 --cpu-throttle 4
 node scripts/video-frame-cpu-correlation.mjs --pairs 3 --mutation-mode both --cpu-profile off --cpu-throttle 4
 node scripts/video-playback-regression.mjs --fps 60 --diagnose-cue-phases
 ```
+
+## Fortsetzung: sporadische Videostörung und Untertitel, 12.10.2026
+
+Die Nutzerbeobachtung betrifft eine nicht mehr von Hand reproduzierbare
+sporadische Störung der Store-Version. Die bisherige Lastfixture bleibt eine
+Robustheitsprüfung; sie allein weist weder die Ursache dieser Beobachtung noch
+eine allgemeine Alltagsfreigabe nach. Zusätzliche lokale native Headless-Proben
+trennen nun keine zusätzliche Textlast, mäßige Last (8 Änderungen/s) und die
+bisherige hohe Last (960 Änderungen/s). Dauer 30–600 Sekunden, gleiche lokale
+Videoquelle und Untertitelwechsel, getrennte Sitzungen mit/ohne Erweiterung.
+Die bestehenden Video-Grenzwerte wurden nicht gelockert. Rohdaten unterscheiden
+Callback-Abstände, präsentierte Frames, Videozeit und Decoder-Drops; große
+Callback-Lücken werden mit diesen Werten und verfügbaren Long Tasks erfasst.
+Die Hauptfixture erfasst keine Long Tasks und weist diese Korrelation als
+unbewertet aus. Der manuelle CI-Workflow bietet optional zwei dreiminütige
+Vergleiche ohne zusätzliche DOM-Last an (`long_session`).
+
+Zwei konkrete Untertitelkorrekturen:
+
+- Priorisierte Cues warten nicht mehr auf das reguläre 8-ms-Sammelfenster.
+  Anfragen desselben Verarbeitungsschritts bleiben gebündelt; Größen- und
+  Parallelitätsgrenzen bleiben bestehen. Native dreiminütige 60-FPS-Probe ohne
+  Textlast: vorher 346/346 Cues, P95 23,9 ms / Maximum 24,2 ms; nachher 345/345,
+  P95 16,0 ms / Maximum 16,1 ms. Beide ohne Lücken >120 ms oder Long Tasks.
+- Der vorhandene Untertitelcache wurde vom asynchronen Produktionspfad
+  umgangen (Regression zunächst 2 statt 1 Hintergrundanfrage). Jetzt werden
+  gültige Ergebnisse dort verwendet. Höchstens 256 Einträge; asynchrone Ein-
+  und Ausgaben ab 8.192 Zeichen werden nicht gespeichert. Optionenwechsel,
+  verspätete Antworten, Normaltext-Abgrenzung, Eviction, No-op, Zähler und
+  Wiederherstellung sind geprüft. Native wiederholte Cues nach dem ersten
+  kalten Aufruf: Chromium 0,2–0,5 ms, Firefox/Waterfox 0–1 ms innerhalb ihrer
+  Uhrpräzision. Neue kontrollierte Cues: Chromium maximal 9,3 ms, Gecko 15 ms.
+
+Die einminütigen Chromium-60-FPS-Vergleiche nach der Sammelfensterkorrektur
+waren vollständig: mäßige Last 115/115 Cues, 480/480 Texte, maximal 16,1 ms;
+hohe Last 115/115, 480/480, maximal 19,6 ms. Callback-Maxima je rund 32 ms,
+keine Long Tasks. Drops Baseline/Erweiterung mäßig 288/280, hoch 286/279;
+daraus keinen Geschwindigkeitsgewinn ableiten. Die erste dreiminütige
+No-addon-Gegenprobe war deutlich langsamer (7.732 Callbacks / 1.487 Drops)
+als die spätere (9.942 / 852). Letztere hatte außerdem eine 133,4-ms-Lücke
+ohne Long Task, mit nur einem zusätzlichen präsentierten Frame. Negative
+Kontrollen bleiben daher Teil der Ursachenprüfung.
+
+Mit beiden Korrekturen: vollständiger Projektcheck 235 Dateien / 10.663 Tests,
+beide Builds und Firefox-Lint ohne Fehler/Warnungen; anschließend zusätzlicher
+Optionenwechsel-Test, fokussierte Cache-Suite 9/9. Native Chromium-, Firefox-
+und Waterfox-Smokes sowie Chromium-30-FPS-Prüfung bestanden. Separate aktive
+30-s-Hochlast-Cues: Chromium 57/57, maximal 17,3 ms, 480/480 Texte, keine Long
+Tasks; Firefox 54/54 und Waterfox 53/53, jeweils maximal 32 ms und 480/480.
+Gecko-Long-Task-API weiterhin nicht verfügbar und ausdrücklich unbewertet.
+Die drei finalen CPU-4-Interaktionspaare sind ebenfalls vollständig (480/480,
+kein Auslauf oder Long Task). Unter dieser künstlich gedrosselten Markerlast
+bleiben rund 7,9 ms mediane P95-Frame-Mehrkosten; Klick +1,1 ms / Eingabe
++2,5 ms. Daraus keine Aussage über generell kostenfreies Browsen ableiten.
+
+**Weiterhin kein Video-/Release-Go:** Die frische kurze Chromium-60-FPS-Probe
+scheiterte unverändert an 58 Drops mit Erweiterung gegenüber 48 ohne; maximale
+eingeschwungene Callback-Abstände 47,8/32,0 ms. Der Gegenbefund wird nicht durch
+die erfolgreichen längeren Cue-Proben aufgehoben. Die 30-FPS-Rohdaten zeigen
+auch anfängliche Lücken von 372,8 ms mit bzw. 159,1 ms ohne Erweiterung, die der
+bisherige Einschwingfilter nicht als Maximum bewertet. Beide Rohdatensätze
+bleiben erhalten; die ursprüngliche Nutzerstörung ist damit noch nicht kausal
+zugeordnet. Keine anderen Roadmap-Aufgaben oder Veröffentlichung begonnen.
+
+Reproduktion der längeren Vergleichsprobe (nach Build; Browserpfade wie oben):
+
+```powershell
+$env:SUBTITLE_DURATION_MS = '180000'
+$env:SUBTITLE_LOAD = 'none' # alternativ moderate oder stress
+node scripts/video-playback-regression.mjs --fps 60 --subtitle-only --subtitle-dom-load --subtitle-baseline
+node scripts/video-playback-regression.mjs --fps 60 --subtitle-only --subtitle-dom-load --diagnose-cue-phases
+```
+
+Rohberichte liegen in `artifacts/video-playback/subtitle-dom-load-*.json` und
+`video-pair-*.json`. Lokale Vorher-/Nachher-Logs und gesicherte Vorher-Berichte
+liegen unter `artifacts/windows-*caption*` bzw. `windows-*everyday*`/`windows-long-*`.

@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
+import { videoGapEpisodes } from "./video-gap-episodes.mjs";
 
 const root = process.cwd();
 const browserIndex = process.argv.indexOf("--browser");
@@ -34,6 +35,16 @@ const diagnoseCuePhases = process.argv.includes("--diagnose-cue-phases");
 const subtitleOnly = process.argv.includes("--subtitle-only");
 // Separate, opt-in sustained load; ordinary video CI remains unchanged.
 const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
+const subtitleBaseline = process.argv.includes("--subtitle-baseline");
+if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
+  throw new Error("--subtitle-baseline benötigt --subtitle-only --subtitle-dom-load.");
+}
+const subtitleDurationMs = Number(process.env.SUBTITLE_DURATION_MS ?? 30_000);
+const subtitleLoad = process.env.SUBTITLE_LOAD ?? "stress";
+if (!Number.isInteger(subtitleDurationMs) || subtitleDurationMs < 30_000 ||
+    subtitleDurationMs > 600_000 || !["none", "moderate", "stress"].includes(subtitleLoad)) {
+  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress erforderlich.");
+}
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
@@ -146,6 +157,7 @@ function fixtureHtml() {
   const root = document.querySelector("#dynamic-root");
   const metrics = {
     frameTimes: [],
+    frameSamples: [],
     waiting: 0,
     stalled: 0,
     playing: 0,
@@ -180,8 +192,10 @@ function fixtureHtml() {
   });
 
   if (typeof video.requestVideoFrameCallback === "function") {
-    const onFrame = (now) => {
+    const onFrame = (now, metadata) => {
       metrics.frameTimes.push(Number(now));
+      metrics.frameSamples.push({nowMs: Number(now), mediaTime: metadata.mediaTime,
+        presentedFrames: metadata.presentedFrames});
       if (!window.__sprachverstandVideoDone) {
         video.requestVideoFrameCallback(onFrame);
       }
@@ -233,7 +247,7 @@ function subtitleFixtureHtml() {
       }
     }).observe({ type: "longtask" });
   } catch { /* Fehlende Longtask-Unterstützung ist kein Testfehler. */ }
-  window.__issueSubtitleCue = (source) => {
+  window.__issueSubtitleCue = (source, text) => {
     window.__subtitleTicks += 1;
     const tick = window.__subtitleTicks;
     const issuedAt = performance.now();
@@ -246,7 +260,7 @@ function subtitleFixtureHtml() {
       latencyMs: null,
       visibilityAtCorrection: null
     });
-    subtitle.textContent = "Nutzer:innen im Untertitel " + tick;
+    subtitle.textContent = text ?? "Nutzer:innen im Untertitel " + tick;
     return tick;
   };
   // Die erste Mutation ist das originale Cue, die folgende nach Korrektur
@@ -460,13 +474,21 @@ async function collect(id, mode) {
         videoWidth: Number(video?.videoWidth || 0),
         videoHeight: Number(video?.videoHeight || 0),
         frameTimes: Array.isArray(metrics.frameTimes) ? metrics.frameTimes : [],
+        frameSamples: Array.isArray(metrics.frameSamples) ? metrics.frameSamples : [],
         errors: Array.isArray(metrics.errors) ? metrics.errors : [],
         mutationTicks: Number(metrics.mutationTicks || 0),
         droppedVideoFrames: Number(quality?.droppedVideoFrames || 0)
       };
     `
   );
-  return { mode, ...state, frames: summarize(state.frameTimes) };
+  const frameSamples = state.frameSamples;
+  return { mode, ...state, frames: summarize(state.frameTimes),
+    presentedFramesDelta: frameSamples.length > 1
+      ? frameSamples.at(-1).presentedFrames - frameSamples[0].presentedFrames : 0,
+    // This fixture does not observe long tasks; absence of correlation is unmeasured.
+    longTaskSupported: null,
+    gapEpisodes: videoGapEpisodes(frameSamples, []).map(({longTasks, ...episode}) => episode)
+  };
 }
 
 async function run(url, mode) {
@@ -498,7 +520,7 @@ function validateRun(result) {
   }
   if (result.frames.callbacks < 90) {
     throw new Error(
-      `${result.mode}: Zu wenige präsentierte Frames (${result.frames.callbacks}).`
+      `${result.mode}: Zu wenige Videoframe-Callbacks (${result.frames.callbacks}).`
     );
   }
 }
@@ -564,6 +586,10 @@ function validateComparison(baseline, extension) {
 async function measureVideoPair(url, attempt) {
   const baseline = await run(url, "baseline");
   const extension = await run(url, "extension");
+  await mkdir(firefoxArtifacts, {recursive: true});
+  await writeFile(path.join(firefoxArtifacts,
+    `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
+    JSON.stringify({baseline, extension}, null, 2) + "\n");
 
   console.log(
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({
@@ -573,7 +599,9 @@ async function measureVideoPair(url, attempt) {
         p95GapMs: baseline.frames.p95GapMs,
         maximumGapMs: baseline.frames.maximumGapMs,
         gapsOver120Ms: baseline.frames.gapsOver120Ms,
-        droppedVideoFrames: baseline.droppedVideoFrames
+        droppedVideoFrames: baseline.droppedVideoFrames,
+        presentedFramesDelta: baseline.presentedFramesDelta,
+        gapEpisodes: baseline.gapEpisodes
       },
       extension: {
         currentTime: extension.currentTime,
@@ -581,7 +609,9 @@ async function measureVideoPair(url, attempt) {
         p95GapMs: extension.frames.p95GapMs,
         maximumGapMs: extension.frames.maximumGapMs,
         gapsOver120Ms: extension.frames.gapsOver120Ms,
-        droppedVideoFrames: extension.droppedVideoFrames
+        droppedVideoFrames: extension.droppedVideoFrames,
+        presentedFramesDelta: extension.presentedFramesDelta,
+        gapEpisodes: extension.gapEpisodes
       }
     })}`
   );
@@ -686,7 +716,7 @@ async function setSubtitleCheckbox(id, enabled) {
 // WebDriver-Laufzeit fließt nicht in die Cue-Latenz ein: Die Zeitstempel
 // entstehen ausschließlich in der Video-Seite unmittelbar vor der DOM-Mutation
 // und im auf die Korrektur reagierenden MutationObserver.
-async function measureControlledSubtitleCues(id, number = 6) {
+async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
   await execute(id, "window.__controlledCueMode = true; return true;");
   const results = [];
   try {
@@ -694,7 +724,8 @@ async function measureControlledSubtitleCues(id, number = 6) {
     await sleep(250);
     for (let index = 0; index < number; index += 1) {
       const tick = await execute(id,
-        'return window.__issueSubtitleCue("kontrolliert");');
+        repeated ? 'return window.__issueSubtitleCue("kontrolliert-wiederholt", "Nutzer:innen im Untertitel Wiederholung");'
+          : 'return window.__issueSubtitleCue("kontrolliert");');
       const deadline = Date.now() + 2_000;
       let record;
       while (Date.now() < deadline) {
@@ -719,7 +750,9 @@ async function measureControlledSubtitleCues(id, number = 6) {
 }
 
 async function measureSubtitleDomLoad(id) {
-  await request("POST", `/session/${id}/timeouts`, {script: 40_000});
+  const mutationsPerTick = subtitleLoad === "none" ? 0 : subtitleLoad === "moderate" ? 4 : 48;
+  const mutationIntervalMs = subtitleLoad === "moderate" ? 500 : 50;
+  await request("POST", `/session/${id}/timeouts`, {script: subtitleDurationMs + 10_000});
   const result = (await request("POST", `/session/${id}/execute/async`, {
     script: `
       const done = arguments[arguments.length - 1];
@@ -745,12 +778,12 @@ async function measureSubtitleDomLoad(id) {
         video.requestVideoFrameCallback(frame);
       }
       const timer = setInterval(() => {
-        for (let offset = 0; offset < 48; offset++) {
-          const index = (ticks * 48 + offset) % nodes.length;
+        for (let offset = 0; offset < ${mutationsPerTick}; offset++) {
+          const index = (ticks * ${mutationsPerTick} + offset) % nodes.length;
           nodes[index].textContent = "Nutzer:innen " + ticks + " / " + offset;
         }
         ticks++;
-      }, 50);
+      }, ${mutationIntervalMs});
       setTimeout(() => {
         clearInterval(timer); stopped = true;
         const endedAt = performance.now();
@@ -764,45 +797,60 @@ async function measureSubtitleDomLoad(id) {
             error: window.__subtitlePlaybackError ?? null,
             droppedFrames: qualityBefore && qualityAfter
               ? qualityAfter.droppedVideoFrames - qualityBefore.droppedVideoFrames : null,
+            totalFrames: qualityBefore && qualityAfter
+              ? qualityAfter.totalVideoFrames - qualityBefore.totalVideoFrames : null,
             cueRecords: window.__subtitleCueRecords.filter(record =>
               record.issuedAt >= startedAt && record.issuedAt <= endedAt),
             longTaskSupported: PerformanceObserver.supportedEntryTypes?.includes("longtask") === true,
             longTasks: window.__subtitleLongTasks.filter(task =>
               task.startMs >= startedAt && task.startMs <= endedAt),
             normalCorrected: nodes.filter(node => node.textContent.startsWith("Nutzer ")).length,
+            staticText: document.querySelector("#static-target").textContent,
             subtitle: document.querySelector("#subtitle-target").textContent});
           root.remove(); window.__controlledCueMode = false;
         }, 350);
-      }, 30_000);
+      }, ${subtitleDurationMs});
     `,
     args: []
   })).value;
   const latencies = result.cueRecords.map(record => record.latencyMs)
     .filter(value => typeof value === "number" && Number.isFinite(value));
-  const report = {browser, fps: diagnosticFps, durationMs: 30_000,
+  const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,
+    mode: subtitleBaseline ? "baseline" : "extension",
+    load: subtitleLoad, mutationsPerTick, mutationIntervalMs,
     cueCount: result.cueRecords.length, correctedCues: latencies.length,
-    cueP95Ms: percentile(latencies, 0.95),
-    cueP99Ms: percentile(latencies, 0.99),
+    cueP95Ms: latencies.length ? percentile(latencies, 0.95) : null,
+    cueP99Ms: latencies.length ? percentile(latencies, 0.99) : null,
     cueMaximumMs: latencies.length ? Math.max(...latencies) : null,
     frameSummary: summarize(result.frames.map(frame => frame.nowMs)),
+    gapEpisodes: videoGapEpisodes(result.frames, result.longTasks),
     ...result};
   await mkdir(firefoxArtifacts, {recursive: true});
   await writeFile(path.join(firefoxArtifacts,
-    `subtitle-dom-load-${browser}-${diagnosticFps}.json`), JSON.stringify(report, null, 2) + "\n");
+    `subtitle-dom-load-${browser}-${diagnosticFps}-${report.mode}-${subtitleLoad}-${subtitleDurationMs}.json`), JSON.stringify(report, null, 2) + "\n");
   console.log("Untertitel unter DOM-Last: " + JSON.stringify({
-    browser, fps: diagnosticFps, ticks: result.ticks,
+    browser, fps: diagnosticFps, mode: report.mode, load: subtitleLoad, durationMs: subtitleDurationMs, ticks: result.ticks,
     cues: report.cueCount, correctedCues: report.correctedCues,
     cueP95Ms: report.cueP95Ms, cueP99Ms: report.cueP99Ms,
     cueMaximumMs: report.cueMaximumMs,
-    frames: report.frameSummary, droppedFrames: result.droppedFrames,
+    frames: report.frameSummary, droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
+    gapEpisodes: report.gapEpisodes,
     longTasks: result.longTaskSupported ? result.longTasks.length : null,
     normalCorrected: result.normalCorrected
   }));
-  if (result.ticks < 500 || report.cueCount < 30 ||
-      report.correctedCues !== report.cueCount || result.normalCorrected !== 480 ||
+  const expectedNormal = subtitleBaseline ? 0 : Math.min(480, result.ticks * mutationsPerTick);
+  const presentedFrames = result.frames.length > 1
+    ? result.frames.at(-1).presentedFrames - result.frames[0].presentedFrames : 0;
+  const minimumTicks = Math.max(subtitleLoad === "stress" ? 500 : 0,
+    subtitleDurationMs / mutationIntervalMs * 0.8);
+  if (result.ticks < minimumTicks || report.cueCount < subtitleDurationMs / 1000 ||
+      report.correctedCues !== (subtitleBaseline ? 0 : report.cueCount) || result.normalCorrected !== expectedNormal ||
+      result.staticText !== (subtitleBaseline ? "Nutzer:innen" : "Nutzer") ||
+      result.cueRecords.some(record => record.visibilityAtIssue !== "visible" || !record.focusAtIssue) ||
+      presentedFrames < subtitleDurationMs / 1000 * 10 ||
       result.frames.length < 200 || result.visibility !== "visible" ||
-      result.paused || result.readyState < 2 || result.error ||
-      !/^Nutzer im Untertitel \d+$/u.test(result.subtitle)) {
+      !result.focused || result.paused || result.readyState < 2 || result.error ||
+      !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {
     throw new Error("Untertitel-/DOM-Lastprobe unvollständig; Rohbericht gespeichert.");
   }
   return report;
@@ -847,6 +895,9 @@ async function validateSubtitleToggle(url) {
     const controlledCues = diagnoseCuePhases
       ? await measureControlledSubtitleCues(id)
       : [];
+    const repeatedCues = diagnoseCuePhases
+      ? await measureControlledSubtitleCues(id, 6, true)
+      : [];
     if (diagnosticFps === 60 && onWithCues.cueLatenciesMs.length === 0) {
       throw new Error("Aktive Untertitel konnten nicht mit Cue-Latenz erfasst werden.");
     }
@@ -865,7 +916,7 @@ async function validateSubtitleToggle(url) {
     }
     console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
       fps: diagnosticFps, off, on: onWithCues, againOff,
-      controlledCues
+      controlledCues, repeatedCues
     })}`);
   } finally {
     try {
@@ -942,20 +993,42 @@ try {
           p95GapMs: baseline.frames.p95GapMs,
           maximumGapMs: baseline.frames.maximumGapMs,
           gapsOver120Ms: baseline.frames.gapsOver120Ms,
-          droppedVideoFrames: baseline.droppedVideoFrames
+          droppedVideoFrames: baseline.droppedVideoFrames,
+          presentedFramesDelta: baseline.presentedFramesDelta,
+          gapEpisodes: baseline.gapEpisodes
         },
         extension: {
           callbacks: extension.frames.callbacks,
           p95GapMs: extension.frames.p95GapMs,
           maximumGapMs: extension.frames.maximumGapMs,
           gapsOver120Ms: extension.frames.gapsOver120Ms,
-          droppedVideoFrames: extension.droppedVideoFrames
+          droppedVideoFrames: extension.droppedVideoFrames,
+          presentedFramesDelta: extension.presentedFramesDelta,
+          gapEpisodes: extension.gapEpisodes
         }
       })}`
     );
   }
 
-  await validateSubtitleToggle(fixture.subtitleUrl);
+  if (subtitleBaseline) {
+    const id = await createSession(false);
+    try {
+      await request("POST", `/session/${id}/url`, {url: fixture.subtitleUrl});
+      const deadline = Date.now() + 8_000;
+      while (Date.now() < deadline) {
+        if (await execute(id, 'return document.querySelector("#video").currentTime > 0.5 && window.__subtitleTicks > 0;')) break;
+        await sleep(50);
+      }
+      if (!await execute(id, 'return document.querySelector("#video").currentTime > 0.5 && window.__subtitleTicks > 0;')) {
+        throw new Error("Baseline-Video oder Untertitelwechsel nicht angelaufen.");
+      }
+      await measureSubtitleDomLoad(id);
+    } finally {
+      await request("DELETE", `/session/${id}`);
+    }
+  } else {
+    await validateSubtitleToggle(fixture.subtitleUrl);
+  }
 } finally {
   if (server) {
     await new Promise((resolve, reject) =>
