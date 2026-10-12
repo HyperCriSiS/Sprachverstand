@@ -40,8 +40,8 @@ const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
 const browserTrace = process.argv.includes("--browser-trace");
 const debuggerAddresses = new Map();
-if (browserTrace && (browser !== "chromium" || !subtitleOnly || !subtitleDomLoad)) {
-  throw new Error("Browsertrace benötigt die separate Chromium-Untertitel-/DOM-Diagnose.");
+if (browserTrace && (browser !== "chromium" || (subtitleOnly && !subtitleDomLoad))) {
+  throw new Error("Browsertrace benötigt Chromium und ein vollständiges Video- oder Untertitel-/DOM-Messfenster.");
 }
 if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
   throw new Error("--subtitle-baseline benötigt --subtitle-only --subtitle-dom-load.");
@@ -173,6 +173,13 @@ function fixtureHtml() {
   };
   window.__sprachverstandVideoMetrics = metrics;
   window.__sprachverstandVideoDone = false;
+  if (${browserTrace}) {
+    metrics.longTasks = [];
+    metrics.longTaskSupported = PerformanceObserver.supportedEntryTypes?.includes("longtask") === true;
+    if (metrics.longTaskSupported) new PerformanceObserver(list => {
+      for (const task of list.getEntries()) metrics.longTasks.push({startMs: task.startTime, durationMs: task.duration});
+    }).observe({type: "longtask"});
+  }
 
   const nodes = [];
   for (let index = 0; index < 480; index += 1) {
@@ -485,6 +492,8 @@ async function collect(id, mode) {
         frameSamples: Array.isArray(metrics.frameSamples) ? metrics.frameSamples : [],
         errors: Array.isArray(metrics.errors) ? metrics.errors : [],
         mutationTicks: Number(metrics.mutationTicks || 0),
+        longTaskSupported: metrics.longTaskSupported ?? null,
+        longTasks: Array.isArray(metrics.longTasks) ? metrics.longTasks : [],
         droppedVideoFrames: Number(quality?.droppedVideoFrames || 0)
       };
     `
@@ -493,23 +502,34 @@ async function collect(id, mode) {
   return { mode, ...state, frames: summarize(state.frameTimes),
     presentedFramesDelta: frameSamples.length > 1
       ? frameSamples.at(-1).presentedFrames - frameSamples[0].presentedFrames : 0,
-    // This fixture does not observe long tasks; absence of correlation is unmeasured.
-    longTaskSupported: null,
-    gapEpisodes: videoGapEpisodes(frameSamples, []).map(({longTasks, ...episode}) => episode)
+    // Only the opt-in instrumented fixture observes long tasks. Default
+    // absence of correlation stays explicitly unmeasured.
+    gapEpisodes: state.longTaskSupported === true
+      ? videoGapEpisodes(frameSamples, state.longTasks)
+      : videoGapEpisodes(frameSamples, []).map(({longTasks, ...episode}) => episode)
   };
 }
 
-async function run(url, mode) {
+async function run(url, mode, attempt) {
   const id = await createSession(mode === "extension");
+  let trace;
+  const traceFile = `video-browser-trace-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
   try {
+    if (browserTrace) {
+      await mkdir(firefoxArtifacts, {recursive: true});
+      trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
+        "v8,devtools.timeline,disabled-by-default-v8.compile,media");
+    }
     await request("POST", `/session/${id}/url`, { url });
+    const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
-    return await collect(id, mode);
+    return {...await collect(id, mode), instrumented: Boolean(trace),
+      ...(trace ? {traceFile, traceClock} : {})};
   } finally {
     try {
-      await request("DELETE", `/session/${id}`);
-    } catch (error) {
-      console.error(String(error));
+      if (trace) await trace.save(path.join(firefoxArtifacts, traceFile));
+    } finally {
+      try {await request("DELETE", `/session/${id}`);} catch (error) {console.error(String(error));}
     }
   }
 }
@@ -592,8 +612,8 @@ function validateComparison(baseline, extension) {
 }
 
 async function measureVideoPair(url, attempt) {
-  const baseline = await run(url, "baseline");
-  const extension = await run(url, "extension");
+  const baseline = await run(url, "baseline", attempt);
+  const extension = await run(url, "extension", attempt);
   await mkdir(firefoxArtifacts, {recursive: true});
   await writeFile(path.join(firefoxArtifacts,
     `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
@@ -757,12 +777,7 @@ async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
   return results;
 }
 
-async function measureSubtitleDomLoad(id) {
-  if (!browserTrace) return measureSubtitleDomLoadResult(id, {instrumented: false});
-  await mkdir(firefoxArtifacts, {recursive: true});
-  const trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
-  const traceFile = `subtitle-browser-trace-${browser}-${diagnosticFps}-${subtitleBaseline ? "baseline" : "extension"}-${subtitleLoad}-${subtitleDurationMs}.json`;
-  try {
+async function synchronizeTraceClock(id) {
     await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Performance.enable", params: {}});
     const before = await execute(id, "return performance.now();");
     const metrics = (await request("POST", `/session/${id}/goog/cdp/execute`, {
@@ -772,8 +787,17 @@ async function measureSubtitleDomLoad(id) {
     const timestamp = metrics?.metrics?.find(metric => metric.name === "Timestamp")?.value;
     if (!Number.isFinite(timestamp) || !Number.isFinite(before) || !Number.isFinite(after) ||
         after < before || after - before > 200) throw new Error("Trace-Zeitachsenabgleich fehlt oder ist zu ungenau.");
-    return await measureSubtitleDomLoadResult(id, {instrumented: true, traceFile,
-      traceClock: {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs: (after - before) / 2}});
+    return {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs: (after - before) / 2};
+}
+
+async function measureSubtitleDomLoad(id) {
+  if (!browserTrace) return measureSubtitleDomLoadResult(id, {instrumented: false});
+  await mkdir(firefoxArtifacts, {recursive: true});
+  const trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
+  const traceFile = `subtitle-browser-trace-${browser}-${diagnosticFps}-${subtitleBaseline ? "baseline" : "extension"}-${subtitleLoad}-${subtitleDurationMs}.json`;
+  try {
+    const traceClock = await synchronizeTraceClock(id);
+    return await measureSubtitleDomLoadResult(id, {instrumented: true, traceFile, traceClock});
   } finally {
     await trace.save(path.join(firefoxArtifacts, traceFile));
   }

@@ -1008,3 +1008,43 @@ gleich häufige Fixture-Aufruf beseitigt die Protokollungleichheit, erklärt
 aber nicht die unabhängigen 172-/105-ms-Ereignisse der Videoprobe.
 Standard-Interaktionsmodus zusätzlich verifiziert: vollständiges gültiges Paar,
 kein Auslauf und keine Long Tasks. Die allgemeine #419-Abnahme bleibt offen.
+
+### Letzte unabhängige Prüfstände und frühe Videolücke
+
+Auf Codecommit `4b95e98` ist PR-CI 38249313005 erfolgreich. Die unabhängige
+aktive Interaktionsdiagnose 38249307717 besteht fünf abwechselnde Paare:
+40/40 Cues, alle 480 Endtexte pro Lauf, kein Auslauf und keine Long Tasks.
+RAF-P95 median +0,1 ms; negative Klick-/Eingabedeltas als Messstreuung erhalten,
+keine Beschleunigung behauptet. Diese CI läuft ohne die native CPU-4-Drosselung.
+
+Native 300-s-Gegenproben mit mäßiger Last: 575/575 aktive Cues, maximal
+16,3 ms, alle 480 Endtexte, keine Long Tasks und keine Lücke >120 ms.
+Ohne/mit Erweiterung: Qualitätsframes 17.992/17.996, Drops 1.533/1.432,
+größte Callback-Lücke 116,0/106,8 ms. Keine pauschale Decoderbeschleunigung
+behauptet. Rohberichte `windows-final-long-moderate-{baseline,extension}.json`.
+
+**Unabhängiger Videolauf 38249314356 ist fehlgeschlagen:** Das unveränderte
+kurze 60-FPS-Gate sieht maximal 333,3 ms mit Erweiterung gegenüber 33,5 ms
+Basis (erlaubt 300 ms). Die Episode 1.567,8–1.901,1 ms hat nur einen neu
+präsentierten Frame und 0,017 s Medienfortschritt. Sie bleibt ein Gegenbefund
+auf dem aktuellen Code, obwohl spätere Phasen bestehen: 345/345 Cues über
+drei Minuten, Hochlast 57/57, Burst 58/58, Entfernung 59/59. Der
+Entfernungstimer hat in diesem Lauf einmal 61 ms, davon 47,6 ms native
+DOM-Mutation; größter dortiger Callback-Abstand nur 50,1 ms. Rohdaten
+`artifacts/ci-451-final-video-long-download/`, Log `ci-451-final-video-long.log`.
+
+Der opt-in Browsertrace beginnt jetzt auch im kurzen Hauptvergleich vor der
+Navigation. Rohberichte kennzeichnen die Instrumentierung und speichern den
+Abgleich; Mediaereignisse und eine passive Long-Task-Beobachtung ergänzen nur
+diesen instrumentierten Hauptpfad. Normale Messung und alle Gates unverändert.
+Defaultberichte bleiben bei fehlender Long-Task-Beobachtung explizit unbewertet.
+
+Erste native technische Prüfung: instrumentierter kurzer Lauf rot wegen Drops
+44 Basis / 54 Erweiterung. Eingeschwungene Maximalabstände 32,3/47,9 ms.
+Frühe Episoden 150,2/260,3 ms; in der aufgezeichneten frühen V8-/JS-Zeitachse
+kein Ereignis >20 ms. Zweite native Media-/Longtaskprüfung technisch vollständig,
+unverändertes Gate bestanden (Drops 53/55): **249,3-ms-Anlaufepisode auch ohne
+Erweiterung**, mit geringem Präsentationsfortschritt und ohne Long Task. Der
+Erweiterungslauf hat keine Episode >120 ms. Dies beweist einen möglichen
+Browser-/Media-Anlaufanteil, erklärt den unabhängigen 333-ms-Befund noch nicht.
+Rohberichte `windows-{final-main60-trace,main60-media-trace}.json`.

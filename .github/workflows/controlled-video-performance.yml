@@ -8,7 +8,7 @@ on:
         type: boolean
         default: false
       browser_trace:
-        description: Entfernungsgegenproben mit Browsertrace diagnostizieren (beeinflusst Laufzeiten)
+        description: Frühen Videostart und Entfernungen mit Browsertrace diagnostizieren (beeinflusst Laufzeiten)
         type: boolean
         default: false
 
@@ -48,7 +48,7 @@ jobs:
       - name: Erweiterten Chromium-Browser prüfen
         run: npm run test:browser:chromium
       - name: Echtes 60-FPS-WebM und dynamische Untertitel prüfen
-        run: npm run test:browser:video:chromium -- --fps 60
+        run: npm run test:browser:video:chromium -- --fps 60 ${{ inputs.browser_trace && '--browser-trace' || '' }}
       - name: Untertitelphasen unabhängig vom Frame-Gate messen
         if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
         run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load
@@ -97,5 +97,6 @@ jobs:
             artifacts/video-playback/subtitle-dom-load-*.json
             artifacts/video-playback/subtitle-browser-trace-*.json
             artifacts/video-playback/video-pair-*.json
+            artifacts/video-playback/video-browser-trace-*.json
           if-no-files-found: warn
           retention-days: 14

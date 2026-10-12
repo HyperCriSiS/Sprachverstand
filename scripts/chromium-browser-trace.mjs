@@ -2,7 +2,8 @@ import {writeFile} from "node:fs/promises";
 
 // Only the fresh local WebDriver session supplies this loopback address.
 // Traces are opt-in diagnostics; their instrumentation changes performance.
-export async function startChromiumBrowserTrace(address) {
+export async function startChromiumBrowserTrace(address,
+  categories = "v8,devtools.timeline,disabled-by-default-v8.compile") {
   if (typeof address !== "string" || !/^(?:localhost|127\.0\.0\.1):\d+$/u.test(address)) {
     throw new Error("Lokale Chromium-Debuggeradresse fehlt.");
   }
@@ -46,7 +47,7 @@ export async function startChromiumBrowserTrace(address) {
       socket.addEventListener("open", () => {clearTimeout(timer); resolve();}, {once:true});
       socket.addEventListener("error", () => {clearTimeout(timer); reject(new Error("Chromium-Traceverbindung fehlgeschlagen."));}, {once:true});
     });
-    await command("Tracing.start", {categories:"v8,devtools.timeline,disabled-by-default-v8.compile", transferMode:"ReturnAsStream"});
+    await command("Tracing.start", {categories, transferMode:"ReturnAsStream"});
   } catch (error) {socket.close(); rejectPending(); throw error;}
   return {
     cancel() {socket.close(); rejectPending();},
