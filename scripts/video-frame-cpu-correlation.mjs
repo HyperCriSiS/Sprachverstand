@@ -33,6 +33,8 @@ if (!["on", "off"].includes(cpuProfileMode)) {
 const cpuProfile = cpuProfileMode === "on";
 const browserTrace = process.argv.includes("--browser-trace");
 if (browserTrace && browser !== "chromium") throw new Error("--browser-trace erfordert Chromium.");
+const allocationProfile = process.argv.includes("--allocation-profile");
+if (allocationProfile && browser !== "chromium") throw new Error("--allocation-profile erfordert Chromium.");
 const debuggerAddresses = new Map();
 const throttleIndex = process.argv.indexOf("--cpu-throttle");
 const cpuThrottle = throttleIndex === -1 ? 1 : Number(process.argv[throttleIndex + 1]);
@@ -179,6 +181,7 @@ async function abgleichZeitachsen(id) {
 async function browserlauf(url, mode, pair, lastart) {
   const id = await openSession(mode === "extension");
   let profileStarted = false;
+  let allocationStarted = false;
   let trace;
   try {
     if (browserTrace) trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
@@ -188,6 +191,15 @@ async function browserlauf(url, mode, pair, lastart) {
       await cdp(id, "Profiler.setSamplingInterval", { interval: 1000 });
       await cdp(id, "Profiler.start");
       profileStarted = true;
+    }
+    if (allocationProfile) {
+      await cdp(id, "HeapProfiler.enable");
+      await cdp(id, "HeapProfiler.startSampling", {
+        samplingInterval: 16_384,
+        includeObjectsCollectedByMajorGC: true,
+        includeObjectsCollectedByMinorGC: true
+      });
+      allocationStarted = true;
     }
     // Start sampling before navigation so content-script initialization and
     // early page Long Tasks are covered. Align to the new document's clock.
@@ -201,6 +213,8 @@ async function browserlauf(url, mode, pair, lastart) {
     const state = await js(id, "return window.__videoCpuState?.();");
     if (!state?.done) throw new Error("Video-Fixturn nicht abgeschlossen.");
     const traceFile = browserTrace ? "trace-" + pair + "-" + lastart + "-" + mode + ".json" : null;
+    const allocationProfileFile = allocationProfile
+      ? "allocation-" + pair + "-" + lastart + "-" + mode + ".json" : null;
     // Keep frame/CPU metrics from the load window. Separately require the
     // final visible text to complete after writes stop, including all nodes.
     let settledState = state;
@@ -243,6 +257,15 @@ async function browserlauf(url, mode, pair, lastart) {
     }
     // Fetching a trace stream can take time. Keep it outside both the
     // completion deadline above and the active V8 sampling window.
+    if (allocationProfile) {
+      const response = await cdp(id, "HeapProfiler.stopSampling");
+      allocationStarted = false;
+      if (!response?.profile?.head || !Array.isArray(response.profile.samples) ||
+          response.profile.samples.length === 0) {
+        throw new Error("Allokationsprofil enthält keine Samples.");
+      }
+      await writeFile(path.join(output, allocationProfileFile), JSON.stringify(response.profile));
+    }
     if (trace) {await trace.save(path.join(output, traceFile)); trace = undefined;}
     const frames = frameLuecken(state.frameTimes, 16, 0);
     const sorted = [...frames].sort((a, b) => a.dauerMs - b.dauerMs);
@@ -273,6 +296,7 @@ async function browserlauf(url, mode, pair, lastart) {
       korrigierteMarkerNachAuslauf: settledState.korrigierteMarker,
       completeAfterLoad,
       traceFile,
+      allocationProfileFile,
       settleAfterLoadMs,
       rawMaximumFrameGapMs: frameLuecken(state.frameTimes, 1, 0)[0]?.dauerMs ?? 0,
       korrigierteMarker: state.korrigierteMarker,
@@ -317,6 +341,9 @@ async function browserlauf(url, mode, pair, lastart) {
     }));
     return result;
   } finally {
+    if (allocationStarted) {
+      try {await cdp(id, "HeapProfiler.stopSampling");} catch { /* Sitzung wird verworfen. */ }
+    }
     trace?.cancel();
     debuggerAddresses.delete(id);
     if (profileStarted) {
@@ -371,7 +398,10 @@ try {
     browser, browserVersion: browserVersion ?? null,
     chromium: browser === "chromium" ? browserVersion ?? null : null,
     pairs, mutationMode, cpuProfileMode, profileIncludesNavigation: cpuProfile,
-    browserTrace, cpuThrottle, alleGueltig,
+    browserTrace, allocationProfile, cpuThrottle, alleGueltig,
+    allocationSamplingIntervalBytes: allocationProfile ? 16_384 : null,
+    allocationHinweis: allocationProfile
+      ? "Allokationssampling inklusive gesammelter Objekte verändert Laufzeiten; keine automatische Freigabe." : null,
     traceHinweis: browserTrace ? "Browsertrace aktiv; Render-/Compilerdiagnostik verändert Laufzeiten." : null,
     hinweis: cpuProfile ?
       "V8-Sampling und Observer verändern Laufzeiten; keine automatische Freigabe." :
@@ -382,7 +412,7 @@ try {
   await writeFile(path.join(output, "report.json"),
     JSON.stringify(report, null, 2) + "\n");
   console.log("VIDEO-FRAME-CPU-REPORT " + JSON.stringify({
-    alleGueltig, alleTexteNachAuslaufVollstaendig, cpuProfileMode, browserTrace,
+    alleGueltig, alleTexteNachAuslaufVollstaendig, cpuProfileMode, browserTrace, allocationProfile,
     runs: runs.map((r) => ({
       modus: r.modus, paar: r.paar, lastart: r.lastart,
       mutationRecords: r.mutationRecords,

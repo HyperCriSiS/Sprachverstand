@@ -27,6 +27,12 @@ on:
         options: ["off", "on"]
         default: "off"
         required: true
+      allocation_profile:
+        description: "Zusätzliches Allokationssampling inklusive gesammelter Objekte"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
 
 permissions:
   contents: read
@@ -61,9 +67,11 @@ jobs:
           MUTATION_MODE: ${{ inputs.mutation_mode }}
           CPU_PROFILE: ${{ inputs.cpu_profile }}
           BROWSER_TRACE: ${{ inputs.browser_trace }}
+          ALLOCATION_PROFILE: ${{ inputs.allocation_profile }}
         run: |
           trace_args=()
           if [ "$BROWSER_TRACE" = "on" ]; then trace_args+=(--browser-trace); fi
+          if [ "$ALLOCATION_PROFILE" = "on" ]; then trace_args+=(--allocation-profile); fi
           node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE" --cpu-profile "$CPU_PROFILE" "${trace_args[@]}"
       - name: Profile und Messbericht archivieren
         if: ${{ always() }}
