@@ -550,6 +550,13 @@ async function collectSnapshot(sessionId) {
         },
         videos: {
           count: videos.length,
+          sourceDiagnostics: videos.slice(0, 8).map(video => ({
+            readyState: video.readyState,
+            networkState: video.networkState,
+            errorCode: video.error?.code ?? null,
+            h264Support: video.canPlayType('video/mp4; codecs="avc1.42E01E"'),
+            vp8Support: video.canPlayType('video/webm; codecs="vp8"')
+          })),
           playingCount: videos.filter((video) => !video.paused && !video.ended).length,
           currentTimeSeconds: Math.max(0, ...videos.map((video) => Number(video.currentTime || 0))),
           textTrackCount: videos.reduce((sum, video) => sum + video.textTracks.length, 0),
