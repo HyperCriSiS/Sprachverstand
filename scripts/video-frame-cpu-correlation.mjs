@@ -35,6 +35,9 @@ const browserTrace = process.argv.includes("--browser-trace");
 if (browserTrace && browser !== "chromium") throw new Error("--browser-trace erfordert Chromium.");
 const allocationProfile = process.argv.includes("--allocation-profile");
 if (allocationProfile && browser !== "chromium") throw new Error("--allocation-profile erfordert Chromium.");
+const waitStrategyIndex = process.argv.indexOf("--wait-strategy");
+const waitStrategy = waitStrategyIndex < 0 ? "poll" : process.argv[waitStrategyIndex + 1];
+if (!["poll", "async"].includes(waitStrategy)) throw new Error("--wait-strategy erlaubt poll oder async.");
 const debuggerAddresses = new Map();
 const throttleIndex = process.argv.indexOf("--cpu-throttle");
 const cpuThrottle = throttleIndex === -1 ? 1 : Number(process.argv[throttleIndex + 1]);
@@ -205,10 +208,21 @@ async function browserlauf(url, mode, pair, lastart) {
     // early page Long Tasks are covered. Align to the new document's clock.
     await api("POST", "/session/" + id + "/url", { url });
     const clock = cpuProfile ? await abgleichZeitachsen(id) : null;
-    const deadline = Date.now() + 21_000;
-    while (Date.now() < deadline) {
-      if (await js(id, "return window.__videoCpuMetrics?.done === true;")) break;
-      await sleep(200);
+    if (waitStrategy === "async") {
+      await api("POST", "/session/" + id + "/timeouts", {script: 25_000});
+      const completed = await api("POST", "/session/" + id + "/execute/async", {
+        script: "const done=arguments[arguments.length-1];const deadline=performance.now()+21000;" +
+          "const poll=()=>{if(window.__videoCpuMetrics?.done===true)done(true);" +
+          "else if(performance.now()>=deadline)done(false);else setTimeout(poll,200);};poll();",
+        args: []
+      });
+      if (!completed) throw new Error("Video-Fixturn nicht abgeschlossen.");
+    } else {
+      const deadline = Date.now() + 21_000;
+      while (Date.now() < deadline) {
+        if (await js(id, "return window.__videoCpuMetrics?.done === true;")) break;
+        await sleep(200);
+      }
     }
     const state = await js(id, "return window.__videoCpuState?.();");
     if (!state?.done) throw new Error("Video-Fixturn nicht abgeschlossen.");
@@ -396,9 +410,10 @@ try {
     alleTexteNachAuslaufVollstaendig,
     commit: process.env.GITHUB_SHA ?? null,
     browser, browserVersion: browserVersion ?? null,
+    browserSource: process.env.SPRACHVERSTAND_TEST_BROWSER_SOURCE ?? "configured-or-system",
     chromium: browser === "chromium" ? browserVersion ?? null : null,
     pairs, mutationMode, cpuProfileMode, profileIncludesNavigation: cpuProfile,
-    browserTrace, allocationProfile, cpuThrottle, alleGueltig,
+    browserTrace, allocationProfile, waitStrategy, cpuThrottle, alleGueltig,
     allocationSamplingIntervalBytes: allocationProfile ? 16_384 : null,
     allocationHinweis: allocationProfile
       ? "Allokationssampling inklusive gesammelter Objekte verändert Laufzeiten; keine automatische Freigabe." : null,

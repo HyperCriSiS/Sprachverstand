@@ -392,6 +392,31 @@ aus, auf Chromium begrenzt und verändert Laufzeiten. Native Prüfung mit Marker
 und neutraler Last: vier gültige Samplingdateien, alle Endtexte vollständig.
 Kein Freigabegate wird verändert.
 
+Die unabhängige unprofilierte Serie auf `9aacc4c` (38193208790) zeigt weiterhin
+einen 200,1-ms-Abstand im ersten Marker-Erweiterungslauf und einen 107-ms-
+Long Task bei 1361 ms. Alle Endtexte werden vollständig korrigiert. Mit
+Allokationssampling (38193206887) zeigt das erste Paar 150 ms maximalen Abstand
+und Long Tasks 114/122 ms. Die fünf Interaktionspaare (38193210423) bestehen
+ohne zusätzlichen Auslauf, Median-P95 +0,1 ms, Maximalframe-/Long-Task-Mehrkosten
+null. Die 60-FPS-Probe (38193212150) besteht erst im zweiten unveränderten
+Paar: zuerst 448/346, danach 371/377 Callbacks. Dies ist weiterhin NO-GO,
+auch bei vollständiger grüner PR-CI (38193169600).
+
+Die externe Negativkontrolle reproduziert ohne Erweiterung auf beiden Seiten
+358/295 und 296/294 Callbacks sowie Drops 38/101 und 101/102. Alle vier
+Dokumente sind sichtbar und fokussiert, Wiedergabe und aktive Captions gemessen.
+Der große erste Unterschied ist daher kein Nachweis einer Erweiterungsregression.
+Die getrennte Linux-CI-Codecdiagnose (38193576980) zeigt H.264 nicht unterstützt,
+VP8 unterstützt und Medienfehler 4 statt Wiedergabe. Dafür wird ein separat
+ausgewiesener, gepinnter CfT-Browserlauf ergänzt.
+
+Ein weiterer isolierter Wartepfad verwendet nur einen asynchronen WebDriver-
+Aufruf statt wiederholter Skriptinjektionen während des Messfensters. Die
+lokalen Markerpaare liefern 414/386, 392/384 und 399/402 Callbacks, ohne
+Long Tasks. Das erklärt die bisherige lokale Frameabweichung nicht vollständig.
+Der optionale `--wait-strategy async` wird als eigene Messvariante ausgewiesen;
+Default bleibt `poll`. Alle Endtext- und Validierungsgates bleiben bestehen.
+
 Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.

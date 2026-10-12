@@ -18,6 +18,12 @@ on:
         required: false
         default: false
         type: boolean
+      browser_source:
+        description: "Browserquelle separat ausweisen; CfT für proprietäre Mediencodecs"
+        required: true
+        default: "system-chromium"
+        type: choice
+        options: ["system-chromium", "chrome-for-testing"]
 
 permissions:
   contents: read
@@ -28,6 +34,7 @@ concurrency:
 
 env:
   CI: true
+  SPRACHVERSTAND_TEST_BROWSER_SOURCE: ${{ inputs.browser_source || 'system-chromium' }}
 
 jobs:
   live:
@@ -48,6 +55,10 @@ jobs:
 
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Gepinntes Chrome for Testing separat vorbereiten
+        if: ${{ inputs.browser_source == 'chrome-for-testing' }}
+        run: bash scripts/setup-chrome-for-testing.sh
 
       - name: Chromium-Build erstellen
         run: npm run build:chromium

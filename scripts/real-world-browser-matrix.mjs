@@ -550,6 +550,8 @@ async function collectSnapshot(sessionId) {
         },
         videos: {
           count: videos.length,
+          visibilityState: document.visibilityState,
+          documentFocused: document.hasFocus(),
           sourceDiagnostics: videos.slice(0, 8).map(video => ({
             readyState: video.readyState,
             networkState: video.networkState,
@@ -985,6 +987,7 @@ const report = {
     platform: process.platform,
     osRelease: osRelease(),
     chromium: browserVersion,
+    browserSource: process.env.SPRACHVERSTAND_TEST_BROWSER_SOURCE ?? "configured-or-system",
     chromedriver: commandVersion(driverExecutable),
     observationMs,
     pairCount,

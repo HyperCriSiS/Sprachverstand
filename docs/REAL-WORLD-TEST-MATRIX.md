@@ -9,6 +9,30 @@ dass sie unterschiedliche Risiken der DOM-Verarbeitung abdecken. Live-Webseiten
 Integrations- und Lasttests gedacht und sollen normale Pull-Request-Tests nicht
 blockieren.
 
+## Separat ausgewiesene Browserquelle (12.10.2026)
+
+Der manuelle Workflow verwendet standardmäßig das bisherige System-Chromium.
+Optional ist `browser_source=chrome-for-testing` wählbar: Browser und passender
+Driver werden in Version 155.0.8059.39 aus den offiziellen Google-Artefakten
+in das temporäre Linux-Runnerverzeichnis geladen. Dies ist die am 12.10.2026
+verifizierte [offizielle Stable-Version](https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json).
+[Chrome for Testing](https://developer.chrome.com/docs/automation-and-testing/chrome-for-testing)
+ist für Automation vorgesehen und unterstützt weiterhin das Laden der
+entpackten Test-Erweiterung gemäß der
+[Chromium-Ankündigung](https://groups.google.com/a/chromium.org/g/chromium-extensions/c/1-g8EFx2BBY/m/S0ET5wPjCAAJ).
+Die Binärdateien werden nicht mit der Erweiterung
+gebündelt oder als Projektartefakte veröffentlicht. Browserquelle und tatsächlich
+gemessene Version werden im Report getrennt ausgewiesen; Ergebnisse verschiedener
+Browserbuilds sind keine unmittelbaren Vorher-/Nachher-Werte eines Produktfixes.
+
+Die zusätzlichen Mediendiagnosen enthalten nur Bereitschaft, Netzwerkstatus,
+Fehlercode, Codecunterstützung, Sichtbarkeit und Fokus. Quellen-URLs oder
+Caption-Texte werden dafür nicht gespeichert. In der bisherigen Linux-CI
+liefert die Caption-Demo Fehlercode 4, `readyState=0`, `networkState=3` und
+keine H.264-Unterstützung, während VP8 unterstützt wird. Der getrennte CfT-Lauf
+soll diese konkrete Messlücke prüfen; keine positive Wiedergabe wird vorab
+unterstellt.
+
 ## Textknoten-Klassifizierung (09.10.2026)
 
 Zusätzlich zum historischen `document.body.innerText`-Zähler prüft die
