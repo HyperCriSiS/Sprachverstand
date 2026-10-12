@@ -187,6 +187,8 @@ export class DomProcessor {
   private shadowDiscoveryDocumentRoot: Element | undefined;
   private shadowDiscoveryHandle: number | undefined;
   private readonly pendingNodes = new Set<Node>();
+  private pendingNodeIterator: Iterator<Node> | undefined;
+  private pendingNodeWakeAt: number | undefined;
   private readonly pendingAddedNodeLists = new Set<{root: Node; nodes: NodeList; index: number}>();
   private addedNodeTurn = true;
   private readonly contextDirtyNodes = new Set<Text>();
@@ -306,6 +308,7 @@ export class DomProcessor {
   }
 
   private cancelAsyncWork(): void {
+    this.resetPendingNodeScan();
     this.pendingAddedNodeLists.clear();
     this.addedNodeTurn = true;
     this.pendingInlineProtection.clear();
@@ -632,6 +635,7 @@ export class DomProcessor {
     this.activeTraversal = undefined;
     this.pendingNodes.clear();
     this.pendingAttributes.clear();
+    this.resetPendingNodeScan();
 
     for (const node of this.coalesceRoots(roots)) {
       this.processRoot(node);
@@ -850,6 +854,9 @@ export class DomProcessor {
     // Im Observer-Callback nur O(1)-Arbeit pro Knoten: keine paarweisen
     // contains()-Prüfungen. Eltern/Kind-Überlappungen werden beim Entnehmen
     // anhand der tatsächlichen DOM-Vorfahren zusammengefasst.
+    // Revisit a deferred entry if its source changes after the scan cursor
+    // has passed it; appending keeps that work visible to the live iterator.
+    if (this.pendingNodeIterator && this.pendingNodes.has(node)) this.pendingNodes.delete(node);
     this.pendingNodes.add(node);
     const delay =
       node.nodeType === Node.TEXT_NODE
@@ -997,7 +1004,7 @@ export class DomProcessor {
         continue;
       }
       nextDelay = ready.delayMs;
-      nodeWorkDeferred = true;
+      nodeWorkDeferred = ready.scanIncomplete !== true;
 
       const attribute = this.takeNextPendingAttribute();
       if (attribute) {
@@ -1007,6 +1014,7 @@ export class DomProcessor {
 
       if (this.pendingTextEdits.size === 0) {
         if (this.processAddedNodeStep()) continue;
+        if (ready.scanIncomplete) continue;
         break;
       }
     }
@@ -1122,10 +1130,21 @@ export class DomProcessor {
   private takeNextReadyNode(): {
     readonly node?: Node;
     readonly delayMs?: number;
+    readonly scanIncomplete?: true;
   } {
-    let minimumDelay: number | undefined;
-
-    for (const node of this.pendingNodes) {
+    // A full scan of detached or backed-off roots can exceed a whole slice.
+    // Keep the cursor across slices so deferred prefixes cannot starve later
+    // ready roots. The iterator visits newly appended entries as well.
+    this.pendingNodeIterator ??= this.pendingNodes.values();
+    for (let inspected = 0; inspected < maximumRegularStepsPerSlice; inspected++) {
+      const entry = this.pendingNodeIterator.next();
+      if (entry.done) {
+        const delayMs = this.pendingNodeWakeAt === undefined
+          ? undefined : Math.max(0, this.pendingNodeWakeAt - this.now());
+        this.resetPendingNodeScan();
+        return delayMs === undefined ? {} : {delayMs};
+      }
+      const node = entry.value;
       if (!this.isProcessableRoot(node)) {
         this.pendingNodes.delete(node);
         continue;
@@ -1144,10 +1163,15 @@ export class DomProcessor {
         this.pendingNodes.delete(node);
         return { node };
       }
-      minimumDelay = Math.min(minimumDelay ?? delay, delay);
+      const wakeAt = this.now() + delay;
+      this.pendingNodeWakeAt = Math.min(this.pendingNodeWakeAt ?? wakeAt, wakeAt);
     }
+    return {delayMs: 0, scanIncomplete: true};
+  }
 
-    return minimumDelay === undefined ? {} : { delayMs: minimumDelay };
+  private resetPendingNodeScan(): void {
+    this.pendingNodeIterator = undefined;
+    this.pendingNodeWakeAt = undefined;
   }
 
   private takeNextPendingAttribute():

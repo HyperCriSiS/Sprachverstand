@@ -29,6 +29,8 @@ dokumentiert.
   verfolgten Einträge zurück. Neutrale Textblätter lösen keine wiederholte Suche
   durch die gesamte Änderungsübersicht aus; vollständig entfernte offene
   Einfügelisten werden verworfen.
+- Auch das Verwerfen bereits abgetrennter Warteschlangenknoten und die Suche
+  hinter verzögerten Texten werden in begrenzten Schritten fortgesetzt.
 - Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
   kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
   Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und
