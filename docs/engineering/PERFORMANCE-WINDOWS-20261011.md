@@ -1411,3 +1411,57 @@ haben keinen korrelierten Longtask-Eintrag. Dies ist ein erneut reproduzierter
 Startgegenbefund unter dieser großen Anfangslast, keine Performancefreigabe.
 Eine aktuelle Aufnahme enthält zusätzlich einen frühen 86-ms-Long-Task
 bei 48,3 ms; die beiden anderen nicht. Rohdaten bleiben vollständig erhalten.
+
+Unabhängige CI 38310735581 auf Observer-Folgefix `0d0fe4c` vollständig
+erfolgreich. Produktions-Trace desselben Builds ohne DOM-/Regex-Wrapper:
+Drops 35/105, diesmal keine große tatsächliche Callback-Lücke und keine Long
+Tasks. Vor Klassifikation (Sekunde 1–4) Media-BeginFrame-Takt in beiden Modi
+56–57/s; nach Restore im Add-on-Modus etwa 32/s, Decoder weiter etwa 60/s.
+Im Fenster 500–4500 ms eigene reguläre PostTask-Callbacks zusammen 95,8 ms
+(427 Aufrufe), Observer 51,3 ms (430 Aufrufe); maximaler PostTask-Event 1,1 ms.
+Verschachtelte Event-Summen sind inklusiv und dürfen nicht addiert werden.
+
+Native Kontrollvariante schreibt ohne Add-on dieselben 10.000 versteckten
+Texte nach fünf Sekunden kurz und wieder original. Erstes Paar weiter rot
+(41/107 Drops, frühe tatsächliche Add-on-Callback-Lücke 284,3 ms); automatische
+zweite Bestätigung relativ grün (115/102 Drops), aber **auch die native Basis
+fällt nach den Textänderungen auf etwa 32 Media-BeginFrames/s**, bei weiter
+60 Decoderframes/s. Damit ist dieser Effekt nicht allein der Erweiterung
+zuzuordnen. Beide Paare erhalten; Rohdaten
+`artifacts/excluded-caption-notifications/chromium-native-control/`.
+
+Host ist Windows 11 10.0.22000; Tests verwenden stumme Headless-Browser.
+Die [Microsoft-Dokumentation](https://learn.microsoft.com/en-us/windows/win32/api/timeapi/nf-timeapi-timebeginperiod)
+garantiert ab Windows 11 für unsichtbare/unhörbare Prozesse keine erhöhte
+Timerauflösung. Der beobachtete Takt ist ein Ansatz für die Testumgebungs-
+Analyse, **kein Nachweis dieser konkreten Ursache**. Keine System-, Timer-,
+Energie- oder Browserkonfigurationsänderung; Gates unverändert.
+
+## Wiederholte ausgeschlossene Captionänderungen vor Boundarysuche bündeln
+
+Gezielte Prüfung des neuen Skip-Pfads: 5.000 Änderungen desselben Texts in
+einem ausgeschlossenen Captionblock führten noch zu 10.000 Klassifikationen
+und wiederholter Inlineboundary-Suche. Die Batch-Deduplizierung liegt jetzt
+vor diesem Skip-Pfad; eigene/pending Writes bleiben wie bisher davor geprüft.
+Regression zunächst rot (10.000 statt höchstens zwei Aufrufe), danach grün.
+Native Chromium-CPU-4-Gegenprobe, 200 Inlinevorfahren, drei unabhängige Läufe:
+Observer vorher 444,4–447,6 ms, nachher 7,5–7,9 ms; gleichzeitig geänderter
+normaler Außenknoten vorher 514,0–517,6 ms, nachher 75,5–77,9 ms. Die native
+Seitenschreibarbeit bleibt etwa 58–60 ms. Ausgeschlossener Text bleibt exakt
+original; keine Aussage über aktive Cue-Latenz aus diesem ausgeschlossenen
+Pfad. Rohdaten `artifacts/excluded-caption-burst/{before,after}/report.json`.
+Gesamtcheck 242 Dateien / 10.722 Tests, beide Builds und Firefox-Lint 0/0/0
+erfolgreich. Finale native Chromium-, Firefox- und Waterfox-Smokes mit
+Inline-Ranges, großem Einzeltext und Restore ebenfalls erfolgreich.
+
+Vollständiges Chromium-Add-on mit echtem 60-FPS-Video, bestehender normaler
+Hochlast und Caption-Burst nach fünf Sekunden: Vorversion `0d0fe4c` normaler
+Außenknoten 118,7 ms, korrelierter Long Task 103 ms und tatsächliche
+Callback-Lücke 120,8 ms beim Burst. Aktuell Außenknoten 15,6 ms, keine Long
+Tasks und keine Lücke beim Burst. Native Seitenschreibarbeit 2,8 / 3,0 ms.
+**Videogates weiter rot** (Drops 40/115 versus 35/114); frühe tatsächliche
+Callback-Lücken 402,6 / 429,8 ms ohne korrelierten Long Task bleiben erhalten.
+Finaler Firefox-Videolauf Außenknoten 6 ms (native Writes 1 ms), Waterfox
+21 ms (native Writes 6 ms), relative Gates grün, absolute Drops schon in der
+Basis hoch (Firefox 208/178, Waterfox 199/189). Gecko-Longtasks weiterhin
+nicht bewertet. Rohdaten `artifacts/excluded-caption-burst-video/`.

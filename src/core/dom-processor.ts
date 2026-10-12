@@ -1319,6 +1319,7 @@ export class DomProcessor {
           knownOwnWrites.set(node, tracked);
           continue;
         }
+        handledExternalText.add(node);
         if (!tracked && !pending && !this.pendingTextTransforms.has(node) &&
             this.options.processSubtitles !== true && this.isSubtitleContent(node) &&
             this.isSubtitleContent(findInlineBoundary(node, blockBoundaryTags))) {
@@ -1327,7 +1328,6 @@ export class DomProcessor {
           // arrive here after ownership was released; avoid rescanning them.
           continue;
         }
-        handledExternalText.add(node);
         if (tracked) {
           this.noteExternalTextRewrite(node);
         }

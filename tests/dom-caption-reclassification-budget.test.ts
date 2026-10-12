@@ -22,6 +22,16 @@ function fixture() {
 }
 afterEach(()=>{processor?.stop({restore:true});processor=undefined;vi.restoreAllMocks();document.body.replaceChildren();});
 describe("Budgetierter Restore nach Untertitelklassifikation",()=>{
+  it("fasst wiederholte Änderungen desselben ausgeschlossenen Captiontexts vor der Boundarysuche zusammen",async()=>{
+    const {root,nodes}=fixture();await Promise.resolve();
+    root.className="ytp-caption-window-container";await Promise.resolve();processor!.flush();await Promise.resolve();
+    const captionProcessor=processor! as unknown as {isSubtitleContent(node:Node):boolean};
+    const classification=vi.spyOn(captionProcessor,"isSubtitleContent");
+    for(let index=0;index<5000;index++) nodes[0]!.data="Nutzer:innen extern "+index;
+    await Promise.resolve();
+    expect(classification.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(nodes[0]!.data).toBe("Nutzer:innen extern 4999");
+  });
   it("scannt bei vielen Änderungen im vollständig ausgeschlossenen Captionblock keine Grammatiknachbarn",async()=>{
     const {root,nodes}=fixture();await Promise.resolve();
     root.className="ytp-caption-window-container";await Promise.resolve();processor!.flush();await Promise.resolve();
