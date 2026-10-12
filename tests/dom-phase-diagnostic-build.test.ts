@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import path from "node:path";
@@ -13,6 +13,7 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
     mkdirSync(production, {recursive:true});
     mkdirSync(core, {recursive:true});
     const original = "production content without diagnostics\n";
+    const originalRegexTest = RegExp.prototype.test;
     const manifest = JSON.stringify({manifest_version:3, permissions:["storage"]});
     writeFileSync(path.join(production, "content.js"), original);
     writeFileSync(path.join(production, "background.js"), "unchanged background");
@@ -21,6 +22,8 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
       start() {} processRoot() {} handleMutationRecords() {}
       flushRegularNodesBudgeted() {} flushSubtitleNodes() {} discoverLateShadowRoots() {}
       processTextNode() {} finishTextTransform() {} replaceTextKeepingRanges() {}
+      isSimpleInlineTextSwap() {} invalidateFollowingContext() {}
+      invalidatePrecedingParticipleContext() {} forgetRoot() {}
     }`);
     writeFileSync(path.join(fixture, "src/content.ts"),
       'import {DomProcessor} from "./core/dom-processor"; new DomProcessor().start();');
@@ -41,9 +44,28 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
       document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
       const report = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic")!);
       expect(report.methods.start.calls).toBe(1);
-      expect(Object.keys(report.methods)).toHaveLength(9);
+      expect(Object.keys(report.methods)).toHaveLength(13);
       expect(report.slow.length).toBeLessThanOrEqual(128);
+      expect(/Nutzer/u.test("Nutzer")).toBe(true);
+      expect(/Nutzer/u.test("Neutral")).toBe(false);
+      let clock = 0;
+      const now = vi.spyOn(performance, "now").mockImplementation(() => clock += 10);
+      try {
+        function probeRegexCaller(): boolean {return new RegExp("Nutzer", "u").test("Nutzer");}
+        for (let index = 0; index < 140; index++) probeRegexCaller();
+      } finally {now.mockRestore();}
+      document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
+      const slowReport = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic")!);
+      expect(slowReport.slow).toHaveLength(128);
+      const regexRecord = slowReport.slow.find((entry: {functions: string[]}) =>
+        entry.functions.includes("probeRegexCaller"));
+      expect(regexRecord).toBeDefined();
+      expect(regexRecord.sourceLength).toBe(6);
+      expect(regexRecord).not.toHaveProperty("input");
+      expect(regexRecord).not.toHaveProperty("source");
+      expect(regexRecord.functions.every((name: string) => /^[\w$.<> ]+$/u.test(name))).toBe(true);
     } finally {
+      RegExp.prototype.test = originalRegexTest;
       document.documentElement.removeAttribute("data-sv-phase-diagnostic");
       // Only the freshly created fixture under the OS temporary directory.
       expect(path.dirname(fixture)).toBe(path.resolve(tmpdir()));

@@ -2,6 +2,7 @@ export interface VideoFrameSample {
   readonly nowMs: number;
   readonly mediaTime: number;
   readonly presentedFrames: number;
+  readonly callbackAtMs?: number;
 }
 export interface VideoLongTask {
   readonly startMs: number;
@@ -13,3 +14,6 @@ export function videoGapEpisodes(frames: readonly VideoFrameSample[],
     presentedFramesDelta: number; mediaTimeDelta: number;
     longTasks: VideoLongTask[];
   }[];
+export function videoCallbackGapEpisodes(frames: readonly VideoFrameSample[],
+  longTasks: readonly VideoLongTask[], thresholdMs?: number):
+  ReturnType<typeof videoGapEpisodes> | undefined;

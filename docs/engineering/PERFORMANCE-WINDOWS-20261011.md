@@ -1106,7 +1106,7 @@ Workflowinput ermöglicht die gleiche Aufnahme auf dem unabhängigen Runner.
 
 Native technische Prüfung des endgültigen Diagnosewegs: Gate erfolgreich,
 Drops 55/59, eingeschwungene Maximalabstände 31,6/47,1 ms. Frühe Lücken
-151/158,2 ms jeweils ohne Long Task. Gemessene Observer-Eigenzeit höchstens
+151/158,2 ms jeweils ohne Long Task. Gemessene Observer-Aufrufdauer höchstens
 1,4 ms, reguläre Scheibe 2,5 ms, Start 1,2 ms; keine langsame Methodenprobe.
 Zwei vorbereitende Archivdiagnosen waren am Drop-Gate rot; eine frühe
 457-ms-Lücke ohne Long Task wurde erfasst. Keine Entwarnung für #419 oder
@@ -1177,3 +1177,44 @@ Manuelle DOM-Phasendiagnose kann nun 1/3/5 getrennte frische Browserpaare in
 einem Runner messen. Jeder Messfehler macht den Gesamtschritt rot; weitere
 Paare werden trotzdem aufgezeichnet und getrennt archiviert. Kein Aussuchen
 grüner Wiederholungen, keine geänderten Einzelgates. 15 relevante Tests erfolgreich.
+
+Waterfox bestätigt den vollständigen 5.000-Schreib-Burst: normaler Text 23 ms,
+gleichzeitiger Cue 13 ms, Seitenmutation 4 ms, 55/55 Cues korrigiert. Longtask-API
+nicht verfügbar. `artifacts/repeated-write-video/waterfox-after/`.
+
+## Wieder erfasster langer Observer-Aufruf und getrennte Video-Uhren
+
+Unabhängige fünf Paare 38293520290 auf `d37cdd0` technisch erfolgreich, aber
+**Paar 1 erfasst einen 143,7-ms-`handleMutationRecords`-Aufruf bei 1.348 ms**
+mit passendem 144-ms-Long-Task bei 1.347,8 ms. Eine frühere Observerprobe bei
+157,3 ms dauert 9,9 ms. Die übrigen vier Paare enthalten weder Long Tasks
+noch langsame Methodenproben; ihre maximalen Callback-Abstände liegen bei
+33,4–33,5 ms. Paar 1 Basis/Erweiterung 50/150 ms, Drops 0/1. Vollständige CI
+38293524547 auf demselben Commit erfolgreich. #419 bleibt NO-GO.
+Rohdaten `artifacts/ci-dom-phase-five-download/`.
+
+Der 150-ms-Abstand in Paar 1 liegt bei den bisherigen übergebenen Rendering-
+Zeitstempeln 1.580,1–1.730,1 ms, ohne Longtask-Überlappung. Rund um den
+Observer-Block springen Compositor-Zähler zunächst von 76 auf 84 und der
+Medienzeitstempel von 1,267 auf 1,4 s, obwohl der nächste Rendering-Zeitstempel
+nur 16,6 ms später liegt. Daraus darf weder eine genaue zeitliche Ursache noch
+ein sichtbarer Stillstand für jeden verzögerten Callback abgeleitet werden.
+
+Die [rVFC-API-Spezifikation](https://wicg.github.io/video-rvfc/) übergibt den
+Rendering-Schritt-Zeitstempel und beschreibt verzögerte/ausgelassene Callbacks
+unter Hauptthreadlast. `presentedFrames` zählt an den Compositor übergebene
+Frames, keine unabhängige Messung des tatsächlich sichtbaren Bildes. Diagnose-
+aufnahmen speichern daher zusätzlich tatsächlichen Callback-Eintritt,
+Compositor-Übergabe, erwartete Displayzeit und optionale Decoderzeit. Getrennte
+`callbackGapEpisodes` korrelieren nur wirklich beobachtete Eintrittszeiten;
+alte Rohdaten bleiben ausdrücklich ungemessen. Bestehende Gates und ihre
+Rendering-Zeitachse unverändert. Zwei Regressionen schützen die Trennung.
+
+Die isolierte Diagnose ergänzt vier Observer-Unterphasen und langsame
+Regex-Testaufrufe. Nur Musterlänge und bereinigte Funktionsnamen, keine Muster,
+URLs oder Eingabetexte; gemeinsam weiterhin maximal 128 langsame Proben.
+Eine zusätzliche Probeprüfung verifiziert die Obergrenze einschließlich
+interner Regex-Aufrufe bei Stackaufbereitung. Technischer nativer Uhrenlauf
+am Drop-Gate rot (44/63), frühe Lücke 126,4 ms Rendering / 127,3 ms Eintritt,
+ohne Long Task oder langsame Unterphase. Vorhandene Typdeklaration ergänzt;
+22 relevante Tests erfolgreich. Keine Produktions-DOM-Änderung in dieser Einheit.

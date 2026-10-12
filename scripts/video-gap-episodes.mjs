@@ -17,3 +17,11 @@ export function videoGapEpisodes(frames, longTasks, thresholdMs = 120) {
   }
   return episodes;
 }
+
+// The rendering-step timestamp passed to rVFC can precede actual callback
+// entry. Keep this separately observed clock; never synthesize it for old data.
+export function videoCallbackGapEpisodes(frames, longTasks, thresholdMs = 120) {
+  if (!frames.length || frames.some(frame => !Number.isFinite(frame.callbackAtMs))) return undefined;
+  return videoGapEpisodes(frames.map(frame => ({...frame, nowMs:frame.callbackAtMs})),
+    longTasks, thresholdMs);
+}

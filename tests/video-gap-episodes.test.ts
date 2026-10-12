@@ -1,7 +1,27 @@
 import {describe, expect, it} from "vitest";
-import {videoGapEpisodes} from "../scripts/video-gap-episodes.mjs";
+import {videoGapEpisodes, videoCallbackGapEpisodes} from "../scripts/video-gap-episodes.mjs";
 
 describe("Video callback gaps and actual frame progress", () => {
+  it("uses observed callback entry instead of a stale rendering timestamp for task correlation", () => {
+    const task = {startMs:40, durationMs:144};
+    const frames = [
+      {nowMs:10, callbackAtMs:12, mediaTime:1, presentedFrames:60},
+      {nowMs:30, callbackAtMs:190, mediaTime:1.15, presentedFrames:69}
+    ];
+    expect(videoGapEpisodes(frames, [task])).toEqual([]);
+    expect(videoCallbackGapEpisodes(frames, [task])).toEqual([
+      {startMs:12, endMs:190, gapMs:178, presentedFramesDelta:9,
+        mediaTimeDelta:1.15 - 1, longTasks:[task]}
+    ]);
+  });
+  it("does not turn old or partially observed callback clocks into measurements", () => {
+    expect(videoCallbackGapEpisodes([], [])).toBeUndefined();
+    expect(videoCallbackGapEpisodes([{nowMs:10, mediaTime:1, presentedFrames:60}], [])).toBeUndefined();
+    expect(videoCallbackGapEpisodes([
+      {nowMs:10, callbackAtMs:12, mediaTime:1, presentedFrames:60},
+      {nowMs:30, mediaTime:1.02, presentedFrames:61}
+    ], [])).toBeUndefined();
+  });
   it("does not label continued presentation during delayed callbacks as lost frames", () => {
     expect(videoGapEpisodes([
       {nowMs: 10, mediaTime: 1, presentedFrames: 60},

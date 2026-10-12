@@ -5,7 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
-import { videoGapEpisodes } from "./video-gap-episodes.mjs";
+import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
@@ -225,10 +225,15 @@ function fixtureHtml() {
 
   if (typeof video.requestVideoFrameCallback === "function") {
     const onFrame = (now, metadata) => {
+      const callbackAtMs = ${browserTrace || mainTaskDiagnostics} ? performance.now() : undefined;
       metrics.frameTimes.push(Number(now));
       const sample = {nowMs: Number(now), mediaTime: metadata.mediaTime,
         presentedFrames: metadata.presentedFrames};
       if (${browserTrace || mainTaskDiagnostics}) Object.assign(sample, {
+        callbackAtMs, presentationTimeMs: metadata.presentationTime,
+        expectedDisplayTimeMs: metadata.expectedDisplayTime,
+        processingDurationMs: typeof metadata.processingDuration === "number"
+          ? metadata.processingDuration * 1000 : null,
         visibilityAtFrame: document.visibilityState, focusedAtFrame: document.hasFocus()});
       metrics.frameSamples.push(sample);
       if (!window.__sprachverstandVideoDone) {
@@ -531,7 +536,11 @@ async function collect(id, mode) {
     `
   );
   const frameSamples = state.frameSamples;
+  const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
+    state.longTaskSupported === true ? state.longTasks : []);
   return { mode, ...state, frames: summarize(state.frameTimes),
+    ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
+      ? callbackEpisodes : callbackEpisodes.map(({longTasks, ...episode}) => episode)} : {}),
     presentedFramesDelta: frameSamples.length > 1
       ? frameSamples.at(-1).presentedFrames - frameSamples[0].presentedFrames : 0,
     // Only the opt-in instrumented fixture observes long tasks. Default
