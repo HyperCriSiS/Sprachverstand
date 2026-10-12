@@ -417,6 +417,28 @@ Long Tasks. Das erklärt die bisherige lokale Frameabweichung nicht vollständig
 Der optionale `--wait-strategy async` wird als eigene Messvariante ausgewiesen;
 Default bleibt `poll`. Alle Endtext- und Validierungsgates bleiben bestehen.
 
+Die unabhängige System-Chromium-Kontrolle mit asynchronem Warten (38196193918,
+154.0.8037.0) reproduziert 183,4 ms im ersten Erweiterungslauf und 166,7 ms
+auch in einer Basis-Sitzung. Wiederholte WebDriver-Abfragen allein erklären
+die Spitze damit nicht. Die separat gepinnte CfT-155-Serie (38196195509)
+enthält dagegen keine Long Tasks, maximal 33,5 ms Abstand; alle Endtexte
+vollständig, einmal 60 ms zusätzlicher Auslauf. Unterschiedliche Browserbuilds
+belegen keine alleinige Kausalität eines Produktfixes.
+
+CfT-155 unterstützt H.264 und beweist externe Caption-Wiedergabe im
+Linux-Runner (38196192206). Ein Erweiterungslauf scheitert jedoch beim Speichern
+der Untertiteloption. Ein eigener Regressionstest reproduziert die Ursache:
+Die Optionsseite rendert bereits die Einstellungen, bindet Speichern und
+weitere Interaktionen aber erst nach einer optionalen asynchronen Zählerabfrage.
+Bei ausstehender Antwort verhindert das Formular seine normale Navigation
+nicht und speichert die Änderung nicht. Die Handler werden jetzt vor der
+Zählerabfrage gebunden; Fehler und verspätete Antworten blockieren keine
+Bedienung und überschreiben keine neueren Werte. Fünf Regressionen sichern
+ausstehende und fehlgeschlagene Antworten, Antwortreihenfolge, Live-Updates
+und neue Tabkontexte. Gesamtcheck 230 Dateien / 10.630 Tests, Firefox-Lint 0/0/0.
+Zwei native externe Caption-Paare bestätigen gespeicherte Option und
+Wiedergabe; der unabhängige CfT-Reaudit folgt auf dem neuen Produktstand.
+
 Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.
