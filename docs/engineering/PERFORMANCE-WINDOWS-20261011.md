@@ -1257,3 +1257,66 @@ Native technische Gegenprobe: Argument verifiziert, keine Long Tasks oder
 langsamen Proben; Drop-Gate weiterhin rot (46/55). Keine Änderung am Add-on
 oder am Browser des Nutzers und kein Freigabenachweis durch Sonderflags.
 Gesamtcheck 240 Dateien / 10.706 Tests, beide Builds und Firefox-Lint erfolgreich.
+
+Fünf Produktions-Traces 38299012401 auf `87fa288` ohne DOM-/Regex-Messwrapper:
+alle Gates bestanden, keine Long Tasks oder Eintrittslücken >120 ms;
+höchster Erweiterungsabstand in Paar 1 49,9 ms, danach 33,4–33,5 ms.
+Standard-V8 unverändert. Vollständige CI 38299018666 erfolgreich. Dieses
+Ergebnis grenzt den möglichen Instrumentierungseinfluss ein, beweist aber
+keine universelle Entwarnung für ältere passive Befunde oder die Store-Störung.
+Rohdaten `artifacts/ci-production-trace-five-download/`.
+
+Engine-Gegenprobe 38302290150 auf demselben Commit **rot**: erstes Paar
+533,3-ms-Rendering-/561,4-ms-Eintrittslücke; 34 übergebene Frames und 0,566 s
+Medienfortschritt. Long Tasks 556/53 ms in Textvorbereitung. Eigenes
+`FunctionCall` 556,274 ms bei 5,808 ms CPU, `V8.OptimizeCode` 555,962 ms
+bei 5,502 ms CPU, darin `V8.OptimizeNonConcurrent` 355,388 ms bei 3,870 ms CPU.
+Sonderflag nachweislich aktiv; keine geeignete Abhilfe für den Produktbetrieb.
+Alle vier Folgepaare ohne Long Tasks, Maximalabstände 33,5 ms. Die Schleife
+hält den Gesamtfehler rot und bewahrt alle Paare. Rohdaten
+`artifacts/ci-v8-engine-control-five-download/`. Keine Übernahme der Engineflag.
+
+## Dichte Entfernung: budgetierte Ownership-Bereinigung
+
+Neuer nativer Reproduktionsfall: 10.000 bereits korrigierte Knoten in einem
+entfernten Teilbaum, gleichzeitig neuer Untertitel. Chromium, CPU-Faktor 4,
+asynchroner Core-Scheduler, drei frische Läufe. Vorher Observer 63,2–64,3 ms,
+Cue 70,4–71 ms, Seitenmutation selbst 3,4–3,8 ms. Zuvor 5.000 Knoten:
+45,1–47,4 ms Observer. Dichte Roots verblieben auf dem allgemeinen synchronen
+Restore-Pfad; die bisherigen Sparse-/Neutral-Fixes erfassten ihn nicht.
+
+Live Ownership-Iteratoren restaurieren dichte entfernte Bestände jetzt in den
+bestehenden regulären Zeit-/Schrittbudgets. Keine volle Key-Snapshot-Kopie
+oder Bindung an die alte Baumform. Reinsert bleibt verfolgt, auseinandergerissene
+Nachkommen werden restauriert, spätere Entfernungen lösen einen weiteren
+Durchlauf aus. Normale Textarbeit und Cues kommen weiter zum Zug. Explizite
+Sync-APIs drainieren die Bereinigung; StopBudgeted übernimmt ausstehende
+Originale. Asynchrone Antworten und Retries prüfen die eigene Dokumentgrenze,
+damit ein währenddessen adoptierter Knoten keine verspätete Transformation
+im fremden Dokument erhält. Pending-Attribute gehören ebenfalls zur Ownership.
+Große dichte Bestände werden nun **eventuell** restauriert; schnelle Blatt-
+und Sparse-Fälle bleiben unmittelbar. Diese begrenzte Verzögerung ist durch
+Reinsert-, externe Änderungs- und Lifecycle-Tests abgesichert.
+
+Identischer nativer Nachlauf: Observer 1,4–1,9 ms, Cue 8,4–10,5 ms, alle
+10.000 Originale restauriert, späterer Frameabstand höchstens 8,9 ms.
+Rohlogs `artifacts/dense-removal-10000-{before,after}.log`.
+
+Vollständiges Produktions-Add-on, echtes 60-FPS-Video, dichte 10.000 Ersetzungen
+und normale Hochlast: vor Entfernung 10.000/10.000 korrekt, danach 10.000/10.000
+Originale restauriert. Chromium Cue 10,2 ms, Operation bis Frame 11,8 ms,
+59/59 Cues, keine Long Tasks. Direkte unveränderte Vorversion `87fa288`:
+Cue 23,9 ms, Operation bis Frame 27,1 ms, ebenfalls alle Originale; Seitenmutation
+8 ms vorher / 9,1 ms nachher. Firefox Cue 13 ms, Frame 16 ms, 56/56;
+Waterfox Cue 13 ms, Frame 12 ms, 55/55. Gecko-Longtask-API nicht verfügbar.
+Isolierte dichte Variante des Videoharness nur unter `artifacts/`;
+Rohdaten `artifacts/dense-removal-video/`.
+
+Zehn neue Regressionen einschließlich harter Schrittgrenze, vollständigem
+Restore/Cue, zerlegtem Baum, Reinsert, externen Änderungen, Shadow DOM,
+StopBudgeted, großen NodeLists, weiteren Entfernungen, verspäteten Antworten
+und Fairness. Initiale Budgetprüfung vor dem Fix rot. Gesamtcheck mit ersten
+neun Regressionen 241 Dateien / 10.715 Tests, beide Builds und Firefox-Lint
+erfolgreich; anschließend gesamte Testsuite mit Fairnessfall 10.716 Tests
+und Typecheck erfolgreich. Native Chromium-, Firefox- und Waterfox-Smokes
+einschließlich Ranges und Restore erfolgreich. #419 weiterhin offen.

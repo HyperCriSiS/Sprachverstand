@@ -105,6 +105,13 @@ interface TraversalState {
   rootProcessed: boolean;
 }
 
+interface DetachedCleanupState {
+  readonly iterators: readonly Iterator<Node>[];
+  index: number;
+  started: boolean;
+  repeat: boolean;
+}
+
 interface BudgetedRestoration {
   readonly promise: Promise<void>;
   readonly resolve: () => void;
@@ -191,6 +198,8 @@ export class DomProcessor {
   private pendingNodeWakeAt: number | undefined;
   private readonly pendingAddedNodeLists = new Set<{root: Node; nodes: NodeList; index: number}>();
   private addedNodeTurn = true;
+  private detachedCleanup: DetachedCleanupState | undefined;
+  private detachedCleanupTurn = true;
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly inlineProtectionVersions = new WeakMap<Node, object>();
@@ -311,6 +320,8 @@ export class DomProcessor {
     this.resetPendingNodeScan();
     this.pendingAddedNodeLists.clear();
     this.addedNodeTurn = true;
+    this.detachedCleanup = undefined;
+    this.detachedCleanupTurn = true;
     this.pendingInlineProtection.clear();
     this.preparedInlineProtection = new WeakMap();
     this.inlineProtectionCache = new WeakMap();
@@ -565,6 +576,7 @@ export class DomProcessor {
   }
 
   public restoreAll(): void {
+    while (this.processDetachedCleanupStep()) { /* Explicit synchronous restore. */ }
     this.cancelAsyncWork();
     if (this.budgetedRestoration) this.runBudgetedRestoration(this.budgetedRestoration, true);
     for (const [node, pending] of this.pendingTextTransforms) {
@@ -610,6 +622,7 @@ export class DomProcessor {
     if (!this.running) {
       return;
     }
+    while (this.processDetachedCleanupStep()) { /* Explicit synchronous flush. */ }
     while (this.processAddedNodeStep()) { /* Explicit synchronous flush. */ }
     while (this.processInlineProtectionStep()) { /* Explicit synchronous flush. */ }
     while (this.processTransformResult(this.pendingTransformResults)) { /* Explicit flush. */ }
@@ -965,6 +978,7 @@ export class DomProcessor {
     let nextDelay: number | undefined;
     let editTurn = true;
     let addedTurn = this.addedNodeTurn;
+    let detachedTurn = this.detachedCleanupTurn;
     let nodeWorkDeferred = false;
     const validatedEdits = new Set<Text>();
     this.activeTextEditSlice = validatedEdits;
@@ -972,6 +986,11 @@ export class DomProcessor {
     while (steps < maximumRegularStepsPerSlice &&
       (this.now() < deadline || steps === 0)) {
       steps++;
+      if (detachedTurn && this.processDetachedCleanupStep()) {
+        detachedTurn = false;
+        continue;
+      }
+      detachedTurn = true;
       if (this.processTransformResult(this.pendingTransformResults)) continue;
       if (this.processInlineProtectionStep()) continue;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
@@ -1014,6 +1033,7 @@ export class DomProcessor {
 
       if (this.pendingTextEdits.size === 0) {
         if (this.processAddedNodeStep()) continue;
+        if (this.processDetachedCleanupStep()) continue;
         if (ready.scanIncomplete) continue;
         break;
       }
@@ -1022,8 +1042,9 @@ export class DomProcessor {
     this.updateExpectedTextEdits(validatedEdits);
     this.activeTextEditSlice = undefined;
     this.addedNodeTurn = addedTurn;
+    this.detachedCleanupTurn = detachedTurn;
     if (this.hasRegularWork()) {
-      this.scheduleFlush(this.pendingTextEdits.size > 0 || this.pendingAddedNodeLists.size > 0
+      this.scheduleFlush(this.detachedCleanup || this.pendingTextEdits.size > 0 || this.pendingAddedNodeLists.size > 0
         ? 0 : nextDelay ?? 0);
     }
   }
@@ -1196,6 +1217,7 @@ export class DomProcessor {
   private hasRegularWork(): boolean {
     return Boolean(
       this.activeTraversal ||
+        this.detachedCleanup ||
         this.pendingAddedNodeLists.size > 0 ||
         this.pendingInlineProtection.size > 0 ||
         this.pendingTransformResults.size > 0 ||
@@ -1369,7 +1391,9 @@ export class DomProcessor {
       if (removedNodes.length > maximumRegularStepsPerSlice) {
         this.discardRemovedAdditionBatch(record.target, removedNodes);
       }
-      if (!(removedNodes.length > maximumRegularStepsPerSlice && this.forgetSparseDetachedNodes())) {
+      if (removedNodes.length > maximumRegularStepsPerSlice && !this.forgetSparseDetachedNodes()) {
+        this.queueDetachedCleanup();
+      } else if (removedNodes.length <= maximumRegularStepsPerSlice) {
         for (let index = 0; index < removedNodes.length; index++) {
           const removedNode = removedNodes[index]!;
           // Ein innerhalb des Dokuments verschobener Knoten bleibt verfolgt.
@@ -1377,7 +1401,7 @@ export class DomProcessor {
           if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
             continue;
           }
-          this.forgetRoot(removedNode);
+          this.forgetRemovedRoot(removedNode);
         }
       }
       const addedNodes = record.addedNodes;
@@ -1604,9 +1628,9 @@ export class DomProcessor {
   }
   private isProcessableRoot(root: Node): boolean {
     if (root instanceof ShadowRoot) {
-      return root.host.isConnected;
+      return root.host.isConnected && root.host.getRootNode({composed:true}) === this.document;
     }
-    return root.isConnected;
+    return root.isConnected && root.getRootNode({composed:true}) === this.document;
   }
 
   private now(): number {
@@ -2396,12 +2420,12 @@ export class DomProcessor {
       this.queuedLargeTransforms.delete(node);
       this.queuedSmallTransforms.delete(node);
       this.queuedSubtitleTransforms.delete(node);
-      if (!node.isConnected || node.data !== pending.expected ||
+      if (!this.isProcessableRoot(node) || node.data !== pending.expected ||
           this.hasTextNodeProtection(node) || this.contextDirtyNodes.has(node) ||
           this.isSubtitleContent(node) !== subtitle ||
           (this.options.processSubtitles !== true && this.isSubtitleContent(node))) {
         if (node.data === pending.expected) this.restoreText(node, original, true);
-        if (node.isConnected) this.queue(node);
+        if (this.isProcessableRoot(node)) this.queue(node);
         return;
       }
       const result = resultOf();
@@ -2420,7 +2444,7 @@ export class DomProcessor {
       ? subtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms : this.queuedLargeTransforms;
     queue.set(node, () => {
       if (!this.running || this.pendingTextTransforms.get(node) !== pending) return Promise.resolve();
-      if (!node.isConnected || node.data !== pending.expected) {
+      if (!this.isProcessableRoot(node) || node.data !== pending.expected) {
         complete(() => ({text: original, replacements: 0, summaries: []}));
         return Promise.resolve();
       }
@@ -2437,7 +2461,7 @@ export class DomProcessor {
               if (this.pendingTextTransforms.get(node) !== pending) return;
               this.pendingTextTransforms.delete(node);
               if (node.data === pending.expected) this.restoreText(node, original, true);
-              this.retryTransform(() => {if (node.isConnected) this.queue(node);});
+              this.retryTransform(() => {if (this.isProcessableRoot(node)) this.queue(node);});
             }, subtitle);
           }
         }
@@ -2687,7 +2711,7 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
-          if (element.isConnected && element.getAttribute(attributeName) === value &&
+          if (this.isProcessableRoot(element) && element.getAttribute(attributeName) === value &&
               !this.isSubtitleContent(element) && shouldProcessAccessibleAttribute(element, attributeName, value)) {
             this.finishAttributeTransform(element, attributeName, value, result);
           }
@@ -2696,7 +2720,7 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
-          this.retryTransform(() => {if (element.isConnected) this.processAccessibleAttribute(element, attributeName);});
+          this.retryTransform(() => {if (this.isProcessableRoot(element)) this.processAccessibleAttribute(element, attributeName);});
         })
       );
       return;
@@ -2948,6 +2972,7 @@ export class DomProcessor {
   }
 
   private forgetTrackedAttributes(element: Element): void {
+    this.pendingAttributeTransforms.delete(element);
     const changes = this.attributeChanges.get(element);
     if (!changes) {
       return;
@@ -2971,7 +2996,8 @@ export class DomProcessor {
     // A single text leaf has exactly one possible text entry. Avoid building
     // a global tracking snapshot for every neutral leaf in a large removal.
     // Tracked attributes and shadow descendants retain the general path.
-    if (root instanceof Element && !root.shadowRoot && !this.attributeChanges.has(root)) {
+    if (root instanceof Element && !root.shadowRoot && !this.attributeChanges.has(root) &&
+        !this.pendingAttributeTransforms.has(root)) {
       const child = root.firstChild;
       if (child?.nodeType === Node.TEXT_NODE && child === root.lastChild) {
         this.forgetTrackedText(child as Text);
@@ -2983,11 +3009,11 @@ export class DomProcessor {
     // walking tens of thousands of neutral descendants. Snapshot the keys:
     // restoration can change the tracking maps while we visit them.
     const trackedEntries = this.textChanges.size + this.attributeChanges.size +
-      this.pendingTextTransforms.size + this.pendingTextEdits.size;
+      this.pendingTextTransforms.size + this.pendingTextEdits.size + this.pendingAttributeTransforms.size;
     if (trackedEntries <= 64) {
       const trackedNodes = new Set<Node>([
         ...this.textChanges.keys(), ...this.attributeChanges.keys(),
-        ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys()
+        ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys(), ...this.pendingAttributeTransforms.keys()
       ]);
       for (const node of trackedNodes) {
         if (!this.isTrackedDescendant(root, node)) continue;
@@ -3024,6 +3050,62 @@ export class DomProcessor {
     }
   }
 
+  private forgetRemovedRoot(root: Node): void {
+    if (root.nodeType === Node.TEXT_NODE || (root instanceof Element &&
+        !root.shadowRoot && !this.attributeChanges.has(root) &&
+        !this.pendingAttributeTransforms.has(root) && root.firstChild?.nodeType === Node.TEXT_NODE &&
+        root.firstChild === root.lastChild)) {
+      this.forgetRoot(root);
+      return;
+    }
+    this.pendingInlineProtection.delete(root);
+    this.preparedInlineProtection.delete(root);
+    const entries = this.textChanges.size + this.attributeChanges.size +
+      this.pendingTextTransforms.size + this.pendingTextEdits.size + this.pendingAttributeTransforms.size;
+    if (entries <= 64) {
+      this.forgetRoot(root);
+    } else this.queueDetachedCleanup();
+  }
+
+  private queueDetachedCleanup(): void {
+    if (this.detachedCleanup) {
+      if (this.detachedCleanup.started) this.detachedCleanup.repeat = true;
+    } else {
+      // Live ownership iterators avoid a large snapshot and remain independent
+      // of detached subtree shape: pages may dismantle or reinsert it meanwhile.
+      this.detachedCleanup = {iterators:[this.textChanges.keys(), this.attributeChanges.keys(),
+        this.pendingTextTransforms.keys(), this.pendingTextEdits.keys(), this.pendingAttributeTransforms.keys()],
+      index:0, started:false, repeat:false};
+    }
+    this.scheduleFlush();
+  }
+
+  private processDetachedCleanupStep(): boolean {
+    const cleanup = this.detachedCleanup;
+    if (!cleanup) return false;
+    cleanup.started = true;
+    while (cleanup.index < cleanup.iterators.length) {
+      const entry = cleanup.iterators[cleanup.index]!.next();
+      if (entry.done) {cleanup.index++; continue;}
+      const node = entry.value;
+      if (this.isProcessableRoot(node)) return true;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node as Text;
+        if (!this.pendingTextEdits.get(text)?.restoring) {
+          this.inlineProtectionCache.delete(text);
+          this.leadingContextCache.delete(text);
+          this.forgetTrackedText(text);
+        }
+      } else if (node instanceof Element) {
+        this.forgetTrackedAttributes(node);
+      }
+      return true;
+    }
+    this.detachedCleanup = undefined;
+    if (cleanup.repeat) {this.queueDetachedCleanup(); return true;}
+    return false;
+  }
+
   private discardRemovedAdditionBatch(root: Node, removed: NodeList): void {
     for (const batch of this.pendingAddedNodeLists) {
       if (batch.root === root && batch.nodes.length === removed.length &&
@@ -3039,10 +3121,10 @@ export class DomProcessor {
   private forgetSparseDetachedNodes(): boolean {
     if (this.requiresInlineProtection() || this.pendingInlineProtection.size > 0) return false;
     const entries = this.textChanges.size + this.attributeChanges.size +
-      this.pendingTextTransforms.size + this.pendingTextEdits.size;
+      this.pendingTextTransforms.size + this.pendingTextEdits.size + this.pendingAttributeTransforms.size;
     if (entries > 64) return false;
     const nodes = new Set<Node>([...this.textChanges.keys(), ...this.attributeChanges.keys(),
-      ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys()]);
+      ...this.pendingTextTransforms.keys(), ...this.pendingTextEdits.keys(), ...this.pendingAttributeTransforms.keys()]);
     for (const node of nodes) {
       if (node.isConnected && node.getRootNode({composed: true}) === this.document) continue;
       if (node.nodeType === Node.TEXT_NODE) {
