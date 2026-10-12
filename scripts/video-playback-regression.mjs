@@ -18,7 +18,8 @@ const driverBase = `http://127.0.0.1:${driverPort}`;
 const extensionDir = process.env.VIDEO_EXTENSION_DIR
   ? path.resolve(process.env.VIDEO_EXTENSION_DIR) : path.join(root, "dist", browser);
 const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
-const firefoxArtifacts = path.join(root, "artifacts/video-playback");
+const firefoxArtifacts = process.env.VIDEO_ARTIFACTS_DIR
+  ? path.resolve(root, process.env.VIDEO_ARTIFACTS_DIR) : path.join(root, "artifacts/video-playback");
 const firefoxXpi = path.join(firefoxArtifacts, "firefox-video-probe.xpi");
 const videoPath = path.join(
   root,
@@ -39,6 +40,9 @@ const subtitleOnly = process.argv.includes("--subtitle-only");
 const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
 const browserTrace = process.argv.includes("--browser-trace");
+const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks");
+const focusedStart = process.argv.includes("--focused-start");
+if (mainTaskDiagnostics && subtitleOnly) throw new Error("Main-Task-Diagnose benötigt den vollständigen Videostartvergleich.");
 const debuggerAddresses = new Map();
 if (browserTrace && (browser !== "chromium" || (subtitleOnly && !subtitleDomLoad))) {
   throw new Error("Browsertrace benötigt Chromium und ein vollständiges Video- oder Untertitel-/DOM-Messfenster.");
@@ -173,8 +177,14 @@ function fixtureHtml() {
   };
   window.__sprachverstandVideoMetrics = metrics;
   window.__sprachverstandVideoDone = false;
-  if (${browserTrace}) {
+  if (${browserTrace || mainTaskDiagnostics}) {
     metrics.longTasks = [];
+    metrics.visibilityEvents = [];
+    const visibility = () => metrics.visibilityEvents.push({nowMs: performance.now(),
+      state: document.visibilityState, focused: document.hasFocus()});
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("focus", visibility); window.addEventListener("blur", visibility);
+    visibility();
     metrics.longTaskSupported = PerformanceObserver.supportedEntryTypes?.includes("longtask") === true;
     if (metrics.longTaskSupported) new PerformanceObserver(list => {
       for (const task of list.getEntries()) metrics.longTasks.push({startMs: task.startTime, durationMs: task.duration});
@@ -208,8 +218,11 @@ function fixtureHtml() {
   if (typeof video.requestVideoFrameCallback === "function") {
     const onFrame = (now, metadata) => {
       metrics.frameTimes.push(Number(now));
-      metrics.frameSamples.push({nowMs: Number(now), mediaTime: metadata.mediaTime,
-        presentedFrames: metadata.presentedFrames});
+      const sample = {nowMs: Number(now), mediaTime: metadata.mediaTime,
+        presentedFrames: metadata.presentedFrames};
+      if (${browserTrace || mainTaskDiagnostics}) Object.assign(sample, {
+        visibilityAtFrame: document.visibilityState, focusedAtFrame: document.hasFocus()});
+      metrics.frameSamples.push(sample);
       if (!window.__sprachverstandVideoDone) {
         video.requestVideoFrameCallback(onFrame);
       }
@@ -494,6 +507,8 @@ async function collect(id, mode) {
         mutationTicks: Number(metrics.mutationTicks || 0),
         longTaskSupported: metrics.longTaskSupported ?? null,
         longTasks: Array.isArray(metrics.longTasks) ? metrics.longTasks : [],
+        visibilityEvents: Array.isArray(metrics.visibilityEvents) ? metrics.visibilityEvents : [],
+        visibilityState: document.visibilityState, focused: document.hasFocus(),
         droppedVideoFrames: Number(quality?.droppedVideoFrames || 0)
       };
     `
@@ -520,10 +535,20 @@ async function run(url, mode, attempt) {
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
         "v8,devtools.timeline,disabled-by-default-v8.compile,media");
     }
+    if (focusedStart) {
+      const handle = (await request("GET", `/session/${id}/window`)).value;
+      await request("POST", `/session/${id}/window`, {handle});
+      if (browser === "chromium") await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Page.bringToFront", params: {}});
+    }
     await request("POST", `/session/${id}/url`, { url });
+    if (focusedStart && !await execute(id, 'return document.visibilityState === "visible" && document.hasFocus();')) {
+      throw new Error("Fokussierter Videostart nicht erreicht.");
+    }
     const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
-    return {...await collect(id, mode), instrumented: Boolean(trace),
+    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics,
+      mainTaskDiagnostics,
+      focusedStart,
       ...(trace ? {traceFile, traceClock} : {})};
   } finally {
     try {

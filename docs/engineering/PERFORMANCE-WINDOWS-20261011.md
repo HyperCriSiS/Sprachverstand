@@ -1048,3 +1048,28 @@ Erweiterung**, mit geringem Präsentationsfortschritt und ohne Long Task. Der
 Erweiterungslauf hat keine Episode >120 ms. Dies beweist einen möglichen
 Browser-/Media-Anlaufanteil, erklärt den unabhängigen 333-ms-Befund noch nicht.
 Rohberichte `windows-{final-main60-trace,main60-media-trace}.json`.
+
+Die vorhandenen Quell-Aufrufprüfungen wurden nach der frühen Trace-Erweiterung
+angepasst; ein zwischenzeitlich roter Gesamtcheck auf dem Diagnosecommit
+betraf zwei wörtliche Aufrufzeilen, keinen Text-/DOM-Test. Reparaturcommit
+`304cf44`: Gesamtcheck erneut 239 Dateien / 10.693 Tests erfolgreich.
+Der Standard-Workflowbefehl bleibt als eigener unveränderter Schritt erhalten;
+Trace ist ein ausdrücklich optionaler Alternativschritt mit denselben Gates.
+
+Frühe unabhängige Media-/V8-Trace 38253477387 auf `28088c2` technisch vollständig
+und erfolgreich: eingeschwungene Maximalabstände 33,5/83,3 ms, Drops 1/2,
+keine Episode >120 ms. Die 333-ms-Lücke wurde dort nicht wieder erfasst.
+
+Eine zusätzliche `--diagnose-main-tasks`-Aufnahme erfasst passive Long Tasks,
+Sichtbarkeit und Fokus ohne schweren Browsertrace. Erste native Reihe bleibt
+am Drop-Gate rot (50/69), frühe Episoden 148,4/284,3 ms, jeweils keine
+Long Tasks. Die Basis bleibt ohne Dokumentfokus, der Erweiterungslauf bekommt
+früh Fokus. Im Produktionscode ist kein Fokus-/Selection-Wechselaufruf gefunden.
+Die zusätzliche explizite `--focused-start`-Kontrolle aktiviert beide Testfenster
+vor Navigation und prüft sichtbaren Dokumentfokus danach: weiterhin rot wegen
+Drops 42/60, frühe Erweiterungsepisode 412,8 ms ohne Long Task. Fokus allein
+erklärt den Gegenbefund nicht. Alle eingeschwungenen Callback-Abstände unter
+48 ms. Die neuen Kontrollen sind gekennzeichnete Diagnosen; Standard und Gates
+bleiben unverändert. `VIDEO_ARTIFACTS_DIR` erlaubt getrennte native Runverzeichnisse,
+damit gleichnamige Traces und ihre zugehörigen Rohberichte nicht überschrieben werden.
+Rohdaten `windows-main60-passive-tasks.json` und `windows-main60-focused-control/`.
