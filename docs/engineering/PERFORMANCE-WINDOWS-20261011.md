@@ -1145,3 +1145,12 @@ Editor-Schutz, verschobene Texte/Restore und aktive Untertitel. Gesamtcheck
 240 Dateien / 10.700 Tests, beide Builds und Firefox-Lint 0/0/0. Native
 Chromium-, Firefox- und Waterfox-Smokes einschließlich vier Ranges/Restore
 erfolgreich. #419 bleibt offen.
+
+Die isolierte Phasendiagnose erfasst jetzt zusätzlich Textvorbereitung,
+Transformationsabschluss und Range-erhaltendes Schreiben (neun Methoden).
+Optionaler Browsertrace und Phasendiagnose sind im manuellen Workflow kombinierbar.
+Native technische Kombinationsprüfung am unveränderten Drop-Gate rot (48/56),
+keine Long Tasks oder Videolücken >120 ms. Reguläre Scheibe maximal 2 ms,
+Textvorbereitung 1,9 ms, Abschluss 0,7 ms, Schreiben 0,5 ms. Keine langsame
+Unterphase erfasst. Rohdaten `artifacts/dom-phase-detailed-native-trace/`.
+Isolierter Build und 16 relevante Diagnose-/Workflowtests erfolgreich.

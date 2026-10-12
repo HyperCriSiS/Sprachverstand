@@ -20,6 +20,7 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
     writeFileSync(path.join(core, "dom-processor.ts"), `export class DomProcessor {
       start() {} processRoot() {} handleMutationRecords() {}
       flushRegularNodesBudgeted() {} flushSubtitleNodes() {} discoverLateShadowRoots() {}
+      processTextNode() {} finishTextTransform() {} replaceTextKeepingRanges() {}
     }`);
     writeFileSync(path.join(fixture, "src/content.ts"),
       'import {DomProcessor} from "./core/dom-processor"; new DomProcessor().start();');
@@ -40,7 +41,7 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
       document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
       const report = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic")!);
       expect(report.methods.start.calls).toBe(1);
-      expect(Object.keys(report.methods)).toHaveLength(6);
+      expect(Object.keys(report.methods)).toHaveLength(9);
       expect(report.slow.length).toBeLessThanOrEqual(128);
     } finally {
       document.documentElement.removeAttribute("data-sv-phase-diagnostic");

@@ -71,7 +71,7 @@ jobs:
         if: ${{ inputs.dom_phase_diagnostics }}
         env:
           VIDEO_EXTENSION_DIR: artifacts/dom-phase-diagnostic/chromium
-        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-main-tasks --diagnose-dom-phases
+        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-main-tasks --diagnose-dom-phases ${{ inputs.browser_trace && '--browser-trace' || '' }}
       - name: Untertitelphasen unabhängig vom Frame-Gate messen
         if: ${{ !cancelled() && steps.erweiterung_build.outcome == 'success' }}
         run: npm run test:browser:video:chromium -- --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load
