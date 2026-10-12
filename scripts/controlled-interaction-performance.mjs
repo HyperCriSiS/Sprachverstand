@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { pruefePaar, zusammenfassung } from "./interaction-performance-metrics.mjs";
+import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 // Ausschließlich lokale, synthetische Last. Keine fremden Seiten oder Mess-Drittdienste.
 const basis = process.cwd();
@@ -16,6 +17,11 @@ const cpuThrottle = positiveZahl("--cpu-throttle", 1, 1, 16);
 let browserVersion;
 const dauerMs = positiveZahl("--duration-ms", 4_000, 1_000, 10_000);
 const ausgabe = path.resolve(basis, argument("--output", "artifacts/interaction-performance/report.json"));
+const cpuProfileMode = argument("--cpu-profile", "off");
+if (!["off", "on"].includes(cpuProfileMode)) throw new Error("--cpu-profile erlaubt off oder on.");
+const cpuProfile = cpuProfileMode === "on";
+const browserTrace = process.argv.includes("--browser-trace");
+const debuggerAddresses = new Map();
 
 function argument(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -104,7 +110,7 @@ function html() {
   }
 
   const m = {
-    rafTimes: [], longTasks: [], inputFrameTimes: [], clickFrameTimes: [],
+    rafTimes: [], longTasks: [], longTaskRecords: [], inputFrameTimes: [], clickFrameTimes: [],
     inputEvents: 0, clicks: 0, mutationTicks: 0, longTaskSupported: false
   };
   window.__perfMetrics = m;
@@ -136,6 +142,8 @@ function html() {
         for (const item of list.getEntries()) {
           if (item.startTime >= began && item.startTime < began + duration) {
             m.longTasks.push(Number(item.duration));
+            if (${cpuProfile || browserTrace}) m.longTaskRecords.push({
+              startMs: item.startTime, durationMs: item.duration});
           }
         }
       });
@@ -206,6 +214,7 @@ async function sitzung(mitErweiterung) {
   const id = wert?.sessionId;
   if (typeof id !== "string" || !id) throw new Error("WebDriver-Sitzung ohne ID.");
   browserVersion = wert.capabilities?.browserVersion;
+  if (browserTrace) debuggerAddresses.set(id, wert.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
   return id;
 }
 
@@ -222,14 +231,46 @@ async function element(id, selector) {
   return wert[key];
 }
 
-async function browserlauf(url, modus) {
+async function synchronizeClocks(id) {
+  const before = await js(id, "return performance.now();");
+  const result = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+    cmd: "Performance.getMetrics", params: {}
+  });
+  const after = await js(id, "return performance.now();");
+  const timestamp = result?.metrics?.find(metric => metric.name === "Timestamp")?.value;
+  if (!Number.isFinite(timestamp) || !Number.isFinite(before) ||
+      !Number.isFinite(after) || after < before) {
+    throw new Error("Monotone Zeitachsen lassen sich nicht synchronisieren.");
+  }
+  const uncertaintyMs = (after - before) / 2;
+  if (uncertaintyMs > 100) throw new Error("Zeitachsenabgleich ist zu ungenau.");
+  return {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs};
+}
+
+async function browserlauf(url, modus, pair) {
   let id;
+  let trace;
+  let profileStarted = false;
   try {
     id = await sitzung(modus === "extension");
     await api("POST", "/session/" + id + "/goog/cdp/execute", {
       cmd: "Emulation.setCPUThrottlingRate", params: { rate: cpuThrottle }
     });
+    if (browserTrace) trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
+    if (cpuProfile || browserTrace) {
+      await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Performance.enable", params: {}
+      });
+    }
+    if (cpuProfile) {
+      for (const [cmd, params] of [["Profiler.enable", {}],
+        ["Profiler.setSamplingInterval", {interval: 1000}], ["Profiler.start", {}]]) {
+        await api("POST", "/session/" + id + "/goog/cdp/execute", {cmd, params});
+      }
+      profileStarted = true;
+    }
     await api("POST", "/session/" + id + "/url", { url });
+    const clock = cpuProfile || browserTrace ? await synchronizeClocks(id) : null;
     // Identisches warmes DOM vor Beginn der kontrollierten Last.
     await sleep(1_000);
     const dynamicAtStart = await js(id,
@@ -308,8 +349,32 @@ async function browserlauf(url, modus) {
         inputNextFrameMs: percentile(m.inputFrameTimes)
       };
     `);
+    const cpuProfileFile = cpuProfile ? `cpu-${pair}-${modus}.json` : null;
+    const traceFile = browserTrace ? `trace-${pair}-${modus}.json` : null;
+    const timingFile = cpuProfile || browserTrace ? `timing-${pair}-${modus}.json` : null;
+    if (timingFile) {
+      const timing = await js(id, "return {rafTimes: window.__perfMetrics.rafTimes," +
+        "longTasks: window.__perfMetrics.longTaskRecords};");
+      await mkdir(path.dirname(ausgabe), {recursive: true});
+      await writeFile(path.join(path.dirname(ausgabe), timingFile),
+        JSON.stringify({clock, ...timing}));
+    }
+    if (cpuProfile) {
+      const response = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Profiler.stop", params: {}
+      });
+      profileStarted = false;
+      if (!response?.profile?.nodes || !response.profile.samples?.length) {
+        throw new Error("CPU-Profil enthält keine Samples.");
+      }
+      await writeFile(path.join(path.dirname(ausgabe), cpuProfileFile),
+        JSON.stringify(response.profile));
+    }
+    // Trace transfer is outside the sampling and text-completion deadlines.
+    if (trace) {await trace.save(path.join(path.dirname(ausgabe), traceFile)); trace = undefined;}
     return {
       status: "ok", ...details,
+      cpuProfileFile, traceFile, timingFile,
       dynamicAtStart, dynamicAt400Ms: dynamicAt400Ms.first,
       dynamicAfterSettle: dynamicAfterSettle.first,
       dynamicNodeCount: dynamicAfterSettle.total,
@@ -322,6 +387,13 @@ async function browserlauf(url, modus) {
   } catch (error) {
     return { status: "error", error: String(error?.message ?? error) };
   } finally {
+    trace?.cancel();
+    debuggerAddresses.delete(id);
+    if (id && profileStarted) {
+      try {await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Profiler.stop", params: {}
+      });} catch { /* Sitzung wird geschlossen. */ }
+    }
     if (id) {
       try { await api("DELETE", "/session/" + id); }
       catch (error) { console.warn("Chromium-Sitzung nicht geschlossen: " + String(error)); }
@@ -373,7 +445,7 @@ try {
       ["baseline", "extension"] : ["extension", "baseline"];
     const ergebnisse = {};
     for (const modus of reihenfolge) {
-      ergebnisse[modus] = await browserlauf(website.url, modus);
+      ergebnisse[modus] = await browserlauf(website.url, modus, index + 1);
       console.log("INTERAKTION " + (index + 1) + "/" + anzahlPaare + " " +
         modus + " " + JSON.stringify(ergebnisse[modus]));
     }
@@ -391,9 +463,13 @@ try {
     environment: {
       node: process.version,
       chromium: browserVersion ?? null,
+      browserSource: process.env.SPRACHVERSTAND_TEST_BROWSER_SOURCE ?? "configured-or-system",
       durationMs: dauerMs,
       pairs: anzahlPaare,
-      cpuThrottle
+      cpuThrottle,
+      cpuProfileMode, browserTrace,
+      instrumentationNotice: cpuProfile || browserTrace
+        ? "CPU-Sampling/Browsertrace verändern Laufzeiten; keine automatische Freigabe." : null
     },
     paare, gesamt
   }, null, 2) + "\n");

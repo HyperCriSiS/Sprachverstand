@@ -483,6 +483,17 @@ Die native lange 30-FPS-Quelle unter 60 Sekunden Markerlast verarbeitet alle
 Drops 7/20, keine Long Tasks. Dies ist ein einzelnes Paar, keine allgemeine
 Performanceabnahme.
 
+Die Interaktionsdiagnose unterstützt nun getrennt `--cpu-profile on` und
+`--browser-trace`, standardmäßig beide aus. Sampling beginnt vor Navigation;
+Frame-/Long-Task-Rohzeitstempel werden mit der monotonen Chromium-Uhr
+abgeglichen und getrennt gespeichert. Trace-Transfer liegt außerhalb des
+Samples und der Text-Abschlussfrist. Der manuelle Workflow kann außerdem
+zwischen System-Chromium und dem separat gepinnten CfT wählen. Native Prüfung
+beider Diagnosearten erzeugt gültige CPU-/Trace-/Timingdateien für beide Modi,
+mit vollständigen Endtexten und geschützten Eingaben; relevante
+Interaktions-/Supply-Chain-Tests und Publikationsaudit bestehen. Instrumentierte
+Zahlen bleiben Diagnosewerte und dürfen keine unprofilierte Abnahme ersetzen.
+
 Die neue optionale `--subtitle-dom-load`-Probe ergänzt den bestehenden echten
 Aus/An/Aus-Schalter um 30 Sekunden natürliche Video-Cues und 960 normale
 Textänderungen pro Sekunde. Native 60-FPS-Quelle:
@@ -503,6 +514,12 @@ Callbacks und 142/256 Drops. Die hohe Dropzahl des ersten Produktlaufs ist
 damit auch ohne Produkt vorhanden; die natürlichen 57 Cues bleiben in der
 Kontrolle erwartungsgemäß unverändert. Dies belegt Cue-Durchsatz unter Last,
 keine störungsfreie Videoausgabe für alle Plattformen oder native WebVTT-Cues.
+Unabhängig bestätigt die neue CI-Probe (38202220213) alle 57/57 Cues und
+480/480 Endtexte: Cue P95 47 ms / Maximum 47,3 ms, 1631 Videocallbacks,
+vier Drops, maximales Frameintervall 50,1 ms, keine Long Tasks. Die separate
+Hauptvideoprobe besteht im ersten Paar, zeigt aber P95 16,8/33,3 ms und
+Maximum 33,4/83,3 ms für Basis/Erweiterung; dies bleibt ein Gegenbefund zur
+pauschalen Störungsfreiheit.
 
 Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
