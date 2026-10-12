@@ -38,6 +38,8 @@ it("coalesces small requests and preserves response order", async () => {
   vi.stubGlobal("browser", {runtime: {sendMessage}});
   const pending = [transformTextLocally("A", {profile: "aggressive"}), transformTextLocally("B", {profile: "standard"})];
   expect(sendMessage).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sendMessage).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(8);
   expect((await Promise.all(pending)).map(entry => entry.text)).toEqual(["A!", "B!"]);
   expect(sendMessage).toHaveBeenCalledOnce();
@@ -73,4 +75,56 @@ it("bounds simultaneous batches and drains queued requests after a reply", async
   reply(0); await vi.advanceTimersByTimeAsync(0); expect(sent.length).toBe(3);
   expect(sent[2]!.inputs).toEqual(["64"]); reply(1); reply(2);
   expect((await Promise.all(pending)).map(entry => entry.text)).toEqual(Array.from({length: 65}, (_, index) => String(index)));
+});
+
+it("dispatches fresh captions without the regular eight-millisecond wait and coalesces the same turn", async () => {
+  vi.useFakeTimers();
+  const sendMessage = vi.fn(async (message: {requests: {input: string}[]}) =>
+    message.requests.map(entry => ({text: entry.input, replacements: 0, summaries: []})));
+  vi.stubGlobal("browser", {runtime: {sendMessage}});
+  const pending = [transformTextLocally("first caption", {profile: "aggressive"}, true),
+    transformTextLocally("second caption", {profile: "aggressive"}, true)];
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sendMessage).toHaveBeenCalledOnce();
+  expect(sendMessage.mock.calls[0]![0].requests.map(entry => entry.input))
+    .toEqual(["first caption", "second caption"]);
+  await Promise.all(pending);
+});
+
+it("lets captions interrupt a pending regular batch timer without duplicate dispatch", async () => {
+  vi.useFakeTimers();
+  const sendMessage = vi.fn(async (message: {requests: {input: string}[]}) =>
+    message.requests.map(entry => ({text: entry.input, replacements: 0, summaries: []})));
+  vi.stubGlobal("browser", {runtime: {sendMessage}});
+  const normal = transformTextLocally("normal", {profile: "aggressive"});
+  await vi.advanceTimersByTimeAsync(3);
+  expect(sendMessage).not.toHaveBeenCalled();
+  const caption = transformTextLocally("caption", {profile: "aggressive"}, true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sendMessage.mock.calls[0]![0].requests.map(entry => entry.input)).toEqual(["caption", "normal"]);
+  await Promise.all([normal, caption]);
+  await vi.advanceTimersByTimeAsync(10);
+  expect(sendMessage).toHaveBeenCalledOnce();
+});
+
+it("keeps caption dispatch bounded while both batch slots are occupied", async () => {
+  vi.useFakeTimers();
+  const sent: {inputs: string[]; resolve: (value: unknown) => void}[] = [];
+  vi.stubGlobal("browser", {runtime: {sendMessage: (message: {requests: {input: string}[]}) =>
+    new Promise(resolve => sent.push({inputs: message.requests.map(entry => entry.input), resolve}))}});
+  const normal = Array.from({length: 65}, (_, index) =>
+    transformTextLocally(String(index), {profile: "aggressive"}));
+  await vi.advanceTimersByTimeAsync(8);
+  const caption = transformTextLocally("caption", {profile: "aggressive"}, true);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sent).toHaveLength(2);
+  const reply = (index: number) => sent[index]!.resolve(sent[index]!.inputs.map(text =>
+    ({text, replacements: 0, summaries: []})));
+  reply(0);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sent).toHaveLength(3);
+  expect(sent[2]!.inputs).toEqual(["caption", "64"]);
+  reply(1); reply(2);
+  expect((await caption).text).toBe("caption");
+  expect(await Promise.all(normal)).toHaveLength(65);
 });

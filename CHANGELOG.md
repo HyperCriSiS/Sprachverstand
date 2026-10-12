@@ -13,6 +13,9 @@ dokumentiert.
 
 ### Leistung
 
+- Untertitelanfragen werden nach demselben Verarbeitungsschritt gebündelt,
+  ohne auf das acht Millisekunden lange Sammelfenster für normale Texte zu
+  warten. Die bestehenden Größen- und Parallelitätsgrenzen bleiben erhalten.
 - Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
   kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
   Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und

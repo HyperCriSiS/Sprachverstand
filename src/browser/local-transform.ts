@@ -32,6 +32,7 @@ const smallRequests: PendingTransform[] = [];
 const subtitleRequests: PendingTransform[] = [];
 const largeRequests: PendingTransform[] = [];
 let batchTimer: ReturnType<typeof setTimeout> | undefined;
+let subtitleDispatchScheduled = false;
 let activeBatches = 0;
 let activeLargeRequests = 0;
 
@@ -84,7 +85,20 @@ export function transformTextLocally(input: string,
       largeRequests.push(entry); dispatchLarge(); return;
     }
     (subtitle ? subtitleRequests : smallRequests).push(entry);
-    if (batchTimer !== undefined) return;
+    // Coalesce cues from the same turn, but do not make them wait for the
+    // regular text batching window. The shared concurrency limit still applies.
+    if (subtitle && !subtitleDispatchScheduled) {
+      subtitleDispatchScheduled = true;
+      queueMicrotask(() => {
+        subtitleDispatchScheduled = false;
+        if (batchTimer !== undefined) {
+          clearTimeout(batchTimer);
+          batchTimer = undefined;
+        }
+        dispatchBatches();
+      });
+    }
+    if (batchTimer !== undefined || subtitleDispatchScheduled) return;
     batchTimer = setTimeout(() => {batchTimer = undefined; dispatchBatches();}, 8);
   });
 }
