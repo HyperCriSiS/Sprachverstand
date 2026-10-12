@@ -1073,3 +1073,22 @@ erklärt den Gegenbefund nicht. Alle eingeschwungenen Callback-Abstände unter
 bleiben unverändert. `VIDEO_ARTIFACTS_DIR` erlaubt getrennte native Runverzeichnisse,
 damit gleichnamige Traces und ihre zugehörigen Rohberichte nicht überschrieben werden.
 Rohdaten `windows-main60-passive-tasks.json` und `windows-main60-focused-control/`.
+
+Unabhängige passive Aufnahme 38260731516 auf `9a507e0`: technisch grün,
+aber **166,7-ms-Videolücke mit passendem 158-ms-Long-Task** bei 1.360,3 ms.
+Präsentationsfortschritt nur ein Frame und 0,017 s Video. Danach eine weitere
+200-ms-Lücke ohne Long-Task-Korrelation, ebenfalls nur ein neuer Frame.
+Sichtbarkeit bleibt sichtbar; Fokus ist seit etwa 88 ms vorhanden. Zwei
+unterschiedliche Ursachenklassen müssen getrennt untersucht werden. Die
+permissiven bestehenden Grenzen lassen diesen Lauf bestehen; #419 bleibt offen.
+Unabhängige Standard-CI 38260738763 auf demselben Commit erfolgreich.
+Rohdaten `ci-451-passive-main-download/`, Log `ci-451-passive-main.log`.
+
+Isolierte normale Batchwartezeit-Gegenprobe, produktiver Code nicht geändert:
+aktueller 8-ms-Build / 2-ms-Archivvariante / 2-ms-Variante / aktueller Build,
+je ein frisches natives 60-FPS-Paar mit passiver Taskdiagnose.
+Zusätzliche Drops +15 / -9 / +11 / -5; beide Varianten jeweils ein rotes
+und ein grünes Gate. Erweiterung allein 55–59 Drops, Basis 41–68. Kein
+belastbarer Timergewinn; 8 ms beibehalten. Alle eingeschwungenen Maximalabstände
+unter 49 ms und keine Long Tasks in diesen nativen Reihen. Rohdaten
+`artifacts/normal-window-comparison/`; isolierte Variante nur unter `artifacts/`.
