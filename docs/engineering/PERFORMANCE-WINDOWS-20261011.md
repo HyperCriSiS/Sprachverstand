@@ -1113,3 +1113,35 @@ Zwei vorbereitende Archivdiagnosen waren am Drop-Gate rot; eine frühe
 Erklärung des früheren unabhängigen 158-ms-Tasks. Rohdaten
 `artifacts/dom-phase-native-supported/` und `artifacts/phase-diagnostic-native/`.
 Gesamtcheck: 240 Dateien / 10.694 Tests, beide Builds und Firefox-Lint erfolgreich.
+
+Unabhängige Phasenaufnahme 38291406839 auf `b0aedfc` technisch erfolgreich:
+keine Long Tasks oder Videolücken >120 ms, Maximalabstände Basis/Erweiterung
+66,7/100 ms, Drops 2/1. Eine reguläre DOM-Scheibe dauert 31,7 ms bei
+1.330,9 ms; Observer maximal 1,8 ms, Shadow Discovery 0,3 ms. Unterphasen
+und mögliche Laufzeit-/Scheduleranteile müssen für die einzelne langsame
+Scheibe getrennt werden. Rohdaten `artifacts/ci-dom-phase-download/`.
+
+## Mehrfache CharacterData-Rückschreibungen pro Batch
+
+Reproduziert mit echtem nativen Observer: 5.000 Änderungen desselben bereits
+korrigierten normalen Textknotens in einem Task und ein gleichzeitig geänderter
+Untertitel. Chromium, CPU-Faktor 4, drei frische Läufe. Vorher Observer
+35,9–36,4 ms, Untertitel 59,9–62,2 ms, normaler Text 298,5–307,6 ms.
+Die wiederholt gelesene finale Quelle wurde für jeden Record erneut als
+Framework-Rewrite gezählt und erhielt dadurch eine künstliche 250-ms-Sperre.
+
+Fix: externe CharacterData-Knoten innerhalb desselben Observer-Batches einmal
+behandeln. Eigene Schreib-Rückläufer bleiben geprüft, echte Rückschreibungen
+über mehrere Batches behalten ihre Begrenzung. Nachher Observer 7,9–8,1 ms,
+Text und Cue 32,4–36,7 ms, genau ein Rewrite ohne Backoff. Seitenmutation
+selbst weiterhin 12–14 ms unter CPU-Faktor 4; gemessene Text-/Cue-Zeit bis zum
+Frame umfasst diese und die Frame-Taktung. Belastungsfall, kein Beleg für die
+Ursache des sporadischen Store-Videofehlers. Vollständige Logs
+`artifacts/repeated-character-data-{before,after}.log`.
+
+Zwei neue Verhaltenstests vor dem Fix rot, nachher erfolgreich. Sechs
+Regressionen insgesamt: Batch vs. mehrere echte Batches, verschiedene Knoten,
+Editor-Schutz, verschobene Texte/Restore und aktive Untertitel. Gesamtcheck
+240 Dateien / 10.700 Tests, beide Builds und Firefox-Lint 0/0/0. Native
+Chromium-, Firefox- und Waterfox-Smokes einschließlich vier Ranges/Restore
+erfolgreich. #419 bleibt offen.

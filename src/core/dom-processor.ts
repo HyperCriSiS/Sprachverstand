@@ -1271,6 +1271,7 @@ export class DomProcessor {
     // Gemeinsame Inline-Bereiche nur einmal statt pro Mutation traversieren.
     const invalidatedInlineRoots = new Set<Node>();
     const knownOwnWrites = new Map<Text, object>();
+    const handledExternalText = new Set<Text>();
     const followingRequests: {node: Node; next?: Node | null}[] = [];
     for (const record of records) {
       if (this.isTemporaryPartitionNode(record.target)) continue;
@@ -1278,6 +1279,10 @@ export class DomProcessor {
           this.isOnlyTemporaryPartitionMutation(record)) continue;
       if (record.type === "characterData") {
         const node = record.target as Text;
+        // Every record reads the same final text state in this observer batch.
+        // Repeat writes need one context invalidation and one rewrite count;
+        // counting intermediate states would create a false framework backoff.
+        if (handledExternalText.has(node)) continue;
         const pending = this.pendingTextEdits.get(node);
         const tracked = this.textChanges.get(node);
         const knownOwn = knownOwnWrites.get(node);
@@ -1291,6 +1296,7 @@ export class DomProcessor {
           knownOwnWrites.set(node, tracked);
           continue;
         }
+        handledExternalText.add(node);
         if (tracked) {
           this.noteExternalTextRewrite(node);
         }
