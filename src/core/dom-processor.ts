@@ -2252,6 +2252,11 @@ export class DomProcessor {
     else this.leadingContextCache.delete(node);
     const protectParticiple = !subtitle &&
       this.shouldProtectFollowingParticiple(node, original);
+    const cachedSubtitle = subtitle ? this.subtitleTransformCache.get(original) : undefined;
+    if (cachedSubtitle) {
+      this.finishTextTransform(node, original, originalFromContext !== undefined, cachedSubtitle, budgeted);
+      return;
+    }
     if (this.options.transformText || (budgeted && (subtitle || !this.requiresInlineProtection()) &&
         original.length >= largeTextTransformThreshold && this.options.transformLargeText)) {
       this.deferTextTransform(node, original, leadingContext, protectParticiple,
@@ -2311,7 +2316,13 @@ export class DomProcessor {
         if (node.isConnected) this.queue(node);
         return;
       }
-      this.finishTextTransform(node, original, restoreUnchanged, resultOf(), true);
+      const result = resultOf();
+      // Only a still-valid response from this processor/options generation may
+      // populate the caption cache. Bound async entries by input and output size.
+      if (subtitle && original.length < largeTextTransformThreshold && result.text.length < largeTextTransformThreshold) {
+        this.rememberSubtitleTransform(original, result);
+      }
+      this.finishTextTransform(node, original, restoreUnchanged, result, true);
     };
     const complete = (resultOf: () => DetailedTransformResult): void => {
       if (this.options.transformText) this.queueTransformResult(pending, () => apply(resultOf), subtitle);
@@ -2661,7 +2672,13 @@ export class DomProcessor {
     }
 
     const result = this.transformValue(input);
+    this.rememberSubtitleTransform(input, result);
+    return result;
+  }
+
+  private rememberSubtitleTransform(input: string, result: DetailedTransformResult): void {
     if (
+      !this.subtitleTransformCache.has(input) &&
       this.subtitleTransformCache.size >= maximumSubtitleTransformCacheEntries
     ) {
       const oldestKey = this.subtitleTransformCache.keys().next().value;
@@ -2670,7 +2687,6 @@ export class DomProcessor {
       }
     }
     this.subtitleTransformCache.set(input, result);
-    return result;
   }
 
   private needsLeadingContext(input: string): boolean {
