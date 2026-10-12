@@ -1154,3 +1154,26 @@ keine Long Tasks oder Videolücken >120 ms. Reguläre Scheibe maximal 2 ms,
 Textvorbereitung 1,9 ms, Abschluss 0,7 ms, Schreiben 0,5 ms. Keine langsame
 Unterphase erfasst. Rohdaten `artifacts/dom-phase-detailed-native-trace/`.
 Isolierter Build und 16 relevante Diagnose-/Workflowtests erfolgreich.
+
+Unabhängige kombinierte Aufnahme 38292633057 auf `b74131f` erfolgreich:
+Basis/Erweiterung Maximalabstand 50/33,4 ms, Drops 3/0, keine Long Tasks oder
+Lücken >120 ms. Neun gemessene DOM-Methoden jeweils höchstens 3,9 ms; keine
+langsame Unterphase erfasst. Aktuelle vollständige CI 38292638283 auf demselben
+Commit erfolgreich. Der Produktfix-Check auf `39eaa6a` wurde durch den folgenden
+Commit abgebrochen; er wird nicht als erfolgreiche CI ausgegeben.
+Rohdaten `artifacts/ci-dom-phase-detailed-download/`.
+
+Vollständiger Add-on-Gegenvergleich mit laufendem echtem 60-FPS-Video, einem
+einmaligen 5.000-Schreib-Burst und aktiven natürlichen Cues über 30 Sekunden:
+unveränderte Vorversion `b0aedfc` korrigiert den normalen Text nach 272,4 ms,
+aktueller Produktfix nach 15,5 ms; native Seitenmutation selbst 2,4/2,8 ms.
+Gleichzeitig ausgelöster Cue 12,8/5,3 ms. Beide Chromium-Läufe ohne Long Tasks.
+Firefox mit Produktfix: Text 17 ms, Burst-Cue 12 ms, alle 54/54 Cues korrigiert;
+Longtask-API dort nicht verfügbar. Dies ist eine weitere direkte Fix-Verifikation,
+keine allgemeine Video-/Store-Abnahme. Isolierte Variante des bestehenden
+Videoharness nur unter `artifacts/`; Rohdaten `artifacts/repeated-write-video/`.
+
+Manuelle DOM-Phasendiagnose kann nun 1/3/5 getrennte frische Browserpaare in
+einem Runner messen. Jeder Messfehler macht den Gesamtschritt rot; weitere
+Paare werden trotzdem aufgezeichnet und getrennt archiviert. Kein Aussuchen
+grüner Wiederholungen, keine geänderten Einzelgates. 15 relevante Tests erfolgreich.
