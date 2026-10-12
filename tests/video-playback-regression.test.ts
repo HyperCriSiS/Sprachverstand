@@ -26,8 +26,8 @@ describe("Video-Playback-Regression", () => {
   });
 
   it("vergleicht lokale Baseline und Erweiterung ohne externes Videonetzwerk", () => {
-    expect(runner).toContain('run(url, "baseline")');
-    expect(runner).toContain('run(url, "extension")');
+    expect(runner).toContain('run(url, "baseline", attempt)');
+    expect(runner).toContain('run(url, "extension", attempt)');
     expect(runner).toContain("measureVideoPair(fixture.url, 1)");
     expect(runner).toContain("requestVideoFrameCallback");
     expect(runner).toContain("getVideoPlaybackQuality");
