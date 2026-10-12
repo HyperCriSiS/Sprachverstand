@@ -1465,3 +1465,43 @@ Finaler Firefox-Videolauf Außenknoten 6 ms (native Writes 1 ms), Waterfox
 21 ms (native Writes 6 ms), relative Gates grün, absolute Drops schon in der
 Basis hoch (Firefox 208/178, Waterfox 199/189). Gecko-Longtasks weiterhin
 nicht bewertet. Rohdaten `artifacts/excluded-caption-burst-video/`.
+
+Unabhängige CI 38312718013 auf finalem Codefix `47d15c5` vollständig
+erfolgreich. Die folgenden Diagnosevarianten ändern keine Produktionsdateien.
+
+## Fünf-Sekunden-Mediatakt zeitlich vom Captionrestore trennen
+
+Klassifikation im identischen Diagnosefixture von 5,0 auf 6,5 Sekunden
+verschoben: tatsächlicher Beginn 6537,3 ms, normaler Außenknoten 13,7 ms,
+letzter beobachteter Restore 56,1 ms, alle 10.000 Originale, keine Long Tasks.
+Relative Videoprüfung grün bei absolut 119/106 Drops. **Der Media-Takt sinkt
+in Basis und Erweiterung weiterhin schon nach etwa fünf Sekunden auf 32/s,
+vor dieser Klassifikation.** Decoder weiter etwa 60/s. Damit belegt die
+zuvor zeitgleiche Aufnahme keinen Restore als Ursache dieser Taktänderung.
+Rohdaten `artifacts/excluded-caption-notifications/chromium-delayed-classification/`.
+
+Weitere ruhende Kontrolle aus dem Standardfixture ohne dynamische
+Textschreibvorgänge (der Metriktimer bleibt erhalten): Videogate rot,
+Drops 33/105. Zusätzliche reine Diagnosegegenprobe mit offiziell dokumentiertem
+[Chromium-Argument `--disable-renderer-backgrounding`](https://chromium.googlesource.com/chromium/src/+/master/content/public/common/content_switches.cc)
+ebenfalls rot, Drops 34/120. Argument in tatsächlicher Browser-Commandline
+verifiziert. Diese Variante wird nicht übernommen; keine nachgewiesene
+Verbesserung. Rohdaten `artifacts/video-quiet-{native,foreground}-control/`.
+
+Erweiterte ruhende Priority-/Compositor-Aufnahme (zusätzlich `renderer_host`,
+`toplevel`, `cc`, `gpu`, `benchmark`, `power`): erneut rot, Drops 37/106.
+Getesteter Renderer in den erfassten UpdateProcessPriority-Ereignissen
+foreground; kein erfasster Prioritätswechsel zum Fünf-Sekunden-Einbruch.
+Media-Takt im Erweiterungslauf nach fünf Sekunden erneut 32/s. Dies widerlegt
+eine einfache durch das getestete Renderer-Flag behebbare Erklärung; die
+konkrete Windows-/Headless-/Mediaursache bleibt offen. Rohdaten
+`artifacts/video-quiet-priority-control/`, numerische Auswertung
+`artifacts/quiet-priority-summary.jsonl`. Diese Varianten sind Diagnosen,
+keine unveränderten Standard-Hochlastabnahmen oder Releasefreigaben.
+
+Fortsetzungspriorität: frühe tatsächliche Videolücken und zeitgesteuerte
+Media-Taktänderung in der lokalen Windows-/Headless-Konfiguration weiter
+zuordnen, gegen unveränderten Produktionsbuild und native Basis prüfen.
+Die sporadische Store-Störung bleibt offen; keine andere Projektaufgabe oder
+Releaseaktion vorgezogen. Alle hier kausal reproduzierten Caption-Observer-
+Engpässe sind implementiert und separat verifiziert.
