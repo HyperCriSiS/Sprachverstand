@@ -14,7 +14,8 @@ if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser 
 const driverPort = Number(process.env.WEBDRIVER_PORT ?? 9515);
 if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) throw new Error("Ungültiger WEBDRIVER_PORT.");
 const driverBase = `http://127.0.0.1:${driverPort}`;
-const extensionDir = path.join(root, "dist", browser);
+const extensionDir = process.env.VIDEO_EXTENSION_DIR
+  ? path.resolve(process.env.VIDEO_EXTENSION_DIR) : path.join(root, "dist", browser);
 const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
 const firefoxArtifacts = path.join(root, "artifacts/video-playback");
 const firefoxXpi = path.join(firefoxArtifacts, "firefox-video-probe.xpi");
@@ -42,8 +43,8 @@ if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
 const subtitleDurationMs = Number(process.env.SUBTITLE_DURATION_MS ?? 30_000);
 const subtitleLoad = process.env.SUBTITLE_LOAD ?? "stress";
 if (!Number.isInteger(subtitleDurationMs) || subtitleDurationMs < 30_000 ||
-    subtitleDurationMs > 600_000 || !["none", "moderate", "stress"].includes(subtitleLoad)) {
-  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress erforderlich.");
+    subtitleDurationMs > 600_000 || !["none", "moderate", "stress", "burst"].includes(subtitleLoad)) {
+  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress/burst erforderlich.");
 }
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
@@ -750,7 +751,7 @@ async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
 }
 
 async function measureSubtitleDomLoad(id) {
-  const mutationsPerTick = subtitleLoad === "none" ? 0 : subtitleLoad === "moderate" ? 4 : 48;
+  const mutationsPerTick = ["none", "burst"].includes(subtitleLoad) ? 0 : subtitleLoad === "moderate" ? 4 : 48;
   const mutationIntervalMs = subtitleLoad === "moderate" ? 500 : 50;
   await request("POST", `/session/${id}/timeouts`, {script: subtitleDurationMs + 10_000});
   const result = (await request("POST", `/session/${id}/execute/async`, {
@@ -764,6 +765,23 @@ async function measureSubtitleDomLoad(id) {
         node.textContent = "Neutraler Inhalt " + index;
         root.append(node); return node;
       });
+      let bulkRoot, bulkFragment, bulkTail, bulkAppliedAt = null, bulkCorrectedAt = null;
+      if (${subtitleLoad === "burst"}) {
+        // Prepare outside the measured window; isolate extension intake rather
+        // than the page's own allocation and visible layout cost.
+        bulkRoot = document.createElement("div"); bulkRoot.style.display = "none"; root.append(bulkRoot);
+        bulkFragment = document.createDocumentFragment();
+        for (let index = 0; index < 50000; index++) {
+          const span = document.createElement("span"); span.textContent = "neutral "; bulkFragment.append(span);
+        }
+        bulkTail = document.createElement("span"); bulkTail.textContent = "Nutzer:innen im normalen Text";
+        bulkFragment.append(bulkTail);
+        new MutationObserver(() => {
+          if (bulkTail.textContent === "Nutzer im normalen Text" && bulkCorrectedAt === null) {
+            bulkCorrectedAt = performance.now();
+          }
+        }).observe(bulkTail, {subtree: true, childList: true, characterData: true});
+      }
       const startedAt = performance.now();
       const qualityBefore = video.getVideoPlaybackQuality?.();
       const frames = [];
@@ -784,14 +802,22 @@ async function measureSubtitleDomLoad(id) {
         }
         ticks++;
       }, ${mutationIntervalMs});
+      const burstTimer = bulkRoot ? setTimeout(() => {
+        bulkRoot.append(bulkFragment); bulkAppliedAt = performance.now();
+        window.__issueSubtitleCue("dom-burst");
+      }, 500) : null;
       setTimeout(() => {
-        clearInterval(timer); stopped = true;
+        clearInterval(timer); if (burstTimer !== null) clearTimeout(burstTimer); stopped = true;
         const endedAt = performance.now();
         const qualityAfter = video.getVideoPlaybackQuality?.();
         // Freeze natural cues while checking the final cue and normal texts.
         window.__controlledCueMode = true;
         setTimeout(() => {
           done({startedAt, endedAt, ticks, frames,
+            bulk: bulkRoot ? {nodes: bulkRoot.childNodes.length,
+              tail: bulkTail.textContent, appliedAt: bulkAppliedAt, correctedAt: bulkCorrectedAt,
+              settleMs: bulkAppliedAt !== null && bulkCorrectedAt !== null
+                ? bulkCorrectedAt - bulkAppliedAt : null} : null,
             visibility: document.visibilityState, focused: document.hasFocus(),
             paused: video.paused, readyState: video.readyState,
             error: window.__subtitlePlaybackError ?? null,
@@ -835,6 +861,8 @@ async function measureSubtitleDomLoad(id) {
     cueMaximumMs: report.cueMaximumMs,
     frames: report.frameSummary, droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
     gapEpisodes: report.gapEpisodes,
+    bulk: result.bulk,
+    burstCueMs: result.cueRecords.find(record => record.source === "dom-burst")?.latencyMs ?? null,
     longTasks: result.longTaskSupported ? result.longTasks.length : null,
     normalCorrected: result.normalCorrected
   }));
@@ -848,6 +876,8 @@ async function measureSubtitleDomLoad(id) {
       result.staticText !== (subtitleBaseline ? "Nutzer:innen" : "Nutzer") ||
       result.cueRecords.some(record => record.visibilityAtIssue !== "visible" || !record.focusAtIssue) ||
       presentedFrames < subtitleDurationMs / 1000 * 10 ||
+      (subtitleLoad === "burst" && (result.bulk?.nodes !== 50001 ||
+        result.bulk.tail !== (subtitleBaseline ? "Nutzer:innen im normalen Text" : "Nutzer im normalen Text"))) ||
       result.frames.length < 200 || result.visibility !== "visible" ||
       !result.focused || result.paused || result.readyState < 2 || result.error ||
       !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {

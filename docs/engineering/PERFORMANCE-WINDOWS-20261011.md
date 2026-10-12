@@ -747,3 +747,67 @@ node scripts/video-playback-regression.mjs --fps 60 --subtitle-only --subtitle-d
 Rohberichte liegen in `artifacts/video-playback/subtitle-dom-load-*.json` und
 `video-pair-*.json`. Lokale Vorher-/Nachher-Logs und gesicherte Vorher-Berichte
 liegen unter `artifacts/windows-*caption*` bzw. `windows-*everyday*`/`windows-long-*`.
+
+### Unabhängiger Untertitelprüfstand und große Einfügelisten
+
+Code-/Diagnosecommit `c46f2f0`: [gesamte PR-CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38225069510)
+und [optionale Langzeitdiagnose](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38225064688)
+erfolgreich. Drei Minuten ohne zusätzliche Textlast: 345/345 aktive Cues,
+maximal 33,4 ms, keine Long Tasks/Lücken >120 ms; Baseline/Erweiterung jeweils
+10.799 Decoder-Frames, Drops 10/5. Callbacks 10.652/9.951 und P95 16,8/33,3 ms
+sind **keine** gleich große Verringerung der tatsächlichen Videopräsentation.
+Die kurze Hauptprobe zeigt maximal 116,5 ms mit Erweiterung gegenüber 33,4 ms
+ohne, je einen Drop. Der unabhängige 30-s-Stressfall korrigiert 56/56 Cues und
+480/480 Texte, maximal 32,4 ms, ohne Long Task. Keine Freigabe allein aus Grün.
+
+Danach ein weiterer kausal reproduzierter Arbeitsblock: Ein Fragment mit
+50.000 neutralen Spans wird im MutationObserver vollständig eingereiht,
+bevor eine separate frische Untertitelmutation an die Reihe kommt. Drei native
+CPU-4-Core-Proben: Observer 202,3/211,3/202,7 ms, Cue 207,4/216,3/207,1 ms.
+Nur neutrale Blätter früh auszusortieren verringert den Observer auf rund
+165 ms und ist allein nicht ausreichend. Große statische Added-NodeLists
+werden deshalb jetzt innerhalb der bestehenden Zeit-/Schrittbudgets verarbeitet;
+ihre Einreihung und die eigentliche Traversal wechseln sich über Scheiben hinweg
+ab. Direkte Caption-Mutationen bleiben unabhängig priorisiert. Untertitelwurzeln
+erhalten weiterhin den eigenen Framepfad. Stop/Restoration verwirft offene
+Listen; manuelles `flush()` bleibt vollständig synchron. Neutrale Blätter ohne
+Attribute/ShadowRoot werden nur übersprungen, wenn weder Texttracking noch
+ausstehende Transformation/Edits vorhanden sind. Attribute, ShadowRoots,
+benutzerdefinierte Regeln und spätere Mutationen bleiben erfasst.
+
+Derselbe vollständige native CPU-4-Auslauf nachher: Observer 6,9/6,3/6,2 ms,
+Cue 10,1/9,7/9,8 ms, 50.000 Knoten erhalten, korrekter Cue und Zähler,
+maximaler späterer Frameabstand 16,0–16,1 ms. **Isolierter Core-Nachweis.**
+
+Zusätzlich die **komplette Erweiterung** mit 60-FPS-Video geprüft: Die
+Burst-Fixture bereitet 50.000 neutrale Spans und einen letzten markierten Text
+außerhalb des Messfensters vor und fügt sie später in einen versteckten Block
+ein. Das trennt Page-Allokation und sichtbares Layout von Erweiterungsaufnahme;
+es ersetzt keine allgemeine Großseiten-/Alltagsprobe. Sechs neue Sitzungen,
+Reihenfolge kein Add-on / `c46f2f0` / korrigiert / korrigiert / `c46f2f0` /
+kein Add-on, jeweils 30 s. Der alte Build stammt aus einem isolierten Git-Archiv
+und denselben Build-Abhängigkeiten; kein produktiver Checkout wurde überschrieben.
+Alle Erweiterungsläufe 58/58 Cues und letzter Text vollständig:
+
+| Build | Burst-Cue | Letzter Text | Größte Callback-Lücke | Long Tasks |
+| --- | ---: | ---: | ---: | ---: |
+| vorher, 1 | 50,0 ms | 503,6 ms | 63,3 ms | 1 |
+| nachher, 1 | 7,4 ms | 70,9 ms | 48,1 ms | 0 |
+| nachher, 2 | 2,9 ms | 69,7 ms | 31,4 ms | 0 |
+| vorher, 2 | 49,7 ms | 496,3 ms | 71,3 ms | 1 |
+
+Die Decoder-Drops schwanken zwischen 141–146 und 271–272; sowohl alter als auch
+neuer Build trifft den langsameren Zustand. Diese Zahlen separat erhalten,
+nicht dem Fix zuschreiben. Rohdaten `artifacts/windows-addon-burst-{1..6}-*.json`;
+Core-Logs `windows-added-neutral-burst-{before,after,cooperative}.log`.
+Gesamtcheck des kooperativen Codes: 236 Dateien / 10.675 Tests, Builds und
+Firefox-Lint erfolgreich. Elf neue Regressionen sichern Neutralblätter,
+vollständigen Auslauf, Stop/Restart, Entfernen/Reattach, Captionpriorität,
+synchrones Flush und Fortschritt trotz abgelaufener erster Zeitbudgets.
+Der manuelle CI-Langlauf ergänzt optionale Burst-Gegenproben.
+Finale native Chromium-/Firefox-/Waterfox-Smokes bestanden. Gecko-Burst mit
+laufendem 60-FPS-Video: Firefox und Waterfox je 54/54 Cues und letzter Text
+vollständig, Burst-Cue 16/18 ms, Auslauf letzter Text 336/333 ms, je zwei
+Decoder-Drops, keine Lücke >120 ms. Long Tasks dort weiterhin unbewertet.
+Die ursprüngliche Store-Beobachtung und der frühere kurze Drop-Gegenbefund
+bleiben ohne gesonderte kausale Abnahme offen.
