@@ -139,6 +139,9 @@ const maximumPreviousInlineNodes = 64;
 const inlineQuoteMarkerPattern = /["„“”‚‘«»‹›]/u;
 
 const regularWorkBudgetMs = 4;
+// Time may be coarse or jump past a deadline before the first work unit.
+// Bound units as well as elapsed time, while guaranteeing forward progress.
+const maximumRegularStepsPerSlice = 128;
 const minimumPartitionedInlineChildren = 128;
 const minimumBudgetedTextEdits = 128;
 const maximumImmediateTextEditPreparationChars = 65_536;
@@ -486,7 +489,10 @@ export class DomProcessor {
     const deadline = synchronous ? Infinity : this.now() + regularWorkBudgetMs;
     const validated = new Set<Text>();
     let editTurn = true;
-    while (this.now() < deadline) {
+    let steps = 0;
+    while (synchronous || (steps < maximumRegularStepsPerSlice &&
+      (this.now() < deadline || steps === 0))) {
+      steps++;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
           (restoration.nodes.length === 0 && restoration.attributes.length === 0))) {
         this.processPendingTextEdit(validated);
@@ -920,8 +926,10 @@ export class DomProcessor {
     let nodeWorkDeferred = false;
     const validatedEdits = new Set<Text>();
     this.activeTextEditSlice = validatedEdits;
-
-    while (this.now() < deadline) {
+    let steps = 0;
+    while (steps < maximumRegularStepsPerSlice &&
+      (this.now() < deadline || steps === 0)) {
+      steps++;
       if (this.processTransformResult(this.pendingTransformResults)) continue;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
           nodeWorkDeferred || (!this.activeTraversal && this.pendingNodes.size === 0))) {
@@ -1412,7 +1420,7 @@ export class DomProcessor {
     while (
       this.running &&
       inspected < shadowDiscoveryBatchSize &&
-      this.now() < deadline
+      (this.now() < deadline || inspected === 0)
     ) {
       const element = this.shadowDiscoveryWalker.nextNode() as Element | null;
       if (!element) {

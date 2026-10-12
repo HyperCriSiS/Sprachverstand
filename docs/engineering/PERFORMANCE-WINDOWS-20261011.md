@@ -521,6 +521,43 @@ Hauptvideoprobe besteht im ersten Paar, zeigt aber P95 16,8/33,3 ms und
 Maximum 33,4/83,3 ms für Basis/Erweiterung; dies bleibt ein Gegenbefund zur
 pauschalen Störungsfreiheit.
 
+Die neue Budgetregression reproduziert zwei Uhr-Randfälle: Bei einem Sprung
+über die erste Deadline werden Verarbeitung, Restore und Shadow-Discovery
+ohne Fortschritt neu eingeplant; bei konstantem grobem Zeitstempel laufen
+Verarbeitung und Restore unbegrenzt in derselben Scheibe. Fünf zuvor rote
+Regressionen sichern jetzt mindestens eine Einheit Fortschritt und höchstens
+128 reguläre Einheiten je budgetierter Scheibe. Expliziter synchroner Restore
+bleibt vollständig, die vorhandene Shadow-Grenze von 256 Elementen bleibt
+erhalten. Gesamtcheck 231 Dateien / 10.635 Tests, Builds und Firefox-Lint
+0/0/0 bestanden. Native Chromium-Smoke und separate Firefox-/Waterfox-Smokes
+in frischen Profilen mit `privacy.resistFingerprinting=true` bestehen inklusive
+Late-Shadow, Editorwechsel und Text-/Range-Restore. Die dabei gemessene
+Seitenuhr hat grobe etwa 16,7-ms-Schritte; die deterministischen Tests prüfen
+die Budgetinvarianten unabhängig von der jeweiligen Browser-Uhrenpolitik.
+Fünf native CPU-4-Interaktionspaare nach dem Fix verarbeiten alle 480 Texte
+ohne zusätzlichen Auslauf und ohne Long Tasks. P95-Differenz weiterhin
+median +8 ms auf diesem schnell aktualisierenden Windows-Setup; daraus wird
+keine allgemeine Latenzfreiheit abgeleitet.
+
+Uninstrumentierte unabhängige CfT-155-Interaktionen (38202616089, vor diesem
+Budgetfix): fünf gültige Paare, alle Texte vollständig und null Auslauf,
+keine Long Tasks, Maximum je 16,8 ms, medianer P95-/Max-Abstand null.
+Die getrennte System-154-Startprofil-/Trace-Reihe (38202482208) reproduziert
+die zuvor beobachtete 152-ms-Spitze nicht: alle sechs Frame-Maxima 16,8 ms,
+keine Long Tasks. Größte Minor-GCs 2,5–4,2 ms, keine vergleichbare lange
+Safepoint-Wartephase. Die sporadische Spitze bleibt daher als Gegenbefund
+offen, statt aus einer guten Wiederholung als behoben erklärt zu werden.
+
+Drei native öffentliche Wikipedia-GPU-Tabellenpaare (je zehn Sekunden)
+erhalten alle geschützten Felder und DOM-Invarianten. Medianer Besuchsdelta
+ohne Browserstart +11 ms, Interaktionsphase +15 ms, nach Observer erfasste
+Long-Task-Summe -11 ms. Ein einzelnes Paar hat +379 ms Besuchsdelta,
+hauptsächlich in den getrennten Mess-/Snapshotphasen. Weder dieses Delta
+noch negative Long-Task-Differenzen belegen allein Produktkausalität.
+Die native 30-FPS-Untertitel-/DOM-Lastprobe korrigiert 57/57 Cues und 480/480
+Endtexte, Cue P95 24,5 ms / Maximum 27,3 ms, 900 Videocallbacks, keine Drops,
+keine Long Tasks und keine Frameabstände über 120 ms.
+
 Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.
