@@ -27,6 +27,10 @@ on:
         options: ["off", "on"]
         default: "off"
         required: true
+      active_subtitles:
+        description: "Aktivierte Untertitel während Klicks und Texteingabe prüfen"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,9 +69,11 @@ jobs:
           PAIR_COUNT: ${{ inputs.pairs }}
           CPU_PROFILE: ${{ inputs.cpu_profile }}
           BROWSER_TRACE: ${{ inputs.browser_trace }}
+          ACTIVE_SUBTITLES: ${{ inputs.active_subtitles }}
         run: |
           trace_args=()
           if [ "$BROWSER_TRACE" = "on" ]; then trace_args+=(--browser-trace); fi
+          if [ "$ACTIVE_SUBTITLES" = "true" ]; then trace_args+=(--active-subtitles); fi
           node scripts/controlled-interaction-performance.mjs --pairs "$PAIR_COUNT" \
             --cpu-profile "$CPU_PROFILE" "${trace_args[@]}" \
             --output artifacts/interaction-performance/report.json

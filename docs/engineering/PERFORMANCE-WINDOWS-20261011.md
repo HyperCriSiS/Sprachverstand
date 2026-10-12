@@ -925,3 +925,86 @@ Native instrumentierte Gegenprobe technisch verifiziert: 59/59 aktive Cues,
 maximal 16,0 ms, keine Long Tasks, Trace enthält den Entfernungstimer mit
 27,0 ms. Zeitachsenunsicherheit 15,8 ms. Eine positive Trace-Wiederholung
 erklärt die unabhängig beobachtete seltene Pause nicht; ihre Ursache bleibt offen.
+
+### Plattform-Alltagsgegenproben und unabhängiger Trace
+
+Auf `cddcaaf` bestanden PR-CI 38244288472 und separate Trace-Diagnosen
+38244283881 sowie 38244978877. Uninstrumentierte unabhängige Hochlast:
+57/57 Cues, maximal 33,3 ms, alle 480 Endtexte, keine Long Tasks.
+Instrumentierte Entfernungsserien: 59/59 beziehungsweise 60/60 Cues,
+maximal 33,2/33,1 ms, größte Callback-Lücke 50,0/33,4 ms, keine Long Tasks.
+Die Traces enthalten den Entfernungstimer (30,0/37,6 ms); Zeitachsenunsicherheit
+3,75/3,20 ms. Die vorherigen seltenen 172-/105-ms-Tasks wurden in diesen
+instrumentierten Wiederholungen nicht erfasst. Keine kausale Entwarnung.
+
+Native mäßige Last jeweils 120 s ohne/mit Erweiterung in Firefox und Waterfox:
+beide je 215/215 aktive Cues und alle 480 Endtexte. Firefox maximales Cue
+33 ms, Qualitätsframes 7.212/7.211, je zehn Drops, größte Callback-Lücke
+60,1/59,3 ms. Waterfox maximales Cue 32 ms, Qualitätsframes je 7.211,
+je zehn Drops, größte Callback-Lücke 59,8/61,0 ms. Long Tasks dort unbewertet.
+Rohberichte `windows-caption-isolation-moderate-{firefox,waterfox}-*.json`.
+
+### Veraltete Warteschlangenknoten ebenfalls budgetiert verwerfen
+
+`takeNextReadyNode()` lief bisher einmal durch alle abgetrennten oder noch
+verzögerten Knoten. Ein isolierter nativer CPU-4-Core-Stau mit 50.000 bereits
+abgetrennten Einträgen überschreitet das 4-ms-Budget: 25,3/25,5/26,7 ms in
+einem Scan, erster Frame 26,3–28,5 ms. Das ist eine isolierte interne
+Scheduler-Fixture, keine vollständige Webseitenlast und keine Erklärung der
+unabhängigen seltenen Video-Long-Tasks.
+
+Ein persistenter Iterator begrenzt jede Suche auf 128 Einträge und setzt sie
+innerhalb der vorhandenen Scheibenbudgets fort. Der früheste Wake-Zeitpunkt
+bleibt über Teilsuchen erhalten. Erneut geänderte bereits besuchte Texte werden
+ans Ende eingereiht, damit der Cursor sie noch erreicht. Synchronflush und
+Abbruch verwerfen den Cursor. Attribute und Einfügelisten behalten Gelegenheit
+zur Verarbeitung. Vier Regressionen sichern begrenzten Scan, Fortschritt hinter
+Backoff, Synchronflush/Restart und erneute Queue nach Cursorfortschritt.
+
+Native vollständige Bereinigung nachher: synchron gesamter Auslauf 45,9–53,8 ms,
+größter einzelner Schritt 6,0–6,6 ms, erster Frame 6,6–7,3 ms. Mit dem
+asynchronen Produktionsbudget Auslauf 42,8–44,0 ms, größter Schritt 3,4–4,4 ms,
+erster Frame 4,4–5,6 ms. Alle 50.000 Einträge entfernt, spätere maximale
+Frameabstände unter 12 ms. Ein erster begrenzter Entwurf mit zu vielen separaten
+Scheiben brauchte im synchronen Pfad 2,8 s; dies wurde vor Sicherung korrigiert.
+Die Zeitbudgets sind Prüfgrenzen zwischen Schritten, keine harte Dauerzusage
+für jeden einzelnen Schritt. Rohlogs `windows-stale-queue-{before,final,async-final}.log`.
+Gesamtcheck des finalen Codes: 239 Dateien / 10.693 Tests, Typprüfung, Builds
+und Firefox-Lint 0/0/0 erfolgreich. #419 bleibt wegen der offenen seltenen
+Pausen weiterhin nicht abgenommen.
+
+Finale native Smokes und 30-s-Hochlastvideos dieses Scanfixes bestanden:
+Chromium 57/57 Cues, maximal 16 ms, keine Long Tasks; Firefox/Waterfox je
+54/54 Cues, maximal 31/32 ms. Alle 480 Endtexte vollständig. Größte
+Video-Callback-Lücke 32,2/62,7/61,8 ms; Gecko Long Tasks weiterhin unbewertet.
+
+### Browsing mit aktiver Untertitelverarbeitung getrennt prüfen
+
+Die vorhandene Interaktionsdiagnose ergänzt optional `--active-subtitles`:
+vor dem ersten Fixture-Aufruf im frischen Profil speichern, tatsächlichen
+Storagewert prüfen und anschließend frische Captions alle 500 ms erzeugen.
+Die Baseline erzeugt dieselben Texte, lässt sie unverändert. Jede ausgegebene
+Caption muss im Erweiterungslauf korrigiert sein. Die Standardprobe bleibt
+ohne Aktivierung; Rohbericht weist den Modus aus. Der manuelle unabhängige
+Interaktionsworkflow bietet den Modus ebenfalls optional an.
+
+Native CPU-4-Serie, drei abwechselnde Paare, jeweils vier Sekunden mit
+1.200 normalen Textänderungen/s und echten WebDriver-Klicks/Eingaben:
+24/24 Cues, alle 480 Endtexte, kein späterer Auslauf, keine Long Tasks.
+Mediane zusätzliche Klickzeit 0,9 ms, Eingabe -0,6 ms (keine behauptete
+Beschleunigung), RAF-P95 +8,0 ms und RAF-Maximum +8,0 ms. Captionmaxima
+unter 44 ms unter dieser starken synthetischen Last. Dies ist eine positive
+Interaktionsgegenprobe, keine Zusage null zusätzlicher Renderarbeit.
+Rohbericht `windows-active-caption-interactions-final/report.json`.
+
+Der erste Teststart lud für die Erweiterung die große Fixture zusätzlich vor
+dem Optionswechsel: auch 24/24 Cues und vollständiger Auslauf, aber ein
+58-ms-Long-Task in drei Erweiterungsläufen. Diese Serie bleibt separat erhalten
+(`windows-active-caption-interactions/report.json`). Instrumentierte Wiederholung
+zeigt MajorGC/Mark-Compactor-Ereignisse von etwa 22–27 ms in verzögerten
+Framephasen, einmal 52-ms-Long-Task. Zeitachsenunsicherheit 16–30 ms;
+damit keine präzise alleinige Zuordnung des gesamten Long Tasks. Der
+gleich häufige Fixture-Aufruf beseitigt die Protokollungleichheit, erklärt
+aber nicht die unabhängigen 172-/105-ms-Ereignisse der Videoprobe.
+Standard-Interaktionsmodus zusätzlich verifiziert: vollständiges gültiges Paar,
+kein Auslauf und keine Long Tasks. Die allgemeine #419-Abnahme bleibt offen.

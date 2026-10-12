@@ -21,6 +21,7 @@ const cpuProfileMode = argument("--cpu-profile", "off");
 if (!["off", "on"].includes(cpuProfileMode)) throw new Error("--cpu-profile erlaubt off oder on.");
 const cpuProfile = cpuProfileMode === "on";
 const browserTrace = process.argv.includes("--browser-trace");
+const activeSubtitles = process.argv.includes("--active-subtitles");
 const debuggerAddresses = new Map();
 
 function argument(name, fallback) {
@@ -86,6 +87,7 @@ function html() {
 <code id="protected-code">Nutzer:innen</code>
 <p id="static-target">Nutzer:innen</p>
 <p id="action-target">Wartet auf Klick</p>
+${activeSubtitles ? '<div id="caption-target" class="ytp-caption-segment"></div>' : ''}
 <div id="dynamic-root"></div>
 <section id="bulk-root"></section>
 <script>
@@ -111,7 +113,8 @@ function html() {
 
   const m = {
     rafTimes: [], longTasks: [], longTaskRecords: [], inputFrameTimes: [], clickFrameTimes: [],
-    inputEvents: 0, clicks: 0, mutationTicks: 0, longTaskSupported: false
+    inputEvents: 0, clicks: 0, mutationTicks: 0, longTaskSupported: false,
+    captionIssued: 0, captionLatencies: [], captionSeen: new Set()
   };
   window.__perfMetrics = m;
   window.__perfDone = false;
@@ -132,6 +135,18 @@ function html() {
   window.__startSyntheticLoad = (duration) => {
     m.rafTimes.length = 0;
     const began = performance.now();
+    const caption = document.querySelector("#caption-target");
+    let captionIssuedAt;
+    if (caption) new MutationObserver(() => {
+      if (caption.textContent === "Nutzer im Untertitel " + m.captionIssued && !m.captionSeen.has(m.captionIssued)) {
+        m.captionSeen.add(m.captionIssued);
+        m.captionLatencies.push(performance.now() - captionIssuedAt);
+      }
+    }).observe(caption, {subtree: true, childList: true, characterData: true});
+    const captionTimer = caption ? setInterval(() => {
+      captionIssuedAt = performance.now(); m.captionIssued++;
+      caption.textContent = "Nutzer:innen im Untertitel " + m.captionIssued;
+    }, 500) : null;
     const onFrame = (now) => {
       m.rafTimes.push(now);
       if (!window.__perfDone) requestAnimationFrame(onFrame);
@@ -162,6 +177,7 @@ function html() {
     }, 40);
     setTimeout(() => {
       clearInterval(timer);
+      if (captionTimer !== null) clearInterval(captionTimer);
       window.__perfDone = true;
     }, duration);
     return true;
@@ -247,6 +263,41 @@ async function synchronizeClocks(id) {
   return {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs};
 }
 
+async function enableSubtitleProcessing(id) {
+  let deadline = Date.now() + 8_000;
+  let extensionId;
+  while (Date.now() < deadline) {
+    const targets = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+      cmd: "Target.getTargets", params: {}
+    });
+    extensionId = targets?.targetInfos?.map(target => target.url)
+      .find(url => /^chrome-extension:\/\/[a-p]{32}\//u.test(url))?.split("/")[2];
+    if (extensionId) break;
+    await sleep(100);
+  }
+  if (!extensionId) throw new Error("Erweiterungsziel für aktive Untertitel fehlt.");
+  await api("POST", "/session/" + id + "/url", {
+    url: "chrome-extension://" + extensionId + "/options/options.html"
+  });
+  deadline = Date.now() + 8_000;
+  while (Date.now() < deadline && !await js(id, 'return document.querySelector("#enabled")?.checked === true;')) {
+    await sleep(100);
+  }
+  if (!await js(id, 'return document.querySelector("#enabled")?.checked === true;')) {
+    throw new Error("Optionsseite für aktive Untertitel nicht initialisiert.");
+  }
+  await js(id, 'const input=document.querySelector("#process-subtitles"); if(!input.checked)input.click(); document.querySelector("#save-settings").click();');
+  deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    const saved = await api("POST", "/session/" + id + "/execute/async", {
+      script: 'const done=arguments[arguments.length-1]; chrome.storage.local.get("settings").then(value=>done(value.settings?.processSubtitles),()=>done(false));', args: []
+    });
+    if (saved === true) return;
+    await sleep(100);
+  }
+  throw new Error("Untertitelverarbeitung nicht gespeichert.");
+}
+
 async function browserlauf(url, modus, pair) {
   let id;
   let trace;
@@ -269,7 +320,10 @@ async function browserlauf(url, modus, pair) {
       }
       profileStarted = true;
     }
-    await api("POST", "/session/" + id + "/url", { url });
+    if (activeSubtitles && modus === "extension") {
+      await enableSubtitleProcessing(id);
+    }
+    await api("POST", "/session/" + id + "/url", {url});
     const clock = cpuProfile || browserTrace ? await synchronizeClocks(id) : null;
     // Identisches warmes DOM vor Beginn der kontrollierten Last.
     await sleep(1_000);
@@ -346,9 +400,16 @@ async function browserlauf(url, modus, pair) {
         longTaskMaximumMs: m.longTaskSupported ?
           Math.max(0, ...m.longTasks) : null,
         clickNextFrameMs: percentile(m.clickFrameTimes),
-        inputNextFrameMs: percentile(m.inputFrameTimes)
+        inputNextFrameMs: percentile(m.inputFrameTimes),
+        captionIssued: m.captionIssued, captionCorrected: m.captionLatencies.length,
+        captionTicks: [...m.captionSeen],
+        captionMaximumMs: m.captionLatencies.length ? Math.max(...m.captionLatencies) : null
       };
     `);
+    if (activeSubtitles && (details.captionIssued < Math.max(1, dauerMs / 500 * 0.7) ||
+        details.captionCorrected !== (modus === "extension" ? details.captionIssued : 0))) {
+      throw new Error("Untertitel-Interaktionsprobe unvollständig.");
+    }
     const cpuProfileFile = cpuProfile ? `cpu-${pair}-${modus}.json` : null;
     const traceFile = browserTrace ? `trace-${pair}-${modus}.json` : null;
     const timingFile = cpuProfile || browserTrace ? `timing-${pair}-${modus}.json` : null;
@@ -467,7 +528,7 @@ try {
       durationMs: dauerMs,
       pairs: anzahlPaare,
       cpuThrottle,
-      cpuProfileMode, browserTrace,
+      cpuProfileMode, browserTrace, activeSubtitles,
       instrumentationNotice: cpuProfile || browserTrace
         ? "CPU-Sampling/Browsertrace verändern Laufzeiten; keine automatische Freigabe." : null
     },
