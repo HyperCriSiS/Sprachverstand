@@ -439,6 +439,37 @@ und neue Tabkontexte. Gesamtcheck 230 Dateien / 10.630 Tests, Firefox-Lint 0/0/0
 Zwei native externe Caption-Paare bestätigen gespeicherte Option und
 Wiedergabe; der unabhängige CfT-Reaudit folgt auf dem neuen Produktstand.
 
+Der unabhängige CfT-Reaudit auf `e4ee831` (38198963932) besteht in allen sechs
+Sitzungen: mindestens 15 Sekunden Fortschritt, eingeblendete Textspur, jeweils
+zwei Cue-Wechsel, keine Medienfehler und keine verlorene Optionsspeicherung.
+Frames Basis/Erweiterung 396/394, 395/392 und 392/392; P95 je 50,1 ms,
+Maximum je rund 66,7 ms, Drops 4/3, 5/5 und 6/2. Die separate 60-FPS-Probe
+(38198965541) besteht im ersten Paar: 353/368 Callbacks, Drops 1/2.
+
+Längere native Windows-60-FPS-Last mit verifiziertem 72-Sekunden-Medium:
+je eine Minute, 57.600 Seitenmutationen, alle Endtexte vollständig, keine
+Long Tasks. Callbacks Basis/Erweiterung 3304/2390, P95 24,1/46,7 ms,
+Drops 291/550, zuletzt präsentierte Frames 3305/3046. Eine anschließende
+Negativkontrolle mit zwei No-Extension-Sitzungen reproduziert 3299/2533
+Callbacks, P95 24,1/47,1 ms und Drops 290/548; zuletzt präsentiert 3300/3035.
+Die zweite No-Extension-Sitzung enthält sogar 394,5 ms maximalen Abstand.
+Der große erste Vergleich ist daher nicht als alleiniger Produktverlust
+belegt. Callback-Zustellung und tatsächliche präsentierte Frames werden
+getrennt bewertet; der langsame Zustand zeigt nahezu gleiche Videoausgabe
+mit und ohne Erweiterung. Eine allgemeine Störungsfreiheit folgt daraus nicht.
+
+Ein weiterer Hotpath ist die vollständige `childElementCount`-Zählung vor jedem
+lokalen Inline-Edit; der aktuelle
+[Blink-Code](https://github.com/chromium/chromium/blob/main/third_party/blink/renderer/core/dom/container_node.cc)
+iteriert dafür alle Elementkinder. Die Prüfung nutzt jetzt eine bereits in
+dieser synchronen Scope vorhandene Partition oder prüft nur das 128. Element.
+Native CPU-4-Mikromessung mit 50.000 Kindern, 100 Scopes / 1600 Prüfungen:
+vorher 721–748 ms, begrenzt 0,9–1,0 ms, identische Schwellenentscheidungen.
+Drei direkte 480-Knoten-Framepaare ergeben noch keinen stabilen Framegewinn;
+der Fix beseitigt die belegte ungebundene Zählung, ohne Texte oder Ranges zu
+verändern. Gesamtcheck 230 Dateien / 10.630 Tests, Firefox-Lint 0/0/0 und
+native Chromium-/Firefox-Smokes bestanden.
+
 Letzte unabhängige Prüfung auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.

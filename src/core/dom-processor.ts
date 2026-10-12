@@ -1913,15 +1913,18 @@ export class DomProcessor {
     if (offset > 0 && node.isConnected && parent instanceof Element &&
         parent.childNodes.length === 1) {
       const boundary = findInlineBoundary(node, blockBoundaryTags);
+      const partitions = this.textSafetyScope?.partitions;
+      const existing = boundary instanceof Element ? partitions?.get(boundary) : undefined;
       if (boundary instanceof Element &&
-          boundary.childElementCount >= minimumPartitionedInlineChildren) {
+          (existing?.parentNode === boundary ||
+            boundary.children.item(minimumPartitionedInlineChildren - 1) !== null)) {
         // One temporary final Text per inline boundary invalidates Chromium's
         // eager partial shaping path for the entire synchronous work slice.
         // Every Range stays on its original Text; hundreds of childList
         // records are avoided when many inline nodes change together.
-        const partitions = this.textSafetyScope?.partitions;
+        // childElementCount walks every sibling in Blink. Only the threshold
+        // matters here; an existing partition already established eligibility.
         if (partitions) {
-          const existing = partitions.get(boundary);
           if (!existing || existing.parentNode !== boundary) {
             const suffix = node.ownerDocument.createTextNode("");
             this.partitionTemporaryNodes.add(suffix);
