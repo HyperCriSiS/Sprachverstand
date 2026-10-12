@@ -1505,3 +1505,21 @@ zuordnen, gegen unveränderten Produktionsbuild und native Basis prüfen.
 Die sporadische Store-Störung bleibt offen; keine andere Projektaufgabe oder
 Releaseaktion vorgezogen. Alle hier kausal reproduzierten Caption-Observer-
 Engpässe sind implementiert und separat verifiziert.
+
+Letzte gezielte Auswertung desselben erweiterten Traces: im ruhenden
+Erweiterungsfenster 4500–8000 ms nur vier eigene Content-Callbacks mit
+zusammen 0,515 ms Wandzeit. Compositor-BeginFrameArgs fordern weiterhin
+16.666 µs Intervalle an. **Konkreter nächster Ansatz im nativen GPU-Prozess:**
+`GpuVSyncThread` / `WaitForVSync Sleep` im Basislauf etwa 18 ms, im späteren
+Erweiterungsfenster wiederholt etwa 32 ms. Beispiel bei 5390,4 ms:
+WaitForVSync Sleep 32,158 ms Wandzeit / 0,012 ms Thread-CPU. Die großen
+Wandzeiten sind hier native Wartezeit, keine laufende eigene DOM-Arbeit.
+Dies ordnet den Taktwechsel genauer zu, erklärt aber noch nicht seine
+konkrete Ursache oder die sporadische Store-Störung. Nächste Prüfung:
+native VSync-/Wakeupsteuerung in der Windows-/Headless-Konfiguration und
+Vergleich mit der normalen Browsersituation. Numerische Rohzusammenfassung
+`artifacts/quiet-slow-task-summary.jsonl`, BeginFrame-Argumente unter
+`artifacts/quiet-begin-frame-args.jsonl`. Keine OS-/Treiber-/Timeränderung.
+
+CI 38313504100 auf Dokumentationscheckpoint `f66b11d` ebenfalls vollständig
+erfolgreich; finaler Code unverändert `47d15c5`.
