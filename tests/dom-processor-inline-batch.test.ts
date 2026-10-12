@@ -176,12 +176,17 @@ describe("Inline-Schutzkontext bei MutationObserver-Mischlast", () => {
   });
 
   it("behält bei benutzerdefinierten Schutzbegriffen den vollen Kontextabgleich bei", async () => {
-    const { wurzel, elemente } = anlegen(60);
+    const { elemente } = anlegen(60);
     starten(["Nutzer"]);
-    const walker = vi.spyOn(document, "createTreeWalker");
     elemente[0]!.textContent = "Weitere Nutzer:innen";
     elemente[1]!.textContent = "Andere Nutzer:innen";
     await Promise.resolve();
-    expect(wurzelTraversierungen(walker, wurzel)).toBe(1);
+    processor!.flush();
+    expect(elemente[0]!.textContent).toBe("Weitere Nutzer:innen");
+    expect(elemente[1]!.textContent).toBe("Andere Nutzer:innen");
+    for (let index = 2; index < elemente.length; index++) {
+      expect(elemente[index]!.textContent).toBe("Nutzer:innen " + index);
+    }
+    expect(processor!.getReplacementCount()).toBe(0);
   });
 });

@@ -558,6 +558,25 @@ Die native 30-FPS-Untertitel-/DOM-Lastprobe korrigiert 57/57 Cues und 480/480
 Endtexte, Cue P95 24,5 ms / Maximum 27,3 ms, 900 Videocallbacks, keine Drops,
 keine Long Tasks und keine Frameabstände über 120 ms.
 
+Eine weitere native CPU-4-Probe reproduziert 32,3–39,1 ms Observer-Arbeit bei
+einer neutralen Textänderung in einem 50.000-Kinder-Inline-Block mit aktiviertem
+Zitatschutz. Bei höchstens 64 verfolgten Textänderungen/-plänen/-antworten
+invalidiert der neue Pfad den schwachen Schutzcache und markiert ausschließlich
+die innerhalb der Grenze liegenden verfolgten Texte. Unbetroffene Grenzen
+berechnen ihren Cache bei Bedarf erneut; viele verfolgte Einträge behalten
+die bisherige Traversierung. Dieselbe isolierte native Probe braucht danach
+0,5–4,1 ms Observerzeit, erster Frame 1,0–5,3 statt 32,9–40,6 ms.
+Dies misst die Invalidierung, nicht sämtliche spätere Schutztextberechnung.
+Fünf neue Fälle sichern Sparse-/Dense-Zitatschutz, externe Originale,
+verspätete ungeschützte Antworten und Schutzbegriffe über mehrere Inline-Nodes.
+Eine bestehende Custom-Term-Regression prüft nun den tatsächlichen geschützten
+Text statt eine notwendige Volltraversierung vorauszusetzen. Gesamtcheck
+232 Dateien / 10.640 Tests und native Chromium-/Firefox-/Waterfox-Smokes
+auf dem neu erstellten Build bestanden. Der erste Check hatte die veraltete
+Traversierungsassertion aufgedeckt und wurde nach deren Verhaltensprüfung
+vollständig neu ausgeführt; der vorherige Smoke auf altem Build gilt nicht
+als Verifikation dieses Fixes.
+
 Historischer Prüfstand vor dem Kontingentreset auf Codecommit `90f0a2e`: vollständige PR-CI
 38181175865 grün. Startprofil-/Render-Serie 38181173126 mit zwölf gültigen
 Zeitachsen, allen Endtexten vollständig und null zusätzlichem Auslauf.

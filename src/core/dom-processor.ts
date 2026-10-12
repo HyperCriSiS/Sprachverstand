@@ -1787,7 +1787,6 @@ export class DomProcessor {
     }
     // Im nächsten Observer-Batch dieselbe Wurzel erneut invalidieren dürfen.
     invalidatedRoots?.add(root);
-    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const invalidate = (text: Text): void => {
       this.inlineProtectionCache.delete(text);
       const tracked = this.textChanges.get(text);
@@ -1801,6 +1800,27 @@ export class DomProcessor {
       }
     };
 
+    const trackedEntries = this.textChanges.size + this.pendingTextEdits.size +
+      this.pendingTextTransforms.size;
+    if (trackedEntries <= 64) {
+      // Cached ranges can include many neutral neighbors. Clearing the weak
+      // cache is safe; only the bounded set of tracked originals/replies needs
+      // dirty flags. Other boundaries lazily recompute protection when needed.
+      this.inlineProtectionCache = new WeakMap();
+      const visited = new Set<Text>();
+      for (const changes of [this.textChanges, this.pendingTextEdits, this.pendingTextTransforms]) {
+        for (const text of changes.keys()) {
+          if (visited.has(text)) continue;
+          visited.add(text);
+          // Match TreeWalker containment: don't enter a nested shadow tree.
+          if (root.contains(text)) invalidate(text);
+        }
+      }
+      this.queue(root);
+      return;
+    }
+
+    const walker = this.document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     if (root.nodeType === Node.TEXT_NODE) {
       invalidate(root as Text);
     }
