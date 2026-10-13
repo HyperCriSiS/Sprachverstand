@@ -1730,3 +1730,76 @@ Waterfox-Desktop-Smokes einschließlich Inline-Ranges, großem Einzeltext,
 Schutzbereichen und Restore erfolgreich. Rohdaten, Gerätezustände und
 Audioaufnahmen bleiben ignoriert unter `artifacts/android-av-20261013/`.
 Keine neue Release-/Store-Freigabe; #419 bleibt NO-GO.
+
+### Neuere Waterfox-Messungen und Android-Audio-Gegenbefund, 13.10.2026
+
+Der vorstehende Waterfox-Blocker ist durch neuere Geräteproben überholt.
+Waterfox 1.2.8.1 auf demselben Android-Gerät ist per RDP erreichbar.
+Die ignorierten Rohdaten unter `artifacts/android-av-20261013/automated/`
+belegen 120 ersetzte Cues bei moderater MP4-Probe: Branch `5fa9c23`
+Cue-P95 30 ms/Maximum 41 ms, Branch `456caf9` P95 18 ms/Maximum 46 ms;
+vier beziehungsweise drei Drops aus 1800 nativen Frames. Bei hoher Textlast
+bleibt zusätzliche Nachrichtenwartezeit offen: `456caf9` P95 100 ms/119 ms
+Maximum in einer vollständigen MP4-Probe. Eine vermeintliche Wiederholung
+mit nur 82 gemessenen Cues ist keine vollständige Untertitelabnahme.
+
+**Neuer relevanter Gegenbefund:** Segmentierte lokale H.264-/AAC-Wiedergabe
+mit zwei SourceBuffers, einsekündigen Segmenten, 100-ms-Pump und Zielpuffer
+0,5 s. Mit ungefähr 900 normalen Textänderungen/s zeigen beide aktiven
+`456caf9`-Proben Innenlücken im tatsächlich aufgenommenen Android-Audio,
+während beide zugehörigen abgeschalteten Proben ohne solche Innenlücke sind.
+Jeweils 60 s Quelle, verifizierte Transformation, sichtbare und vollständige
+Wiedergabe; Reihenfolge erst aus/an, anschließend an/aus. Sensorwerte und
+native Framequalität allein hätten die hörbare Signalunterbrechung übersehen.
+
+| Code / Probe | Native Drops / 1800 Frames | Audio-Innenlücken ab 20 ms |
+| --- | ---: | --- |
+| 0.6.6-Produktcode, an, Stress/0,5-s-Puffer | 58 | 34,5 ms |
+| 0.6.6-Produktcode, aus, gleiche Last | 61 | 45,5 ms |
+| 456caf9, aus, Stress/0,5-s-Puffer | 71 | keine |
+| 456caf9, an, gleiche Last | 53 | 40,1 / 151,5 / 21,5 ms |
+| 456caf9, an, Wiederholung | 55 | sieben, Maximum 103 ms |
+| 456caf9, aus, umgekehrte Paarung | 61 | keine |
+| 456caf9, aus, moderate Last/2,5-s-Puffer | 4 | keine |
+| 456caf9, an, moderate Last/2,5-s-Puffer | 4 | keine |
+| 456caf9, an, Stress/2,5-s-Puffer | 4 | keine |
+| 456caf9, an, moderate Last/0,5-s-Puffer | 85 | 77,4 ms |
+
+Die 0.6.6-Probe verwendet den lokal vorhandenen, unveränderten Produktcode
+mit per Hash geprüfter Herkunft aus seinem Build, separater temporärer
+Identität und Loopback-Hostbegrenzung. Sie ist kein Identitätsnachweis des
+vom Nutzer damals verwendeten signierten Store-Artefakts. Alle Audioangaben
+beziehen sich auf den Android-Playback-Abgriff mit scrcpy/FLAC; Randstille
+der Aufnahme ist ausgeschlossen. Frequenzabweichungen nach Innenlücken
+belegen Signal-/Zeitverschiebung, nicht automatisch wiederholte Audioblöcke.
+In den Streamingproben liegen 120 oder 121 beobachtete Cue-Ersetzungen vor;
+die Abschlussgrenze kann einen zusätzlichen Cue ergeben.
+
+Die knappe Pufferung ist in den bisherigen Proben der gemeinsame Faktor;
+hohe Textlast allein genügte beim 2,5-s-Puffer nicht. Auch moderate Last mit
+0,5-s-Puffer zeigt eine Lücke. Dafür fehlt noch die passende ausgeschaltete
+Gegenprobe. Dass 0.6.6 auch ausgeschaltet eine Lücke zeigt, verhindert eine
+pauschale Add-on-Attribution. Die wiederholten 456caf9-Aus/an-Gegenbefunde
+verhindern umgekehrt eine Entwarnung für den Branch. Das ist ein neuer
+reproduzierbarer Untersuchungsfall, noch kein kausaler Nachweis der
+ursprünglichen sporadischen Store-Störung. Normale Pufferung zu prüfen
+ersetzt keine Behebung oder weitere Diagnose des knappen Pufferfalls.
+
+Der uncommittete zusätzliche Caption-Batchslot wurde separat geprüft:
+elf fokussierte Tests und Firefox-Build erfolgreich; MSE-Stressprobe mit
+121 Ersetzungen, Cue-P95 63 ms/Maximum 85 ms, 53/1800 Drops, dennoch
+Audio-Innenlücken von 69,4 und 54,3 ms. Er behebt den Audiofall nicht und
+bleibt ein offener Versuch in `src/browser/local-transform.ts` und
+`tests/local-transform-batch.test.ts`. Keine Freigabe oder Lösung daraus
+abgeleitet. Die instrumentierte vorherige MP4-Probe misst bei 120 Cues
+Nachrichtenwartezeit P95 60 ms/Maximum 120 ms bei Kernberechnung bis 1 ms;
+dies begründet weitere gezielte Prüfung der Nachrichten-/Scheduling-Kette.
+
+Nächste Priorität: moderate 0,5-s-Aus/an-Gegenprobe vervollständigen und
+Fetch-, Append-/Updateend- und Hintergrund-Nachrichtenzeiten rund um echte
+PCM-Lücken getrennt erfassen. Aufnahme-/Debugging-Einfluss unabhängig prüfen;
+keine pauschale Verzögerung oder Gate-Lockerung. Ursprüngliche Waterfox-
+Version 0.7.1 und vollständige Settings nach den Proben verifiziert
+wiederhergestellt, temporäre Identität entfernt, Autoplay-Prefs restauriert,
+USB-Wachhalten wieder 0 und eigene ADB-Testports entfernt. Telefon danach
+gesperrt; weitere Geräteprobe benötigt erneutes Entsperren. #419 bleibt NO-GO.
