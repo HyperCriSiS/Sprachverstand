@@ -1864,3 +1864,37 @@ aber frühe Callbackepisoden bleiben: 30 FPS 159,7/444,4 ms und 60 FPS
 437,5/376,4 ms (Basis/Erweiterung). Eingeschwungene Abstände unter 56 ms.
 Ein grünes Gate ist weiterhin keine vollständige Videoabnahme. #419 NO-GO;
 keine Store-, Tag-, Release-, Berechtigungs- oder Pale-Moon-Aktion.
+
+### Restore-Fortsetzung ohne verschachtelte Timerwartezeit, 13.10.2026
+
+Der erste Restore-Fix `aaa808a` ist gepusht; vollständige unabhängige CI
+38471014062 inklusive Gecko, Chromium/Video, Performance und CodeQL grün.
+Zweiter Produktfix `0ed27b1`: Fortsetzung über `scheduler.postTask` mit
+Hintergrundpriorität und unverändertem 4-ms-/128-Schritte-Budget; fehlende API
+oder abgelehnte Task-Anfrage behalten Timer. Token verwerfen alte Callbacks
+nach synchronem Stop/Finish. Keine neue Transformationsregel.
+
+Eigene lokale synthetische Chromium-CPU-4-Fixture mit 16.000 tatsächlich
+korrigierten Texten, je drei Proben: Timer-Restore 4,03/4,27/4,20 s;
+Hintergrund-Tasks 185/162/191 ms, jeweils vollständige Originalrückgabe.
+
+Separate unprofilierte Fairnessprobe mit FFprobe-bestätigter 60-FPS-Quelle,
+16.000 Texten, CPU-4 und drei alternierenden Timer/Task-Paaren:
+
+| Paar | Timer: gesamte Rückgabe | Hintergrund-Task: gesamte Rückgabe | Task: Eingabe bis rAF | Task: höchster Callback-Abstand |
+| --- | --- | --- | --- | --- |
+| 1, Timer zuerst | 1.165 ms | 178 ms | 1,0 ms | 21,5 ms |
+| 2, Task zuerst | 1.240 ms | 174 ms | 1,1 ms | 24,0 ms |
+| 3, Timer zuerst | 1.173 ms | 172 ms | 0,9 ms | 21,1 ms |
+
+Alle sechs Proben restaurieren 16.000/16.000 Texte; keine Long Tasks oder
+Drops. Unterschiedliche Beobachtungsfenster durch unterschiedlich lange
+Rückgabe: absolute Callbackzahlen sind kein Modus-Performancevergleich.
+Erste Scheibe mit Video 6,3–7,4 ms: kooperatives Budget bleibt keine harte
+Einzeloperationgarantie. Diese endliche Restore-Probe ersetzt keine Abnahme
+der offenen Streaming-/Startbefunde. Vier neue Regressionen für begrenzte
+Fortsetzung, synchronen Stop, Task-Ablehnung und verspätete Ablehnung nach
+Finish; Task-Test scheitert auf vorherigem Timer-Code. Vollständiger lokaler
+Projektcheck grün; finale Suite 245 Dateien / 10.738 Tests, native Smokes
+Chromium, Firefox und Waterfox einschließlich Ranges/Restore erneut grün.
+Daten ausschließlich synthetisch, Rohdaten lokal ignoriert. #419 NO-GO.
