@@ -1569,3 +1569,28 @@ Media-/Browserstart. Keine geänderten Fixtures, Framegrenzen, Wiederholungs-
 oder Akzeptanzregeln. 31 fokussierte Tests in vier Dateien, Typprüfung und
 YAML-Parsing erfolgreich; beide native Reihenfolgen auf dem echten
 Produktionsbundle ausgeführt. Rohdaten `artifacts/video-pair-order-validation/`.
+
+Unabhängige vollständige CI 38324123027 auf `95d4d26` erfolgreich. Neue
+manuelle Workflowauswahl mit drei Produktions-Traces unabhängig in
+38324209263 ausgeführt, Workflow ebenfalls erfolgreich. Alle drei Rohpaare
+haben `pairOrder=extension-first`, korrekte Moduslabels und Engine `standard`.
+Drops Basis/Erweiterung: Paar 1 169/3, Paar 2 1/2, Paar 3 1/1. Paar 2 und 3
+ohne Long Tasks oder tatsächliche Callbackepisoden über 120 ms.
+
+**Gegenbefund im ersten unmodifizierten Produktionsbundle:** Long Task
+269 ms bei 1754,4 ms; tatsächliche Callbackepisode 283,8 ms, dabei 17 weitere
+an den Compositor weitergereichte Frames und 0,283 s Medienfortschritt.
+Matched FunctionCall 269,316 ms Wandzeit / 2,715 ms Thread-CPU;
+V8.OptimizeCode 268,176 / 1,590 ms. Später MinorGC 86,334 / 1,514 ms,
+enthaltene Safepoint-Wartezeit 84,796 / 0,026 ms. Summen sind verschachtelt.
+Dies bestätigt eine seltene Produktions-Callbackpause unter Trace ohne
+DOM-/Regex-Wrapper, überwiegend Warte-/OffCPU-Zeit. Es belegt keine sichtbare
+Video-Freeze und löst die Store-Störung nicht kausal. Hohe Basis-Drops und
+permissive Vergleichsgrenzen erklären, warum der Workflow trotzdem grün ist.
+
+Alle Rohpaare und Traces erhalten unter `artifacts/ci-video-pair-order-20261013/`;
+kompakte CPU-Zuordnung `artifacts/ci-pair-order-first-cpu-summary.jsonl`.
+Nächste begrenzte Prüfung: Produktions-Callbackpausen mit ausgeglichener
+Messreihenfolge und ohne Browsertrace gegenprüfen, eigene CPU von nativer
+V8-/Safepoint-Wartezeit und GPU-Takt trennen. Keine spekulative Änderung
+an Transformation, Scheduler oder Benutzerbrowser; #419 weiterhin NO-GO.
