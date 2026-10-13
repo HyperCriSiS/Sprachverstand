@@ -1647,3 +1647,86 @@ Umleitung bisher. Mozilla beschreibt für
 das Hauptprofil statt eines isolierten temporären Profils; vorhandene
 Store-Identität/Einstellungen vor Testbuild berücksichtigen. Waterfox separat
 verifizieren. Keine spekulative Produktkorrektur aus den Desktopbefunden.
+
+### Android-Geräteprüfung und kürzere Untertitelwartezeit, 13.10.2026
+
+Die vorstehende Vorbereitung ist inzwischen durch echte Geräteproben ergänzt:
+Pixel 10 Pro, Android 17, Firefox Nightly 160.0a1. Installierte Erweiterung laut
+`runtime.getManifest()` **0.7.1**, obwohl der Paketdateiname 0.7.2-rc.11 nennt.
+Vier manuell exportierte Proben waren sämtlich mit aktiver Transformation;
+ihre Baseline-Beschriftung ist kein gültiger Aus/an-Vergleich. Der Nutzer hörte
+keinen Aussetzer. Die damalige Audioausgabe (Lautsprecher/Kopfhörer/Bluetooth)
+ist ihm nicht mehr bekannt.
+
+Automatische Vergleiche prüfen den Modus anhand frischer Texttransformation.
+Produktcode von `main` **6c3b5f4d** und Branch **5fa9c23** wurde jeweils als
+0.7.2 mit derselben separaten temporären Identität installiert, ausschließlich
+auf der lokalen Fixture. Hintergrund- und Content-JavaScript stimmen per
+SHA256 mit dem jeweiligen Produktionsbuild überein; nur Testname/-Identität
+und Fixture-Hostbegrenzung ändern sich. Die ursprüngliche Erweiterung bleibt
+installiert und wird für den Vergleich lokal deaktiviert. Die ältere 0.7.1
+ist keine kausale Vorher-Baseline für die 0.7.2-Codeänderungen.
+
+Je 60 Sekunden 720p30/H.264 und AAC48k, 120 erkannte `subtitle-cue`-Wechsel,
+moderate Last etwa vier normale Textänderungen/s; separat etwa 950/s und
+5.000 gebündelte Änderungen desselben Textknotens. Sichtbarkeit, Videogeometrie,
+verbundene Knoten, tatsächliche Cue-Ersetzung und native Framequalität geprüft.
+Die frühe Probe mit generischer Klasse `subtitle` maß normalen Seitentext;
+eine weitere Probe ohne Frame-/Latenz-Sensordaten wurde ausdrücklich verworfen.
+
+| Produktionsstand / gültige Probe | Cue-P95 / Maximum | Drops / Frames |
+| --- | ---: | ---: |
+| main 6c3b5f4d, moderat, zuerst | 8 / 12 ms | 3 / 1800 |
+| Branch 5fa9c23, moderat, zuerst | 23 / 25 ms | 4 / 1800 |
+| Branch 5fa9c23, moderat, umgekehrt | 24 / 26 ms | 4 / 1800 |
+| main 6c3b5f4d, moderat, umgekehrt | 9 / 52 ms | 4 / 1800 |
+| Branch mit frühem budgetierten Cue-Pfad, moderat | 18 / 21 ms | 4 / 1800 |
+| Derselbe Cue-Pfad, moderat, Wiederholung nach echter Baseline | 16 / 22 ms | 4 / 1800 |
+| Derselbe Cue-Pfad, etwa 950 normale Änderungen/s | 15 / 23 ms | 4 / 1800 |
+| Derselbe Cue-Pfad, 5.000 Änderungen gebündelt | 24 / 30 ms | 4 / 1800 |
+| Erweiterung abgeschaltet, moderat | keine Ersetzung | 4 / 1800 |
+
+Die gebündelte normale Textänderung wurde auf main nach 69 ms, auf Branch
+5fa9c23 nach 32 ms, mit dem zusätzlichen Cue-Pfad nach 43 ms ersetzt.
+Einzelproben, keine universellen Geschwindigkeitsfaktoren. Alle aktiven
+Tabellenproben ersetzten sämtliche 120 Cues; außerhalb des Anlaufs keine
+Callbackepisode über 120 ms oder Media-Waiting-/Fehlerereignisse.
+
+**Zusätzliche Produktkorrektur:** Bekannte einzelne Caption-Textknoten und
+fertige lokale Transformationsantworten müssen keinen Animationsframe
+abwarten. Eine Microtask bearbeitet ausschließlich diese bekannte Arbeit;
+größere Unterbäume bleiben im Frame-Traversal. Frühe Arbeit und Frame-Callback
+teilen dieselben zwölf Schritte und das kooperative 2-ms-Budget; getrennt
+eintreffende Antworten bekommen kein jeweils neues Budget. Große Rückschreib-
+arbeit bleibt gesliced. Optionswechsel/Stop verwerfen alte Aufgaben und
+Antworten. Das entfernt nachgewiesene zusätzliche Wartezeit, erreicht in
+diesen Android-Proben aber **noch nicht** die main-Cue-P95 von 8–9 ms.
+
+Audio wird mit scrcpy 5.0.1 als FLAC am Android-Playback-Abgriff dupliziert,
+während es am Telefon weiterläuft. Positive Kontrollen am Gerät: eingefügte
+Quelllücke von 128 ms als 107,3-ms-Innenlücke erkannt; 200-ms-Wiederholung
+ohne Stille anhand des Frequenzverlaufs erkannt. In den Tabellenproben keine
+Innenlücke ab 20 ms und keine entsprechende Wiederholung im kontinuierlichen
+Prüfton. Container-Zeitstempeljitter und teilweise aktive Anfangs-/Endfenster
+sind keine Audioaussetzer. Dieser endliche synthetische Test erfasst weder
+die komplette Lautsprecher-/Bluetooth-Kette noch alle realen Videoseiten;
+Aufnahme und Debugging können das Timing beeinflussen. **Die sporadische
+Store-Audiostörung ist weiterhin nicht reproduziert oder kausal behoben.**
+
+Nightly-Originalversion/-Einstellungen und beide Autoplay-UserPref-Zustände
+verifiziert wiederhergestellt; temporäre Identität entfernt. USB-Wachhalten
+auf den ursprünglichen Wert 0 zurückgestellt. Waterfox Android 1.2.8.1 ist im
+Vordergrund per RDP erreichbar; frühere Timeouts belegen keinen Defekt.
+Automatische Wiedergabeproben brachen vor Aufnahme wegen gesperrtem Telefon
+ab; keine Android-Waterfox-Performanceabnahme. Auch dort Originalzustand
+verifiziert wiederhergestellt und temporäre Identität entfernt.
+
+Verifikation des zusätzlichen Produktpfads: sieben fokussierte Regressionen
+für frühe Antworten, beide Cue-Mutationsarten, Mengen-/Zeitbudget, getrennte
+Antworten und Stop. Vollständiger lokaler `npm run check`: **243 Dateien,
+10.730 Tests**, Typprüfung, Builds, Metadaten-/Locale-/Browserprüfungen,
+Firefox-Lint ohne Fehler/Warnungen. Native Chromium-, Firefox- und
+Waterfox-Desktop-Smokes einschließlich Inline-Ranges, großem Einzeltext,
+Schutzbereichen und Restore erfolgreich. Rohdaten, Gerätezustände und
+Audioaufnahmen bleiben ignoriert unter `artifacts/android-av-20261013/`.
+Keine neue Release-/Store-Freigabe; #419 bleibt NO-GO.

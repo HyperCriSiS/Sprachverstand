@@ -248,6 +248,9 @@ export class DomProcessor {
   private textRewriteStates = new WeakMap<Text, RewriteState>();
   private subtitleFlushHandle: number | undefined;
   private subtitleFlushUsesAnimationFrame = false;
+  private subtitleResultTask: object | undefined;
+  private subtitleFrameSteps = 0;
+  private subtitleFrameWorkMs = 0;
   private readonly subtitleTransformCache = new Map<
     string,
     ReturnType<typeof transformTextWithSummary>
@@ -357,6 +360,7 @@ export class DomProcessor {
     if (subtitle) {
       this.pendingSubtitleTransformResults.set(token, work);
       this.scheduleSubtitleFlush();
+      this.scheduleReadySubtitleWork();
     } else {
       this.pendingTransformResults.set(token, work);
       this.scheduleFlush();
@@ -368,6 +372,38 @@ export class DomProcessor {
     if (!first) return false;
     const [token, work] = first;
     results.delete(token); work(); return true;
+  }
+
+  private scheduleReadySubtitleWork(): void {
+    if (this.subtitleResultTask || this.subtitleFrameSteps >= maximumSubtitleStepsPerFrame ||
+      this.subtitleFrameWorkMs >= subtitleWorkBudgetMs) return;
+    const task = {};
+    const generation = this.asyncGeneration;
+    this.subtitleResultTask = task;
+    queueMicrotask(() => {
+      if (this.subtitleResultTask !== task || this.asyncGeneration !== generation) return;
+      this.subtitleResultTask = undefined;
+      if (!this.running || this.budgetedRestoration) return;
+      // Known text nodes and ready replies need no animation-frame wait.
+      // Share the frame's existing budget across separately arriving replies;
+      // large caption subtrees still wait for budgeted frame traversal.
+      this.withTextSafetyScope(() => {
+        const startedAt = this.now();
+        const deadline = startedAt + Math.max(0, subtitleWorkBudgetMs - this.subtitleFrameWorkMs);
+        let steps = 0;
+        while (this.running && this.subtitleFrameSteps + steps < maximumSubtitleStepsPerFrame &&
+          (this.subtitleFrameSteps + steps === 0 || this.now() < deadline)) {
+          if (this.processTransformResult(this.pendingSubtitleTransformResults)) {steps++; continue;}
+          const node = this.pendingSubtitleTextNodes.values().next().value;
+          if (!node) break;
+          this.pendingSubtitleTextNodes.delete(node);
+          steps++;
+          if (node.isConnected && this.isSubtitleContent(node)) this.processTextNode(node, true, true);
+        }
+        this.subtitleFrameSteps += steps;
+        this.subtitleFrameWorkMs += this.now() - startedAt;
+      });
+    });
   }
 
   public start(): void {
@@ -673,13 +709,14 @@ export class DomProcessor {
 
     // flush() bleibt ein expliziter synchroner Test-/Steuerungsaufruf.
     // Automatische Frame-Callbacks erhalten dagegen eine harte Mengengrenze.
-    const deadline = budgeted ? this.now() + subtitleWorkBudgetMs : Infinity;
+    const startedAt = this.now();
+    const deadline = budgeted ? startedAt + Math.max(0, subtitleWorkBudgetMs - this.subtitleFrameWorkMs) : Infinity;
     let steps = 0;
     while (
       this.running &&
       (!budgeted ||
-        (steps < maximumSubtitleStepsPerFrame &&
-          (steps === 0 || this.now() < deadline)))
+        (this.subtitleFrameSteps + steps < maximumSubtitleStepsPerFrame &&
+          (this.subtitleFrameSteps + steps === 0 || this.now() < deadline)))
     ) {
       if (this.processTransformResult(this.pendingSubtitleTransformResults)) {
         steps += 1;
@@ -728,6 +765,10 @@ export class DomProcessor {
       }
     }
 
+    if (budgeted) {
+      this.subtitleFrameSteps += steps;
+      this.subtitleFrameWorkMs += this.now() - startedAt;
+    }
     if (
       budgeted &&
       (this.pendingSubtitleTextNodes.size > 0 ||
@@ -881,9 +922,14 @@ export class DomProcessor {
 
   private queueSubtitleTextNodes(root: Node): void {
     // Im MutationObserver keinen vollständigen Caption-Unterbaum durchlaufen.
-    // Die Textsuche wird erst im budgetierten Frame-Callback fortgesetzt.
-    if (root.nodeType === Node.TEXT_NODE) {
-      this.pendingSubtitleTextNodes.add(root as Text);
+    // Nur bereits bekannte Textknoten bekommen den frühen budgetierten Pfad;
+    // die Suche in größeren Unterbäumen bleibt beim Frame-Callback.
+    const child = root.firstChild;
+    const text = root.nodeType === Node.TEXT_NODE ? root as Text
+      : child?.nodeType === Node.TEXT_NODE && child === root.lastChild ? child as Text : undefined;
+    if (text) {
+      this.pendingSubtitleTextNodes.add(text);
+      this.scheduleReadySubtitleWork();
     } else {
       this.pendingSubtitleRoots.add(root);
     }
@@ -1239,6 +1285,8 @@ export class DomProcessor {
       this.subtitleFlushHandle = view.requestAnimationFrame(() => {
         this.subtitleFlushHandle = undefined;
         this.subtitleFlushUsesAnimationFrame = false;
+        this.subtitleFrameSteps = 0;
+        this.subtitleFrameWorkMs = 0;
         this.flushSubtitleNodes(true);
       });
       return;
@@ -1247,14 +1295,21 @@ export class DomProcessor {
     this.subtitleFlushUsesAnimationFrame = false;
     this.subtitleFlushHandle = view?.setTimeout(() => {
       this.subtitleFlushHandle = undefined;
+      this.subtitleFrameSteps = 0;
+      this.subtitleFrameWorkMs = 0;
       this.flushSubtitleNodes(true);
     }, 16) ?? window.setTimeout(() => {
       this.subtitleFlushHandle = undefined;
+      this.subtitleFrameSteps = 0;
+      this.subtitleFrameWorkMs = 0;
       this.flushSubtitleNodes(true);
     }, 16);
   }
 
   private cancelSubtitleFlush(): void {
+    this.subtitleResultTask = undefined;
+    this.subtitleFrameSteps = 0;
+    this.subtitleFrameWorkMs = 0;
     if (this.subtitleFlushHandle === undefined) {
       return;
     }
