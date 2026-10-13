@@ -2052,3 +2052,19 @@ somit im Browser-/Transportweg vor dem lokalen Server; einzelne Komponenten
 sind nicht kausal getrennt. Kein Mikrofon, keine öffentlichen Rohaufnahmen
 oder Kennungen. Vorab gelieferte Segmente sind die nächste getrennte
 CPU-/Wiedergabekontrolle; reale Streaming-/Startbefunde bleiben offen. #419 NO-GO.
+
+Abschließende getrennte Kontrolle auf exakt aus Commit `66bd5a0` gebautem
+Produktcode: vier 60-s-Stressproben, Aus/an und an/aus, 0,5-s-MSE-Puffer,
+123 synthetische Segmente (10,5 MB) vor Aufnahmestart im Gerätespeicher.
+Während der Wiedergabe stammen alle Segmentzugriffe nachweislich aus dem
+Speicher; dadurch entfallen die oben beobachteten Lieferverzögerungen.
+Alle vier Fälle bestätigen Sichtbarkeit, durchgehenden Transformationsmarker,
+Wiedergabeende und ausreichenden Aufnahme-Nachlauf. Keine innere Stille
+ab 20 ms; vollständige Signalabschnitte ohne Frequenzausreißer über 2 Hz,
+Chirp-Residual-P99 jeweils unter 0,008 Hz. Begrenzte synthetische Kontrolle,
+keine allgemeine Streaming-/Lautsprecher-/Bluetooth-Freigabe und kein
+Widerlegen der früheren Befunde auf dem anderen Gerät. Produkt-CI `66bd5a0`
+mit allen acht Checks erfolgreich. Temporäre Erweiterung und eigene
+Gerätedatei entfernt, ursprüngliches Autoplay und Wachhalten verifiziert,
+eigene Testports und lokaler Server geschlossen. Ausschließlich Playback;
+keine Mikrofonaufnahme. Rohaufnahmen und Kennungen bleiben lokal ignoriert.
