@@ -22,7 +22,7 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
       start() {} processRoot() {} handleMutationRecords() {}
       flushRegularNodesBudgeted() {} flushSubtitleNodes() {} discoverLateShadowRoots() {}
       processTextNode() {} finishTextTransform() {} replaceTextKeepingRanges() {}
-      isSimpleInlineTextSwap() {} invalidateFollowingContext() {}
+      isSimpleInlineTextSwap() {} invalidateFollowingContext() {} processFollowingContextStep() {}
       invalidatePrecedingParticipleContext() {} forgetRoot() {}
     }`);
     writeFileSync(path.join(fixture, "src/content.ts"),
@@ -44,7 +44,8 @@ describe("Isolierter DOM-Phasendiagnosebuild", () => {
       document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
       const report = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic")!);
       expect(report.methods.start.calls).toBe(1);
-      expect(Object.keys(report.methods)).toHaveLength(13);
+      expect(Object.keys(report.methods)).toHaveLength(14);
+      expect(report.methods.processFollowingContextStep.calls).toBe(0);
       expect(report.slow.length).toBeLessThanOrEqual(128);
       expect(/Nutzer/u.test("Nutzer")).toBe(true);
       expect(/Nutzer/u.test("Neutral")).toBe(false);

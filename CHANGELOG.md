@@ -13,6 +13,10 @@ dokumentiert.
 
 ### Leistung
 
+- Auch die erneute Prüfung grammatischer Folgekontexte nach Seitenänderungen
+  läuft in begrenzten Schritten. Normale Antworten warten auf diese Prüfung;
+  Untertitel bleiben priorisiert. Wiederholte Textänderungen desselben
+  Ankers übernehmen den neuesten Kontext statt zusätzliche Scans anzuhäufen.
 - Lange grammatische Kontextsuche vor einer lokalen Textanfrage wird in
   begrenzten Schritten vorbereitet. Vollständiger Kontext und Schutzregeln
   bleiben erhalten; Änderungen während der Vorbereitung verwerfen den alten

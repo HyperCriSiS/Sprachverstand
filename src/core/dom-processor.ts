@@ -238,6 +238,8 @@ export class DomProcessor {
   private textChanges = new Map<Text, ChangeRecord>();
   private pendingTextTransforms = new Map<Text, {original: string; expected: string}>();
   private readonly pendingContextPreparations = new Map<Text, TextContextPreparation>();
+  private readonly pendingFollowingContexts = new Map<Node | object, Generator<void>>();
+  private contextInvalidationVersion = 0;
   private readonly queuedLargeTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSmallTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSubtitleTransforms = new Map<Text, () => Promise<void>>();
@@ -336,6 +338,7 @@ export class DomProcessor {
 
   private cancelAsyncWork(): void {
     this.pendingContextPreparations.clear();
+    this.pendingFollowingContexts.clear();
     this.resetPendingNodeScan();
     this.pendingAddedNodeLists.clear();
     this.addedNodeTurn = true;
@@ -726,6 +729,7 @@ export class DomProcessor {
     }
     while (this.processDetachedCleanupStep()) { /* Explicit synchronous flush. */ }
     while (this.processAddedNodeStep()) { /* Explicit synchronous flush. */ }
+    while (this.processFollowingContextStep()) { /* Explicit synchronous flush. */ }
     while (this.processInlineProtectionStep()) { /* Explicit synchronous flush. */ }
     while (this.processTransformResult(this.pendingTransformResults)) { /* Explicit flush. */ }
     const awaiting = this.options.transformText ? [] : [...this.pendingTextTransforms.entries()];
@@ -1103,6 +1107,7 @@ export class DomProcessor {
         continue;
       }
       detachedTurn = true;
+      if (this.processFollowingContextStep()) continue;
       if (this.processTransformResult(this.pendingTransformResults)) continue;
       if (this.processInlineProtectionStep()) continue;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
@@ -1332,6 +1337,7 @@ export class DomProcessor {
         this.detachedCleanup ||
         this.pendingAddedNodeLists.size > 0 ||
         this.pendingInlineProtection.size > 0 ||
+        this.pendingFollowingContexts.size > 0 ||
         this.pendingTransformResults.size > 0 ||
         this.pendingTextEdits.size > 0 ||
         this.pendingNodes.size > 0 ||
@@ -1564,19 +1570,48 @@ export class DomProcessor {
       }
     }
     // All restore/forget operations have now finished. The final readable
-    // neighbor state is stable within this batch; overlapping windows need
-    // only one protection/candidate check per Text node.
-    const followingCache = new Map<Text, {length: number; canContinue: boolean}>();
+    // overlapping windows share checks. A later mutation invalidates their
+    // cached decisions while the bounded traversal consults the live DOM.
+    const followingCache = new Map<Text, {length: number; canContinue: boolean; version: number}>();
     const mergeableStarts = new Set(followingRequests.filter(request =>
       request.next == null && (request.node.nodeType === Node.TEXT_NODE ||
         (request.node instanceof Element && !blockBoundaryTags.has(request.node.tagName) &&
           request.node.firstChild === request.node.lastChild &&
           request.node.firstChild?.nodeType === Node.TEXT_NODE))));
     const remainingStarts = new Set([...mergeableStarts].map(request => request.node));
-    for (const request of followingRequests) {
-      if (mergeableStarts.has(request) && !remainingStarts.delete(request.node)) continue;
-      this.invalidateFollowingContext(request.node, request.next, followingCache, remainingStarts);
+    const processor = this;
+    const iterate = function* (): Generator<void> {
+      for (const request of followingRequests) {
+        yield;
+        if (mergeableStarts.has(request) && !remainingStarts.delete(request.node)) continue;
+        yield* processor.invalidateFollowingContext(request.node, request.next, followingCache, remainingStarts);
+      }
+    };
+    if (followingRequests.length > 0) {
+      const only = followingRequests.length === 1 ? followingRequests[0] : undefined;
+      // Repeated character changes of one live anchor need only its latest
+      // window. Structural requests retain their captured next sibling.
+      const key = only?.next === undefined && only?.node.nodeType === Node.TEXT_NODE ? only.node : {};
+      this.pendingFollowingContexts.set(key, iterate());
+      const deadline = this.now() + 1;
+      for (let unit = 0; unit < 8 && (unit === 0 || this.now() < deadline); unit++) {
+        if (!this.processFollowingContextStep()) break;
+      }
+      if (this.pendingFollowingContexts.size > 0) this.scheduleFlush(0);
     }
+  }
+
+  private processFollowingContextStep(): boolean {
+    const entry = this.pendingFollowingContexts.entries().next().value;
+    if (!entry) return false;
+    const [key, iterator] = entry;
+    // One regular unit advances at most eight simple traversal steps.
+    // Pending normal replies wait for invalidation; captions have their
+    // separate queue and may still complete during a large context walk.
+    for (let step = 0; step < 8; step++) {
+      if (iterator.next().done) {this.pendingFollowingContexts.delete(key); break;}
+    }
+    return true;
   }
 
   private processElement(element: Element, processShadowNow: boolean): void {
@@ -1892,81 +1927,90 @@ export class DomProcessor {
     }
   }
 
-  private invalidateFollowingContext(
+  private *invalidateFollowingContext(
     node: Node,
     immediateNext?: Node | null,
-    cache?: Map<Text, {length: number; canContinue: boolean}>,
+    cache?: Map<Text, {length: number; canContinue: boolean; version: number}>,
     remainingStarts?: Set<Node>
-  ): void {
+  ): Generator<void> {
     let scanned = 0;
+    const processor = this;
 
-    const processText = (text: Text): boolean => {
+    const processText = function* (text: Text): Generator<void, boolean> {
+      yield;
+      const version = processor.contextInvalidationVersion;
       const cached = cache?.get(text);
-      if (cached) {
+      if (cached && cached.version === version) {
         scanned += cached.length;
         if (cached.canContinue && remainingStarts?.delete(text)) scanned = 0;
         return cached.canContinue && scanned < leadingContextLimit;
       }
-      if (!this.shouldProcessTextNode(text)) {
+      if (!processor.shouldProcessTextNode(text)) {
         const whitespace = text.data.trim() === "";
         const length = whitespace ? text.length : 0;
-        cache?.set(text, {length, canContinue: whitespace});
+        cache?.set(text, {length, canContinue: whitespace, version});
         scanned += length;
         return whitespace && scanned < leadingContextLimit;
       }
-      const original = this.originalTextValue(text);
-      if (this.needsLeadingContext(original)) {
-        const previousContext = this.leadingContextCache.get(text);
-        const tracked = this.textChanges.get(text);
+      const original = processor.originalTextValue(text);
+      if (processor.needsLeadingContext(original)) {
+        const previousContext = processor.leadingContextCache.get(text);
+        const tracked = processor.textChanges.get(text);
         const unchangedWhitespaceContext = previousContext && tracked &&
           text.data === tracked.transformed &&
-          this.leadingContextRequiresTrailingWhitespace(original) &&
-          this.collectLeadingContext(text, false, true) === previousContext.value;
+          processor.leadingContextRequiresTrailingWhitespace(original) &&
+          (yield* processor.iterateLeadingContext(text, false, true)) === previousContext.value &&
+          version === processor.contextInvalidationVersion;
         if (!unchangedWhitespaceContext) {
-          this.contextDirtyNodes.add(text);
-          this.queue(text);
+          processor.contextDirtyNodes.add(text);
+          processor.queue(text);
         }
       }
       scanned += original.length;
-      cache?.set(text, {length: original.length, canContinue: true});
+      cache?.set(text, {length: original.length, canContinue: true, version});
       // A later mutation starts its own window AFTER this node. Absorb that
       // window here, extending the union instead of walking the overlap again.
       if (remainingStarts?.delete(text)) scanned = 0;
       return scanned < leadingContextLimit;
     };
 
-    const processSibling = (sibling: Node): boolean => {
+    const processSibling = function* (sibling: Node): Generator<void, boolean> {
+      yield;
+      if (!sibling.isConnected) return false;
       if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
         return false;
       }
       if (sibling.nodeType === Node.TEXT_NODE) {
-        return processText(sibling as Text);
+        return yield* processText(sibling as Text);
       }
       if (!sibling.firstChild) return true;
       // The common dynamic span has exactly one Text child. Its protection
       // is checked by processText; constructing a walker adds no information.
       if (sibling.firstChild === sibling.lastChild &&
           sibling.firstChild?.nodeType === Node.TEXT_NODE) {
-        const continues = processText(sibling.firstChild as Text);
-        if (cache?.get(sibling.firstChild as Text)?.canContinue && remainingStarts?.delete(sibling)) {
+        const continues = yield* processText(sibling.firstChild as Text);
+        const cached = cache?.get(sibling.firstChild as Text);
+        if (cached?.canContinue && cached.version === processor.contextInvalidationVersion && remainingStarts?.delete(sibling)) {
           scanned = 0;
           return true;
         }
         return continues;
       }
-      const walker = this.document.createTreeWalker(
+      const walker = processor.document.createTreeWalker(
         sibling,
         NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT
       );
       let current = walker.nextNode();
       while (current) {
+        yield;
+        if (!sibling.isConnected) return false;
         if (
           current instanceof Element &&
           blockBoundaryTags.has(current.tagName)
         ) {
           return false;
         }
-        if (current.nodeType === Node.TEXT_NODE && !processText(current as Text)) {
+        if (current.nodeType === Node.TEXT_NODE && !(yield* processText(current as Text))) {
           return false;
         }
         current = walker.nextNode();
@@ -1977,8 +2021,10 @@ export class DomProcessor {
     let current: Node | null = node;
     let next: Node | null = immediateNext ?? current.nextSibling;
     while (current?.parentNode && scanned < leadingContextLimit) {
+      yield;
+      if (!node.isConnected) return;
       while (next) {
-        if (!processSibling(next)) {
+        if (!(yield* processSibling(next))) {
           return;
         }
         next = next.nextSibling;
@@ -2057,10 +2103,11 @@ export class DomProcessor {
   }
 
   private invalidateContextPreparation(node: Node, invalidatedRoots: Set<Node>): void {
-    if (this.pendingContextPreparations.size === 0) return;
+    if (this.pendingContextPreparations.size === 0 && this.pendingFollowingContexts.size === 0) return;
     const root = node instanceof Element && blockBoundaryTags.has(node.tagName)
       ? node : findInlineBoundary(node, blockBoundaryTags);
     if (invalidatedRoots.has(root)) return;
+    if (invalidatedRoots.size === 0) this.contextInvalidationVersion++;
     invalidatedRoots.add(root);
     // A partial context must be discarded if its boundary or an ancestor
     // changes, even when quotation/protected-term scanning is disabled.

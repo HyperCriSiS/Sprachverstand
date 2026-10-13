@@ -12,7 +12,7 @@ const contentBefore = await readFile(path.join(production, "content.js"));
 const probe = `
 // Local diagnostic build only: retain timings, never text or node references.
 const phaseReport = {methods: {}, slow: []};
-for (const name of ['start', 'processRoot', 'handleMutationRecords', 'flushRegularNodesBudgeted', 'flushSubtitleNodes', 'discoverLateShadowRoots', 'processTextNode', 'finishTextTransform', 'replaceTextKeepingRanges', 'isSimpleInlineTextSwap', 'invalidateFollowingContext', 'invalidatePrecedingParticipleContext', 'forgetRoot']) {
+for (const name of ['start', 'processRoot', 'handleMutationRecords', 'flushRegularNodesBudgeted', 'flushSubtitleNodes', 'discoverLateShadowRoots', 'processTextNode', 'finishTextTransform', 'replaceTextKeepingRanges', 'isSimpleInlineTextSwap', 'invalidateFollowingContext', 'processFollowingContextStep', 'invalidatePrecedingParticipleContext', 'forgetRoot']) {
   const original = DomProcessor.prototype[name];
   if (typeof original !== 'function') throw new Error('Missing diagnostic method ' + name);
   const stats = phaseReport.methods[name] = {calls:0, totalMs:0, maximumMs:0};

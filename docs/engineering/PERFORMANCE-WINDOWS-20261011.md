@@ -1983,3 +1983,72 @@ Nach Entfernung/Deaktivierung zusätzlicher Erweiterungen wird die Reihe
 mit durchgehender Markerkontrolle wiederholt. Keine Mikrofonaufnahme;
 Aufnahmen, Browserinventar, Sicherungen und eindeutige Kennungen bleiben
 lokal. #419 weiterhin NO-GO.
+
+### Folgekontext-Invalidierung und Ersatzgeräte-Gegenproben, 14.10.2026
+
+Die verbleibende Folgekontextsuche ist separat reproduziert: Nach einem
+Präfixwechsel vor 50.000 leeren Inline-Nachbarn liefen Vorwärtssuche und
+erneutes Lesen des vorhergehenden Kontexts synchron im MutationObserver.
+Jetzt wird der zusammengefasste Lauf mit vollständigem Kontext fortgesetzt:
+höchstens 64 unmittelbare Iteratorschritte, danach reguläre Arbeitseinheiten
+mit jeweils höchstens acht Schritten innerhalb des bestehenden Budgets.
+Normale Antworten warten auf die Invalidierung; Untertitel verwenden weiter
+ihre separate Queue. Wiederholte Zeichenänderungen eines einzelnen Ankers
+ersetzen dessen offene Anfrage; strukturelle Anfragen behalten ihren
+erfassten nächsten Nachbarn. Neue Mutationen verwerfen alte Cacheentscheidungen.
+Stop/Optionswechsel verwerfen offene Läufe; explizites `flush()` bleibt synchron.
+Diagnosewerkzeuge erfassen die neue Fortsetzung gesondert.
+
+Native unprofilierte Chromium-CPU-4-Fixture, bestätigte 60-FPS-Quelle,
+simulierter einzelner echter CharacterData-Record, drei alternierende Paare:
+
+| Paar, 50.000 Nachbarn | Vorher: Observer-Aufruf | Nachher: Observer-Aufruf | Vorher / Nachher: Eingabe bis rAF | Vorher / Nachher: komplette Korrektur |
+| --- | --- | --- | --- | --- |
+| 1, vorher zuerst | 98,5 ms | 3,2 ms | 105,0 / 7,0 ms | 216,9 / 333,6 ms |
+| 2, nachher zuerst | 102,2 ms | 3,2 ms | 107,6 / 12,6 ms | 210,3 / 339,3 ms |
+| 3, vorher zuerst | 102,7 ms | 3,0 ms | 108,6 / 6,6 ms | 212,4 / 345,7 ms |
+
+Alle sechs Proben behalten Ziel, Ersetzungszahl und Original korrekt; keine
+Drops, höchste nachher gemessene Callbackabstände 21,9 / 21,4 / 21,4 ms.
+Diese Abstände enthalten nicht die Wartezeit bis zum ersten Callback;
+Eingabe bis rAF misst die hier relevante erste Blockierung. Die vollständige
+Korrektur wird langsamer. Synthetische DOM-Pipeline, keine allgemeine
+Webseiten- oder Videofreigabe. Eigene Gecko-Proben, ungedrosselt, je drei:
+
+| Browser, 50.000 Nachbarn | Vorher / Nachher: Observer-Aufruf | Vorher / Nachher: gesamte Korrektur |
+| --- | --- | --- |
+| Firefox 157.0.1 | 14 / 11 / 16 ms → 1 / 1 / 0 ms | 32 / 28 / 33 ms → 55 / 47 / 53 ms |
+| Waterfox 153.5.0 | 26 / 25 / 30 ms → 0 / 0 / 0 ms | 60 / 58 / 65 ms → 101 / 86 / 100 ms |
+
+Coarse Gecko-Zeitauflösung; 0 ms bedeutet keine kostenlose Arbeit. Sieben
+neue Produktregel-Regressionen prüfen Geschwister-/Teilbaumbudget,
+Zusammenfassung wiederholter Änderungen, fremde Inhalte, veraltete normale
+Antworten, Untertitelpriorität und Stop/Restore. Vorher scheitern beide
+Budgetfälle mit 2.202 bzw. 4.402 Traversalschritten statt maximal 128.
+Bestehender Nachbarfenster-Test wartet nun auf die komplette schrittweise
+Invalidierung; sein Limit von 64 Prüfungen bleibt erhalten. Gesamtcheck
+248 Dateien / 10.763 Tests sowie native Chromium-/Firefox-/Waterfox-Smokes
+einschließlich Ranges und Restore erfolgreich.
+
+Nach Beseitigung zusätzlicher Erweiterungseinflüsse wurden acht lokale
+Playback-Proben mit unverändertem Kontrollstand `456caf9` wiederholt:
+moderate und hohe Last, je Aus/an und an/aus, 0,5-s-MSE-Puffer. Sichtbarkeit,
+durchgehender Aus/an-Marker und vollständiges Signalende bestätigt. Erste
+moderate Aus/an-Proben lückenfrei; zweite Aus-Probe sechs Lücken mit Maximum
+5.348,5 ms, zweite An-Probe vier mit Maximum 392,2 ms. Hohe Last: erste
+Aus-Probe zwei Lücken, Maximum 3.603,4 ms; zweite Aus-Probe und beide
+An-Proben ohne innere Stille ab 20 ms. Das ist kein allgemeiner Fixnachweis
+und widerlegt die früheren Befunde auf dem anderen Gerät nicht.
+
+Zusätzlicher gepaarter Stresslauf auf exakt aus Commit `42ece3b` gebautem
+Produktcode, nur Testidentität und lokale Hosts angepasst: Aus-Lücke
+4.626,4 ms, An-Probe ohne innere Stille ab 20 ms. Unabhängige lokale
+Serverzeiten grenzen den 4.659-ms-Segmentabruf ein: 4.618–4.631 ms vor
+Eingang beim HTTP-Server, dort 0,7 ms Antwortzeit, danach 27–40 ms bis zum
+erfassten Browserabschluss. Uhrunsicherheit 13 ms; keine Host-Eventloop-
+Verzögerung über 20 ms in diesem Wiedergabefenster. Maximaler Serverabschluss
+aller Aus-Anfragen 1,9 ms, An-Anfragen 1,6 ms. Die große Verzögerung liegt
+somit im Browser-/Transportweg vor dem lokalen Server; einzelne Komponenten
+sind nicht kausal getrennt. Kein Mikrofon, keine öffentlichen Rohaufnahmen
+oder Kennungen. Vorab gelieferte Segmente sind die nächste getrennte
+CPU-/Wiedergabekontrolle; reale Streaming-/Startbefunde bleiben offen. #419 NO-GO.

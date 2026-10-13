@@ -105,6 +105,10 @@ describe("Inline-Schutzkontext bei MutationObserver-Mischlast", () => {
       elemente[index]!.textContent = "Nutzer:innen " + (index + 10);
     }
     await Promise.resolve();
+    // Complete the sliced neighbor work before counting its checks, without
+    // also running the separate transformation queue.
+    const context = processor as unknown as {processFollowingContextStep(): boolean};
+    while (context.processFollowingContextStep()) { /* Complete this observer batch. */ }
     expect(check.mock.calls.length).toBeGreaterThan(48);
     expect(check.mock.calls.length).toBeLessThanOrEqual(64);
   });
