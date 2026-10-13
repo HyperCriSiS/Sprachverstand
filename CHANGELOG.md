@@ -13,6 +13,9 @@ dokumentiert.
 
 ### Leistung
 
+- Leere Inline-Nachbarn werden bei grammatischer Kontextsuche und ihrer
+  erneuten Auswertung ohne zusätzliche TreeWalker verarbeitet. Leere
+  Blockgrenzen und geschützte Inhalte behalten ihre bisherige Bedeutung.
 - Auch die Vorbereitung der schrittweisen Wiederherstellung großer Seiten
   erfolgt jetzt innerhalb des Arbeitsbudgets. Verfolgte Originale werden
   ohne vollständige synchrone Kopie übernommen; fremde Änderungen und

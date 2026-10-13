@@ -1918,6 +1918,7 @@ export class DomProcessor {
       if (sibling.nodeType === Node.TEXT_NODE) {
         return processText(sibling as Text);
       }
+      if (!sibling.firstChild) return true;
       // The common dynamic span has exactly one Text child. Its protection
       // is checked by processText; constructing a walker adds no information.
       if (sibling.firstChild === sibling.lastChild &&
@@ -2950,6 +2951,7 @@ export class DomProcessor {
     if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
       return undefined;
     }
+    if (sibling.nodeType !== Node.TEXT_NODE && !sibling.firstChild) return "";
 
     const chunks: string[] = [];
 

@@ -1898,3 +1898,34 @@ Finish; Task-Test scheitert auf vorherigem Timer-Code. Vollständiger lokaler
 Projektcheck grün; finale Suite 245 Dateien / 10.738 Tests, native Smokes
 Chromium, Firefox und Waterfox einschließlich Ranges/Restore erneut grün.
 Daten ausschließlich synthetisch, Rohdaten lokal ignoriert. #419 NO-GO.
+
+### Leere Inline-Kontextnachbarn ohne TreeWalker-Allokation, 13.10.2026
+
+Eine eigene lokale native Fixture stellt einen einzelnen Kontexttext hinter
+0/1.000/10.000/50.000 leere Inline-Spans. Verarbeitung fordert vorhergehenden
+Kontext an, kontrolliert Dativziel und Originalrückgabe; Aufbau außerhalb
+der gemessenen einzelnen `processTextNode`-Operation. Synthetische Grenze,
+keine belegte reale Häufigkeit solcher Seitenstrukturen.
+
+Bisher entstand für jedes leere Inline-Blatt ein erfolgloser TreeWalker.
+Leere Nicht-Text-Blätter werden jetzt ohne Walker gelesen; Blockgrenzen
+werden weiterhin zuerst geprüft. Derselbe Schnellpfad gilt bei Änderung
+des vorangehenden Kontexts. Sechs neue Regressionen mit echten Produktregeln
+prüfen Dativ, Kontextwechsel, Restore, drei leere Blockgrenzen und Code-
+Schutz. Vorher scheitern beide Allokationsregressionen (u.a. 3.000 Walker
+bei 1.000 leeren Nachbarn), alle vier übrigen Sicherheitsfälle bestehen.
+
+| Native Einzeloperation, 50.000 leere Nachbarn, je drei Proben | Vorher | Nachher |
+| --- | --- | --- |
+| Chromium, CPU-4 | 87,7 / 89,0 / 96,3 ms | 31,0 / 30,7 / 33,5 ms |
+| Firefox 157.0.1, ungedrosselt | 19 / 18 / 20 ms | 7 / 9 / 9 ms |
+| Waterfox, ungedrosselt | 17 / 20 / 23 ms | 9 / 6 / 15 ms |
+
+Alle nativen Proben erhalten Dativziel und Original korrekt. Vollständiger
+lokaler Projektcheck: 246 Dateien / 10.744 Tests, Typprüfung, beide Builds,
+Metadaten-/Locale-/Browserprüfungen, Firefox-Lint ohne Fehler/Warnungen.
+Native Rohdaten lokal ignoriert unter `artifacts/restore-preparation-resume/`.
+**Teilkorrektur:** Der verbleibende lineare Kontextlauf kann weiterhin eine
+Arbeitsscheibe überschreiten. Nächste Ursachenprüfung: große Kontextläufe
+in der vorhandenen lokalen Anfragepipeline kooperativ vorbereiten, ohne
+Kontext abzuschneiden oder Schutz-/Flexionsverhalten zu lockern. #419 NO-GO.
