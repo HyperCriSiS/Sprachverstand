@@ -92,6 +92,16 @@ interface ChangeRecord {
   readonly summaries: readonly ReplacementSummaryEntry[];
 }
 
+interface TextContext {
+  readonly leadingContext: string | undefined;
+  readonly protectParticiple: boolean;
+}
+
+interface TextContextPreparation {
+  readonly iterator: Generator<void, TextContext>;
+  readonly ancestry: readonly (readonly [Node, object | undefined])[];
+}
+
 interface RewriteState {
   count: number;
   windowStartedAt: number;
@@ -153,6 +163,7 @@ const regularWorkBudgetMs = 4;
 // Time may be coarse or jump past a deadline before the first work unit.
 // Bound units as well as elapsed time, while guaranteeing forward progress.
 const maximumRegularStepsPerSlice = 128;
+const maximumContextStepsPerSlice = 1_024;
 const maximumImmediateInlineProtectionNodes = 2_048;
 const minimumPartitionedInlineChildren = 128;
 const minimumBudgetedTextEdits = 128;
@@ -226,6 +237,7 @@ export class DomProcessor {
   private readonly pendingAttributes = new Map<Element, Set<string>>();
   private textChanges = new Map<Text, ChangeRecord>();
   private pendingTextTransforms = new Map<Text, {original: string; expected: string}>();
+  private readonly pendingContextPreparations = new Map<Text, TextContextPreparation>();
   private readonly queuedLargeTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSmallTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSubtitleTransforms = new Map<Text, () => Promise<void>>();
@@ -323,6 +335,7 @@ export class DomProcessor {
   }
 
   private cancelAsyncWork(): void {
+    this.pendingContextPreparations.clear();
     this.resetPendingNodeScan();
     this.pendingAddedNodeLists.clear();
     this.addedNodeTurn = true;
@@ -1400,6 +1413,7 @@ export class DomProcessor {
     // Im Observer-Batch ist der finale DOM-Zustand bereits sichtbar.
     // Gemeinsame Inline-Bereiche nur einmal statt pro Mutation traversieren.
     const invalidatedInlineRoots = new Set<Node>();
+    const invalidatedContextRoots = new Set<Node>();
     const knownOwnWrites = new Map<Text, object>();
     const handledExternalText = new Set<Text>();
     const followingRequests: {node: Node; next?: Node | null}[] = [];
@@ -1407,6 +1421,7 @@ export class DomProcessor {
       if (this.isTemporaryPartitionNode(record.target)) continue;
       if (record.type === "childList" &&
           this.isOnlyTemporaryPartitionMutation(record)) continue;
+      if (record.type !== "characterData") this.invalidateContextPreparation(record.target, invalidatedContextRoots);
       if (record.type === "characterData") {
         const node = record.target as Text;
         // Every record reads the same final text state in this observer batch.
@@ -1435,6 +1450,7 @@ export class DomProcessor {
           // arrive here after ownership was released; avoid rescanning them.
           continue;
         }
+        this.invalidateContextPreparation(node, invalidatedContextRoots);
         if (tracked) {
           this.noteExternalTextRewrite(node);
         }
@@ -1757,10 +1773,17 @@ export class DomProcessor {
   }
 
   private shouldProtectFollowingParticiple(node: Text, original: string): boolean {
+    const iterator = this.iterateFollowingParticipleProtection(node, original);
+    let next = iterator.next();
+    while (!next.done) next = iterator.next();
+    return next.value;
+  }
+
+  private *iterateFollowingParticipleProtection(node: Text, original: string): Generator<void, boolean> {
     // Ein links ohne Wortgrenze anliegender Text ist ein Teil desselben Wortes.
     if (
       leadingParticiplePattern.test(original) &&
-      /\p{L}$/u.test(this.collectLeadingContext(node, true) ?? "")
+      /\p{L}$/u.test((yield* this.iterateLeadingContext(node, true)) ?? "")
     ) {
       return true;
     }
@@ -1771,10 +1794,11 @@ export class DomProcessor {
     let current: Node | null = node;
     let following = "";
     while (current?.parentNode && following.length < leadingContextLimit) {
+      yield;
       let sibling = current.nextSibling;
       while (sibling) {
         // Nur lesbare Inline-Texte dürfen den Schutz beeinflussen.
-        const context = this.collectSafeContextSibling(sibling, true);
+        const context = yield* this.iterateSafeContextSibling(sibling, true);
         if (context === undefined) {
           return false;
         }
@@ -2030,6 +2054,17 @@ export class DomProcessor {
     }
     this.inlineProtectionCache.set(added, cached);
     if (prepared) {prepared.delete(removed); prepared.set(added, cached);}
+  }
+
+  private invalidateContextPreparation(node: Node, invalidatedRoots: Set<Node>): void {
+    if (this.pendingContextPreparations.size === 0) return;
+    const root = node instanceof Element && blockBoundaryTags.has(node.tagName)
+      ? node : findInlineBoundary(node, blockBoundaryTags);
+    if (invalidatedRoots.has(root)) return;
+    invalidatedRoots.add(root);
+    // A partial context must be discarded if its boundary or an ancestor
+    // changes, even when quotation/protected-term scanning is disabled.
+    this.inlineProtectionVersions.set(root, {});
   }
 
   private invalidateInlineProtectionAround(
@@ -2417,6 +2452,7 @@ export class DomProcessor {
     if (pendingTransform) {
       if (node.data === pendingTransform.expected && !contextDirty) return;
       this.pendingTextTransforms.delete(node);
+      this.pendingContextPreparations.delete(node);
       this.queuedLargeTransforms.delete(node);
       this.queuedSmallTransforms.delete(node);
       this.queuedSubtitleTransforms.delete(node);
@@ -2476,14 +2512,30 @@ export class DomProcessor {
       return;
     }
     const needsLeadingContext = !subtitle && this.needsLeadingContext(original);
-    const leadingContext = needsLeadingContext
-      ? this.collectLeadingContext(node, false,
-          this.leadingContextRequiresTrailingWhitespace(original))
-      : undefined;
-    if (needsLeadingContext) this.leadingContextCache.set(node, {value: leadingContext});
+    let leadingContext: string | undefined;
+    let protectParticiple = false;
+    let contextPreparation: TextContextPreparation | undefined;
+    if (budgeted && this.options.transformText && !subtitle &&
+        (needsLeadingContext || leadingParticiplePattern.test(original) || trailingParticiplePattern.test(original))) {
+      const iterator = this.iterateTextContext(node, original, needsLeadingContext);
+      const ancestry = this.inlineProtectionAncestry(findInlineBoundary(node, blockBoundaryTags));
+      // Ordinary short contexts stay in the current slice. A long context
+      // keeps its iterator and continues inside the bounded request pipeline.
+      for (let step = 0; step < maximumImmediateInitialNodes; step++) {
+        const next = iterator.next();
+        if (next.done) {
+          ({leadingContext, protectParticiple} = next.value);
+          break;
+        }
+        if (step === maximumImmediateInitialNodes - 1) contextPreparation = {iterator, ancestry};
+      }
+    } else {
+      leadingContext = needsLeadingContext ? this.collectLeadingContext(node, false,
+        this.leadingContextRequiresTrailingWhitespace(original)) : undefined;
+      protectParticiple = !subtitle && this.shouldProtectFollowingParticiple(node, original);
+    }
+    if (needsLeadingContext && !contextPreparation) this.leadingContextCache.set(node, {value: leadingContext});
     else this.leadingContextCache.delete(node);
-    const protectParticiple = !subtitle &&
-      this.shouldProtectFollowingParticiple(node, original);
     const cachedSubtitle = subtitle ? this.subtitleTransformCache.get(original) : undefined;
     if (cachedSubtitle) {
       this.finishTextTransform(node, original, originalFromContext !== undefined, cachedSubtitle, budgeted);
@@ -2492,7 +2544,7 @@ export class DomProcessor {
     if (this.options.transformText || (budgeted && (subtitle || !this.requiresInlineProtection()) &&
         original.length >= largeTextTransformThreshold && this.options.transformLargeText)) {
       this.deferTextTransform(node, original, leadingContext, protectParticiple,
-        originalFromContext !== undefined, subtitle, protectedRanges);
+        originalFromContext !== undefined, subtitle, protectedRanges, contextPreparation);
       return;
     }
     const result = subtitle
@@ -2527,16 +2579,20 @@ export class DomProcessor {
 
   private deferTextTransform(node: Text, original: string, leadingContext: string | undefined,
     protectParticiple: boolean, restoreUnchanged: boolean, subtitle: boolean,
-    protectedRanges: readonly {start: number; end: number}[] = []): void {
+    protectedRanges: readonly {start: number; end: number}[] = [],
+    contextPreparation?: TextContextPreparation): void {
     const asynchronousTransform = this.options.transformText;
     const transform = asynchronousTransform ?? this.options.transformLargeText!;
     const options = {...this.createTransformOptions(leadingContext, protectParticiple),
       ...(protectedRanges.length ? {protectedRanges} : {})};
     const pending = {original, expected: node.data};
     this.pendingTextTransforms.set(node, pending);
+    this.pendingContextPreparations.delete(node);
+    if (contextPreparation) this.pendingContextPreparations.set(node, contextPreparation);
     const apply = (resultOf: () => DetailedTransformResult): void => {
       if (!this.running || this.pendingTextTransforms.get(node) !== pending) return;
       this.pendingTextTransforms.delete(node);
+      this.pendingContextPreparations.delete(node);
       this.queuedLargeTransforms.delete(node);
       this.queuedSmallTransforms.delete(node);
       this.queuedSubtitleTransforms.delete(node);
@@ -2568,9 +2624,22 @@ export class DomProcessor {
         complete(() => ({text: original, replacements: 0, summaries: []}));
         return Promise.resolve();
       }
-      return Promise.resolve().then(() => asynchronousTransform
-        ? asynchronousTransform(original, options, subtitle) : transform(original, options)).then(
-        result => complete(() => result),
+      return Promise.resolve().then(async () => {
+        let preparedOptions = options;
+        if (contextPreparation) {
+          const context = await this.prepareTextContext(node, pending, contextPreparation);
+          if (!context) {
+            complete(() => ({text: original, replacements: 0, summaries: []}));
+            return;
+          }
+          this.leadingContextCache.set(node, {value: context.leadingContext});
+          preparedOptions = {...this.createTransformOptions(context.leadingContext, context.protectParticiple),
+            ...(protectedRanges.length ? {protectedRanges} : {})};
+        }
+        return asynchronousTransform ? asynchronousTransform(original, preparedOptions, subtitle)
+          : transform(original, preparedOptions);
+      }).then(
+        result => {if (result) complete(() => result);},
         () => {
           if (!this.options.transformText) {
             complete(() => original.length <= maximumImmediateTextEditPreparationChars
@@ -2610,6 +2679,49 @@ export class DomProcessor {
         this.activeSmallTransforms -= 1;
         this.dispatchSmallTransforms();
       });
+    }
+  }
+
+  private *iterateTextContext(node: Text, original: string, needsLeading: boolean): Generator<void, TextContext> {
+    const leadingContext = needsLeading ? yield* this.iterateLeadingContext(node, false,
+      this.leadingContextRequiresTrailingWhitespace(original)) : undefined;
+    const protectParticiple = yield* this.iterateFollowingParticipleProtection(node, original);
+    return {leadingContext, protectParticiple};
+  }
+
+  private async prepareTextContext(node: Text, pending: {original: string; expected: string},
+    preparation: TextContextPreparation): Promise<TextContext | undefined> {
+    const view = this.document.defaultView ?? window;
+    const current = () => this.running && this.pendingTextTransforms.get(node) === pending &&
+      this.pendingContextPreparations.get(node) === preparation && node.data === pending.expected &&
+      !this.contextDirtyNodes.has(node) && this.validInlineProtectionAncestry(preparation.ancestry);
+    try {
+      while (current()) {
+        const scheduler = (view as Window & {scheduler?: {
+          postTask: (work: () => void, options: {priority: "background"}) => Promise<unknown>;
+        }}).scheduler;
+        if (scheduler?.postTask) {
+          try {await scheduler.postTask(() => undefined, {priority: "background"});}
+          catch {await new Promise<void>(resolve => view.setTimeout(resolve, 0));}
+        } else await new Promise<void>(resolve => view.setTimeout(resolve, 0));
+        if (!current()) break;
+        let result: TextContext | undefined;
+        this.withTextSafetyScope(() => {
+          const deadline = this.now() + 1;
+          for (let step = 0; step < maximumContextStepsPerSlice && (step === 0 || this.now() < deadline); step++) {
+            const next = preparation.iterator.next();
+            if (next.done) {result = next.value; break;}
+          }
+        });
+        if (result) return result;
+      }
+      if (this.running && this.pendingTextTransforms.get(node) === pending && this.isProcessableRoot(node)) {
+        this.contextDirtyNodes.add(node);
+        this.queue(node);
+      }
+      return undefined;
+    } finally {
+      if (this.pendingContextPreparations.get(node) === preparation) this.pendingContextPreparations.delete(node);
     }
   }
 
@@ -2947,7 +3059,8 @@ export class DomProcessor {
   }
 
   // Geschützte oder technische Teilbäume sind keine grammatischen Nachbarn.
-  private collectSafeContextSibling(sibling: Node, allowShortFragment = false): string | undefined {
+  private *iterateSafeContextSibling(sibling: Node, allowShortFragment = false): Generator<void, string | undefined> {
+    yield;
     if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) {
       return undefined;
     }
@@ -2996,6 +3109,7 @@ export class DomProcessor {
 
     let current = walker.nextNode();
     while (current) {
+      yield;
       if (
         current instanceof Element &&
         blockBoundaryTags.has(current.tagName)
@@ -3016,14 +3130,26 @@ export class DomProcessor {
     allowShortFragment = false,
     requiresTrailingWhitespace = false
   ): string | undefined {
+    const iterator = this.iterateLeadingContext(node, allowShortFragment, requiresTrailingWhitespace);
+    let next = iterator.next();
+    while (!next.done) next = iterator.next();
+    return next.value;
+  }
+
+  private *iterateLeadingContext(
+    node: Text,
+    allowShortFragment = false,
+    requiresTrailingWhitespace = false
+  ): Generator<void, string | undefined> {
     const chunks: string[] = [];
     let collectedLength = 0;
     let current: Node | null = node;
 
     while (current?.parentNode) {
+      yield;
       let sibling = current.previousSibling;
       while (sibling) {
-        const text = this.collectSafeContextSibling(sibling, allowShortFragment);
+        const text = yield* this.iterateSafeContextSibling(sibling, allowShortFragment);
         if (text === undefined) {
           const context = chunks.join("").slice(-leadingContextLimit);
           return context || undefined;
@@ -3072,6 +3198,7 @@ export class DomProcessor {
     const pendingTransform = this.pendingTextTransforms.get(node);
     if (pendingTransform) {
       this.pendingTextTransforms.delete(node);
+      this.pendingContextPreparations.delete(node);
       this.queuedLargeTransforms.delete(node);
       this.queuedSmallTransforms.delete(node);
       this.queuedSubtitleTransforms.delete(node);

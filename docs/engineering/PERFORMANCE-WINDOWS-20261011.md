@@ -1929,3 +1929,57 @@ Native Rohdaten lokal ignoriert unter `artifacts/restore-preparation-resume/`.
 Arbeitsscheibe überschreiten. Nächste Ursachenprüfung: große Kontextläufe
 in der vorhandenen lokalen Anfragepipeline kooperativ vorbereiten, ohne
 Kontext abzuschneiden oder Schutz-/Flexionsverhalten zu lockern. #419 NO-GO.
+
+### Lange Anfragekontexte kooperativ vorbereiten, 14.10.2026
+
+Die Kontextvorbereitung normaler budgetierter lokaler Textanfragen behält
+nach einer kurzen unmittelbaren Prüfung ihren Iterator. Fortsetzungen
+laufen in der vorhandenen begrenzten Anfragepipeline mit 1-ms-Budget und
+höchstens 1.024 Schritten. Hintergrund-Tasks werden bevorzugt; fehlende oder
+abgelehnte Tasks verwenden Timer. Vollständiger vorangehender Kontext und
+folgender Partizipschutz bleiben erhalten. Geänderte Grenzen, fremde Texte,
+Editorwechsel, Stop und neue Optionen verwerfen den alten Stand; auch vor
+Anfragestart verworfene Iteratoren werden freigegeben. Untertitel benötigen
+diese normale Kontextvorbereitung nicht und behalten ihren Anfragepfad.
+
+Separate native Chromium-Fixture, CPU-4, bestätigte 60-FPS-Quelle,
+50.000 leere Inline-Nachbarn, drei alternierende Vorher/Nachher-Paare:
+
+| Paar | Vorher: erster Aufruf | Nachher: erster Aufruf | Vorher: Eingabe bis rAF | Nachher: Eingabe bis rAF | Vorher / Nachher: Korrektur vollständig |
+| --- | --- | --- | --- | --- | --- |
+| 1, vorher zuerst | 46,2 ms | 7,0 ms | 51,3 ms | 11,2 ms | 59,8 / 139,0 ms |
+| 2, nachher zuerst | 46,8 ms | 7,8 ms | 60,3 ms | 12,6 ms | 59,9 / 145,5 ms |
+| 3, vorher zuerst | 45,2 ms | 7,1 ms | 49,6 ms | 13,1 ms | 57,2 / 138,0 ms |
+
+Dies verbessert die Reaktionszeit auf Kosten der gesamten Korrekturdauer;
+keine allgemeine Durchsatzsteigerung. Alle Ziele und Originalrückgaben
+korrekt; keine Long Tasks oder Drops in diesen endlichen Proben. Höchste
+Callbackabstände nachher 25,1 / 21,4 / 26,7 ms. Mit 1.000 Nachbarn sinkt der
+erste Aufruf von 9,5–12,0 auf 7,0–7,3 ms, die Korrektur steigt von
+17,4–23,1 auf 28,5–31,5 ms. Fixture verwendet eine synthetische Regel und
+asynchrone Transformationsfunktion; sie misst die DOM-Pipeline, nicht die
+vollständige Erweiterung oder reale Seitennutzung. Zeitbudget bleibt
+kooperativ, keine harte Einzeloperationgarantie.
+
+Zwölf Regressionen mit Produktregeln prüfen vollständigen Dativkontext,
+große Geschwisterlisten/Teilbäume, fremde Änderungen, bereits gelesenen
+Kontext, Editorwechsel, Partizipschutz, Untertitelpriorität, Stop,
+Optionswechsel, frühe Iteratorfreigabe und beide Timer-Fallbacks. Die zwei
+Budgetregressionen scheitern auf dem vorherigen synchronen Code.
+Abschließender Gesamtcheck: 247 Dateien / 10.756 Tests, Typprüfung, Builds,
+Metadaten-/Locale-/Browserprüfungen und Firefox-Lint ohne Fehler/Warnungen.
+Native Erweiterungssmokes Chromium, Firefox und Waterfox mit Inline-Ranges,
+großem Einzeltext, Schutzbereichen und Restore erfolgreich. Synthetische
+Rohdaten lokal ignoriert. Lange synchrone Folgekontext-Invalidierung und
+die allgemeinen Streaming-/Startbefunde sind damit nicht abgeschlossen.
+
+Die erste neue Ersatzgeräte-Reihe erkennt eine absichtliche 128-ms-Lücke
+im lokalen Playback-Abgriff; vier moderate 0,5-s-MSE-Proben enthalten keine
+innere Stille ab 20 ms. **Kein gültiger Aus/an-Nachweis:** Ein zusätzlicher
+Texttransformer auf dem Ersatzgerät verändert den Marker auch bei
+entfernter temporärer Sprachverstand-ID. Alle vier Vergleiche verworfen;
+zwei Stressanläufe brechen vor Wiedergabestart an der Zustandskontrolle ab.
+Nach Entfernung/Deaktivierung zusätzlicher Erweiterungen wird die Reihe
+mit durchgehender Markerkontrolle wiederholt. Keine Mikrofonaufnahme;
+Aufnahmen, Browserinventar, Sicherungen und eindeutige Kennungen bleiben
+lokal. #419 weiterhin NO-GO.

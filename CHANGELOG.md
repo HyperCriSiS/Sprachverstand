@@ -13,6 +13,10 @@ dokumentiert.
 
 ### Leistung
 
+- Lange grammatische Kontextsuche vor einer lokalen Textanfrage wird in
+  begrenzten Schritten vorbereitet. Vollständiger Kontext und Schutzregeln
+  bleiben erhalten; Änderungen während der Vorbereitung verwerfen den alten
+  Stand. Untertitel behalten ihren eigenen priorisierten Anfragepfad.
 - Leere Inline-Nachbarn werden bei grammatischer Kontextsuche und ihrer
   erneuten Auswertung ohne zusätzliche TreeWalker verarbeitet. Leere
   Blockgrenzen und geschützte Inhalte behalten ihre bisherige Bedeutung.
