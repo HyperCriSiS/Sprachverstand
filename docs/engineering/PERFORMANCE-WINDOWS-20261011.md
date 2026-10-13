@@ -1594,3 +1594,56 @@ Nächste begrenzte Prüfung: Produktions-Callbackpausen mit ausgeglichener
 Messreihenfolge und ohne Browsertrace gegenprüfen, eigene CPU von nativer
 V8-/Safepoint-Wartezeit und GPU-Takt trennen. Keine spekulative Änderung
 an Transformation, Scheduler oder Benutzerbrowser; #419 weiterhin NO-GO.
+
+### Nutzereingrenzung vom 13.10.2026: Android und hörbare Aussetzer
+
+Der Nutzer grenzt die sporadische Störung der Store-Version auf Android mit
+Firefox beziehungsweise Waterfox ein. Sie trat auf mehreren Seiten auf;
+der Ton stockte definitiv, vermutlich das gesamte Video. Am Desktop ist
+die Störung nach seiner Erinnerung bisher nicht aufgetreten. Das ist eine
+Nutzerbeobachtung, noch keine reproduzierte oder kausal zugeordnete Störung.
+
+Die bisherigen Desktop-Messungen belegen die beschriebenen Einsparungen
+an DOM-Arbeit, verifizieren aber weder Android-Verhalten noch hörbare
+Audiokontinuität. Windows-VSync- und V8-Befunde dürfen nicht als Erklärung
+des Android-Fehlers übernommen werden. Die nächste priorisierte Prüfung
+benötigt Android mit dem betroffenen Gecko-Browser und ein Video mit echtem
+Ton: Audio- und Videounterbrechungen mit und ohne Erweiterung erfassen,
+die Vergleichsreihenfolge wechseln und beobachtete Unterbrechungen mit
+Erweiterungsarbeit korrelieren. Desktop-AV-Tests können ergänzen, ersetzen
+die Android-Verifikation aber nicht. Originale Store-Störung und #419
+NO-GO bleiben offen; noch keine weiteren Produktänderungen abgeleitet.
+
+**Vorbereitung nach Kontingentreset:** `adb devices -l` zweimal ohne Gerät;
+ADB vorhanden, kein Emulator an den üblichen SDK-Pfaden. Nutzer kann ein
+Android-Gerät erst in etwa acht Stunden anschließen. Kein Gerätetest gestartet.
+Aktueller Remote-`main` weiterhin `6c3b5f4d`; #451 offen und Draft auf `0292515`.
+
+Lokaler, noch nicht ins Produkt/Testsystem übernommener Prototyp unter
+`artifacts/android-av-20261013/`: reproduzierbare FFmpeg-Quelle mit 60 s
+H.264 1280×720/30 FPS und AAC Mono/48 kHz, durchgehender Prüfton. Moderate
+Seitenlast 4 normale Textänderungen/s plus etwa 2 Captionwechsel/s, getrennte
+Stressprobe bis 960 normale Änderungen/s. Start per Benutzerinteraktion mit
+echtem unmuted Audio; Browsermetriken ausdrücklich kein Audio-Nachweis.
+Server nur an 127.0.0.1, Android-Zugriff später per gezieltem ADB-Reverse.
+
+Quelle und Prototyp vollständig neu erzeugt und lokal geprüft:
+FFprobe bestätigt beide Streams und 60-s-Dauer; Stilleprüfung −50 dB/20 ms
+findet keine Quelllücke. Absichtlich eingefügte 120-ms-Audiolücke wird als
+128 ms erkannt (blockweise Filterung). HTTP/HEAD/Byte-Ranges, ungültige Range,
+Pfadbegrenzung sowie Start, moderate Writes, unmuted Audio und Endzustand der
+Seitenlogik erfolgreich geprüft. Serverprozess danach beendet. Keine
+Decoder-/Android-Verifikation; Stilleprüfung erfasst keine wiederholten
+Audioblöcke und keine Störung hinter dem Aufnahmeabgriff.
+
+Vor Android-Test Geräte-/Browser-/Storeversion feststellen, Erweiterungs-
+zustand anhand tatsächlicher Transformation prüfen und Aus/an sowie an/aus
+vergleichen. Aufnahmeunterstützung erst am Gerät prüfen: offizielle
+[scrcpy-Audiodokumentation](https://github.com/Genymobile/scrcpy/blob/master/doc/audio.md)
+beschreibt Audio ab Android 11 und Playback-Duplikation ab Android 13;
+Aufnahmequelle kann Wiedergabe beeinflussen. Keine Aufnahmeinstallation oder
+Umleitung bisher. Mozilla beschreibt für
+[Android-web-ext](https://extensionworkshop.com/documentation/develop/developing-extensions-for-firefox-for-android/)
+das Hauptprofil statt eines isolierten temporären Profils; vorhandene
+Store-Identität/Einstellungen vor Testbuild berücksichtigen. Waterfox separat
+verifizieren. Keine spekulative Produktkorrektur aus den Desktopbefunden.
