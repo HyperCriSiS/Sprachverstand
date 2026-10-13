@@ -17,6 +17,10 @@ dokumentiert.
   erfolgt jetzt innerhalb des Arbeitsbudgets. Verfolgte Originale werden
   ohne vollständige synchrone Kopie übernommen; fremde Änderungen und
   bereits begonnene Rückgaben bleiben erhalten.
+- Wo die Browser-API verfügbar ist, setzt die Wiederherstellung ihre kurzen
+  Arbeitsschritte mit Hintergrundpriorität fort und vermeidet wiederholte
+  Mindestwartezeiten verschachtelter Timer. Andere Browser und fehlgeschlagene
+  Task-Anfragen behalten den Timerpfad.
 - Untertitelanfragen werden nach demselben Verarbeitungsschritt gebündelt,
   ohne auf das acht Millisekunden lange Sammelfenster für normale Texte zu
   warten. Die bestehenden Größen- und Parallelitätsgrenzen bleiben erhalten.

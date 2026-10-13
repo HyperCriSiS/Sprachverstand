@@ -120,6 +120,7 @@ interface BudgetedRestoration {
   readonly attributes: Iterator<{element: Element; name: string; original: string; expected: string}>;
   attributesDone: boolean;
   handle?: number;
+  task?: object;
 }
 
 interface TextEditPlan {
@@ -577,6 +578,7 @@ export class DomProcessor {
 
   private runBudgetedRestoration(restoration: BudgetedRestoration, synchronous = false): void {
     if (this.budgetedRestoration !== restoration) return;
+    delete restoration.task;
     const view = this.document.defaultView ?? window;
     if (restoration.handle !== undefined) {
       view.clearTimeout(restoration.handle);
@@ -625,7 +627,23 @@ export class DomProcessor {
     this.updateExpectedTextEdits(validated);
     if (this.pendingTextEdits.size > 0 || restoration.nodes.length > 0 ||
         !restoration.attributesDone) {
-      restoration.handle = view.setTimeout(() => this.runBudgetedRestoration(restoration), 0);
+      const scheduler = (view as Window & {scheduler?: {
+        postTask: (work: () => void, options: {priority: "background"}) => Promise<unknown>;
+      }}).scheduler;
+      if (scheduler?.postTask) {
+        // Yield to rendering/input without the repeated nested-timer delay.
+        // A synchronous finish invalidates any previously posted callback.
+        const task = {};
+        restoration.task = task;
+        void scheduler.postTask(() => {
+          if (restoration.task === task) this.runBudgetedRestoration(restoration);
+        }, {priority: "background"}).catch(() => {
+          if (restoration.task === task && this.budgetedRestoration === restoration) {
+            delete restoration.task;
+            restoration.handle = view.setTimeout(() => this.runBudgetedRestoration(restoration), 0);
+          }
+        });
+      } else restoration.handle = view.setTimeout(() => this.runBudgetedRestoration(restoration), 0);
     } else {
       this.budgetedRestoration = undefined;
       if (this.running) {
