@@ -116,8 +116,9 @@ interface DetachedCleanupState {
 interface BudgetedRestoration {
   readonly promise: Promise<void>;
   readonly resolve: () => void;
-  readonly nodes: {node: Text; original: string; expected: string}[];
-  readonly attributes: {element: Element; name: string; original: string; expected: string}[];
+  readonly nodes: Iterator<{node: Text; original: string; expected: string} | undefined>[];
+  readonly attributes: Iterator<{element: Element; name: string; original: string; expected: string}>;
+  attributesDone: boolean;
   handle?: number;
 }
 
@@ -222,8 +223,8 @@ export class DomProcessor {
     | { readonly root: Node; readonly walker: TreeWalker }
     | undefined;
   private readonly pendingAttributes = new Map<Element, Set<string>>();
-  private readonly textChanges = new Map<Text, ChangeRecord>();
-  private readonly pendingTextTransforms = new Map<Text, {original: string; expected: string}>();
+  private textChanges = new Map<Text, ChangeRecord>();
+  private pendingTextTransforms = new Map<Text, {original: string; expected: string}>();
   private readonly queuedLargeTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSmallTransforms = new Map<Text, () => Promise<void>>();
   private readonly queuedSubtitleTransforms = new Map<Text, () => Promise<void>>();
@@ -235,9 +236,9 @@ export class DomProcessor {
   private readonly pendingAttributeTransforms = new Map<Element, Map<string, {value: string}>>();
   private readonly transformRetryHandles = new Set<number>();
   private activeTextEditSlice: ReadonlySet<Text> | undefined;
-  private readonly pendingTextEdits = new Map<Text, TextEditPlan>();
+  private pendingTextEdits = new Map<Text, TextEditPlan>();
   private readonly summaryCounts = new Map<string, ReplacementSummaryEntry>();
-  private readonly attributeChanges = new Map<
+  private attributeChanges = new Map<
     Element,
     Map<string, ChangeRecord>
   >();
@@ -513,12 +514,36 @@ export class DomProcessor {
     return this.beginBudgetedRestoration(false);
   }
 
+  private *restorationTextEntries(
+    changes: ReadonlyMap<Text, ChangeRecord>,
+    transforms: ReadonlyMap<Text, {original: string; expected: string}>,
+    edits: ReadonlyMap<Text, TextEditPlan>
+  ): Generator<{node: Text; original: string; expected: string} | undefined> {
+    for (const [node, pending] of edits)
+      yield {node, original: pending.original, expected: pending.expected};
+    for (const [node, pending] of transforms)
+      yield edits.has(node) ? undefined : {node, ...pending};
+    for (const [node, change] of changes)
+      // Superseded entries still consume a budget step. Skipping an entire
+      // overlapping map in one iterator.next() would recreate a long task.
+      yield edits.has(node) || transforms.has(node) ? undefined :
+        {node, original: change.original, expected: change.transformed};
+  }
+
+  private *restorationAttributeEntries(changes: ReadonlyMap<Element, ReadonlyMap<string, ChangeRecord>>):
+    Generator<{element: Element; name: string; original: string; expected: string}> {
+    for (const [element, attributes] of changes)
+      for (const [name, change] of attributes)
+        yield {element, name, original: change.original, expected: change.transformed};
+  }
+
   private beginBudgetedRestoration(keepRunning: boolean): Promise<void> {
     if (this.budgetedRestoration) {
       const restoration = this.budgetedRestoration;
       if (!keepRunning && this.running) {
-        for (const [node, pending] of this.pendingTextEdits) restoration.nodes.push(
-          {node, original: pending.original, expected: pending.expected});
+        restoration.nodes.unshift(this.restorationTextEntries(
+          new Map(), new Map(), this.pendingTextEdits));
+        this.pendingTextEdits = new Map();
         this.budgetedRestoration = undefined;
         this.stop({restore: false});
         this.budgetedRestoration = restoration;
@@ -526,16 +551,16 @@ export class DomProcessor {
       }
       return restoration.promise;
     }
-    const originals = new Map<Text, {original: string; expected: string}>();
-    for (const [node, change] of this.textChanges) originals.set(node,
-      {original: change.original, expected: change.transformed});
-    for (const [node, pending] of this.pendingTextTransforms) originals.set(node, pending);
-    for (const [node, pending] of this.pendingTextEdits) originals.set(node,
-      {original: pending.original, expected: pending.expected});
-    const nodes = [...originals].map(([node, change]) => ({node, ...change}));
-    const attributes = [...this.attributeChanges].flatMap(([element, changes]) =>
-      [...changes].map(([name, change]) => ({element, name,
-        original: change.original, expected: change.transformed})));
+    // Transfer ownership of the maps in constant time. Entries are read only
+    // inside restoration slices; cancellation clears the new live maps and
+    // invalidates outstanding replies without losing these originals.
+    const nodes = [this.restorationTextEntries(
+      this.textChanges, this.pendingTextTransforms, this.pendingTextEdits)];
+    const attributes = this.restorationAttributeEntries(this.attributeChanges);
+    this.textChanges = new Map();
+    this.pendingTextTransforms = new Map();
+    this.pendingTextEdits = new Map();
+    this.attributeChanges = new Map();
     if (keepRunning) {
       this.cancelRegularFlush();
       this.cancelSubtitleFlush();
@@ -543,7 +568,7 @@ export class DomProcessor {
     } else this.stop({restore: false});
     let resolve!: () => void;
     const promise = new Promise<void>(yes => {resolve = yes;});
-    const restoration: BudgetedRestoration = {promise, resolve, nodes, attributes};
+    const restoration: BudgetedRestoration = {promise, resolve, nodes, attributes, attributesDone: false};
     this.budgetedRestoration = restoration;
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.runBudgetedRestoration(restoration);
@@ -565,24 +590,33 @@ export class DomProcessor {
       (this.now() < deadline || steps === 0))) {
       steps++;
       if (this.pendingTextEdits.size > 0 && (editTurn ||
-          (restoration.nodes.length === 0 && restoration.attributes.length === 0))) {
+          (restoration.nodes.length === 0 && restoration.attributesDone))) {
         this.processPendingTextEdit(validated);
         editTurn = false;
         continue;
       }
       editTurn = true;
-      const entry = restoration.nodes.pop();
-      if (entry) {
-        if (entry.node.data === entry.expected && !this.deferTextEdits(entry.node,
-          entry.original, {text: entry.original, replacements: 0, summaries: []}, true)) {
-          this.replaceTextKeepingRanges(entry.node, entry.original);
+      const iterator = restoration.nodes[0];
+      if (iterator) {
+        const next = iterator.next();
+        if (next.done) restoration.nodes.shift();
+        else if (next.value) {
+          const entry = next.value;
+          if (entry.node.data === entry.expected && !this.deferTextEdits(entry.node,
+            entry.original, {text: entry.original, replacements: 0, summaries: []}, true)) {
+            this.replaceTextKeepingRanges(entry.node, entry.original);
+          }
         }
         continue;
       }
-      const attribute = restoration.attributes.pop();
-      if (attribute) {
-        if (attribute.element.getAttribute(attribute.name) === attribute.expected) {
-          this.setAttributeValue(attribute.element, attribute.name, attribute.original);
+      if (!restoration.attributesDone) {
+        const next = restoration.attributes.next();
+        if (next.done) restoration.attributesDone = true;
+        else {
+          const attribute = next.value;
+          if (attribute.element.getAttribute(attribute.name) === attribute.expected) {
+            this.setAttributeValue(attribute.element, attribute.name, attribute.original);
+          }
         }
         continue;
       }
@@ -590,7 +624,7 @@ export class DomProcessor {
     }
     this.updateExpectedTextEdits(validated);
     if (this.pendingTextEdits.size > 0 || restoration.nodes.length > 0 ||
-        restoration.attributes.length > 0) {
+        !restoration.attributesDone) {
       restoration.handle = view.setTimeout(() => this.runBudgetedRestoration(restoration), 0);
     } else {
       this.budgetedRestoration = undefined;

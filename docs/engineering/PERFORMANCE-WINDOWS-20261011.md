@@ -1803,3 +1803,64 @@ Version 0.7.1 und vollständige Settings nach den Proben verifiziert
 wiederhergestellt, temporäre Identität entfernt, Autoplay-Prefs restauriert,
 USB-Wachhalten wieder 0 und eigene ADB-Testports entfernt. Telefon danach
 gesperrt; weitere Geräteprobe benötigt erneutes Entsperren. #419 bleibt NO-GO.
+
+### Wiederaufnahme: Restore-Vorbereitung und beeinflusste Android-Gegenprobe, 13.10.2026
+
+Live geprüft: main `6c3b5f4d`, PR #451 weiterhin Entwurf auf `d74c4d2`, alle
+acht Head-Prüfungen erfolgreich. Der zusätzliche Caption-Batchslot bleibt
+als früherer uncommitteter Versuch getrennt von der folgenden Korrektur.
+
+**Neuer reproduzierter Produktengpass:** `stopBudgeted()` kopierte sämtliche
+verfolgten Text-, Anfrage-, Edit- und Attributoriginale in neue Listen, bevor
+das erste Arbeitsbudget begann. Die native lokale Fixture transformiert
+1.000/4.000/16.000 Texte tatsächlich mit einer einfachen lokalen Regel,
+prüft Ersetzungszahl und anschließend jedes restaurierte Original. Keine
+Produktregel-/Lexikonmessung, keine allgemeine Webseitenabnahme.
+
+Die Korrektur übergibt die vorhandenen Ownership-Maps in konstantem Aufwand
+und liest ihre Einträge innerhalb der Restore-Scheiben. Überschriebene
+Einträge verbrauchen ebenfalls einen Budgetschritt; ausstehende Antworten
+werden entwertet. Teilrückgaben bei DesignMode -> Stop behalten Original und
+aktuellen Erwartungstext. Fremde Text-/Attributänderungen bleiben bestehen.
+
+| Native Probe, 16.000 Texte, je drei Wiederholungen | Vorher: Aufruf bis Rückkehr | Nachher: Aufruf bis Rückkehr |
+| --- | --- | --- |
+| Chromium 155, Renderer CPU-4 | 14,2 / 37,5 / 14,8 ms | 3,2 / 4,0 / 3,9 ms |
+| Firefox 157.0.1, ungedrosselt | 12 / 5 / 5 ms | 0 / 0 / 1 ms |
+| Waterfox 153.5.0, ungedrosselt | 10 / 9 / 7 ms | 0 / 0 / 0 ms |
+
+Nullwerte liegen unter der Millisekundenauflösung, sind keine kostenlose
+Arbeit. Die Messung umfasst Vorbereitung und erste Restore-Scheibe, keine
+isolierte Funktions-Eigenzeit. Gesamt-Restore bleibt insbesondere auf Chromium
+CPU-4 mehrere Sekunden lang; diese Korrektur behebt den synchronen
+Vorbereitungsengpass, nicht pauschal die ganze Rückgabezeit. Native Daten
+ignoriert unter `artifacts/restore-preparation-resume/`.
+
+Vier neue Regressionen: Vorbereitungslimit, fremde Text-/Attributänderung,
+Neustart mit neuer Ownership und DesignMode-Teilrückgabe mit Range-Erhalt.
+Vorher-Code scheitert beim Budgettest (512 gelesene Originale statt maximal
+128), drei weitere Sicherheitsfälle bestehen dort bereits. Nachher alle
+vier grün. Vollständiger `npm run check`: 244 Dateien / 10.734 Tests,
+Typprüfung, Builds, Metadaten-/Locale-/Browserprüfungen und Firefox-Lint
+0 Fehler / 0 Notices / 0 Warnungen. Chromium-, Firefox- und Waterfox-Erweiterungssmokes
+mit Inline-Ranges, großem Einzeltext, Schutzbereichen und Restore erfolgreich.
+
+Zwei neue Android-0,5-s-Proben wurden mit unverändertem 456caf9-Produktcode
+und instrumentierter lokaler MSE-Fixture durchgeführt. Der Nutzer meldete
+anschließend zwischenzeitliche Gerätebedienung, Zeitpunkt/Zuteilung unbekannt.
+**Beide Proben als kausaler Aus/an-Vergleich und Freigabenachweis verworfen**,
+auch bei durchgehend gemeldeter Seitensichtbarkeit. Die ausgeschaltete Probe
+enthält Segmentfetch-Verzögerungen bis 2.350 ms, Audiopufferleerlauf und
+passende `waiting`-Episoden; dies bleibt ein beeinflusster Transporthinweis,
+keine Erklärung der früheren gültigen Gegenbefunde. Starre 65-s-Aufnahme
+kann bei verzögerter Wiedergabe außerdem das Signalende verfehlen; vor
+weiterer Abnahme Aufnahmevor-/nachlauf und vollständigen Prüfton prüfen.
+Originalversion/-settings verifiziert restauriert, temporäre ID entfernt,
+Autoplay restauriert, eigene ADB-Testports geschlossen, Wachhalten weiterhin
+0. Gerät an Nutzer freigegeben; keine weiteren Geräteproben in dieser Runde.
+
+Unprofilierte Chromium-30/60-FPS-Proben, Erweiterung zuerst, technisch grün,
+aber frühe Callbackepisoden bleiben: 30 FPS 159,7/444,4 ms und 60 FPS
+437,5/376,4 ms (Basis/Erweiterung). Eingeschwungene Abstände unter 56 ms.
+Ein grünes Gate ist weiterhin keine vollständige Videoabnahme. #419 NO-GO;
+keine Store-, Tag-, Release-, Berechtigungs- oder Pale-Moon-Aktion.
