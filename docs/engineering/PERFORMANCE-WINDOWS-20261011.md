@@ -2343,3 +2343,56 @@ Gesamtcheck 256 Dateien / 10.821 Tests, Typprüfung, beide Builds und weitere
 Projektprüfungen einschließlich Firefox-Lint erfolgreich. Der vorbestehende
 zusätzliche Caption-Batchslot bleibt außerhalb des verifizierten Builds.
 Dieser Fix erklärt noch keinen Android-Audiogegenbefund; NO-GO bleibt bestehen.
+
+### Ersatzgerät auf dem aktuellen Transportfix
+
+Alle acht PR-Checks für `f801acb` erfolgreich. Der vollständige Ablauf mit
+5.000 Texten und großen synthetischen Listen besteht zusätzlich in Firefox
+und Waterfox: alle Texte korrekt, keine Schreibvorgänge bei Popupänderung,
+5.000 erforderliche Schreibvorgänge bei tatsächlicher Schutzänderung.
+
+Auf dem ausdrücklich bereitgestellten Ersatzgerät sechs gültige Nightly-
+Playback-Proben mit exakt aus `git archive f801acb` gebautem Produktcode,
+separater temporärer Testidentität, jeweils 60 s synthetischer Wiedergabe
+und hoher Textlast. Kein Mikrofon. Keine weiteren aktiven Texttransformer;
+Testseite durchgehend sichtbar, Aus/an-Marker unverändert, keine echten
+Eingaben während der Proben. Eingabeprüfung speichert ausschließlich eine
+Anzahl, keine Tastendaten oder Berührungspunkte.
+
+Vier Netzwerk-MSE-Proben in beiden Reihenfolgen Aus/an und an/aus mit
+0,5-s-Zielpuffer: keine innere Stille ab 20 ms, keine vollständigen
+Frequenzfenster mit Ausreißern über 2 Hz, P99 unter 0,008 Hz. Maximale
+Segmentanforderungen 97 / 52 / 57 / 61 ms; kleinster beobachteter
+Medienvorlauf etwa 0,32 s. Keine Host-Eventloop-Verzögerung im jeweiligen
+Segmentfenster. Erste Aus-Probe eine Serverantwort von 37,1 ms, übrige
+Antwortmaxima 2,0 / 1,7 / 1,7 ms. Keine Anforderung über 150 ms. Die älteren
+mehrsekündigen Pausen sind diesmal nicht reproduziert; Ursache weiterhin offen.
+Aktive Untertitel jeweils 121 gemessene Korrekturen, P95 16/17 ms,
+Maximum 27/26 ms.
+
+Zwei weitere Speicher-MSE-Proben Aus/an mit je 100 großen Schutzbegriffen
+und eigenen Ersetzungen: sämtliche 123 Segmentzugriffe aus dem Speicher,
+10.548.188 Bytes vorab geliefert. Wieder keine innere Stille ab 20 ms oder
+vollständige Frequenzausreißer über 2 Hz, P99 unter 0,008 Hz. Aktiver
+Untertitelpfad 121 Korrekturen, P95 16 ms / Maximum 24 ms. Zeitstempeljitter
+des Playback-Containers und unvollständige Tonfenster am Aufnahmerand
+werden getrennt erhalten und nicht als innere Tonlücken bewertet.
+Keine allgemeine Streaming-, Lautsprecher- oder Bluetooth-Abnahme.
+
+Gerätebereinigung verifiziert: temporäre Erweiterung und eigener Remote-
+Ordner entfernt, ursprüngliche Erweiterungsidentität weiterhin nicht
+installiert, Autoplay und Wachhalten restauriert, eigene Forward-/Reverse-
+Verbindungen und lokaler Server geschlossen. Ersatzgerät wieder frei.
+Alle Rohaufnahmen, Kennungen, Profile und Sicherungen bleiben lokal ignoriert.
+
+Separate native CPU-Stichproben verändern das Timing: zwei aktuelle
+profilierte Paare haben frühe Callbacklücken mit überwiegend untätigem
+JavaScript-Thread und je eine 82-ms-Starttask ohne JavaScript-Funktionszuordnung.
+Zwei passive aktuelle Paare enthalten keine Page-Long-Task, aber tatsächliche
+frühe Callbacklücken 145/456 ms und 433 ms beziehungsweise einen erst nach
+472,5 ms eintreffenden ersten Erweiterungscallback. Alle Endtexte korrekt.
+Profilierte Gegenläufe auf früheren Builds bleiben mit Drops 55/65 und
+58/66 ausdrücklich rot. Ein weiterer kombinierter Trace-/CPU-Lauf zeigt
+keine lange Seitentask und keine native Tracephase über 40 ms im Messfenster.
+Keine belastbare CPU-Zuordnung der seltenen Linux-Taskpause; weder diese
+Proben noch die erfolgreichen Android-Proben heben #419 NO-GO auf.
