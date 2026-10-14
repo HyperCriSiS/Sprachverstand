@@ -84,6 +84,12 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
       summaries: [{original: "Nutzer:innen", replacement: "Nutzern", count: 1}]
     });
     expect(await messageListener?.({type: "sprachverstand.transform-text-batch", requests: [transformRequest]}, {})).toBeUndefined();
+    const sharedBatch = {type: "sprachverstand.transform-text-shared-batch", sharedOptions: {profile: "aggressive"},
+      requests: [{input: "Nutzer:innen", leadingContext: "mit "},
+        {input: "Nutzer:innen", protectedRanges: [{start: 0, end: 12}]}]};
+    expect(await messageListener?.(sharedBatch, {})).toBeUndefined();
+    expect((await messageListener?.(sharedBatch, {tab: {id: 37}}) as {text: string}[]).map(value => value.text))
+      .toEqual(["Nutzern", "Nutzer:innen"]);
     expect(await messageListener?.({type: "sprachverstand.transform-text-batch", requests: [transformRequest]}, {tab: {id: 37}})).toEqual([{
       text: "mit Nutzern", replacements: 1,
       summaries: [{original: "Nutzer:innen", replacement: "Nutzern", count: 1}]

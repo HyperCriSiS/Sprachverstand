@@ -1,7 +1,8 @@
 import {getExtensionApi} from "./api";
 import {isDetailedTransformResult, largeLocalTransformThreshold,
   maximumLocalTransformBatchSize, maximumLocalTransformBatchCharacters,
-  type LocalTransformRequest, type LocalTransformBatchRequest} from "../core/local-transform-message";
+  type LocalTransformRequest} from "../core/local-transform-message";
+import {packLocalTransformBatch} from "../core/shared-local-transform-batch";
 import type {TransformOptions, DetailedTransformResult} from "../core/transform-text";
 
 function requestFor(input: string, options: TransformOptions): LocalTransformRequest {
@@ -63,9 +64,7 @@ function dispatchBatches(): void {
       if (entries.length && characters + next.request.input.length > maximumLocalTransformBatchCharacters) break;
       entries.push(queue.shift()!); characters += next.request.input.length;
     }
-    const request: LocalTransformBatchRequest = {
-      type: "sprachverstand.transform-text-batch", requests: entries.map(entry => entry.request)
-    };
+    const request = packLocalTransformBatch(entries.map(entry => entry.request));
     activeBatches++;
     void Promise.resolve().then(() => getExtensionApi().runtime.sendMessage(request)).then(values => {
       if (!Array.isArray(values) || values.length !== entries.length) {

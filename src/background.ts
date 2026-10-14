@@ -2,6 +2,7 @@ import { getExtensionApi } from "./browser/api";
 import { badgeBackgroundColor, formatBadgeCount } from "./browser/badge";
 import { parseOptionsPageTabId } from "./browser/options";
 import {isLocalTransformRequest, isLocalTransformBatchRequest, type LocalTransformRequest} from "./core/local-transform-message";
+import {expandSharedLocalTransformBatch} from "./core/shared-local-transform-batch";
 import {transformTextWithSummary} from "./core/transform-text";
 import {defaultRules} from "./rules";
 import {maximumReportedReplacementSummaries, aggregateReplacementSummaries} from "./core/replacement-summary";
@@ -433,9 +434,10 @@ function transformLocalRequest(request: LocalTransformRequest) {
 }
 
 api.runtime.onMessage.addListener(async (message, sender) => {
-  if (isLocalTransformBatchRequest(message)) {
+  const batch = isLocalTransformBatchRequest(message) ? message : expandSharedLocalTransformBatch(message);
+  if (batch) {
     if (sender.tab?.id === undefined) return undefined;
-    return message.requests.map(transformLocalRequest);
+    return batch.requests.map(transformLocalRequest);
   }
   if (isLocalTransformRequest(message)) {
     if (sender.tab?.id === undefined) return undefined;

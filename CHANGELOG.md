@@ -31,6 +31,10 @@ dokumentiert.
 
 ### Leistung
 
+- Große gemeinsame Schutzlisten und eigene Ersetzungen werden innerhalb einer
+  lokalen Textcharge nur einmal übertragen. Kleine und unterschiedlich
+  konfigurierte Anfragen behalten ihr bisheriges Format; individuelle Kontexte,
+  Schutzbereiche und die Validierungsgrenzen bleiben erhalten.
 - Identische Einstellungen sowie reine Popup- oder Sync-Auswahländerungen
   lösen keine vollständige DOM-Rückgabe und Neuverarbeitung mehr aus.
   Änderungen an Textregeln, Schutzbegriffen, Domains und Textoptionen

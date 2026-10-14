@@ -2304,3 +2304,42 @@ Normale CI und Videorunner bleiben unverändert. Workflow mit vorhandenem
 YAML-Parser, exklusiven Ein-/Mehrpaar-Guards und Artefaktpfaden geprüft;
 sieben bestehende Runnertests erfolgreich. Nächste kontrollierte Gegenprobe:
 fünf identische An/aus-Paare ohne Trace auf demselben Produktstand.
+
+### Passiver Gegenbefund und große lokale Nachrichtenchargen
+
+Alle acht PR-Checks für `1ea2452` erfolgreich. Der separate passive
+[Linux-Lauf 38608107831](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38608107831)
+besteht seine bestehenden Gates in allen fünf Paaren; alle zehn Sitzungen
+enden mit 480/480 aktuellen Texten. Drops Basis/Erweiterung 2/1, 1/2, 1/4,
+2/1, 2/1. Im ersten Erweiterungsdurchlauf trotzdem eine Page-Long-Task von
+112 ms bei 1.650 ms, Callbackepisoden 127/246,9 ms und erster Callback erst
+619,7 ms. Während der Episoden schreiten Medienzeit und präsentierte Frames
+fort. Die seltene unprofilierte Taskpause bleibt reproduzierbar und ohne
+CPU-Zuordnung; erfolgreiche Framegates bedeuten weiterhin keine Abnahme.
+
+Separat reproduziert eine gültige synthetische Konfiguration mit je 100
+Schutzbegriffen und eigenen Ersetzungen unnötige Wiederholung derselben
+Optionen in 32 kurzen Textanfragen: 1.374.097 JSON-Bytes pro Charge.
+Nativer Chromium-Aufruf bei vierfacher CPU-Drosselung blockiert synchron
+17,4 / 17,8 / 19,5 ms. Gemeinsame Optionen ab 4.096 Zeichen werden nun einmal
+mit individuellen Texten, Kontexten und Schutzbereichen übertragen:
+44.413 Bytes, Vorbereitung plus synchroner Aufruf 0,5–0,7 ms. Ohne Drosselung
+bisher 3,6–4,3 ms Aufruf, danach 0,1–0,5 ms einschließlich Vorbereitung.
+Jeweils alle 32 Ergebnisse korrekt. Kleine, einzelne oder unterschiedlich
+konfigurierte Anfragen behalten das bisherige Format. Kein Wechsel der
+Browser-Serialisierung, keine neue Berechtigung oder externe Verarbeitung.
+
+Die Nachrichtenprüfung verwendet weiter die vorhandenen Grenzen für Texte,
+Kontexte, Schutzbereiche, Optionen und Gesamtgröße sowie die Prüfung des
+Absendertabs. Regressionen prüfen JSON-Rundreise, Dativkontext, Ersetzungen,
+Schutzbereiche, gemischte Optionen, ungültige und dünn besetzte Arrays sowie
+fehlenden Tab-Absender. Die Größenregression war vor dem Fix rot.
+Native Firefox- und Waterfox-Chargen liefern ebenfalls alle 32 Ergebnisse;
+deren synchroner Aufruf liegt bereits bei 0–1 ms. Ein isolierter Chromium-
+Gesamtablauf verarbeitet 5.000 Texte mit großen Listen korrekt, Popupänderung
+verursacht keine Textschreibvorgänge, tatsächliche Schutzänderung genau 5.000.
+Chromium-, Firefox- und Waterfox-Smokes mit Inline-Schutz und Restore grün.
+Gesamtcheck 256 Dateien / 10.821 Tests, Typprüfung, beide Builds und weitere
+Projektprüfungen einschließlich Firefox-Lint erfolgreich. Der vorbestehende
+zusätzliche Caption-Batchslot bleibt außerhalb des verifizierten Builds.
+Dieser Fix erklärt noch keinen Android-Audiogegenbefund; NO-GO bleibt bestehen.
