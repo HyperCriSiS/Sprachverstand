@@ -2630,3 +2630,37 @@ vorhandenen Caption-Batch-Slot-Versuchsänderungen sind darin nicht enthalten.
 Native isolierte Smokes in Chromium, Firefox und Waterfox bestehen
 einschließlich dynamischer Texte, geschützter Bereiche, Schatten-DOM,
 großer Inline-/Einzeltexte, DOM-Ranges und vollständiger Rückgabe.
+
+Die [ungeprofilte Linux-Gegenprobe auf `6fe8956`](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38647938370)
+besteht alle fünf unabhängigen Paare im jeweils ersten Versuch. Zehn
+sichtbare und fokussierte Sitzungen, alle 480 neuesten Texte korrekt.
+Drops Basis/Erweiterung 2/3, 1/1, 0/1, 1/2 und 2/2. Keine laufende
+Trace- oder Heap-Profilierung, unveränderte Engine und Akzeptanzgrenzen.
+Alle acht regulären PR-Prüfungen dieses Produktstands ebenfalls erfolgreich.
+
+**Restbefund bleibt:** Im ersten Erweiterungslauf beginnt der erste
+Videocallback erst nach 666,9 ms gegenüber 89,2 ms ohne Erweiterung.
+Ein 101-ms-Page-Long-Task bei 1.621,2 ms überlappt eine tatsächliche
+134,3-ms-Callbackepisode mit acht zusätzlichen präsentierten Frames.
+Im dritten Paar erster Erweiterungscallback 590,6 ms ohne Page-Long-Task.
+Die Leerprüfungen beheben diese Start-/Taskpausen somit nicht nachweislich.
+Die älteren roten Gegenproben bleiben erhalten; gesamte Abnahme und
+#419 weiterhin NO-GO.
+
+Ein einzelner [neutraler Kontrollversuch ohne installierte Erweiterung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38648779519)
+verwendet dieselbe Baseline-Videofixture mit einer zusätzlich definierten
+reinen JavaScript-Rechen-/Allokationslast. Diese beginnt erst ab
+Dokumentzeit 1 s, erzeugt je 50 ms 5.000 kurzlebige Objekte und bewahrt
+jeweils die jüngste Generation auf. 145 ausgeführte Takte, alle 480
+Baseline-Endtexte korrekt, drei verworfene Frames. Bereits vor Beginn
+dieser Last kommt der erste Videocallback erst nach 688 ms. Verzögerter
+Videostart ist damit nicht ausschließlich bei installierter Erweiterung
+beobachtet; dies erklärt den früheren Erweiterungsanlauf nicht kausal.
+
+Unter der zusätzlichen Last tritt eine 106-ms-Page-Long-Task bei
+1.023,8 ms auf. Kein Trace ausgelöst, deshalb weder gleiche native
+Safepoint-Ursache noch gleiche CPU-Charakteristik behauptet. Die gezielte
+Baseline-Prüfstufe besteht. Der Gesamtworkflow ist rot, weil der nur für
+diese Baseline bestimmte Kontrollrunner die zusätzlich aufgerufenen
+Untertitelmodi ausdrücklich zurückweist; diese Teile wurden nicht geprüft.
+Keine Freigabemessung und keine weitere Wiederholung aus diesem Einzeltest.
