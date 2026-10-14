@@ -2518,3 +2518,77 @@ Frameepisode über 120 ms in diesen Teilen. Source-60-FPS bedeuten weiterhin
 keine durchgehend 60 dargestellten Frames. Der konkrete Entfernungsengpass
 ist plattformübergreifend verifiziert behoben; gesamte Videoabnahme bleibt
 wegen der getrennten Start-/Task-/Frame-Gegenbefunde offen, #419 NO-GO.
+
+### Linux: Task-Wartezeit getrennt von CPU-Arbeit untersucht
+
+Die reguläre CI auf `985e5b3` ist vollständig grün. Im ersten Versuch
+scheiterte Chromium beim ersten lokalen Seitenaufruf am 30-s-Renderer-Timeout;
+die Wiederholung der fehlgeschlagenen Jobs bestand. Der erste Fehler bleibt
+als nicht zugeordneter Einzelbefund erhalten.
+
+Ein ausschließlich diagnostischer Zweig verwendet denselben Produktcode
+`088fea6`; Änderungen betreffen nur den manuellen Messrunner. Keine neuen
+Browserflags, Produktänderungen oder geänderten Akzeptanzgrenzen.
+
+- [Reduzierter Trace, fünf Paare](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38641678056):
+  alle Endtexte korrekt, keine Page-Long-Tasks oder tatsächlichen
+  Callbackepisoden über 120 ms. Ein Renderer-`MinorGC` dauerte 95,202 ms
+  bei 0,840 ms CPU-Zeit des betroffenen Threads. Dieser Trace-Befund erklärt
+  die ältere 126-ms-Taskpause nicht kausal.
+- [Trace erst nach mindestens acht Drops, fünf Paare](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38642526907):
+  keine Auslösung, sämtliche Videofenster daher ohne aktiven Trace. Trotzdem
+  im ersten Erweiterungslauf 181-ms-Long-Task und 204,9-ms-Callbackepisode,
+  anschließend 221,1 ms ohne Page-Long-Task. Präsentierte Frames steigen
+  während dieser Episoden um 12 bzw. 13; Endtexte alle korrekt. Der starke
+  anhaltende Frameverlust ist in dieser Reihe nicht wieder aufgetreten.
+- [Äußere Prozessmessung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38643889889):
+  **rot**, maximaler Frameabstand 350 ms bei 300-ms-Grenze, Drops Basis/Erweiterung 2/12,
+  trotzdem alle 480 Endtexte korrekt. Eigene Browser-Prozesshauptthreads
+  im 50-ms-Raster über Linux-CPU-Zähler beobachtet. Die vollständige
+  154-ms-Taskpause liegt innerhalb eines 200-ms-Messfensters mit insgesamt
+  20,765 ms CPU-Zeit aller erfassten Chrome-Prozesshauptthreads. Eine
+  200-ms-Taskpause liegt in einem 251-ms-Fenster mit insgesamt 35,031 ms
+  CPU-Zeit. Damit keine durchgehend rechnende JavaScript-Schleife dieser
+  Dauer nachgewiesen; überwiegende Wartezeit ist eine aus den CPU-Zählern
+  gestützte Einordnung. Konkrete native Warteoperation und auslösender
+  Produktpfad bleiben offen. Einzelne Rendereridentität nicht zugeordnet.
+  Die Messung selbst benötigt im Mittel 2,52 ms je 50-ms-Abtastung
+  (Maximum 9 ms); sie ist eine separate Diagnose, keine unbeeinflusste
+  Freigabemessung. Ein vorangegangener Monitor erfasste nur den Treiber
+  und wurde für Aussagen über die Browser-CPU verworfen.
+
+Ein [gezielt verzögert gestarteter Trace](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38645194064)
+ist ebenfalls **rot**, Drops Basis/Erweiterung 1/12. Die zwölf Drops waren
+bereits vor Tracebeginn bei Medienzeit 0,553 s messbar; danach wurde der
+Trace automatisch aktiviert. Bei Dokumentzeit 1.693 ms erfasst er auf dem
+Renderer-Hauptthread einen `MinorGC` von 150,299 ms mit 1,206 ms CPU-Zeit.
+Davon entfallen 149,040 ms und nur 0,030 ms CPU-Zeit auf
+`V8.GC_TIME_TO_SAFEPOINT`. Diese Phase überlappt die tatsächliche
+158,8-ms-Callbackepisode; die nächste Callbackantwort zeigt neun zusätzliche
+präsentierte Frames. Zeitabgleich-Unsicherheit 4,35 ms.
+
+Gleichzeitig läuft ein Hintergrundauftrag des V8-Optimierungscompilers
+(343,391 ms Gesamtdauer, 8,300 ms CPU-Zeit). Dessen Überschneidung ist
+ein Zusammenhang, noch keine isolierte Zuordnung des wartenden Threads
+oder einer konkreten Erweiterungsfunktion. Nach dem Safepoint dauert die
+eigentliche Scavenger-Phase nur etwa 1 ms. Die V8-Dokumentation beschreibt
+[Safepoints und Hintergrundkompilierung](https://chromium.googlesource.com/v8/v8/+/HEAD/docs/compiler/concurrency-and-background-compilation.md)
+als Synchronisierung zwischen Heap-Zugriffen und GC. Der Trace belegt
+damit eine konkrete native Wartephase für diese Episode; er erklärt weder
+alle früheren Tasks noch den anhaltenden Frameverlust des älteren Paars.
+Ein separater 82-ms-DOM-Task desselben Laufs benötigt 2,103 ms CPU-Zeit,
+bleibt aber ohne genaue innere Zuordnung. Alle 480 Endtexte korrekt.
+
+Eine begrenzte [Engine-Gegenprobe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38645886257)
+mit ausschließlich im Diagnosebrowser verifiziertem
+`--js-flags=--no-concurrent-recompilation` bleibt ebenfalls **rot**:
+368-ms-Page-Long-Task, tatsächliche Callbacklücke 391,9 ms,
+23 zusätzlich präsentierte Frames, Drops Basis/Erweiterung 2/1 und alle
+480 Texte korrekt. Der während der blockierten Browserantwort ausgelöste
+Trace liefert keine vollständige innere Aufzeichnung dieser bereits
+laufenden Taskpause. Deshalb weder gleiche native Ursache behauptet noch
+eine solche Browserflag-Änderung als Produktlösung vorgesehen. Eine
+ungeänderte Engine bleibt erforderlich für die eigentliche Abnahme.
+
+Die Gesamtabnahme bleibt offen. Erfolgreiche instrumentierte oder kurze
+Gegenproben ersetzen die roten Videobefunde nicht; #419 bleibt NO-GO.
