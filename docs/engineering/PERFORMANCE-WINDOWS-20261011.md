@@ -2427,3 +2427,38 @@ Linux- oder Android-Gegenbefunde. Nächster Schritt: Arbeit über den gesamten
 Observer-Batch begrenzen, ohne für jeden einzelnen entfernten Blattknoten
 alle übrigen Ownership-Einträge zu scannen. Wiederverwendung, vollständige
 Originalrückgabe, Schutzbereiche und Untertitel müssen geprüft bleiben.
+
+### Viele einzelne Blattentfernungen budgetiert verarbeiten
+
+Die Fortsetzung begrenzt jetzt sowohl die synchronen Entfernungen über den
+gesamten Observer-Aufruf als auch große Folgen struktureller Meldungen.
+Mehr als 128 gewöhnliche `childList`-Meldungen werden in Einheiten von
+höchstens acht Meldungen innerhalb des bestehenden regulären Zeitbudgets
+bearbeitet. Text-, Attribut- und aktive Untertitelmeldungen behalten ihren
+unmittelbaren Pfad. Große Gruppen eigener Textschreibmeldungen verzögern
+keine einzelne Strukturänderung und teilen deren Schutzkontext nicht auf.
+Normale Antworten warten auf die Prüfung der Strukturänderungen; Untertitel
+bleiben unabhängig. Die bestehende kooperative Ownership-Bereinigung übernimmt
+ausstehende entfernte Texte, ohne pro Blatt alle anderen Einträge zu scannen.
+Explizites `flush`, synchrone Rückgabe und Stop bleiben vollständig;
+Stop/Neustart verwerfen ausstehende Strukturmeldungen ohne Originalverlust.
+
+Neue Regressionen schützen die Grenze über verschiedene Elternknoten,
+teure einzelne Rückgaben, Wiederverwendung, fremde Textänderungen,
+gleichzeitige neue Untertitel, Stop/Neustart und bereits ausstehende Antworten
+bei neu zitiertem Text. Die Mengenregression war vor dem Fix rot: alle
+512 Rückgaben synchron statt höchstens 128. Vollständiger Projektcheck
+256 Dateien / 10.826 Tests, Typprüfung, beide Builds, Metadatenprüfungen und
+Firefox-Lint erfolgreich.
+
+Unprofilierte native Produktions-Gegenproben mit 5.000 einzeln entfernten
+Blättern, ohne parallele Projektprüfung: Chromium CPU×4 vorher 282,4 ms bis
+zum nächsten Animationsframe, nachher zunächst 59,6/59,5 ms; endgültiger
+Stand einschließlich Antwort-/Schutzreihenfolge 52,7 ms. Die eigene
+Entfernschleife bleibt mit 38–43 ms vergleichbar. Ohne Drosselung ein neuer
+Lauf mit 9,1 ms. Firefox 217 auf 18 ms, Waterfox 211 auf 21 ms. In allen
+Proben alle 5.000 entfernten Originaltexte korrekt. Ein früher überlappend
+mit dem Gesamtcheck gemessener 56,9-ms-Lauf ist kein Vergleichsnachweis.
+Diese Ergebnisse beheben den konkreten Entfernungsengpass; die unabhängige
+Video-Gegenprüfung und die älteren nicht zugeordneten Gegenbefunde bleiben
+vor der gesamten Performanceabnahme erforderlich. #419 bleibt NO-GO.

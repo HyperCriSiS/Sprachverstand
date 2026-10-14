@@ -31,6 +31,10 @@ dokumentiert.
 
 ### Leistung
 
+- Große Folgen einzelner DOM-Strukturänderungen werden in begrenzten
+  Schritten verarbeitet. Die synchrone Rückgabe entfernter Texte teilt
+  sich ein Budget über den gesamten Meldungsblock; Untertitel behalten
+  ihren unmittelbaren Pfad und vollständige Originale bleiben erhalten.
 - Große gemeinsame Schutzlisten und eigene Ersetzungen werden innerhalb einer
   lokalen Textcharge nur einmal übertragen. Kleine und unterschiedlich
   konfigurierte Anfragen behalten ihr bisheriges Format; individuelle Kontexte,

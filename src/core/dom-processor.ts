@@ -214,6 +214,7 @@ export class DomProcessor {
   private addedNodeTurn = true;
   private detachedCleanup: DetachedCleanupState | undefined;
   private detachedCleanupTurn = true;
+  private readonly pendingStructuralMutations = new Set<{records: readonly MutationRecord[]; index: number}>();
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly inlineProtectionVersions = new WeakMap<Node, object>();
@@ -344,6 +345,7 @@ export class DomProcessor {
     this.addedNodeTurn = true;
     this.detachedCleanup = undefined;
     this.detachedCleanupTurn = true;
+    this.pendingStructuralMutations.clear();
     this.pendingInlineProtection.clear();
     this.preparedInlineProtection = new WeakMap();
     this.inlineProtectionCache = new WeakMap();
@@ -480,6 +482,12 @@ export class DomProcessor {
 
   public stop(options: StopOptions = {}): void {
     if (this.budgetedRestoration) this.runBudgetedRestoration(this.budgetedRestoration, true);
+    if (options.restore) {
+      // A synchronous stop must not discard detached originals whose
+      // structural records have not reached a regular slice yet.
+      while (this.processStructuralMutationStep()) { /* Explicit stop. */ }
+      while (this.processDetachedCleanupStep()) { /* Explicit stop. */ }
+    }
     this.running = false;
     this.cancelAsyncWork();
     this.observedDesignModeOn = false;
@@ -681,6 +689,7 @@ export class DomProcessor {
   }
 
   public restoreAll(): void {
+    while (this.processStructuralMutationStep()) { /* Explicit synchronous restore. */ }
     while (this.processDetachedCleanupStep()) { /* Explicit synchronous restore. */ }
     this.cancelAsyncWork();
     if (this.budgetedRestoration) this.runBudgetedRestoration(this.budgetedRestoration, true);
@@ -727,6 +736,7 @@ export class DomProcessor {
     if (!this.running) {
       return;
     }
+    while (this.processStructuralMutationStep()) { /* Explicit synchronous flush. */ }
     while (this.processDetachedCleanupStep()) { /* Explicit synchronous flush. */ }
     while (this.processAddedNodeStep()) { /* Explicit synchronous flush. */ }
     while (this.processFollowingContextStep()) { /* Explicit synchronous flush. */ }
@@ -1107,6 +1117,10 @@ export class DomProcessor {
         continue;
       }
       detachedTurn = true;
+      // Structural changes may invalidate the context of a normal pending
+      // reply. Finish their bookkeeping before applying ordinary results;
+      // captions keep their independent immediate queue.
+      if (this.processStructuralMutationStep()) continue;
       if (this.processFollowingContextStep()) continue;
       if (this.processTransformResult(this.pendingTransformResults)) continue;
       if (this.processInlineProtectionStep()) continue;
@@ -1149,6 +1163,7 @@ export class DomProcessor {
       }
 
       if (this.pendingTextEdits.size === 0) {
+        if (this.processStructuralMutationStep()) continue;
         if (this.processAddedNodeStep()) continue;
         if (this.processDetachedCleanupStep()) continue;
         if (ready.scanIncomplete) continue;
@@ -1161,7 +1176,7 @@ export class DomProcessor {
     this.addedNodeTurn = addedTurn;
     this.detachedCleanupTurn = detachedTurn;
     if (this.hasRegularWork()) {
-      this.scheduleFlush(this.detachedCleanup || this.pendingTextEdits.size > 0 || this.pendingAddedNodeLists.size > 0
+      this.scheduleFlush(this.detachedCleanup || this.pendingStructuralMutations.size > 0 || this.pendingTextEdits.size > 0 || this.pendingAddedNodeLists.size > 0
         ? 0 : nextDelay ?? 0);
     }
   }
@@ -1334,6 +1349,7 @@ export class DomProcessor {
   private hasRegularWork(): boolean {
     return Boolean(
       this.activeTraversal ||
+        this.pendingStructuralMutations.size > 0 ||
         this.detachedCleanup ||
         this.pendingAddedNodeLists.size > 0 ||
         this.pendingInlineProtection.size > 0 ||
@@ -1397,7 +1413,39 @@ export class DomProcessor {
   }
 
   private handleMutationRecords(records: readonly MutationRecord[]): void {
-    this.withTextSafetyScope(() => this.handleMutationRecordsScoped(records));
+    this.withTextSafetyScope(() => {
+      if (records.length <= maximumRegularStepsPerSlice) {
+        this.handleMutationRecordsScoped(records);
+        return;
+      }
+      // Text/caption and protection changes keep their immediate path. Large
+      // structural batches read the live final DOM in bounded regular units.
+      const structural: MutationRecord[] = [], immediate: MutationRecord[] = [];
+      for (const record of records) {
+        const defer = record.type === "childList" &&
+          !(this.options.processSubtitles === true && this.isSubtitleContent(record.target));
+        (defer ? structural : immediate).push(record);
+      }
+      if (structural.length <= maximumRegularStepsPerSlice) {
+        // A large group of our own text writes must not defer one ordinary
+        // page mutation or split its shared inline-protection scope.
+        this.handleMutationRecordsScoped(records);
+        return;
+      }
+      if (immediate.length) this.handleMutationRecordsScoped(immediate);
+      this.pendingStructuralMutations.add({records: structural, index: 0});
+      this.scheduleFlush(0);
+    });
+  }
+
+  private processStructuralMutationStep(): boolean {
+    const batch = this.pendingStructuralMutations.values().next().value;
+    if (!batch) return false;
+    const end = Math.min(batch.index + 8, batch.records.length);
+    this.handleMutationRecordsScoped(batch.records.slice(batch.index, end));
+    batch.index = end;
+    if (end === batch.records.length) this.pendingStructuralMutations.delete(batch);
+    return true;
   }
 
   private isOnlyTemporaryPartitionMutation(record: MutationRecord): boolean {
@@ -1423,6 +1471,12 @@ export class DomProcessor {
     const knownOwnWrites = new Map<Text, object>();
     const handledExternalText = new Set<Text>();
     const followingRequests: {node: Node; next?: Node | null}[] = [];
+    // A page can remove a large subtree one leaf at a time. The native
+    // records then contain one removed node each, so a per-record limit
+    // alone would restore the entire subtree inside this observer callback.
+    const removalDeadline = this.now() + 1;
+    let removedRoots = 0;
+    let removalCleanupQueued = false;
     for (const record of records) {
       if (this.isTemporaryPartitionNode(record.target)) continue;
       if (record.type === "childList" &&
@@ -1542,7 +1596,16 @@ export class DomProcessor {
           if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
             continue;
           }
-          this.forgetRemovedRoot(removedNode);
+          if (removedRoots < maximumRegularStepsPerSlice &&
+              (removedRoots === 0 || this.now() < removalDeadline)) {
+            removedRoots++;
+            this.forgetRemovedRoot(removedNode);
+          } else if (!removalCleanupQueued) {
+            // One live ownership walk covers all remaining detached nodes,
+            // including dismantled/reused subtrees and open shadow roots.
+            this.queueDetachedCleanup();
+            removalCleanupQueued = true;
+          }
         }
       }
       const addedNodes = record.addedNodes;
@@ -2660,7 +2723,8 @@ export class DomProcessor {
       this.finishTextTransform(node, original, restoreUnchanged, result, true);
     };
     const complete = (resultOf: () => DetailedTransformResult): void => {
-      if (this.options.transformText) this.queueTransformResult(pending, () => apply(resultOf), subtitle);
+      if (this.options.transformText || (!subtitle && this.pendingStructuralMutations.size > 0))
+        this.queueTransformResult(pending, () => apply(resultOf), subtitle);
       else apply(resultOf);
     };
     const queue = this.options.transformText && original.length < largeTextTransformThreshold
