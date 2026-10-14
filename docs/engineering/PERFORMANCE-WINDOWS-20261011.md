@@ -2527,8 +2527,10 @@ die Wiederholung der fehlgeschlagenen Jobs bestand. Der erste Fehler bleibt
 als nicht zugeordneter Einzelbefund erhalten.
 
 Ein ausschließlich diagnostischer Zweig verwendet denselben Produktcode
-`088fea6`; Änderungen betreffen nur den manuellen Messrunner. Keine neuen
-Browserflags, Produktänderungen oder geänderten Akzeptanzgrenzen.
+`088fea6`; Änderungen betreffen nur den manuellen Messrunner. Die
+Standardmessungen verwenden unveränderte Browserflags. Keine
+Produktänderungen oder geänderten Akzeptanzgrenzen; die zusätzliche
+Engine-Gegenprobe ist unten ausdrücklich getrennt.
 
 - [Reduzierter Trace, fünf Paare](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38641678056):
   alle Endtexte korrekt, keine Page-Long-Tasks oder tatsächlichen
