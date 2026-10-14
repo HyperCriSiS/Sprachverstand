@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
+import {fetchWebdriverResponse} from "./webdriver-response.mjs";
 
 const projectRoot = process.cwd();
 const browserArgumentIndex = process.argv.indexOf("--browser");
@@ -78,12 +79,12 @@ function sleep(milliseconds) {
 }
 
 async function webdriverRequest(method, pathname, body) {
-  const response = await fetch(`${driverBaseUrl}${pathname}`, {
+  const response = await fetchWebdriverResponse(`${driverBaseUrl}${pathname}`, {
     method,
     headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
-  const payload = await response.json();
+  const payload = JSON.parse(response.text);
 
   if (!response.ok || payload?.value?.error) {
     throw new Error(
@@ -109,7 +110,7 @@ async function waitForDriver(driverProcess, logs) {
     }
 
     try {
-      const response = await fetch(`${driverBaseUrl}/status`);
+      const response = await fetchWebdriverResponse(`${driverBaseUrl}/status`, undefined, 2_000);
       if (response.ok) {
         return;
       }
@@ -169,6 +170,7 @@ async function createSession() {
       capabilities: {
         alwaysMatch: {
           browserName: "chrome",
+          timeouts: {pageLoad: 30_000},
           "goog:chromeOptions": {
             binary: chromiumExecutable,
             args: [
@@ -190,6 +192,7 @@ async function createSession() {
     capabilities: {
       alwaysMatch: {
         browserName: "firefox",
+        timeouts: {pageLoad: 30_000},
         "moz:firefoxOptions": {
           ...(process.env.FIREFOX_BIN ? {binary: process.env.FIREFOX_BIN} : {}),
           args: ["-headless"]

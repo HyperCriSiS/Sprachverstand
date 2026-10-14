@@ -9,6 +9,7 @@ import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes
 import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
 import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
 import {isReadySubtitleState} from "./video-subtitle-state.mjs";
+import {fetchWebdriverResponse} from "./webdriver-response.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
@@ -122,14 +123,14 @@ const chromium = browser === "chromium" ?
 const sleep = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function request(method, pathname, body) {
-  const response = await fetch(`${driverBase}${pathname}`, {
+async function request(method, pathname, body, timeoutMs) {
+  const response = await fetchWebdriverResponse(`${driverBase}${pathname}`, {
     method,
     headers:
       body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body)
-  });
-  const text = await response.text();
+  }, timeoutMs);
+  const text = response.text;
   let payload;
   try {
     payload = text ? JSON.parse(text) : {};
@@ -157,7 +158,7 @@ async function waitForDriver(processHandle, logs) {
       throw new Error(`ChromeDriver wurde vorzeitig beendet.\n${logs.join("")}`);
     }
     try {
-      const response = await fetch(`${driverBase}/status`);
+      const response = await fetchWebdriverResponse(`${driverBase}/status`, undefined, 2_000);
       if (response.ok) {
         return;
       }
@@ -1031,7 +1032,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
       }, ${subtitleDurationMs});
     `,
     args: []
-  })).value;
+  }, subtitleDurationMs + 20_000)).value;
   const latencies = result.cueRecords.map(record => record.latencyMs)
     .filter(value => typeof value === "number" && Number.isFinite(value));
   const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,

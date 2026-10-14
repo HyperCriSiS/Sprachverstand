@@ -2247,3 +2247,37 @@ Maximum 4,1 ms; Entfernung: aktive 59/59, Maximum 8,3 ms; Stress: aktive
 57/57, Maximum 9,4 ms. Keine dieser Teilproben hebt den roten Gesamtlauf
 auf. Auch hohe Basis-Drops bei Entfernung (228 gegen 2 aktiv) bleiben
 erhalten. #419 und die Android-Store-Störung weiterhin offen.
+
+### Gegenreihenfolge und begrenzte WebDriver-Antworten
+
+Aus/an-Gegenlauf `38603370292` auf exakt `4eb7e23` scheitert vor der
+Videoprobe: erste Smoke-Navigation erhält einen Renderer-Timeout von
+300 Sekunden. Keine Videodaten, kein Gegenbeweis zum roten Paar. Erneuter
+[Aus/an-Lauf 38604853611](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38604853611)
+auf derselben SHA erfolgreich: Drops Basis/Erweiterung 5/1, 480/480 Endtexte
+je Modus. Dennoch Erweiterungs-Page-Long-Task 172 ms bei 1.374 ms und
+tatsächliche Callbackepisoden 179,2/261,6 ms, während 10/15 weitere Frames
+an den Compositor weitergereicht werden. Keine eigene CPU-Zuordnung und
+kein Nachweis stehender Pixel oder gestörten Tons. Erster Basis-Callback
+erst bei 787,1 ms; leere Episodenliste schließt diesen Anlauf nicht ein.
+Temporäre Referenz auf diese SHA nach Laufabschluss geprüft und entfernt.
+
+Unabhängig davon reproduziert ein lokaler antwortloser HTTP-Endpunkt die
+unbegrenzte Wartefähigkeit des bisherigen WebDriver-Clients. Beide nativen
+Runner begrenzen jetzt die vollständige Antwort einschließlich stockenden
+Bodys auf 60 s, Bereitschaftsabfragen auf 2 s. Smoke-Navigation maximal
+30 s, bisherige Videonavigationsfristen unverändert. Lange async-Untertitel-
+proben verwenden Dauer + 20 s zusätzlich zur vorhandenen Browserfrist.
+Keine neue Wiederholung oder Änderung an Frame-/Cue-Akzeptanzgrenzen.
+Das begrenzt Prüfungsblockaden, behebt aber nicht den Renderer-Hänger.
+
+Vier funktionale HTTP-Tests mit echten lokalen Endpunkten prüfen fehlende
+Headers, abgebrochenen Body, erhaltene HTTP-Ergebnisse und ungültige Fristen.
+20 fokussierte Tests und Typprüfung erfolgreich. Native Chromium-, Firefox-
+und Waterfox-Smokes erfolgreich. Zusätzliche 70-s-Chromium-Untertitelprobe
+überlebt die normale 60-s-Frist ausdrücklich: 134/134 Cues, Maximum 2,1 ms,
+keine Frameepisode über 120 ms; 326 Drops von 4.200 Quellframes bleiben
+erhalten und bedeuten keine Videoabnahme. Gesamtcheck 254 Dateien /
+10.809 Tests sowie Builds und übrige Projektprüfungen einschließlich
+Firefox-Lint erfolgreich. Alle acht PR-Checks des Produktfixes `51a0c95`
+ebenfalls erfolgreich; native CPU-Zuordnung bleibt der nächste Schritt.

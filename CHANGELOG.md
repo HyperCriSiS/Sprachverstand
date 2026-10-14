@@ -21,6 +21,10 @@ dokumentiert.
 
 ### Korrigiert
 
+- Browserprüfungen begrenzen auch ausbleibende oder unvollständige
+  WebDriver-HTTP-Antworten. Der Smoke-Test begrenzt seine Seitennavigation
+  auf 30 Sekunden; ausdrücklich lange Untertitelproben behalten ein
+  passend längeres Antwortzeitlimit.
 - Die Videountertitelprobe wartet nach dem Ausschalten innerhalb ihres
   bestehenden Zeitlimits auf Medien- und Cue-Fortschritt. Eine schnelle
   Wiederherstellung desselben Cues wird nicht mehr als Unterbrechung gewertet.
