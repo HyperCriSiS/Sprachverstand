@@ -31,6 +31,9 @@ dokumentiert.
 
 ### Leistung
 
+- Leere Arbeitswarteschlangen erzeugen bei der budgetierten DOM-Verarbeitung
+  keine kurzlebigen Map-/Set-Iteratoren mehr. Text-, Untertitel- und
+  Rückgabereihenfolge bleiben erhalten.
 - Große Folgen einzelner DOM-Strukturänderungen werden in begrenzten
   Schritten verarbeitet. Die synchrone Rückgabe entfernter Texte teilt
   sich ein Budget über den gesamten Meldungsblock; Untertitel behalten

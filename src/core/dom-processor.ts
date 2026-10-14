@@ -388,6 +388,7 @@ export class DomProcessor {
   }
 
   private processTransformResult(results: Map<object, () => void>): boolean {
+    if (results.size === 0) return false;
     const first = results.entries().next().value;
     if (!first) return false;
     const [token, work] = first;
@@ -1182,6 +1183,7 @@ export class DomProcessor {
   }
 
   private processAddedNodeStep(): boolean {
+    if (this.pendingAddedNodeLists.size === 0) return false;
     const batch = this.pendingAddedNodeLists.values().next().value;
     if (!batch) return false;
     if (!this.isProcessableRoot(batch.root) || batch.index >= batch.nodes.length) {
@@ -1330,6 +1332,7 @@ export class DomProcessor {
   private takeNextPendingAttribute():
     | { readonly element: Element; readonly attributeName: string }
     | undefined {
+    if (this.pendingAttributes.size === 0) return undefined;
     for (const [element, names] of this.pendingAttributes) {
       const iterator = names.values();
       const attributeName = iterator.next().value as string | undefined;
@@ -1439,6 +1442,7 @@ export class DomProcessor {
   }
 
   private processStructuralMutationStep(): boolean {
+    if (this.pendingStructuralMutations.size === 0) return false;
     const batch = this.pendingStructuralMutations.values().next().value;
     if (!batch) return false;
     const end = Math.min(batch.index + 8, batch.records.length);
@@ -1665,6 +1669,7 @@ export class DomProcessor {
   }
 
   private processFollowingContextStep(): boolean {
+    if (this.pendingFollowingContexts.size === 0) return false;
     const entry = this.pendingFollowingContexts.entries().next().value;
     if (!entry) return false;
     const [key, iterator] = entry;
@@ -2291,6 +2296,7 @@ export class DomProcessor {
   }
 
   private processInlineProtectionStep(): boolean {
+    if (this.pendingInlineProtection.size === 0) return false;
     const first = this.pendingInlineProtection.entries().next().value;
     if (!first) return false;
     const [root, preparation] = first;
@@ -2779,6 +2785,7 @@ export class DomProcessor {
       // captions still share the existing total limit of 32 requests.
       if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= 31) return;
       const queue = hasSubtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
+      if (queue.size === 0) return;
       const first = queue.entries().next().value;
       if (!first) return;
       const [node, run] = first;
@@ -2838,6 +2845,7 @@ export class DomProcessor {
 
   private dispatchLargeTransforms(): void {
     while (this.running && this.activeLargeTransforms < maximumConcurrentLargeTransforms) {
+      if (this.queuedLargeTransforms.size === 0) return;
       const first = this.queuedLargeTransforms.entries().next().value;
       if (!first) return;
       const [node, run] = first;

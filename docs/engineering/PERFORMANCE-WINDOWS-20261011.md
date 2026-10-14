@@ -2594,3 +2594,39 @@ ungeänderte Engine bleibt erforderlich für die eigentliche Abnahme.
 
 Die Gesamtabnahme bleibt offen. Erfolgreiche instrumentierte oder kurze
 Gegenproben ersetzen die roten Videobefunde nicht; #419 bleibt NO-GO.
+
+### Weniger kurzlebige Allokationen bei leeren Arbeitswarteschlangen
+
+Eine separate lokale Chromium-Speicherprobe zeichnet auch bereits durch
+Minor-/Major-GC eingesammelte Objekte auf. Sampling-Intervall 32 KiB;
+Schätzwerte aus jeweils einem achtsekündigen Fenster derselben 480-Text-
+Fixture, keine präzise Bytezählung oder unverfälschte Laufzeitmessung.
+
+Die Stichprobe ordnet vermeidbare Iterator-Allokationen unter anderem
+`processTransformResult`, `processFollowingContextStep` sowie den
+Text-Dispatchern zu. Acht frühe Leerprüfungen verhindern jetzt die
+Erzeugung eines Map-/Set-Iterators für eine leere Queue. Nichtleere Arbeit,
+Reihenfolge, Budgets und Untertitelpriorität bleiben erhalten.
+
+| Messung | Bisheriger Produktstand `088fea6` | Kandidat mit acht Leerprüfungen |
+| --- | ---: | ---: |
+| Mutationstakte | 159 | 160 |
+| Korrekte neueste Endtexte | 480/480 | 480/480 |
+| Geschätzte Gesamtallokationen | 65,72 MB | 63,13 MB |
+| Geschätzte Allokationen der betroffenen Queue-Funktionen | 7,05 MB | 3,97 MB |
+
+Auf die Zahl der Mutationstakte normiert etwa 4,5 % weniger geschätzte
+Gesamtallokationen; die Stichprobe der betroffenen Funktionen fällt um
+etwa 44 %. Ein vorheriger Kandidat mit sechs Leerprüfungen erreichte
+62,32 MB bei 159 Takten; das zeigt auch die Schwankung dieser
+Sampling-Messung. Die drei aufgezeichneten Reihen bleiben erhalten.
+Kein Nachweis, dass damit die zuvor beobachteten nativen Safepoint-
+Wartezeiten oder sämtliche Videogrenzen behoben wären.
+
+Der vollständige Check des abschließenden isolierten Quellstands besteht:
+256 Testdateien, 10.826 Tests, Typecheck, Build, Metadaten-/Localeprüfungen
+und Firefox-Lint ohne Fehler, Hinweise oder Warnungen. Die separat
+vorhandenen Caption-Batch-Slot-Versuchsänderungen sind darin nicht enthalten.
+Native isolierte Smokes in Chromium, Firefox und Waterfox bestehen
+einschließlich dynamischer Texte, geschützter Bereiche, Schatten-DOM,
+großer Inline-/Einzeltexte, DOM-Ranges und vollständiger Rückgabe.
