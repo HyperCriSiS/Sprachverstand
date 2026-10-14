@@ -2206,3 +2206,44 @@ Im ersten Erweiterungslauf Hintergrundoptimierung 343,9 ms Wandzeit bei
 kein Wiederholen der früheren blockierenden V8-Episode. Native Ursache,
 Android-Store-Störung und #419 bleiben offen. Lokale Rohdaten ignoriert unter
 `artifacts/performance-resume-20261014/`, keine Mikrofonaufnahme.
+
+### Unnötige DOM-Neustarts bei unveränderten Verarbeitungsregeln
+
+Drei Regressionen reproduzieren auf `4eb7e23` eine vollständige DOM-Rückgabe
+bei identischer Einstellungsantwort, reiner Popup-Anzeigeänderung und reiner
+Sync-Auswahländerung. Der Content-Pfad vergleicht jetzt ausschließlich die
+wirksamen Verarbeitungseinstellungen. Die vollständige Typklassifikation
+verlangt bei neuen Einstellungsfeldern eine ausdrückliche Entscheidung.
+Kopierte Listen und eigene Ersetzungsobjekte erhalten den Vergleichsstand;
+ein Fehler gibt identische Einstellungen für eine erneute Anwendung frei.
+Eine identische Anforderung während laufender Rückgabe bleibt gültig.
+
+Native isolierte Vorher-/Nachher-Proben in Chromium, Firefox und Waterfox,
+jeweils 5.000 tatsächlich korrigierte Textknoten: reine Popup-Änderung vorher
+10.000 `characterData`-Rückschreibungen, nachher 0. Alle 5.000 Endtexte bleiben
+korrekt. Anschließende echte Schutzbegriffänderung erzeugt je Browser
+5.000 notwendige Rückschreibungen und schützt alle 5.000 Texte; Aufheben
+des Schutzes korrigiert sie wieder vollständig. Kein Profiling-Wrapper.
+Produktbuilds schließen den separaten Caption-Batchslot-Versuch aus.
+23 fokussierte Tests sichern Einstellungsklassen, Reihenfolge, Snapshots,
+Wiederholung nach Fehlern und bestehende Restore-Wechsel. Gesamtcheck
+253 Dateien / 10.805 Tests, Typprüfung, Builds und übrige Projektprüfungen
+inklusive Firefox-Lint erfolgreich. Keine Audio-/Videofreigabe daraus.
+
+### Längere Wiedergabe und neuer roter Mischlast-Gegenbefund
+
+Manueller [Linux-Lauf 38601500982](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38601500982)
+auf `4eb7e23` insgesamt **fehlgeschlagen**: vorgeschaltetes An/aus-Mischlastpaar
+hat Drops Basis/Erweiterung 1/166, eine 133,4-ms-Frameepisode bei 1.483 ms,
+keinen korrelierten Page-Long-Task. Alle 480 Endtexte je Modus vollständig.
+Das ist ein neuer gültiger Gegenbefund; kein zusätzliches Retry und keine
+Gate-Lockerung. Gegengeprüft wird Aus/an auf exakt demselben Commit.
+
+Unabhängig weitergelaufene Teilproben erfolgreich: 180 s ohne weitere
+Textlast, Basis 345 unveränderte Cues, Erweiterung alle 345 korrigiert,
+P99 3,0 ms / Maximum 3,7 ms. Frame-Maximum Basis/Erweiterung 50,0/50,1 ms,
+je acht Drops, keine Episode über 120 ms. 30-s-Burst: aktive 58/58 Cues,
+Maximum 4,1 ms; Entfernung: aktive 59/59, Maximum 8,3 ms; Stress: aktive
+57/57, Maximum 9,4 ms. Keine dieser Teilproben hebt den roten Gesamtlauf
+auf. Auch hohe Basis-Drops bei Entfernung (228 gegen 2 aktiv) bleiben
+erhalten. #419 und die Android-Store-Störung weiterhin offen.

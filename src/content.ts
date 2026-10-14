@@ -8,10 +8,12 @@ import { disabledRuleIdsForGroups } from "./rules/catalog";
 import { shouldProcessDomain } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
 import { subscribeToSettings } from "./settings/storage";
+import {sameDomSettings, snapshotDomSettings} from "./settings/dom-settings";
 
 let processor: DomProcessor | undefined;
 let settingsTransition: Promise<void> = Promise.resolve();
 let settingsGeneration = 0;
+let requestedSettings: Settings | undefined;
 
 interface GetCurrentReplacementStateMessage {
   readonly type: "sprachverstand.get-current-replacement-state";
@@ -62,6 +64,8 @@ function reportReplacementState(
 }
 
 function applySettings(settings: Settings): Promise<void> {
+  if (sameDomSettings(requestedSettings, settings)) return settingsTransition;
+  requestedSettings = snapshotDomSettings(settings);
   const generation = ++settingsGeneration;
   settingsTransition = settingsTransition.catch(() => undefined).then(async () => {
     if (generation !== settingsGeneration) return;
@@ -92,6 +96,9 @@ function applySettings(settings: Settings): Promise<void> {
       onReplacementCountChange: reportReplacementState
     });
     processor.start();
+  }).catch((error: unknown) => {
+    if (generation === settingsGeneration) requestedSettings = undefined;
+    throw error;
   });
   return settingsTransition;
 }

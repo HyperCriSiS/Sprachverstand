@@ -41,11 +41,46 @@ beforeEach(() => {
 });
 afterEach(() => {for (const resolve of state.restorations) resolve(); vi.resetModules();});
 describe("Einstellungswechsel während kooperativer Originalrückgabe", () => {
+  it.each(["identical", "popup", "sync"] as const)("does not restore the DOM for a %s-only settings notification", async (change) => {
+    await import("../src/content"); await settle();
+    const updated = {...state.settings!};
+    if (change === "popup") updated.visiblePopupSectionIds = ["activation"];
+    if (change === "sync") updated.syncCategoryIds = ["activation"];
+    const applying = state.listener!(updated);
+    await settle();
+    const stops = state.instances[0]!.stopBudgeted.mock.calls.length;
+    for (const resolve of state.restorations) resolve();
+    await applying;
+    expect(stops).toBe(0);
+    expect(state.instances).toHaveLength(1);
+  });
   it("startet ohne aktive Regeln oder eigene Ersetzungen keinen DOM-Beobachter", async () => {
     state.settings = {...state.settings!, enabledRuleGroupIds: [], customReplacements: []};
     await import("../src/content"); await settle();
     expect(state.instances).toHaveLength(0);
     expect(state.sendMessage).toHaveBeenLastCalledWith(expect.objectContaining({count: 0, replacements: []}));
+  });
+  it("keeps an identical pending request alive during restoration", async () => {
+    await import("../src/content"); await settle();
+    const updated = {...state.settings!, protectedTerms: ["latest"]};
+    const first = state.listener!(updated);
+    await settle();
+    const same = state.listener!({...updated, visiblePopupSectionIds: []});
+    state.restorations[0]!();
+    await Promise.all([first, same]);
+    expect(state.instances).toHaveLength(2);
+    expect(state.instances[0]!.stopBudgeted).toHaveBeenCalledOnce();
+    expect(state.instances[1]!.options.protectedTerms).toEqual(["latest"]);
+    expect(state.instances[1]!.start).toHaveBeenCalledOnce();
+  });
+  it("allows retrying the same settings after a failed transition", async () => {
+    await import("../src/content"); await settle();
+    state.instances[0]!.stopBudgeted.mockRejectedValueOnce(new Error("restore failed"));
+    const updated = {...state.settings!, protectedTerms: ["retry"]};
+    await expect(state.listener!(updated)).rejects.toThrow("restore failed");
+    await state.listener!(updated);
+    expect(state.instances).toHaveLength(2);
+    expect(state.instances[1]!.start).toHaveBeenCalledOnce();
   });
   it("restauriert vor dem Abschalten aller Regeln und kann sie wieder aktivieren", async () => {
     await import("../src/content"); await settle();

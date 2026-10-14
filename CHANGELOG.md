@@ -27,6 +27,10 @@ dokumentiert.
 
 ### Leistung
 
+- Identische Einstellungen sowie reine Popup- oder Sync-Auswahländerungen
+  lösen keine vollständige DOM-Rückgabe und Neuverarbeitung mehr aus.
+  Änderungen an Textregeln, Schutzbegriffen, Domains und Textoptionen
+  werden weiterhin angewendet; fehlgeschlagene Übergänge bleiben wiederholbar.
 - Verbindliche lokale Einstellungen warten nicht mehr auf eine dafür
   unerhebliche Antwort des Sync-Speichers. Einstellungsänderungen werden
   bereits während des Starts beobachtet; überholte Leseantworten und
