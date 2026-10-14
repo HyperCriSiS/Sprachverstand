@@ -7,6 +7,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes.mjs";
 import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
+import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
@@ -569,6 +570,7 @@ async function collect(id, mode) {
       return {
         ...(domPhases ? {domPhases} : {}),
         staticText: document.querySelector("#static-target")?.textContent || "",
+        dynamicTexts: Array.from(document.querySelectorAll("#dynamic-root > span"), node => node.textContent),
         currentTime: Number(video?.currentTime || 0),
         readyState: Number(video?.readyState || 0),
         videoWidth: Number(video?.videoWidth || 0),
@@ -587,12 +589,14 @@ async function collect(id, mode) {
     `
   );
   const frameSamples = state.frameSamples;
+  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, mode);
+  delete state.dynamicTexts;
   const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
     state.longTaskSupported === true ? state.longTasks : []);
   const schedulingEpisodes = state.schedulingProgress && callbackEpisodes
     ? callbackEpisodes.map(episode => ({...episode,
         scheduling: videoSchedulingProgress(episode, state.schedulingProgress)})) : undefined;
-  return { mode, ...state, frames: summarize(state.frameTimes),
+  return { mode, ...state, dynamicCompletion, frames: summarize(state.frameTimes),
     ...(schedulingEpisodes ? {schedulingEpisodes} : {}),
     ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
       ? callbackEpisodes : callbackEpisodes.map(({longTasks, ...episode}) => episode)} : {}),
@@ -669,6 +673,12 @@ class VideoFrameRatioError extends Error {
 }
 
 function validateComparison(baseline, extension) {
+  for (const result of [baseline, extension]) {
+    const completion = result.dynamicCompletion;
+    if (completion.total !== completion.expected || completion.correct !== completion.expected) {
+      throw new Error(`${result.mode}: Dynamische Endtexte unvollständig: ${JSON.stringify(completion)}`);
+    }
+  }
   if (baseline.staticText !== "Nutzer:innen" || extension.staticText !== "Nutzer") {
     throw new Error(
       `Erweiterungszustand im Videotest unerwartet: ${JSON.stringify({
@@ -739,6 +749,7 @@ async function measureVideoPair(url, attempt) {
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({
       pairOrder: videoPairOrder,
       baseline: {
+        dynamicCompletion: baseline.dynamicCompletion,
         currentTime: baseline.currentTime,
         callbacks: baseline.frames.callbacks,
         p95GapMs: baseline.frames.p95GapMs,
@@ -749,6 +760,7 @@ async function measureVideoPair(url, attempt) {
         gapEpisodes: baseline.gapEpisodes
       },
       extension: {
+        dynamicCompletion: extension.dynamicCompletion,
         currentTime: extension.currentTime,
         callbacks: extension.frames.callbacks,
         p95GapMs: extension.frames.p95GapMs,

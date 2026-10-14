@@ -7,6 +7,9 @@ dokumentiert.
 
 ### Hinzugefügt
 
+- Die Videoregression prüft nach dem bestehenden Nachlauf alle 480 dynamischen
+  Texte auf den neuesten erwarteten Stand. Fehlende, veraltete oder nicht
+  korrigierte Texte verhindern ein erfolgreiches Performanceergebnis.
 - Ein ausdrücklicher manueller Videodiagnosemodus erfasst getrennt den
   Fortschritt von Seitentasks, Animationsframes und Videoframes. Begrenzte
   Beobachtungsfenster verhindern Aussagen aus fehlenden, abgeschnittenen

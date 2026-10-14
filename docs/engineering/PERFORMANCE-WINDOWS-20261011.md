@@ -2152,3 +2152,23 @@ Die Proben verwenden den neuen Einstellungsfix auf dem committeten Produktstand,
 ohne den weiterhin separaten uncommitteten Caption-Batchslot-Versuch.
 Keine neue Geräteaufnahme und keine Zuordnung der Audio-/Videopausen zu diesem
 Einstellungsfehler; diese Befunde bleiben offen, #419 weiterhin NO-GO.
+
+### Vollständige dynamische Endtexte, 14.10.2026
+
+Zwei native CPU-4-/60-FPS-Paare auf Produktfix `efe4990`, An/aus und Aus/an:
+alle 480 dynamischen Texte in allen vier Sitzungen entsprechen dem neuesten
+Fixture-Takt. Erstes Paar technisch grün, zweite Frameprobe rot mit Drops
+48/60. Die Textvollständigkeit erklärt den Videobefund nicht und ersetzt
+keine Wiedergabeprüfung. Alle Rohpaare bleiben lokal erhalten.
+
+Der Videorunner prüft jetzt nach dem unveränderten 350-ms-Nachlauf genau
+diese Endtexte, einschließlich unveränderter Baseline und noch neutraler
+Slots vor einer vollen Rotation. Beobachtung erfolgt nach dem Messfenster;
+Produzent, Framegrenzen und Wiederholungsregeln bleiben erhalten. Rohbericht
+enthält nur Anzahlen und fehlerhafte Slotindizes, keine dynamischen Textkopien.
+Fünf funktionale Regressionen sowie sieben bestehende Runnertests und
+Typprüfung erfolgreich. Native Chromium-Proben 30 und 60 FPS bestehen mit
+480/480 je Modus. Firefox 30 FPS besteht die Video-/Endtextprüfung ebenfalls,
+scheitert anschließend jedoch an der separaten Untertitel-Aus-Prüfung;
+Gesamtlauf ausdrücklich fehlgeschlagen. Dieser neue Testbefund wird separat
+untersucht. #419 weiterhin NO-GO.
