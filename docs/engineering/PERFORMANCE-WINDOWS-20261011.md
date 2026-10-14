@@ -2396,3 +2396,34 @@ Profilierte Gegenläufe auf früheren Builds bleiben mit Drops 55/65 und
 keine lange Seitentask und keine native Tracephase über 40 ms im Messfenster.
 Keine belastbare CPU-Zuordnung der seltenen Linux-Taskpause; weder diese
 Proben noch die erfolgreichen Android-Proben heben #419 NO-GO auf.
+
+### Viele einzelne Blätter entfernen: neuer bestätigter Engpass
+
+Der isolierte
+[Linux-Diagnoselauf 38617472893](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38617472893)
+auf `f801acb` besteht fünf getrennte Paare, jeweils 480/480 Endtexte in
+beiden Modi. Keine Page-Long-Tasks oder tatsächlichen Callbackepisoden über
+120 ms nach dem ersten Callback. Drops Basis/Erweiterung 0/1, 1/1, 1/0,
+1/1, 2/1. Im ersten Paar eine einzelne Range-erhaltende Textrückgabe mit
+18,9 ms innerhalb `forgetRoot` (19,1 ms) und Observer (20,1 ms); übrige
+Rückschreibmaxima unter 1 ms. Die frühere 112-ms-Taskpause ist damit weiterhin
+nicht zugeordnet. Instrumentierter Build bleibt von Produktionsgates getrennt.
+
+Die gezielte lokale Folgeprobe entfernt 5.000 bereits korrigierte einblättrige
+Elemente einzeln, statt ihren gemeinsamen Teilbaum zu entfernen. Diagnosebuild:
+Observer 40,8 ms, eigener Entferndurchlauf 6 ms, nächster Animationsframe
+48,3 ms nach Beginn. Unveränderter Produktionsbuild: eigener Durchlauf
+5,6 ms, nächster Frame 35,7 ms. Bei vierfacher CPU-Drosselung: eigener
+Durchlauf 41,7 ms, nächster Frame 285,2 ms. Kontrollprobe mit deaktivierter
+Verarbeitung bei gleicher Drosselung: 23 ms Entferndurchlauf / 24,6 ms bis
+zum nächsten Frame. Jeweils alle 5.000 entfernten Originaltexte korrekt.
+
+**Noch nicht behoben:** Viele einzelne `childList`-Entfernmeldungen erreichen
+jeweils den synchronen Blattpfad in `forgetRemovedRoot`; die vorhandene
+Budgetierung großer Entfernbereiche greift dabei nicht. Das blockiert den
+Observer bei einer großen Anzahl kleiner Meldungen. Der konkrete Pfad ist
+ein neuer in-scope Arbeitsfall, aber noch keine Erklärung der älteren
+Linux- oder Android-Gegenbefunde. Nächster Schritt: Arbeit über den gesamten
+Observer-Batch begrenzen, ohne für jeden einzelnen entfernten Blattknoten
+alle übrigen Ownership-Einträge zu scannen. Wiederverwendung, vollständige
+Originalrückgabe, Schutzbereiche und Untertitel müssen geprüft bleiben.
