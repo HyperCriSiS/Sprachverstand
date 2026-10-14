@@ -2127,3 +2127,28 @@ Auch frühere nicht getrennte Instrumentierungsproben sind vollständig
 erhalten, darunter ein rotes Paar mit Drops 50/60. Keine Auswahl nur grüner
 Messungen; keine Video-Freigabe. Rohdaten ausschließlich lokal ignoriert
 unter `artifacts/performance-resume-20261014/`. #419 weiterhin NO-GO.
+
+### Lokale Einstellungen und Reihenfolge beim Start, 14.10.2026
+
+Gezielte verzögerte Speicherantworten reproduzieren drei Fehler im bisherigen
+Stand: Ein verbindlicher lokaler Override wartet trotzdem auf Sync; eine
+ältere Antwort wird nach einer neueren Änderung angewendet; eine ausstehende
+Antwort erreicht einen bereits abgemeldeten Listener. Drei Regressionen
+scheitern vor dem Fix. Lokaler und synchronisierter Lesevorgang starten
+weiter parallel, aber der verbindliche lokale Stand darf sofort zurückkehren.
+Ohne Override wird die Sync-Auswahl weiterhin vollständig abgewartet.
+
+Das Content-Skript registriert jetzt den Einstellungslistener vor dem ersten
+Lesen. Generationen verwerfen überholte Antworten, Abmelden sperrt ausstehende
+Zustellung. Sechs gezielte Tests sichern Warteverhalten, Sync-Auswahl,
+Antwortreihenfolge, Abmelden, Startänderungen und späte Sync-Fehler. Bestehende
+Retries und lokale Datenschutz-/Sync-Speicherregeln bleiben erhalten.
+
+Gesamtcheck: 250 Dateien / 10.779 Tests erfolgreich, Typprüfung, Builds,
+Metadaten-/Locale-/Browserprüfungen und Firefox-Lint fehler-/warnungsfrei.
+Native isolierte Chromium-, Firefox- und Waterfox-Proben bestätigen Start,
+dynamische Texte, geschützte Inhalte, native Ranges und Wiederherstellung.
+Die Proben verwenden den neuen Einstellungsfix auf dem committeten Produktstand,
+ohne den weiterhin separaten uncommitteten Caption-Batchslot-Versuch.
+Keine neue Geräteaufnahme und keine Zuordnung der Audio-/Videopausen zu diesem
+Einstellungsfehler; diese Befunde bleiben offen, #419 weiterhin NO-GO.

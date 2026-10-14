@@ -18,6 +18,10 @@ dokumentiert.
 
 ### Leistung
 
+- Verbindliche lokale Einstellungen warten nicht mehr auf eine dafür
+  unerhebliche Antwort des Sync-Speichers. Einstellungsänderungen werden
+  bereits während des Starts beobachtet; überholte Leseantworten und
+  Antworten nach dem Abmelden werden nicht mehr angewendet.
 - Auch die erneute Prüfung grammatischer Folgekontexte nach Seitenänderungen
   läuft in begrenzten Schritten. Normale Antworten warten auf diese Prüfung;
   Untertitel bleiben priorisiert. Wiederholte Textänderungen desselben

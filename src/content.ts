@@ -7,10 +7,7 @@ import {maximumReportedReplacementSummaries} from "./core/replacement-summary";
 import { disabledRuleIdsForGroups } from "./rules/catalog";
 import { shouldProcessDomain } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
-import {
-  loadSettingsWithRetry,
-  subscribeToSettings
-} from "./settings/storage";
+import { subscribeToSettings } from "./settings/storage";
 
 let processor: DomProcessor | undefined;
 let settingsTransition: Promise<void> = Promise.resolve();
@@ -101,8 +98,7 @@ function applySettings(settings: Settings): Promise<void> {
 
 async function start(): Promise<void> {
   reportReplacementState(0);
-  await applySettings(await loadSettingsWithRetry());
-  subscribeToSettings(applySettings);
+  subscribeToSettings(applySettings, { initial: true });
 }
 
 getExtensionApi().runtime.onMessage.addListener((message) => {

@@ -26,8 +26,11 @@ vi.mock("../src/core/dom-processor", () => ({DomProcessor: class {
 }}));
 vi.mock("../src/rules", () => ({defaultRules: [{id: "test", risk: "safe", apply: (input: string) => ({text: input, replacements: 0})}]}));
 vi.mock("../src/settings/storage", () => ({
-  loadSettingsWithRetry: async () => state.settings,
-  subscribeToSettings: (listener: (settings: Settings) => Promise<void>) => {state.listener = listener; return () => undefined;}
+  subscribeToSettings: (listener: (settings: Settings) => Promise<void>, options?: {initial?: boolean}) => {
+    state.listener = listener;
+    if (options?.initial) void listener(state.settings!);
+    return () => undefined;
+  }
 }));
 async function settle() {for (let index = 0; index < 15; index += 1) await Promise.resolve();}
 beforeEach(() => {
