@@ -19,6 +19,12 @@ dokumentiert.
   Verarbeitung ausgenommen. Eine neue, standardmäßig deaktivierte Option
   erlaubt ihre gezielte Korrektur.
 
+### Korrigiert
+
+- Die Videountertitelprobe wartet nach dem Ausschalten innerhalb ihres
+  bestehenden Zeitlimits auf Medien- und Cue-Fortschritt. Eine schnelle
+  Wiederherstellung desselben Cues wird nicht mehr als Unterbrechung gewertet.
+
 ### Leistung
 
 - Verbindliche lokale Einstellungen warten nicht mehr auf eine dafür

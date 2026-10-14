@@ -2172,3 +2172,37 @@ Typprüfung erfolgreich. Native Chromium-Proben 30 und 60 FPS bestehen mit
 scheitert anschließend jedoch an der separaten Untertitel-Aus-Prüfung;
 Gesamtlauf ausdrücklich fehlgeschlagen. Dieser neue Testbefund wird separat
 untersucht. #419 weiterhin NO-GO.
+
+### Tatsächlichen Fortschritt nach Untertitelschaltern abwarten
+
+Die oben fehlgeschlagene Firefox-30-FPS-Aus-Probe scheitert in drei separaten
+Sitzungen erneut: wiederhergestellter Cue 1, drei Medienupdates, laufendes
+Video, `readyState=4`, kein Fehler. 700 ms spätere private Gegenbeobachtung:
+Cue 2, fünf Updates, weiterhin laufend und fehlerfrei. Ursache ist die
+Prüfungsreihenfolge: Warten endet beim schnellen Zurückgeben desselben Cues,
+während die sofortige Folgeprüfung bereits einen neuen Cue voraussetzt.
+
+Die Probe wartet jetzt innerhalb desselben 8-s-Limits und 100-ms-Polltakts
+auf den geforderten Medienfortschritt, beim Ausschalten zusätzlich auf einen
+neuen Cue gegenüber dem unmittelbar vorher beobachteten Zustand. Kein
+pauschales Zusatz-Sleep, keine gelockerten Frame-/Cue-Grenzen oder zusätzlichen
+Wiederholungen. Pausiertes, fehlerhaftes oder noch nicht dekodiertes Video
+bleibt ungültig. Vier funktionale Regressionen prüfen diese Zustände.
+Korrigierte Firefox-Aus-Probe dreimal erfolgreich, vollständiger Firefox-
+30-FPS-Lauf erfolgreich. Endgültige Variante zusätzlich in isoliertem Firefox
+und Waterfox erfolgreich. Gesamtcheck 252 Dateien / 10.788 Tests, Typprüfung,
+Builds, Metadaten-/Locale-/Browserprüfungen und Firefox-Lint erfolgreich.
+
+### Unabhängige Linux-Gegenprüfung auf dem Einstellungsfix
+
+Alle acht PR-Checks für `efe4990` erfolgreich. Separater manueller
+[Linux-Trace-Lauf 38599774461](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38599774461)
+mit drei Aus/an-Produktpaaren ebenfalls erfolgreich. Drops Basis/Erweiterung
+11/1, 1/0, 1/1; keine tatsächlichen Callbackepisoden über 120 ms nach dem
+ersten Callback. Erster Basis-Callback erst bei 812,3 ms, vorher ein 156-ms-
+Page-Long-Task; dieser Anlauf ist dadurch nicht automatisch freigegeben.
+Im ersten Erweiterungslauf Hintergrundoptimierung 343,9 ms Wandzeit bei
+6,7 ms Thread-CPU, ohne Page-Long-Task oder solche Callbackepisode. Das ist
+kein Wiederholen der früheren blockierenden V8-Episode. Native Ursache,
+Android-Store-Störung und #419 bleiben offen. Lokale Rohdaten ignoriert unter
+`artifacts/performance-resume-20261014/`, keine Mikrofonaufnahme.

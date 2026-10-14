@@ -51,8 +51,9 @@ describe("Video-Playback-Regression", () => {
     expect(runner).toContain('document.querySelector("#process-subtitles")');
     expect(runner).toContain("await setSubtitleCheckbox(id, true)");
     expect(runner).toContain("await setSubtitleCheckbox(id, false)");
-    expect(runner).toContain("await waitSubtitle(id, true)");
+    expect(runner).toContain("await waitSubtitle(id, true, {timeUpdates: off.timeUpdates})");
     expect(runner).toContain("await waitSubtitle(id, false)");
+    expect(runner).toContain("await waitSubtitle(id, false, beforeOff)");
     expect(runner).toContain("validateSubtitleToggle(fixture.subtitleUrl)");
   });
 

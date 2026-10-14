@@ -8,6 +8,7 @@ import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes.mjs";
 import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
 import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
+import {isReadySubtitleState} from "./video-subtitle-state.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
@@ -798,16 +799,12 @@ async function subtitleState(id) {
   `);
 }
 
-async function waitSubtitle(id, corrected) {
+async function waitSubtitle(id, corrected, previous) {
   const deadline = Date.now() + 8_000;
   let state;
   while (Date.now() < deadline) {
     state = await subtitleState(id);
-    const expected = corrected
-      ? /^Nutzer im Untertitel \d+$/u
-      : /^Nutzer:innen im Untertitel \d+$/u;
-    if (state.normal === "Nutzer" && expected.test(state.subtitle ?? "") &&
-        state.ready >= 2 && !state.paused && state.ticks >= 1) {
+    if (isReadySubtitleState(state, corrected, previous)) {
       return state;
     }
     await sleep(100);
@@ -1122,7 +1119,7 @@ async function validateSubtitleToggle(url) {
     }
     await setSubtitleCheckbox(id, true);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
-    const on = await waitSubtitle(id, true);
+    const on = await waitSubtitle(id, true, {timeUpdates: off.timeUpdates});
     // In der optionalen 60-FPS-Diagnose weitere echte Untertitelwechsel abwarten.
     if (diagnosticFps === 60) await sleep(2_200);
     const onWithCues = diagnosticFps === 60 ? await subtitleState(id) : on;
@@ -1141,11 +1138,12 @@ async function validateSubtitleToggle(url) {
 
     if (subtitleDomLoad) await measureSubtitleDomLoad(id);
 
+    const beforeOff = await subtitleState(id);
     await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await setSubtitleCheckbox(id, false);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
-    const againOff = await waitSubtitle(id, false);
-    if (againOff.timeUpdates <= on.timeUpdates || againOff.ticks <= on.ticks) {
+    const againOff = await waitSubtitle(id, false, beforeOff);
+    if (againOff.timeUpdates <= beforeOff.timeUpdates || againOff.ticks <= beforeOff.ticks) {
       throw new Error("Video oder Untertitel wurden beim Ausschalten unterbrochen.");
     }
     console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
