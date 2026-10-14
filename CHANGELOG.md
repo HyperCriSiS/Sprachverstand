@@ -7,6 +7,11 @@ dokumentiert.
 
 ### Hinzugefügt
 
+- Ein ausdrücklicher manueller Videodiagnosemodus erfasst getrennt den
+  Fortschritt von Seitentasks, Animationsframes und Videoframes. Begrenzte
+  Beobachtungsfenster verhindern Aussagen aus fehlenden, abgeschnittenen
+  oder bereits beendeten Messreihen. Der aktive Animationsbeobachter bleibt
+  von der bisherigen passiven Diagnose und der normalen CI getrennt.
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der
   Verarbeitung ausgenommen. Eine neue, standardmäßig deaktivierte Option
   erlaubt ihre gezielte Korrektur.

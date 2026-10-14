@@ -15,6 +15,10 @@ on:
         description: Frühen Videostart mit passiven Long-Task- und Sichtbarkeitsdaten prüfen
         type: boolean
         default: false
+      render_scheduling_diagnostics:
+        description: Task-/Animations-/Videofortschritt getrennt erfassen (beeinflusst Rendering)
+        type: boolean
+        default: false
       dom_phase_diagnostics:
         description: Isolierten Diagnosebuild mit begrenzten DOM-Methodenzeiten verwenden
         type: boolean
@@ -72,7 +76,7 @@ jobs:
       - name: Erweiterten Chromium-Browser prüfen
         run: npm run test:browser:chromium
       - name: Echtes 60-FPS-WebM und dynamische Untertitel prüfen
-        if: ${{ !inputs.browser_trace && !inputs.main_task_diagnostics && !inputs.dom_phase_diagnostics }}
+        if: ${{ !inputs.browser_trace && !inputs.main_task_diagnostics && !inputs.render_scheduling_diagnostics && !inputs.dom_phase_diagnostics }}
         run: npm run test:browser:video:chromium -- --fps 60
       - name: Frühen Videostart mit Browsertrace prüfen
         if: ${{ inputs.browser_trace && !inputs.dom_phase_diagnostics && inputs.dom_phase_pairs == '1' }}
@@ -94,8 +98,11 @@ jobs:
           done
           exit "$failed"
       - name: Frühen Videostart mit Long-Task-Daten prüfen
-        if: ${{ !inputs.browser_trace && inputs.main_task_diagnostics && !inputs.dom_phase_diagnostics }}
+        if: ${{ !inputs.browser_trace && inputs.main_task_diagnostics && !inputs.render_scheduling_diagnostics && !inputs.dom_phase_diagnostics }}
         run: npm run test:browser:video:chromium -- --fps 60 --diagnose-main-tasks
+      - name: Task- und Renderfortschritt getrennt beobachten
+        if: ${{ !inputs.browser_trace && inputs.render_scheduling_diagnostics && !inputs.dom_phase_diagnostics }}
+        run: npm run test:browser:video:chromium -- --fps 60 --diagnose-render-scheduling
       - name: Isolierten DOM-Phasendiagnosebuild erstellen
         if: ${{ inputs.dom_phase_diagnostics }}
         run: node scripts/build-dom-phase-diagnostic.mjs

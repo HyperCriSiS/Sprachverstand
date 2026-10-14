@@ -6,6 +6,7 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes.mjs";
+import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
@@ -44,7 +45,10 @@ const videoPairOrder = process.env.VIDEO_PAIR_ORDER || "baseline-first";
 if (!["baseline-first", "extension-first"].includes(videoPairOrder)) {
   throw new Error("VIDEO_PAIR_ORDER erlaubt nur baseline-first oder extension-first.");
 }
-const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks");
+// A continuous rAF observer changes rendering demand. Keep it explicitly
+// separate from the existing passive task/visibility observations.
+const renderSchedulingDiagnostics = process.argv.includes("--diagnose-render-scheduling");
+const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks") || renderSchedulingDiagnostics;
 const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
 const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
 if (!["standard", "no-concurrent-recompilation"].includes(engineControl)) {
@@ -208,6 +212,20 @@ function fixtureHtml() {
     if (metrics.longTaskSupported) new PerformanceObserver(list => {
       for (const task of list.getEntries()) metrics.longTasks.push({startMs: task.startTime, durationMs: task.duration});
     }).observe({type: "longtask"});
+    if (${renderSchedulingDiagnostics}) {
+      metrics.schedulingProgress = {supported: typeof requestAnimationFrame === "function",
+        startedAtMs: performance.now(), finishedAtMs: null, truncated: false,
+        timerSamples: [], animationSamples: []};
+      const progress = metrics.schedulingProgress;
+      const animation = nowMs => {
+        if (window.__sprachverstandVideoDone) return;
+        if (progress.animationSamples.length < 2048) {
+          progress.animationSamples.push({nowMs, callbackAtMs: performance.now()});
+        } else progress.truncated = true;
+        requestAnimationFrame(animation);
+      };
+      if (progress.supported) requestAnimationFrame(animation);
+    }
   }
 
   const nodes = [];
@@ -225,6 +243,13 @@ function fixtureHtml() {
       nodes[index].textContent = "Nutzer:innen " + tick + " / " + offset;
     }
     metrics.mutationTicks += 1;
+    const progress = metrics.schedulingProgress;
+    if (progress) {
+      if (progress.timerSamples.length < 2048) {
+        progress.timerSamples.push({nowMs: performance.now(), mediaTime: video.currentTime,
+          readyState: video.readyState, paused: video.paused});
+      } else progress.truncated = true;
+    }
   }, 50);
 
   for (const name of ["waiting", "stalled", "playing"]) {
@@ -260,6 +285,7 @@ function fixtureHtml() {
 
   setTimeout(() => {
     clearInterval(timer);
+    if (metrics.schedulingProgress) metrics.schedulingProgress.finishedAtMs = performance.now();
     window.__sprachverstandVideoDone = true;
   }, ${observationMs});
 })();
@@ -554,6 +580,7 @@ async function collect(id, mode) {
         longTaskSupported: metrics.longTaskSupported ?? null,
         longTasks: Array.isArray(metrics.longTasks) ? metrics.longTasks : [],
         visibilityEvents: Array.isArray(metrics.visibilityEvents) ? metrics.visibilityEvents : [],
+        schedulingProgress: metrics.schedulingProgress ?? null,
         visibilityState: document.visibilityState, focused: document.hasFocus(),
         droppedVideoFrames: Number(quality?.droppedVideoFrames || 0)
       };
@@ -562,7 +589,11 @@ async function collect(id, mode) {
   const frameSamples = state.frameSamples;
   const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
     state.longTaskSupported === true ? state.longTasks : []);
+  const schedulingEpisodes = state.schedulingProgress && callbackEpisodes
+    ? callbackEpisodes.map(episode => ({...episode,
+        scheduling: videoSchedulingProgress(episode, state.schedulingProgress)})) : undefined;
   return { mode, ...state, frames: summarize(state.frameTimes),
+    ...(schedulingEpisodes ? {schedulingEpisodes} : {}),
     ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
       ? callbackEpisodes : callbackEpisodes.map(({longTasks, ...episode}) => episode)} : {}),
     presentedFramesDelta: frameSamples.length > 1
@@ -598,6 +629,7 @@ async function run(url, mode, attempt) {
     await waitForCompletion(id);
     return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
+      renderSchedulingDiagnostics,
       domPhaseDiagnostics,
       focusedStart,
       ...(trace ? {traceFile, traceClock, engineControl, engineControlArgumentVerified:true} : {})};

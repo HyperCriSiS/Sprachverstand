@@ -78,4 +78,14 @@ describe("Video-Playback-Regression", () => {
       "1a45dfa3"
     );
   });
+
+  it("requires an explicit mode for the active render observer and leaves ordinary CI unchanged", () => {
+    expect(runner).toContain('process.argv.includes("--diagnose-render-scheduling")');
+    expect(runner).toContain('if (${renderSchedulingDiagnostics})');
+    expect(runner).toContain('progress.animationSamples.length < 2048');
+    expect(runner).toContain('progress.timerSamples.length < 2048');
+    expect(diagnoseWorkflow).toContain('render_scheduling_diagnostics:');
+    expect(diagnoseWorkflow).toContain('--fps 60 --diagnose-render-scheduling');
+    expect(workflow).not.toContain('--diagnose-render-scheduling');
+  });
 });

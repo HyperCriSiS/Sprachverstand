@@ -2068,3 +2068,62 @@ mit allen acht Checks erfolgreich. Temporäre Erweiterung und eigene
 Gerätedatei entfernt, ursprüngliches Autoplay und Wachhalten verifiziert,
 eigene Testports und lokaler Server geschlossen. Ausschließlich Playback;
 keine Mikrofonaufnahme. Rohaufnahmen und Kennungen bleiben lokal ignoriert.
+
+### Task-/Renderfortschritt im erneuerten Kontingent, 14.10.2026
+
+Live-Refs erneut geprüft: main `6c3b5f4`, Draft-PR #451 weiterhin offen;
+alle acht Checks des Dokumentations-HEADs `5752a0c` erfolgreich. Native
+Produktmessungen verwenden weiterhin den exakt aus `66bd5a0` gebauten
+Chromium-Build ohne den uncommitteten zusätzlichen Caption-Batchslot.
+Keine neue Geräteaufnahme, Produktregel, Browserkonfiguration oder Freigabe.
+
+Drei neue 60-FPS-Paare ohne Browsertrace/V8-Sampling, Reihenfolge Aus/an,
+an/aus, Aus/an, Chrome 155.0.8059.39: alle bisherigen Gates grün, trotzdem
+frühe tatsächliche Callbackpausen Basis 437,1 / 353,4 / 196,1 ms,
+Erweiterung 347,9 / keine Episode / 453,4 ms. Zweiter Erweiterungslauf
+beginnt erst bei 489,8 ms mit dem ersten Callback; eine leere Episodenliste
+beweist deshalb keinen schnellen Videostart. Nach dem Anlauf alle maximalen
+Renderabstände unter 35 ms. Keine beobachteten Page-Long-Tasks.
+
+Separate instrumentierte Proben ergänzen Zeitpunkte des bereits vorhandenen
+Mutationstimers und eine kontinuierliche Animationsframe-Schleife. In den
+frühen Videopausen laufen Seitentimer mit Medienzeitfortschritt und
+`readyState=4` weiter, während Animationscallbacks über nahezu dasselbe
+Fenster ausbleiben. Das trennt Taskfortschritt von Rendering, identifiziert
+aber keine native Ursache und beweist keine Audio-/Pixel-Störungsfreiheit.
+
+Erweiterte Windows-Traces mit GPU-/Compositor-Kategorien zeigen in allen
+vier Sitzungen 375–385 ms Wandzeit / 276–283 ms Thread-CPU in
+`MediaFoundationVideoEncodeAccelerator::GetSupportedProfiles`; außerdem
+108–112 ms Raster-Ende-Wartezeit bei nur etwa 6–7 ms Thread-CPU.
+Trace verändert Timing deutlich; beide Tracepaare scheitern am unveränderten
+Drop-Limit. Gegenprobe über den offiziell dokumentierten
+[Encoder-Schalter](https://chromium.googlesource.com/chromium/src/+/master/content/public/common/content_switches.cc)
+entfernt die Encoderabfrage im Trace, lässt jedoch 183/206-ms-Callbackpausen
+und Raster-Wartezeiten bestehen. Der Encoder allein erklärt den Befund
+nicht. Kein solcher Schalter wird in Produkt, Standardtest oder Nutzerbrowser
+übernommen. Shader-/Raster-/Compositor-Zuordnung bleibt offen.
+
+Der neue opt-in Modus `--diagnose-render-scheduling` und die gleichnamige
+manuelle Workflowauswahl speichern höchstens 2.048 Task- und 2.048
+Animationssamples, ausschließlich Zeit-/Medienzustände, keine Texte oder
+Node-Referenzen. Er enthält die passiven Long-Task-/Sichtbarkeitsdaten, ist
+aber ausdrücklich aktiv und beeinflusst Renderanforderungen. Der bisherige
+`--diagnose-main-tasks`-Modus erhält keine Animationsschleife; Standard-CI,
+Mediaquelle, Grenzwerte und Wiederholungsregeln bleiben erhalten.
+
+Auswertung verwendet die tatsächliche Callback-Eintrittszeit, zählt nur
+Samples innerhalb der Episode und weist fehlende, abgeschnittene oder
+außerhalb des Beobachtungsfensters liegende Daten als ungemessen aus.
+Neun funktionale Regressionen prüfen Uhren, Fenstergrenzen, Abbruch,
+fehlende Daten und Größenlimit; zusätzlicher Wiringtest schützt opt-in
+gegenüber normaler CI. Vollständiger Gesamtcheck 249 Dateien / 10.773 Tests,
+Typprüfung, Builds, Metadaten-/Locale-/Browserprüfungen und Firefox-Lint
+ohne Fehler/Warnungen. Workflow-YAML mit vorhandenem Parser geprüft.
+
+Native Validierung des endgültigen getrennten Modus: zwei aktive Paare
+technisch grün; separate passive Gegenprobe rot mit Drops 44/58.
+Auch frühere nicht getrennte Instrumentierungsproben sind vollständig
+erhalten, darunter ein rotes Paar mit Drops 50/60. Keine Auswahl nur grüner
+Messungen; keine Video-Freigabe. Rohdaten ausschließlich lokal ignoriert
+unter `artifacts/performance-resume-20261014/`. #419 weiterhin NO-GO.
