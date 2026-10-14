@@ -2281,3 +2281,26 @@ erhalten und bedeuten keine Videoabnahme. Gesamtcheck 254 Dateien /
 10.809 Tests sowie Builds und übrige Projektprüfungen einschließlich
 Firefox-Lint erfolgreich. Alle acht PR-Checks des Produktfixes `51a0c95`
 ebenfalls erfolgreich; native CPU-Zuordnung bleibt der nächste Schritt.
+
+### Fünf Produktions-Tracepaare auf dem aktuellen Stand
+
+Alle acht PR-Checks für `780ab19` erfolgreich. Manueller
+[Linux-Lauf 38606503982](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38606503982)
+mit fünf An/aus-Paaren ebenfalls erfolgreich: alle zehn Sitzungen 480/480
+aktuelle Endtexte, keine Page-Long-Tasks und keine tatsächlichen
+Callbackepisoden über 120 ms nach dem ersten Callback. Drops
+Basis/Erweiterung 1/0, 2/1, 2/1, 3/1, 1/1. Erste Erweiterungs-Callbacks
+231,8 / 131,4 / 135,4 / 152,6 / 131,2 ms. Erstes Paar: Hintergrundoptimierung
+210,3 ms Wandzeit / 6,4 ms Thread-CPU, ohne Seitentask-Stillstand.
+Das widerlegt die frühere unprofilierte 172-ms-Episode nicht; Trace kann
+Timing verändern. Native CPU-Ursache dieser Episode bleibt offen.
+
+Die vorhandene manuelle Paarzahl 1/3/5 kann nun auch den passiven
+Produktionsmodus wählen. Ein Paar bleibt der Standard; explizite drei/fünf
+Paare laufen unabhängig durch, auch nach einem roten Framegate, speichern
+jeweils alle Rohberichte und machen den Gesamtlauf bei jedem Fehler rot.
+Keine zusätzliche automatische Wiederholung und kein aktiver RAF-Beobachter.
+Normale CI und Videorunner bleiben unverändert. Workflow mit vorhandenem
+YAML-Parser, exklusiven Ein-/Mehrpaar-Guards und Artefaktpfaden geprüft;
+sieben bestehende Runnertests erfolgreich. Nächste kontrollierte Gegenprobe:
+fünf identische An/aus-Paare ohne Trace auf demselben Produktstand.
