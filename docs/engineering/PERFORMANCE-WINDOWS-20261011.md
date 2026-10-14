@@ -2462,3 +2462,59 @@ mit dem Gesamtcheck gemessener 56,9-ms-Lauf ist kein Vergleichsnachweis.
 Diese Ergebnisse beheben den konkreten Entfernungsengpass; die unabhängige
 Video-Gegenprüfung und die älteren nicht zugeordneten Gegenbefunde bleiben
 vor der gesamten Performanceabnahme erforderlich. #419 bleibt NO-GO.
+
+### Android-Gegenreihenfolge und verbleibende Linux-Videogrenze auf `088fea6`
+
+Alle acht regulären PR-Checks auf `088fea6` erfolgreich, native Chromium-,
+Firefox- und Waterfox-Smokes mit Ranges und Restore ebenfalls erfolgreich.
+Vier gültige Nightly-Playback-Proben vergleichen exakt gebaute Versionen
+`f801acb` und `088fea6` auf dem Ersatzgerät, jeweils aktive Erweiterung,
+hohe Textlast und 60 s lokale Speicher-MSE-Wiedergabe. Sämtliche 123
+Segmentzugriffe aus dem Speicher, 10.548.188 Bytes vorab geliefert.
+Zusätzlich 5.000 korrigierte Blätter bei Medienzeit etwa 15 s einzeln
+entfernt. Durchgehend gültige Marker/Sichtbarkeit und keine echten Eingaben.
+Jeweils alle 5.000 Texte vorher korrigiert und nachher original.
+
+| Reihenfolge | Bisheriger Build: Entfernen bis Frame | Fix: Entfernen bis Frame | Längste Medienpump-Pause, bisher/Fix |
+| --- | ---: | ---: | ---: |
+| Bisherig → Fix | 448 ms | 54 ms | 553 / 158 ms |
+| Fix → Bisherig, Zusatzlast erst nach laufender Wiedergabe | 421 ms | 54 ms | 478 / 115 ms |
+
+Eigene Entfernschleifen 19–22 ms. Keine innere Stille ab 20 ms oder
+vollständigen Frequenzausreißer über 2 Hz in allen vier Aufnahmen,
+P99 unter 0,008 Hz. Keine Mikrofonaufnahme. Rohaufnahmen, Gerätekennungen,
+UI-Schnappschüsse und Sicherungen bleiben ausschließlich lokal. Temporäre
+Erweiterung/Remote-Dateien entfernt, Autoplay/Wachhalten restauriert,
+eigene Testverbindungen und Server geschlossen.
+
+**Offener Einzelbefund:** Im ersten neuen Lauf verzögerte sich das erste
+`playing` bis 4.417 ms gegenüber 181 ms im bisherigen Lauf. Anfangsdaten
+waren nach 92 ms angehängt; der Medienpumper lief währenddessen etwa alle
+100 ms weiter, anfangs `readyState=1`. Kein Nachweis einer viersekündigen
+JavaScript-Blockade. Die damalige Zusatzlast begann vor sicher laufender
+Wiedergabe. Eine gezielte Gegenreihenfolge startet sie erst ab Medienzeit
+2 s: erstes `playing` 142 ms im neuen und 127 ms im bisherigen Build.
+Die Abweichung ist nicht erneut reproduziert; Ursache nicht behauptet.
+
+Die separate passive
+[Linux-Videoreihe 38637642535](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38637642535)
+auf `088fea6` bleibt **rot**. Fünf unabhängige Paare plus die unveränderte
+bestehende Wiederholung des vierten Paares, insgesamt zwölf Sitzungen,
+alle mit 480/480 korrekten Endtexten. Drops Basis/Erweiterung der ersten
+Versuche 2/4, 1/1, 1/1, 0/167, 1/1; die bestehende Wiederholung des vierten
+Paares ebenfalls rot mit 1/86. Dessen Frameverluste ohne Page-Long-Task
+oder tatsächliche Callbackepisode über 120 ms. Erstes Paar dagegen
+Erweiterungs-Task 79 ms bei 444 ms und 126 ms bei 1.726 ms; letztere
+überlappt eine 139-ms-Callbackepisode bei weiterhin fortschreitenden Frames.
+Die seltene Taskpause ist noch nicht kausal zugeordnet. Kein grüner Rerun
+ersetzt diese Gegenbefunde; keine Änderung der Akzeptanzgrenzen.
+
+Unabhängig davon bestehen alle Lang-/Untertitelteile desselben Laufs:
+180 s ohne zusätzliche DOM-Last 345/345 Cues, P95 3,3 / Maximum 4,3 ms,
+Drops Basis/Erweiterung 11/7, maximale Frameabstände etwa 50 ms. Burst
+30 s: 58/58 Cues, Maximum 6,3 ms; Entfernung 30 s: 59/59, Maximum 8,3 ms;
+Stress 30 s: 57/57, Maximum 6,3 ms und alle 480 Endtexte. Keine gemessene
+Frameepisode über 120 ms in diesen Teilen. Source-60-FPS bedeuten weiterhin
+keine durchgehend 60 dargestellten Frames. Der konkrete Entfernungsengpass
+ist plattformübergreifend verifiziert behoben; gesamte Videoabnahme bleibt
+wegen der getrennten Start-/Task-/Frame-Gegenbefunde offen, #419 NO-GO.
