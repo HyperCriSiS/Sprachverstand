@@ -2940,3 +2940,30 @@ ihr erfolgreicher Ablauf ist keine Freigabe des Framegates. Die lokale
 Fixture enthält nur synthetisches Video ohne Audio. Kein Gerätezugriff,
 keine neuen Audioaufnahmen, keine Mikrofonverwendung. Die älteren starken
 Frame- und nativen Wartebefunde bleiben offen; #419 bleibt NO-GO.
+
+### Gegenbefund bei verändertem Mutationstakt auf aktuellem Produktstand
+
+Die gezielte [Linux-Taktkontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38679732876)
+mit unverändertem Produktstand `8a78844` bleibt **rot**. Nur die synthetische
+Fixture variiert den Abstand ihrer 48 Textänderungen auf 50/45/55/45/50 ms;
+gleicher Abstand innerhalb jedes Aus/an-Paars, wechselnde Reihenfolge,
+alle bisherigen Gates unverändert. Alle zehn Sitzungen haben 480/480 aktuelle
+Endtexte und sichtbare, fokussierte Samples. Drops Basis/Erweiterung
+1/1, 1/2, 1/1, **4/67**, 3/1.
+
+Im vierten Paar bei 45 ms fehlen zwischen den beobachteten Callbacks 57
+Quellframes gegenüber dem Präsentationszähler: 46 eindeutig lokalisierbare
+Auslassungen liegen wieder sämtlich auf Quellindex modulo drei gleich eins;
+elf bleiben nicht lokalisierbar. Die eindeutig fehlenden Frames liegen
+zwischen Medienzeit 5,167 und 7,917 s. Keine Page-Long-Task und keine
+Callbacklücke über 120 ms in dieser Sitzung. Damit ist das charakteristische
+Verlustmuster auf dem aktuellen Produktstand erneut sichtbar und setzt
+keinen exakt 50-ms-Mutationstakt voraus. Ein einzelner 45-ms-Fall beweist
+keine Abhängigkeit von dieser Frequenz; zugleich verändert der Takt die
+Gesamtzahl der Textänderungen (177 statt 160 beziehungsweise 145 Takte).
+Die andere 45-ms-Probe besteht. Separat bleibt im ersten Erweiterungspaar
+eine 56-ms-Page-Long-Task bei 1,409 s erhalten.
+
+Der Gewinn voller Textpakete bleibt verifiziert; dieser Fix löst den
+periodischen Videoverlust nicht vollständig. Der neue Gegenbefund wird
+zusammen mit den alten roten Rohdaten erhalten. #419 bleibt NO-GO.
