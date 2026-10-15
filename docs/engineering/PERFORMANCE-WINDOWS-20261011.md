@@ -3568,3 +3568,90 @@ Schreibzahl; Drops grob/fein 0/1, 1/0, 1/0, 4/1, 1/1. Kein starkes
 Drittelmuster und kein bestätigter kausaler Zeitbasis-Fix. Der reguläre
 Mediengenerator und alle Akzeptanzgrenzen bleiben unverändert.
 PR #451 bleibt Entwurf, #419 bleibt NO-GO.
+
+## Ergänzende Kontrollen vom 15./16. Oktober: native Bildauswahl und kontinuierliche Wiedergabe
+
+Produktstand weiterhin `a6e4047`; die folgenden manuellen Diagnosebranches
+ändern weder Produktcode noch reguläre Medienerzeugung oder Freigabegrenzen.
+Ein erfolgreicher Diagnosejob bedeutet gültige Messdaten und vollständige
+Textergebnisse, nicht automatisch bestandene Performanceabnahme.
+
+Die [Kontrolle mit Chrome for Testing 155.0.8059.39](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38808155600)
+auf `d17e1fa` umfasst zwölf Rollen, drei Aus/an-Paare mit Markerlast und
+drei mit neutraler DOM-Last. Alle Rollen sind gültig, alle aktiven
+Markerrollen erreichen nach Auslauf 480 korrekte Texte. Keine Page-Long-Task
+und keine native V8-/GC-Hauptphase ab 40 ms. Dennoch hat die neutrale
+Baseline des zweiten Paars **109 Drops ohne installierte Erweiterung**:
+keine dynamischen Gender-Marker, keine characterData-Korrekturen und keine
+Ausführung von Erweiterungs-content.js. Ein statischer Marker bleibt Teil
+der unveränderten Testseite. Die übrigen elf Rollen haben null bis vier Drops.
+
+Im API-Quellframebereich 2 bis 478 zeigt der native Medien-Trace genau
+108 ausgelassene Frames, alle Index modulo drei gleich eins. Im längeren
+Trace sind es 109 Auslassungen und 109 Dropmeldungen, median alle 49,998 ms,
+jeweils mit Wiederholung eines älteren Frames. Die 108 zugehörigen
+Decodieraufrufe enden bereits vor der vorherigen Renderentscheidung.
+Das beweist nicht, dass diese Frames zu diesem Zeitpunkt schon in der
+internen Renderwarteschlange angekommen waren. Der genaue interne Zustand
+der Auswahl bleibt offen. Dieser Befund reproduziert das starke Muster
+auch ohne Sprachverstand; er beseitigt keine anderen Gegenbefunde.
+Sichtbarkeit wurde gemessen, Fokus in diesem älteren Fixture nicht separat.
+Die exakten Medienbytes dieses Laufs wurden nicht exportiert. Gegenüber
+dem Systembrowser ändern sich Version und frisch entpacktes Paket zugleich;
+die fehlenden langen Wartephasen sind kein isolierter Versionseffekt.
+
+Eine [Kontrolle ohne DOM-Schreiblast und ohne Erweiterung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38809266385)
+auf `8eec6d7` liefert in sechs Rollen 2/1/1/2/1/1 Drops, keine Page-Long-Task
+und höchstens 33,5 ms Callbackabstand. Null childList-/characterData-Writes
+und keine Erweiterungsausführung; historische Rollenlabels wie extension
+bezeichnen hier ausdrücklich keine installierte Erweiterung. Die exakte
+synthetische Quelle ist gesichert: 720 dekodierte Frames und Pakete bei
+60 FPS, nur Video, alle VP8-show_frame-Bits gesetzt. Da die Quellbytes
+zwischen den Jobs verschieden sind, beweist diese negative Kontrolle
+nicht allein, dass DOM-Schreiblast das Drittelmuster verursacht.
+
+Die [kontinuierliche Aus/an/aus-Kontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38810679719)
+auf `89bda82` vermeidet neue Wiedergabestarts zwischen den drei 20-Sekunden-
+Fenstern. Dieselbe 90-Sekunden-Quelle mit 5.400 verifizierten Frames läuft
+ohne Navigation oder Quellwechsel durch. Ein nativer VideoRendererImpl-
+Player und monotone Medientimestamps über mehr als 59 Sekunden sind im
+Trace bestätigt. Vor der Beobachtung findet Initialisierung statt;
+dies ist ausdrücklich keine Kaltstartabnahme.
+
+Über das ganze Beobachtungsfenster werden alle **3.603 Quellframes**
+präsentiert; 2.554 JavaScript-Callbacks sind nicht mit der Zahl dargestellter
+Bilder gleichzusetzen. Keine ausgelassenen Quellframes, keine Callbacklücke
+über 120 ms, Maximum 34,2 ms, P95 33,4 ms und keine Page-Long-Task,
+auch nicht in den Übergängen. Die kumulative Dropzahl bleibt bei 1/1/1;
+dieser erste Drop liegt außerhalb des beobachteten Quellframebereichs.
+Alle Frame- und Sichtbarkeitsproben sind sichtbar und fokussiert.
+Im aktiven Fenster werden 40/40 Untertitel korrigiert, P95 1,4 ms,
+Maximum 2,4 ms; ein zuvor ausgegebener Cue wird beim Einschalten separat
+als Überhang gezählt. Nach Ausschalten sind alle 480 neuesten Originaltexte
+exakt wiederhergestellt. Eigene Sitzung, Server, Driver und Worker sind
+nachweislich beendet. Keine Audioaufnahme und kein Mikrofon.
+
+Eine [weitere Zeitbasis-Kontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38812728800)
+auf `6015bf2` belässt Containerpositionen, Clusteraufteilung, Dateilänge
+und DefaultDuration unverändert. Nur vorhandene Zeitstempel werden von
+1 ms auf 0,2 ms verfeinert; alle 720 VP8-Pakethashes bleiben paarweise
+identisch, beide Quellen dekodieren 720 Frames bei 60 FPS, nur Video.
+Sechs sichtbare/fokussierte Rollen ohne Erweiterung mit neutraler DOM-Last:
+Drops grob/fein 0/0, 1/0, 1/1; keine Page-Long-Task, höchstens 33,5 ms
+Callbackabstand. Wieder kein starkes Drittelmuster und kein kausaler
+Zeitbasis-Fix. Dieser Prototyp wird nicht in den Mediengenerator übernommen.
+
+Die ergänzende lokale Aufräumprüfung besteht acht gezielte DOM-Testdateien
+mit 57 Tests, einschließlich abgetrennter Teilbäume, dichter Blattentfernung,
+Inline-Caches und budgetierter Wiederherstellung. Kein weiterer
+reproduzierbarer Produktfehler aus dieser Prüfung.
+
+Die manuelle Frame-/CPU-Diagnose archiviert künftig ihre exakt erzeugte
+synthetische `source.webm` samt Bytezahl und SHA-256 in `source.json` und im
+Bericht. Die Speicherung erfolgt vor Serverstart und Wiedergabe, auch wenn
+ein späterer Schritt fehlschlägt. Lokal wurden HTTP-Antwort, Archivbytes,
+Hash und Berichtsmetadaten auf Gleichheit sowie Erhalt bei kontrolliertem
+Serverfehler geprüft; elf bestehende Frame-/CPU-Tests bestehen.
+Keine Aufzeichnung fremder Medien und keine geänderte Messlast oder Grenze.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO; die nativen Restbefunde sind
+eingegrenzt, aber keine vollständige Freigabe ist belegt.

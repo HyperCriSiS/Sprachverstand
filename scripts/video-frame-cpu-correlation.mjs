@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
 import { analysiereVideoCpu, frameLuecken } from "./video-frame-cpu-metrics.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
@@ -143,6 +144,12 @@ async function openSession(withExtension) {
 async function openFixture() {
   const page = Buffer.from(html, "utf8");
   const media = createVerified60FpsWebm();
+  // Preserve the exact generated source before playback, including failed runs.
+  // Re-encoding the same test pattern can produce different VP8 packet bytes.
+  const source = {file: "source.webm", bytes: media.length,
+    sha256: createHash("sha256").update(media).digest("hex"), synthetic: true};
+  await writeFile(path.join(output, source.file), media);
+  await writeFile(path.join(output, "source.json"), JSON.stringify(source, null, 2) + "\n");
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     const asset = url.pathname === "/video.webm" ? media :
@@ -161,7 +168,7 @@ async function openFixture() {
   });
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Fixture ohne Port.");
-  return { server, url: "http://127.0.0.1:" + address.port + "/test.html" };
+  return { server, source, url: "http://127.0.0.1:" + address.port + "/test.html" };
 }
 
 async function abgleichZeitachsen(id) {
@@ -407,6 +414,7 @@ try {
   const alleTexteNachAuslaufVollstaendig = runs.every(run => run.completeAfterLoad);
   const report = {
     version: 2, generatedAt: new Date().toISOString(),
+    source: fixture.source,
     alleTexteNachAuslaufVollstaendig,
     commit: process.env.GITHUB_SHA ?? null,
     browser, browserVersion: browserVersion ?? null,
