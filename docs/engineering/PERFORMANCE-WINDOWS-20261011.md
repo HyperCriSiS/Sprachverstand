@@ -2890,3 +2890,53 @@ läuft bereits das Erstellen der Chromium-Browsersitzung nach 60 s in das
 bestehende WebDriver-Limit, vor Navigation und Videoprüfung. Der unveränderte
 zweite Versuch und alle acht regulären Checks bestehen. Der Timeout ist
 gesichert; keine Behebung seiner Ursache durch diesen Dispatch-Fix behauptet.
+
+### Vollständige Prüfung und unabhängige Wiedergabe auf `8a78844`
+
+Alle acht regulären PR-Prüfungen auf dem Dispatch-Fix bestehen,
+einschließlich [CI mit 257 Testdateien und 10.838 Tests](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38675928090)
+und [CodeQL](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38675924922).
+Die getrennte [passive Linux-60-FPS-Reihe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38675927102)
+besteht fünf Paare jeweils im ersten Versuch: Basis/Erweiterung 2/2, 2/1,
+2/2, 1/2 und 1/2 Drops, zehnmal 480/480 Endtexte, alle Samples sichtbar und
+fokussiert, keine Page-Long-Tasks. Der erste Baseline-Callback benötigt
+434,3 ms gegenüber 122,5 ms mit Erweiterung; das ist kein Beleg, dass alle
+Anlaufprobleme behoben sind.
+
+Die größere native Chromium-CPU×4-Probe mit 512 Texten begrenzt die
+Übertragbarkeit des 32-Text-Gewinns. Drei Paare, wechselnde Reihenfolge,
+jeweils drei Aufwärm- und sechs gewertete Durchläufe bei 512 Texten:
+Median vorher/nachher 343,50/322,05, 325,15/284,20 und 342,35/327,45 ms.
+Das entspricht etwa 4–13 %; die hohen Quantile verbessern sich nicht
+durchgehend. Inklusive getrennter 31-Text-Kontrollen alle 144 Pakete korrekt.
+Deren Mediane bleiben ähnlich, allerdings tritt nachher einmal 208,7 ms
+auf. Dieser Einzelbefund bleibt offen; keine Ursache oder Behebung durch
+den Dispatch-Fix behauptet.
+
+Eine aus derselben synthetischen Fixture erzeugte lokale Seite friert ihre
+Messdaten selbst nach acht Sekunden plus Nachlauf ein. Nach der Navigation
+erfolgen bis zum Lesen des fertigen Berichts keine WebDriver-Scriptabfragen.
+Frische native Chromium-Profile ohne beziehungsweise mit Erweiterung zeigen
+weiterhin 41/60 kumulative Drops, bei 419/373 Callbackbenachrichtigungen und
+jeweils 480/480 korrekten Endtexten. Beide Fenster bleiben sichtbar und
+fokussiert; die verfügbare Long-Task-API meldet keine langen Aufgaben.
+Der lokale Gegenbefund bleibt also auch ohne fortlaufende Driverabfragen
+bestehen. Die eindeutig lokalisierbaren Auslassungen verteilen sich auf alle
+drei Quellframe-Reste; das entspricht nicht dem alten konzentrierten
+Linux-Drittelverlust und erklärt ihn nicht.
+
+Die entsprechende native Firefox-/Waterfox-Probe zeigt je zwei gültige
+Fenster mit 480/480 Texten und null gemeldeten Drops bei jeweils 500
+kumulativen Videoframes. Firefox 197/195, Waterfox 197/195 Callbacks.
+In beiden Erweiterungsläufen geht allerdings die Medienzeit zwischen den
+ersten zwei Callback-Samples von 0,167 auf 0,050 s zurück, während der
+Präsentationszähler steigt. Die strenge Präsentationsauswertung verwirft
+diese widersprüchliche Folge wie vorgesehen, statt daraus null Auslassungen
+abzuleiten. Die Qualitätszähler und Rohsamples bleiben getrennt erhalten;
+die nicht verfügbare Gecko-Long-Task-API bleibt unbewertet.
+
+Diese unabhängigen Proben prüfen Beobachtbarkeit und Textkorrektheit;
+ihr erfolgreicher Ablauf ist keine Freigabe des Framegates. Die lokale
+Fixture enthält nur synthetisches Video ohne Audio. Kein Gerätezugriff,
+keine neuen Audioaufnahmen, keine Mikrofonverwendung. Die älteren starken
+Frame- und nativen Wartebefunde bleiben offen; #419 bleibt NO-GO.
