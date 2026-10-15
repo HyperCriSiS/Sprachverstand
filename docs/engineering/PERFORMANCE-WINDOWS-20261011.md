@@ -3291,3 +3291,78 @@ Browser 154.0.8037.0, Treiber 154.0.8037.92. Zwei davor separat erhaltene
 Versuche scheiterten bereits beim WebDriver-Startup und führten diese
 Hauptmessung nicht aus. Kein Frame-Gate geändert oder roter Befund verworfen.
 PR #451 bleibt Entwurf, #419 bleibt NO-GO.
+
+### Weitere Gegenproben und native Wartezustände auf `a6e4047`
+
+Alle acht [regulären PR-Checks auf `a6e4047`](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38773309005)
+bestehen. Der neue Vorbereitungstest scheitert mit dem ursprünglichen
+DOM-Prozessor genau an der überflüssigen Tokenplanung; die beiden anderen
+neuen Regressionen bestehen auch dort. Zusätzlich 198 korrekte native
+Firefox-157.0.1-Bursts ohne CPU-Drosselung: neun lange Absätze vorher/nachher
+45/42, 44/44 und 44/43 ms. Der Chromium-Gewinn gilt somit nicht pauschal für
+Gecko. Eine Zweiwort-Gegenprobe und ein Folgeprototyp zur Wiederverwendung
+des Änderungsfensters zeigen keinen stabilen zusätzlichen Gesamtgewinn;
+der Folgeprototyp bleibt außerhalb des Produktcodes.
+
+Der [getrennte Produktlanglauf 38773722279](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38773722279)
+ohne zusätzlichen Trace/Prozessmonitor besteht technisch, lässt aber
+Gegenbefunde offen. Drei passive Paare: alle 480 Texte und sichtbare/fokussierte
+Frames, Drops Basis/Erweiterung 1/2, 157/3 und 9/0. Im ersten Addonlauf
+75-ms-Page-Long-Task sowie getrennte tatsächliche Callbacklücke von 184 ms
+ohne Page-Long-Task, bei elf zusätzlichen Präsentationen. 180-s-Untertitel:
+345/345 Cues, Maximum 4,9 ms, Drops Basis/aktiv 7/10. Burst 58/58, Maximum
+5,4 ms; Entfernung 59/59, Maximum 10,9 ms. Stress 57/57, Maximum 4,6 ms,
+480 normale Endtexte, aber 73 Drops. Innerhalb der Stress-Loopsegmente 71
+Sourceauslassungen, davon 69 exakt lokalisiert, alle Restklasse 1 modulo 3;
+zwei Loopgrenzintervalle sind dabei ausgeschlossen. Dieser Framebefund bleibt
+trotz schneller Cues und leerer Page-Long-Task-Arrays bestehen.
+
+Die [verzögerte native Diagnose 38774635202](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38774635202)
+startet den Browsertrace erst 500 ms nach abgeschlossener Navigation, ohne
+Prozessmonitor oder Seitentrigger. Sie endet rot am unveränderten
+300-ms-Frame-Limit (316,6 ms). Im ersten Addonlauf enthält eine
+299,211-ms-Seitentask `V8.OptimizeCode` mit 298,434 ms Wandzeit und 1,625 ms
+CPU. Eine getrennte native GC-Phase dauert 288,176 ms bei 1,366 ms CPU,
+darin `V8.GC_TIME_TO_SAFEPOINT` mit 287,133 ms bei 0,481 ms CPU.
+Callbackepisoden 301,6 ms mit Seitentask und 291,7 ms ohne Seitentask;
+Präsentationen dabei +18/+17. Beide Pausenklassen sind hier im selben Trace
+erfasst; dies ordnet die frühere einzelne 117-ms-Task nicht rückwirkend zu.
+
+Die [Kontrolle mit Renderer-Hauptthreads 38775861497](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38775861497)
+bestätigt in einer 43,660-ms-Optimierungsphase bei 0,456 ms CPU einen inneren
+Kernelpunkt `D/folio_wait_bit_common`. Eine spätere 258,202-ms-Safepointphase
+verbraucht 0,025 ms CPU, fünf innere Hauptthread-Proben melden
+`S/futex_do_wait`. Obwohl alle Page-Long-Task-Arrays leer sind, bleibt eine
+278-ms-Callbackepisode. Der reine Hauptthreadmonitor kostet 1,74–2,10 % CPU
+bezogen auf die Messwandzeit und ist weiterhin Diagnoseinstrumentierung.
+
+Die [begrenzte Worker-Kontrolle 38777292628](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38777292628)
+erfasst Hintergrundthreads nur 300–2.000 ms nach Monitorstart. Alle zehn
+Sitzungen liefern 480 korrekte Texte mit sichtbaren/fokussierten Frameproben;
+Drops Basis/Erweiterung 2/3, 2/1, 1/3, 2/2 und 1/0. Im ersten Addonlauf:
+
+- 124-ms-Page-Long-Task, darin `V8.OptimizeCode` 123,707 ms bei 0,659 ms CPU;
+  zwei innere Hauptthread-Proben `D/folio_wait_bit_common`.
+- Später 250,981 ms `V8.GC_TIME_TO_SAFEPOINT` bei 0,024 ms CPU;
+  fünf innere Hauptthread-Proben `S/futex_do_wait`.
+- Gleichzeitig `V8.OptimizeBackground` 687,646 ms bei 6,016 ms CPU. Der im
+  Trace identifizierte Compilerthread meldet in den fünf inneren GC-Proben
+  jeweils `D/folio_wait_bit_common`; seine Major-Fault-Zähler steigen dabei
+  von 16 auf 35. Das belegt Speicherseiten-Wartezustände auch im Compiler.
+
+Die eigene erfasste Cgroup meldet `cpu.max = max 100000`, in den jeweiligen
+Bracketingintervallen keine Erhöhung von `nr_throttled`/`throttled_usec`.
+Der begrenzte Monitor kostet 2,82–3,57 % CPU bezogen auf die Messwandzeit.
+Die beiden tatsächlichen Callbackepisoden betragen 127,2/255 ms, während
+der Präsentationszähler um sieben bzw. 16 Frames steigt. Unterschiedliche
+Messuhren und interne GC-Tasks bleiben getrennt; keine Gate-Lockerung.
+
+Der über Chromium-155.0.8059.0-`DEPS` zugeordnete
+[V8-Safepoint-Quellstand `17abeb50`](https://github.com/v8/v8/blob/17abeb50acb4563e253edebd0db09062d39c8c91/src/heap/safepoint.cc)
+umfasst unter `TIME_TO_SAFEPOINT` das Warten auf angehaltene Hintergrundthreads.
+Das passt zu den beobachteten Futex-Wartezuständen. Welche Speicherabbildung
+die verzögerten Seitenzugriffe auslöst, bleibt offen. Die Messung belegt hier
+lange native Wartezeiten mit geringer CPU-Zeit, keinen entsprechend langen
+CPU-Durchlauf der Textregeln. Ein allgemeiner Freispruch für sämtliche
+Erweiterungseffekte oder eine Gesamtfreigabe folgt daraus nicht.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO.
