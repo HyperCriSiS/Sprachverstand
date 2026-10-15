@@ -3655,3 +3655,81 @@ Serverfehler geprüft; elf bestehende Frame-/CPU-Tests bestehen.
 Keine Aufzeichnung fremder Medien und keine geänderte Messlast oder Grenze.
 PR #451 bleibt Entwurf, #419 bleibt NO-GO; die nativen Restbefunde sind
 eingegrenzt, aber keine vollständige Freigabe ist belegt.
+
+### Quellarchivierung im Linux-Ablauf und native DOM-Speicherprobe (16. Oktober)
+
+Der [manuelle Linux-Lauf auf 8de8a36](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38814828202)
+bestätigt die Archivierung im vollständigen Ablauf: 795.714 Bytes,
+SHA-256 und Bytezahl stimmen zwischen Datei, source.json und Bericht überein.
+FFprobe bestätigt 720 dekodierte VP8-Frames und Pakete bei 60 FPS, nur Video;
+alle 720 show_frame-Bits sind gesetzt. Alle zwölf Rollen sind gültig und
+alle Endtexte vollständig, keine Page-Long-Task oder native V8-/GC-Hauptphase
+ab 40 ms, maximaler Callbackabstand 33,5 ms. Marker-Drops Basis/Addon
+2/0, 1/0, 1/5; neutrale Last 1/1, 0/1, 1/1. Das starke Drittelmuster
+tritt hier nicht auf; einzelne verlorene Frames bleiben sichtbar.
+Fokus wurde in diesem älteren Fixture nicht separat gemessen.
+Alle acht regulären PR-Prüfungen auf 8de8a36 sind ebenfalls verifiziert grün:
+[CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38814810598)
+und [CodeQL](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38814806760).
+
+Die zusätzliche native Speicherprobe nutzt Chromium 155.0.8059.39 und den
+exakten Produktbuild a6e4047, ohne alten Transportversuch. Drei Szenarien,
+jeweils sechs Zyklen mit 5.000 Absätzen, mit und ohne Erweiterung:
+vollständig korrigierte Absätze, Entfernung bei noch laufender Verarbeitung
+und entfernte ShadowRoots mit geschützten code-Inhalten. Insgesamt 180.000
+Absatzinstanzen; in den beiden vollständig verarbeiteten aktiven Szenarien
+60.000 korrekte Absätze und 30.000 unveränderte geschützte Code-Texte.
+Vor der frühen Entfernung sind in den sechs aktiven Zyklen noch
+5.000/4.995/4.995/4.984/4.994/4.995 Texte unkorrigiert.
+Nach jeder Entfernung, 1,5 Sekunden für begrenzte Aufräumarbeit und expliziter
+Garbage Collection meldet der Browser wieder exakt zehn lebende DOM-Knoten
+wie zu Beginn. Keine anwachsende DOM-Knotenretention in diesen Proben;
+kein allgemeiner Beweis gegen sämtliche Heap-Leaks und keine Latenzmessung.
+Alle eigenen Sitzungen, Server und Driver sind beendet. Kein Mikrofon
+und keine Aufnahme.
+
+### Waterfox-Ausreißer auf den eingebauten Filterblocker eingegrenzt
+
+Separate native Gegenmessung mit Waterfox 153.5.0, Build 20261013130543:
+Produkt vor/nach a6e4047, gleicher HEAD-Transport ohne alten dritten Slot,
+drei wechselnde Paare, 198 korrekte Bursts, durchgehend sichtbar/fokussiert.
+Neun lange Absätze im Median vorher/nachher 43/40, 44/39, 42/40 ms;
+31 lange Absätze bleiben gemischt. In allen sechs frischen Testprofilen
+gibt es zusätzlich einen frühen Acht-Absatz-Ausreißer:
+424/443, 484/456, 395/422 ms. Diese Befunde werden nicht als bloßer
+Aufwärmsample verworfen; sie liegen nach den zwei ausgewiesenen Aufwärmbursts.
+
+Eine getrennte Diagnose zeigt während eines 475-ms-Durchlaufs höchstens
+19 ms Lücke des Seitentimers. Hintergrund- und Transportmessung grenzen
+den Ausreißer auf den Nachrichtenaustausch ein: einzelne Transformationen
+höchstens neun Millisekunden, reguläre Flush- und Batch-Timer kurz,
+eine runtime-Nachricht dagegen 386 ms unterwegs. Der Hauptprozess-Timer
+setzt in einer weiteren Probe 243 und 221 ms aus; Seite und
+Erweiterungshintergrund laufen währenddessen weiter.
+
+Das lokale Gecko-Profil ordnet zwei lange Hauptprozess-Phasen dem Aufbau
+und der Serialisierung des eingebauten Waterfox-Filterengines zu:
+nsIWaterfoxBlockerEngine.initFromLists und serialize, aufgerufen über
+_createEngineFromListRecords, _refreshEngineAfterListUpdate und EngineCache.write.
+Die tatsächlichen installierten Browsermodule stimmen bytegenau mit den
+öffentlichen Blobs des Browser-Quellstands 1de140d0 überein:
+[WaterfoxBlockerService](https://github.com/BrowserWorks/waterfox/blob/1de140d004d3fd63a2b63564b2ed4ea26f0adc97/waterfox/browser/components/blocker/WaterfoxBlockerService.sys.mjs)
+und [EngineCache](https://github.com/BrowserWorks/waterfox/blob/1de140d004d3fd63a2b63564b2ed4ea26f0adc97/waterfox/browser/components/blocker/internal/EngineCache.sys.mjs).
+Der Profiler verändert Laufzeiten; diese Diagnose ist keine neue Abnahme.
+
+Die gezielte Kontrolle ändert ausschließlich waterfox.blocker.enabled in
+neuen, anschließend geschlossenen Testprofilen; Wert jeweils zurückgelesen.
+Mit deaktiviertem eingebautem Blocker weitere sechs Sitzungen/198 korrekte,
+sichtbare/fokussierte Bursts: kein Ausreißer über 150 ms, Maximum 122 ms
+über alle vier Lastgrößen. Neun lange Absätze vorher/nachher im Median
+43/40, 41/43, 44/41 ms: auch hier kein pauschaler Gecko-Gewinn.
+Nach erneuter Aktivierung in einem weiteren frischen Profil sind alle neun
+Bursts korrekt, aber die Ausreißer mit 262 und 167 ms wieder vorhanden.
+Zusammen mit dem Hauptprozess-Profil stützt dies die Zuordnung zur
+Filterinitialisierung/Cache-Arbeit des Browsers. Die exakten Erweiterungspakete
+sind zwischen diesen Kontrollen identisch. Persönliche Profile und
+Browsereinstellungen wurden nicht verändert; kein permanentes Abschalten
+des Blockers als Empfehlung oder als Produktfix. Alle lokalen Rohprofile
+bleiben unveröffentlicht. Keine Aufnahme und kein Mikrofon.
+Dieser eingegrenzte Waterfox-Testumgebungseffekt hebt die übrigen nativen
+Chromium-Gegenbefunde nicht auf: PR #451 bleibt Entwurf, #419 bleibt NO-GO.
