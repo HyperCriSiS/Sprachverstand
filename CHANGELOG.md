@@ -40,6 +40,10 @@ dokumentiert.
 
 ### Leistung
 
+- Einzelne Wortänderungen in begrenzten Textknoten überspringen bei Korrektur
+  und Rückgabe die vollständige Tokenplanung. Textmarkierungen bleiben
+  erhalten; große Texte und Änderungen an mehreren Wörtern werden weiterhin
+  in begrenzten Schritten verarbeitet.
 - Leere Arbeitswarteschlangen erzeugen bei der budgetierten DOM-Verarbeitung
   keine kurzlebigen Map-/Set-Iteratoren mehr. Text-, Untertitel- und
   Rückgabereihenfolge bleiben erhalten.

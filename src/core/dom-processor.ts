@@ -2476,17 +2476,11 @@ export class DomProcessor {
     return true;
   }
 
-  private replaceTextKeepingRanges(node: Text, next: string): void {
-    const previous = node.data;
-    if (previous === next) {
-      return;
-    }
-
-    // Eine einzelne Änderung innerhalb eines Tokens benötigt kein erneutes
-    // Zerlegen des kompletten Textes in Wörter. Das lokale replaceData()
-    // bewahrt unveränderte Präfix-/Suffixbereiche mitsamt ihren DOM-Ranges.
-    // Bei Leerraumänderungen oder mehreren Wortänderungen bleibt der
-    // bisherige tokenweise Rückwärts-Algorithmus maßgeblich.
+  // The same changed-window check serves direct writes and the bounded
+  // preparation fast path; whitespace changes retain token-based planning.
+  private singleTokenEdit(previous: string, next: string):
+    {offset: number; length: number; text: string} | undefined {
+    if (previous === next) return undefined;
     let prefix = 0;
     while (
       prefix < previous.length &&
@@ -2509,8 +2503,26 @@ export class DomProcessor {
       !/\s/u.test(previous.slice(prefix, previousEnd)) &&
       !/\s/u.test(next.slice(prefix, nextEnd))
     ) {
-      this.applyLocalTextEdit(node, prefix, previousEnd - prefix,
-        next.slice(prefix, nextEnd));
+      return {offset: prefix, length: previousEnd - prefix, text: next.slice(prefix, nextEnd)};
+    }
+
+    return undefined;
+  }
+
+  private replaceTextKeepingRanges(node: Text, next: string): void {
+    const previous = node.data;
+    if (previous === next) {
+      return;
+    }
+
+    // Eine einzelne Änderung innerhalb eines Tokens benötigt kein erneutes
+    // Zerlegen des kompletten Textes in Wörter. Das lokale replaceData()
+    // bewahrt unveränderte Präfix-/Suffixbereiche mitsamt ihren DOM-Ranges.
+    // Bei Leerraumänderungen oder mehreren Wortänderungen bleibt der
+    // bisherige tokenweise Rückwärts-Algorithmus maßgeblich.
+    const edit = this.singleTokenEdit(previous, next);
+    if (edit) {
+      this.applyLocalTextEdit(node, edit.offset, edit.length, edit.text);
       return;
     }
 
@@ -2683,6 +2695,16 @@ export class DomProcessor {
       return;
     }
 
+    // A bounded single-token edit needs no complete token plan. Large inputs
+    // still prepare incrementally, even when the rule reports one replacement.
+    if (budgeted && Math.max(node.data.length, result.text.length) <= maximumImmediateTextEditPreparationChars) {
+      const edit = this.singleTokenEdit(node.data, result.text);
+      if (edit) {
+        this.recordTextResult(node, original, result);
+        this.applyLocalTextEdit(node, edit.offset, edit.length, edit.text);
+        return;
+      }
+    }
     if (budgeted && this.deferTextEdits(node, original, result)) return;
     this.recordTextResult(node, original, result);
     this.replaceTextKeepingRanges(node, result.text);
@@ -2902,6 +2924,13 @@ export class DomProcessor {
   }
 
   private restoreText(node: Text, original: string, budgeted: boolean): boolean {
+    if (budgeted && this.running && Math.max(node.data.length, original.length) <= maximumImmediateTextEditPreparationChars) {
+      const edit = this.singleTokenEdit(node.data, original);
+      if (edit) {
+        this.applyLocalTextEdit(node, edit.offset, edit.length, edit.text);
+        return false;
+      }
+    }
     if (budgeted && this.running && this.deferTextEdits(node, original,
       {text: original, replacements: 0, summaries: []}, true)) return true;
     this.replaceTextKeepingRanges(node, original);

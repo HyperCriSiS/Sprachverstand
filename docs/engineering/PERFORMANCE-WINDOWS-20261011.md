@@ -3215,3 +3215,79 @@ Fehlerbehandlung und die Assertion gegen unbegrenzten lokalen Fallback bleiben
 erhalten. 22 gezielte Tests/Typecheck sowie alle acht PR-Checks auf diesem
 Stand bestehen. Kein Produktbudget geändert, kein unveränderter Rerun zum
 Verbergen des fehlgeschlagenen Versuchs. #419 bleibt NO-GO.
+
+### Begrenzte Einzeländerung vor vollständiger Tokenplanung, 15.10.2026
+
+Die vollständige Tokenplanung wurde auch dann vorbereitet und verworfen,
+wenn ein langer Absatz nur eine zusammenhängende Änderung innerhalb eines
+Wortes enthielt. Die vorhandene sichere Präfix-/Suffix-Erkennung wird jetzt
+gemeinsam verwendet und bei budgetierten Korrekturen und Rückgaben bereits
+vor dieser Planung geprüft. Das gilt nur bis zur bestehenden Grenze von
+65.536 Zeichen. Größere Texte behalten ihre inkrementelle Vorbereitung;
+Leerraum- und Mehrwortänderungen behalten die bisherige Tokenplanung.
+Bereits identischer Text erzeugt keinen DOM-Schreibzugriff.
+
+Vollständiger nativer DOM-Vergleich gegen Produkt `00b7462` / HEAD `daa3a72`,
+Chromium 155.0.8059.39 unter Windows mit CPU×4, normaler Content-Einstieg,
+unveränderter HEAD-Transport ohne den alten dritten Caption-Slot-Versuch.
+Drei Gegenpaare mit wechselnder Reihenfolge, insgesamt 198 korrekte Bursts.
+Bei 8/9/31 Absätzen enthält jeder Absatz 8.000 Zeichen und eine Korrektur;
+die 30er-Kontrolle enthält kurze Texte. Mediane in ms:
+
+| Absätze | Paar 1 vorher/nachher | Paar 2 vorher/nachher | Paar 3 vorher/nachher |
+| --- | --- | --- | --- |
+| 8 | 74,60 / 61,10 | 71,20 / 53,80 | 71,00 / 60,30 |
+| 9 | 72,20 / 60,10 | 74,70 / 53,60 | 75,10 / 54,10 |
+| 30, kurz | 29,90 / 27,10 | 26,70 / 30,00 | 30,90 / 26,60 |
+| 31 | 237,45 / 154,20 | 240,65 / 153,85 | 235,75 / 213,45 |
+
+Bei neun langen Absätzen 17–28 % Median-Gewinn, bei 31 langen Absätzen
+9–36 %. Kein allgemeiner Latenzgewinn: Die kurze Kontrolle ist in Paar 2
+langsamer; P95 verschlechtert sich bei acht Absätzen in Paar 3 von
+149,7 auf 189,2 ms und bei 31 von 250 auf 385,5 ms. Ein gesonderter Durchlauf
+parallel zur vollständigen Testsuite wurde wegen konkurrierender CPU-Last
+nicht für diese Performanceaussage verwendet und bleibt lokal erhalten.
+
+Die erste Fassung verursachte bei unverändertem Text eine unnötige Mutation;
+fünf bestehende Tests deckten dies auf. Nach dem Gleichheitsguard bestehen
+alle 258 Dateien / 10.843 Tests. Neue Regressionen prüfen die ausbleibende
+Mutation, Ranges und budgetierte Rückgabe sowie weiterhin budgetierte viele
+Wortänderungen aus einer einzigen Regelersetzung. Build und Typprüfung sowie
+native Chromium-/Firefox-/Waterfox-Smokes mit Inline-Ranges, großem Einzeltext,
+Schutzbereichen und Restore bestehen. Diese Prüfungen ersetzen keine offene
+Videoabnahme.
+
+### Quellvergleich und weiterhin offene native Gegenbefunde
+
+Geprüfte Referenzen: [uBlock Origin `8cf2cbd1`](https://github.com/gorhill/uBlock/blob/8cf2cbd13ba7c3fbd2fb5051e0cd1afa697d1656/src/js/contentscript.js),
+[TWP `50a92116`](https://github.com/FilipePS/Traduzir-paginas-web/blob/50a92116542ab93524594cc210f4bf4e5d86a925/src/contentScript/pageTranslator.js)
+und [OpenRead `dd606d00`](https://github.com/uxgnod/openread/blob/dd606d002f9f319b691a3066d56b2d3d16e7d4a9/src/content/page-translator.ts).
+Observer-Bündelung und Zeitbudgets sind bei Sprachverstand bereits vorhanden.
+TWPs 2-Sekunden-Bündelung neuer Inhalte passt nicht zu Untertiteln. OpenReads
+sichtbarkeitsabhängige Fragmentanforderung bleibt ein möglicher gesonderter
+Versuch für große Seiten, kein bewiesener Fix der Videopausen. Keine fremden
+Codebestandteile übernommen und kein persistenter Seitentextcache ergänzt.
+
+Der frühere [Produktlanglauf 38733846211](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38733846211)
+ist technisch grün, enthält aber eine Page-Long-Task von 117 ms sowie getrennte
+Callbackpausen von 128,2 und 131,1 ms. Die Herkunft dieser konkreten Pausen
+bleibt offen. Der [native Kontrolllauf ohne Erweiterung 38765058046](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38765058046)
+belegt separat 174,530 ms Wandzeit bei 2,969 ms CPU in einem von
+`HTMLMediaElement::ScheduleNextSourceChild` geplanten Task, noch vor Fixture-
+und Content-Script. Zwei innere Kernelproben melden `D/folio_wait_bit_common`.
+Das weist eine unabhängige Browserwartephase nach, erklärt aber nicht durch
+Analogie die frühere 117-ms-Page-Long-Task. Der Monitor kostet selbst ungefähr
+6–8 % CPU bezogen auf die Messwandzeit; keine uninstrumentierte Freigabe.
+
+Der [nachgelagerte Traceversuch 38771510434](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38771510434)
+auf unverändertem Produkt `00b7462` endet rot: Drops Basis/Erweiterung
+1/2, 3/2, 1/1, 96/4, 2/16. Alle zehn Sitzungen liefern 480/480 korrekte
+Endtexte und durchgehend fokussierte/sichtbare Frameproben. Ohne Erweiterung
+werden 85 der 96 fehlenden Sourceframes exakt lokalisiert, alle Restklasse
+1 modulo 3; im letzten Addonlauf acht exakt lokalisierte Auslassungen derselben
+Restklasse. Die 72-ms-Page-Long-Task im ersten Addonlauf erreicht die gewählte
+80-ms-Triggerschwelle nicht; kein Trace startet, kein Ursachenbeweis daraus.
+Browser 154.0.8037.0, Treiber 154.0.8037.92. Zwei davor separat erhaltene
+Versuche scheiterten bereits beim WebDriver-Startup und führten diese
+Hauptmessung nicht aus. Kein Frame-Gate geändert oder roter Befund verworfen.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO.
