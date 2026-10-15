@@ -2967,3 +2967,179 @@ eine 56-ms-Page-Long-Task bei 1,409 s erhalten.
 Der Gewinn voller Textpakete bleibt verifiziert; dieser Fix löst den
 periodischen Videoverlust nicht vollständig. Der neue Gegenbefund wird
 zusammen mit den alten roten Rohdaten erhalten. #419 bleibt NO-GO.
+
+### Periodischer Frameverlust in kleiner Fixture ohne Erweiterung
+
+Der gezielte [Vergleich sofortiger und framegebündelter Rückschreibung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38720347684)
+reproduziert das charakteristische Auslassungsmuster erstmals in einer
+kleinen Fixture **ohne installierte Erweiterung**. Drei Hauptpaare vergleichen
+denselben zweiten Textwrite unmittelbar im MutationObserver beziehungsweise
+in einem einmalig angeforderten Animationsframe. In beiden Rollen je 177
+Mutationstakte, 8.497 geprüfte Korrekturen einschließlich Starttext und alle
+480 aktuellen Endtexte; keine versteckte Verringerung der Arbeit.
+
+Drops sofort/rAF in den drei reinen Kontrollen: 1/2, 2/1 und **1/149**.
+Der rote rAF-Lauf hat 149 Auslassungen gegenüber dem Präsentationsfortschritt,
+davon 142 eindeutig lokalisierbar und sämtlich auf Quellindex modulo drei
+gleich eins; sieben bleiben nicht lokalisierbar. Keine Page-Long-Task,
+keine Callbacklücke über 120 ms, sichtbare und fokussierte Samples. Alle
+177 Frame-Rückschreibungen laufen ohne Timer-Fallback. Die vorgeschlagene
+Frame-Bündelung wird deshalb nicht als Produktfix übernommen.
+
+Dieser Fall benötigt weder Sprachregeln noch Hintergrundnachrichten oder
+Sprachverstand-Code. Das grenzt den möglichen Auslöser ein, erklärt aber
+nicht rückwirkend alle Produktgegenbefunde. Die zwei zusätzlichen echten
+Aus/an-Produktreferenzen haben 2/1 und 1/1 Drops; im ersten Erweiterungslauf
+bleiben eine 108-ms-Page-Long-Task und eine getrennte 150,1-ms-Callbacklücke
+erhalten. Alle Texte stimmen. #419 bleibt NO-GO.
+
+### Headless-/Fensterkontrolle mit gleicher Browserversion und Innenfläche
+
+Die [korrigierte reine Browserkontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38722743714)
+verwendet in beiden Rollen dieselbe Fixture mit rAF-Korrektur ohne Erweiterung.
+Eine Rolle läuft headless, die andere als normales Fenster auf einem eigenen
+virtuellen X-Display. Chromium 155.0.8059.0, jeweils 1.280 × 600 Pixel
+Innenfläche ohne Geräteemulation, DPR 1; Fokus, Sichtbarkeit, Endtexte und
+vollständige Rückschreibzahlen sind geprüft. Wechselnde Reihenfolge.
+
+Drops headless/Fenster: 1/1, 1/2, 1/0, **168/1**, 1/0. Im roten
+Headless-Fenster fehlen innerhalb des beobachteten Präsentationsintervalls
+159 Quellframes; 156 eindeutig lokalisierbare Auslassungen liegen wieder
+alle auf Quellindex modulo drei gleich eins, drei bleiben unlokalisierbar.
+Keine Page-Long-Task in diesem Fenster. Der kumulative Qualitätszähler und
+der beobachtete Präsentationsbereich bleiben getrennte Messgrößen.
+
+Der Workflow ist trotz dieses Befunds grün: Das unveränderte relative Gate
+vergleicht hier den Fensterlauf mit einer bereits schlechten Headless-Basis.
+**Dieser grüne Diagnosejob ist kein Produktfix und keine Gesamtfreigabe.**
+Er ist ein konkreter Hinweis auf einen Einfluss der Browserumgebung.
+
+Der [erste Aufbau](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38722136457)
+bleibt als fehlgeschlagener Diagnoseaufbau erhalten: In zwei Paaren hatte
+das Fenster 577 statt der geforderten 600 Pixel Innenhöhe; diese Vergleiche
+wurden vor Navigation abgewiesen. Drei weitere vollständige Paare waren
+gültig. Die Korrektur stellt nur die tatsächlich realisierte Fenstergröße
+begrenzt nach, ohne Performancegrenzen zu verändern.
+
+Eine [nach Verlust aktivierbare Trace-Gegenprobe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38721120392)
+findet in fünf reinen Paaren keinen starken Verlust und aktiviert keinen
+Trace. Zusätzliche Qualitätsabfragen während des Fensters können das Timing
+beeinflussen; daraus wird keine Entkräftung der roten Rohdaten abgeleitet.
+
+Ein separat untersuchter Leerprüfungs-Prototyp für die Following-Context-
+Vorbereitung verbessert eine isolierte Node/V8-Mikroprobe, zeigt in drei
+nativen Chromium-Allokationsgegenpaaren aber keinen verlässlichen Vorteil
+der Gesamtallokationen oder Taskdauer. Er bleibt außerhalb des Produktcodes.
+
+### Echter Produktvergleich im normalen Chromium-Fenster
+
+Der [separate Produktlauf](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38723494726)
+prüft die Erweiterung tatsächlich aus/an, beide Rollen auf einem eigenen
+virtuellen X-Display mit gleichem Innenviewport 1.280 × 600 und DPR 1.
+Chromium 154.0.8037.0 in allen zehn Sitzungen, unveränderter Produktcode
+`8a78844`, keine Frame-Bündelung im Produkt. Drops aus/an: 1/0, 1/1, 0/2,
+2/1, 0/1; alle 480 Endtexte, Fokus und Sichtbarkeit korrekt. Im ersten
+Erweiterungslauf bleibt jedoch eine **162-ms-Page-Long-Task bei 1.188,6 ms**.
+Das ist kein vollständiger Abnahmenachweis. Die nachfolgenden Untertiteltests
+des Workflows laufen weiterhin headless; keine Fensterprüfung dieser Stufe
+behauptet.
+
+### Längere Kontrolle und Einflüsse der Beobachtung
+
+Eine [30-s-Kontrolle mit 40-s-Quelle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38723237217)
+verwendet in beiden Rollen keine Erweiterung, sofortige beziehungsweise
+einmalig framegebündelte Textkorrekturen. Drops: 4/1, 4/5, 2/1, 1/2, 1/1.
+Alle Texte und vollständigen Rückschreibzahlen stimmen. Der aus vorhandenen
+Frame-Samples berechnete Verlusttrigger erreicht seine Schwelle nicht;
+kein Trace startet. Daraus lässt sich die Dauer der früheren starken
+Episode nicht bestimmen.
+
+Ein [nach Verlust aktivierbarer zweisekündiger leerer rAF-Loop](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38726170148)
+greift in keinem der fünf reinen Browserpaare ein. Drops 3/2, 2/1, 1/1,
+2/2, 1/1. Keine Aussage zur Wirksamkeit, da kein Eingriff stattfindet.
+
+Die [durchgehende Rendernachfrage-Kontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38727213963)
+ergänzt nur in der Vergleichsrolle einen separaten leeren rAF-Loop, ohne
+DOM-Schreibzugriffe. Ursprüngliches Fixture-Script und numerische Gates
+bleiben gleich. Chromium 155.0.8059.0 in allen zehn Sitzungen, beide Rollen
+ohne Erweiterung und mit gleichen einmalig framegebündelten Korrekturen.
+Drops 2/2, 1/2, 0/2, 1/1, 1/0; Vergleich jeweils 480–482 zusätzliche
+Animationscallbacks, alle Texte und Rückschreibzahlen korrekt. Eine
+100-ms-Page-Long-Task tritt in der ersten Basis ohne Erweiterung auf.
+Keine starke Verlustepisode; deshalb kein Nachweis einer Ursache oder
+Behebung durch zusätzliche Rendernachfrage. Der vorherige Aufbau wurde vor
+der Hauptmessung wegen fehlerhafter HTML-Erzeugung abgebrochen und nicht
+ausgewertet.
+
+Der [native Trace über das Browser-Debugziel](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38728439890)
+lässt ebenfalls beide Rollen ohne Erweiterung und das ursprüngliche
+Seitenscript unverändert. Zeitmarkierung erst nach dem Beobachtungsfenster,
+keine zusätzlichen Qualitätsabfragen währenddessen. Drops 1/1, 0/1, 2/1,
+2/1, 1/0; alle Texte und Rückschreibzahlen korrekt, Chromium 155.0.8059.0.
+Native Traces liegen für alle zehn Sitzungen vor, aber keiner erfasst die
+starke Episode. Auch native Instrumentierung kann das Timing beeinflussen.
+Ein erfolgreicher Diagnosejob entkräftet die uninstrumentierten roten Fälle
+nicht.
+
+### Eigenständige Fixture und verworfener Observer-Prototyp
+
+Lokal liegt eine eigenständige Fixture ohne Erweiterungsinstallation vor:
+exakte 40-s-/60-FPS-WebM-Quelle aus dem ersten längeren CI-Paar, nur
+Videostream, keine Audiospur. SHA-256
+`0041f0694f9babf9e815ac530836d0d81ea25607cc3e3339fa25a50b93dd8d54`.
+Der Bericht wird nach 30 s eingefroren; während dieses Fensters keine
+WebDriver-Scriptabfragen. Alle 480 Texte und vollständigen Schreibzahlen
+sind in nativem Chromium 155.0.8059.39, Firefox 157.0.1 und Waterfox 153.5.0
+bestätigt. Chromium meldet 151 Drops; die 146 innerhalb des beobachteten
+Präsentationsintervalls fehlenden Frames verteilen sich auf alle drei
+Quellindexreste, also **kein Nachweis des charakteristischen Drittelmusters**.
+Firefox/Waterfox melden null Drops; deren Long-Task-API ist nicht verfügbar.
+Diese Quelle stammt aus einem grünen CI-Paar und garantiert keine starke
+Reproduktion. Es handelt sich um Integritätsprüfungen, keine neue
+Performancefreigabe.
+
+Die gleiche eigenständige Videofixture läuft auf dem freigegebenen
+Android-Ersatzgerät in Firefox Nightly 160.0a1 ohne Sprachverstand: 480/480
+Endtexte, 662 Mutationstakte und 31.777 Korrekturen, null gemeldete Drops,
+1.789/1.789 Quell-/Präsentationsframes im beobachteten Bereich. Keine
+Scriptabfragen während des Fensters und keine Aufnahme. Dark Reader bleibt
+installiert, wird im Debugprotokoll aber ohne aktive WebExtension-Policy
+gemeldet; seine Einstellungen werden nicht geändert. Diese reine Browserprobe
+prüft weder das Produkt noch die früheren Playback-Tonbefunde erneut.
+
+Ein zweiter Observer-Prototyp erkennt ausschließlich eigene Textwrites vor
+dem Anlegen der Kontextcontainer. Drei native Allokationspaare zeigen nur
+kleine Gesamtänderungen; eine anschließende unprofilierte CPU×4-Gegenprobe
+hat uneinheitliche 512er-Paketmediane und meist schlechtere 31er-Kontrollen.
+Auch dieser Kandidat bleibt außerhalb des Produktcodes. Ein besserer
+Mikrobenchmark reicht nicht als Übernahmegrund.
+
+### Verbliebene lange Produktaufgabe nativ eingegrenzt
+
+Der [Fenster-Produktvergleich mit Browser-Trace](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38729818997)
+prüft wiederum echte Aus/an-Paare mit identischer Innenfläche, diesmal
+Chromium 155.0.8059.0. Drops 2/1, 1/1, 1/1, 0/1, 2/0; alle zehn Sitzungen
+480/480 korrekte Endtexte und gültiger Fokus/Sichtbarkeit. Der erste
+Erweiterungslauf enthält eine 56-ms-Page-Long-Task bei 1.200,4 ms.
+
+Der zugehörige Renderer-Task liegt bei 1.200,8 ms und dauert nativ 56,189 ms,
+bei 0,821 ms Thread-CPU. Innerhalb eines Erweiterungs-`scheduler.postTask`-
+Callbacks nimmt **`V8.OptimizeCode` 55,921 ms bei nur 0,559 ms Thread-CPU**
+ein; die eigentliche `V8.OptimizeConcurrentPrepare`-Phase danach 0,053 ms.
+Zeitachsenunsicherheit ±3 ms. Das ordnet diese konkrete Pause überwiegend
+einer nativen Optimierungsphase mit wenig CPU-Verbrauch des Hauptthreads
+zu. Es beweist weder eine bestimmte Kernel-Warteursache noch die Ursache
+der alten 162-ms-Aufgabe oder des periodischen Frameverlusts. Insbesondere
+kein Nachweis, dass ein kleineres DOM-Arbeitsbudget diese Pause beseitigt.
+
+Eine zusätzliche lokale 30-s-Browsertrace-Probe bleibt bei einem Drop und
+ohne Auslassung innerhalb des Präsentationsbereichs. Ihr Traceexport wird
+an der bestehenden 128-MiB-Diagnosegrenze abgewiesen; kein vollständiger
+nativer Trace und keine daraus abgeleitete Zuordnung. Testbrowser und
+Server sind beendet. Die Grenze wurde nicht angehoben.
+
+Es wurden für diese Untersuchungen keine Audioaufnahmen erstellt und kein
+Mikrofon verwendet. Rohtraces, lokale Profile und Gerätekennungen werden
+nicht mitveröffentlicht. Der Produktstand und sämtliche Akzeptanzgrenzen
+bleiben unverändert. Die offenen Produkt-/Umgebungsgegenbefunde werden
+weitergeführt; #419 bleibt NO-GO, PR #451 Entwurf.
