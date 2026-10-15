@@ -3143,3 +3143,75 @@ Mikrofon verwendet. Rohtraces, lokale Profile und Gerätekennungen werden
 nicht mitveröffentlicht. Der Produktstand und sämtliche Akzeptanzgrenzen
 bleiben unverändert. Die offenen Produkt-/Umgebungsgegenbefunde werden
 weitergeführt; #419 bleibt NO-GO, PR #451 Entwurf.
+
+### Reale 31er-Kapazität bei aktivierter Untertitelverarbeitung
+
+Produktfix [`00b7462`](https://github.com/HyperCriSiS/Sprachverstand/commit/00b746235ba5691912425f717cbf822679052bec)
+beseitigt eine weitere konkrete Sammelwartezeit: Der DOM-Prozessor lässt bei
+aktivierten Untertiteln höchstens 31 normale Textanfragen gleichzeitig zu und
+reserviert einen Platz für Untertitel. Der Transport wartete trotzdem bis
+zur 32. Anfrage oder zum 8-ms-Timer. Er versendet jetzt bereits das vollständige
+31er-Fenster nach dem laufenden Turn. Ein im gleichen Turn eintreffender 32.
+Text passt weiterhin in dasselbe Paket. Paketgröße 32, Zeichengrenze, zwei
+normale Transportplätze, getrennte Untertitelpakete und Priorität bleiben gleich.
+Gruppen bis 30 behalten die bisherige Sammelfrist. Der alte uncommittete
+Versuch mit einem dritten Transportplatz ist **nicht** enthalten.
+
+Isolierte native Chromium-CPU×4-Gegenprobe: gleicher synthetischer Content-
+Einstieg mit `processSubtitles: true`, gleicher Produkt-Prozessor und Hintergrund,
+nur Transportschwelle vorher/nachher 32/31. Drei Gegenpaare mit wechselnder
+Reihenfolge, je drei Warmups; insgesamt 234 vollständige Bursts. Mediane in ms:
+
+| Textzahl | Paar 1 vorher/nachher | Paar 2 vorher/nachher | Paar 3 vorher/nachher |
+| --- | --- | --- | --- |
+| 30, Kontrolle | 35,95 / 35,10 | 35,65 / 35,95 | 34,90 / 35,00 |
+| 31 | 31,65 / 26,15 | 34,65 / 21,40 | 32,00 / 29,60 |
+| 512 | 333,15 / 264,60 | 338,60 / 307,95 | 340,75 / 277,70 |
+
+Damit 8–38 % Median-Gewinn bei 31 und 9–21 % bei 512 Texten in dieser Probe.
+Hohe Latenzen sind nicht durchgehend besser: 31er-P95 in Paar 2/3 danach
+72,1/84,9 ms gegenüber 53,6/53,4 ms; ein 413,5-ms-Ausreißer der 30er-Basis
+bleibt ebenfalls erhalten. Kein Nachweis einer Lösung der nativen Wartephasen
+oder des sporadischen Drittelverlusts.
+
+Der neue 31er-Regressionstest scheitert mit dem vorherigen Transport erwartbar
+an der ausbleibenden sofortigen Anfrage und besteht mit dem Fix. 31 isolierte
+Transport-/Packingtests und Typecheck erfolgreich; alte Versuchdateien bei
+diesen Prüfungen ausgeschlossen. Native Chromium-, Firefox- und Waterfox-
+Smokes mit Schutzbereichen/Ranges/Restore bestehen. Firefox-/Waterfox-30-FPS-
+Aus/an-Paare: alle 480 Endtexte, null gemeldete Drops. Getrennte sechs sichtbare,
+fokussierte kontrollierte Cues plus sechs Wiederholungen: Maximum 4/6 ms,
+Wiederholungen höchstens 2 ms. Die ersten Schalterwerte 278/446 ms enthalten
+Optionsnavigation und Korrektur im versteckten Tab; keine isolierte Cue-Latenz.
+Gecko-Long-Tasks bleiben mangels API unbewertet.
+
+Alle acht [regulären PR-Checks auf `00b7462`](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38733211141)
+erfolgreich, vollständige CI 257 Dateien / 10.840 Tests. Die separate
+[passive Linux-60-FPS-Reihe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38733203020)
+besteht fünf Paare ohne Wiederholung: Drops Basis/Erweiterung 0/2, 2/1, 1/2,
+0/1, 1/2; alle zehn Sitzungen 480/480 und durchgehend fokussiert/sichtbar,
+keine Page-Long-Task. Die anschließende 30-s-Untertitel-Stressprobe hat 57/57
+korrigierte Cues, Maximum 5,3 ms, alle 480 normalen Texte und null Drops.
+Das ist eine gültige neue Gegenprobe, keine Entkräftung alter roter Fälle.
+
+### Weitere Verifikationsgrenzen
+
+Die [Zeitstempelkontrolle ohne Erweiterung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38731420473)
+vergleicht je Paar dieselben 720 sichtbaren VP8-Bildpakete mit 1-ms-/1-µs-
+Zeitbasis und je einem Cluster pro Frame. Alle zehn exakten CI-Quellen lokal
+mit FFprobe auf 720 Frames/60 FPS/nur Video geprüft; alle 720 Pakethashes
+zwischen beiden Varianten jedes Paars gleich. Zwischen den Paaren können die
+neu erzeugten Bilddaten abweichen. Chromium 155.0.8059.0, beide Rollen gleiche
+einmalige rAF-Korrektur, alle 480 Texte und Schreibzahlen korrekt. Drops grob/fein
+1/6, 3/2, 2/7, 4/3, 3/3; in der ersten feinen Rolle Page-Long-Tasks 87/59 ms.
+Kein starkes Drittelmuster, kein bestätigter Vorteil der feineren Zeitbasis;
+keine Änderung der regulären Medienquelle oder Akzeptanzgrenzen.
+
+Die reguläre CI auf dem ausschließlich dokumentarischen `dcaf029` scheitert
+einmal in `dom-async-large-text.test.ts`: Eine echte Zeitscheibe genügt unter
+Last nicht, um die Hintergrundanfrage zu beginnen. Testfix `e59f193` verwendet
+eine kontrolliert ablaufende Uhr und mehrere begrenzte Durchläufe; die
+Fehlerbehandlung und die Assertion gegen unbegrenzten lokalen Fallback bleiben
+erhalten. 22 gezielte Tests/Typecheck sowie alle acht PR-Checks auf diesem
+Stand bestehen. Kein Produktbudget geändert, kein unveränderter Rerun zum
+Verbergen des fehlgeschlagenen Versuchs. #419 bleibt NO-GO.
