@@ -3366,3 +3366,205 @@ lange native Wartezeiten mit geringer CPU-Zeit, keinen entsprechend langen
 CPU-Durchlauf der Textregeln. Ein allgemeiner Freispruch für sämtliche
 Erweiterungseffekte oder eine Gesamtfreigabe folgt daraus nicht.
 PR #451 bleibt Entwurf, #419 bleibt NO-GO.
+
+### Android-Gegenprobe auf aktuellem Produktstand, 15.10.2026
+
+Firefox Nightly Android 160.0a1 auf einem ausschließlich lokal verbundenen
+Testgerät. Der normale Content-Einstieg und der echte Regelprozessor wurden
+gegen DOM-Baseline daa3a72 und Produkt a6e4047 / Dokumentations-HEAD 53c8cc3
+verglichen. Beide Builds verwenden denselben HEAD-Transport; die zwei alten
+uncommitteten Versuchdateien sind ausgeschlossen. Die temporäre Testidentität
+verarbeitet nur die eigene Loopback-Fixture. Keine zusätzliche Produktberechtigung.
+
+Drei wechselnde Vorher/Nachher-Gegenpaare, sechs Sitzungen, 198/198 korrekte
+Bursts. Vor und nach jedem Messfenster sichtbar und fokussiert; keine
+Debugabfragen während der eigentlichen Bursts. Absatzlast, Untertiteloption
+nicht verändert. Mediane in Millisekunden:
+
+| Absatzlast | Paar 1 vorher/nachher | Paar 2 vorher/nachher | Paar 3 vorher/nachher |
+| --- | ---: | ---: | ---: |
+| 8 × 8.000 Zeichen | 140/124 | 153/115 | 127/124 |
+| 9 × 8.000 Zeichen | 164/125 | 160/125 | 171/125 |
+| 30 kurze Texte | 68/61 | 58/67 | 58/58 |
+| 31 × 8.000 Zeichen | 362/370 | 424/360,5 | 338,5/357 |
+
+Die neun langen Absätze benötigen median 22–27 % weniger Zeit. Deren P95
+sinkt in den drei Paaren von 200/192/202 auf 160/155/162 ms. Die kurze
+Kontrolle und 31 langen Absätze sind nicht durchgehend besser; die Daten
+belegen keinen pauschalen Gewinn für alle Lastgrößen.
+
+Eine getrennte Funktionsprobe mit dem aktuellen vollständigen Produkt besteht:
+spät geöffnete ShadowRoot, ereignisloser Wechsel aus dem Editormodus,
+Inline-Ranges samt Originalrückgabe, großer Einzeltext mit vier Ranges und
+Rückgabe sowie unveränderter Code und Eingabefelder. Die Prüfungen stammen
+inhaltlich aus dem nativen Browser-Smoke; nur die lokale Android-Ansteuerung
+wurde angepasst.
+
+Die ältere isolierte Transportprobe mit synthetischem Prozessor ist davon
+getrennt: drei Paare, 512 Änderungen median 457/280,5; 453,5/294; 434,5/277 ms
+(vorher/nachher). Bei 30/31 Änderungen gemischte Ergebnisse. Das stützt die
+Paketierungsoptimierung in dieser begrenzten Probe; keine vollständige
+Produkt- oder Audiomessung.
+
+Eine neue Android-30-FPS-Videogegenprobe verwendet den aktuellen Produktbuild
+mit 480 dynamischen Texten und 48 Umschreibungen alle 50 ms. Drei wechselnde
+Aus/an-Paare, jeweils acht Sekunden plus Nachlauf: alle Endtexte korrekt,
+alle Messfenster sichtbar/fokussiert, null gemeldete Drops und keine
+Callbacklücke über 120 ms. Maxima Basis 75,22/91,98/91,98 ms gegenüber
+Erweiterung 75,22/75,18/66,88 ms. Der Präsentationszähler umfasst in allen
+sechs Rollen die 238 beobachteten Quellframes. Long Tasks sind mangels
+Gecko-API ausdrücklich nicht gemessen; diese Absatzprobe enthält keine
+aktiv korrigierten Untertitel und keine Aufnahme.
+
+Die erste kombinierte 30-/60-FPS-Probe benutzte dieselbe Medienadresse.
+Die ersten drei als 60 FPS bezeichneten Rollen melden trotz null Drops
+nur halb so viele Präsentationen; ein eindeutiger Quellnachweis fehlt.
+Diese 60-FPS-Rollen sind kein Freigabebeleg. Rohdaten bleiben erhalten;
+eine getrennte Reihe mit eindeutiger Medienadresse pro Probe und
+protokollierter Auslieferung prüft die Quellenidentität.
+
+Nach Absatz- und Funktionsprobe sind temporäre Erweiterungen, eigene
+Verbindungen und Testdateien entfernt, fremde Erweiterungsidentitäten
+unverändert und die vorübergehend verlängerte Displayzeit wiederhergestellt.
+Keine Mikrofonverwendung, keine Audio- oder Bildschirmaufnahme.
+Gerätekennungen und private Oberflächendaten bleiben lokal.
+
+Die getrennte 60-FPS-Reihe mit eindeutiger Medienadresse je Sitzung besteht
+alle drei wechselnden Gegenpaare auf demselben aktuellen Produktstand.
+Der Server protokolliert für alle sechs Rollen dieselben synthetischen
+Videobytes mit derselben SHA256; der kodierte Stream ist per FFprobe als
+60 FPS geprüft. Alle 480 Endtexte korrekt, null gemeldete Drops,
+sichtbar und fokussiert während der Beobachtung. Der Präsentationszähler
+umfasst in jeder Rolle alle 479 beobachteten Quellframes; weniger rVFC-
+Benachrichtigungen werden ausdrücklich nicht als Quellframeverlust gewertet.
+Maximale Callbackabstände Basis/Erweiterung: 83,56/58,50; 66,92/58,56;
+75,24/58,58 ms. Alle unveränderten Vergleichsgrenzen bestehen. Auch hier
+keine aktive Untertitelkorrektur und keine Long-Task-Messung. Temporäre
+Erweiterung, Verbindungen und Dateien entfernt; Displayzeit wiederhergestellt.
+Die erste Quellen-Unstimmigkeit bleibt dokumentiert und wird nicht als
+Produktfehler oder als positiver 60-FPS-Nachweis ausgegeben.
+
+Zusätzliche aktive Android-Untertitelprobe: aktueller vollständiger
+Produktbuild, nur eigener temporärer Erweiterungsnamensraum, Option
+processSubtitles ausdrücklich gesetzt und zurückgelesen. Zwei wechselnde
+Aus/an-Paare à 30 Sekunden mit lokaler 60-FPS-Schleife, 48 von 480 normalen
+Texten alle 50 ms und einem kontrollierten Cue alle 500 ms. Alle vier
+Fenster sichtbar/fokussiert; alle 480 Endtexte korrekt. In den aktiven
+Fenstern je 60/60 Cues korrigiert: Median 6/5 ms, P95 12/14 ms,
+Maximum 61/58 ms. Die Aus-Rollen lassen alle Cues unverändert.
+Jeweils zwei gemeldete Drops in allen vier Rollen; größte Callbackabstände
+Basis 91,90/83,60 ms und aktiv 66,86/66,88 ms, keine Lücke über 120 ms.
+Die unveränderten relativen Vergleichsgrenzen bestehen. Die separate
+Quellframe-Auswertung wird für diese Schleifen nicht behauptet: Geckos
+Loop-Metadaten erfüllen den Vertrag der CFR-Auswertung ohne Sprünge nicht.
+Keine Long-Task-API und keine Audiomessung. Aufräumen vollständig geprüft.
+
+Die Testeinrichtung hatte vor gültigen aktiven Fenstern zwei lokale Fehler:
+fehlender Starthook im Untertitel-HTML und noch nicht verfügbare Browser-API
+im ersten Hintergrund-Debugziel. Beide behoben; Konfiguration erfolgt jetzt
+über die eigene verifizierte Optionsadresse und Runtime-ID. Ein anschließender
+Auswertungsfehler erwartete ein drittes statt der zwei geplanten Paare;
+die vier vollständigen Rohreihen wurden ohne Wiederholung mit denselben
+Vergleichsfunktionen korrekt als zwei Paare ausgewertet. Frühere Fehler-
+und Aufräumbelege bleiben lokal erhalten. Kein Produktfehler daraus abgeleitet.
+
+
+### Native Befehlspositionen während der Seitenwartezeiten, 15.10.2026
+
+Die [begrenzte Positionsdiagnose](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38803836598)
+auf 0782ae9 / Produkt a6e4047 ist **fehlgeschlagen**: erstes Erweiterungsfenster
+366,7 ms maximale Frame-Lücke bei unveränderter Grenze 300 ms. Alle fünf
+geplanten Paare bleiben erhalten; die übrigen vier bestehen. Alle zehn
+Sitzungen erreichen 480/480 korrekte Endtexte. Drops Basis/Erweiterung:
+2/5, 2/2, 2/1, 1/2, 4/1. Ein grünes Teilpaar ersetzt den roten Gegenbefund nicht.
+
+Erstes Erweiterungsfenster: V8.OptimizeCode 136,573 ms / 0,633 ms CPU,
+später V8.GC_TIME_TO_SAFEPOINT 365,328 ms / 0,027 ms CPU. Während der
+Optimierung drei innere D/folio_wait_bit_common-Hauptthreadproben, beim
+Safepoint Futex-Warten. Tatsächliche Callbacklücken 138,4/385,6 ms,
+Präsentationsfortschritt acht bzw. 23 Frames. Das GC-Fenster wird nicht
+fälschlich als von der Page-Long-Task-API gemessene Aufgabe ausgegeben.
+
+Zusätzlich werden ausschließlich bei begrenzten D/folio-Warteproben eigener
+Renderer die Befehlsposition aus proc/PID/task/TID/syscall und die passende
+Abbildung aus proc/PID/maps gelesen. Aufbewahrt werden nur Abbildungsklasse,
+Rechte und relativer Dateioffset; keine vollständigen Pfade, absoluten
+Registeradressen oder Prozessspeicherinhalte. Die ausgelesenen Positionen
+des Hauptthreads und der Hintergrundthreads liegen im ausführbaren
+Chromium-Code (r-xp). Der Registerzugriff meldet -1, also beim Lesen keinen
+aktiven Systemaufruf. Die [Kernel-Manpage](https://man7.org/linux/man-pages/man5/proc_pid_syscall.5.html)
+beschreibt diese Darstellung für blockierte Threads außerhalb eines Systemaufrufs.
+
+Das ist eine Befehlspositions-Zuordnung, **keine Identifikation der fehlenden
+Datenseite**. Eine Folgediagnose prüft deshalb getrennt die Anwesenheit der
+jeweiligen Befehlsseite. Physische Seitenrahmennummern und Speicherinhalte
+werden dafür nicht gespeichert; keine zusätzlichen Kernelrechte oder
+geänderten Hostschalter. Eigene Cgroup-Quota erneut ohne Throttlingzuwachs.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO.
+
+
+### Fehlende Chromium-Befehlsseiten und native Frameauswahl, 15.10.2026
+
+Die [Befehlsseiten-Diagnose](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38805020847)
+auf a73f6c5 / unverändertem Produkt a6e4047 bestätigt die vorherige
+Codezuordnung: elf stabile D/folio-Proben haben eine nicht präsente und
+nicht ausgelagerte Befehlsseite innerhalb der ausführbaren Chromium-Abbildung.
+Drei Proben betreffen den Hauptthread, acht den Hintergrundthread; sieben
+davon liegen sicher innerhalb seiner V8.OptimizeBackground-Tracephase.
+Eine weitere Probe sieht eine inzwischen präsente Seite, aber eine geänderte
+Befehlsposition; sie wird als instabil ausgeschlossen. Physische
+Seitenrahmennummern, Registeradressen, Pfade und Speicherinhalte bleiben
+außerhalb der gespeicherten Diagnose. Die [Kernel-Dokumentation](https://www.kernel.org/doc/html/latest/admin-guide/mm/pagemap.html)
+definiert present als Bit 63 und swapped als Bit 62. Es werden nur diese
+Statusinformationen aus einem begrenzten, ausgerichteten Acht-Byte-Lesezugriff
+auf die eigene Prozess-Seitentabelle ausgewertet, ohne Rechteerhöhung.
+
+Die erste V8.OptimizeCode-Phase dauert 173,418 ms bei 0,581 ms CPU.
+Der identifizierte Hintergrundcompiler läuft 414,791 ms bei 5,794 ms CPU;
+seine sieben sicheren inneren fehlenden-Seiten-Proben zeigen steigende
+Major-Fault-Zähler 7 bis 57. Parallel GC-Safepoint 231,369 ms / 0,574 ms CPU.
+Damit sind in diesen erfassten Pausen tatsächlich fehlende Befehlsseiten
+belegt. Ursache der langsamen Bereitstellung und die exakte historische
+117-ms-Aufgabe sind damit nicht vollständig aufgeklärt. Keine
+Erwärmungsmaßnahme, Compilerflag oder Messgrenze als Produktfix ausgegeben.
+Monitor-Eigenkosten über die zehn Rollen 2,87–3,78 % der Messwandzeit.
+
+Der Lauf ist trotzdem **rot**: im dritten Paar 50 gemeldete Drops gegenüber
+zwei in der Baseline. Die übrigen vier Paare bestehen; Drops Basis/aktiv
+2/1, 1/1, 2/50, 1/1, 1/2. Alle zehn Sitzungen haben 480 korrekte Endtexte,
+gültigen Fokus und Sichtbarkeit. In der auffälligen Rolle keine Page-Long-Task
+und keine lange native Optimierungs-/GC-Phase wie im ersten Paar.
+
+Der bereits vorhandene Medien-Trace trennt diesen Fall weiter auf: im
+beobachteten Quellframebereich 2 bis 480 überspringt die native
+VideoRendererImpl::Render-Ausgabe genau 40 Frames, alle Index modulo drei
+gleich eins. Das stimmt mit den 40 fehlenden Präsentationen im API-Intervall
+überein. Über den längeren Trace einschließlich Nachlauf sind es 48
+Auslassungen und 48 native Dropmeldungen, median alle 49,973 ms; diese
+weiteren Ereignisse werden nicht in das kürzere API-Fenster hineingezählt.
+Vor den Auslassungen wird jeweils ein älterer Frame wiederholt. Die
+zugehörigen Decodieraufrufe sind bereits vor der vorherigen Renderentscheidung
+abgeschlossen, in den ersten Beispielen rund 66 ms früher. Die Auswahl-
+Aufrufe dauern dort nur einige Dutzend Mikrosekunden. Die Daten zeigen
+somit native Auswahl/Wiederholung statt einer bloß fehlenden JavaScript-
+Videobenachrichtigung; sie beweisen noch keinen bestimmten internen
+Cadence-Zustand und entlasten nicht pauschal sämtliche Erweiterungseinflüsse.
+
+Die versionsgleichen Chromium-Quellen ordnen die Rückgabe dem nativen
+[Renderer](https://github.com/chromium/chromium/blob/155.0.8059.0/media/renderers/video_renderer_impl.cc)
+und dessen Auswahl nach Cadence, Überdeckung und Drift dem
+[VideoRendererAlgorithm](https://github.com/chromium/chromium/blob/155.0.8059.0/media/filters/video_renderer_algorithm.cc)
+zu. Diese Quellen werden nur zur Diagnose gelesen; kein Fremdcode im Produkt.
+
+Eine zusätzliche [Startphasen-/Zeitbasis-Kontrolle ohne Erweiterung](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38807203371)
+auf da3b0b2 besteht fünf Paare. Angeforderte Verzögerungen nach rAF:
+0/4/8/12/16 ms; tatsächliche rAF- und Play-Aufrufzeiten bleiben erhalten,
+die Timer liefern keine exakte Phasengarantie. Je Paar dieselben 720
+sichtbaren VP8-Bildpakete, 1-ms- gegen 1-µs-Zeitbasis, ein Cluster je Frame;
+alle zehn exakten Quellen lokal mit FFprobe geprüft, Pakethashes paarweise
+identisch. Beide Rollen haben nur die gleiche lokale rAF-Textkorrektur,
+keine installierte Erweiterung. Jeweils 480 korrekte Texte und identische
+Schreibzahl; Drops grob/fein 0/1, 1/0, 1/0, 4/1, 1/1. Kein starkes
+Drittelmuster und kein bestätigter kausaler Zeitbasis-Fix. Der reguläre
+Mediengenerator und alle Akzeptanzgrenzen bleiben unverändert.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO.
