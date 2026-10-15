@@ -26,6 +26,10 @@ dokumentiert.
 
 ### Korrigiert
 
+- Volle Pakete mit 32 normalen Textanfragen warten nicht mehr zusätzlich
+  auf den 8-ms-Sammeltimer. Kleine Pakete behalten ihr Sammelfenster;
+  Untertitelpriorität, Paketgrößen und Nebenläufigkeitsgrenzen bleiben erhalten.
+
 - Browserprüfungen begrenzen auch ausbleibende oder unvollständige
   WebDriver-HTTP-Antworten. Der Smoke-Test begrenzt seine Seitennavigation
   auf 30 Sekunden; ausdrücklich lange Untertitelproben behalten ein

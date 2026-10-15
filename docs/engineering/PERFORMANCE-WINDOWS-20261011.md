@@ -2809,3 +2809,84 @@ Quellposition und Präsentationszähler berechneten Auslassungen beziehen sich
 nur auf das beobachtete Callbackintervall; sie sind getrennt vom kumulativen
 `droppedVideoFrames`-Zähler zu lesen.
 Kein neuer Produktfix und keine vollständige Performancefreigabe; #419 NO-GO.
+
+### Volle lokale Textpakete ohne zusätzliche Sammelwartezeit
+
+Eine konkrete vermeidbare Wartezeit liegt zwischen DOM-Dispatcher und lokaler
+Hintergrundanfrage: Ohne aktivierte Untertitelverarbeitung lässt der
+DOM-Processor höchstens 32 kleine Anfragen gleichzeitig zu. Das entspricht
+bereits der maximalen Paketgröße. Dennoch wartet auch ein gefülltes Paket
+bis zum 8-ms-Sammeltimer; weitere reguläre Anfragen dieses Processors können
+erst nach einer Antwort entstehen.
+
+Der Dispatcher sendet volle Pakete jetzt nach Abschluss des laufenden
+JavaScript-Durchlaufs per Microtask. Kleine Pakete behalten ihre bisherige
+Sammelfrist. Die gesonderte Untertitelpriorität, zwei parallele normale
+Pakete, die Zeichen- und Paketgrößenlimits sowie Reihenfolge und
+Antwortvalidierung bleiben erhalten. Das ist keine allgemeine Verkürzung
+des Sammeltimers auf 0 oder 2 ms und enthält den älteren zusätzlichen
+Caption-Slot-Versuch nicht.
+
+Eine isolierte deterministische Dispatcherprobe zeigt für 32 Anfragen den
+Versand bei Zeit 0 statt 8 ms, weiterhin genau eine Nachricht. 31 Anfragen
+warten weiter 8 ms. Eine separate native Chromium-Probe misst die vollständige
+Korrektur eines neuen Pakets unter vierfacher Renderer-CPU-Drosselung.
+Pro Variante und Paketgröße drei Aufwärmdurchläufe plus zwölf gewertete
+Durchläufe; drei Paare mit wechselnder Reihenfolge. Alle 180 Pakete vollständig
+korrekt, einschließlich Aufwärmdurchläufen.
+
+| Paar | 32 Texte vorher/nachher, Median | 31 Texte vorher/nachher, Median |
+| --- | ---: | ---: |
+| vorher zuerst | 27,05/13,95 ms | 29,10/30,00 ms |
+| nachher zuerst | 26,80/13,75 ms | 28,55/29,05 ms |
+| vorher zuerst | 28,85/12,35 ms | 29,45/29,20 ms |
+
+Der Gewinn betrifft gefüllte Pakete; daraus wird keine Halbierung sämtlicher
+Webseiten- oder Videokosten abgeleitet. Die Kontrollgröße 31 bleibt im Median
+ähnlich; ihre einzelnen Maxima schwanken. Keine neue Audioaufnahme.
+
+Native Chromium-, Firefox- und Waterfox-Smokes bestehen mit dem isolierten
+Kandidaten einschließlich Inline-/Einzeltext-Ranges, Original-Rückgabe,
+Schutzbereichen und Schatten-DOM. Firefox-30-FPS-Video: 195/196 Callbacks,
+Waterfox 195/190; jeweils Basis/Erweiterung ohne gemeldete Drops und alle
+480 Texte korrekt. Sechs kontrollierte sowie sechs wiederholte Cues pro
+Browser vollständig; Maximum der kontrollierten Cues 2 ms in Firefox und
+3 ms in Waterfox, Wiederholungen höchstens 2 ms. Die nicht verfügbare
+Gecko-Long-Task-API bleibt unbewertet.
+
+Die [fünf Linux-Versionspaare](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38674661027)
+vergleichen **zwei installierte Erweiterungsversionen**, mit wechselnder
+Reihenfolge; kein Aus/an-Vergleich. Alle zehn Sitzungen haben 480/480 aktuelle
+Texte. Drops vorher/nachher 2/2, 1/2, 1/2, 2/2, 2/1. Der Workflow ist wegen
+einer unpassenden Kontrollrollen-Prüfung rot: Er verlangte zunächst den
+unveränderten Baseline-Text, obwohl dort die bisherige Erweiterung installiert
+war. Die korrigierte Prüfung verlangt den transformierten Text in beiden
+Versionen. Alle fünf Rohdatenpaare bestehen bei erneutem Anwenden dieser
+Rollenprüfung und sämtlicher unveränderter numerischer Performancegrenzen.
+Der [korrigierte Integrationslauf](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38675265282)
+besteht einschließlich echter Wiedergabe und Untertitelfolgen; zusätzliches
+Versionspaar mit 480/480 Texten und je einem Drop. Daraus keine Freigabe des
+älteren ungeprofilten Drittel-Frameverlusts ableiten.
+
+Eine getrennte [minimale DOM-Kontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38672937484)
+verwendet in drei Hauptproben gar keine installierte Erweiterung: Die Fixture
+schreibt dieselben Texte unmittelbar beziehungsweise nach 8 ms zurück.
+Je 7.681 Rückschreibungen einschließlich statischem Starttext, alle 480
+Endtexte korrekt; der starke Drittelverlust tritt nicht auf. Zwei weitere
+Produktreferenzen und alle Untertitelfolgen bestehen. Lokal überschreitet
+bereits die verzögerte Fixture-Kontrolle ohne Erweiterung die Drop-Grenze
+mit 52/62 Drops, ebenfalls bei 480/480 korrekten Texten. Das grenzt den
+lokalen Grenzbefund ein, erklärt den älteren Linux-Verlust aber nicht kausal.
+
+Sechs neue Dispatcherregressionen schützen den Sofortversand voller Pakete,
+die unveränderte Sammelfrist kleinerer Pakete, Zeichenlimits, zwei normale
+Slots, Untertitelpriorität sowie Erholung nach unvollständiger Antwort.
+17 fokussierte Transporttests und Typecheck erfolgreich. Der geprüfte
+Zwei-Slot-Quellstand stimmt mit dem Produktcode dieses Fixes überein; der
+vorbestehende Caption-Slot-Versuch bleibt separat uncommitted.
+
+Unabhängiger CI-Gegenbefund auf Diagnosecommit `a451c7b`: Im ersten Versuch
+läuft bereits das Erstellen der Chromium-Browsersitzung nach 60 s in das
+bestehende WebDriver-Limit, vor Navigation und Videoprüfung. Der unveränderte
+zweite Versuch und alle acht regulären Checks bestehen. Der Timeout ist
+gesichert; keine Behebung seiner Ursache durch diesen Dispatch-Fix behauptet.

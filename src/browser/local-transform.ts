@@ -34,6 +34,7 @@ const subtitleRequests: PendingTransform[] = [];
 const largeRequests: PendingTransform[] = [];
 let batchTimer: ReturnType<typeof setTimeout> | undefined;
 let subtitleDispatchScheduled = false;
+let fullBatchDispatchScheduled = false;
 let activeBatches = 0;
 let activeLargeRequests = 0;
 
@@ -99,7 +100,21 @@ export function transformTextLocally(input: string,
         dispatchBatches();
       });
     }
-    if (batchTimer !== undefined || subtitleDispatchScheduled) return;
+    // At the request limit a full batch cannot gain more entries by waiting.
+    // Finish this turn before sending, preserving caption priority and packing.
+    if (!subtitle && smallRequests.length >= maximumLocalTransformBatchSize &&
+        !fullBatchDispatchScheduled && !subtitleDispatchScheduled) {
+      fullBatchDispatchScheduled = true;
+      queueMicrotask(() => {
+        fullBatchDispatchScheduled = false;
+        if (batchTimer !== undefined) {
+          clearTimeout(batchTimer);
+          batchTimer = undefined;
+        }
+        dispatchBatches();
+      });
+    }
+    if (batchTimer !== undefined || subtitleDispatchScheduled || fullBatchDispatchScheduled) return;
     batchTimer = setTimeout(() => {batchTimer = undefined; dispatchBatches();}, 8);
   });
 }
