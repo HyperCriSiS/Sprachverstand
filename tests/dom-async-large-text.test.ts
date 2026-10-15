@@ -37,9 +37,14 @@ describe("Lokale asynchrone Transformation großer Textknoten", () => {
     const localRule = createRegexRule({id: "test.failure", risk: "safe", pattern: /Nutzer:innen/gu, replace});
     const transform = vi.fn(async () => {throw new Error("Hintergrund nicht erreichbar");});
     processor = new DomProcessor(document, {rules: [localRule], profile: "conservative", transformLargeText: transform});
+    const internal = processor as unknown as {now: () => number; flushRegularNodesBudgeted: () => void};
+    let now = 0;
+    // Expire each slice deliberately: traversal may need several turns before
+    // the request starts, independently of machine load or timer resolution.
+    vi.spyOn(internal, "now").mockImplementation(() => now += 5);
     processor.start();
-    const internal = processor as unknown as {flushRegularNodesBudgeted: () => void};
-    internal.flushRegularNodesBudgeted(); await settle(); await settle();
+    for (let index = 0; index < 16; index += 1) internal.flushRegularNodesBudgeted();
+    await settle(); await settle();
     expect(transform).toHaveBeenCalledOnce(); expect(replace).not.toHaveBeenCalled();
     expect(paragraph.textContent).toBe(hugeOriginal); expect(processor.getReplacementCount()).toBe(0);
   });
