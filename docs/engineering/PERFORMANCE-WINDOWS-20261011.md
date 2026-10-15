@@ -2664,3 +2664,75 @@ Baseline-Prüfstufe besteht. Der Gesamtworkflow ist rot, weil der nur für
 diese Baseline bestimmte Kontrollrunner die zusätzlich aufgerufenen
 Untertitelmodi ausdrücklich zurückweist; diese Teile wurden nicht geprüft.
 Keine Freigabemessung und keine weitere Wiederholung aus diesem Einzeltest.
+
+### Native Wartephasen und Speicherseiten, 15. Oktober
+
+Zwei isolierte Linux-Diagnosereihen auf unverändertem Produktstand `6fe8956`
+ergänzen den Browsertrace um Betriebssystemdaten aller Threads des eigenen
+Testbrowsers. Keine Produktänderung, ausschließlich synthetische lokale Fixture.
+Die [erste Reihe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38668043598)
+und die [Gegenreihenfolge mit Wartepunkten und Seitenfehlern](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38668492841)
+bestehen jeweils drei Paare ohne Bestätigungswiederholung. Alle zwölf Sitzungen
+haben 480/480 korrekte Endtexte. Drops Basis/Erweiterung zuerst 1/1, 1/1,
+2/2, in der Gegenreihenfolge 1/2, 1/1, 2/2. Instrumentierte Diagnosen,
+keine unverfälschte Performanceabnahme.
+
+Der erste Baseline-Browser ohne installierte Erweiterung zeigt bereits eine
+129,1-ms-Task im nativen Videoanlauf bei nur 2,2 ms Thread-CPU. Währenddessen
+steht der zugeordnete Renderer zweimal im Linux-Zustand `D`. In der zweiten,
+mit Erweiterung beginnenden Reihe lässt sich die Wartephase genauer erfassen:
+
+- Eine DOM-Task bei Dokumentzeit 1.669,9 ms dauert 145,0 ms bei 2,4 ms CPU.
+  Zwei Stichproben innerhalb dieser Task zeigen denselben Renderer im Zustand
+  `D` am Kernel-Wartepunkt `folio_wait_bit_common`. Die umgebende Messspanne
+  enthält sechs zusätzliche große Seitenfehler dieses Threads.
+  Eine JavaScript-Videocallbacklücke von 156 ms überlappt diese Task;
+  neun weitere Frames werden zwischen den Callbacks als präsentiert gemeldet.
+- Bei 1.921,9 ms dauert eine Minor-GC 80,0 ms bei 1,3 ms CPU. Davon entfallen
+  78,8 ms auf `V8.GC_TIME_TO_SAFEPOINT`, mit 0,023 ms CPU in dieser Phase.
+  Eine Stichprobe innerhalb der Safepoint-Wartephase zeigt den Hauptthread
+  in `futex_do_wait` und einen V8-Optimierungs-Arbeiterthread im Zustand `D`
+  in `folio_wait_bit_common`. Dessen große Seitenfehler steigen zwischen den
+  umgebenden Stichproben; sein Optimierungsauftrag dauert insgesamt 288,1 ms
+  bei 5,6 ms CPU. Damit sind native Speicherwartephasen zeitlich konkret
+  belegt; die exakte interne Safepoint-Abhängigkeit wird nicht allein aus
+  dieser Gleichzeitigkeit abgeleitet.
+
+Die [Linux-Dokumentation zu `/proc`](https://docs.kernel.org/filesystems/proc.html)
+beschreibt Zustand `D` und den Kernel-Wartepunkt; die
+[Scheduler-Dokumentation](https://docs.kernel.org/scheduler/sched-stats.html)
+unterscheidet verbrauchte CPU-Zeit von Wartezeit auf die CPU.
+Die Betriebssystemdaten sind Stichproben im Abstand von 100 ms. Ein
+Zählerdelta gehört stets zum ausdrücklich größeren umgebenden Messfenster,
+nicht exakt zur einzelnen Tracetask. Uhrabgleich im genannten Beispiel
+mit 4,7 ms Unsicherheit. Das vollständige Lesen aller Threads erzeugt
+zusätzliche Last: in der zweiten Reihe rund 0,67–0,82 s Monitor-CPU je
+Sitzung, einzelne Lesevorgänge bis 44 ms. Deshalb keine Freigabe aus diesen
+Diagnosezeiten oder aus dem Ausbleiben weiterer Pausen ableiten.
+
+Eine [zusätzliche Vorladeprobe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38669079596)
+las nur rund 112 MB bereits gemappter Betriebssystemdateien. Das rund
+519 MB große Browser-Hauptprogramm wurde wegen einer zu niedrigen
+Dateigrößengrenze übersprungen. Weiterhin native Seitenwartephasen;
+deshalb keine vollständige Gegenprobe für den Einfluss kalter Browserseiten.
+
+Die [korrigierte Einzelprobe](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38669573464)
+verlangt vor der Navigation ausdrücklich auch das vollständige Lesen des
+Browser-Hauptprogramms. Insgesamt rund 631 MB Dateien, davon 519 MB
+`chrome`; keine Produktänderung oder Lockerung der Videogrenzen.
+In der mit Erweiterung beginnenden Sitzung kostet dieses Vorladen 7,77 s
+**vor** der Wiedergabe, beim nachfolgenden Baseline-Browser 109 ms.
+Beide Sitzungen erreichen 480/480 Endtexte, Drops Basis/Erweiterung 1/0,
+erster tatsächlicher Videocallback 130,8/60,4 ms. Keine Page-Long-Task und
+keine Hauptthread-Tracetask ab 40 ms, kein beobachteter `D`-Zustand des
+Hauptthreads während der Messung. Ein Arbeiterthread steht weiterhin
+kurzzeitig in `folio_wait_bit_common`; nicht sämtliche Wartezustände entfallen.
+Der Uhrabgleich ist für die Erweiterung mit 11,6 ms ungenauer als in der
+vorherigen Reihe. Dieses einzelne instrumentierte Fenster ist mit dem
+Einfluss nativer Dateiseiten vereinbar, aber kein vollständiger kausaler
+Nachweis für jede frühere Pause. Das Vorladen verschiebt Kosten vor die
+Wiedergabe und ist ausdrücklich **keine Produktlösung**.
+
+Die alten ungeprofilten roten Frameverlust-Befunde bleiben offen. Diese
+Ergebnisse grenzen konkrete native Wartephasen ein und sind kein Nachweis,
+dass alle früheren Episoden dieselbe Ursache hatten. #419 bleibt NO-GO.
