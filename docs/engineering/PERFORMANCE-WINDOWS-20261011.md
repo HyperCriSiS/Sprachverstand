@@ -2736,3 +2736,76 @@ Wiedergabe und ist ausdrücklich **keine Produktlösung**.
 Die alten ungeprofilten roten Frameverlust-Befunde bleiben offen. Diese
 Ergebnisse grenzen konkrete native Wartephasen ein und sind kein Nachweis,
 dass alle früheren Episoden dieselbe Ursache hatten. #419 bleibt NO-GO.
+
+### Periodischer Frameverlust und getrennte Callback-Auswertung
+
+Die vorhandenen Linux-Rohdaten erlauben eine präzisere Beschreibung des
+starken Frameverlusts: Bei einer verifizierten konstanten 60-FPS-Quelle
+werden Quellframeindizes aus `mediaTime` rekonstruiert. Nur zwischen zwei
+aufeinanderfolgenden Präsentationen (`presentedFrames` steigt exakt um eins)
+lässt sich die Position ausgelassener Quellframes eindeutig lokalisieren.
+Mehrere Präsentationen zwischen Callbacks bleiben hinsichtlich der Position
+fehlender Frames unbestimmt.
+
+In drei früheren roten Sitzungen liegen **sämtliche eindeutig lokalisierbaren
+Auslassungen auf Quellframeindex modulo drei gleich eins**: 140 beim früheren
+166-Drop-Fall auf `4eb7e23`, 143 beim 167-Drop-Fall auf `088fea6`, 73 in
+dessen 86-Drop-Bestätigung. Die zugehörigen Callbackintervalle umfassen
+474/479/479 Quellframes, während der Präsentationszähler um 316/319/401
+steigt. Die Wiederholung zeigt den starken Verlust erst ab ungefähr
+Medienzeit 4 s. Das ist ein festes Taktmuster; seine Ursache bleibt offen.
+Insbesondere werden die 20-Hz-DOM-Last und die auf Millisekunden gerundeten
+Zeitstempel der 60-FPS-Quelle nicht allein aus diesem Muster gleichgesetzt.
+
+Eine [isolierte Linux-Medienkontrolle](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38671151417)
+vergleicht die Originalquelle mit zwei synthetischen WebM-Varianten. Letztere
+verwenden dieselben 720 VP8-Bildpakete; lokal sind die SHA256-Werte jedes
+Pakets per FFprobe identisch geprüft. Unterschied ist die Zeitauflösung:
+1 ms mit Zeitstempeln 0/0,017/0,033/0,050 s gegenüber 1 µs mit
+0/0,016667/0,033333/0,050 s. Beide Quellen sind 320×180, echte 60 FPS;
+die benutzerdefinierten Varianten nutzen dieselbe Clusterstruktur. Der
+[WebM-Spezifikation](https://www.webmproject.org/docs/container/) zufolge
+bestimmt `TimecodeScale` die Einheit der Zeitstempel.
+
+| Quelle / Reihenfolge | Drops Basis/Erweiterung |
+| --- | ---: |
+| Original, Basis zuerst, erster Versuch | 0/3 |
+| Original, bestehende Bestätigung | 1/2 |
+| 1-ms-Kontrolle, Basis zuerst | 4/1 |
+| 1-µs-Kontrolle, Erweiterung zuerst | 2/2 |
+| 1-µs-Kontrolle, Basis zuerst | 2/1 |
+| 1-ms-Kontrolle, Erweiterung zuerst | 1/4 |
+
+Alle zwölf Sitzungen haben 480/480 korrekte Endtexte. Der Gesamtworkflow
+besteht. Der starke Drittel-Frameverlust ist in keiner Variante reproduziert;
+die Zeitstempelhypothese ist damit **nicht bestätigt**. Keine Änderung am
+produktiven Quellgenerator oder an den Performancegrenzen. Eine zusätzliche
+lokale Chromium-Probe mit feiner Quelle bleibt rot: 50/68 Drops, 480/480
+Endtexte; deren eindeutig lokalisierbare Auslassungen sind nicht auf eine
+einzige Position im Dreierzyklus konzentriert.
+
+Der erste Linux-Originalversuch hat einen anderen Gegenbefund: nur 351
+Videocallbacks gegenüber 450 in der Baseline, also 78 %. Daraufhin greift
+die bestehende einmalige Bestätigung; sie besteht mit 356/359 Callbacks.
+Die 78%-Kennzahl beschreibt Callbackbenachrichtigungen. In den jeweils
+zwischen erstem und letztem Callback beobachteten Intervallen meldet der
+Browser 473 von 473 Quellframes ohne Erweiterung und 474 von 476 mit
+Erweiterung als präsentiert. 24 beziehungsweise 124 Präsentationen haben
+keine eigene erfasste Callbackbenachrichtigung.
+
+Die Auswertung ergänzt deshalb `presentationProgress` **nach** dem
+Messfenster: Quellframe- und Präsentationsfortschritt, nicht einzeln gemeldete
+Präsentationen und eindeutig beziehungsweise nicht lokalisierbare
+Auslassungen. Zurückgesetzte Zähler, Medienzeitsprünge rückwärts,
+unplausible Zeitraster oder unvollständige Daten liefern keine Klassifikation.
+Die Fehlermeldung nennt die tatsächlich verglichenen Videocallbacks.
+Alle bisherigen Gates und Wiederholungsregeln bleiben erhalten. Sechs neue
+Regressionen und die drei archivierten starken Gegenbefunde prüfen die
+Unterscheidung, einschließlich Mehrfachpräsentationen und großer Zeitlücken.
+Der native Chromium-Standardpfad mit der unveränderten 30-FPS-Quelle besteht
+einschließlich 480/480 Endtexten und Untertitelschaltern Aus/An/Aus;
+die zusätzlichen Daten werden im realen Ergebnis protokolliert. Die aus
+Quellposition und Präsentationszähler berechneten Auslassungen beziehen sich
+nur auf das beobachtete Callbackintervall; sie sind getrennt vom kumulativen
+`droppedVideoFrames`-Zähler zu lesen.
+Kein neuer Produktfix und keine vollständige Performancefreigabe; #419 NO-GO.

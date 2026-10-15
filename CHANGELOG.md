@@ -7,6 +7,11 @@ dokumentiert.
 
 ### Hinzugefügt
 
+- Die Videodiagnose unterscheidet ausgelassene Callback-Benachrichtigungen
+  von fehlenden Quellframes im Präsentationszähler des Browsers. Eindeutig
+  lokalisierbare Auslassungen werden nach ihrer Position im Dreierzyklus
+  ausgewertet; die bestehenden Performancegrenzen bleiben erhalten.
+
 - Die Videoregression prüft nach dem bestehenden Nachlauf alle 480 dynamischen
   Texte auf den neuesten erwarteten Stand. Fehlende, veraltete oder nicht
   korrigierte Texte verhindern ein erfolgreiches Performanceergebnis.

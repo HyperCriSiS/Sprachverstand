@@ -5,7 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
-import { videoGapEpisodes, videoCallbackGapEpisodes } from "./video-gap-episodes.mjs";
+import { videoGapEpisodes, videoCallbackGapEpisodes, videoPresentationProgress } from "./video-gap-episodes.mjs";
 import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
 import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
 import {isReadySubtitleState} from "./video-subtitle-state.mjs";
@@ -599,6 +599,7 @@ async function collect(id, mode) {
     ? callbackEpisodes.map(episode => ({...episode,
         scheduling: videoSchedulingProgress(episode, state.schedulingProgress)})) : undefined;
   return { mode, ...state, dynamicCompletion, frames: summarize(state.frameTimes),
+    presentationProgress: videoPresentationProgress(frameSamples, diagnosticFps),
     ...(schedulingEpisodes ? {schedulingEpisodes} : {}),
     ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
       ? callbackEpisodes : callbackEpisodes.map(({longTasks, ...episode}) => episode)} : {}),
@@ -698,7 +699,7 @@ function validateComparison(baseline, extension) {
   const frameRatio = extension.frames.callbacks / baseline.frames.callbacks;
   if (frameRatio < 0.8) {
     throw new VideoFrameRatioError(
-      `Videoframes mit Erweiterung zu stark reduziert: ${(frameRatio * 100).toFixed(1)} % der Baseline.`
+      `Videocallbacks mit Erweiterung zu stark reduziert: ${(frameRatio * 100).toFixed(1)} % der Baseline.`
     );
   }
 
@@ -758,6 +759,7 @@ async function measureVideoPair(url, attempt) {
         maximumGapMs: baseline.frames.maximumGapMs,
         gapsOver120Ms: baseline.frames.gapsOver120Ms,
         droppedVideoFrames: baseline.droppedVideoFrames,
+        presentationProgress: baseline.presentationProgress,
         presentedFramesDelta: baseline.presentedFramesDelta,
         gapEpisodes: baseline.gapEpisodes
       },
@@ -769,6 +771,7 @@ async function measureVideoPair(url, attempt) {
         maximumGapMs: extension.frames.maximumGapMs,
         gapsOver120Ms: extension.frames.gapsOver120Ms,
         droppedVideoFrames: extension.droppedVideoFrames,
+        presentationProgress: extension.presentationProgress,
         presentedFramesDelta: extension.presentedFramesDelta,
         gapEpisodes: extension.gapEpisodes
       }

@@ -17,3 +17,10 @@ export function videoGapEpisodes(frames: readonly VideoFrameSample[],
 export function videoCallbackGapEpisodes(frames: readonly VideoFrameSample[],
   longTasks: readonly VideoLongTask[], thresholdMs?: number):
   ReturnType<typeof videoGapEpisodes> | undefined;
+export function videoPresentationProgress(frames: readonly VideoFrameSample[],
+  sourceFps: number): {
+    sourceFps: number; sourceFrameSpan: number; presentedFrameSpan: number;
+    callbackIntervals: number; unreportedPresentations: number;
+    omittedSourceFrames: number; locatedOmissionsModulo3: number[];
+    unlocatedOmissions: number;
+  } | undefined;
