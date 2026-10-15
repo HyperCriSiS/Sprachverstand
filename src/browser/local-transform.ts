@@ -100,9 +100,11 @@ export function transformTextLocally(input: string,
         dispatchBatches();
       });
     }
-    // At the request limit a full batch cannot gain more entries by waiting.
-    // Finish this turn before sending, preserving caption priority and packing.
-    if (!subtitle && smallRequests.length >= maximumLocalTransformBatchSize &&
+    // The DOM processor reserves one of its 32 requests for captions when
+    // subtitles are enabled. Send its 31-request ordinary window without
+    // waiting for a request that cannot enter. Same-turn packing still accepts
+    // 32 entries, and caption priority and the two-batch limit remain intact.
+    if (!subtitle && smallRequests.length >= maximumLocalTransformBatchSize - 1 &&
         !fullBatchDispatchScheduled && !subtitleDispatchScheduled) {
       fullBatchDispatchScheduled = true;
       queueMicrotask(() => {

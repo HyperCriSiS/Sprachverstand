@@ -21,17 +21,31 @@ it("sends a full ordinary batch in the current turn without the collection delay
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it("retains the collection window for a batch below capacity", async () => {
+it("sends the ordinary capacity left by the reserved caption slot without waiting", async () => {
   const sendMessage = vi.fn(async (message: Batch) => values(message));
   vi.stubGlobal("browser", {runtime:{sendMessage}});
   const {transformTextLocally} = await import("../src/browser/local-transform");
-  const pending = Array.from({length:31},(_,i) => transformTextLocally("small"+i,options));
+  const pending = Array.from({length:31},(_,i) => transformTextLocally("reserved"+i,options));
+  expect(sendMessage).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(sendMessage).toHaveBeenCalledOnce();
+  expect(sendMessage.mock.calls[0]![0].requests).toHaveLength(31);
+  expect((await Promise.all(pending)).map(r => r.text))
+    .toEqual(Array.from({length:31},(_,i) => "reserved"+i+"!"));
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("retains the collection window below the ordinary capacity with a reserved caption slot", async () => {
+  const sendMessage = vi.fn(async (message: Batch) => values(message));
+  vi.stubGlobal("browser", {runtime:{sendMessage}});
+  const {transformTextLocally} = await import("../src/browser/local-transform");
+  const pending = Array.from({length:30},(_,i) => transformTextLocally("small"+i,options));
   await vi.advanceTimersByTimeAsync(7);
   expect(sendMessage).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(1);
   await Promise.all(pending);
   expect(sendMessage).toHaveBeenCalledOnce();
-  expect(sendMessage.mock.calls[0]![0].requests).toHaveLength(31);
+  expect(sendMessage.mock.calls[0]![0].requests).toHaveLength(30);
 });
 
 it("keeps the aggregate character limit when a full request queue is dispatched early", async () => {
@@ -65,15 +79,15 @@ it("keeps two ordinary batches in flight and drains a queued full batch in order
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it("preserves a separate caption batch ahead of a full ordinary batch", async () => {
+it.each([31,32])("preserves a separate caption batch ahead of %i ordinary requests", async count => {
   const sendMessage = vi.fn(async (message: Batch) => values(message));
   vi.stubGlobal("browser", {runtime:{sendMessage}});
   const {transformTextLocally} = await import("../src/browser/local-transform");
-  const pending = Array.from({length:32},(_,i) => transformTextLocally("normal"+i,options));
+  const pending = Array.from({length:count},(_,i) => transformTextLocally("normal"+i,options));
   pending.push(transformTextLocally("caption",options,true));
   await vi.advanceTimersByTimeAsync(0); await Promise.all(pending);
   expect(sendMessage.mock.calls[0]![0].requests.map(r=>r.input)).toEqual(["caption"]);
-  expect(sendMessage.mock.calls[1]![0].requests).toHaveLength(32);
+  expect(sendMessage.mock.calls[1]![0].requests).toHaveLength(count);
   await vi.advanceTimersByTimeAsync(8);
   expect(sendMessage).toHaveBeenCalledTimes(2);
 });
