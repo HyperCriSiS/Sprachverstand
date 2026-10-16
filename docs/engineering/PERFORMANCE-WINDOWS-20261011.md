@@ -3733,3 +3733,67 @@ des Blockers als Empfehlung oder als Produktfix. Alle lokalen Rohprofile
 bleiben unveröffentlicht. Keine Aufnahme und kein Mikrofon.
 Dieser eingegrenzte Waterfox-Testumgebungseffekt hebt die übrigen nativen
 Chromium-Gegenbefunde nicht auf: PR #451 bleibt Entwurf, #419 bleibt NO-GO.
+
+### Kontrollierte native Videoauswahl ohne Erweiterung (16. Oktober)
+
+Eine neue kausale Diagnose steuert erstmals die nativen Präsentationsfenster
+statt nur einen JavaScript-Starttimer. Separater Windows-Prozess mit offiziellem
+Chrome for Testing headless-shell 155.0.8059.39, keine Erweiterung, sichtbare und
+fokussierte synthetische Seite mit derselben neutralen DOM-Last. Dies ist keine
+reguläre Full-Chrome-Abnahme. Alle 720 VP8-Pakethashes der groben und feinen
+Quelle sind paarweise identisch; nur vorhandene Containerzeitstempel ändern sich
+von 1 ms auf 0,2 ms. Die grobe Quelle ist das genaue Archiv des Linux-Laufs
+38814828202, SHA-256 ff5a1b4b7206bb75cd7fcb921bdf81350e9cb7f0241f96d241914a5756a5ce6d.
+
+Die pinned Quellen zeigen zwei relevante Eingriffe: Der
+[Headless-Handler](https://github.com/chromium/chromium/blob/155.0.8059.39/headless/lib/browser/protocol/headless_handler.cc)
+übernimmt Zeit und Intervall; die standardaktive Funktion
+[OnBeginFrameThrottleVideo](https://github.com/chromium/chromium/blob/155.0.8059.39/components/viz/service/frame_sinks/compositor_frame_sink_support.cc)
+kann danach das Intervall durch die bevorzugte Videobildrate ersetzen.
+Nur im Diagnoseprozess ist diese Funktion deaktiviert; BeginFrameControl und
+run-all-compositor-stages-before-draw ermöglichen die Steuerung. Jedes gewertete
+Fenster ist anschließend im nativen Trace verifiziert: 360 Aufrufe mit exakt
+16.750 oder 16.666 Mikrosekunden Breite, keine Pause oder Rateänderung der Medienuhr.
+Ungültige frühe Versuche mit Pufferpause werden nicht als Phasenkontrolle gewertet.
+
+Nach einer Sekunde kontrolliertem Vorlauf folgen fünf Sekunden Beobachtung.
+Die Phase bezieht sich auf die rekonstruierte Medienuhr, modulo 50 ms;
+der Takt zwischen angeforderten Aufrufen bleibt 1/60 Sekunde.
+
+| Zeitauflösung | Fensterbreite | Phase | API-Drops im Messfenster | Interne Quellbildauslassungen / Wiederholungen |
+| --- | ---: | ---: | ---: | ---: |
+| 1 ms | 16.750 µs | 8.625 µs | 100 | 99 / 99 |
+| 0,2 ms | 16.750 µs | 8.625 µs | 0 | 0 / 0 |
+| 1 ms | 16.666 µs | 8.625 µs | 0 | 0 / 0 |
+| 0,2 ms | 16.666 µs | 8.625 µs | 0 | 0 / 0 |
+| 1 ms | 16.750 µs | 0 µs | 0 | 0 / 0 |
+
+Pro Rolle werden 299 native Renderentscheidungen im inneren Messintervall
+verglichen. API-Differenz und innere Renderübergänge haben unterschiedliche
+Randabgrenzungen: 100 API- gegenüber 99 internen Auslassungen im auffälligen Fall.
+Diese Zähler werden nicht als identisches Intervall ausgegeben. Startverluste vor dem
+Messfenster sind ausdrücklich nicht in dieser Tabelle enthalten.
+
+Das Ergebnis reproduziert die periodische native Auslassung ohne Sprachverstand
+und verändert sie durch gezielte Eingriffe an Zeitauflösung, Fenster und Phase.
+Zusätzlich erklärt ein Coverage-Gegenmodell einschließlich der
+[500-µs-Präferenz für das ältere Bild](https://github.com/chromium/chromium/blob/155.0.8059.39/media/filters/video_renderer_algorithm.cc)
+im alten d17-Baseline-Trace 482 von 483 Entscheidungen beim mittleren
+rekonstruierten Uhrenursprung. Das Gegenmodell nimmt verfügbare decodierte Frames
+an; Decoderende beweist weiterhin keine Ankunft im internen Renderqueue.
+Im kontrollierten Versuch stimmt dasselbe Modell in den drei breiten Fenstern
+jeweils mit allen 299 Entscheidungen überein, über die gesamte rekonstruierte
+Unsicherheit des Uhrenursprungs. Bei den exakten Intervallen erklärt das reine
+Coverage-Modell dagegen nur 99 bzw. 199 von 299 Entscheidungen; es ersetzt dort
+keinen Nachweis des zusätzlichen internen Kadenzzustands.
+
+Grenzen: kontrollierter Windows-headless-shell-Prozess statt ursprünglichem
+Linux-Full-Chrome-Lauf, experimentell geänderte Browserfunktion und fehlendes
+exaktes Medienarchiv des historischen d17-Fehllaufs. Interner Queue- und
+Cadence-Zustand werden nicht direkt gelesen. Damit ist der Mechanismus separat
+experimentell belegt, die historische Instanz nicht bytegenau nachgestellt.
+Kein Produktfix, keine Änderung des regulären Generators oder der Akzeptanzgrenzen.
+Die separaten langen V8-/GC-Wandzeiten und historische Seitenaufgaben bleiben
+offen; PR #451 bleibt Entwurf, #419 bleibt NO-GO. Alle eigenen Prozesse,
+Sitzungen und Server beendet; keine Aufnahme, kein Mikrofon und keine persönlichen
+Browserprofile. Nur geprüfte synthetische Aggregate sind hier dokumentiert.
