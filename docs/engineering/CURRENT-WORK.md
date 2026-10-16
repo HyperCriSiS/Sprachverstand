@@ -1,11 +1,13 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-16
+Stand: 2026-10-17
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **Gemeinsame Paketprüfung, 17.10.2026:** Separater Snapshot aus PR #451 (`dfab427`) plus den exakten Ergänzungen aus #454/#455/#456 besteht Build, Typecheck und 11.098 Tests. Native Edge- und Firefox-Proben bestehen jeweils alle 213 ergänzten Fälle, Schutzbereiche, ShadowRoots und Wiederherstellung. Keine Gitintegration und keine Übernahme der uncommitteten Versuchdateien. Dies ist eine funktionale Teilabnahme; historische Performancegegenbefunde und Gesamtfreigabe bleiben offen. [Umfang und Grenzen](COMPOSED-PACKAGE-CHECK-20261017.md).
 
 - **16.10.2026, Produktstand `f778bae`:** Spät angehängte innere offene ShadowRoots werden automatisch erkannt; Suche bleibt auf 2 ms / 256 Schritte begrenzt. Isolierter Gesamtcheck 259 Dateien / 10.849 Tests, Chromium-/Firefox-/Waterfox-Smokes und alle acht PR-Prüfungen bestanden. Zusätzlich ist der neue verschachtelte ShadowRoot-Fall auf Android/Firefox Nightly mit geschütztem Code und Eingabefeld bestanden; Seite sichtbar/fokussiert, Testinstallation vollständig aufgeräumt. Neue kontrollierte Browserdiagnose ohne Erweiterung: bei realem 8-ms-Takt erzeugt ein deklariertes 6.943-µs-Intervall in beiden Reihenfolgen 31 Auslassungen, ein passendes 8.000-µs-Intervall null. Der reparierte Controller prüft reale Zeit statt nur nomineller Framezeit. Der reguläre sichtbare Chromium-Browser zeigt denselben Taktgegenbefund; zwei zusätzliche sichtbare Produktvergleiche bestehen mit Drops Basis/Addon 50/41 und 52/53, alle 1.920 Endtexte korrekt. Die frühe 30-FPS-Lücke ist separat auf den lokalen Graphite-Grafikpfad eingegrenzt: Standard / Diagnose aus / Standard bringt die Lücken zum Verschwinden und zurück; 243,2 ms sind auch mit gewöhnlichen Seitentextänderungen ohne Erweiterung reproduziert. Kein dauerhafter Grafikschalter als Produktfix. **Die ältere rote 42/58-Probe und historischen V8-/GC-/Navigationsgegenbefunde bleiben offen; keine rückwirkende Erklärung jeder Einzelprobe.** Kein Gesamt-Go, PR #451 weiterhin Entwurf. [Neue Zeitbasis-/Grafikevidenz und Grenzen](PERFORMANCE-NATIVE-CLOCK-20261016.md). Nächste Einheit: verbleibende historische V8-/GC-/Navigationspausen gezielt nach Ursache und Produktanteil abgrenzen; erledigte Android-/Waterfox-Reihen nicht blind wiederholen.
 
