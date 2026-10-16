@@ -1,11 +1,13 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-12
+Stand: 2026-10-16
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **16.10.2026, Produktstand `f778bae`:** Spät angehängte innere offene ShadowRoots werden automatisch erkannt; Suche bleibt auf 2 ms / 256 Schritte begrenzt. Isolierter Gesamtcheck 259 Dateien / 10.849 Tests, Chromium-/Firefox-/Waterfox-Smokes und alle acht PR-Prüfungen bestanden. Neue kontrollierte Browserdiagnose ohne Erweiterung: bei realem 8-ms-Takt erzeugt ein deklariertes 6.943-µs-Intervall in beiden Reihenfolgen 31 Auslassungen, ein passendes 8.000-µs-Intervall null. Der reparierte Controller prüft reale Zeit statt nur nomineller Framezeit. Der reguläre sichtbare Chromium-Browser zeigt denselben Taktgegenbefund; zwei zusätzliche sichtbare Produktvergleiche bestehen mit Drops Basis/Addon 50/41 und 52/53, alle 1.920 Endtexte korrekt. **Die ältere rote 42/58-Probe, frühe 30-FPS-Lücke und historische V8-/GC-/Navigationsgegenbefunde bleiben offen.** Kein Gesamt-Go, PR #451 weiterhin Entwurf. [Neue Zeitbasisevidenz und Grenzen](PERFORMANCE-NATIVE-CLOCK-20261016.md). Nächste Einheit: verbleibende Startpausen gezielt nach Ursache und Produktanteil abgrenzen; erledigte Android-/Waterfox-Reihen nicht blind wiederholen.
 
 - **Abschluss dieses Kontingentfensters, 12.10.2026:** Codecommit `90f0a2e`, [vollständige PR-CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38181175865) und [Startprofil-/Render-Serie](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38181173126) erfolgreich. Alle zwölf Zeitachsen und Endtextprüfungen gültig, kein zusätzlicher Auslauf. Markerframes Basis/Erweiterung 451/426, 440/433, 443/420; im ersten Erweiterungslauf erneut 166,7 ms maximaler Frameabstand ohne Long-Task-Eintrag. GC-Samples 25/229 ms im ersten Paar sind ein Ansatz für weitere Ursachenanalyse, kein Kausalitätsnachweis. Native Waterfox-60-FPS-Quelle bestanden: 197/196 Callbacks, keine Drops, sechs kontrollierte Cues 14–15 ms; Long-Task-API dort weiterhin nicht bewertet. Bei 94 % Kontingent gemäß Nutzergrenze beendet. **Gesamtauftrag offen; als Nächstes lokale Chromium-Drops und GC-/Layout-/Framekorrelation untersuchen, erst danach andere Projektaufgaben.**
 
