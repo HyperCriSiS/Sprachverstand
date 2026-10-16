@@ -41,6 +41,7 @@ describe("Exakte Berufsbezeichnungen mit abweichendem Singularstamm", () => {
     "Fantasieaudiologe/Fantasieaudiologin",
     "Fantasieindustriekletterer/Fantasieindustriekletterin",
     "General/Generalin", "Stallknecht/Stallknechtin",
+    "Leichtmatrose/Leichmatrosin",
     "Holzbohrmaschinenbediener/Hozbohrmaschinenbedienerin",
     "Kolumnist/Koloumnistin", "Kuvertmacher/Kuvermacherin",
     "Papiermachéformer/Papiermachéoformerin",
