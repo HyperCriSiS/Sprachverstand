@@ -3797,3 +3797,52 @@ Die separaten langen V8-/GC-Wandzeiten und historische Seitenaufgaben bleiben
 offen; PR #451 bleibt Entwurf, #419 bleibt NO-GO. Alle eigenen Prozesse,
 Sitzungen und Server beendet; keine Aufnahme, kein Mikrofon und keine persönlichen
 Browserprofile. Nur geprüfte synthetische Aggregate sind hier dokumentiert.
+
+Die ergänzende lokale Prüfung mit der standardaktiven Videofunktion grenzt
+auch diese Diagnose ein: Nur DefaultDuration-Metadaten auf 16,75 ms zu ändern,
+bei identischen 720 Paketzeitstempeln und -inhalten, lässt das native Intervall
+bei 16.666 µs. Mit unveränderten Video-Bytes und anfänglicher Rate 0,9950248756
+meldet der Viz-Trace dagegen eine bevorzugte Bilddauer von 16.750 µs; nach
+Rückkehr auf Rate 1 bleibt diese Breite über alle 360 gesteuerten Aufrufe bestehen.
+In diesem Messfenster trotzdem null API- und native Auslassungen. Ein anschließender
+Seek stellt in einer weiteren Gegenprobe auch das Intervall auf 16.666 µs zurück;
+er isoliert daher keinen Auswahlreset bei unverändertem breitem Fenster.
+Breite und Phase allein sind keine hinreichende Beschreibung sämtlicher interner
+Auswahlzustände. Die ursprüngliche kontrollierte Fünf-Fall-Matrix wird dadurch
+nicht zur allgemeinen Aussage über jeden Playerstart erweitert.
+
+Eine neue [Linux-Dateicache-Diagnose](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38840395349)
+auf a8428c7 / unverändertem Produkt prüft zehn CfT-155.0.8059.39-Rollen:
+4.800/4.800 Endtexte korrekt, alle sichtbar/fokussiert, Drops Basis/Addon
+1/1, 2/1, 1/1, 1/1, 1/2. Keine Page-Long-Task, maximal 33,5 ms Callbackabstand
+und 3,907 ms erfasste native Phase. Der begrenzte Read-only-Helfer besteht seine
+Linux-Kontrolle mit unberührter/berührter eigener temporärer Dateiseite.
+Es tritt jedoch keine D/folio-Probe auf; die neue Dateicache-Abfrage wird nie
+ausgelöst. Damit ist die Frage nach den historischen fehlenden Befehlsseiten
+nicht beantwortet. Keine unveränderte Wiederholung und keine Aufwärmung als Fix.
+Die 16 hochgeladenen JSON-Dateien sind vor jedem Schreiben auf ein festes
+Aggregatschema begrenzt; keine Rawbrowsertraces, Pfade, Prozess-IDs oder absoluten
+Zeitstempel in diesen Artefakten. Bestehende Untertitel-Funktionslogs enthalten
+zusätzlich synthetische Cue-Einzelwerte und lokale Fixture-URLs. Keine persönlichen
+Profile, Gerätekennungen, Aufnahmen oder Mikrofonverwendung. Der eigene reine
+Diagnosebranch wurde nach Abschluss, SHA- und Evidenzprüfung entfernt.
+
+### Native JavaScript-Speicherprobe mit unterschiedlichen Untertiteln
+
+Zusätzliche Windows-CfT-155.0.8059.39-Probe mit exaktem Produktbuild a6e4047:
+je 8.000 unterschiedliche synthetische Untertitel mit und ohne Erweiterung,
+aktive Untertiteloption zurückgelesen, alle 16.000 Zuweisungen auf den vollständigen
+erwarteten Text sowie Sichtbarkeit/Fokus geprüft. Speicher nach 500, 1.000,
+2.000, 4.000 und 8.000 Cues jeweils nach Ruhezeit und Garbage Collection gemessen;
+Seitenkontext und eigener Erweiterungshintergrund getrennt. Keine Videowiedergabe
+oder Latenzabnahme in dieser Speicherprobe.
+
+Der Subtitle-Cache ist im Produkt bereits auf 256 Einträge begrenzt. Von 4.000
+auf 8.000 unterschiedliche Cues steigt der aktive Seitenheap um 28.432 Bytes,
+der Vergleich ohne Erweiterung um 17.600 Bytes; der Erweiterungshintergrund um
+3.220 Bytes. Der DOM-Knotenbestand bleibt an sämtlichen Messpunkten bei 13.
+Nach Abschalten der Erweiterung sinkt der aktive Seitenheap von 1.720.464 auf
+1.475.656 Bytes, also um 244.808 Bytes. Die Messung zeigt keinen Bestand aller
+8.000 Cue-Eingaben im aktiven Cache; kleine weitere Heapänderungen bleiben sichtbar.
+Kein allgemeiner Beweis gegen sämtliche Heap-Leaks, kein neuer Produktfix.
+Alle eigenen Sitzungen, Server und Driver beendet; keine Aufnahme und kein Mikrofon.
