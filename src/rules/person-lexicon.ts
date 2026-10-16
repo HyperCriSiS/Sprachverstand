@@ -83,6 +83,20 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  // Exakt geprüfte Berufsformen mit abweichendem Singular-/Femininumstamm.
+  { ...weak("audiolog", "audiologe", "audiologen"), match: "exact" as const },
+  { ...weak("choreolog", "choreologe", "choreologen"), match: "exact" as const },
+  { ...weak("diätolog", "diätologe", "diätologen"), match: "exact" as const },
+  { ...weak("flugmeteorolog", "flugmeteorologe", "flugmeteorologen"), match: "exact" as const },
+  { ...weak("grafolog", "grafologe", "grafologen"), match: "exact" as const },
+  { ...weak("kosmolog", "kosmologe", "kosmologen"), match: "exact" as const },
+  { ...weak("metrolog", "metrologe", "metrologen"), match: "exact" as const },
+  { ...weak("sophrolog", "sophrologe", "sophrologen"), match: "exact" as const },
+  { ...weak("thanatolog", "thanatologe", "thanatologen"), match: "exact" as const },
+  { ...weak("matros", "matrose", "matrosen"), match: "exact" as const },
+  { ...weak("leichtmatros", "leichtmatrose", "leichtmatrosen"), match: "exact" as const },
+  { ...regular("industriekletter", "industriekletterer", "industriekletterer", "industriekletterers"), match: "exact" as const },
+  { ...regular("möbelpolster", "möbelpolsterer", "möbelpolsterer", "möbelpolsterers"), match: "exact" as const },
   { ...regular("tischler", "tischler"), match: "exact" as const },
   { ...regular("torhüter", "torhüter"), match: "exact" as const },
   { ...regular("turner", "turner"), match: "exact" as const },

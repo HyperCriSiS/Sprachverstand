@@ -5,6 +5,12 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- 13 exakt geprüfte Berufsbezeichnungen mit abweichenden Singular- und
+  Femininumstämmen werden als Paarformen und in markierten Schreibweisen
+  mit passender Flexion erkannt, etwa Audiologe/Audiologin und Matrose/Matrosin.
+
 ### Hinzugefügt
 
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der
