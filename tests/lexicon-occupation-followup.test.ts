@@ -27,3 +27,19 @@ describe("Marketer: exakt geprüfte Personenform", () => {
     expect(transformText(text, defaultRules, options).text).toBe(text);
   });
 });
+// Eigenständig geprüftes Kompositum; keine allgemeine Modelleur-Suffixregel.
+describe("Fertigungsmodelleur: exaktes Grundwort einer Berufsbezeichnung", () => {
+  it("erkennt Plural und Singularpaar", () => {
+    expect(transformText("Die Fertigungsmodelleur:innen erstellen Modelle.", defaultRules, options).text)
+      .toBe("Die Fertigungsmodelleure erstellen Modelle.");
+    expect(mapMappedSingularPair("Fertigungsmodelleur", "Fertigungsmodelleurin")).toBe("Fertigungsmodelleur");
+    expect(mapMappedSingularPair("Fertigungsmodelleurin", "Fertigungsmodelleur")).toBe("Fertigungsmodelleur");
+    expect(mapMappedSingular("Fertigungsmodelleur", "dative")).toBe("Fertigungsmodelleur");
+    expect(mapMappedSingular("Fertigungsmodelleur", "genitive")).toBe("Fertigungsmodelleurs");
+  });
+  it.each(["Der Fertigungsmodelleur erstellt Modelle.", "Die Fantasiefertigungsmodelleur:innen arbeiten."])(
+    "bewahrt unmarkierte und nicht freigegebene Formen: %s", text => {
+      expect(transformText(text, defaultRules, options).text).toBe(text);
+    }
+  );
+});

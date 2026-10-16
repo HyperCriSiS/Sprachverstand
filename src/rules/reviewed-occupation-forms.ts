@@ -4,6 +4,7 @@ import type { GeneratedPersonForms } from "./generated-person-lexicon";
 // ß/ss-Normalisierung: Schreibweise und Flexion bleiben am jeweiligen Eintrag.
 const variants: ReadonlyMap<string, readonly [plural: string, weak: boolean]> = new Map([
   ["berufsfußballer", ["berufsfußballer", false]],
+  ["fertigungsmodelleur", ["fertigungsmodelleure", false]],
   ["fußjongleur", ["fußjongleure", false]],
   ["greißler", ["greißler", false]],
   ["heißfoliendrucker", ["heißfoliendrucker", false]],

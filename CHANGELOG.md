@@ -10,8 +10,8 @@ dokumentiert.
 - Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
   erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
   Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
-- Die exakt geprüfte Berufsbezeichnung Marketer wird mit unverändertem Plural,
-  Singularpaar und passender Kasusflexion erkannt.
+- Die exakt geprüften Berufsbezeichnungen Marketer und Fertigungsmodelleur
+  werden mit passendem Plural, Singularpaar und Kasus erkannt.
 
 ### Hinzugefügt
 
