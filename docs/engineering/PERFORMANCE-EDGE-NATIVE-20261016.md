@@ -64,6 +64,26 @@ Die Zeitstempel entstehen in der Testseite vor der Textzuweisung und beim
 beobachteten Korrekturergebnis; WebDriver-Antwortzeit wird nicht als
 Verarbeitungslatenz gezählt.
 
+## Ergänzte sichtbare Eingabeprüfung
+
+Eine eigene sichtbare Edge-Instanz desselben isolierten Produktbuilds bestätigt
+den Schutz eines Eingabefelds zusätzlich mit echter Benutzereingabe. Die lokale
+Testseite erfasst das vollständige erwartete Prüfmuster in einem Eingabeereignis
+mit `isTrusted: true` und Fokus im Feld. Nach 2.000 ms ist der Feldwert unverändert,
+das Dokument weiterhin sichtbar/fokussiert, der Codebereich unverändert und der
+gewöhnliche Seitentext korrekt verarbeitet. Dies ist ein begrenzter Nachweis für
+Eingabeschutz, keine vollständige interaktive Browser- oder Performanceabnahme.
+
+Die erste manuelle Probe verwendete eine bereits in der angezeigten Anleitung
+verkürzte Zeichenfolge. Sie belegt keine Änderung des Eingabefelds durch das
+Produkt. Die korrigierte Anleitung übermittelt das Muster in getrennten Teilen.
+Der gültige Ereignisnachweis wurde vor einer versehentlich verbliebenen alten
+Fokusprüfung gespeichert. Diese nachgelagerte Prüfung scheiterte nach dem Wechsel
+zum Chat; der gesamte Diagnoselauf endete deshalb mit Fehlerstatus. Er wird nicht
+als vollständig bestandener Lauf gewertet. Der lokale Generator ist korrigiert;
+der gespeicherte fokussierte Ereignisnachweis und die anschließende vollständige
+Bereinigung sind separat geprüft. Keine Produktänderung aus diesem Versuch.
+
 ## Grenzen und Aufräumen
 
 Alle eigenen Browser-/Driverprozesse sind beendet und alle drei
