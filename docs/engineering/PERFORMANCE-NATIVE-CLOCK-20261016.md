@@ -114,3 +114,78 @@ Aggregate; keine persönlichen Browserprofile, Gerätekennungen, Audio- oder
 Mikrofonaufnahmen. Sämtliche eigenen Testsitzungen, Server und Timer beendet.
 Vorherige Befunde und Produktkorrekturen:
 [Windows-Performanceevidenz](PERFORMANCE-WINDOWS-20261011.md).
+
+## Frühe 30-FPS-Lücke: separater Graphite-Gegenbefund
+
+Eine gezielte neue Startzeitachse verwendet die unveränderte eingecheckte
+30-FPS-Quelle, SHA-256
+`13f69752b5dc9e85842e1eacd71f03f36f83de9d3b6ce8321fd2fc4c09d842cd`.
+Frische Chromium-Sitzungen, aktueller Produktbuild, native Media-/Viz-/GPU-
+und V8-Ereignisse ab Navigation. Die frühe Lücke tritt erneut in beiden Rollen
+auf. Währenddessen fehlen auch native Renderaufrufe; die Seitenhauptaufgaben
+in der ersten nativen Wiedergabesekunde bleiben unter 8 ms.
+
+| Grafikpfad, frische Sitzungen | Frühe Seitenlücke Basis / Erweiterung | API-Drops Basis / Erweiterung | Größte native Renderlücke in der ersten Sekunde Basis / Erweiterung |
+| --- | ---: | ---: | ---: |
+| Standard vorher | 148,4 / 241,0 ms | 4 / 9 | 146,534 / 240,045 ms |
+| Nur im Diagnoseprozess Graphite deaktiviert | keine >120 ms / keine >120 ms | 0 / 4 | 32,586 / 31,308 ms |
+| Zurück zum Standard, erneut frische Sitzungen | 132,5 / 243,6 ms | 4 / 9 | 126,754 / 236,312 ms |
+
+Alle sechs Rollen haben 480 korrekte Endtexte, keine Page-Long-Task und
+durchgehend sichtbare/fokussierte Frameproben. Die Vergleichsgrenzen bleiben
+unverändert; auch die Standardrollen bestehen relativ, obwohl die frühen
+Lücken in den Rohproben sichtbar sind. Die bekannte Zusammenfassung verwirft
+die ersten 15 Callbackabstände und wird deshalb nicht als vollständige
+Startabnahme ausgegeben.
+
+Mit dem Standardpfad enthält die erste native Wiedergabesekunde lange
+`DawnPlatformImpl::RunWorkerTask`-Phasen: höchstens rund 95–113 ms Wandzeit
+bei rund 95–111 ms CPU-Zeit. Lange GPU-Hauptaufgaben benötigen dagegen
+rund 103–120 ms Wandzeit bei weniger als 8 ms CPU-Zeit. Im Gegenprozess
+fehlen die Dawn-Workerphasen und sämtliche erfassten Graphite-Rasterereignisse.
+Nach Rückkehr zum Standard kommen sie zusammen mit den Lücken wieder.
+
+Der explizite lokale Schalter `--disable-skia-graphite` wird über die eigene
+Browserbefehlszeile geprüft. Laut
+[pinned GPU-Konfiguration](https://github.com/chromium/chromium/blob/155.0.8059.39/gpu/config/gpu_finch_features.cc)
+hat er Vorrang vor den Graphite-Featureentscheidungen. Die
+[Dawn-Tracephase](https://github.com/chromium/chromium/blob/155.0.8059.39/gpu/command_buffer/service/dawn_platform.cc)
+umfasst den aufgerufenen Worker-Callback; ihr Name allein benennt keinen
+bestimmten Shader oder Grafiktreiberfehler. Der Eingriff wechselt den Grafikpfad
+und isoliert damit noch keine einzelne interne Pipelineoperation.
+
+Eine weitere Kontrolle ersetzt dieselben Texte ausschließlich durch kleinen
+Seitencode, **ohne geladene Erweiterung**. 7.681 Textkorrekturen, 480 korrekte
+Endtexte, keine Page-Long-Task; dennoch eine frühe Lücke von **243,2 ms**, sieben
+API-Drops und eine Dawn-Workerphase von 97,843 ms bei 97,472 ms CPU-Zeit.
+Damit lässt sich auch die längere Startlücke mit gewöhnlichen Textänderungen
+ohne Sprachverstand reproduzieren. Die Zeitplanung dieses kleinen Seitencodes
+ist kein exakter Ersatz für die Erweiterung und beweist keine vollständige
+Gleichheit aller Renderkosten.
+
+Eine anschließend gezielt um `gpu.dawn` und Skia-GPU-Ereignisse erweiterte
+Zeitachse desselben Seitencode-Kontrollfalls benennt die lange Operation:
+`CreatePipelineAsyncEvent::InitializeImpl` mit D3D11-Shaderkompilierung.
+Zwei frühe Pipelines benötigen **101,085 / 87,528 ms Wandzeit** bei
+**100,614 / 87,343 ms CPU-Zeit**. Darin liegen `CompileShaderFXC`-Phasen
+von 16,024 + 78,951 ms beziehungsweise 60,031 + 21,010 ms.
+Überlappende Graphite-`CommandBuffer::addRenderPass`-Aufrufe benötigen
+101,098 / 87,579 ms Wandzeit bei nur 1,790 / 0,052 ms CPU-Zeit.
+Die Auswertung prüft jeweils enthaltene Shaderphasen auf demselben Worker
+und die zeitliche Überdeckung des Renderpass-Aufrufs.
+
+Dieser stärker instrumentierte Lauf hat weiterhin keine geladene Erweiterung:
+7.633 Seitentextkorrekturen, 480 korrekte Endtexte, keine Page-Long-Task,
+208,968 ms frühe Seitenlücke und sechs API-Drops. Die Detailtrace belegt damit
+die beteiligte Pipeline-/FXC-Arbeit und die gleichzeitigen langen
+Graphite-Renderpass-Aufrufe. Welcher konkrete Shader oder Treiberfehler die
+Kosten verursacht und ob jede historische Startlücke denselben internen
+Ablauf hatte, wird weiterhin nicht behauptet.
+
+Die kontrollierten Eingriffe grenzen diesen lokalen Startbefund auf den
+nativen Grafikpfad ein. Sie sind keine Produktkorrektur und begründen keine
+dauerhaft deaktivierte Browserfunktion. Die ursprüngliche 158,2-ms-Einzelprobe
+enthielt keinen nativen Trace und wird nicht rückwirkend exakt zugeordnet.
+Historische Linux-V8-/GC-Wartezustände und der Navigationstimeout werden durch
+diese Windows-Grafikdiagnose ebenfalls nicht erklärt. PR #451 bleibt Entwurf,
+#419 bleibt NO-GO; keine neuen Produktänderungen oder gelockerten Gates.
