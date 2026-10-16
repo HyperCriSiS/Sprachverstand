@@ -226,8 +226,14 @@ Das lokale Quellarchiv enthält insgesamt 18 geprüfte Dateien: Quellcode,
 Lizenzen, Anleitungen und synthetische Videoressourcen. Sämtliche Archiveinträge
 sind gegen ihre SHA-256-Manifeste geprüft. Rohtraces, Ausgabeverzeichnisse,
 persönliche Pfade, Profile und Gerätekennungen sind ausgeschlossen. Die
-Pakete und vorbereiteten Browserfehlerberichte sind noch nicht an einen
-externen Tracker gesendet. Sie sind getrennte Reproduktionshilfen, keine
+Pakete und Browserfehlerberichte sind nach ausdrücklicher Freigabe und Einsicht
+in die vollständigen Texte und den Anhang am 16.10.2026 eingereicht:
+[Frame-Takt / BeginFrame #574079200](https://issues.chromium.org/issues/574079200)
+und [Graphite-/FXC-Startpausen #574322346](https://issues.chromium.org/issues/574322346).
+Bei beiden sind vollständiger Bericht und Quell-ZIP im Tracker verifiziert;
+der Status ist jeweils „New“, keine bestätigte Diagnose oder Browserkorrektur.
+Ein identischer Gegenversuch dieser beiden Chromium-Reproduktionen in anderen
+Browser-Engines ist nicht nachgewiesen. Die Meldungen sind getrennte Reproduktionshilfen, keine
 zusätzliche Produktkorrektur oder Gesamtfreigabe.
 
 ## Gezielte Android-Abnahme des verschachtelten ShadowRoot-Fixes
