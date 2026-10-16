@@ -189,3 +189,43 @@ enthielt keinen nativen Trace und wird nicht rückwirkend exakt zugeordnet.
 Historische Linux-V8-/GC-Wartezustände und der Navigationstimeout werden durch
 diese Windows-Grafikdiagnose ebenfalls nicht erklärt. PR #451 bleibt Entwurf,
 #419 bleibt NO-GO; keine neuen Produktänderungen oder gelockerten Gates.
+
+## Begrenzte Linux-Versionskontrolle für die offene Wartefrage
+
+Die historische Befehlsseitenprobe verwendete Chromium 155.0.8059.0;
+die spätere Dateicache-Gegenprobe bereits .39. Eine neue
+[begrenzte Gegenprobe auf .0](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38865018419)
+behält den geprüften rein lesenden Monitor, dieselbe Produktbasis a6e4047
+und den Exportfilter bei; nur die offizielle Browser-/Driver-Version wird
+angepasst. Alle zehn Versionswerte, Fokus/Sichtbarkeit und 4.800 Endtexte
+sind geprüft. 16 kleine JSON-Artefakte enthalten ausschließlich erlaubte
+synthetische Aggregate; native Rohdaten werden vor Dateiexport entfernt.
+
+Der Lauf ist rot: Drops Basis/Addon **1/2, 2/0, 2/167, 2/1, 163/1**.
+Keine Page-Long-Task, größter zusammengefasster Callbackabstand 50,1 ms,
+größte erfasste V8-/GC-Wandphase 6,478 ms. Erneut keine D/folio-Probe und
+kein ausgelöster Dateicacheabruf. Damit bleibt die historische Warte-/
+Dateicachefrage auch bei passender Versionsnummer unbeantwortet.
+Die hohen Dropzahlen treten hier in beiden Rollen auf; aus den exportierten
+Summen wird weder ein bestimmtes natives Auslassungsmuster noch eine genaue
+Version als Ursache abgeleitet. Die eigene Diagnosebranch wurde nach
+terminalem Lauf und verifizierter Belegsicherung entfernt. Kein erneuter
+identischer Lauf, keine Produktänderung und keine Änderung der Gates.
+
+## Unabhängige lokale Reproduktionspakete
+
+Zwei getrennte Quellpakete sind ohne Erweiterung, Repository-Abhängigkeiten
+oder npm-Pakete lokal vorbereitet und erneut funktional geprüft. Der
+Zeitbasisfall bestätigt im unabhängigen Paket 31/0 API- und native innere
+Auslassungen bei gültigem realem Takt. Das kleine Grafikpaket bestätigt eine
+frühe Lücke von 165,1 ms mit FXC-/Graphite-Ereignissen; sein Gegenprozess hat
+keine Lücke über 120 ms, maximal 48 ms Abstand und keine erfassten FXC-/
+Graphite-Ereignisse. Je 480 Endtexte korrekt, keine Page-Long-Task.
+
+Das lokale Quellarchiv enthält insgesamt 18 geprüfte Dateien: Quellcode,
+Lizenzen, Anleitungen und synthetische Videoressourcen. Sämtliche Archiveinträge
+sind gegen ihre SHA-256-Manifeste geprüft. Rohtraces, Ausgabeverzeichnisse,
+persönliche Pfade, Profile und Gerätekennungen sind ausgeschlossen. Die
+Pakete und vorbereiteten Browserfehlerberichte sind noch nicht an einen
+externen Tracker gesendet. Sie sind getrennte Reproduktionshilfen, keine
+zusätzliche Produktkorrektur oder Gesamtfreigabe.
