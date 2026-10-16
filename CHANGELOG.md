@@ -5,6 +5,12 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- 190 exakt geprüfte Berufsbezeichnungen unterstützen zusätzlich zu ihren
+  bisherigen markierten Pluralformen auch ausgeschriebene Singularpaare und
+  die passende Kasusflexion. Kürzel und bestehende Schreibweisen bleiben erhalten.
+
 ### Hinzugefügt
 
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der
