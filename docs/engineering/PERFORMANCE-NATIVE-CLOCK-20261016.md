@@ -229,3 +229,28 @@ persönliche Pfade, Profile und Gerätekennungen sind ausgeschlossen. Die
 Pakete und vorbereiteten Browserfehlerberichte sind noch nicht an einen
 externen Tracker gesendet. Sie sind getrennte Reproduktionshilfen, keine
 zusätzliche Produktkorrektur oder Gesamtfreigabe.
+
+## Gezielte Android-Abnahme des verschachtelten ShadowRoot-Fixes
+
+Der Produktfix `f778bae` ist zusätzlich in Firefox Nightly auf Android
+geprüft. Grundlage ist das bereits isoliert gebaute Firefox-Produktpaket
+(Content-SHA-256 `9b54097b9da67907baca342325f8ab24d4221a686509a1437d86c4c607892ab0`);
+für die temporäre Testinstallation wurden ausschließlich die lokale
+Testadresse, Erweiterungskennung und der Anzeigename begrenzt. Die zwei
+älteren uncommitteten Transportversuche sind darin nicht enthalten.
+
+Ein zunächst leerer innerer Host wird innerhalb einer bereits beobachteten
+offenen ShadowRoot eingefügt. Erst nach 250 ms erhält er seine eigene
+offene ShadowRoot. Der neue innere Absatz wird automatisch von
+`Nutzer:innen` zu `Nutzer` korrigiert, sein Codebereich bleibt unverändert.
+Auch der vorgelagerte einfache ShadowRoot-Fall, geschützter Seitencode
+und ein Eingabefeld bestehen. Die Testseite ist vor und nach der Prüfung
+sichtbar und fokussiert. Dies ist eine gezielte Funktionsabnahme; die
+Protokollabfrage liefert keine präzise Verarbeitungslatenz.
+
+Temporäre Erweiterung, eigene Geräte-Testdateien und eigene Weiterleitungen
+sind anschließend entfernt; andere Erweiterungen und die vorherige
+Bildschirm-Zeitüberschreitung sind nachweislich unverändert bzw.
+wiederhergestellt. Kein Mikrofon, keine Audio-/Videoaufnahme und keine
+Gerätekennung im veröffentlichten Nachweis. Die offenen Chromium-Befunde
+und die Gesamtfreigabe werden durch diese Android-Abnahme nicht ersetzt.
