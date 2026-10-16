@@ -38,9 +38,13 @@ Einzeltext-Ranges einschließlich Wiederherstellung.
 | Korrekte Endtexte | 480/480 | 480/480 |
 | Video-Callbacks | 241 | 239 |
 | Gemeldete Drops | 0 | 1 |
-| Größter Callbackabstand | 61,3 ms | 51,5 ms |
+| Größter Callbackabstand im Gate-Abschnitt | 61,3 ms | 51,5 ms |
+| Größter Abstand über alle erfassten Callbacks | 61,3 ms | 63,6 ms |
 | Beobachtete Page-Long-Tasks | 0 | 0 |
 
+Das bestehende Gate nimmt die ersten 15 Callbackintervalle aus seiner
+Abstandsstatistik aus. Die zusätzliche ungekürzte Zeile enthält diese
+Intervalle; der frühe 63,6-ms-Abstand liegt weiterhin unter 120 ms.
 Unveränderte relative Video-Gates bestanden. Beide Rollen waren am Start,
 am Ende und bei sämtlichen erfassten Frames sichtbar/fokussiert;
 Long-Task-Beobachtung war eingeschaltet. Dies ist ein Paar, keine
