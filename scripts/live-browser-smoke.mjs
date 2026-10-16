@@ -335,6 +335,49 @@ async function pruefeSpaeteShadowRoot(sessionId) {
   );
 }
 
+async function pruefeSpaeteVerschachtelteShadowRoot(sessionId) {
+  await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+    script: `
+      const outer = document.querySelector("#late-shadow-host").shadowRoot;
+      const host = document.createElement("section");
+      host.id = "nested-shadow-host";
+      outer.append(host);
+      return true;
+    `,
+    args: []
+  });
+  // Let the observed outer tree finish processing its still-empty inner host.
+  await sleep(250);
+  await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+    script: `
+      const host = document.querySelector("#late-shadow-host").shadowRoot
+        .querySelector("#nested-shadow-host");
+      host.attachShadow({mode: "open"}).innerHTML =
+        "<p>Nutzer:innen</p><code>Nutzer:innen</code>";
+      return true;
+    `,
+    args: []
+  });
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const result = await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+      script: `
+        const root = document.querySelector("#late-shadow-host").shadowRoot
+          .querySelector("#nested-shadow-host").shadowRoot;
+        return {text: root.querySelector("p").textContent,
+          protectedText: root.querySelector("code").textContent};
+      `,
+      args: []
+    });
+    if (result.value?.protectedText !== "Nutzer:innen") {
+      throw new Error(`Geschützter Code in verschachtelter ${browser}-ShadowRoot verändert.`);
+    }
+    if (result.value.text === "Nutzer") return;
+    await sleep(125);
+  }
+  throw new Error(`Späte verschachtelte ShadowRoot im echten ${browser}-Browser nicht korrigiert.`);
+}
+
 async function pruefeEreignislosenDesignModeWechsel(sessionId) {
   const entered = await webdriverRequest(
     "POST",
@@ -560,6 +603,7 @@ try {
 
   const state = await waitForExpectedState(sessionId);
   await pruefeSpaeteShadowRoot(sessionId);
+  await pruefeSpaeteVerschachtelteShadowRoot(sessionId);
   await pruefeEreignislosenDesignModeWechsel(sessionId);
   await pruefeGrosseInlineRanges(sessionId);
   await pruefeGrossenEinzeltext(sessionId);

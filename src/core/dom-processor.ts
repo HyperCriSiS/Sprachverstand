@@ -205,6 +205,7 @@ export class DomProcessor {
   private observerOptions: MutationObserverInit | undefined;
   private observedShadowRoots = new WeakSet<ShadowRoot>();
   private shadowDiscoveryWalker: TreeWalker | undefined;
+  private readonly shadowDiscoveryParents: TreeWalker[] = [];
   private shadowDiscoveryDocumentRoot: Element | undefined;
   private shadowDiscoveryHandle: number | undefined;
   private readonly pendingNodes = new Set<Node>();
@@ -438,6 +439,7 @@ export class DomProcessor {
     this.document.addEventListener("beforeinput", this.beforeInputHandler, true);
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.shadowDiscoveryWalker = undefined;
+    this.shadowDiscoveryParents.length = 0;
     this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
@@ -509,6 +511,7 @@ export class DomProcessor {
     this.subtitleTransformCache.clear();
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
     this.shadowDiscoveryWalker = undefined;
+    this.shadowDiscoveryParents.length = 0;
     this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
@@ -1764,6 +1767,7 @@ export class DomProcessor {
     const root = this.document.documentElement;
     if (!root) {
       this.shadowDiscoveryWalker = undefined;
+      this.shadowDiscoveryParents.length = 0;
       this.shadowDiscoveryDocumentRoot = undefined;
       this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
       return;
@@ -1774,9 +1778,12 @@ export class DomProcessor {
     if (
       !this.shadowDiscoveryWalker ||
       this.shadowDiscoveryDocumentRoot !== root ||
-      !this.shadowDiscoveryWalker.currentNode.isConnected
+      !this.shadowDiscoveryWalker.root.isConnected ||
+      !this.shadowDiscoveryWalker.currentNode.isConnected ||
+      this.shadowDiscoveryWalker.currentNode.ownerDocument !== this.document
     ) {
       const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+      this.shadowDiscoveryParents.length = 0;
       this.shadowDiscoveryWalker = this.document.createTreeWalker(
         root,
         filter.SHOW_ELEMENT
@@ -1791,19 +1798,35 @@ export class DomProcessor {
       inspected < shadowDiscoveryBatchSize &&
       (this.now() < deadline || inspected === 0)
     ) {
+      // Completing an empty/deep root also consumes a step, so unwinding a
+      // shadow hierarchy cannot bypass the slice's amount or time limit.
+      inspected += 1;
       const element = this.shadowDiscoveryWalker.nextNode() as Element | null;
       if (!element) {
+        const parent = this.shadowDiscoveryParents.pop();
+        if (parent?.root.isConnected && parent.currentNode.isConnected &&
+            parent.currentNode.ownerDocument === this.document) {
+          this.shadowDiscoveryWalker = parent;
+          continue;
+        }
         this.shadowDiscoveryWalker = undefined;
+        this.shadowDiscoveryParents.length = 0;
         this.shadowDiscoveryDocumentRoot = undefined;
         this.scheduleShadowDiscovery(shadowDiscoveryIntervalMs);
         return;
       }
 
-      inspected += 1;
       const shadowRoot = element.shadowRoot;
-      if (shadowRoot && !this.observedShadowRoots.has(shadowRoot)) {
-        this.observeShadowRoot(shadowRoot);
-        this.queue(shadowRoot);
+      if (shadowRoot) {
+        if (!this.observedShadowRoots.has(shadowRoot)) {
+          this.observeShadowRoot(shadowRoot);
+          this.queue(shadowRoot);
+        }
+        // attachShadow() does not mutate its host. Known open roots must also
+        // be traversed to discover roots added later to their existing hosts.
+        const filter = this.document.defaultView?.NodeFilter ?? NodeFilter;
+        this.shadowDiscoveryParents.push(this.shadowDiscoveryWalker);
+        this.shadowDiscoveryWalker = this.document.createTreeWalker(shadowRoot, filter.SHOW_ELEMENT);
       }
     }
     // Auch auf riesigen Seiten nur kurze Scheiben, statt einen ganzen

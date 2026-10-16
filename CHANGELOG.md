@@ -5,6 +5,13 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Spät angehängte offene ShadowRoots innerhalb bereits bekannter ShadowRoots
+  werden jetzt ebenfalls automatisch erkannt. Die Suche behält ihre Zeit- und
+  Mengengrenzen auch beim Zurückkehren aus tiefen Hierarchien; Code-/Editorschutz
+  und Wiederherstellung bleiben erhalten.
+
 ### Hinzugefügt
 
 - Die Videodiagnose unterscheidet ausgelassene Callback-Benachrichtigungen

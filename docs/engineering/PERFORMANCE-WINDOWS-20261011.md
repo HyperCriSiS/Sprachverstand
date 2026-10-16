@@ -3846,3 +3846,51 @@ Nach Abschalten der Erweiterung sinkt der aktive Seitenheap von 1.720.464 auf
 8.000 Cue-Eingaben im aktiven Cache; kleine weitere Heapänderungen bleiben sichtbar.
 Kein allgemeiner Beweis gegen sämtliche Heap-Leaks, kein neuer Produktfix.
 Alle eigenen Sitzungen, Server und Driver beendet; keine Aufnahme und kein Mikrofon.
+
+### Zusätzlicher DOM-Fix: späte offene Roots innerhalb bekannter ShadowRoots
+
+Eine neue funktionale Probe reproduziert eine Erkennungslücke im Produkt a6e4047:
+Eine bereits bekannte äußere ShadowRoot enthält einen vorhandenen inneren Host.
+Wird daran später eine offene Root angehängt, bleibt deren Text im echten
+Chromium nach vier Sekunden unkorrigiert. Erst erneutes Einfügen desselben Hosts
+löst die Verarbeitung aus. Die regelmäßige Suche besuchte bisher nur den Light-DOM.
+
+Die Suche durchläuft nun auch bekannte offene Roots mit fortgesetzten TreeWalkern.
+Zeitbudget zwei Millisekunden und höchstens 256 Schritte bleiben erhalten;
+auch die Rückkehr aus leeren/tiefen Roots verbraucht einen Schritt. Abgetrennte
+oder in ein anderes Dokument verschobene Cursor werden verworfen, und Stop
+beendet die Suche samt Elterncursoren. Keine Page-World-Hooks oder zusätzlichen
+Berechtigungen. Code-, Editor- und Untertitelschutz bleiben erhalten.
+
+Sechs gezielte Regressionen prüfen nachträgliche innere Roots, weitere Mutationen,
+Restore/Stop, große bekannte Roots, tiefe Rückwege bei grober Uhr und beide
+Untertiteloptionen. Die vollständige isolierte Prüfung besteht mit 259 Dateien /
+10.849 Tests, Typprüfung, beiden Builds, Metadaten-/Lokalisierungsprüfungen und
+Firefox-Lint ohne Warnungen. Die zwei alten lokalen Transportversuche sind aus
+dieser Prüfkopie ausgeschlossen und unverändert erhalten. Standardbuild und
+native Prüfbuilds haben bytegleiche content.js-Dateien.
+
+Native Windows-Smokes mit Chromium 155.0.8059.39, Firefox 157.0.1 und Waterfox
+153.5.0 bestehen einschließlich der neuen inneren Root und geschütztem Code,
+Inline-Ranges, großem Einzeltext und Restore. Der direkte Chromium-Gegenfall
+wird nach dem Fix automatisch korrekt und beim Abschalten wiederhergestellt.
+Eine neue relevante Speichergegenprobe mit 60.000 Absatzinstanzen in offenen
+ShadowRoots, mit/ohne Erweiterung, sechs Entfernungen pro Rolle, endet nach jeder
+Entfernung und Garbage Collection wieder bei den ursprünglichen zehn DOM-Knoten.
+
+Die zusätzliche reguläre Windows-60-FPS-Probe bleibt jedoch rot: 42 Drops ohne,
+58 mit Erweiterung. Eine getrennte Vorher-/Nachher-Kontrolle verwendet danach
+für alle acht Rollen exakt dieselben archivierten 814.295 Bytes, 720 VP8-Frames,
+60 FPS, nur Video; Quelle vor erster Wiedergabe gespeichert. Reihenfolge alter
+Stand / Fix / Fix / alter Stand, jeweils Basis/Addon: 40/58, 58/56, 58/57,
+57/57 Drops. Alle 3.840 Endtexte korrekt und Fenster sichtbar/fokussiert,
+keine Page-Long-Task; größter Callbackabstand 48 ms. Das unveränderte Drop-Gate
+scheitert auch auf dem alten Stand im ersten Paar. Die zwei Fix-Gegenpaare
+bestehen relativ zu ihrer Baseline; die reguläre rote Probe wird dadurch nicht
+aufgehoben und eine vollständige Regressionsfreiheit nicht behauptet.
+
+Außerdem scheitert die [CI des vorherigen reinen Dokumentationsstands 8c6075e](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/38842915732)
+beim ersten Chromium-Smoke-Aufruf bereits an einem 30-Sekunden-Navigationstimeout
+unter Chrome 155.0.8059.0. Dieser Lauf enthält den neuen DOM-Fix noch nicht;
+seine genaue Ursache bleibt offen. Keine Timeout- oder Gate-Lockerung.
+PR #451 bleibt Entwurf, #419 bleibt NO-GO. Keine Aufnahme und kein Mikrofon.
