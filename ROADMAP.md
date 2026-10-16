@@ -20,7 +20,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 **Phase 1 – Quellen vor Releases** (endlicher, nachvollziehbarer Quellenabschluss):
 
 - [x] Quellenregister für BA-KldB-2026 und DKZ-Current anhand der nachweislich erfolgreichen Importe und aller 22 Reviewblöcke korrigiert; der gemeinsame unbekannte Kandidatenpool ist vollständig entschieden.
-- [ ] ESCO v1.2.1 als **deutsches Label-/Alternativlabel-Delta** gegenüber der abgeschlossenen v1.2.0-API-Basis prüfen; offizielles v1.2.1-CSV benötigt autorisierten E-Mail-Download (extern offen, keine erfundene Freigabe).
+- [ ] ESCO v1.2.1 als **deutsches Label-/Alternativlabel-Delta** gegenüber der abgeschlossenen v1.2.0-API-Basis prüfen. Der frühere Downloadblocker ist überholt: Der v1.2.1-Bestand wurde bereits geprüft und sichere Kandidaten in Wellen 89–92 integriert (PRs #344, #346, #348, #356). Diese Kandidatenprüfung belegt noch keinen vollständigen Versionsvergleich der Labels und Alternativlabels; dessen Abschluss bleibt gesondert nachzuweisen. Keine erneute Vollabfrage bereits geprüfter Kandidaten.
 - [x] Den Hunspell-DE-Frami-Movierungs-Vorfilterpool (3.502 Kandidaten, davon 1.936 damals unbekannt) quellen-, qualitäts- und flexionsgeprüft abschließend triagieren. Dies ist keine Vollabdeckung des Wörterbuchs.
 - [x] Erste große Hunspell-Welle: 399 individuell geprüfte reguläre Personenbasen in Welle 84 / PR #315 integrieren; der Restpool bleibt ohne pauschale Freigabe zurückgestellt.
 - [x] Zweite große Hunspell-Welle: 552 exakt geprüfte Einwohner- und Herkunftsformen in Welle 85 / PR #317 integrieren; von 1.936 ursprünglich unbekannten Basen sind insgesamt 951 integriert und 985 bleiben ungeprüft.
