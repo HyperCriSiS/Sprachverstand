@@ -1,7 +1,7 @@
 import {readFileSync,readdirSync} from 'node:fs';
 export function knownRendererFlags(text){
  if(!/(?:^|[\s\0])--type=renderer(?:[\s\0]|$)/.test(text))return null;
- const flags=text.replaceAll('\0',' ').replaceAll('--js-flags=',' ');
+ const flags=text.replaceAll('\0',' ').replaceAll('--js-flags=',' ').replaceAll(',',' ');
  const has=name=>new RegExp('(?:^|\\s)--'+name+'(?:\\s|$)').test(flags);
  return {traceOpt:has('trace-opt'),traceFileNames:has('trace-file-names'),jitless:has('jitless'),
  disableOptimizers:has('disable-optimizing-compilers'),disallowDeveloper:has('disallow-developer-only-features'),

@@ -5,3 +5,5 @@ assert.equal(result.traceOpt,true);assert.equal(result.traceFileNames,true);asse
 assert.ok(!JSON.stringify(result).includes('PRIVATE'));assert.equal(knownRendererFlags('chrome --type=renderer-not-real'),null);
 assert.equal(knownRendererFlags('chrome --type=renderer --js-flags=--notrace-opt').traceOpt,false);
 console.log('Known own-renderer flags only, NUL/space titles, exact token boundaries and private arguments omitted PASS.');
+assert.equal(knownRendererFlags('chrome --type=renderer --js-flags=--trace-opt,--jitless').jitless,true);
+assert.equal(knownRendererFlags('chrome --type=renderer --js-flags=--trace-opt,--jitless').traceOpt,true);
