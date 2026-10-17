@@ -28,10 +28,17 @@ export async function createCompilerMemoryFile(sources){
   const descriptor=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Memory helper timeout')),5000);helper.once('error',e=>{clearTimeout(timer);reject(e);});helper.stdout.once('data',data=>{clearTimeout(timer);resolve(data.toString().trim());});});
   assert.match(descriptor,/^\d+$/);const filename='/proc/'+helper.pid+'/fd/'+descriptor;
   fd=openSync(filename,constants.O_RDONLY);assert.ok(fstatSync(fd).isFile());
-  let closed=false;
-  return {flags:'--trace-opt --trace-file-names --redirect-code-traces --redirect-code-traces-to='+filename,
+  let closed=false,timer,position=0,lastReadEpochMs=Date.now(),tail='',tailStartEpochMs=null,resets=0,readFailed=false;const records=[];
+  function sample(){try{const before=lastReadEpochMs,size=fstatSync(fd).size;assert.ok(size<=16*1024*1024);if(size<position){resets++;position=0;tail='';tailStartEpochMs=null;}
+   if(size>position){const buffer=Buffer.alloc(size-position);const n=readSync(fd,buffer,0,buffer.length,position);position+=n;const text=tail+buffer.subarray(0,n).toString('utf8'),lines=text.split('\n');tail=lines.pop();const after=Date.now();
+    for(const line of lines){if(!/^\[compiling method /.test(line))continue;const symbol=/\bJSFunction ([^\s(]+)/.exec(line)?.[1],symbolIndex=symbols.indexOf(symbol);if(records.length>=4096)throw Error('Compiler record cap');
+     records.push({symbolIndex,contentSource:/content\.js/.test(line),backgroundSource:/background\.js/.test(line),turbofan:/\(target TURBOFAN_JS\)/.test(line),beforeEpochMs:tailStartEpochMs??before,afterEpochMs:after});}
+    tailStartEpochMs=tail?tailStartEpochMs??before:null;lastReadEpochMs=after;
+   }else lastReadEpochMs=Date.now();
+  }catch{readFailed=true;}}
+  return {arm(){sample();records.length=0;resets=0;readFailed=false;timer=setInterval(sample,25);},window(){if(timer){clearInterval(timer);timer=undefined;}sample();return {records,resets,readFailed,symbolTableSha256};},flags:'--trace-opt --trace-file-names --redirect-code-traces --redirect-code-traces-to='+filename,
    summarize(){assert.ok(!closed);const size=fstatSync(fd).size;assert.ok(size<=16*1024*1024);const buffer=Buffer.alloc(size);const n=readSync(fd,buffer,0,size,0);assert.equal(n,size);
     return {syntheticOnly:true,compilerFlagsDiagnosticOnly:true,rawOutputExported:false,anonymousMemoryFileVerified:true,temporalAttributionEstablished:false,byteCount:size,symbolCount:symbols.length,symbolTableSha256,...summarizeCompilerText(buffer.toString('utf8'),symbols)};},
-   close(){if(closed)return;closed=true;closeSync(fd);helper.stdin.end();helper.kill();helper.stdout.destroy();}};
+   close(){if(closed)return;closed=true;if(timer)clearInterval(timer);closeSync(fd);helper.stdin.end();helper.kill();helper.stdout.destroy();}};
  }catch(error){if(fd!==undefined)closeSync(fd);helper.stdin.destroy();helper.kill();helper.stdout.destroy();throw error;}
 }

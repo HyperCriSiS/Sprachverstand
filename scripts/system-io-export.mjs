@@ -46,7 +46,7 @@ function role(r){
  const pageThreadPhases=pageThread?phaseTotals(phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid)):null;
  const pageThreadGapOverlap=pageThread?pagePhaseGapOverlap(phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid),r.frameSamples,r.traceClock):null;
  const pageWorkerWaitCorrelation=summarizePageWorkerWaits(phases,r.rendererMonitor,pageThread,r.traceClock,r.timeOriginEpochMs);
- return {pageWorkerWaitCorrelation,pageThreadGapOverlap,pageThreadWitnessVerified:Boolean(pageThread),pageThreadPhases,backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
+ return {compilerWindowCandidates:compilerWindowCandidates(r.compilerOutputWindow,phases,pageThread,r.traceClock,r.timeOriginEpochMs),pageWorkerWaitCorrelation,pageThreadGapOverlap,pageThreadWitnessVerified:Boolean(pageThread),pageThreadPhases,backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
  extensionInstalled:r.extensionInstalled,installationArgumentsVerified:r.installationArgumentsVerified,driverVersion:r.driverVersion,pageDomBundleSha256:r.pageDomBundleSha256,
  pageDomControlStats:r.pageDomControlStats?{started:r.pageDomControlStats.started===true,requests:number(r.pageDomControlStats.requests),matchedMarkers:number(r.pageDomControlStats.matchedMarkers),notifications:number(r.pageDomControlStats.notifications),reportedCount:number(r.pageDomControlStats.reportedCount)}:null,
  diagnosticComplete:Boolean(r.nativeTraceSchedule)&&!r.nativeTraceSchedule.error&&Boolean(r.rendererMonitor)&&!(r.rendererMonitor.errors?.length)&&samples.length>0,clockUncertaintyMs:number(r.traceClock?.uncertaintyMs),allCallbackFramesFocused:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.focusedAtFrame==="boolean")?r.frameSamples.every(f=>f.focusedAtFrame):null,allCallbackFramesVisible:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.visibilityAtFrame==="string")?r.frameSamples.every(f=>f.visibilityAtFrame==="visible"):null,ioObservation:summarizeIoObservation(r.rendererMonitor),browserVersion:/^\d+\.\d+\.\d+\.\d+$/.test(r.browserVersion??'')?r.browserVersion:null,visible:r.visibilityState==='visible',focused:r.focused===true,correctDynamicTexts:number(r.dynamicCompletion?.correct),expectedDynamicTexts:number(r.dynamicCompletion?.expected),drops:number(r.droppedVideoFrames),maximumCallbackGapMs:number(r.frames?.maximumGapMs),pageLongTaskCount:tasks.length,pageLongTaskMaximumMs:tasks.length?number(Math.max(...tasks.map(t=>t.durationMs??t.duration??t.dauerMs??NaN))):0,monitorSampleCount:samples.length,monitorSpanMs:number(span),parentMonitorCpuUs:samples.reduce((s,e)=>s+(e.monitorCpuUs??0),0),childProbeCpuExcluded:true,phaseTotals:phaseTotals(phases),residency:counts};
@@ -85,4 +85,19 @@ export function pagePhaseGapOverlap(phases,frames,clock){
   }
   return {name,observedCallbackGapCount:gaps.length,confirmedOverlapPairs,maximumGuaranteedOverlapMs,maximumPossibleOverlapMs};
  });
+}
+
+// A sampled output interval is only a possible association, never a causal
+// function attribution. Raw clock values remain inside this process.
+export function compilerWindowCandidates(window,phases,pageThread,clock,origin){
+ if(!window||window.readFailed||window.resets||!pageThread||!Number.isFinite(origin)||!Number.isFinite(clock?.offsetMs)||!Number.isFinite(clock?.uncertaintyMs))return null;
+ const page=phases.filter(e=>e.name==='V8.OptimizeCode'&&e.pid===pageThread.pid&&e.tid===pageThread.tid),candidates=new Map();
+ const contentRecords=window.records.filter(r=>r.contentSource&&r.turbofan&&r.symbolIndex>=0);
+ let uniquelyAssociatedRecords=0;
+ for(const record of contentRecords){
+  const possible=page.filter(e=>{const start=e.ts/1000+clock.offsetMs+origin,end=start+e.dur/1000;return record.afterEpochMs>=start-clock.uncertaintyMs&&record.beforeEpochMs<=end+clock.uncertaintyMs;});
+  if(possible.length!==1||possible[0].dur<=120000)continue;uniquelyAssociatedRecords++;
+  const count=candidates.get(record.symbolIndex)??{symbolIndex:record.symbolIndex,possibleLongPhaseAssociations:0};count.possibleLongPhaseAssociations++;candidates.set(record.symbolIndex,count);
+ }
+ return {temporalAttributionEstablished:false,compilerFlagsDiagnosticOnly:true,contentTurbofanRecordCount:contentRecords.length,uniquelyAssociatedRecords,candidates:[...candidates.values()].sort((a,b)=>a.symbolIndex-b.symbolIndex).slice(0,32)};
 }

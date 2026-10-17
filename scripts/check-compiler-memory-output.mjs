@@ -8,3 +8,16 @@ assert.equal(result.compileStarts,2);assert.equal(result.compileEnds,1);assert.e
 assert.deepEqual(result.symbols,[{symbolIndex:0,compileStarts:1,compileEnds:1}]);
 assert.ok(!JSON.stringify(result).includes('SYNTHETIC_PRIVATE_SENTINEL'));assert.ok(!JSON.stringify(result).includes('0x'));
 console.log('Compiler symbol-index filter verified.');
+
+import {compilerWindowCandidates} from './system-io-export.mjs';
+const phase={name:'V8.OptimizeCode',pid:1,tid:2,ts:100000,dur:200000};
+const window={readFailed:false,resets:0,records:[{symbolIndex:3,contentSource:true,turbofan:true,beforeEpochMs:120,afterEpochMs:140}]};
+const candidate=compilerWindowCandidates(window,[phase],{pid:1,tid:2},{offsetMs:0,uncertaintyMs:1},0);
+assert.deepEqual(candidate.candidates,[{symbolIndex:3,possibleLongPhaseAssociations:1}]);
+assert.equal(candidate.temporalAttributionEstablished,false);
+assert.deepEqual(compilerWindowCandidates(window,[phase,{...phase,ts:130000,dur:1000}],{pid:1,tid:2},{offsetMs:0,uncertaintyMs:1},0).candidates,[]);
+assert.deepEqual(compilerWindowCandidates(window,[{...phase,pid:99}],{pid:1,tid:2},{offsetMs:0,uncertaintyMs:1},0).candidates,[]);
+assert.equal(compilerWindowCandidates({...window,resets:1},[phase],{pid:1,tid:2},{offsetMs:0,uncertaintyMs:1},0),null);
+assert.equal(compilerWindowCandidates({...window,readFailed:true},[phase],{pid:1,tid:2},{offsetMs:0,uncertaintyMs:1},0),null);
+assert.ok(!JSON.stringify(candidate).includes('Epoch'));assert.ok(!JSON.stringify(candidate).includes('pid'));
+console.log('Possible compiler association: unique/ambiguous/other-thread/unknown/privacy cases verified.');

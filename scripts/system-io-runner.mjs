@@ -745,7 +745,7 @@ async function run(url, mode, attempt) {
       await mkdir(firefoxArtifacts, {recursive: true});
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
         "toplevel,v8,blink.user_timing,devtools.timeline,disabled-by-default-v8.compile,disabled-by-default-v8.gc,media",{deferStart:true});
-      arm.activate=async()=>{await trace.start();arm.startedAtEpochMs=Date.now();stopMonitor=startOwnRendererMonitor(driverProcess.pid,{mainThreadsOnly:true,workerWindowMs:[300,2000],sampleNativeWait:true,readInstructionPage:true,nativePageSize:4096});};
+      arm.activate=async()=>{await trace.start();compilerOutput.arm();arm.startedAtEpochMs=Date.now();stopMonitor=startOwnRendererMonitor(driverProcess.pid,{mainThreadsOnly:true,workerWindowMs:[300,2000],sampleNativeWait:true,readInstructionPage:true,nativePageSize:4096});};
 
     }
     if (focusedStart) {
@@ -764,7 +764,7 @@ async function run(url, mode, attempt) {
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
     await mkdir(firefoxArtifacts,{recursive:true});
     await writeAggregateFile(path.join(firefoxArtifacts,"compiler-functions-"+mode+".json"),JSON.stringify(compilerOutput.summarize(),null,2));
-    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode), compilerOutputWindow:compilerOutput.window(), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,
