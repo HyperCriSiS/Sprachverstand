@@ -1,7 +1,24 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {NavigationStartObserver} from './navigation-start-observer.mjs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {NavigationStartObserver,resolveNavigationExecutable} from './navigation-start-observer.mjs';
 const url = 'http://127.0.0.1:1234/extension-smoke.html';
+test('resolves a runner-provided executable directory and an explicit executable file', () => {
+  const prefix=path.join(os.tmpdir(),'sprachverstand-navigation-executable-');
+  const directory=fs.mkdtempSync(prefix);
+  try {
+    const file=path.join(directory,'chromedriver');fs.writeFileSync(file,'synthetic test only');
+    assert.equal(resolveNavigationExecutable(directory,'chromedriver'),file);
+    assert.equal(resolveNavigationExecutable(file,'chromedriver'),file);
+    assert.equal(resolveNavigationExecutable(undefined,'chromedriver',()=>file),file);
+    assert.throws(()=>resolveNavigationExecutable(directory,'missing-driver'));
+  } finally {
+    assert.ok(path.resolve(directory).startsWith(path.resolve(prefix)));
+    fs.rmSync(directory,{recursive:true,force:true});
+  }
+});
 test('exports only own fixture milestones, never protocol URLs, IDs or payloads', () => {
   let time = 10;
   const observer = new NavigationStartObserver(url, () => time++);

@@ -44,13 +44,16 @@ jobs:
         run: |
           node --input-type=module -e '
           import fs from "node:fs";
+          let files=0;
           for(const file of ["artifacts/navigation-start/navigation-summary.json","artifacts/navigation-validation/navigation-summary.json"]){
             if(!fs.existsSync(file))continue;
+            files++;
             const text=fs.readFileSync(file,"utf8"),r=JSON.parse(text);
             if(text.length>100000||r.rawProtocolExported!==false||r.profilesExported!==false||r.sessionIdentifiersExported!==false||r.traceEnabled!==false)throw Error("Unsafe diagnostic summary");
             if(/https?:|webSocket|"sessionId"|"requestId"|Authorization|debuggerAddress|\/home\//u.test(text))throw Error("Unexpected identifiers or URLs");
             if(r.rows.length>6||r.rows.some(x=>x.witness.events.length>256))throw Error("Unbounded diagnostic summary");
-          }'
+          }
+          if(files===0)throw Error("No diagnostic summaries were produced");'
       - name: Geprüfte synthetische Zusammenfassungen sichern
         if: ${{ always() && steps.summary_guard.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

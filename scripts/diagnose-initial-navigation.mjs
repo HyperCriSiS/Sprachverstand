@@ -5,7 +5,7 @@ import {createServer} from 'node:http';
 import {spawn,spawnSync} from 'node:child_process';
 import {once} from 'node:events';
 import {fetchWebdriverResponse} from './webdriver-response.mjs';
-import {NavigationStartObserver,connectNavigationObserver} from './navigation-start-observer.mjs';
+import {NavigationStartObserver,connectNavigationObserver,resolveNavigationExecutable} from './navigation-start-observer.mjs';
 
 const root=process.cwd();
 const output=path.resolve(process.env.NAVIGATION_ARTIFACTS_DIR??'artifacts/navigation-start');
@@ -16,12 +16,13 @@ const fixture=fs.readFileSync(path.join(root,'tests/browser/extension-smoke.html
 const extension=path.join(root,'dist/chromium');
 assert.ok(fs.existsSync(path.join(extension,'manifest.json')));
 const executable=(env,names)=>{
- if(process.env[env])return process.env[env];
+ if(process.env[env])return resolveNavigationExecutable(process.env[env],names[0]+(process.platform==='win32'?'.exe':''));
  for(const name of names){const result=spawnSync('which',[name],{encoding:'utf8'});if(result.status===0)return result.stdout.trim();}
  throw new Error('Required local browser executable missing');
 };
 const binary=executable('CHROMIUM_BIN',['chromium','chromium-browser']);
 const driverBinary=executable('CHROMEWEBDRIVER',['chromedriver']);
+console.log(JSON.stringify({preflight:true,configuredDriverIsDirectory:!!process.env.CHROMEWEBDRIVER&&fs.statSync(process.env.CHROMEWEBDRIVER).isDirectory(),resolvedDriverIsFile:fs.statSync(driverBinary).isFile()}));
 const port=Number(process.env.WEBDRIVER_PORT??9515);
 assert.ok(Number.isSafeInteger(port)&&port>0&&port<65536);
 const base=`http://127.0.0.1:${port}`;

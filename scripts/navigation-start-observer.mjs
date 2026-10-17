@@ -1,3 +1,18 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+export function resolveNavigationExecutable(configured, name, findCommand) {
+  let candidate;
+  if (configured) {
+    candidate = fs.existsSync(configured) && fs.statSync(configured).isDirectory()
+      ? path.join(configured, name) : configured;
+  } else candidate = findCommand(name);
+  if (!candidate || !fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {
+    throw new Error('Configured navigation executable is not a file');
+  }
+  return candidate;
+}
+
 // Bounded allowlist for our synthetic fixture. Never export protocol payloads.
 export class NavigationStartObserver {
   constructor(fixtureUrl, now = () => performance.now()) {
