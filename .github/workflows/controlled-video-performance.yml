@@ -60,6 +60,7 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-source-stage-recorder.mjs
           node scripts/check-source-warmup-budget.mjs
           node scripts/check-source-read-control.mjs
           node scripts/check-native-failure-class.mjs
@@ -103,3 +104,16 @@ jobs:
       - name: Matched source read session and navigation stages bestaetigen
         if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs
+      - name: Fixed lifecycle stages validate
+        id: stages
+        if: always()
+        run: node scripts/validate-source-stages.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: ${{ always() && steps.stages.outcome == 'success' && steps.stages.outputs.present == 'true' }}
+        with:
+          name: source-stages-${{ matrix.source_mode }}-${{ matrix.order }}-${{ github.sha }}
+          path: |
+            artifacts/source-stages/baseline.json
+            artifacts/source-stages/extension.json
+          if-no-files-found: error
+          retention-days: 7

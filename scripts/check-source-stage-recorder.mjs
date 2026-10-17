@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {createStageRecorder,validateStages} from './source-stage-recorder.mjs';
+let clock=1;const recorder=createStageRecorder('baseline',()=>clock++);
+assert.equal(await recorder.measure('preparation',async()=>42),42);
+await assert.rejects(recorder.measure('session-helper',async()=>{throw Error('PRIVATE_SENTINEL');}));
+assert.deepEqual(recorder.report.stages,[{stage:'preparation',completed:true,elapsedMs:1},{stage:'session-helper',completed:false,elapsedMs:1}]);
+assert.ok(!JSON.stringify(recorder.report).includes('PRIVATE_SENTINEL'));
+validateStages(recorder.report);
+assert.throws(()=>validateStages({...recorder.report,path:'PRIVATE_SENTINEL'}));
+assert.throws(()=>validateStages({...recorder.report,stages:[{stage:'PRIVATE_SENTINEL',completed:false,elapsedMs:1}]}));
+assert.throws(()=>validateStages({...recorder.report,stages:[{stage:'preparation',completed:false,elapsedMs:-1}]}));
+assert.throws(()=>validateStages({...recorder.report,stages:[...recorder.report.stages,recorder.report.stages[0]]}));
+console.log('Stage durations survive failed actions; only fixed enums, booleans and bounded durations allowed.');

@@ -1,3 +1,4 @@
+import {createStageRecorder,validateStages} from './source-stage-recorder.mjs';
 import {sourceWarmupPlan,validateSourceWarmup} from './source-warmup-budget.mjs';
 import assert from 'node:assert/strict';
 import {ownRenderers} from './source-renderer-binding.mjs';
@@ -751,12 +752,17 @@ async function prepareSourceControl(){
  const wall=performance.now()-before,cpu=cpuUsed();validateSourceWarmup(mode,wall,cpu);
  return {sourceControlMode:mode,browserWarmReadPerformed:mode==='browser-read',sourceWarmupBytes:bytes,sourceWarmupPaddingBytes:paddingBytes,sourceWarmupWallMs:wall,sourceWarmupCpuUs:cpu,sourceWarmupWallBudgetMs:plan.wallBudgetMs,sourceWarmupCpuBudgetUs:plan.cpuBudgetUs,sourceWarmupMatched:true};
 }
-async function run(url, mode, attempt) {
+async function run(url,mode,attempt){
+ const recorder=createStageRecorder(mode);
+ try{const value=await runWithStages(url,mode,attempt,recorder);recorder.report.completed=true;return value;}
+ finally{validateStages(recorder.report);await mkdir('artifacts/source-stages',{recursive:true});await writeAggregateFile('artifacts/source-stages/'+mode+'.json',JSON.stringify(recorder.report),{flag:'wx'});}
+}
+async function runWithStages(url, mode, attempt,recorder) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
-  const sourceControl=await prepareSourceControl();
+  const sourceControl=await recorder.measure('preparation',()=>prepareSourceControl());
   const sessionStageStarted=performance.now();
-  const id=await createSession(extensionInstalled);
+  const id=await recorder.measure('session-helper',()=>createSession(extensionInstalled));
   const sessionCreateWallMs=performance.now()-sessionStageStarted;
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
@@ -779,7 +785,7 @@ async function run(url, mode, attempt) {
       if (browser === "chromium") await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Page.bringToFront", params: {}});
     }
     const navigationStageStarted=performance.now();
-    await request("POST", `/session/${id}/url`, { url });
+    await recorder.measure('navigation-command',()=>request("POST", `/session/${id}/url`, { url }));
     const navigationCommandWallMs=performance.now()-navigationStageStarted;
     if(trace){arm.scheduledAtEpochMs=Date.now();arm.pending=new Promise(resolve=>setTimeout(()=>resolve(arm.activate()),500)).catch(error=>{arm.error=String(error.message);});}
     if (focusedStart && !await execute(id, 'return document.visibilityState === "visible" && document.hasFocus();')) {
