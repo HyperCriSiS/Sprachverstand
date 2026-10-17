@@ -3,7 +3,7 @@ import {summarizeIoObservation} from './owned-io-observation.mjs';
 import path from 'node:path';
 // Raw diagnostics exist in process memory only. Every exported field is listed here.
 const pageThreads=new Map();
-const traces=new Map(),names=new Set(['V8.OptimizeCode','V8.OptimizeBackground','V8.GC_TIME_TO_SAFEPOINT','V8.GC_MARK_COMPACTOR','V8.GC_SCAVENGER']);
+const traces=new Map(),names=new Set(['V8.OptimizeCode','V8.OptimizeConcurrentPrepare','V8.OptimizeNonConcurrent','V8.OptimizeBackground','V8.GC_TIME_TO_SAFEPOINT','V8.GC_MARK_COMPACTOR','V8.GC_SCAVENGER']);
 const number=n=>Number.isFinite(n)?n:null;
 function phaseTotals(events){return [...names].map(name=>{
  const list=events.filter(e=>e.name===name);

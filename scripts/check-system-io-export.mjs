@@ -84,3 +84,17 @@ assert.equal(pagePhaseGapOverlap([], [{callbackAtMs:400},{callbackAtMs:100}],{of
 const noGap=pagePhaseGapOverlap(phase(100000,100000),[{callbackAtMs:100},{callbackAtMs:200}],{offsetMs:0,uncertaintyMs:0});
 assert.equal(noGap.find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT').observedCallbackGapCount,0);
 console.log('Trace clock offset sign, nonmonotonic entry-clock rejection and unchanged >120ms gap threshold PASS.');
+const nestedFile='/private/nested-compiler.json';
+const nested=JSON.parse(summarizeOwnedTrace(nestedFile,JSON.stringify({traceEvents:[
+ {name:'V8.OptimizeCode',pid:1234567,tid:7654321,ts:100000,dur:200000,tdur:2000},
+ {name:'V8.OptimizeConcurrentPrepare',pid:1234567,tid:7654321,ts:110000,dur:170000,tdur:1000,args:{private:'SECRET'}},
+ {name:'V8.OptimizeNonConcurrent',pid:1234567,tid:7654321,ts:400000,dur:20000,tdur:19000}
+]})));
+validateSystemIoArtifact(nested);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeConcurrentPrepare').maximumWallMs,170);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeNonConcurrent').maximumWallEventCpuMs,19);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeCode').maximumWallMs,200);
+assert.ok(!JSON.stringify(nested).includes('SECRET'));assert.ok(!JSON.stringify(nested).includes('1234567'));
+const nestedOverlap=pagePhaseGapOverlap([{name:'V8.OptimizeConcurrentPrepare',ts:110000,dur:170000}],frames,{offsetMs:0,uncertaintyMs:0});
+assert.equal(nestedOverlap.find(p=>p.name==='V8.OptimizeConcurrentPrepare').maximumGuaranteedOverlapMs,170);
+console.log('Known compiler prepare/synchronous subscopes retained separately; nested durations not added; raw arguments refused.');
