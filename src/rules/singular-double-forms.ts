@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
 import {
   mapKnownInflectedSingularPair,
   mapKnownSingularPair
@@ -18,11 +19,11 @@ interface DeterminerPair {
 const locale = "de-DE";
 const word = String.raw`[\p{L}\p{M}’'-]+`;
 const connector = String.raw`(?:\s*(?:/|&|:)\s*|\s+(?:und|oder|bzw\.|beziehungsweise)\s+)`;
-const singularDoubleFormPattern = new RegExp(
+const singularDoubleFormPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${word})(${connector})(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
-const mannFrauShorthandPattern = new RegExp(
+const mannFrauShorthandPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*mann)\s*/\s*-frau(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -106,7 +107,7 @@ const determinerAlternation = [
 ]
   .sort((left, right) => right.length - left.length)
   .join("|");
-const inflectedPhrasePattern = new RegExp(
+const inflectedPhrasePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerAlternation})(\s+)(${word})(${connector})(${determinerAlternation})(\s+)(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -133,7 +134,7 @@ function mapPair(left: string, right: string): string | undefined {
 
 function transformMannFrauShorthand(
   input: string,
-  pattern = mannFrauShorthandPattern
+  pattern = mannFrauShorthandPattern()
 ): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -149,7 +150,7 @@ function transformMannFrauShorthand(
 function transformInflectedPhrases(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    inflectedPhrasePattern,
+    inflectedPhrasePattern(),
     (
       match: string,
       leftDeterminer: string,
@@ -223,7 +224,7 @@ function transformSingularDoubleForms(input: string): TransformResult {
   let replacements = 0;
 
   const text = input.replace(
-    singularDoubleFormPattern,
+    singularDoubleFormPattern(),
     (match: string, left: string, matchedConnector: string, right: string) => {
       if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
         return match;
@@ -257,6 +258,12 @@ export const singularDoubleFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    // All current lexical pairs require a feminine -in form; the separate
+    // mann/frau shorthand is the only exception.
+    if (!/in(?![a-z])|frau/iu.test(input)) return {text: input, replacements: 0};
+    if (!/[/&:]|und|oder|bzw\.|beziehungsweise/iu.test(input)) {
+      return {text: input, replacements: 0};
+    }
     const shorthandResult = transformMannFrauShorthand(input);
     const kaufmannResult = transformMannFrauShorthand(
       shorthandResult.text,

@@ -72,8 +72,19 @@ const markedDeterminerPrefixes = new Set([
   "eures"
 ]);
 const separatorPattern = /[:*_\/·•.’‘]/u;
-const precedingTokensPattern =
-  /([\p{L}\p{M}:*_\/·•.’‘-]+(?:\s+[\p{L}\p{M}:*_\/·•.’‘-]+){0,3})\s+$/u;
+const contextTokenCharacter = /[\p{L}\p{M}:*_\/·•.’‘-]/u;
+const whitespaceCharacter = /\s/u;
+
+function previousCharacterStart(input: string, end: number): number {
+  const last = input.charCodeAt(end - 1);
+  if (last >= 0xdc00 && last <= 0xdfff && end > 1) {
+    const first = input.charCodeAt(end - 2);
+    if (first >= 0xd800 && first <= 0xdbff) {
+      return end - 2;
+    }
+  }
+  return end - 1;
+}
 
 function isAmbiguousDeterminer(token: string): boolean {
   const normalized = token.toLocaleLowerCase(locale);
@@ -92,12 +103,35 @@ export function hasAmbiguousSingularDeterminer(
   input: string,
   nounIndex: number
 ): boolean {
-  const prefix = input.slice(0, nounIndex);
-  const match = precedingTokensPattern.exec(prefix);
-  const tokens = match?.[1];
-  return Boolean(
-    tokens
-      ?.split(/\s+/u)
-      .some((token) => isAmbiguousDeterminer(token))
-  );
+  // Der bisherige unankerte End-Regex suchte für jeden Treffer erneut
+  // den gesamten Präfix ab. Nur die letzten vier zusammenhängenden Tokens
+  // können die Entscheidung beeinflussen: direkt rückwärts lesen, ohne
+  // ein Zeichenlimit, das lange Wörter/Unicode-Kontexte abschneiden würde.
+  let cursor = nounIndex;
+  if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) {
+    return false;
+  }
+  for (let token = 0; token < 4; token += 1) {
+    while (cursor > 0 && whitespaceCharacter.test(input[cursor - 1] ?? "")) {
+      cursor -= 1;
+    }
+    const end = cursor;
+    while (cursor > 0) {
+      const start = previousCharacterStart(input, cursor);
+      if (!contextTokenCharacter.test(input.slice(start, cursor))) {
+        break;
+      }
+      cursor = start;
+    }
+    if (cursor === end) {
+      return false;
+    }
+    if (isAmbiguousDeterminer(input.slice(cursor, end))) {
+      return true;
+    }
+    if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) {
+      return false;
+    }
+  }
+  return false;
 }

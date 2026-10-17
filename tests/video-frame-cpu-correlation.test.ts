@@ -43,6 +43,28 @@ describe("Frame-Lücken und CPU-Samples zeitlich korrelieren", () => {
     expect(result.achsePlausibel).toBe(false);
   });
 
+  it("ordnet ungeordnete V8-Samples ohne negative CPU-Zeiten ihren Funktionen zu", () => {
+    const result = analysiereVideoCpu({
+      startTime: 1_000_000, endTime: 1_200_000,
+      nodes: [
+        {id:1,callFrame:{functionName:"frueh",url:"chrome-extension://test/content.js"}},
+        {id:2,callFrame:{functionName:"spaet",url:"http://127.0.0.1:123/test.html"}}
+      ],
+      samples:[1,2,1,2],timeDeltas:[50_000,100_000,-20_000,30_000]
+    },-1000,[0,100,200]);
+    expect(result.achsePlausibel).toBe(true);
+    expect(result.zeitraumMs).toEqual([50,160]);
+    expect(result.topGesamt).toEqual([
+      {name:"erweiterung | frueh",ms:130}, {name:"fixture | spaet",ms:30}
+    ]);
+  });
+
+  it.each([NaN,Infinity,-1,201_000])("weist ungültige oder außerhalb liegende Samples zurück: %j", deltaUs => {
+    expect(()=>analysiereVideoCpu({
+      startTime:1_000_000,endTime:1_200_000,nodes:[],samples:[1],timeDeltas:[deltaUs]
+    },0,[0,100])).toThrow();
+  });
+
   it("misst Mutation-Batches auch ohne V8-Sampler", () => {
     const runner = readFileSync("scripts/video-frame-cpu-correlation.mjs", "utf8");
     const workflow = readFileSync(".github/workflows/video-frame-cpu-correlation.yml", "utf8");

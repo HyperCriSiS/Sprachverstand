@@ -31,6 +31,7 @@ export const neutralPersonTermsRule: Rule = {
   risk: "contextual",
 
   apply(input) {
+    if (!/mitarbeitende|benutzungshandbuch/iu.test(input)) return {text: input, replacements: 0};
     let replacementsCount = 0;
 
     const text = input.replace(contextualPattern, (match: string) => {

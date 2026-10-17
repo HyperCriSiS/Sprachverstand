@@ -4,6 +4,21 @@ export interface ReplacementSummaryEntry {
   readonly count: number;
 }
 
+// The background/UI protocol has always retained at most this many entries.
+export const maximumReportedReplacementSummaries = 250;
+
+export function replacementSummaryKey(entry: ReplacementSummaryEntry): string {
+  return JSON.stringify([entry.original, entry.replacement]);
+}
+
+export function compareReplacementSummaries(
+  left: ReplacementSummaryEntry,
+  right: ReplacementSummaryEntry
+): number {
+  return right.count - left.count || left.original.localeCompare(right.original, "de") ||
+    left.replacement.localeCompare(right.replacement, "de");
+}
+
 const wordLikeCharacter = /[\p{L}\p{M}\p{N}’'_-]/u;
 const nonWhitespaceTokenPattern = /\S+/gu;
 const maximumTokenDiffCells = 160_000;
@@ -253,7 +268,7 @@ export function aggregateReplacementSummaries(
   const aggregated = new Map<string, ReplacementSummaryEntry>();
 
   for (const entry of entries) {
-    const key = `${entry.original}\u0000${entry.replacement}`;
+    const key = replacementSummaryKey(entry);
     const existing = aggregated.get(key);
     aggregated.set(key, {
       original: entry.original,
@@ -262,8 +277,5 @@ export function aggregateReplacementSummaries(
     });
   }
 
-  return [...aggregated.values()].sort(
-    (left, right) =>
-      right.count - left.count || left.original.localeCompare(right.original, "de")
-  );
+  return [...aggregated.values()].sort(compareReplacementSummaries);
 }
