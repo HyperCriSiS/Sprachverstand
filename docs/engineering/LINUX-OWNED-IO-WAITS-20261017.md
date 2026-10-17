@@ -141,3 +141,33 @@ Versionsstand; sie ist kein eigenständiger Nachweis der Build-Provenienz des
 Runner-Binaries. Der konkret verzögerte Hintergrundthread und der Auslöser
 seiner Verzögerung bleiben unbestimmt. Eine zeitliche Überlappung ist noch
 kein vollständiger Ursachenbeweis und kein nachgewiesener Produktfix.
+
+## Aktuelle Abnahmematrix nach den Komponentenproben
+
+Diese Matrix ergänzt die bestehende Abnahme von Issue #419; sie ersetzt weder
+Gates noch den ursprünglichen Auftrag. Grün in einzelnen Diagnoseläufen ist
+keine Gesamtfreigabe. Keine der folgenden Einheiten ändert Produktlaufzeitcode.
+
+| Befund / Anforderung | Verifizierte Evidenz | Verbleibende Grenze / Status |
+| --- | --- | --- |
+| Langes Seitenthread-Safepoint-Warten | Marker bindet Thread; konservative Callback-Überlappung bestätigt | Ursprung des verzögerten Threads nicht vollständig kausal identifiziert |
+| Worker-Seitenwarten während Seitenthread-Safepoint | Run 39009509446: je eine stabile fehlende Worker-Befehlsseitenprobe innerhalb Seitenthread-Safepoint und Optimierung desselben Workers, beide Produktrollen | Zeitliche Koexistenz, keine Identifikation des konkret blockierenden Barriere-Teilnehmers |
+| Lange Optimierungsphase: synchron oder nebenläufig? | Run 39009766108: 13/14 nebenläufige Vorbereitungen mit maximal 0,101/0,94 ms; keine synchronen Unterphasen. Umfassender Scope 195,751/121,707 ms | Roter Callbackanteil 77,0 % in einem Paar bleibt gültig. Kein Funktionsname im Ereignis; kein belegter Quellfunktionsfix |
+| Hauptthread-Seitenwarten innerhalb Optimierung | Run 39009957914: beide Produktrollen je drei stabile D/folio-Proben mit fehlender Befehlsseite der Browserprogrammdatei innerhalb des markierten Seitenthread-Optimierungs-Scopes | Speicher-/I/O-Warteanteil gestützt. Programmzähler ist keine behauptete exakte Fehleradresse; nachzuladende Datei-/Datenseite bleibt unbestimmt |
+| Dieselbe genaue Warteklasse ohne Erweiterung? | Run 39010119067: keine Erweiterung in allen vier Rollen, aktive reale DOM-Komponente mit 7.681/7.537 Literal-Anfragen. Seitenthread-Safepoint überlappt Callback-Abstand garantiert 148,956 ms; ein stabiler Worker-Befehlsseitenbefund innerhalb Safepoint und gleicher Workeroptimierung | Safepoint-/Worker-Kombination braucht keine Erweiterungsinstallation. Hauptthread-Seitenwarten innerhalb Optimierung in dieser begrenzten Kontrolle nicht beobachtet; weder allgemein ausgeschlossen noch frühere Produktbefunde erklärt |
+| Reguläres 30-FPS-Muster und Navigationstimeout | Separate vorhandene Kontrollen und automatische Fehlersicherung dokumentiert | Historische Gegenbefunde weiterhin offen; native Compilerproben erklären sie nicht rückwirkend |
+| Strengere endgültige Qualitätsabnahme aus #419 | Bestehende Gates bleiben in allen Diagnoseeinheiten unverändert; Ausreißer werden erhalten | Die bestehenden 0,8-/Drop-/Gap-Gates sind laut #419 nur Sicherheitsnetz. Noch kein Nachweis der dort verlangten vollständigen verschärften Gesamt-/Plattformabnahme |
+
+Die Läufe sind öffentlich nachvollziehbar:
+[Worker](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39009509446),
+[Compilerpfade](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39009766108),
+[Hauptthread](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39009957914),
+[ohne Erweiterungsinstallation](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39010119067).
+Alle vier Einheiten haben je vier gültige, sichtbar/fokussierte Rollen mit
+1.920 korrekten Endtexten. Ein roter Lauf wird durch nachfolgende grüne
+Kontrollen nicht ersetzt. Zeitangaben der tatsächlichen Callback-Eintritte
+und des rVFC-Renderingzeitstempels sind getrennte Größen; ihre Maxima dürfen
+nicht gleichgesetzt werden. Aggregierte Überschneidungen verschiedener
+Phasen werden nicht addiert und nicht ohne Episodenbindung derselben
+Videolücke zugeschrieben. Keine Cachevorladung, Kernelrechte oder dauerhafte
+Compilerflags werden als Produktkorrektur verwendet.
