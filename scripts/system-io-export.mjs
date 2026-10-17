@@ -43,7 +43,8 @@ function role(r){
  const tasks=r.longTasks??[],first=samples[0],last=samples.at(-1),span=first&&last?last.afterEpochMs-first.beforeEpochMs:null;
  const pageThread=pageThreads.get(path.basename(r.traceFile??''));
  const pageThreadPhases=pageThread?phaseTotals(phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid)):null;
- return {pageThreadWitnessVerified:Boolean(pageThread),pageThreadPhases,backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
+ const pageThreadGapOverlap=pageThread?pagePhaseGapOverlap(phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid),r.frameSamples,r.traceClock):null;
+ return {pageThreadGapOverlap,pageThreadWitnessVerified:Boolean(pageThread),pageThreadPhases,backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
  extensionInstalled:r.extensionInstalled,installationArgumentsVerified:r.installationArgumentsVerified,driverVersion:r.driverVersion,pageDomBundleSha256:r.pageDomBundleSha256,
  pageDomControlStats:r.pageDomControlStats?{started:r.pageDomControlStats.started===true,requests:number(r.pageDomControlStats.requests),matchedMarkers:number(r.pageDomControlStats.matchedMarkers),notifications:number(r.pageDomControlStats.notifications),reportedCount:number(r.pageDomControlStats.reportedCount)}:null,
  diagnosticComplete:Boolean(r.nativeTraceSchedule)&&!r.nativeTraceSchedule.error&&Boolean(r.rendererMonitor)&&!(r.rendererMonitor.errors?.length)&&samples.length>0,clockUncertaintyMs:number(r.traceClock?.uncertaintyMs),allCallbackFramesFocused:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.focusedAtFrame==="boolean")?r.frameSamples.every(f=>f.focusedAtFrame):null,allCallbackFramesVisible:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.visibilityAtFrame==="string")?r.frameSamples.every(f=>f.visibilityAtFrame==="visible"):null,ioObservation:summarizeIoObservation(r.rendererMonitor),browserVersion:/^\d+\.\d+\.\d+\.\d+$/.test(r.browserVersion??'')?r.browserVersion:null,visible:r.visibilityState==='visible',focused:r.focused===true,correctDynamicTexts:number(r.dynamicCompletion?.correct),expectedDynamicTexts:number(r.dynamicCompletion?.expected),drops:number(r.droppedVideoFrames),maximumCallbackGapMs:number(r.frames?.maximumGapMs),pageLongTaskCount:tasks.length,pageLongTaskMaximumMs:tasks.length?number(Math.max(...tasks.map(t=>t.durationMs??t.duration??t.dauerMs??NaN))):0,monitorSampleCount:samples.length,monitorSpanMs:number(span),parentMonitorCpuUs:samples.reduce((s,e)=>s+(e.monitorCpuUs??0),0),childProbeCpuExcluded:true,phaseTotals:phaseTotals(phases),residency:counts};
@@ -53,4 +54,33 @@ export function summarizeOwnedReport(text){
  if(r.baseline&&r.extension)return JSON.stringify({type:'synthetic-component-dom-pair-aggregates',rawDiagnosticsExported:false,baseline:role(r.baseline),extension:role(r.extension)},null,2);
  if(typeof r.cueCount==='number')return JSON.stringify({type:'synthetic-subtitle-aggregates',rawDiagnosticsExported:false,cueCount:number(r.cueCount),correctedCues:number(r.correctedCues),cueP95Ms:number(r.cueP95Ms),cueMaximumMs:number(r.cueMaximumMs)},null,2);
  throw Error('Unknown diagnostic report refused before export');
+}
+// Trace timestamps are converted into performance.now() using a bounded clock
+// offset. Only callback-entry timestamps are accepted, never rVFC render time.
+export function pagePhaseGapOverlap(phases,frames,clock){
+ if(!Number.isFinite(clock?.offsetMs)||!Number.isFinite(clock?.uncertaintyMs)||clock.uncertaintyMs<0||
+ !Array.isArray(frames)||frames.length<2||frames.some(f=>!Number.isFinite(f.callbackAtMs)))return null;
+ const gaps=[];
+ for(let i=1;i<frames.length;i++){
+  const start=frames[i-1].callbackAtMs,end=frames[i].callbackAtMs;
+  if(end<start)return null;
+  if(end-start>120)gaps.push({start,end});
+ }
+ const valid=phases.filter(e=>Number.isFinite(e.ts)&&Number.isFinite(e.dur)&&e.dur>=0);
+ const uncertainty=clock.uncertaintyMs;
+ return [...names].map(name=>{
+  let confirmedOverlapPairs=0,maximumGuaranteedOverlapMs=0,maximumPossibleOverlapMs=0;
+  for(const event of valid.filter(e=>e.name===name)){
+   const start=event.ts/1000+clock.offsetMs,end=start+event.dur/1000;
+   for(const gap of gaps){
+    // Contracting/expanding is conservative for a common unknown offset.
+    const lower=Math.max(0,Math.min(gap.end,end-uncertainty)-Math.max(gap.start,start+uncertainty));
+    const upper=Math.max(0,Math.min(gap.end,end+uncertainty)-Math.max(gap.start,start-uncertainty));
+    if(lower>0)confirmedOverlapPairs++;
+    maximumGuaranteedOverlapMs=Math.max(maximumGuaranteedOverlapMs,lower);
+    maximumPossibleOverlapMs=Math.max(maximumPossibleOverlapMs,upper);
+   }
+  }
+  return {name,observedCallbackGapCount:gaps.length,confirmedOverlapPairs,maximumGuaranteedOverlapMs,maximumPossibleOverlapMs};
+ });
 }
