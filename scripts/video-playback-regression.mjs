@@ -1,4 +1,4 @@
-import {summarizeVideoFrames as summarize} from './video-frame-summary.mjs';
+import {summarizeVideoFrames as summarize, summarizeVideoCallbackEntries} from './video-frame-summary.mjs';
 import {validateVideoBaselineSafety} from './video-baseline-safety.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
@@ -973,7 +973,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
       let ticks = 0, stopped = false;
       const frame = (now, metadata) => {
         if (stopped) return;
-        frames.push({nowMs: now, mediaTime: metadata.mediaTime,
+        frames.push({callbackAtMs: performance.now(), nowMs: now, mediaTime: metadata.mediaTime,
           presentedFrames: metadata.presentedFrames,
           visibilityAtFrame: document.visibilityState, focusedAtFrame: document.hasFocus()});
         video.requestVideoFrameCallback(frame);
@@ -1050,6 +1050,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
     cueP99Ms: latencies.length ? percentile(latencies, 0.99) : null,
     cueMaximumMs: latencies.length ? Math.max(...latencies) : null,
     frameSummary: summarize(result.frames.map(frame => frame.nowMs)),
+    callbackEntrySummary: summarizeVideoCallbackEntries(result.frames),
     gapEpisodes: videoGapEpisodes(result.frames, result.longTasks),
     ...result};
   await mkdir(firefoxArtifacts, {recursive: true});
@@ -1061,7 +1062,8 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
     cues: report.cueCount, correctedCues: report.correctedCues,
     cueP95Ms: report.cueP95Ms, cueP99Ms: report.cueP99Ms,
     cueMaximumMs: report.cueMaximumMs,
-    frames: report.frameSummary, droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
+    frames: report.frameSummary, callbackEntrySummary:report.callbackEntrySummary,
+    droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
     gapEpisodes: report.gapEpisodes,
     bulk: result.bulk,
     removal: result.removal,

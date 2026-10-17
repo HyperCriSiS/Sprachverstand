@@ -19,3 +19,19 @@ describe('Video frame summary with P99',()=>{
   expect(summarizeVideoFrames(times)).toEqual({callbacks:21,p95GapMs:130,p99GapMs:130,maximumGapMs:130,gapsOver120Ms:1});
  });
 });
+
+import {summarizeVideoCallbackEntries} from '../scripts/video-frame-summary.mjs';
+describe('Independent callback-entry clock',()=>{
+ it('uses actual entry times, separately from the rendering timestamps',()=>{
+  const entries=fromGaps([...Array(15).fill(10),20,100]);
+  const frames=entries.map((callbackAtMs,index)=>({callbackAtMs,nowMs:index*10}));
+  expect(summarizeVideoCallbackEntries(frames).maximumGapMs).toBe(100);
+  expect(summarizeVideoFrames(frames.map(frame=>frame.nowMs)).maximumGapMs).toBe(10);
+ });
+ it.each([[],[{nowMs:10}],[{callbackAtMs:NaN}],[{callbackAtMs:-1}],[{callbackAtMs:2},{callbackAtMs:1}]])('keeps absent or invalid entry clocks unknown: %j',(...frames)=>{
+  expect(summarizeVideoCallbackEntries(frames.flat())).toBeNull();
+ });
+ it('accepts repeated quantized entry times without inventing negative gaps',()=>{
+  expect(summarizeVideoCallbackEntries(Array(18).fill({callbackAtMs:10})).maximumGapMs).toBe(0);
+ });
+});
