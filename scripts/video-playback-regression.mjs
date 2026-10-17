@@ -1,3 +1,4 @@
+import {validateVideoBaselineSafety} from './video-baseline-safety.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -688,6 +689,7 @@ class VideoFrameRatioError extends Error {
 }
 
 function validateComparison(baseline, extension) {
+  validateVideoBaselineSafety(baseline);
   for (const result of [baseline, extension]) {
     const completion = result.dynamicCompletion;
     if (completion.total !== completion.expected || completion.correct !== completion.expected) {
