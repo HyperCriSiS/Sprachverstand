@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {validateSourceWarmup,sourceWarmupPlan} from './source-warmup-budget.mjs';
+assert.throws(()=>validateSourceWarmup('browser-read',13136,1328959));
+assert.throws(()=>validateSourceWarmup('zero-scan',273,282168));
+assert.throws(()=>validateSourceWarmup('browser-read',30000,2060000));
+assert.throws(()=>validateSourceWarmup('zero-scan',30000,1999999));
+assert.throws(()=>sourceWarmupPlan('PRIVATE_SENTINEL'));
+assert.deepEqual(validateSourceWarmup('browser-read',30001,2000100),{wallBudgetMs:30000,cpuBudgetUs:2000000});
+assert.deepEqual(validateSourceWarmup('zero-scan',30002,2000200),{wallBudgetMs:30000,cpuBudgetUs:2000000});
+assert.deepEqual(validateSourceWarmup('idle-only',30001,1000),{wallBudgetMs:30000,cpuBudgetUs:0});
+assert.deepEqual(validateSourceWarmup('immediate',1,100),{wallBudgetMs:0,cpuBudgetUs:0});
+console.log('Warmup controls reject the earlier unequal timing/CPU observations and accept only declared matched budgets.');

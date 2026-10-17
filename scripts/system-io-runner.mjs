@@ -1,3 +1,4 @@
+import {sourceWarmupPlan,validateSourceWarmup} from './source-warmup-budget.mjs';
 import assert from 'node:assert/strict';
 import {ownRenderers} from './source-renderer-binding.mjs';
 import {parseProcReadBytes} from './owned-io-observation.mjs';
@@ -731,14 +732,24 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
 }
 
 async function prepareSourceControl(){
- const mode=process.env.SOURCE_CONTROL_MODE,expected=process.env.EXPECTED_SOURCE_SHA256;
- assert.ok(['browser-read','zero-scan'].includes(mode));assert.match(expected??'',/^[a-f0-9]{64}$/);
+ const mode=process.env.SOURCE_CONTROL_MODE,expected=process.env.EXPECTED_SOURCE_SHA256,plan=sourceWarmupPlan(mode);
+ assert.match(expected??'',/^[a-f0-9]{64}$/);
  const metadata=statSync(chromium);assert.ok(metadata.isFile()&&metadata.uid!==process.getuid()&&metadata.size>0&&metadata.size<=2*1024**3);
- const before=performance.now(),cpuBefore=process.cpuUsage(),h=createHash('sha256');let bytes=0;
- if(mode==='browser-read'){for await(const chunk of createReadStream(chromium)){h.update(chunk);bytes+=chunk.length;}assert.equal(h.digest('hex'),expected);}
- else{const buffer=Buffer.alloc(64*1024);while(bytes<metadata.size){const count=Math.min(buffer.length,metadata.size-bytes);h.update(buffer.subarray(0,count));bytes+=count;await new Promise(resolve=>setImmediate(resolve));}h.digest();}
- assert.equal(bytes,metadata.size);const cpu=process.cpuUsage(cpuBefore);
- return {sourceControlMode:mode,browserWarmReadPerformed:mode==='browser-read',sourceWarmupBytes:bytes,sourceWarmupWallMs:performance.now()-before,sourceWarmupCpuUs:cpu.user+cpu.system};
+ const before=performance.now(),cpuBefore=process.cpuUsage();let bytes=0,paddingBytes=0;
+ const cpuUsed=()=>{const cpu=process.cpuUsage(cpuBefore);return cpu.user+cpu.system;};
+ if(mode==='browser-read'){
+  const h=createHash('sha256');for await(const chunk of createReadStream(chromium)){h.update(chunk);bytes+=chunk.length;}assert.equal(h.digest('hex'),expected);assert.equal(bytes,metadata.size);
+ }else if(mode==='zero-scan'){
+  const h=createHash('sha256'),buffer=Buffer.alloc(64*1024);while(bytes<metadata.size){const count=Math.min(buffer.length,metadata.size-bytes);h.update(buffer.subarray(0,count));bytes+=count;await new Promise(resolve=>setImmediate(resolve));}h.digest();assert.equal(bytes,metadata.size);
+ }
+ if(plan.cpuBudgetUs){
+  const h=createHash('sha256'),buffer=Buffer.alloc(64*1024);
+  while(cpuUsed()<plan.cpuBudgetUs){h.update(buffer);paddingBytes+=buffer.length;if(paddingBytes%(1024*1024)===0){assert.ok(performance.now()-before<=plan.wallBudgetMs,'Source-control wall budget exceeded');await new Promise(resolve=>setImmediate(resolve));}}
+  h.digest();
+ }
+ const remaining=plan.wallBudgetMs-(performance.now()-before);if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));
+ const wall=performance.now()-before,cpu=cpuUsed();validateSourceWarmup(mode,wall,cpu);
+ return {sourceControlMode:mode,browserWarmReadPerformed:mode==='browser-read',sourceWarmupBytes:bytes,sourceWarmupPaddingBytes:paddingBytes,sourceWarmupWallMs:wall,sourceWarmupCpuUs:cpu,sourceWarmupWallBudgetMs:plan.wallBudgetMs,sourceWarmupCpuBudgetUs:plan.cpuBudgetUs,sourceWarmupMatched:true};
 }
 async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");

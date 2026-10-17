@@ -12,7 +12,7 @@ try{
  const binding=await resolveSourceBrowser();report.browserVersion=binding.browserVersion;report.resolutionMethod=binding.method;report.sourceUnwritableByCaller=true;report.noExplicitFullImageReadForDiscovery=true;
  if(process.argv.includes('--resolver-preflight')){report.resolverOnly=true;report.completed=true;}
  else{
-  const mode=process.env.SOURCE_CONTROL_MODE;assert.ok(['browser-read','zero-scan'].includes(mode));report.sourceControlMode=mode;stage='native-pair';
+  const mode=process.env.SOURCE_CONTROL_MODE;assert.ok(['immediate','idle-only','browser-read','zero-scan'].includes(mode));report.sourceControlMode=mode;stage='native-pair';
   const child=spawnSync(process.execPath,['scripts/system-io-runner.mjs','--browser','chromium','--fps','60','--focused-start'],{env:{...process.env,CHROMIUM_BIN:binding.source,EXPECTED_SOURCE_SHA256:expectedSourceSha256},stdio:'pipe',maxBuffer:4*1024*1024,timeout:360000});
   report.nativeExitCode=Number.isSafeInteger(child.status)?child.status:255;report.nativeFailureClass=classifyNativeFailure(child.stderr?.toString()??'',child.status);report.nativePairCompleted=child.status===0;
   stage='post-source-provenance';const after=statSync(binding.source);for(const key of ['dev','ino','size','mtimeMs','ctimeMs'])assert.equal(after[key],binding.identity[key]);report.sourceIdentityStable=true;

@@ -1,4 +1,4 @@
-name: Original browser image read control
+name: Original image read time and CPU control
 on:
   workflow_dispatch:
 permissions:
@@ -40,7 +40,7 @@ jobs:
       matrix:
         order: [baseline-first, extension-first]
         backend: [rules]
-        source_mode: [zero-scan, browser-read]
+        source_mode: [immediate, idle-only, zero-scan, browser-read]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -60,6 +60,7 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-source-warmup-budget.mjs
           node scripts/check-source-read-control.mjs
           node scripts/check-native-failure-class.mjs
           node scripts/check-owned-io-observation.mjs
@@ -90,7 +91,7 @@ jobs:
         if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: source-read-${{ matrix.source_mode }}-${{ matrix.order }}-${{ github.sha }}
+          name: matched-source-${{ matrix.source_mode }}-${{ matrix.order }}-${{ github.sha }}
           path: |
             artifacts/source-read-control/summary.json
             artifacts/system-io/video-pair-chromium-60-1.json
@@ -99,6 +100,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Original browser image read control bestaetigen
+      - name: Original image read time and CPU control bestaetigen
         if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs
