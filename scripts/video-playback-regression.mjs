@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import {createHash} from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
@@ -11,8 +12,10 @@ import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
 import {isReadySubtitleState} from "./video-subtitle-state.mjs";
 import {fetchWebdriverResponse} from "./webdriver-response.mjs";
 import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
+import {videoBrowserVersion} from "./sanitize-video-failure.mjs";
 
 const root = process.cwd();
+const sessionVersions = new Map();
 const browserIndex = process.argv.indexOf("--browser");
 const browser = browserIndex === -1 ? "chromium" : process.argv[browserIndex + 1];
 if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser erlaubt chromium oder firefox.");
@@ -479,6 +482,9 @@ async function createSession(withExtension) {
       }
     });
   const id = sessionId(response);
+  const capabilities = response.value?.capabilities ?? response.capabilities;
+  sessionVersions.set(id, {browserVersion:videoBrowserVersion(capabilities?.browserVersion),
+    driverVersion:videoBrowserVersion(capabilities?.chrome?.chromedriverVersion)});
   if (browserTrace) {
     try {
       const commandLine = (await request("POST", `/session/${id}/goog/cdp/execute`, {
@@ -635,6 +641,7 @@ async function run(url, mode, attempt) {
     const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
     return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+      ...(sessionVersions.get(id) ?? {browserVersion:"unknown", driverVersion:"unknown"}),
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,
@@ -746,7 +753,10 @@ async function measureVideoPair(url, attempt) {
   await mkdir(firefoxArtifacts, {recursive: true});
   await writeFile(path.join(firefoxArtifacts,
     `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
-    JSON.stringify({pairOrder: videoPairOrder, baseline, extension}, null, 2) + "\n");
+    JSON.stringify({browser, sourceFps:diagnosticFps,
+      sourceHash:diagnosticFps === 30
+        ? createHash("sha256").update(Buffer.from(readFileSync(videoPath, "utf8"), "base64")).digest("hex") : null,
+      pairOrder: videoPairOrder, baseline, extension}, null, 2) + "\n");
 
   console.log(
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({

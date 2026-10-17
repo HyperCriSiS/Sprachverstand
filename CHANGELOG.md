@@ -14,6 +14,11 @@ dokumentiert.
 
 ### Hinzugefügt
 
+- Die Chromium-CI erhält bei fehlgeschlagener Videoprüfung die vollständigen,
+  streng gefilterten synthetischen Framefolgen und ausgehandelten Browser- und
+  Treiberversionen. Seiteninhalte, Profile, Kennungen und Rohtraces bleiben
+  ausgeschlossen; ursprüngliche Fehler und Prüfgrenzen bleiben erhalten.
+
 - Die Chromium-CI sichert bei einer fehlgeschlagenen Testnavigation einen
   begrenzten synthetischen Nachweis aus Serverfortschritt und unabhängig
   abgefragtem DOM-Zustand. Der ursprüngliche Testfehler und das Zeitlimit

@@ -216,7 +216,24 @@ jobs:
         run: npm run test:browser:interaction:chromium -- --pairs 1
 
       - name: Videowiedergabe unter DOM-Last prüfen
+        id: chromium_video
         run: npm run test:browser:video:chromium
+
+      - name: Synthetische Videofehlerwerte filtern
+        id: video_diagnostic
+        if: ${{ failure() && steps.chromium_video.outcome == 'failure' }}
+        run: node scripts/sanitize-video-failure.mjs
+
+      - name: Ausschließlich gefilterte Videofehlerwerte sichern
+        if: ${{ failure() && steps.video_diagnostic.outcome == 'success' && steps.video_diagnostic.outputs.present == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: video-failure-${{ github.sha }}
+          path: |
+            artifacts/video-playback/sanitized-video-failure-1.json
+            artifacts/video-playback/sanitized-video-failure-2.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Chromium-Basisbuild und Familienkompatibilität prüfen
         run: npm run validate:browsers:chromium
