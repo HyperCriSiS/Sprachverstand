@@ -37,7 +37,11 @@ async function main(){
   const code=await new Promise(resolve=>child.once('close',resolve));clearTimeout(timer);clearInterval(pump);pump=undefined;drain();
   const counts=summarizeSyntheticOptOutput(stdout,stderr);
   const pipeCount=summarizeSyntheticOptOutput(pipe,'').recognizedFunctionLinesStdout;
-  const report={browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,namedPipeVerified:true,
+  const genericTraceLines=text=>text.split(/\r?\n/).filter(line=>/\bJSFunction\b/.test(line)&&/marking|compiling|optimizing/.test(line)).length;
+  const report={stdoutBytes:Buffer.byteLength(stdout),stderrBytes:Buffer.byteLength(stderr),pipeBytes:Buffer.byteLength(pipe),
+   genericTraceLinesStdout:genericTraceLines(stdout),genericTraceLinesStderr:genericTraceLines(stderr),genericTraceLinesPipe:genericTraceLines(pipe),
+   flagRejectionTextObserved:/unrecognized flag|not allowed|unknown flag/i.test(stderr),
+   browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,namedPipeVerified:true,
    rawOutputExported:false,profileExported:false,browserExitedSuccessfully:code===0&&!startFailed,
    fixtureCompleted:stdout.includes('<title>synthetic-complete</title>'),readFailed,truncated,...counts,recognizedFunctionLinesNamedPipe:pipeCount};
   await mkdir('artifacts',{recursive:true});await writeFile('artifacts/opt-source-preflight.json',JSON.stringify(report,null,2));
