@@ -45,6 +45,116 @@ afterEach(() => {
 });
 
 describe("DomProcessor Framework-Resilienz", () => {
+  it("zählt viele Textzustände im selben Observer-Batch als einen Rewrite", async () => {
+    document.body.innerHTML = "<p>Nutzer:innen initial</p>";
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false});
+    processor.start();
+    await Promise.resolve();
+    const node = document.querySelector("p")!.firstChild as Text;
+    for (let index = 0; index < 100; index++) node.data = "Nutzer:innen " + index;
+    await Promise.resolve();
+    const internals = processor as unknown as {getBackoffRemaining(node: Text): number};
+    expect(internals.getBackoffRemaining(node)).toBe(0);
+    processor.flush();
+    expect(node.data).toBe("Nutzer 99");
+    expect(processor.getReplacementCount()).toBe(1);
+    processor.stop({restore:true});
+    expect(node.data).toBe("Nutzer:innen 99");
+  });
+
+  it("behält den Backoff für echte Rückschreibungen über mehrere Batches", async () => {
+    document.body.innerHTML = "<p>Nutzer:innen initial</p>";
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false});
+    processor.start();
+    await Promise.resolve();
+    const node = document.querySelector("p")!.firstChild as Text;
+    const internals = processor as unknown as {getBackoffRemaining(node: Text): number};
+    for (let batch = 0; batch < 5; batch++) {
+      for (let index = 0; index < 10; index++) node.data = `Nutzer:innen ${batch}/${index}`;
+      await Promise.resolve();
+      if (batch < 4) expect(internals.getBackoffRemaining(node)).toBe(0);
+      else expect(internals.getBackoffRemaining(node)).toBeGreaterThan(0);
+      processor.flush();
+      await Promise.resolve();
+    }
+    expect(node.data).toBe("Nutzer 4/9");
+  });
+
+  it("verarbeitet verschiedene Knoten desselben Batches und ihren letzten Zustand", async () => {
+    document.body.innerHTML = "<p>Nutzer:innen eins</p><p>Nutzer:innen zwei</p>";
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false});
+    processor.start();
+    await Promise.resolve();
+    const nodes = [...document.querySelectorAll("p")].map(element => element.firstChild as Text);
+    for (let index = 0; index < 20; index++) {
+      nodes[0]!.data = "Nutzer:innen eins " + index;
+      nodes[1]!.data = "Nutzer:innen zwei " + index;
+    }
+    await Promise.resolve();
+    processor.flush();
+    expect(nodes.map(node => node.data)).toEqual(["Nutzer eins 19", "Nutzer zwei 19"]);
+    expect(processor.getReplacementCount()).toBe(2);
+  });
+
+  it("respektiert den finalen Schutzstatus bei Text- und Attributänderungen im selben Batch", async () => {
+    document.body.innerHTML = "<p>Nutzer:innen initial</p>";
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false});
+    processor.start();
+    await Promise.resolve();
+    const paragraph = document.querySelector("p")!;
+    const node = paragraph.firstChild as Text;
+    for (let index = 0; index < 20; index++) node.data = "Nutzer:innen geschützt " + index;
+    paragraph.setAttribute("contenteditable", "true");
+    node.data = "Nutzer:innen final geschützt";
+    await Promise.resolve();
+    processor.flush();
+    expect(node.data).toBe("Nutzer:innen final geschützt");
+    expect(processor.getReplacementCount()).toBe(0);
+  });
+
+  it("behält die letzte Quelle eines mehrfach geschriebenen und verschobenen Knotens", async () => {
+    document.body.innerHTML = "<section><p>Nutzer:innen initial</p></section><section></section>";
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false});
+    processor.start();
+    await Promise.resolve();
+    const paragraph = document.querySelector("p")!;
+    const node = paragraph.firstChild as Text;
+    for (let index = 0; index < 10; index++) node.data = "Nutzer:innen vorher " + index;
+    document.querySelectorAll("section")[1]!.appendChild(paragraph);
+    for (let index = 0; index < 10; index++) node.data = "Nutzer:innen danach " + index;
+    await Promise.resolve();
+    processor.flush();
+    expect(node.data).toBe("Nutzer danach 9");
+    expect(processor.getReplacementCount()).toBe(1);
+    processor.stop({restore:true});
+    expect(node.data).toBe("Nutzer:innen danach 9");
+  });
+
+  it("verarbeitet mehrfach geschriebene Untertitel mit normaler Textarbeit im selben Batch", async () => {
+    document.body.innerHTML = '<p>Nutzer:innen initial</p><div class="ytp-caption-segment">Nutzer:innen initial</div>';
+    processor = new DomProcessor(document, {rules:[rule], profile:"conservative",
+      processAccessibleAttributes:false, processSubtitles:true});
+    processor.start();
+    processor.flush();
+    await Promise.resolve();
+    const normal = document.querySelector("p")!.firstChild as Text;
+    const caption = document.querySelector("div")!.firstChild as Text;
+    for (let index = 0; index < 50; index++) {
+      normal.data = "Nutzer:innen Text " + index;
+      caption.data = "Nutzer:innen Untertitel " + index;
+    }
+    await Promise.resolve();
+    processor.flush();
+    expect(normal.data).toBe("Nutzer Text 49");
+    expect(caption.data).toBe("Nutzer Untertitel 49");
+    expect(processor.getReplacementCount()).toBe(2);
+  });
+
   it("fasst überlappende Mutations-Roots vor der Verarbeitung zusammen", () => {
     processor = new DomProcessor(document, {
       rules: [rule],

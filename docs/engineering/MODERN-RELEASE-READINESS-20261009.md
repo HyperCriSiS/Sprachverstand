@@ -12,15 +12,15 @@
 ## Verifizierte Sicherungen und verbleibende Blocker
 
 - `main` wird durch das **aktive Ruleset „Main“**, ID `19909828`, geschützt: PR-Pflicht, Verbot von Löschung und Non-Fast-Forward und erforderlicher Statuscheck `check`. Ein `404` am *klassischen* Branch-Protection-Endpunkt bedeutet hier nicht, dass `main` ungeschützt ist.
-- **Store-Production-Environment fehlt:** REST `GET /environments/store-production` meldet `404` (09.10.2026). Ein Administrator muss eine getrennte, geschützte Umgebung mit mindestens einem berechtigten zweiten Reviewer, deaktivierter Selbstfreigabe, deaktiviertem Admin-Bypass und Schutz auf zulässige Branches einrichten; Details in [Issue #331](https://github.com/HyperCriSiS/Sprachverstand/issues/331) und `docs/engineering/STORE-PRODUCTION-GATE.md`.
+- **Store-Production-Environment nicht bestätigt:** REST `GET /environments/store-production` liefert auch am 16.10.2026 für den aktuellen Zugriff `404`; Existenz und Schutzregeln sind damit nicht nachgewiesen. Die neuere verbindliche Einzelentwicklerentscheidung aus [Issue #331](https://github.com/HyperCriSiS/Sprachverstand/issues/331) und PR #371 verlangt **keine Required Reviewers**, deaktivierten Admin-Bypass und ausschließlich geschützte Branches. Ein zweiter Reviewer ist nicht erforderlich; keine zusätzliche Person einladen. Das aktuelle Prüfskript `scripts/verify-store-production-environment.mjs` setzt diese Bedingungen durch. Keine Credentials gelesen oder Store-Aktion ausgeführt.
 - Repository-Actions-Variablen sind für den aktuellen Zugriff **nicht lesbar (`403`)**. Über Store-Token, Google-OIDC und Rechte wird daher weder Vorhandensein noch Funktion behauptet.
 - Für eine echte Veröffentlichung sind **Quellschluss, Versions- und Release-Typ-Entscheidung** sowie eine neue ausdrückliche Freigabe nötig. Der `release.yml`-Workflow ist tagwirksam und darf nicht als Ersatz für den Preflight ausgeführt werden. Der Store-Workflow `store-publish.yml` bleibt gesperrt, solange die administrativen Freigaben fehlen.
-- Bekannte produktive Sprachgrenze: die noch offene Dativ-Mehrdeutigkeit aus **Issue #359**. Die lexikalische und grammatische Testabdeckung ist keine repräsentative Fehlerrate des gesamten Webs.
+- Bekannte produktive Sprachgrenze: das bewusst kontextmehrdeutige isolierte Fragment aus dem **abgeschlossenen Issue #359**. Die lexikalische und grammatische Testabdeckung ist keine repräsentative Fehlerrate des gesamten Webs.
 
 ## Nächste Freigabeschritte
 
 1. Die für das moderne Release gewünschte Version und den Reifegrad (z. B. weiterer RC oder stabil) **explizit entscheiden**, zusätzlich zu den bestehenden CI-Ergebnissen.
-2. Admin-/Reviewer-Schutz für `store-production` und Store-Credentials/OIDC in [Issue #331](https://github.com/HyperCriSiS/Sprachverstand/issues/331) erledigen.
+2. Environment-Schutz im Einzelentwicklermodus ohne Required Reviewers sowie Store-Credentials/OIDC in [Issue #331](https://github.com/HyperCriSiS/Sprachverstand/issues/331) erledigen.
 3. Nach einem **gesondert freigegebenen** modernen GitHub-Release ausschließlich den `validate`-Pfad der vorhandenen Artefakte ausführen; eine echte Store-Einreichung erfordert nochmals separate Freigabe.
 4. Edge/Opera in ihren eigenen Verfahren testen; Pale Moon bleibt eine spätere, unabhängige Phase.
 

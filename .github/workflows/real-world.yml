@@ -13,6 +13,17 @@ on:
         required: false
         default: "1"
         type: string
+      active_subtitles:
+        description: "Externe Player mit aktiven Untertiteln und Erweiterungsoption prüfen"
+        required: false
+        default: false
+        type: boolean
+      browser_source:
+        description: "Browserquelle separat ausweisen; CfT für proprietäre Mediencodecs"
+        required: true
+        default: "system-chromium"
+        type: choice
+        options: ["system-chromium", "chrome-for-testing"]
 
 permissions:
   contents: read
@@ -23,6 +34,7 @@ concurrency:
 
 env:
   CI: true
+  SPRACHVERSTAND_TEST_BROWSER_SOURCE: ${{ inputs.browser_source || 'system-chromium' }}
 
 jobs:
   live:
@@ -44,6 +56,10 @@ jobs:
       - name: Abhängigkeiten reproduzierbar installieren
         run: npm ci --prefer-offline --no-audit --no-fund
 
+      - name: Gepinntes Chrome for Testing separat vorbereiten
+        if: ${{ inputs.browser_source == 'chrome-for-testing' }}
+        run: bash scripts/setup-chrome-for-testing.sh
+
       - name: Chromium-Build erstellen
         run: npm run build:chromium
 
@@ -54,6 +70,7 @@ jobs:
         env:
           SITE_FILTER: ${{ inputs.site }}
           PAIR_COUNT: ${{ inputs.pairs }}
+          ACTIVE_SUBTITLES: ${{ inputs.active_subtitles }}
         shell: bash
         run: |
           set -euo pipefail
@@ -65,6 +82,7 @@ jobs:
             ARGS+=(--site "$SITE_FILTER")
           fi
           ARGS+=(--pairs "$PAIR_COUNT")
+          if [[ "$ACTIVE_SUBTITLES" == "true" ]]; then ARGS+=(--active-subtitles); fi
           npm run test:real-world -- "${ARGS[@]}"
 
       # Die unabhängige Live-Diagnose darf durch einen Video-Regressionstest

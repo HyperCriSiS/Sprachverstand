@@ -103,6 +103,7 @@ export const unmarkedSingularRule: Rule = {
   risk: "contextual",
 
   apply(input) {
+    if (!/in(?![a-z])|verbündete/iu.test(input)) return {text: input, replacements: 0};
     const adjectiveResult = transformMarkedAdjectives(input);
     const separatorResult = transformMarkerPattern(
       adjectiveResult.text,

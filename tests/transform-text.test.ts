@@ -18,6 +18,34 @@ const aggressiveRule = createRegexRule({
 });
 
 describe("transformText", () => {
+  it("unterscheidet Schutzlisten auch bei eingebetteten Nullzeichen", () => {
+    const input = "Nutzer:innen Leser:innen";
+    const options = {profile: "conservative" as const};
+    expect(transformText(input, [safeRule], {...options,
+      protectedTerms: ["Nutzer:innen\u0000Leser:innen"]}).text)
+      .toBe("Nutzer Leser:innen");
+    expect(transformText(input, [safeRule], {...options,
+      protectedTerms: ["Nutzer:innen", "Leser:innen"]}).text)
+      .toBe(input);
+  });
+
+  it("verwendet nach vielen Konfigurationswechseln weiterhin die aktuellen Muster", () => {
+    const protectedTerms = ["Nutzer:innen"];
+    const customReplacements = [{source: "Sonderform", replacement: "Leser"}];
+    const options = {profile: "conservative" as const, protectedTerms, customReplacements};
+    expect(transformText("Nutzer:innen Sonderform", [safeRule], options).text)
+      .toBe("Nutzer:innen Leser");
+    for (let index = 0; index < 160; index += 1) {
+      protectedTerms[0] = "Ausnahme" + index;
+      customReplacements[0] = {source: "Sonderform" + index, replacement: "Begriff"};
+      expect(transformText("Nutzer:innen Sonderform" + index, [safeRule], options).text)
+        .toBe("Nutzer Begriff");
+    }
+    protectedTerms[0] = "Nutzer:innen";
+    customReplacements[0] = {source: "Sonderform", replacement: "Expert:innen"};
+    expect(transformText("Nutzer:innen Sonderform", [safeRule], options).text)
+      .toBe("Nutzer:innen Expert:innen");
+  });
   it("wendet erlaubte Regeln an und zählt Ersetzungen", () => {
     const result = transformText(
       "Nutzer:innen und Nutzer:innen",
