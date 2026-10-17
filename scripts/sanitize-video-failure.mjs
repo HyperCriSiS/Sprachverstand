@@ -30,7 +30,7 @@ const bounded = (value, limit) => {
 };
 export function videoBrowserVersion(value) {
   const version = String(value ?? "").split(" ")[0];
-  return /^\d+\.\d+\.\d+\.\d+$/u.test(version) ? version : "unknown";
+  return /^\d+(?:\.\d+){1,3}$/u.test(version) ? version : "unknown";
 }
 function version(value) {
   if (value !== "unknown" && videoBrowserVersion(value) !== value) throw Error("Invalid video version");
