@@ -12,6 +12,7 @@ import { spawn, spawnSync } from "node:child_process";
 import {fetchWebdriverResponse} from "./webdriver-response.mjs";
 import {NavigationStartObserver} from "./navigation-start-observer.mjs";
 import {saveNavigationFailureDiagnostic} from "./navigation-failure-diagnostics.mjs";
+import {createSmokeProcessIo} from "./smoke-process-io.mjs";
 
 const projectRoot = process.cwd();
 const browserArgumentIndex = process.argv.indexOf("--browser");
@@ -594,6 +595,12 @@ async function pruefeGrossenEinzeltext(sessionId) {
   console.log(`Nativer großer Einzeltext mit vier Ranges und Restore erfolgreich: ${browser}`);
 }
 
+const processIo = createSmokeProcessIo({
+  enabled: browser === "chromium" && process.platform === "linux" && process.env.GITHUB_ACTIONS === "true" && process.env.SMOKE_PROCESS_IO === "1",
+  outputDirectory: path.join(projectRoot, "artifacts/browser-smoke-navigation"),
+  unavailable: () => console.error("Process I/O diagnostic unavailable; original result is preserved.")
+});
+
 let fixtureServer;
 let sessionId;
 
@@ -602,7 +609,8 @@ try {
   const fixture = await startFixtureServer();
   fixtureServer = fixture.server;
 
-  const sessionResponse = await createSession();
+  await processIo.start(driverProcess.pid);
+  const sessionResponse = await processIo.measure("session", createSession);
   sessionId = sessionIdFrom(sessionResponse);
 
   if (browser === "firefox") {
@@ -611,7 +619,7 @@ try {
 
   const navigationStartedAt = performance.now();
   try {
-    await webdriverRequest("POST", `/session/${sessionId}/url`, {url: fixture.url});
+    await processIo.measure("navigation", () => webdriverRequest("POST", `/session/${sessionId}/url`, {url: fixture.url}));
   } catch (error) {
     if (fixture.navigationObserver) {
       try {
@@ -642,6 +650,7 @@ try {
     `Echter Browser-Smoke-Test erfolgreich: ${browser} ${JSON.stringify(state)}`
   );
 } finally {
+  await processIo.close();
   if (sessionId) {
     try {
       await webdriverRequest("DELETE", `/session/${sessionId}`);

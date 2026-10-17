@@ -196,6 +196,7 @@ jobs:
         id: chromium_smoke
         env:
           SMOKE_NAVIGATION_DIAGNOSTICS: "1"
+          SMOKE_PROCESS_IO: "1"
         run: npm run test:browser:chromium
 
       - name: Begrenzten Navigationsfehlernachweis prüfen
@@ -209,6 +210,20 @@ jobs:
         with:
           name: navigation-failure-${{ github.sha }}
           path: artifacts/browser-smoke-navigation/navigation-failure.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Begrenzten Start-/Navigationsprozessnachweis prüfen
+        id: process_io_diagnostic
+        if: ${{ failure() && steps.chromium_smoke.outcome == 'failure' }}
+        run: node scripts/validate-smoke-process-io.mjs
+
+      - name: Geprüften synthetischen Prozessnachweis sichern
+        if: ${{ failure() && steps.process_io_diagnostic.outcome == 'success' && steps.process_io_diagnostic.outputs.present == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: startup-process-io-${{ github.sha }}
+          path: artifacts/browser-smoke-navigation/process-io.json
           if-no-files-found: error
           retention-days: 7
 
