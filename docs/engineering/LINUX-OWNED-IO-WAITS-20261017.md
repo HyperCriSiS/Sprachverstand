@@ -55,3 +55,37 @@ Auch ohne Erweiterung sind die zuvor untersuchten nativen Phasen vorhanden: maxi
 Im vollständigen Produkt sind Safepoint-Maximalwandzeiten 374,122/406,368 ms und Hintergrundoptimierung 1.051,066/733,602 ms erfasst. Der Unterschied ist ein Ansatz zur weiteren Komponententrennung, keine kausale Kostensubtraktion zwischen unterschiedlichen VMs. Der korrigierte Long-Task-Exporter ist hier von Beginn an aktiv; die früher ungültigen Nullmaxima werden nicht weiterverwendet. Die reine Monitor-CPU liegt in den vier Zweitrollen bei 3,19–4,02 Prozent einer CPU bezogen auf Wandzeit. Nur feste Zahlenaggregate werden exportiert, keine Rohtraces, Profile, Prozesskennungen oder Medien.
 
 Der frühere Vorlauf `39007224979` auf `eb507de` scheiterte vor der Videomessung: Der Linux-esbuild-Binärstart wurde fälschlich über Node aufgerufen. Die portable JavaScript-API korrigiert den Aufbau in `8943bed`; aus dem ungültigen Vorlauf wird kein Produktbefund abgeleitet. Produktlaufzeitcode und Berechtigungen bleiben unverändert. PR #451 bleibt Entwurf, #419 NO-GO.
+
+## Matched background backend comparison, 17 October 2026
+
+Run [39008606568](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39008606568)
+completed successfully on diagnostic source `35508e7f77073a531b0caa7990dc4e473f30983b`.
+Four fresh jobs compare literal/rules backends in both pair orders. All existing
+60-FPS gates remain unchanged, with no automatic confirmation run. All eight
+roles are visible/focused, diagnostically complete, and reach 480/480 correct
+texts (3,840 total). Twelve strictly filtered aggregate files are retained locally.
+
+The extension packages have identical content scripts, manifests, UI and assets.
+Both background scripts retain the complete rules and lexicon initialization;
+the complete bundled body is identical, with SHA-256
+`d064d90b72828203eebeaf6246ebc0e2e2464aca083a7b737369ef9cf06d2ec0`.
+Only a runtime selector banner differs. Before each session the runner checks
+selector, full background hash, common body hash and selected installation path.
+The browser command-line check confirms the extension in the second role and
+its absence in the baseline. Baseline backend metadata describes the intended
+paired package, not an installed baseline extension.
+
+| Backend | Pair order | Maximum callback gap baseline/extension (ms) | Maximum page long task baseline/extension (ms) | Drops baseline/extension |
+| --- | --- | --- | --- | --- |
+| Literal | baseline-first | 33.5 / 133.3 | 0 / 67 | 2 / 1 |
+| Literal | extension-first | 33.4 / 166.6 | 0 / 0 | 4 / 1 |
+| Rules | baseline-first | 83.3 / 66.6 | 0 / 75 | 0 / 2 |
+| Rules | extension-first | 50.1 / 149.9 | 57 / 91 | 3 / 2 |
+
+There is no consistent literal-backend advantage in this bounded sample.
+This supplies no supported product fix based on replacing or simplifying the
+general rule execution. Independent VM/browser I/O states prevent interpreting
+the differences as a quantified rule cost. Both variants retain lexicon startup,
+so the comparison does not isolate that initialization. All-green outcomes do
+not invalidate earlier red runs or close their unresolved causes. No product
+runtime change or overall performance acceptance follows from this experiment.
