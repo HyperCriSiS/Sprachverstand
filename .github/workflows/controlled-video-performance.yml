@@ -1,4 +1,4 @@
-name: Hintergrund-Regelbackend Komponentenvergleich
+name: Native Seitenthread-Zuordnung
 on:
   workflow_dispatch:
 permissions:
@@ -8,14 +8,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native_io:
-    name: DOM component (${{ matrix.backend }}, ${{ matrix.order }})
+    name: Page thread (${{ matrix.order }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         order: [baseline-first, extension-first]
-        backend: [literal, rules]
+        backend: [rules]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -63,10 +63,14 @@ jobs:
         if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: page-dom-native-${{ matrix.backend }}-${{ matrix.order }}-${{ github.sha }}
+          name: page-thread-${{ matrix.order }}-${{ github.sha }}
           path: |
             artifacts/system-io/video-pair-chromium-60-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-baseline-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-extension-1.json
           if-no-files-found: error
           retention-days: 7
+
+      - name: Native Seitenthread-Zuordnung bestaetigen
+        if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
+        run: node scripts/check-native-page-witness.mjs
