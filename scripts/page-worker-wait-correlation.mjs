@@ -7,6 +7,8 @@ export function summarizePageWorkerWaits(phases,monitor,pageThread,clock,timeOri
  const inside=(event,begin,end)=>Number.isFinite(event.ts)&&Number.isFinite(event.dur)&&
  begin>event.ts/1000+clock.offsetMs+clock.uncertaintyMs&&
  end<(event.ts+event.dur)/1000+clock.offsetMs-clock.uncertaintyMs;
+ const pageOptimizers=phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid&&e.name==="V8.OptimizeCode");
+ let observedPageThreadSamples=0,pageFolioSamplesInsideOptimizer=0,stableAbsentPageInstructionSamplesInsideOptimizer=0,browserExecutableAbsentPageInstructionSamplesInsideOptimizer=0;
  let observedOwnWorkerSamples=0,workerFolioSamplesInsidePageSafepoint=0,
  stableAbsentWorkerInstructionSamplesInsidePageSafepoint=0,
  stableAbsentWorkerInstructionSamplesInsidePageSafepointAndOptimizer=0;
@@ -14,7 +16,19 @@ export function summarizePageWorkerWaits(phases,monitor,pageThread,clock,timeOri
   const begin=sample.beforeEpochMs-timeOrigin,end=sample.afterEpochMs-timeOrigin;
   if(!Number.isFinite(begin)||!Number.isFinite(end)||end<begin)continue;
   for(const thread of sample.threads??[]){
-   if(thread.pid!==pageThread.pid||thread.tid===pageThread.tid||thread.startToken===undefined)continue;
+   if(thread.pid!==pageThread.pid||thread.startToken===undefined)continue;
+   if(thread.tid===pageThread.tid){
+    observedPageThreadSamples++;
+    if(thread.state==='D'&&thread.waitChannel==='folio_wait_bit_common'&&pageOptimizers.some(e=>inside(e,begin,end))){
+     pageFolioSamplesInsideOptimizer++;
+     const n=thread.nativeLocation;
+     if(n?.status==='sampled'&&n.sampleStable===true&&n.instructionPage?.status==='sampled'&&n.instructionPage.present===false){
+      stableAbsentPageInstructionSamplesInsideOptimizer++;
+      if(n.mapping?.kind==='browser-executable')browserExecutableAbsentPageInstructionSamplesInsideOptimizer++;
+     }
+    }
+    continue;
+   }
    observedOwnWorkerSamples++;
    if(thread.state!=='D'||thread.waitChannel!=='folio_wait_bit_common'||!safePoints.some(e=>inside(e,begin,end)))continue;
    workerFolioSamplesInsidePageSafepoint++;
@@ -25,7 +39,7 @@ export function summarizePageWorkerWaits(phases,monitor,pageThread,clock,timeOri
     stableAbsentWorkerInstructionSamplesInsidePageSafepointAndOptimizer++;
   }
  }
- return {observedOwnWorkerSamples,workerFolioSamplesInsidePageSafepoint,
+ return {observedPageThreadSamples,pageFolioSamplesInsideOptimizer,stableAbsentPageInstructionSamplesInsideOptimizer,browserExecutableAbsentPageInstructionSamplesInsideOptimizer,observedOwnWorkerSamples,workerFolioSamplesInsidePageSafepoint,
  stableAbsentWorkerInstructionSamplesInsidePageSafepoint,
  stableAbsentWorkerInstructionSamplesInsidePageSafepointAndOptimizer,
  barrierBlockingWorkerIdentified:false};

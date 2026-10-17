@@ -17,3 +17,13 @@ assert.equal(run([{...sample,threads:[{...worker,nativeLocation:{...worker.nativ
 assert.equal(run([]).observedOwnWorkerSamples,0);
 assert.equal(run([sample],{offsetMs:0,uncertaintyMs:-1}),null);
 console.log('Same-renderer worker/safepoint/optimizer temporal nesting, uncertainty boundary, unstable identity and privacy PASS; no blocking-worker causality claimed.');
+const ownPhase={pid:10,tid:10,name:'V8.OptimizeCode',ts:100000,dur:200000};
+const main={...worker,tid:10,nativeLocation:{...worker.nativeLocation,mapping:{kind:'browser-executable'}}};
+const mainResult=summarizePageWorkerWaits([ownPhase],{samples:[{...sample,threads:[main]}]},{pid:10,tid:10},{offsetMs:0,uncertaintyMs:10},1000);
+assert.equal(mainResult.observedPageThreadSamples,1);assert.equal(mainResult.pageFolioSamplesInsideOptimizer,1);
+assert.equal(mainResult.stableAbsentPageInstructionSamplesInsideOptimizer,1);
+assert.equal(mainResult.browserExecutableAbsentPageInstructionSamplesInsideOptimizer,1);assert.equal(mainResult.observedOwnWorkerSamples,0);
+validateSystemIoArtifact({pageWorkerWaitCorrelation:mainResult});
+const wrongScope=summarizePageWorkerWaits([{...ownPhase,tid:12}],{samples:[{...sample,threads:[main]}]},{pid:10,tid:10},{offsetMs:0,uncertaintyMs:10},1000);
+assert.equal(wrongScope.pageFolioSamplesInsideOptimizer,0);
+console.log('Actual page-thread folio/absent instruction/browser mapping samples nested inside own optimizer; other thread scope excluded PASS.');
