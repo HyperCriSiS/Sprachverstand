@@ -14,6 +14,12 @@ dokumentiert.
 
 ### Hinzugefügt
 
+- Die Chromium-CI sichert bei einer fehlgeschlagenen Testnavigation einen
+  begrenzten synthetischen Nachweis aus Serverfortschritt und unabhängig
+  abgefragtem DOM-Zustand. Der ursprüngliche Testfehler und das Zeitlimit
+  bleiben erhalten; Profile, Rohprotokolle und Sitzungskennungen werden
+  nicht exportiert.
+
 - Die Videodiagnose unterscheidet ausgelassene Callback-Benachrichtigungen
   von fehlenden Quellframes im Präsentationszähler des Browsers. Eindeutig
   lokalisierbare Auslassungen werden nach ihrer Position im Dreierzyklus

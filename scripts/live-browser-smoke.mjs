@@ -10,6 +10,8 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import {fetchWebdriverResponse} from "./webdriver-response.mjs";
+import {NavigationStartObserver} from "./navigation-start-observer.mjs";
+import {saveNavigationFailureDiagnostic} from "./navigation-failure-diagnostics.mjs";
 
 const projectRoot = process.cwd();
 const browserArgumentIndex = process.argv.indexOf("--browser");
@@ -126,6 +128,7 @@ async function waitForDriver(driverProcess, logs) {
 
 function startFixtureServer() {
   const html = readFileSync(fixturePath);
+  let navigationObserver;
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     if (url.pathname !== "/extension-smoke.html") {
@@ -134,6 +137,10 @@ function startFixtureServer() {
       return;
     }
 
+    if (navigationObserver) {
+      navigationObserver.served();
+      response.once("finish", () => navigationObserver.finished());
+    }
     response.writeHead(200, {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store"
@@ -150,9 +157,14 @@ function startFixtureServer() {
         return;
       }
 
+      const url = `http://127.0.0.1:${address.port}/extension-smoke.html`;
+      if (browser === "chromium" && process.env.SMOKE_NAVIGATION_DIAGNOSTICS === "1") {
+        navigationObserver = new NavigationStartObserver(url);
+      }
       resolve({
         server,
-        url: `http://127.0.0.1:${address.port}/extension-smoke.html`
+        url,
+        navigationObserver
       });
     });
   });
@@ -597,9 +609,27 @@ try {
     await installFirefoxExtension(sessionId);
   }
 
-  await webdriverRequest("POST", `/session/${sessionId}/url`, {
-    url: fixture.url
-  });
+  const navigationStartedAt = performance.now();
+  try {
+    await webdriverRequest("POST", `/session/${sessionId}/url`, {url: fixture.url});
+  } catch (error) {
+    if (fixture.navigationObserver) {
+      try {
+        const capabilities = sessionResponse.value?.capabilities ?? sessionResponse.capabilities;
+        await saveNavigationFailureDiagnostic({
+          debuggerAddress: capabilities?.["goog:chromeOptions"]?.debuggerAddress,
+          browserVersion: capabilities?.browserVersion,
+          observer: fixture.navigationObserver,
+          error,
+          navigationStartedAt,
+          outputDirectory: path.join(projectRoot, "artifacts/browser-smoke-navigation")
+        });
+      } catch {
+        console.error("Navigation diagnostic unavailable; original failure is preserved.");
+      }
+    }
+    throw error;
+  }
 
   const state = await waitForExpectedState(sessionId);
   await pruefeSpaeteShadowRoot(sessionId);
