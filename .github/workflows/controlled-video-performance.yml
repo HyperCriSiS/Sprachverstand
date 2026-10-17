@@ -40,6 +40,7 @@ jobs:
           node scripts/check-page-worker-wait-correlation.mjs
       - name: Exakten Produktstand bauen
         run: |
+          git fetch --no-tags --depth=1 origin f6d850e06990c777e2e6b97640ee20be0674d21e
           node scripts/build-context-product-pair.mjs
       - name: Reale DOM-Komponente isoliert bauen und funktional pruefen
         run: |
