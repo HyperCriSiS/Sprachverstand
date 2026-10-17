@@ -29,3 +29,18 @@ assert.ok(!JSON.stringify(componentReport).includes(secret));
 const actualProduct={...pageComponent,componentKind:'product',extensionInstalled:true,pageDomControlStats:null};
 assert.equal(JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:actualProduct,extension:actualProduct}))).extension.correctionImplementation,'sprachverstand');
 console.log('Component binding retained: page DOM is no-addon, product is installed, unknown telemetry stripped.');
+// CPU maxima and the CPU duration of the longest wall event are different facts.
+const paired=JSON.parse(summarizeOwnedTrace(filename,JSON.stringify({traceEvents:[
+ {name:'V8.OptimizeCode',ts:0,dur:300000,tdur:1000},
+ {name:'V8.OptimizeCode',ts:400000,dur:10000,tdur:9000},
+ {name:'V8.GC_TIME_TO_SAFEPOINT',ts:0,dur:200000}
+]})));
+validateSystemIoArtifact(paired);
+const optimize=paired.phases.find(p=>p.name==='V8.OptimizeCode');
+assert.equal(optimize.maximumWallMs,300);assert.equal(optimize.maximumCpuMs,9);
+assert.equal(optimize.maximumWallEventCpuMs,1);assert.equal(optimize.cpuDurationKnownCount,2);
+const unknown=paired.phases.find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT');
+assert.equal(unknown.maximumWallMs,200);assert.equal(unknown.maximumCpuMs,null);
+assert.equal(unknown.maximumWallEventCpuMs,null);assert.equal(unknown.cpuDurationKnownCount,0);
+assert.ok(!JSON.stringify(paired).includes('"ts"'));
+console.log('Same-event wall/CPU association preserved; missing CPU stays unknown, no raw timestamps exported.');

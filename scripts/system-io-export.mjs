@@ -3,7 +3,15 @@ import path from 'node:path';
 // Raw diagnostics exist in process memory only. Every exported field is listed here.
 const traces=new Map(),names=new Set(['V8.OptimizeCode','V8.OptimizeBackground','V8.GC_TIME_TO_SAFEPOINT','V8.GC_MARK_COMPACTOR','V8.GC_SCAVENGER']);
 const number=n=>Number.isFinite(n)?n:null;
-function phaseTotals(events){return [...names].map(name=>{const list=events.filter(e=>e.name===name);return {name,count:list.length,maximumWallMs:list.length?Math.max(...list.map(e=>e.dur/1000)):0,maximumCpuMs:list.length?Math.max(...list.map(e=>(e.tdur??0)/1000)):0};});}
+function phaseTotals(events){return [...names].map(name=>{
+ const list=events.filter(e=>e.name===name);
+ const known=list.filter(e=>Number.isFinite(e.tdur)&&e.tdur>=0);
+ const longest=list.reduce((best,event)=>!best||event.dur>best.dur?event:best,null);
+ return {name,count:list.length,cpuDurationKnownCount:known.length,
+ maximumWallMs:longest?longest.dur/1000:0,
+ maximumCpuMs:known.length?Math.max(...known.map(e=>e.tdur/1000)):null,
+ maximumWallEventCpuMs:longest&&Number.isFinite(longest.tdur)&&longest.tdur>=0?longest.tdur/1000:null};
+ });}
 export function summarizeOwnedTrace(filename,text){
  const parsed=JSON.parse(text),events=parsed.traceEvents??parsed;
  if(!Array.isArray(events))throw Error('Synthetic trace shape missing');
