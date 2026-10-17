@@ -1,0 +1,108 @@
+import assert from 'node:assert/strict';import {summarizeOwnedTrace,summarizeOwnedReport} from './system-io-export.mjs';
+const secret='PRIVATE_IDENTIFIER_MUST_NOT_EXPORT',filename='/private/'+secret+'/fixture.json';
+const trace={traceEvents:[{name:'V8.OptimizeBackground',ts:1000,dur:100000,tdur:1000,pid:7777777,tid:8888888,args:{url:secret}},{name:secret,args:{url:secret},ts:88888888888,dur:100}]};
+const safeTrace=summarizeOwnedTrace(filename,JSON.stringify(trace));assert.ok(!safeTrace.includes(secret));assert.ok(!safeTrace.includes('7777777'));assert.ok(!safeTrace.includes('8888888'));
+const raw={browserVersion:'155.0.8059.0',visibilityState:'visible',focused:true,dynamicCompletion:{correct:480,expected:480,private:secret},droppedVideoFrames:1,traceFile:filename,timeOriginEpochMs:100000,traceClock:{offsetMs:0,uncertaintyMs:0},frames:{maximumGapMs:33.4},rendererMonitor:{samples:[{beforeEpochMs:100010,afterEpochMs:100011,monitorCpuUs:5,threads:[{pid:7777777,tid:8888888,nativeLocation:{status:'sampled',sampleStable:true,instructionPage:{status:'sampled',present:false},fileCachePage:{status:'sampled',resident:false,probeWallMs:1},mapping:{fileOffsetHex:secret}}}]}]},rawProfile:secret};
+const output=summarizeOwnedReport(JSON.stringify({baseline:raw,extension:raw,private:secret}));assert.ok(!output.includes(secret));assert.ok(!output.includes('7777777'));assert.ok(!output.includes('8888888'));assert.ok(!output.includes('100000'));const parsed=JSON.parse(output);assert.equal(parsed.extension.residency.workerAbsentCacheNotResidentInsideCompiler,1);assert.equal(parsed.extension.correctDynamicTexts,480);assert.equal(parsed.extension.phaseTotals.find(p=>p.name==='V8.OptimizeBackground').maximumWallMs,100);
+const subtitle=summarizeOwnedReport(JSON.stringify({cueCount:40,correctedCues:40,cueP95Ms:2,cueMaximumMs:3,profile:secret}));assert.ok(!subtitle.includes(secret));
+assert.throws(()=>summarizeOwnedReport(JSON.stringify({unknown:secret})),/refused/);assert.throws(()=>summarizeOwnedTrace(filename,'{}'),/shape missing/);
+console.log('Aggregate export whitelist: preserves causal counts, strips raw trace arguments, paths, process IDs, timestamps, offsets and unknown fields; unknown reports fail closed.');
+import {validateSystemIoArtifact} from './validate-system-io-artifacts.mjs';
+validateSystemIoArtifact(parsed);validateSystemIoArtifact(JSON.parse(safeTrace));
+assert.throws(()=>validateSystemIoArtifact({...parsed,profile:'PRIVATE'}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,browserVersion:'PRIVATE'}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,phases:Array(65).fill(0)}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,drops:-1}));
+console.log('Aggregate artifact whitelist accepts generated causal summaries and refuses unknown fields/strings/unbounded data.');
+const measuredTask={...raw,longTasks:[{startMs:1,durationMs:311}]};
+const taskExport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:measuredTask,extension:measuredTask})));
+assert.equal(taskExport.extension.pageLongTaskCount,1);assert.equal(taskExport.extension.pageLongTaskMaximumMs,311);
+const unknownTask={...raw,longTasks:[{startMs:1}]};
+assert.equal(JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:unknownTask,extension:unknownTask}))).extension.pageLongTaskMaximumMs,null);
+console.log('Long-task durationMs retained; missing duration stays unknown, never zero.');
+const pageComponent={...raw,mode:'extension',componentKind:'page-dom',extensionInstalled:false,installationArgumentsVerified:true,driverVersion:'155.0.8059.39',pageDomBundleSha256:'a'.repeat(64),pageDomControlStats:{started:true,requests:2,matchedMarkers:3,notifications:1,reportedCount:3,private:secret}};
+const componentReport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:{...pageComponent,mode:'baseline',pageDomControlStats:null},extension:pageComponent})));
+validateSystemIoArtifact(componentReport);
+assert.equal(componentReport.extension.correctionImplementation,'page-dom-literal');
+assert.equal(componentReport.extension.extensionInstalled,false);assert.equal(componentReport.extension.pageDomControlStats.requests,2);
+assert.ok(!JSON.stringify(componentReport).includes(secret));
+const actualProduct={...pageComponent,componentKind:'product',extensionInstalled:true,pageDomControlStats:null};
+assert.equal(JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:actualProduct,extension:actualProduct}))).extension.correctionImplementation,'sprachverstand');
+console.log('Component binding retained: page DOM is no-addon, product is installed, unknown telemetry stripped.');
+// CPU maxima and the CPU duration of the longest wall event are different facts.
+const paired=JSON.parse(summarizeOwnedTrace(filename,JSON.stringify({traceEvents:[
+ {name:'V8.OptimizeCode',ts:0,dur:300000,tdur:1000},
+ {name:'V8.OptimizeCode',ts:400000,dur:10000,tdur:9000},
+ {name:'V8.GC_TIME_TO_SAFEPOINT',ts:0,dur:200000}
+]})));
+validateSystemIoArtifact(paired);
+const optimize=paired.phases.find(p=>p.name==='V8.OptimizeCode');
+assert.equal(optimize.maximumWallMs,300);assert.equal(optimize.maximumCpuMs,9);
+assert.equal(optimize.maximumWallEventCpuMs,1);assert.equal(optimize.cpuDurationKnownCount,2);
+const unknown=paired.phases.find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT');
+assert.equal(unknown.maximumWallMs,200);assert.equal(unknown.maximumCpuMs,null);
+assert.equal(unknown.maximumWallEventCpuMs,null);assert.equal(unknown.cpuDurationKnownCount,0);
+assert.ok(!JSON.stringify(paired).includes('"ts"'));
+console.log('Same-event wall/CPU association preserved; missing CPU stays unknown, no raw timestamps exported.');
+const pageTraceFile='/private/page-witness.json';
+const traceWithWitness=events=>summarizeOwnedTrace(pageTraceFile,JSON.stringify({traceEvents:events}));
+const witness={name:'sprachverstand.diagnostic.page-thread',pid:1234567,tid:7654321,ts:1000};
+const pagePhase={name:'V8.OptimizeCode',pid:1234567,tid:7654321,ts:0,dur:200000,tdur:1000};
+const unrelated={...pagePhase,pid:9999999,dur:900000,tdur:8000};
+traceWithWitness([witness,pagePhase,unrelated]);
+const pageReport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:{traceFile:pageTraceFile},extension:{traceFile:pageTraceFile}})));
+validateSystemIoArtifact(pageReport);
+assert.equal(pageReport.extension.pageThreadWitnessVerified,true);
+assert.equal(pageReport.extension.pageThreadPhases.find(p=>p.name==='V8.OptimizeCode').maximumWallMs,200);
+assert.equal(pageReport.extension.phaseTotals.find(p=>p.name==='V8.OptimizeCode').maximumWallMs,900);
+assert.ok(!JSON.stringify(pageReport).includes('1234567'));assert.ok(!JSON.stringify(pageReport).includes('7654321'));
+traceWithWitness([witness,{...witness,pid:9999999},pagePhase]);
+const ambiguous=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:{traceFile:pageTraceFile},extension:{traceFile:pageTraceFile}})));
+assert.equal(ambiguous.extension.pageThreadWitnessVerified,false);assert.equal(ambiguous.extension.pageThreadPhases,null);
+traceWithWitness([pagePhase]);
+const absent=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:{traceFile:pageTraceFile},extension:{traceFile:pageTraceFile}})));
+assert.equal(absent.extension.pageThreadPhases,null);
+console.log('Exact marked page-thread phase scope excludes other renderers; missing/ambiguous witness stays unknown; identifiers stay in memory.');
+import {pagePhaseGapOverlap} from './system-io-export.mjs';
+const phase=(ts,dur)=>[{name:'V8.GC_TIME_TO_SAFEPOINT',ts,dur}];
+const frames=[{callbackAtMs:100},{callbackAtMs:400}];
+const overlap=pagePhaseGapOverlap(phase(150000,200000),frames,{offsetMs:0,uncertaintyMs:10});
+const entry=overlap.find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT');
+assert.equal(entry.maximumGuaranteedOverlapMs,180);assert.equal(entry.maximumPossibleOverlapMs,220);assert.equal(entry.confirmedOverlapPairs,1);
+assert.equal(pagePhaseGapOverlap(phase(500000,200000),frames,{offsetMs:0,uncertaintyMs:10}).find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT').maximumPossibleOverlapMs,0);
+const boundary=pagePhaseGapOverlap(phase(395000,10000),frames,{offsetMs:0,uncertaintyMs:10}).find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT');
+assert.equal(boundary.maximumGuaranteedOverlapMs,0);assert.equal(boundary.maximumPossibleOverlapMs,15);
+assert.equal(pagePhaseGapOverlap(phase(150000,200000),[{nowMs:100},{nowMs:400}],{offsetMs:0,uncertaintyMs:0}),null);
+assert.equal(pagePhaseGapOverlap([],frames,{offsetMs:0,uncertaintyMs:-1}),null);
+validateSystemIoArtifact({pageThreadGapOverlap:overlap});
+assert.ok(!JSON.stringify(overlap).includes('"ts"'));
+console.log('Page phase/callback gap overlap: bounded-clock lower/upper intersection, nonoverlap and unknown entry-clock tests PASS.');
+const shifted=pagePhaseGapOverlap(phase(1150000,200000),frames,{offsetMs:-1000,uncertaintyMs:10}).find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT');
+assert.equal(shifted.maximumGuaranteedOverlapMs,entry.maximumGuaranteedOverlapMs);
+assert.equal(shifted.maximumPossibleOverlapMs,entry.maximumPossibleOverlapMs);
+assert.equal(pagePhaseGapOverlap([], [{callbackAtMs:400},{callbackAtMs:100}],{offsetMs:0,uncertaintyMs:0}),null);
+const noGap=pagePhaseGapOverlap(phase(100000,100000),[{callbackAtMs:100},{callbackAtMs:200}],{offsetMs:0,uncertaintyMs:0});
+assert.equal(noGap.find(p=>p.name==='V8.GC_TIME_TO_SAFEPOINT').observedCallbackGapCount,0);
+console.log('Trace clock offset sign, nonmonotonic entry-clock rejection and unchanged >120ms gap threshold PASS.');
+const nestedFile='/private/nested-compiler.json';
+const nested=JSON.parse(summarizeOwnedTrace(nestedFile,JSON.stringify({traceEvents:[
+ {name:'V8.OptimizeCode',pid:1234567,tid:7654321,ts:100000,dur:200000,tdur:2000},
+ {name:'V8.OptimizeConcurrentPrepare',pid:1234567,tid:7654321,ts:110000,dur:170000,tdur:1000,args:{private:'SECRET'}},
+ {name:'V8.OptimizeNonConcurrent',pid:1234567,tid:7654321,ts:400000,dur:20000,tdur:19000}
+]})));
+validateSystemIoArtifact(nested);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeConcurrentPrepare').maximumWallMs,170);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeNonConcurrent').maximumWallEventCpuMs,19);
+assert.equal(nested.phases.find(p=>p.name==='V8.OptimizeCode').maximumWallMs,200);
+assert.ok(!JSON.stringify(nested).includes('SECRET'));assert.ok(!JSON.stringify(nested).includes('1234567'));
+const nestedOverlap=pagePhaseGapOverlap([{name:'V8.OptimizeConcurrentPrepare',ts:110000,dur:170000}],frames,{offsetMs:0,uncertaintyMs:0});
+assert.equal(nestedOverlap.find(p=>p.name==='V8.OptimizeConcurrentPrepare').maximumGuaranteedOverlapMs,170);
+console.log('Known compiler prepare/synchronous subscopes retained separately; nested durations not added; raw arguments refused.');
+const boundProduct={...actualProduct,contentSha256:'b'.repeat(64),sourceSha256:'c'.repeat(64),frameSamples:Array.from({length:20},(_,i)=>({nowMs:i*16,callbackAtMs:12000+i*17,private:secret}))};
+const boundReport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:{...boundProduct,mode:'baseline',extensionInstalled:false},extension:boundProduct})));
+validateSystemIoArtifact(boundReport);
+assert.equal(boundReport.extension.contentSha256,'b'.repeat(64));assert.equal(boundReport.extension.sourceSha256,'c'.repeat(64));
+assert.equal(boundReport.extension.actualEntryFrames.maximumGapMs,17);assert.equal(boundReport.extension.actualEntryFrames.callbacks,20);
+assert.ok(!JSON.stringify(boundReport).includes(secret));assert.ok(!JSON.stringify(boundReport).includes('12000'));
+for(const key of ['contentSha256','sourceSha256'])assert.throws(()=>validateSystemIoArtifact({...boundReport.extension,[key]:secret}));
+console.log('Current content/media hash bindings and measured entry-clock aggregates retained; raw times and private fields refused.');
