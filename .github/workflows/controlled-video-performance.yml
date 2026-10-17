@@ -12,8 +12,14 @@ concurrency:
 
 jobs:
   navigation:
+    name: Navigation (${{ matrix.first_role }}, observer ${{ matrix.observer_stage }})
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        first_role: [extension, baseline]
+        observer_stage: [before, after]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -32,6 +38,8 @@ jobs:
       - name: Frische Navigationen mit unabhängigem Zeugen vergleichen
         env:
           NAVIGATION_ARTIFACTS_DIR: artifacts/navigation-start
+          NAVIGATION_FIRST_ROLE: ${{ matrix.first_role }}
+          NAVIGATION_OBSERVER_STAGE: ${{ matrix.observer_stage }}
         run: node scripts/diagnose-initial-navigation.mjs
       - name: Instrumentierung mit absichtlichem Timeout validieren
         if: ${{ always() }}
@@ -58,7 +66,7 @@ jobs:
         if: ${{ always() && steps.summary_guard.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: navigation-start-${{ github.sha }}
+          name: navigation-start-${{ matrix.first_role }}-${{ matrix.observer_stage }}-${{ github.sha }}
           path: |
             artifacts/navigation-start/navigation-summary.json
             artifacts/navigation-validation/navigation-summary.json

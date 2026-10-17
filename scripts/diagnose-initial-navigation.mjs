@@ -38,8 +38,12 @@ const request=async(method,url,body,deadline=45000)=>{
  return payload.value;
 };
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-const validate=process.argv.includes('--validate-observer');
-const roles=validate?['baseline']:['extension','baseline','baseline','extension','extension','baseline'];
+const validateAfter=process.argv.includes('--validate-after-observer');
+const validate=validateAfter||process.argv.includes('--validate-observer');
+const observerStage=validateAfter?'after':validate?'before':(process.env.NAVIGATION_OBSERVER_STAGE??'before');
+assert.ok(['before','after'].includes(observerStage));
+const baselineFirst=process.env.NAVIGATION_FIRST_ROLE==='baseline';
+const roles=validate?['baseline']:baselineFirst?['baseline','extension','extension','baseline','baseline','extension']:['extension','baseline','baseline','extension','extension','baseline'];
 const results=[];
 for(const [ordinal,role] of roles.entries()){
  let session,connection,observer,sessionDeleted=false;
@@ -55,27 +59,42 @@ for(const [ordinal,role] of roles.entries()){
  server.listen(0,'127.0.0.1');await once(server,'listening');
  const fixtureUrl=`http://127.0.0.1:${server.address().port}/extension-smoke.html`;
  observer=new NavigationStartObserver(fixtureUrl);
+ const driverStarted=performance.now();
  const driver=spawn(driverBinary,[`--port=${port}`],{stdio:['ignore','ignore','ignore'],windowsHide:true});
  let spawnFailed=false;driver.once('error',()=>{spawnFailed=true;});
- const row={ordinal,role,validationOnly:validate,pageLoadLimitMs:validate?500:30000};
+ const row={ordinal,role,observerStage,validationOnly:validate,pageLoadLimitMs:validate?500:30000};
  try{
   let ready=false;for(let i=0;i<100;i++){
    if(spawnFailed||driver.exitCode!==null)throw new Error('Own driver failed before startup');
    try{await request('GET','/status',undefined,1000);ready=true;break;}catch{await sleep(100);}
   }assert.ok(ready,'Own driver startup deadline');
+  row.driverStartupMs=performance.now()-driverStarted;
   const args=['--headless=new','--no-sandbox','--disable-dev-shm-usage','--no-first-run','--disable-default-apps'];
   if(role==='extension')args.push(`--disable-extensions-except=${extension}`,`--load-extension=${extension}`);
   else args.push('--disable-extensions');
+  const sessionStarted=performance.now();
   const response=await request('POST','/session',{capabilities:{alwaysMatch:{browserName:'chrome',timeouts:{pageLoad:row.pageLoadLimitMs},'goog:chromeOptions':{binary,args}}}});
+  row.sessionCreationMs=performance.now()-sessionStarted;
   session=response.sessionId;
   row.browserVersion=response.capabilities.browserVersion;
   assert.match(row.browserVersion,validate?/^155\.0\.8059\.(0|39)$/u:/^155\.0\.8059\.0$/u,'Keep the failing Linux browser version fixed outside instrument validation');
-  connection=await connectNavigationObserver(response.capabilities['goog:chromeOptions']?.debuggerAddress,observer);
+  const connect=async()=>{
+   const connectStarted=performance.now();
+   try{
+    connection=await connectNavigationObserver(response.capabilities['goog:chromeOptions']?.debuggerAddress,observer,observerStage==='after');
+    row.observerSetupOutcome='connected';
+   }catch{row.observerSetupOutcome='unavailable';}
+   row.observerSetupMs=performance.now()-connectStarted;
+  };
+  if(observerStage==='before')await connect();
+  row.preNavigationMs=performance.now()-driverStarted;
   const before=performance.now();
   try{await request('POST',`/session/${session}/url`,{url:fixtureUrl});row.navigationOutcome='completed';}
   catch(error){row.navigationOutcome=error.diagnosticKind??'transport-deadline';}
   row.navigationElapsedMs=performance.now()-before;
+  if(observerStage==='after')await connect();
   try{
+   assert.ok(connection,'Independent observer is unavailable');
    const end=performance.now()+5000;
    do{
     row.independentSnapshot=await connection.snapshot();
@@ -89,7 +108,8 @@ for(const [ordinal,role] of roles.entries()){
    assert.equal(row.independentSnapshot.staticOriginal,true);
    assert.equal(row.independentSnapshot.protected,true);
    assert.ok(observer.summary().events.some(e=>e.event==='fixture-http-response-finished'));
-   assert.ok(observer.summary().events.some(e=>e.event==='fixture-main-frame-navigated'));
+   assert.equal(observer.ownDocument,true);
+   if(observerStage==='before')assert.ok(observer.summary().events.some(e=>e.event==='fixture-main-frame-navigated'));
   }
   const s=row.independentSnapshot;
   row.expectedTextsConfirmed=!!(s.protected&&(role==='baseline'?s.staticOriginal&&s.dynamicOriginal:s.staticCorrect&&s.dynamicCorrect));

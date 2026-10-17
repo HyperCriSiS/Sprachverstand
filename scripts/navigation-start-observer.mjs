@@ -52,14 +52,15 @@ export class NavigationStartObserver {
   summary() { return {events: this.events, truncated: this.truncated}; }
 }
 
-export async function connectNavigationObserver(address, observer) {
+export async function connectNavigationObserver(address, observer, allowNavigatedFixture = false) {
   if (typeof address !== 'string' || !/^(localhost|127\.0\.0\.1):\d+$/u.test(address)) {
     throw new Error('Own loopback debugger address required');
   }
   const response = await fetch(`http://${address}/json/list`, {signal: AbortSignal.timeout(5000)});
   if (!response.ok) throw new Error('Debugger discovery failed');
   const pages = (await response.json()).filter(target => target.type === 'page');
-  if (pages.length !== 1 || pages[0].url !== 'data:,') throw new Error('Expected one fresh WebDriver data page');
+  if (pages.length !== 1 || !(pages[0].url === 'data:,' || (allowNavigatedFixture && pages[0].url === observer.fixtureUrl))) throw new Error('Expected one own WebDriver fixture page');
+  if (pages[0].url === observer.fixtureUrl) observer.ownDocument = true;
   const websocket = new URL(pages[0].webSocketDebuggerUrl);
   const expected = new URL(`http://${address}`);
   if (websocket.protocol !== 'ws:' || websocket.hostname !== expected.hostname || websocket.port !== expected.port) {
