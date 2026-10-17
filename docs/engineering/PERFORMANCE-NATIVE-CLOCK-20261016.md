@@ -426,3 +426,18 @@ Die native Chromium-Mikroprobe (155.0.8059.39) verwendet erneut drei Größen, v
 | 40.000 | 160,95 ms | 2,00 ms |
 
 Fünf zusätzliche Tests prüfen insbesondere den aktualisierten Wert eines bestehenden Auftrags, Reihenfolge beim Wiedereinfügen, `clear`/Leeren, einen explizit undefinierten Map-Wert sowie 4.000 gemischte Operationen gegen eine normale Map. Zusammen mit den vorhandenen DOM- und Set-Warteschlangentests sind 55 Dateien / 377 Tests und TypeScript im isolierten Arbeitsstand geprüft. Die reguläre Abnahme des ergänzten Produktstands folgt separat. Die Mikroprobe erklärt weder die gesamte DOM-Laufzeit noch rückwirkend historische Linux-Frame-/Compiler-/Navigationsgegenbefunde; deren Freigabe bleibt offen.
+
+### Native Firefox-Teilabnahme der beiden Cursor-Helfer
+
+Die erforderliche ergänzende Plattformprobe verwendet Firefox 157.0.1 mit eigenem ephemerem Testprofil und beiden unveränderten Helferquellen. Vorab festgelegt sind Sets und Maps mit jeweils 10.000/40.000 Einträgen und drei wechselnd angeordneten Alt-/Cursorpaaren, insgesamt 24 Rollen. Jede Rolle prüft Reihenfolge, Schlüsselindex und Wert sowie Anzahl und Indexsumme. Alle Rollen sind gültig; kein DOM, keine Erweiterungsinstallation und keine Videowiedergabe:
+
+| Struktur | Einträge | Bisheriges Muster, Median | Cursor, Median |
+| --- | ---: | ---: | ---: |
+| Set | 10.000 | 91 ms | 0 ms gemeldet* |
+| Set | 40.000 | 322 ms | 3 ms |
+| Map | 10.000 | 42 ms | 1 ms |
+| Map | 40.000 | 302 ms | 4 ms |
+
+*Die Nullmessung ist durch die Firefox-Zeitauflösung nicht weiter aufgelöst und bedeutet keine kostenlose Verarbeitung. Die 40.000er-Cursorrollen liegen bei Sets zwischen 2 und 4 ms, bei Maps zwischen 4 und 5 ms. Diese Probe bestätigt die beiden Entnahmemuster und Helfer im nativen Firefox; sie ersetzt keine kombinierte DOM-/Videolatenz-Abnahme und erklärt die historischen 300-ms-Lücken nicht allein aufgrund ähnlicher Größenordnung. Pale Moon und Waterfox sind damit nicht automatisch separat abgenommen.
+
+Die reguläre [CI 39073343146](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39073343146) auf dem ergänzten Produktstand `fe72ee9` endet ebenfalls erfolgreich. Alle acht PR-Prüfungen einschließlich vollständiger Kernprüfung, echter Chromium-/Firefox-Smokes, Interaktion, Video und Paketkompatibilität sind bestanden. Die zwei ursprünglichen Versuchdateien sind erneut bytegleich geprüft. Die Map-Korrektur ist damit regulär abgenommen; ein matched Ursachenvergleich der historischen roten Linux-Episoden oder eine gesamte Performancefreigabe folgt daraus weiterhin nicht.

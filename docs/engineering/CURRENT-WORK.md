@@ -1,11 +1,13 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-17
+Stand: 2026-10-18
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
 ## Aktuelle DOM-/Videoperformance-Teilkorrekturen (#419)
+
+- **Map-Warteschlangen und Firefox-Abnahme, 18.10.2026:** Produkt `fe72ee9` führt auch in neun Map-Arbeitsmengen den Entnahme-Cursor fort; bestehende Aufträge liefern bei Wertänderung den neuesten Wert. 55 Dateien / 377 gezielte Tests und TypeScript bestanden. Native Map-Mikroprobe mit 40.000 Einträgen: Chromium 160,95 → 2,00 ms, Firefox 302 → 4 ms; Firefox bestätigt zusätzlich den Set-Helfer mit 322 → 3 ms. Das sind reine Entnahmemessungen ohne DOM/Video. Alle acht regulären PR-Prüfungen auf `fe72ee9`, einschließlich realer Browser-/Video-/Paketprüfungen, sind erfolgreich ([CI 39073343146](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39073343146)). Historische Linux-/Navigationsgegenbefunde bleiben getrennt offen; keine Gesamtfreigabe. [Details und Plattformgrenzen](PERFORMANCE-NATIVE-CLOCK-20261016.md#fortgeführte-schlüssel-für-ausstehende-map-aufträge).
 
 - **Neue Warteschlangenoptimierung, 17.10.2026:** Vier DOM-/Untertitel-Arbeitsmengen vermeiden wiederholtes Starten des Set-Iterators. Native Chromium-Mikroprobe mit 40.000 Einträgen: Median 146,80 auf 1,85 ms reine Entnahmezeit; 24 Rollen vollständig. TypeScript und 54 Dateien / 372 DOM-/Warteschlangentests bestanden. Produktstand `5bc1578` besteht außerdem alle acht regulären PR-Prüfungen einschließlich Chromium-/Firefox-Smokes, Interaktion, Video und Paketkompatibilität ([CI 39072752855](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39072752855)). Keine rückwirkende Erklärung historischer Linux-Pausen oder Gesamtfreigabe. [Umfang und Grenzen](PERFORMANCE-NATIVE-CLOCK-20261016.md#fortgeführte-iteratoren-für-ausstehende-dom-arbeit).
 - **Linux-Startwarteklasse ohne Erweiterung, 17.10.2026:** Eine gezielte Gegenprobe mit korrigierter direkter Hauptbrowserzuordnung scheitert bereits während der Sitzungserzeugung nach rund 45 Sekunden, ohne Seitenaufruf oder Erweiterungsargument. 425/447 Hauptbrowser-Stichproben erfassen stabile Kernel-Folio-Wartezustände; rund 225,5 MB gemeldeter Lesezuwachs. Der Erweiterungslauf bestätigt die Messfähigkeit und besteht funktional. Das grenzt eine erhebliche Browser-/Umgebungsstörung vor der Produktverarbeitung ab; keine Erklärung des historischen 30-Sekunden-URL-Timeouts oder Gesamtfreigabe. Alte Diagnoseklassenzuordnung bleibt eingeschränkt, kein Produktfix oder aufgeweichtes Gate. [Methodik, rote Gegenprobe und Grenzen](NAVIGATION-START-DIAGNOSTICS-20261017.md#prozessgebundene-start-io-ohne-erweiterung).
