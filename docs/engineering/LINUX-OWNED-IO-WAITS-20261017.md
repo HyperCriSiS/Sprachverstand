@@ -171,3 +171,13 @@ nicht gleichgesetzt werden. Aggregierte Überschneidungen verschiedener
 Phasen werden nicht addiert und nicht ohne Episodenbindung derselben
 Videolücke zugeschrieben. Keine Cachevorladung, Kernelrechte oder dauerhafte
 Compilerflags werden als Produktkorrektur verwendet.
+
+## Nachprüfung nach den Statusoptimierungen
+
+Der Produktstand `98c80cd` begrenzt die Auswahl der veröffentlichten Ersetzungsübersicht und vermeidet bereits erfolgreich veröffentlichte identische Hintergrundzustände. Seine reguläre CI [39011606216](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39011606216) besteht alle acht Prüfungen. Das ist keine vollständige Performancefreigabe.
+
+Die native Nachprüfung [39012047167](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39012047167) verwendet Diagnosequelle `e29131f`, deren Produktquellen gegenüber `98c80cd` unverändert sind; die vorherigen Backend-Testumschaltungen sind entfernt. Beide Reihenfolgen erreichen alle 480 Endtexte je Rolle mit gültigen Sichtbarkeits-/Fokusbedingungen. Baseline zuerst besteht; Erweiterung zuerst scheitert am Callbackanteil von 75,8 Prozent. In letzterem Paar betragen die maximalen Callbackabstände 33,4/300,1 ms, die verworfenen Bilder 1/6 und der Seiten-Long-Task-Maximalwert 265 ms.
+
+In der roten Produktrolle liegen vier stabile fehlende Hauptthread-Befehlsseitenproben innerhalb der Optimierung und sechs entsprechende Workerproben innerhalb Seitenthread-Safepoint und Optimierung desselben Workers. Konservative garantierte Callback-Überlappungen erreichen 190,398 ms bei `V8.OptimizeCode` und 282,288 ms beim Safepoint. Das sind unabhängige Maxima; sie dürfen weder addiert noch ohne Ereignisabgleich derselben Episode zugeschrieben werden. Die Proben identifizieren weiterhin keine exakte fehlende Datenseite und keinen kausal blockierenden Barriere-Teilnehmer.
+
+Die beiden Statusoptimierungen sind funktional und in der regulären CI verifiziert, reichen aber für diesen nativen Gegenbefund nicht aus. PR #451 bleibt Entwurf und #419 NO-GO. Versuche zur Zuordnung einer konkreten optimierten JavaScript-Funktion sind bislang nur Diagnosevorprüfungen; fehlende Compiler-Ausgabe oder ein abgebrochener Sessionstart beweisen keine gelöste Produktursache.
