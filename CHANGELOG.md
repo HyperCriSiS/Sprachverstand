@@ -7,6 +7,8 @@ dokumentiert.
 
 ### Behoben
 
+- Große ausstehende DOM- und Untertitel-Arbeitsmengen behalten ihren Set-Iterator beim Abarbeiten bei. Bereits entfernte Einträge werden dadurch nicht bei jeder Entnahme erneut überlaufen; Reihenfolge, erneutes Einfügen und Arbeitsbudgets bleiben erhalten.
+
 - Identische bereits veröffentlichte Ersetzungszustände lösen keine wiederholten Speicher-, Badge- und Broadcast-Aufrufe aus. Änderungen, Navigation und notwendige Wiederholungen nach Fehlern bleiben berücksichtigt.
 
 - Große Ersetzungsübersichten wählen die bereits auf 250 Einträge begrenzte Meldung direkt aus, statt bei jeder Meldung den gesamten Seitenindex zu kopieren und zu sortieren. Gesamtzähler und vollständige Abfragen bleiben erhalten.

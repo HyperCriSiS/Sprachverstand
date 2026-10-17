@@ -392,3 +392,19 @@ Alle vier Rollen bestehen Quell-/Versionsbindung und durchgängigen Framefokus/S
 Die beobachteten Drops und Long Tasks sind in allen vier Rollen null, bei verfügbarer Long-Task-API. Renderingmaxima liegen bei 27,9–34,8 ms. Die Abfragegrenzen von Gesamtbildzähler und Callbackfenster sind verschiedene Beobachtungen; deren Einzelbilddifferenzen werden nicht als zusätzliche Bildverluste ausgegeben.
 
 Die höheren P95-Werte der Erweiterung bei 60 FPS bleiben ausdrücklich Gegenstand der Bewertung. P99, tatsächliche Maxima, Bildverlustzähler und Cuekorrektheit zeigen in dieser begrenzten Reihe keine entsprechende schwere zusätzliche Störung; daraus folgt keine behauptete identische Leistung. Insgesamt sind es acht funktional gültige Rollen, 228 korrekt verarbeitete aktive Cues und 1.920 finale normale Texte in den vier Erweiterungsrollen. Die früheren Linux-I/O-/Navigationsgegenbefunde, die Grafik-/Zeitbasisberichte und die vollständige unabhängige Qualitäts-/Plattformfreigabe aus #419 werden dadurch nicht rückwirkend geschlossen. PR #451 bleibt Entwurf.
+
+## Fortgeführte Iteratoren für ausstehende DOM-Arbeit
+
+Eine gezielte Quellprüfung findet ein eigenständiges Skalierungsproblem: Die Mengen für hinzugefügte Knotenlisten, Strukturmutationen, bekannte Untertiteltexte und Untertitelwurzeln verwenden bei jedem Entnahmeschritt `values().next()`. Frische V8-Set-Iteratoren beginnen erneut am Tabellenanfang und können dabei bereits gelöschte Einträge wiederholt durchlaufen. Die reguläre Knotenwarteschlange verwendet bereits einen fortgeführten Iterator; die vier übrigen Mengen bislang nicht. Die Arbeitsbudgets begrenzen zwar Schritte pro Scheibe, beseitigen diesen zusätzlichen Suchaufwand aber nicht.
+
+`PendingSet` führt für das erste ausstehende Element einen Cursor fort. Ein teilweise bearbeiteter Stapel bleibt bis zu seiner expliziten Löschung erster Eintrag. Löschen und erneutes Einfügen ordnen ihn wie bei einem normalen Set hinten ein; `clear()` und vollständiges Leeren lösen den Cursor. Mitgliedschaft und normale Set-Iteration bleiben erhalten. Die Korrektur betrifft ausschließlich die vier genannten Arbeitsmengen, keine Textregeln, Budgets oder Erweiterungsberechtigungen.
+
+Eine vorab festgelegte lokale native Chromium-Probe (155.0.8059.39) vergleicht beide Entnahmemuster im selben Browser über drei Größen und je vier Wiederholungen mit wechselnder Reihenfolge. Alle 24 Rollen konsumieren genau die erwarteten Elemente mit korrekter Indexsumme. Gemessen wird ausschließlich das Leeren der bereits aufgebauten Menge, ohne DOM, Erweiterungsinstallation oder Videowiedergabe:
+
+| Elemente | Bisheriges Muster, Median | Fortgeführter Cursor, Median |
+| ---: | ---: | ---: |
+| 10.000 | 11,55 ms | 0,35 ms |
+| 20.000 | 37,45 ms | 1,00 ms |
+| 40.000 | 146,80 ms | 1,85 ms |
+
+Damit ist der Skalierungseffekt des tatsächlich verwendeten Entnahmemusters im Browser reproduziert. Die Werte sind keine DOM-Gesamtdauer, kein Frame-/Untertitel-Latenzvergleich und keine rückwirkende Erklärung der historischen Linux-Pausen. Fünf neue Warteschlangentests prüfen teilweise bearbeitete Stapel, Löschen/Wiedereinfügen, `clear`, vollständiges Leeren und 4.000 gemischte Operationen gegen ein gewöhnliches Set. Zusammen mit allen vorhandenen DOM-Tests bestehen 54 Dateien / 372 Tests sowie TypeScript im isolierten sauberen Arbeitsstand. Die reguläre Browser-/Paketabnahme dieser Produktänderung steht zum Implementierungszeitpunkt noch aus. Keine Gesamtfreigabe aus der Mikroprobe ableiten.

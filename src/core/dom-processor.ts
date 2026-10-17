@@ -1,3 +1,4 @@
+import {PendingSet} from "./pending-set";
 import { isRiskAllowed, type Rule, type RuleProfile } from "./rule";
 import {
   accessibleAttributeNames,
@@ -212,11 +213,11 @@ export class DomProcessor {
   private readonly pendingNodes = new Set<Node>();
   private pendingNodeIterator: Iterator<Node> | undefined;
   private pendingNodeWakeAt: number | undefined;
-  private readonly pendingAddedNodeLists = new Set<{root: Node; nodes: NodeList; index: number}>();
+  private readonly pendingAddedNodeLists = new PendingSet<{root: Node; nodes: NodeList; index: number}>();
   private addedNodeTurn = true;
   private detachedCleanup: DetachedCleanupState | undefined;
   private detachedCleanupTurn = true;
-  private readonly pendingStructuralMutations = new Set<{records: readonly MutationRecord[]; index: number}>();
+  private readonly pendingStructuralMutations = new PendingSet<{records: readonly MutationRecord[]; index: number}>();
   private readonly contextDirtyNodes = new Set<Text>();
   private inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
   private readonly inlineProtectionVersions = new WeakMap<Node, object>();
@@ -232,8 +233,8 @@ export class DomProcessor {
   }>();
   private leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
   private partitionTemporaryNodes = new WeakSet<Node>();
-  private readonly pendingSubtitleTextNodes = new Set<Text>();
-  private readonly pendingSubtitleRoots = new Set<Node>();
+  private readonly pendingSubtitleTextNodes = new PendingSet<Text>();
+  private readonly pendingSubtitleRoots = new PendingSet<Node>();
   private activeSubtitleTraversal:
     | { readonly root: Node; readonly walker: TreeWalker }
     | undefined;
@@ -417,7 +418,7 @@ export class DomProcessor {
         while (this.running && this.subtitleFrameSteps + steps < maximumSubtitleStepsPerFrame &&
           (this.subtitleFrameSteps + steps === 0 || this.now() < deadline)) {
           if (this.processTransformResult(this.pendingSubtitleTransformResults)) {steps++; continue;}
-          const node = this.pendingSubtitleTextNodes.values().next().value;
+          const node = this.pendingSubtitleTextNodes.peek();
           if (!node) break;
           this.pendingSubtitleTextNodes.delete(node);
           steps++;
@@ -807,7 +808,7 @@ export class DomProcessor {
         steps += 1;
         continue;
       }
-      const node = this.pendingSubtitleTextNodes.values().next().value;
+      const node = this.pendingSubtitleTextNodes.peek();
       if (node) {
         this.pendingSubtitleTextNodes.delete(node);
         steps += 1;
@@ -818,7 +819,7 @@ export class DomProcessor {
       }
 
       if (!this.activeSubtitleTraversal) {
-        const root = this.pendingSubtitleRoots.values().next().value;
+        const root = this.pendingSubtitleRoots.peek();
         if (!root) {
           break;
         }
@@ -1189,7 +1190,7 @@ export class DomProcessor {
 
   private processAddedNodeStep(): boolean {
     if (this.pendingAddedNodeLists.size === 0) return false;
-    const batch = this.pendingAddedNodeLists.values().next().value;
+    const batch = this.pendingAddedNodeLists.peek();
     if (!batch) return false;
     if (!this.isProcessableRoot(batch.root) || batch.index >= batch.nodes.length) {
       this.pendingAddedNodeLists.delete(batch);
@@ -1448,7 +1449,7 @@ export class DomProcessor {
 
   private processStructuralMutationStep(): boolean {
     if (this.pendingStructuralMutations.size === 0) return false;
-    const batch = this.pendingStructuralMutations.values().next().value;
+    const batch = this.pendingStructuralMutations.peek();
     if (!batch) return false;
     const end = Math.min(batch.index + 8, batch.records.length);
     this.handleMutationRecordsScoped(batch.records.slice(batch.index, end));
