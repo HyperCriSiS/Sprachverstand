@@ -22,6 +22,9 @@ describe("Inkrementelle Übersicht aller verbleibenden Ersetzungen", () => {
       {original: "Nutzer:innen", replacement: "Nutzer", count: 2},
       {original: "Lehrer:innen", replacement: "Lehrer", count: 1}
     ]);
+    expect(processor?.getReplacementSummary(1)).toEqual([
+      {original: "Nutzer:innen", replacement: "Nutzer", count: 2}
+    ]);
     document.querySelector("p")!.textContent = "Lehrer:innen";
     document.querySelector("button")!.removeAttribute("title");
     await flush();
@@ -29,14 +32,21 @@ describe("Inkrementelle Übersicht aller verbleibenden Ersetzungen", () => {
       {original: "Lehrer:innen", replacement: "Lehrer", count: 1},
       {original: "Nutzer:innen", replacement: "Nutzer", count: 1}
     ]);
+    expect(processor?.getReplacementSummary(1)).toEqual([
+      {original: "Lehrer:innen", replacement: "Lehrer", count: 1}
+    ]);
     document.querySelectorAll("p")[1]!.remove();
     await flush();
     expect(processor?.getReplacementSummary()).toEqual([
       {original: "Lehrer:innen", replacement: "Lehrer", count: 1}
     ]);
+    expect(processor?.getReplacementSummary(1)).toEqual([
+      {original: "Lehrer:innen", replacement: "Lehrer", count: 1}
+    ]);
     processor?.updateOptions({rules: [], profile: "aggressive"});
     processor?.flush();
     expect(processor?.getReplacementSummary()).toEqual([]);
+    expect(processor?.getReplacementSummary(1)).toEqual([]);
     expect(document.querySelector("p")!.textContent).toBe("Lehrer:innen");
   });
 
