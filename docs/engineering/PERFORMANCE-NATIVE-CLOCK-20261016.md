@@ -337,3 +337,20 @@ Vier erneut vorab festgelegte Rollen ohne/mit/mit/ohne Erweiterung erfüllen Que
 In der ersten Erweiterungsrolle fallen Renderingmaximum und tatsächliches Eintrittsmaximum in dasselbe Intervall. In der zweiten liegt beim Renderingmaximum ein tatsächlicher Abstand von 76 ms vor; ihr Eintrittsmaximum von 77 ms gehört zu einem anderen, ebenfalls rund 76,38-ms-Renderingintervall. Damit ist ein bloßes Artefakt der Renderingzeitstempel als vollständige Erklärung ausgeschlossen. Die betroffenen Intervalle zeigen weiterhin jeweils zwei Präsentationen bei rund 66–67 ms Medienfortschritt. Ein konkreter CPU-/GC-/Schedulerblock oder additiver Bildverlust ist daraus nicht bewiesen.
 
 Die nächste begrenzte Ursachenfrage ist, ob vergleichbare zusätzliche Text-Rückschreibungen durch einen minimalen seiteneigenen Literaladapter ohne installierte Erweiterung dieselbe Abweichung in genau dieser Firefox-Dauerlast erzeugen. Frühere Literaltests in anderen Browsern oder Fixtures beantworten das nicht. Bis zu dieser Abgrenzung bleibt der 77-ms-Gegenbefund offen; eine unveränderte Wiederholung derselben Reihe würde keine neue Ursache isolieren. Keine Produktregel, Cachevorladung oder Browserflagänderung wird aus dem Befund abgeleitet.
+
+### Kontrollierte Text-Rückschreibungen ohne Erweiterung
+
+Die gezielte Kontrolle auf Diagnosequelle `dd6e742` ersetzt ausschließlich bekannte synthetische Fixturetexte durch einen kleinen seiteneigenen MutationObserver. Sie installiert keine Erweiterung und lädt weder Produktregeln noch Hintergrundtransport. Nur die beiden bekannten statischen/Cue-Ziele sowie unmittelbar im eigenen Lastcontainer liegende, exakt passende Spans werden verändert; Code, Eingaben und übrige Texte bleiben unangetastet. Tatsächliche Normal-/Cue-Rückschreibungen werden gezählt. Beide Kontrollrollen müssen wie das Produkt alle Cues und 480 finale normale Texte korrigieren. Diese Diagnose wird nicht in die Produktlaufzeit übernommen.
+
+Ein erster Aufbauversuch brach in beiden Kontrollrollen vor Messbeginn ab, weil der WebDriver-Aufruf die Installationsbestätigung nicht zurückgab. Die beiden übrigen Produktrollen dieses unvollständigen Versuchs sind keine gültige gepaarte Kontrolle. Der korrigierte Transport enthält ein explizites `return`; ein Test führt den tatsächlich serialisierten Installationscode aus und prüft dessen Rückgabe samt Schutzverhalten. 32 relevante Tests und die Argumentwächter bestehen.
+
+Die danach separat vorab deklarierte gültige Reihe hat feste Rollen Literal/Produkt/Produkt/Literal, je 30 Sekunden unter unveränderter Stresslast. Alle vier Rollen bestehen Quelle/Version, sichtbare/fokussierte Callbacks, Cuekorrektheit und 480 finale normale Texte. Die Literalrollen laufen über frische Sitzungen ohne Add-on-Installation; ihr Bericht bindet `extensionInstalled:false` und `synthetic-literal` an diesen Aufbau. Die Literalrollen führen 28.224/28.176 normale Rückschreibungen aus, zusätzlich zu den Cuekorrekturen.
+
+| Rolle | Tatsächliches Eintrittsmaximum / P99 ms | Renderingmaximum ms | Drops / gesamte Bilder | Cues korrigiert | Cue-Maximum ms |
+| --- | --- | --- | --- | --- | --- |
+| Literal, zuerst | 71 / 49 | 72,64 | 5 / 906 | 54 von 54 | 1 |
+| Produkt | 76 / 50 | 76,38 | 5 / 906 | 53 von 53 | 5 |
+| Produkt, zuerst | 51 / 50 | 48,62 | 5 / 906 | 54 von 54 | 6 |
+| Literal | 73 / 49 | 72,78 | 6 / 906 | 53 von 53 | 1 |
+
+Damit können zusätzliche Text-Rückschreibungen bereits ohne Produktpipeline tatsächliche Callbackabstände über 70 ms erzeugen. Die zweite Produktrolle bleibt hier bei 51 ms; ein dauerhaft ausschließlich dem Produkt eigener 77-ms-Effekt ist damit nicht belegt. Der Vergleich weist weder jedem früheren Maximum eine exakte Ursache zu noch beweist er identische Leistung: Die Cue-Latenzen und P99-Werte des Produkts liegen über der minimalen Kontrolle. Das rechtfertigt keinen Austausch der echten Sprach-/Schutzregeln durch den Literaladapter. Es gibt weiterhin keinen physischen Displaynachweis und keine Long-Task-API in diesem Firefox. Ältere Gegenbefunde bleiben erhalten; weitere unveränderte Wiederholungen dieser Kontrolle sind nicht erforderlich.

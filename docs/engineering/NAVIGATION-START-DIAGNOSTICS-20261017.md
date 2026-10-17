@@ -106,3 +106,13 @@ soll verhindern, dass bei einem erneuten regulären Fehler die benötigte
 Evidenz fehlt. Kein Produktfix, keine gelockerten Grenzen, keine gesamte
 Performance-, Browser- oder Releasefreigabe. PR #451 bleibt Entwurf;
 Issue #419 bleibt NO-GO.
+
+## Erneuter echter Fehler mit gesichertem Nachweis
+
+Die reguläre [CI 39054176385](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39054176385) auf `49ce645` scheitert erneut beim ersten Chromium-Seitenaufruf, unverändert mit 30-Sekunden-Renderer-Timeout. Kernprüfung, Performance und Gecko bestehen; der Gesamtstatus bleibt rot. Dieser Lauf wird nicht unverändert neu gestartet oder durch einen späteren grünen Stand als gelöst umgedeutet.
+
+Diesmal sind der tatsächliche Fehlerfilter und der Actions-Upload erfolgreich ausgeführt. Das einzelne streng validierte synthetische Artefakt heißt `navigation-failure-a82e0ff1f008db53b9660c59778310ff3eb0c990`; der Name bindet den geprüften Mergebaum, nicht nur den PR-Head. Browserversion 155.0.8059.0, gemessene Navigation 30.011,914 ms bei unverändertem 30.000-ms-Limit, anschließende Diagnose 7,102 ms. Der reguläre eigene Serverzeuge erfasst **keine HTTP-Anfrage oder beendete Antwort für die Fixture**, auch keine Browserereignisse; sein Puffer ist nicht abgeschnitten. Ein eigenes Fixture-Dokument ist nicht bestätigt, der Snapshot fehlt, sämtliche Aussagen zur vorherigen Ladebeendigung bleiben unbekannt.
+
+Zwischen Aufbau des Serverzeugen und Beginn des Navigationsbefehls liegen bereits 42.362,993 ms. Im geprüften Ablauf liegen dort die Sitzungserzeugung und anschließende synchrone Kennungsextraktion; dies ist keine zusätzlich isolierte Messung interner Browserstartkosten. Die fehlenden Serverereignisse liefern keinen Beleg für ein bereits fertig geladenes oder von Sprachverstand verarbeitetes Testdokument.
+
+Der vorhandene Nachfehler-Beobachter verwirft unerwartete Debugger-Zielzustände weiterhin streng und bewahrt keine freien URLs oder Rohprotokolle. Sein abgefangener Fehler unterscheidet bislang jedoch nicht zwischen Adressprüfung, Discovery, Zielauswahl, Verbindung und Snapshot. Aus den nur 7 ms Diagnosezeit wird keine konkrete dieser Ursachen geraten. Die nächste begrenzte Verbesserung ist eine ausschließlich aus festen Stufen-/Zielzustandswerten bestehende Fehlerklassifikation nach dem ursprünglichen Fehler. Sie darf weder die erfolgreiche Navigation vorab beobachten noch Ziel-/Adressgrenzen lockern oder das ursprüngliche Timeout verändern. Der echte Gegenbefund bleibt offen.
