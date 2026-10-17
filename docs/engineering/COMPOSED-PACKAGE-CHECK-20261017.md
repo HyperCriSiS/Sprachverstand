@@ -72,6 +72,31 @@ Erweiterung. Der erste Animation-Frame-Callback misst keine physische
 Bildschirmdarstellung. Die Probe belegt den aktuellen lokalen Edge-Startpfad;
 sie erklärt keinen historischen Linux-Navigationstimeout.
 
+### Frische Firefox-Profile und Add-on-Initialisierung
+
+Eine getrennte lokale Firefox-Probe verwendet dieselben sechs Rollen und
+dieselbe synthetische Seite. Firefox **157.0.1** startet jeweils mit einem
+frischen Driver-Testprofil. Für die Erweiterungsläufe wird das geprüfte
+Firefox-Paket vor Navigation als temporäres Add-on geladen. Diese Installationszeit
+wird gesondert erfasst; dies simuliert keinen normalen Browserstart mit einem
+bereits dauerhaft installierten Add-on. Dokumentfokus und Sichtbarkeit sind in
+allen sechs Läufen tatsächlich bestätigt.
+
+| Messgröße | Basis, drei Starts | Erweiterung, drei Starts |
+| --- | --- | --- |
+| WebDriver-Navigationsantwort | 76,0–93,4 ms | 73,8–83,8 ms |
+| Erster Animation-Frame-Callback ab Dokumentbeginn | 35,4–73,0 ms | 37,2–45,1 ms |
+| Alle 480 Texte korrigiert, ab Dokumentbeginn | Unverändert wie erwartet | 183–206 ms |
+| Temporäre Add-on-Installation | Entfällt | 152,6–188,5 ms |
+| WebDriver-Sitzung erzeugt | 1.983,2–2.313,8 ms | 1.875,1–2.174,8 ms |
+
+In allen drei Erweiterungsläufen sind 480/480 Texte korrekt; in allen
+Basisläufen bleiben 480/480 Texte unverändert. Code und Eingabefelder bleiben
+geschützt. Kein Navigationstimeout; eigene Browser-/Driverprozesse und der
+eigene Testport sind nach Abschluss unabhängig als beendet geprüft.
+Die begrenzte Probe misst weder physische Darstellung noch Videowiedergabe
+und begründet keine allgemeine Startzeit- oder Plattformfreigabe.
+
 ### Weiterhin offene Abnahmen
 
 Dies ist eine gemeinsame **Funktions- und Paketprüfung** der angegebenen
