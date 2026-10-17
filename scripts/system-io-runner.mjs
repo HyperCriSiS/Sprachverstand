@@ -22,6 +22,18 @@ const componentKind=process.env.DOM_COMPONENT_KIND;
 if(!['page-dom','product'].includes(componentKind))throw Error('Unknown declared component');
 const pageDomBundle=readFileSync(path.join(root,'artifacts/page-dom-control.js'),'utf8');
 const pageDomBundleSha256=createHash('sha256').update(pageDomBundle).digest('hex');
+const backendKind=process.env.BACKEND_KIND;
+if(!['literal','rules'].includes(backendKind)||componentKind!=='product')throw Error('Explicit backend product comparison required');
+const backendBinding=JSON.parse(readFileSync(path.join(root,'artifacts/backend-pair',backendKind,'binding.json'),'utf8'));
+if(backendBinding.backendKind!==backendKind)throw Error('Backend binding mismatch');
+function verifyBackendPackage(){
+ const bytes=readFileSync(path.join(root,'artifacts/backend-pair',backendKind,'extension/background.js'));
+ if(createHash('sha256').update(bytes).digest('hex')!==backendBinding.backgroundSha256)throw Error('Backend hash mismatch');
+ const body=bytes.toString('utf8');
+ if(!body.startsWith('globalThis["__diagnosticLiteralBackend"] = '+(backendKind==='literal')+';\n'))throw Error('Backend selector mismatch');
+ if(createHash('sha256').update(body.slice(body.indexOf('\n')+1)).digest('hex')!==backendBinding.backendBodySha256)throw Error('Backend body mismatch');
+}
+verifyBackendPackage();
 const browserIndex = process.argv.indexOf("--browser");
 const browser = browserIndex === -1 ? "chromium" : process.argv[browserIndex + 1];
 if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser erlaubt chromium oder firefox.");
@@ -30,6 +42,7 @@ if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) throw
 const driverBase = `http://127.0.0.1:${driverPort}`;
 const extensionDir = process.env.VIDEO_EXTENSION_DIR
   ? path.resolve(process.env.VIDEO_EXTENSION_DIR) : path.join(root, "dist", browser);
+if(extensionDir!==path.join(root,'artifacts/backend-pair',backendKind,'extension'))throw Error('Unexpected backend package path');
 const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
 const firefoxArtifacts = process.env.VIDEO_ARTIFACTS_DIR
   ? path.resolve(root, process.env.VIDEO_ARTIFACTS_DIR) : path.join(root, "artifacts/video-playback");
@@ -725,6 +738,7 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
 }
 
 async function run(url, mode, attempt) {
+  verifyBackendPackage();
   const extensionInstalled=mode==='extension'&&componentKind==='product';
   const id=await createSession(extensionInstalled);
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
@@ -755,7 +769,7 @@ async function run(url, mode, attempt) {
     await waitForCompletion(id);
     await arm.pending;
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
-    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backendKind,...backendBinding,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,
