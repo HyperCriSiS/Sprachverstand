@@ -19,6 +19,8 @@ jobs:
         if: ${{ always() }}
         with:
           name: synthetic-opt-source-preflight
-          path: artifacts/opt-source-preflight.json
+          path: |
+            artifacts/opt-source-preflight.json
+            artifacts/opt-source-preflight-failure.json
           if-no-files-found: ignore
           retention-days: 7
