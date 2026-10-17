@@ -10,7 +10,7 @@ import {observeOwnRendererFlags} from './own-renderer-flag-observation.mjs';
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 async function main(){
  assert.equal(process.platform,'linux');
- let stage='temporary-directory';
+ let stage='temporary-directory',baselineSessionVerified=false;
  const directory=await mkdtemp(path.join(tmpdir(),'sv-opt-source-'));let fd,pump,driver,session,stopFlags;
  const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;await new Promise(r=>server.close(r));
  const base='http://127.0.0.1:'+port;
@@ -27,16 +27,22 @@ async function main(){
   driver=spawn('chromedriver',['--port='+port],{stdio:['ignore','pipe','pipe']});
   let startFailed=false;driver.on('error',()=>{startFailed=true;});driver.stdout.on('data',()=>{});driver.stderr.on('data',()=>{});
   let ready=false;for(let i=0;i<30&&!startFailed;i++){try{await rpc('GET','/status',undefined,500);ready=true;break;}catch{await pause(100);}}
-  assert.ok(ready&&!startFailed);stopFlags=observeOwnRendererFlags(driver.pid);
+  assert.ok(ready&&!startFailed);
+  stage='baseline-session';
+  const baseline=await rpc('POST','/session',{capabilities:{alwaysMatch:{browserName:'chrome','goog:chromeOptions':{binary:'/usr/bin/chromium',args:['--headless=new','--no-sandbox','--no-first-run']}}}},30000);
+  session=baseline.sessionId;assert.equal(baseline.capabilities.browserVersion,'155.0.8059.0');
+  const baselineResult=await rpc('POST','/session/'+session+'/execute/sync',{script:'return 49995000;',args:[]});
+  assert.equal(baselineResult,49995000);baselineSessionVerified=true;
+  await rpc('DELETE','/session/'+session,undefined,5000);session=undefined;
   let pipe='',truncated=false,readFailed=false;const buffer=Buffer.alloc(8192);
   const drain=()=>{for(let i=0;i<64;i++){let n;try{n=readSync(fd,buffer,0,buffer.length,null);}catch(e){if(e.code==='EAGAIN')break;throw e;}if(!n)break;
    if(pipe.length+n>16*1024*1024){truncated=true;break;}pipe+=buffer.subarray(0,n).toString('utf8');}};
   pump=setInterval(()=>{try{drain();}catch{readFailed=true;}},10);
   const flags='--trace-opt --trace-file-names --redirect-code-traces --redirect-code-traces-to='+fifo;
   stage='session-create';
-  const created=await rpc('POST','/session',{capabilities:{alwaysMatch:{browserName:'chrome','goog:chromeOptions':{binary:'/usr/bin/chromium',args:['--headless=new','--no-sandbox','--no-first-run','--js-flags='+flags]}}}});
+  const created=await rpc('POST','/session',{capabilities:{alwaysMatch:{browserName:'chrome','goog:chromeOptions':{binary:'/usr/bin/chromium',args:['--headless=new','--no-sandbox','--no-first-run','--js-flags='+flags]}}}},30000);
   stage='version-guard';
-  session=created.sessionId;assert.equal(created.capabilities.browserVersion,'155.0.8059.0');
+  session=created.sessionId;stopFlags=observeOwnRendererFlags(driver.pid);assert.equal(created.capabilities.browserVersion,'155.0.8059.0');
   stage='navigation';
   await rpc('POST','/session/'+session+'/url',{url:'data:text/html,<title>synthetic-control</title>'});
   stage='script-execute';
@@ -44,7 +50,7 @@ async function main(){
   stage='collect-output';
   await pause(500);drain();const rendererFlags=stopFlags();stopFlags=undefined;
   const recognized=summarizeSyntheticOptOutput(pipe,'').recognizedFunctionLinesStdout;
-  const report={browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,namedPipeVerified:true,rawOutputExported:false,profileExported:false,
+  const report={baselineSessionVerified,browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,namedPipeVerified:true,rawOutputExported:false,profileExported:false,
    fixtureCompleted:result.completed===true&&result.checksum===49995000,rendererFlags,pipeBytes:Buffer.byteLength(pipe),
    genericTraceLinesPipe:pipe.split(/\r?\n/).filter(line=>/\bJSFunction\b/.test(line)&&/marking|compiling|optimizing/.test(line)).length,
    recognizedFunctionLinesNamedPipe:recognized,readFailed,truncated};
@@ -53,7 +59,7 @@ async function main(){
   console.log('Own WebDriver checksum and known optimizer output verified; only fixed metadata exported.');
  }catch(error){
   await mkdir('artifacts',{recursive:true});
-  await writeFile('artifacts/opt-source-preflight-failure.json',JSON.stringify({stage,timeout:error?.name==='TimeoutError',webdriver:error?.diagnostic??null,syntheticOnly:true,rawOutputExported:false,profileExported:false},null,2));
+  await writeFile('artifacts/opt-source-preflight-failure.json',JSON.stringify({stage,baselineSessionVerified,timeout:error?.name==='TimeoutError',webdriver:error?.diagnostic??null,syntheticOnly:true,rawOutputExported:false,profileExported:false},null,2));
   throw Error('Synthetic preflight did not complete');
  }finally{
   if(session)try{await rpc('DELETE','/session/'+session,undefined,5000);}catch{}
