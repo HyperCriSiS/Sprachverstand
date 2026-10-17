@@ -34,6 +34,7 @@ function roleSummary(input,mode,controlKind){
   literalControl={rewrites:integer(input.literalControl.rewrites),batches:integer(input.literalControl.batches)};
  }
  return {
+  initialState:input.initialState?{nowMs:number(input.initialState.nowMs),focused:boolean(input.initialState.focused),visibility:visibility(input.initialState.visibility)}:null,
   role:mode,correctionImplementation:mode==='baseline'?'none':controlKind==='literal'?'page-literal':'sprachverstand',
   extensionInstalled,installationArgumentsVerified:true,browserVersion:version(input.browserVersion),driverVersion:version(input.driverVersion),
   currentTime:number(input.currentTime),droppedVideoFrames:integer(input.droppedVideoFrames),mutationTicks,
@@ -50,9 +51,16 @@ function roleSummary(input,mode,controlKind){
 
 export function sanitizeVideo30Pair(input){
  if(!['literal','product'].includes(input.controlKind)||!['baseline-first','extension-first'].includes(input.pairOrder)||input.sourceFps!==30||input.sourceHash!==sourceHash)throw Error('Unexpected video source or experiment');
+ const factorial=input.focusMode!==undefined||input.observerMode!==undefined;
+ if(factorial){
+  if(input.controlKind!=='product'||!['default','focused'].includes(input.focusMode)||!['default','passive'].includes(input.observerMode))throw Error('Invalid factorial condition');
+  for(const role of [input.baseline,input.extension]){
+   if(role.focusedStart!==(input.focusMode==='focused')||role.mainTaskDiagnostics!==(input.observerMode==='passive')||!role.initialState)throw Error('Unverified factorial flags or initial observation');
+  }
+ }
  const baseline=roleSummary(input.baseline,'baseline',input.controlKind),extension=roleSummary(input.extension,'extension',input.controlKind);
  if(baseline.browserVersion!==extension.browserVersion||baseline.driverVersion!==extension.driverVersion)throw Error('Mixed browser versions in pair');
- return {schemaVersion:1,controlKind:input.controlKind,pairOrder:input.pairOrder,sourceFps:30,sourceHash,
+ return {schemaVersion:1,...(factorial?{focusMode:input.focusMode,observerMode:input.observerMode}:{}),controlKind:input.controlKind,pairOrder:input.pairOrder,sourceFps:30,sourceHash,
   observation:'synthetic numeric frame and timing measurements, not a native trace or recording',
   baseline,extension,nativeTracesExported:false,profilesExported:false,sessionIdentifiersExported:false,recordingsExported:false};
 }

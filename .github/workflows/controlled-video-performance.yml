@@ -1,21 +1,21 @@
-name: Isolierte 30-FPS-Seitentextkontrolle
+name: 30-FPS-Fokus-und-Beobachtervergleich
 on:
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: video30-page-control-${{ github.ref }}
+  group: video30-factorial-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   video30:
-    name: 30 FPS (${{ matrix.control }}, ${{ matrix.order }})
+    name: 30 FPS (${{ matrix.focus }}, ${{ matrix.observer }})
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
-        control: [literal, product]
-        order: [baseline-first, extension-first]
+        focus: [default, focused]
+        observer: [default, passive]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -33,12 +33,18 @@ jobs:
         run: npm run build:chromium
       - name: Drei vorab festgelegte Paare prüfen
         env:
-          VIDEO_CONTROL_KIND: ${{ matrix.control }}
-          VIDEO_PAIR_ORDER: ${{ matrix.order }}
+          VIDEO_CONTROL_KIND: product
+          VIDEO_FOCUS_MODE: ${{ matrix.focus }}
+          VIDEO_OBSERVER_MODE: ${{ matrix.observer }}
         run: |
+          flags=()
+          if [ "$VIDEO_FOCUS_MODE" = focused ]; then flags+=(--focused-start); fi
+          if [ "$VIDEO_OBSERVER_MODE" = passive ]; then flags+=(--diagnose-main-tasks); fi
           failed=0
           for pair in 1 2 3; do
-            VIDEO_ARTIFACTS_DIR="artifacts/video30-control/pair-${pair}" node scripts/video30-page-control.mjs --fps 30 --diagnose-main-tasks --focused-start || failed=1
+            order=baseline-first
+            if [ "$pair" = 2 ]; then order=extension-first; fi
+            VIDEO_PAIR_ORDER="$order" VIDEO_ARTIFACTS_DIR="artifacts/video30-control/pair-${pair}" node scripts/video30-page-control.mjs --fps 30 "${flags[@]}" || failed=1
           done
           exit "$failed"
       - name: Ausschließlich synthetische Frame-Messwerte filtern
@@ -49,7 +55,7 @@ jobs:
         if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: video30-control-${{ matrix.control }}-${{ matrix.order }}-${{ github.sha }}
+          name: video30-factorial-${{ matrix.focus }}-${{ matrix.observer }}-${{ github.sha }}
           path: |
             artifacts/video30-control/pair-1/sanitized-video30-pair.json
             artifacts/video30-control/pair-2/sanitized-video30-pair.json

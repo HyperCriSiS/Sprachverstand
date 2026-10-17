@@ -33,3 +33,16 @@ test('keeps missing long-task and callback observations explicitly unmeasured',(
  assert.equal(output.extension.frameSamples[0].focused,null);
  assert.equal(output.extension.longTaskObservation,'not-enabled');
 });
+
+test('verifies all four factorial conditions and rejects misleading labels',()=>{
+ for(const focusMode of ['default','focused'])for(const observerMode of ['default','passive']){
+  const pair=fixture();Object.assign(pair,{controlKind:'product',focusMode,observerMode});
+  for(const role of [pair.baseline,pair.extension])Object.assign(role,{controlKind:'product',extensionInstalled:role.mode==='extension',focusedStart:focusMode==='focused',mainTaskDiagnostics:observerMode==='passive',initialState:{nowMs:1,focused:false,visibility:'visible',private:'PRIVATE'}});
+  const output=sanitizeVideo30Pair(pair);
+  assert.equal(output.focusMode,focusMode);assert.equal(output.observerMode,observerMode);
+  assert.equal(output.baseline.initialState.focused,false);
+  assert.ok(!JSON.stringify(output).includes('PRIVATE'));
+  pair.extension.focusedStart=!pair.extension.focusedStart;
+  assert.throws(()=>sanitizeVideo30Pair(pair));
+ }
+});

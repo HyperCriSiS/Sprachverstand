@@ -16,6 +16,9 @@ import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 const root = process.cwd();
 const controlKind=process.env.VIDEO_CONTROL_KIND??'literal';
 if(!['literal','product'].includes(controlKind))throw Error('Invalid video control kind');
+const focusMode=process.env.VIDEO_FOCUS_MODE;
+const observerMode=process.env.VIDEO_OBSERVER_MODE;
+if(!['default','focused'].includes(focusMode)||!['default','passive'].includes(observerMode))throw Error('Undeclared factorial condition');
 const versions=new Map();
 const version=value=>/^\d+\.\d+\.\d+\.\d+$/.test(String(value??'').split(' ')[0])?String(value).split(' ')[0]:'unknown';
 const browserIndex = process.argv.indexOf("--browser");
@@ -94,7 +97,7 @@ if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
 
-if(browser!=='chromium'||diagnosticFps!==30||browserTrace||domPhaseDiagnostics||subtitleOnly||!mainTaskDiagnostics||!focusedStart)throw Error('This bounded control requires Chromium30FPS, passive main-task diagnostics and focused start, without raw traces');
+if(browser!=='chromium'||diagnosticFps!==30||browserTrace||domPhaseDiagnostics||subtitleOnly||controlKind!=='product'||mainTaskDiagnostics!==(observerMode==='passive')||focusedStart!==(focusMode==='focused'))throw Error('Factorial condition and actual flags disagree');
 if (!existsSync(path.join(extensionDir, "manifest.json"))) {
   throw new Error(
     "Der Build fehlt. Vor dem Videotest zuerst npm run build:" + browser + " ausführen."
@@ -219,6 +222,7 @@ function fixtureHtml(withLiteralControl=false) {
   const video = document.querySelector("#video");
   const root = document.querySelector("#dynamic-root");
   const metrics = {
+    initialState: {nowMs:performance.now(),focused:document.hasFocus(),visibility:document.visibilityState},
     frameTimes: [],
     frameSamples: [],
     waiting: 0,
@@ -623,6 +627,7 @@ async function collect(id, mode) {
         readyState: Number(video?.readyState || 0),
         videoWidth: Number(video?.videoWidth || 0),
         videoHeight: Number(video?.videoHeight || 0),
+        initialState:metrics.initialState,
         frameTimes: Array.isArray(metrics.frameTimes) ? metrics.frameTimes : [],
         frameSamples: Array.isArray(metrics.frameSamples) ? metrics.frameSamples : [],
         errors: Array.isArray(metrics.errors) ? metrics.errors : [],
@@ -798,7 +803,7 @@ async function measureVideoPair(url, attempt) {
   await mkdir(firefoxArtifacts, {recursive: true});
   await writeFile(path.join(firefoxArtifacts,
     `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
-    JSON.stringify({controlKind,sourceHash,sourceFps:30,pairOrder: videoPairOrder,baseline,extension},null,2) + "\n");
+    JSON.stringify({focusMode,observerMode,controlKind,sourceHash,sourceFps:30,pairOrder:videoPairOrder,baseline,extension},null,2) + "\n");
 
   console.log(
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({
