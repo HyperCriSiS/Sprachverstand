@@ -8,6 +8,8 @@ for(const role of ['baseline','extension']) {
  assert.equal(r.pageThreadWitnessVerified,true,'Native page marker must identify exactly one thread');
  assert.ok(Array.isArray(r.pageThreadPhases));
  assert.equal(r.pageThreadPhases.length,5);
+ assert.ok(Array.isArray(r.pageThreadGapOverlap),'Require actual callback-entry clock and valid bounded trace clock');
+ assert.equal(r.pageThreadGapOverlap.length,5);
  assert.equal(r.correctDynamicTexts,480);assert.equal(r.expectedDynamicTexts,480);
  assert.equal(r.allCallbackFramesVisible,true);assert.equal(r.allCallbackFramesFocused,true);
  assert.equal(r.diagnosticComplete,true);
