@@ -13,6 +13,7 @@ jobs:
         with:
           node-version: 24
       - run: node scripts/check-synthetic-opt-output.mjs
+      - run: node scripts/check-own-renderer-flag-observation.mjs
       - run: node scripts/opt-source-preflight.mjs
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ always() }}

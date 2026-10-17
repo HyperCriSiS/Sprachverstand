@@ -1,3 +1,4 @@
+import {observeOwnRendererFlags} from './own-renderer-flag-observation.mjs';
 import assert from 'node:assert/strict';
 import {spawnSync,spawn} from 'node:child_process';
 import {constants,openSync,readSync,closeSync,lstatSync} from 'node:fs';
@@ -22,6 +23,7 @@ async function main(){
   const child=spawn(bin,['--headless=new','--no-sandbox','--no-first-run','--no-default-browser-check',
    '--user-data-dir='+directory,'--enable-logging=stderr','--js-flags='+flags,'--dump-dom',
    'data:text/html,'+encodeURIComponent(html)],{stdio:['ignore','pipe','pipe']});
+  const stopFlagObservation=observeOwnRendererFlags(child.pid);
   let stdout='',stderr='',pipe='',size=0,truncated=false,startFailed=false;
   const append=(kind,text)=>{size+=text.length;if(size>16*1024*1024){truncated=true;child.kill();return;}
    if(kind==='stdout')stdout+=text;else if(kind==='stderr')stderr+=text;else pipe+=text;};
@@ -35,10 +37,11 @@ async function main(){
   pump=setInterval(()=>{try{drain();}catch{readFailed=true;child.kill();}},10);
   const timer=setTimeout(()=>child.kill(),15000);
   const code=await new Promise(resolve=>child.once('close',resolve));clearTimeout(timer);clearInterval(pump);pump=undefined;drain();
+  const rendererFlags=stopFlagObservation();
   const counts=summarizeSyntheticOptOutput(stdout,stderr);
   const pipeCount=summarizeSyntheticOptOutput(pipe,'').recognizedFunctionLinesStdout;
   const genericTraceLines=text=>text.split(/\r?\n/).filter(line=>/\bJSFunction\b/.test(line)&&/marking|compiling|optimizing/.test(line)).length;
-  const report={stdoutBytes:Buffer.byteLength(stdout),stderrBytes:Buffer.byteLength(stderr),pipeBytes:Buffer.byteLength(pipe),
+  const report={rendererFlags,stdoutBytes:Buffer.byteLength(stdout),stderrBytes:Buffer.byteLength(stderr),pipeBytes:Buffer.byteLength(pipe),
    genericTraceLinesStdout:genericTraceLines(stdout),genericTraceLinesStderr:genericTraceLines(stderr),genericTraceLinesPipe:genericTraceLines(pipe),
    flagRejectionTextObserved:/unrecognized flag|not allowed|unknown flag/i.test(stderr),
    browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,namedPipeVerified:true,
