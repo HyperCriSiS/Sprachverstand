@@ -15,7 +15,9 @@ jobs:
         with:
           node-version: 24
       - name: Syntax pruefen
-        run: node --check scripts/system-cache-preflight.mjs
+        run: |
+          node --check scripts/system-cache-preflight.mjs
+          node --test scripts/test-system-cache-renderer-match.mjs
       - name: Eigenen Systembrowser und Dateivoraussetzungen pruefen
         run: node scripts/system-cache-preflight.mjs
       - name: Ausschliesslich festes Metadatenschema pruefen

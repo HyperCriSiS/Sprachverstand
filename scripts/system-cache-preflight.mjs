@@ -3,6 +3,7 @@ import {readFileSync,readdirSync,readlinkSync,statSync,accessSync,constants} fro
 import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {fetchWebdriverResponse} from './webdriver-response.mjs';
+import {matchesOwnedRenderer} from './system-cache-renderer-match.mjs';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function executable(variable,names){
  const configured=process.env[variable];
@@ -25,8 +26,7 @@ function ownRenderers(rootPid,rootStart){
   const identity=start(pid);if(!identity)continue;
   const command=safe(`/proc/${pid}/cmdline`);
   const comm=safe(`/proc/${pid}/comm`)?.trim();
-  const argumentMatch=command?.split('\0').includes('--type=renderer')===true;
-  const commMatch=comm==='CrRendererMain';
+  const {argumentMatch,commMatch}=matchesOwnedRenderer(command,comm);
   discovery.ownProcesses++;
   if(command===null)discovery.commandLineUnavailable++;
   if(argumentMatch)discovery.rendererArgumentMatches++;
