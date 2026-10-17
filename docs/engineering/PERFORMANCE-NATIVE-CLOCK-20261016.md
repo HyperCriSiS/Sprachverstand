@@ -410,3 +410,19 @@ Eine vorab festgelegte lokale native Chromium-Probe (155.0.8059.39) vergleicht b
 Damit ist der Skalierungseffekt des tatsächlich verwendeten Entnahmemusters im Browser reproduziert. Die Werte sind keine DOM-Gesamtdauer, kein Frame-/Untertitel-Latenzvergleich und keine rückwirkende Erklärung der historischen Linux-Pausen. Fünf neue Warteschlangentests prüfen teilweise bearbeitete Stapel, Löschen/Wiedereinfügen, `clear`, vollständiges Leeren und 4.000 gemischte Operationen gegen ein gewöhnliches Set. Zusammen mit allen vorhandenen DOM-Tests bestehen 54 Dateien / 372 Tests sowie TypeScript im isolierten sauberen Arbeitsstand. Die reguläre Browser-/Paketabnahme dieser Produktänderung steht zum Implementierungszeitpunkt noch aus. Keine Gesamtfreigabe aus der Mikroprobe ableiten.
 
 Die anschließende reguläre [CI 39072752855](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39072752855) auf Produktcommit `5bc1578` endet erfolgreich; alle acht PR-Prüfungen sind grün. Vollständige Kernprüfung, reale Chromium-/Firefox-Smokes, kontrollierte Interaktion, Videoprüfungen und Paket-/Gecko-Kompatibilität bestehen. Dies ist die reguläre Abnahme der neuen Warteschlangenänderung, kein erneuter matched Vergleich der historischen roten Linux-Compiler-/Frame-Reihe. Die ursprünglichen uncommitteten Versuchdateien sind bytegleich erhalten; PR #451 bleibt Entwurf und #419 NO-GO.
+
+## Fortgeführte Schlüssel für ausstehende Map-Aufträge
+
+Die anschließende gezielte Prüfung findet dasselbe Entnahmemuster in den Map-Warteschlangen für Folgekontexte, Inline-Schutzvorbereitung, normale/große/Untertitel-Transformationen, normale/Untertitel-Ergebnisanwendung, Textbearbeitungspläne und zugängliche Attribute. Die Grenzen gleichzeitig aktiver Transformationen begrenzen nicht die Länge der wartenden Mengen. Normale Zustands-, Originaltext-, Ergebnisindex- und Cache-Speicher werden nicht geändert.
+
+`PendingMap` führt den Schlüsseliterator fort und liest beim Zugriff den aktuellen Wert dieses Schlüssels. Dadurch wird ein noch ausstehender Auftrag nach `set` mit demselben Schlüssel nicht aus einem veralteten zwischengespeicherten Wert ausgeführt. Löschen/Wiedereinfügen, `clear`, vollständiges Leeren, normale Map-Iteration und Eigentumsübergabe der Textbearbeitungspläne an die Wiederherstellung behalten ihre Semantik. Die Attributnamen pro Element sind eine kleine feste Menge und bleiben normale Sets; nur die äußere Auftrags-Map erhält den Cursor.
+
+Die native Chromium-Mikroprobe (155.0.8059.39) verwendet erneut drei Größen, vier vorab festgelegte Wiederholungen und wechselnde Alt-/Cursorreihenfolge, diesmal ausschließlich für das Map-Entnahmemuster. Alle 24 Rollen prüfen bei jedem Eintrag explizit Reihenfolge, Schlüsselindex und Wert sowie abschließend Anzahl und Indexsumme. Gemessen wird nur das Leeren einer bereits gefüllten Map, ohne DOM oder Videowiedergabe:
+
+| Aufträge | Bisheriges Muster, Median | Fortgeführter Schlüssel, Median |
+| ---: | ---: | ---: |
+| 10.000 | 10,70 ms | 0,65 ms |
+| 20.000 | 41,90 ms | 1,00 ms |
+| 40.000 | 160,95 ms | 2,00 ms |
+
+Fünf zusätzliche Tests prüfen insbesondere den aktualisierten Wert eines bestehenden Auftrags, Reihenfolge beim Wiedereinfügen, `clear`/Leeren, einen explizit undefinierten Map-Wert sowie 4.000 gemischte Operationen gegen eine normale Map. Zusammen mit den vorhandenen DOM- und Set-Warteschlangentests sind 55 Dateien / 377 Tests und TypeScript im isolierten Arbeitsstand geprüft. Die reguläre Abnahme des ergänzten Produktstands folgt separat. Die Mikroprobe erklärt weder die gesamte DOM-Laufzeit noch rückwirkend historische Linux-Frame-/Compiler-/Navigationsgegenbefunde; deren Freigabe bleibt offen.

@@ -1,3 +1,4 @@
+import {PendingMap} from "./pending-map";
 import {PendingSet} from "./pending-set";
 import { isRiskAllowed, type Rule, type RuleProfile } from "./rule";
 import {
@@ -225,7 +226,7 @@ export class DomProcessor {
     ancestry: readonly (readonly [Node, object | undefined])[];
     ranges: Map<Text, readonly InlineProtectionRange[]>;
   }>();
-  private readonly pendingInlineProtection = new Map<Node, {
+  private readonly pendingInlineProtection = new PendingMap<Node, {
     iterator: ReturnType<typeof iterateInlineProtection>;
     results: Map<Text, readonly InlineProtectionRange[]>;
     ancestry: readonly (readonly [Node, object | undefined])[];
@@ -238,24 +239,24 @@ export class DomProcessor {
   private activeSubtitleTraversal:
     | { readonly root: Node; readonly walker: TreeWalker }
     | undefined;
-  private readonly pendingAttributes = new Map<Element, Set<string>>();
+  private readonly pendingAttributes = new PendingMap<Element, Set<string>>();
   private textChanges = new Map<Text, ChangeRecord>();
   private pendingTextTransforms = new Map<Text, {original: string; expected: string}>();
   private readonly pendingContextPreparations = new Map<Text, TextContextPreparation>();
-  private readonly pendingFollowingContexts = new Map<Node | object, Generator<void>>();
+  private readonly pendingFollowingContexts = new PendingMap<Node | object, Generator<void>>();
   private contextInvalidationVersion = 0;
-  private readonly queuedLargeTransforms = new Map<Text, () => Promise<void>>();
-  private readonly queuedSmallTransforms = new Map<Text, () => Promise<void>>();
-  private readonly queuedSubtitleTransforms = new Map<Text, () => Promise<void>>();
+  private readonly queuedLargeTransforms = new PendingMap<Text, () => Promise<void>>();
+  private readonly queuedSmallTransforms = new PendingMap<Text, () => Promise<void>>();
+  private readonly queuedSubtitleTransforms = new PendingMap<Text, () => Promise<void>>();
   private activeLargeTransforms = 0;
   private activeSmallTransforms = 0;
   private asyncGeneration = 0;
-  private readonly pendingTransformResults = new Map<object, () => void>();
-  private readonly pendingSubtitleTransformResults = new Map<object, () => void>();
+  private readonly pendingTransformResults = new PendingMap<object, () => void>();
+  private readonly pendingSubtitleTransformResults = new PendingMap<object, () => void>();
   private readonly pendingAttributeTransforms = new Map<Element, Map<string, {value: string}>>();
   private readonly transformRetryHandles = new Set<number>();
   private activeTextEditSlice: ReadonlySet<Text> | undefined;
-  private pendingTextEdits = new Map<Text, TextEditPlan>();
+  private pendingTextEdits = new PendingMap<Text, TextEditPlan>();
   private readonly summaryCounts = new Map<string, ReplacementSummaryEntry>();
   private attributeChanges = new Map<
     Element,
@@ -390,9 +391,9 @@ export class DomProcessor {
     }
   }
 
-  private processTransformResult(results: Map<object, () => void>): boolean {
+  private processTransformResult(results: PendingMap<object, () => void>): boolean {
     if (results.size === 0) return false;
-    const first = results.entries().next().value;
+    const first = results.peek();
     if (!first) return false;
     const [token, work] = first;
     results.delete(token); work(); return true;
@@ -574,7 +575,7 @@ export class DomProcessor {
       if (!keepRunning && this.running) {
         restoration.nodes.unshift(this.restorationTextEntries(
           new Map(), new Map(), this.pendingTextEdits));
-        this.pendingTextEdits = new Map();
+        this.pendingTextEdits = new PendingMap();
         this.budgetedRestoration = undefined;
         this.stop({restore: false});
         this.budgetedRestoration = restoration;
@@ -590,7 +591,7 @@ export class DomProcessor {
     const attributes = this.restorationAttributeEntries(this.attributeChanges);
     this.textChanges = new Map();
     this.pendingTextTransforms = new Map();
-    this.pendingTextEdits = new Map();
+    this.pendingTextEdits = new PendingMap();
     this.attributeChanges = new Map();
     if (keepRunning) {
       this.cancelRegularFlush();
@@ -1339,7 +1340,10 @@ export class DomProcessor {
     | { readonly element: Element; readonly attributeName: string }
     | undefined {
     if (this.pendingAttributes.size === 0) return undefined;
-    for (const [element, names] of this.pendingAttributes) {
+    while (this.pendingAttributes.size > 0) {
+      const first = this.pendingAttributes.peek();
+      if (!first) break;
+      const [element, names] = first;
       const iterator = names.values();
       const attributeName = iterator.next().value as string | undefined;
       if (!attributeName) {
@@ -1676,7 +1680,7 @@ export class DomProcessor {
 
   private processFollowingContextStep(): boolean {
     if (this.pendingFollowingContexts.size === 0) return false;
-    const entry = this.pendingFollowingContexts.entries().next().value;
+    const entry = this.pendingFollowingContexts.peek();
     if (!entry) return false;
     const [key, iterator] = entry;
     // One regular unit advances at most eight simple traversal steps.
@@ -2323,7 +2327,7 @@ export class DomProcessor {
 
   private processInlineProtectionStep(): boolean {
     if (this.pendingInlineProtection.size === 0) return false;
-    const first = this.pendingInlineProtection.entries().next().value;
+    const first = this.pendingInlineProtection.peek();
     if (!first) return false;
     const [root, preparation] = first;
     if (!this.isProcessableRoot(root)) {
@@ -2834,7 +2838,7 @@ export class DomProcessor {
       if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= 31) return;
       const queue = hasSubtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
       if (queue.size === 0) return;
-      const first = queue.entries().next().value;
+      const first = queue.peek();
       if (!first) return;
       const [node, run] = first;
       queue.delete(node);
@@ -2894,7 +2898,7 @@ export class DomProcessor {
   private dispatchLargeTransforms(): void {
     while (this.running && this.activeLargeTransforms < maximumConcurrentLargeTransforms) {
       if (this.queuedLargeTransforms.size === 0) return;
-      const first = this.queuedLargeTransforms.entries().next().value;
+      const first = this.queuedLargeTransforms.peek();
       if (!first) return;
       const [node, run] = first;
       this.queuedLargeTransforms.delete(node);
@@ -2985,7 +2989,7 @@ export class DomProcessor {
   }
 
   private processPendingTextEdit(validated: Set<Text>): void {
-    const first = this.pendingTextEdits.entries().next().value;
+    const first = this.pendingTextEdits.peek();
     if (!first) return;
     const [node, pending] = first;
     if (!validated.has(node) && (node.data !== pending.expected ||

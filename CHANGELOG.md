@@ -7,6 +7,8 @@ dokumentiert.
 
 ### Behoben
 
+- Ausstehende Transformations-, Kontext-, Textbearbeitungs- und Attributaufträge behalten auch in Map-Warteschlangen ihren Entnahme-Cursor. Aktualisierte Aufträge werden mit ihrem neuesten Wert ausgeführt; große Rückstände werden ohne wiederholtes Durchlaufen gelöschter Einträge abgearbeitet.
+
 - Große ausstehende DOM- und Untertitel-Arbeitsmengen behalten ihren Set-Iterator beim Abarbeiten bei. Bereits entfernte Einträge werden dadurch nicht bei jeder Entnahme erneut überlaufen; Reihenfolge, erneutes Einfügen und Arbeitsbudgets bleiben erhalten.
 
 - Identische bereits veröffentlichte Ersetzungszustände lösen keine wiederholten Speicher-, Badge- und Broadcast-Aufrufe aus. Änderungen, Navigation und notwendige Wiederholungen nach Fehlern bleiben berücksichtigt.
