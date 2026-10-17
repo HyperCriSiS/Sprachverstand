@@ -53,7 +53,7 @@ function sanitizeRole(input, mode) {
     mode, browserVersion:version(input.browserVersion), driverVersion:version(input.driverVersion),
     currentTime:number(input.currentTime), droppedVideoFrames:count(input.droppedVideoFrames), mutationTicks:count(input.mutationTicks),
     completion:{total:count(completion.total), expected:count(completion.expected), correct:count(completion.correct)},
-    frames:{callbacks:frameSamples.length, p95GapMs:optionalNumber(input.frames.p95GapMs),
+    frames:{callbacks:frameSamples.length, p95GapMs:optionalNumber(input.frames.p95GapMs), p99GapMs:optionalNumber(input.frames.p99GapMs),
       maximumGapMs:optionalNumber(input.frames.maximumGapMs), gapsOver120Ms:count(input.frames.gapsOver120Ms)},
     focused:boolean(input.focused), visibility:visibility(input.visibilityState), frameSamples,
     presentationProgress:videoPresentationProgress(frameSamples, 30) ?? null,
