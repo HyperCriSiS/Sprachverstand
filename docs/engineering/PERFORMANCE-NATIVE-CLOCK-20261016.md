@@ -320,3 +320,20 @@ Alle Rollen bestätigen Firefox 157.0.1 / Geckodriver 0.37.1, den bekannten 30-F
 Wiedergabe, finale Korrektheit und sämtliche Cues bestehen; die Erweiterung hat in dieser Reihe keine zusätzlichen Drops. Dennoch steigt der maximale Renderingzeitstempel-Abstand in beiden Erweiterungsrollen reproduzierbar auf 76,38 ms, gegenüber rund 49 ms ohne Erweiterung. Die drei betroffenen Intervalle liegen bei unterschiedlichen Medienzeiten, jeweils mit zwei Präsentationen und etwa 66–67 ms Medienfortschritt. Ein konkreter Zusatzbildverlust in genau diesen Intervallen ist nicht belegt. Diese Abweichung wird weder als identische Leistung noch als erklärte Ursache ausgegeben.
 
 Die bisherige Dauerlastprobe speichert den Renderingzeitstempel aus dem Callbackargument, aber keine unabhängige `performance.now()`-Zeit beim tatsächlichen Eintritt. Damit lässt sich eine Rendering-/Callbacktaktabweichung noch nicht von einer realen Hauptthread-Verzögerung trennen. Firefox bietet hier auch keine Long-Task-API. Vor weiterer Ursachenmessung ist diese konkrete Zeitbasislücke zu schließen; eine unveränderte Dauerlastwiederholung würde sie nicht beantworten. Die Reihe ist eine funktional positive, zeitlich teilweise offene Teilabnahme. Historische Linux-/Navigationsgegenbefunde und #419-Gesamtfreigabe bleiben offen.
+
+### Unabhängige Eintrittsuhr für die kombinierte Dauerlast
+
+Die gezielte Folgereihe ergänzt ausschließlich `performance.now()` beim Eintritt in den bereits bestehenden Videocallback. Sie erzeugt weder einen zusätzlichen rAF noch einen Timerbeobachter. Die tatsächliche Eintrittsuhr wird getrennt vom Renderingzeitstempel zusammengefasst; fehlende, nichtfinite, negative oder rückwärts laufende Eintrittswerte bleiben ausdrücklich unbekannt. Alte Messungen werden nicht aus Renderingzeiten rekonstruiert. Die bisherigen Prüfgrenzen und Anlaufsegmente bleiben bestehen. 37 relevante Tests prüfen unter anderem getrennte Uhren, fehlende Werte und zulässige Zeitquantisierung.
+
+Vier erneut vorab festgelegte Rollen ohne/mit/mit/ohne Erweiterung erfüllen Quell-/Versionsbindung, Fokus/Sichtbarkeit und sämtliche Funktionsbedingungen. Beide Erweiterungsrollen korrigieren jeweils alle 53 Cues und 480 finalen normalen Texte; maximale Cue-Latenzen 5 beziehungsweise 3 ms. Die Messfenster dauern 30.000–30.001 ms. Die unabhängige Uhr bestätigt die Abweichung:
+
+| Rolle | Renderingmaximum ms | Tatsächliches Eintrittsmaximum ms | Eintritts-P99 ms | Callbacks | Drops / gesamte Bilder |
+| --- | --- | --- | --- | --- | --- |
+| Ohne, zuerst | 48,90 | 50 | 49 | 739 | 6 / 906 |
+| Mit | 76,40 | 77 | 50 | 731 | 5 / 906 |
+| Mit, zuerst | 76,40 | 77 | 50 | 728 | 6 / 906 |
+| Ohne | 50,52 | 50 | 49 | 737 | 5 / 906 |
+
+In der ersten Erweiterungsrolle fallen Renderingmaximum und tatsächliches Eintrittsmaximum in dasselbe Intervall. In der zweiten liegt beim Renderingmaximum ein tatsächlicher Abstand von 76 ms vor; ihr Eintrittsmaximum von 77 ms gehört zu einem anderen, ebenfalls rund 76,38-ms-Renderingintervall. Damit ist ein bloßes Artefakt der Renderingzeitstempel als vollständige Erklärung ausgeschlossen. Die betroffenen Intervalle zeigen weiterhin jeweils zwei Präsentationen bei rund 66–67 ms Medienfortschritt. Ein konkreter CPU-/GC-/Schedulerblock oder additiver Bildverlust ist daraus nicht bewiesen.
+
+Die nächste begrenzte Ursachenfrage ist, ob vergleichbare zusätzliche Text-Rückschreibungen durch einen minimalen seiteneigenen Literaladapter ohne installierte Erweiterung dieselbe Abweichung in genau dieser Firefox-Dauerlast erzeugen. Frühere Literaltests in anderen Browsern oder Fixtures beantworten das nicht. Bis zu dieser Abgrenzung bleibt der 77-ms-Gegenbefund offen; eine unveränderte Wiederholung derselben Reihe würde keine neue Ursache isolieren. Keine Produktregel, Cachevorladung oder Browserflagänderung wird aus dem Befund abgeleitet.

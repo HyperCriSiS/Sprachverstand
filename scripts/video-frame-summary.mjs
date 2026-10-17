@@ -20,3 +20,11 @@ export function summarizeVideoFrames(frameTimes) {
     gapsOver120Ms: settled.filter(gap => gap > 120).length
   };
 }
+
+// Rendering timestamps cannot substitute for an unobserved callback-entry clock.
+export function summarizeVideoCallbackEntries(frames) {
+  if (!frames.length || frames.some((frame, index) =>
+    !Number.isFinite(frame.callbackAtMs) || frame.callbackAtMs < 0 ||
+    (index > 0 && frame.callbackAtMs < frames[index - 1].callbackAtMs))) return null;
+  return summarizeVideoFrames(frames.map(frame => frame.callbackAtMs));
+}
