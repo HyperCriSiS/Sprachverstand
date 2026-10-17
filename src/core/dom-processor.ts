@@ -294,12 +294,15 @@ export class DomProcessor {
   };
 
   private readonly clock: Performance;
+  // Candidate presence is readonly; profile/disabled checks remain live in each lookup.
+  private leadingContextRules: readonly Rule[];
 
   public constructor(
     private readonly document: Document,
     private options: DomProcessorOptions
   ) {
     this.clock = document.defaultView?.performance ?? performance;
+    this.leadingContextRules = options.rules.filter(rule => rule.leadingContextCandidate !== undefined);
   }
 
   private withTextSafetyScope(work: () => void): void {
@@ -533,6 +536,7 @@ export class DomProcessor {
     }
 
     this.options = options;
+    this.leadingContextRules = options.rules.filter(rule => rule.leadingContextCandidate !== undefined);
     this.subtitleTransformCache.clear();
 
     if (wasRunning) {
@@ -3212,7 +3216,7 @@ export class DomProcessor {
   }
 
   private needsLeadingContext(input: string): boolean {
-    for (const rule of this.options.rules) {
+    for (const rule of this.leadingContextRules) {
       if (
         !rule.applyWithLeadingContext ||
         !rule.leadingContextCandidate ||
@@ -3352,7 +3356,7 @@ export class DomProcessor {
 
   private leadingContextRequiresTrailingWhitespace(input: string): boolean {
     let matched = false;
-    for (const rule of this.options.rules) {
+    for (const rule of this.leadingContextRules) {
       if (!rule.applyWithLeadingContext || !rule.leadingContextCandidate ||
           this.options.disabledRuleIds?.has(rule.id) ||
           !isRiskAllowed(rule.risk, this.options.profile)) continue;
