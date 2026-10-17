@@ -81,3 +81,10 @@ it("reports absent pairs without manufacturing evidence and rejects oversized ra
   await writeFile(path.join(directory, "video-pair-chromium-30-1.json"), " ".repeat(1024 * 1024 + 1));
   await expect(exportVideoFailures(directory)).rejects.toThrow("Oversized");
 });
+it('preserves numeric P99 while legacy missing observations stay unknown',()=>{
+ const input=fixture();input.extension.frames.p99GapMs=83.3;
+ const output=sanitizeVideoFailure(input);
+ expect(output.extension.frames.p99GapMs).toBe(83.3);
+ expect(output.baseline.frames.p99GapMs).toBeNull();
+ for(const invalid of [-1,Infinity,'PRIVATE']){input.extension.frames.p99GapMs=invalid;expect(()=>sanitizeVideoFailure(input)).toThrow();}
+});

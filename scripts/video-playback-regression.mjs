@@ -1,3 +1,4 @@
+import {summarizeVideoFrames as summarize} from './video-frame-summary.mjs';
 import {validateVideoBaselineSafety} from './video-baseline-safety.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
@@ -546,24 +547,6 @@ function percentile(values, fraction) {
   ];
 }
 
-function summarize(frameTimes) {
-  const gaps = [];
-  for (let index = 1; index < frameTimes.length; index += 1) {
-    const gap = Number(frameTimes[index]) - Number(frameTimes[index - 1]);
-    if (Number.isFinite(gap) && gap >= 0) {
-      gaps.push(gap);
-    }
-  }
-  // Start- und Decoderanlauf nicht als Ruckeln bewerten.
-  const settled = gaps.slice(Math.min(15, gaps.length));
-  return {
-    callbacks: frameTimes.length,
-    p95GapMs: percentile(settled, 0.95),
-    maximumGapMs: settled.length ? Math.max(...settled) : 0,
-    gapsOver120Ms: settled.filter((gap) => gap > 120).length
-  };
-}
-
 async function collect(id, mode) {
   const state = await execute(
     id,
@@ -772,6 +755,7 @@ async function measureVideoPair(url, attempt) {
         currentTime: baseline.currentTime,
         callbacks: baseline.frames.callbacks,
         p95GapMs: baseline.frames.p95GapMs,
+        p99GapMs: baseline.frames.p99GapMs,
         maximumGapMs: baseline.frames.maximumGapMs,
         gapsOver120Ms: baseline.frames.gapsOver120Ms,
         droppedVideoFrames: baseline.droppedVideoFrames,
@@ -784,6 +768,7 @@ async function measureVideoPair(url, attempt) {
         currentTime: extension.currentTime,
         callbacks: extension.frames.callbacks,
         p95GapMs: extension.frames.p95GapMs,
+        p99GapMs: extension.frames.p99GapMs,
         maximumGapMs: extension.frames.maximumGapMs,
         gapsOver120Ms: extension.frames.gapsOver120Ms,
         droppedVideoFrames: extension.droppedVideoFrames,
@@ -1243,6 +1228,7 @@ try {
         baseline: {
           callbacks: baseline.frames.callbacks,
           p95GapMs: baseline.frames.p95GapMs,
+        p99GapMs: baseline.frames.p99GapMs,
           maximumGapMs: baseline.frames.maximumGapMs,
           gapsOver120Ms: baseline.frames.gapsOver120Ms,
           droppedVideoFrames: baseline.droppedVideoFrames,
@@ -1252,6 +1238,7 @@ try {
         extension: {
           callbacks: extension.frames.callbacks,
           p95GapMs: extension.frames.p95GapMs,
+        p99GapMs: extension.frames.p99GapMs,
           maximumGapMs: extension.frames.maximumGapMs,
           gapsOver120Ms: extension.frames.gapsOver120Ms,
           droppedVideoFrames: extension.droppedVideoFrames,
