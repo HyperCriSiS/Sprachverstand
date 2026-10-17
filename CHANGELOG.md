@@ -7,6 +7,8 @@ dokumentiert.
 
 ### Behoben
 
+- Identische bereits veröffentlichte Ersetzungszustände lösen keine wiederholten Speicher-, Badge- und Broadcast-Aufrufe aus. Änderungen, Navigation und notwendige Wiederholungen nach Fehlern bleiben berücksichtigt.
+
 - Große Ersetzungsübersichten wählen die bereits auf 250 Einträge begrenzte Meldung direkt aus, statt bei jeder Meldung den gesamten Seitenindex zu kopieren und zu sortieren. Gesamtzähler und vollständige Abfragen bleiben erhalten.
 
 - Spät angehängte offene ShadowRoots innerhalb bereits bekannter ShadowRoots

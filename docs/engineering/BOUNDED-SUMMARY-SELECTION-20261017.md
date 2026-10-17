@@ -45,3 +45,29 @@ Die bisherigen Video-Fixtures verwenden nur wenige unterschiedliche Paare.
 Diese Korrektur erklärt oder beseitigt deren historische rote Gegenbefunde
 nicht nachweislich. Die gesamte Performanceabnahme aus #419 bleibt offen;
 PR #451 bleibt Entwurf. Keine neuen Berechtigungen oder Abhängigkeiten.
+
+## Identische Hintergrundmeldungen
+
+Eine weitere reproduzierte unnötige Arbeit liegt in `updateTabState`: Zwei
+vollständig identische, nacheinander abgeschlossene Meldungen lösten bisher
+jeweils Session-Schreiben, zwei Badge-Aufrufe und zwei Broadcasts aus. Der
+neue Erfolgsindex überspringt diese Arbeit nur, wenn Hostname, Gesamtzähler
+und alle begrenzten Paare einschließlich Reihenfolge und Anzahl mit dem
+aktuellen Speicherzustand und der letzten erfolgreichen Veröffentlichung
+übereinstimmen. Der Vergleich ist auf die bestehende Meldungsgröße begrenzt.
+
+Während laufender Veröffentlichungen wird nicht übersprungen. Fehler bei der
+Persistenz oder Badge-Aktualisierung lassen einen erneuten Versuch zu;
+Navigation und Tab-Schließen löschen die Erfolgskennung. Späte Ergebnisse
+werden nicht als Erfolg eines anderen aktuellen Zustands gespeichert. Dies
+bevorzugt bei Rennen gegebenenfalls zusätzliche Arbeit gegenüber verlorenen
+Aktualisierungen. Fehlende Broadcast-Empfänger werden weiterhin wie bisher
+behandelt, da normalerweise kein Popup geöffnet ist.
+
+Verifikation: vollständige Suite 263 Dateien / 10.879 Tests vor einer weiteren
+gezielten Parallelitätsregression, TypeScript, beide Builds, Audit und native
+Chromium-/Firefox-Smokes erfolgreich. Die abschließend ergänzte Regression
+prüft zusätzlich die Rückkehr zum alten Wert, während ein abweichender Zustand
+noch veröffentlicht wird; alle sieben gezielten Hintergrundtests und TypeScript
+bestehen. Kein zusätzlicher Timing- oder Videowirksamkeitsnachweis wird daraus
+abgeleitet. Die historischen Browserwarte-Gegenbefunde bleiben offen.

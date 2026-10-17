@@ -113,6 +113,13 @@ describe("Hintergrundzustand der Ersetzungsübersicht", () => {
       ]
     });
 
+    const unchangedState = {type: "sprachverstand.replacement-state", hostname: "example.test", count: 2,
+      replacements: [{original: "Nutzer:innen", replacement: "Nutzer", count: 2}]};
+    await messageListener?.(unchangedState, {tab: {id: 37}});
+    setBadgeText.mockClear(); sendRuntimeMessage.mockClear();
+    await messageListener?.(unchangedState, {tab: {id: 37}});
+    expect(setBadgeText, "identical settled state needs no repeated badge write").not.toHaveBeenCalled();
+    expect(sendRuntimeMessage, "identical settled state needs no repeated broadcasts").not.toHaveBeenCalled();
     expect(updatedListener).toBeDefined();
     updatedListener?.(37, { status: "loading" });
     await vi.waitFor(() => {

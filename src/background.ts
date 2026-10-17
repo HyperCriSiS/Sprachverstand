@@ -52,6 +52,8 @@ interface CachedReplacementState {
 
 const api = getExtensionApi();
 const statesByTab = new Map<number, CachedReplacementState>();
+const publishedStatesByTab = new Map<number, CachedReplacementState>();
+const activeStatePublications = new Map<number, number>();
 const runtimeStateStoragePrefix = "sprachverstand.runtime-state.";
 let inspectedTabId: number | undefined;
 
@@ -188,15 +190,15 @@ async function readCachedTabState(tabId: number): Promise<CachedReplacementState
   }
 }
 
-async function persistTabState(tabId: number, state: CachedReplacementState): Promise<void> {
+async function persistTabState(tabId: number, state: CachedReplacementState): Promise<boolean> {
   const session = api.storage.session;
-  if (!session) {
-    return;
-  }
+  if (!session) { return true; }
   try {
     await session.set({ [runtimeStateStorageKey(tabId)]: state });
+    return true;
   } catch {
     // Session-Speicher ist auf älteren Browsern nicht verfügbar.
+    return false;
   }
 }
 
@@ -365,28 +367,41 @@ async function readLiveReplacementState(
   }
 }
 
-async function updateTabState(
-  tabId: number,
-  state: CachedReplacementState
-): Promise<void> {
-  statesByTab.set(tabId, state);
-  await persistTabState(tabId, state);
-
-  await Promise.all([
-    api.action.setBadgeBackgroundColor({
-      color: badgeBackgroundColor,
-      tabId
-    }),
-    api.action.setBadgeText({
-      text: formatBadgeCount(state.count),
-      tabId
-    })
-  ]);
-  await notifyStateUpdate(tabId, state);
+function sameReplacementState(left: CachedReplacementState | undefined, right: CachedReplacementState): boolean {
+  return Boolean(left && left.hostname === right.hostname && left.count === right.count &&
+    left.replacements.length === right.replacements.length && left.replacements.every((entry, index) => {
+      const other = right.replacements[index]!;
+      return entry.original === other.original && entry.replacement === other.replacement && entry.count === other.count;
+    }));
 }
 
+async function updateTabState(tabId: number, state: CachedReplacementState): Promise<void> {
+  if (!activeStatePublications.has(tabId) && sameReplacementState(statesByTab.get(tabId), state) &&
+      sameReplacementState(publishedStatesByTab.get(tabId), state)) return;
+  statesByTab.set(tabId, state);
+  activeStatePublications.set(tabId, (activeStatePublications.get(tabId) ?? 0) + 1);
+  try {
+    const persisted = await persistTabState(tabId, state);
+    await Promise.all([
+      api.action.setBadgeBackgroundColor({color: badgeBackgroundColor, tabId}),
+      api.action.setBadgeText({text: formatBadgeCount(state.count), tabId})
+    ]);
+    await notifyStateUpdate(tabId, state);
+    // A late completion or navigation must never certify a different state.
+    if (persisted && statesByTab.get(tabId) === state) publishedStatesByTab.set(tabId, state);
+    else publishedStatesByTab.delete(tabId);
+  } catch (error) {
+    publishedStatesByTab.delete(tabId);
+    throw error;
+  } finally {
+    const pending = (activeStatePublications.get(tabId) ?? 1) - 1;
+    if (pending) activeStatePublications.set(tabId, pending);
+    else activeStatePublications.delete(tabId);
+  }
+}
 async function resetTabState(tabId: number): Promise<void> {
   statesByTab.delete(tabId);
+  publishedStatesByTab.delete(tabId);
   await removePersistedTabState(tabId);
 
   try {
@@ -542,5 +557,6 @@ api.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
 api.tabs.onRemoved.addListener((tabId) => {
   statesByTab.delete(tabId);
+  publishedStatesByTab.delete(tabId);
   void removePersistedTabState(tabId);
 });
