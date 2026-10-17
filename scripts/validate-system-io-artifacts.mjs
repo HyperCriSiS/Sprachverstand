@@ -5,8 +5,8 @@ export function validateSystemIoArtifact(value,key=''){
  if(value===null||typeof value==='boolean')return;
  if(typeof value==='number'){if(!Number.isFinite(value)||value<0||value>Number.MAX_SAFE_INTEGER)throw Error('Invalid diagnostic number');return;}
  if(typeof value==='string'){
-  const allowed=key==='backendKind'?['literal','rules'].includes(value):['backgroundSha256','backendBodySha256'].includes(key)?/^[a-f0-9]{64}$/.test(value):key==='componentKind'?['page-dom','product'].includes(value)
-   :key==='correctionImplementation'?['none','page-dom-literal','sprachverstand'].includes(value)
+  const allowed=key==='backendKind'?['literal','rules'].includes(value):['backgroundSha256','backendBodySha256'].includes(key)?/^[a-f0-9]{64}$/.test(value):key==='componentKind'?['page-dom','classifier-literal','product'].includes(value)
+   :key==='correctionImplementation'?['none','page-dom-literal','classifier-literal','sprachverstand'].includes(value)
    :key==='driverVersion'?/^(unknown|\d+\.\d+\.\d+\.\d+)$/.test(value)
    :key==='pageDomBundleSha256'?/^[a-f0-9]{64}$/.test(value)
    :key==='type'?['synthetic-component-dom-pair-aggregates','synthetic-owned-browser-phase-aggregates'].includes(value)

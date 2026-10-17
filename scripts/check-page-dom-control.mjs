@@ -4,7 +4,7 @@ import {JSDOM} from 'jsdom';
 import {Script} from 'node:vm';
 const source=readFileSync('artifacts/page-dom-control.js','utf8');
 const metadata=JSON.parse(readFileSync('artifacts/page-dom-control.metafile.json','utf8'));
-for(const forbidden of ['src/background.ts','src/browser/api.ts','src/browser/local-transform.ts','src/rules/person-lexicon.ts'])assert.ok(!(forbidden in metadata.inputs),'Unexpected full-extension dependency');
+for(const forbidden of ['src/core/dom-processor.ts','src/background.ts','src/browser/api.ts','src/browser/local-transform.ts','src/rules/person-lexicon.ts'])assert.ok(!(forbidden in metadata.inputs),'Unexpected full-extension dependency');
 const runner=readFileSync('scripts/system-io-runner.mjs','utf8');
 const fixtureSource=runner.slice(runner.indexOf('function fixtureHtml() {'),runner.indexOf('function subtitleFixtureHtml() {'));
 const fixture=new Function('diagnosticFps','browserTrace','mainTaskDiagnostics','renderSchedulingDiagnostics','observationMs',fixtureSource+'; return fixtureHtml();')(60,true,false,false,8000);
@@ -29,5 +29,5 @@ try{
  await dom.window.__stopPageDomControl();
  assert.equal(dom.window.document.querySelector('#normal').textContent,'Nutzer:innen');
  assert.ok([...root.children].every((node,i)=>node.textContent==='Nutzer:innen '+i));
- console.log('Real page DOM processor: 480 corrections, protected code/input and full restore passed; no extension API needed.');
+ console.log('Minimal classifier/literal control: 480 corrections, protected code/input and full restore passed; no extension API needed.');
 }finally{dom.window.close();}

@@ -19,7 +19,7 @@ async function writeFile(filename,text){return writeAggregateFile(filename,summa
 if(process.platform!=='linux'||process.env.GITHUB_ACTIONS!=='true')throw Error('System I/O diagnosis requires own Linux Actions job');
 const root = process.cwd();const sessionVersions=new Map(),sessionDriverVersions=new Map();
 const componentKind=process.env.DOM_COMPONENT_KIND;
-if(!['page-dom','product'].includes(componentKind))throw Error('Unknown declared component');
+if(!['classifier-literal','product'].includes(componentKind))throw Error('Unknown declared component');
 const pageDomBundle=readFileSync(path.join(root,'artifacts/page-dom-control.js'),'utf8');
 const pageDomBundleSha256=createHash('sha256').update(pageDomBundle).digest('hex');
 const browserIndex = process.argv.indexOf("--browser");
@@ -30,7 +30,7 @@ if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) throw
 const driverBase = `http://127.0.0.1:${driverPort}`;
 const extensionDir = process.env.VIDEO_EXTENSION_DIR
   ? path.resolve(process.env.VIDEO_EXTENSION_DIR) : path.join(root, "dist", browser);
-if(componentKind!=="product")throw Error("This verification requires the actual product");
+if(componentKind!=="classifier-literal")throw Error("This diagnosis requires the no-addon minimal classifier");
 const backgroundSha256=createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex");
 const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
 const firefoxArtifacts = process.env.VIDEO_ARTIFACTS_DIR
@@ -730,7 +730,7 @@ async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
   const id=await createSession(extensionInstalled);
-  if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
+  if(mode==='extension'&&componentKind==='classifier-literal')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
   try {
@@ -776,7 +776,7 @@ async function run(url, mode, attempt) {
 }
 
 function validateRun(result) {
- if(result.mode==='extension'&&componentKind==='page-dom'&&(!result.pageDomControlStats?.started||!result.pageDomControlStats.requests))throw Error('Real page DOM processor not exercised');
+ if(result.mode==='extension'&&componentKind==='classifier-literal'&&(!result.pageDomControlStats?.started||!result.pageDomControlStats.requests))throw Error('Minimal classifier not exercised');
   if(result.nativeTraceSchedule?.error||result.nativeTraceSignalError||result.rendererMonitor?.errors?.length)throw new Error("Native trigger/monitor diagnostic incomplete; raw pair retained.");
   if (result.errors.length) {
     throw new Error(`${result.mode}: Videofehler: ${result.errors.join(" | ")}`);
