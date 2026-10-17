@@ -60,6 +60,7 @@ export const specialGenderFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/in(?![a-z])|inn|nja|zze|ys/iu.test(input)) return {text: input, replacements: 0};
     let replacementCount = 0;
     const text = input.replace(pattern, (match: string) => {
       const replacement = replacements.get(match.toLocaleLowerCase(locale));

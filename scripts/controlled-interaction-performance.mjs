@@ -5,6 +5,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { pruefePaar, zusammenfassung } from "./interaction-performance-metrics.mjs";
+import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 // Ausschließlich lokale, synthetische Last. Keine fremden Seiten oder Mess-Drittdienste.
 const basis = process.cwd();
@@ -12,8 +13,16 @@ const erweiterung = path.join(basis, "dist", "chromium");
 const portTreiber = 9515;
 const serverTreiber = `http://127.0.0.1:${portTreiber}`;
 const anzahlPaare = positiveZahl("--pairs", 3, 1, 5);
+const cpuThrottle = positiveZahl("--cpu-throttle", 1, 1, 16);
+let browserVersion;
 const dauerMs = positiveZahl("--duration-ms", 4_000, 1_000, 10_000);
 const ausgabe = path.resolve(basis, argument("--output", "artifacts/interaction-performance/report.json"));
+const cpuProfileMode = argument("--cpu-profile", "off");
+if (!["off", "on"].includes(cpuProfileMode)) throw new Error("--cpu-profile erlaubt off oder on.");
+const cpuProfile = cpuProfileMode === "on";
+const browserTrace = process.argv.includes("--browser-trace");
+const activeSubtitles = process.argv.includes("--active-subtitles");
+const debuggerAddresses = new Map();
 
 function argument(name, fallback) {
   const index = process.argv.indexOf(name);
@@ -78,6 +87,7 @@ function html() {
 <code id="protected-code">Nutzer:innen</code>
 <p id="static-target">Nutzer:innen</p>
 <p id="action-target">Wartet auf Klick</p>
+${activeSubtitles ? '<div id="caption-target" class="ytp-caption-segment"></div>' : ''}
 <div id="dynamic-root"></div>
 <section id="bulk-root"></section>
 <script>
@@ -102,8 +112,9 @@ function html() {
   }
 
   const m = {
-    rafTimes: [], longTasks: [], inputFrameTimes: [], clickFrameTimes: [],
-    inputEvents: 0, clicks: 0, mutationTicks: 0, longTaskSupported: false
+    rafTimes: [], longTasks: [], longTaskRecords: [], inputFrameTimes: [], clickFrameTimes: [],
+    inputEvents: 0, clicks: 0, mutationTicks: 0, longTaskSupported: false,
+    captionIssued: 0, captionLatencies: [], captionSeen: new Set()
   };
   window.__perfMetrics = m;
   window.__perfDone = false;
@@ -124,6 +135,18 @@ function html() {
   window.__startSyntheticLoad = (duration) => {
     m.rafTimes.length = 0;
     const began = performance.now();
+    const caption = document.querySelector("#caption-target");
+    let captionIssuedAt;
+    if (caption) new MutationObserver(() => {
+      if (caption.textContent === "Nutzer im Untertitel " + m.captionIssued && !m.captionSeen.has(m.captionIssued)) {
+        m.captionSeen.add(m.captionIssued);
+        m.captionLatencies.push(performance.now() - captionIssuedAt);
+      }
+    }).observe(caption, {subtree: true, childList: true, characterData: true});
+    const captionTimer = caption ? setInterval(() => {
+      captionIssuedAt = performance.now(); m.captionIssued++;
+      caption.textContent = "Nutzer:innen im Untertitel " + m.captionIssued;
+    }, 500) : null;
     const onFrame = (now) => {
       m.rafTimes.push(now);
       if (!window.__perfDone) requestAnimationFrame(onFrame);
@@ -134,6 +157,8 @@ function html() {
         for (const item of list.getEntries()) {
           if (item.startTime >= began && item.startTime < began + duration) {
             m.longTasks.push(Number(item.duration));
+            if (${cpuProfile || browserTrace}) m.longTaskRecords.push({
+              startMs: item.startTime, durationMs: item.duration});
           }
         }
       });
@@ -152,6 +177,7 @@ function html() {
     }, 40);
     setTimeout(() => {
       clearInterval(timer);
+      if (captionTimer !== null) clearInterval(captionTimer);
       window.__perfDone = true;
     }, duration);
     return true;
@@ -203,6 +229,8 @@ async function sitzung(mitErweiterung) {
   });
   const id = wert?.sessionId;
   if (typeof id !== "string" || !id) throw new Error("WebDriver-Sitzung ohne ID.");
+  browserVersion = wert.capabilities?.browserVersion;
+  if (browserTrace) debuggerAddresses.set(id, wert.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
   return id;
 }
 
@@ -219,11 +247,84 @@ async function element(id, selector) {
   return wert[key];
 }
 
-async function browserlauf(url, modus) {
+async function synchronizeClocks(id) {
+  const before = await js(id, "return performance.now();");
+  const result = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+    cmd: "Performance.getMetrics", params: {}
+  });
+  const after = await js(id, "return performance.now();");
+  const timestamp = result?.metrics?.find(metric => metric.name === "Timestamp")?.value;
+  if (!Number.isFinite(timestamp) || !Number.isFinite(before) ||
+      !Number.isFinite(after) || after < before) {
+    throw new Error("Monotone Zeitachsen lassen sich nicht synchronisieren.");
+  }
+  const uncertaintyMs = (after - before) / 2;
+  if (uncertaintyMs > 100) throw new Error("Zeitachsenabgleich ist zu ungenau.");
+  return {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs};
+}
+
+async function enableSubtitleProcessing(id) {
+  let deadline = Date.now() + 8_000;
+  let extensionId;
+  while (Date.now() < deadline) {
+    const targets = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+      cmd: "Target.getTargets", params: {}
+    });
+    extensionId = targets?.targetInfos?.map(target => target.url)
+      .find(url => /^chrome-extension:\/\/[a-p]{32}\//u.test(url))?.split("/")[2];
+    if (extensionId) break;
+    await sleep(100);
+  }
+  if (!extensionId) throw new Error("Erweiterungsziel für aktive Untertitel fehlt.");
+  await api("POST", "/session/" + id + "/url", {
+    url: "chrome-extension://" + extensionId + "/options/options.html"
+  });
+  deadline = Date.now() + 8_000;
+  while (Date.now() < deadline && !await js(id, 'return document.querySelector("#enabled")?.checked === true;')) {
+    await sleep(100);
+  }
+  if (!await js(id, 'return document.querySelector("#enabled")?.checked === true;')) {
+    throw new Error("Optionsseite für aktive Untertitel nicht initialisiert.");
+  }
+  await js(id, 'const input=document.querySelector("#process-subtitles"); if(!input.checked)input.click(); document.querySelector("#save-settings").click();');
+  deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    const saved = await api("POST", "/session/" + id + "/execute/async", {
+      script: 'const done=arguments[arguments.length-1]; chrome.storage.local.get("settings").then(value=>done(value.settings?.processSubtitles),()=>done(false));', args: []
+    });
+    if (saved === true) return;
+    await sleep(100);
+  }
+  throw new Error("Untertitelverarbeitung nicht gespeichert.");
+}
+
+async function browserlauf(url, modus, pair) {
   let id;
+  let trace;
+  let profileStarted = false;
   try {
     id = await sitzung(modus === "extension");
-    await api("POST", "/session/" + id + "/url", { url });
+    await api("POST", "/session/" + id + "/goog/cdp/execute", {
+      cmd: "Emulation.setCPUThrottlingRate", params: { rate: cpuThrottle }
+    });
+    if (browserTrace) trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
+    if (cpuProfile || browserTrace) {
+      await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Performance.enable", params: {}
+      });
+    }
+    if (cpuProfile) {
+      for (const [cmd, params] of [["Profiler.enable", {}],
+        ["Profiler.setSamplingInterval", {interval: 1000}], ["Profiler.start", {}]]) {
+        await api("POST", "/session/" + id + "/goog/cdp/execute", {cmd, params});
+      }
+      profileStarted = true;
+    }
+    if (activeSubtitles && modus === "extension") {
+      await enableSubtitleProcessing(id);
+    }
+    await api("POST", "/session/" + id + "/url", {url});
+    const clock = cpuProfile || browserTrace ? await synchronizeClocks(id) : null;
     // Identisches warmes DOM vor Beginn der kontrollierten Last.
     await sleep(1_000);
     const dynamicAtStart = await js(id,
@@ -248,15 +349,19 @@ async function browserlauf(url, modus) {
     }
     if (!fertig) throw new Error("Synthetische Last nicht beendet.");
     await sleep(400);
-    const momentaufnahme = () => js(id,
-      'return document.querySelector("#dynamic-target-0")?.textContent?.split(" ")[0];');
+    const momentaufnahme = () => js(id, `
+      const nodes = [...document.querySelectorAll("#dynamic-root > span")];
+      return { first: nodes[0]?.textContent?.split(" ")[0], total: nodes.length,
+        corrected: nodes.filter(node => node.textContent.startsWith("Nutzer ")).length,
+        uncorrected: nodes.filter(node => node.textContent.startsWith("Nutzer:innen ")).length };
+    `);
     const dynamicAt400Ms = await momentaufnahme();
     const startDerNachprüfung = Date.now();
     let dynamicAfterSettle = dynamicAt400Ms;
     if (modus === "extension") {
       // Verzögerte Verarbeitung ausdrücklich messen statt sofort als dauerhaften
       // Erkennungsfehler zu klassifizieren. Timeout bleibt ein Funktionsfehler.
-      while (dynamicAfterSettle !== "Nutzer" &&
+      while ((dynamicAfterSettle.total !== 480 || dynamicAfterSettle.corrected !== 480) &&
              Date.now() - startDerNachprüfung < 3_500) {
         await sleep(100);
         dynamicAfterSettle = await momentaufnahme();
@@ -295,19 +400,61 @@ async function browserlauf(url, modus) {
         longTaskMaximumMs: m.longTaskSupported ?
           Math.max(0, ...m.longTasks) : null,
         clickNextFrameMs: percentile(m.clickFrameTimes),
-        inputNextFrameMs: percentile(m.inputFrameTimes)
+        inputNextFrameMs: percentile(m.inputFrameTimes),
+        captionIssued: m.captionIssued, captionCorrected: m.captionLatencies.length,
+        captionTicks: [...m.captionSeen],
+        captionMaximumMs: m.captionLatencies.length ? Math.max(...m.captionLatencies) : null
       };
     `);
+    if (activeSubtitles && (details.captionIssued < Math.max(1, dauerMs / 500 * 0.7) ||
+        details.captionCorrected !== (modus === "extension" ? details.captionIssued : 0))) {
+      throw new Error("Untertitel-Interaktionsprobe unvollständig.");
+    }
+    const cpuProfileFile = cpuProfile ? `cpu-${pair}-${modus}.json` : null;
+    const traceFile = browserTrace ? `trace-${pair}-${modus}.json` : null;
+    const timingFile = cpuProfile || browserTrace ? `timing-${pair}-${modus}.json` : null;
+    if (timingFile) {
+      const timing = await js(id, "return {rafTimes: window.__perfMetrics.rafTimes," +
+        "longTasks: window.__perfMetrics.longTaskRecords};");
+      await mkdir(path.dirname(ausgabe), {recursive: true});
+      await writeFile(path.join(path.dirname(ausgabe), timingFile),
+        JSON.stringify({clock, ...timing}));
+    }
+    if (cpuProfile) {
+      const response = await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Profiler.stop", params: {}
+      });
+      profileStarted = false;
+      if (!response?.profile?.nodes || !response.profile.samples?.length) {
+        throw new Error("CPU-Profil enthält keine Samples.");
+      }
+      await writeFile(path.join(path.dirname(ausgabe), cpuProfileFile),
+        JSON.stringify(response.profile));
+    }
+    // Trace transfer is outside the sampling and text-completion deadlines.
+    if (trace) {await trace.save(path.join(path.dirname(ausgabe), traceFile)); trace = undefined;}
     return {
       status: "ok", ...details,
-      dynamicAtStart, dynamicAt400Ms, dynamicAfterSettle,
+      cpuProfileFile, traceFile, timingFile,
+      dynamicAtStart, dynamicAt400Ms: dynamicAt400Ms.first,
+      dynamicAfterSettle: dynamicAfterSettle.first,
+      dynamicNodeCount: dynamicAfterSettle.total,
+      dynamicCorrectedCount: dynamicAfterSettle.corrected,
+      dynamicUncorrectedCount: dynamicAfterSettle.uncorrected,
       dynamicCorrectedAt400Ms: modus === "extension" ?
-        dynamicAt400Ms === "Nutzer" : null,
+        dynamicAt400Ms.total === 480 && dynamicAt400Ms.corrected === 480 : null,
       dynamicSettleAfterMs
     };
   } catch (error) {
     return { status: "error", error: String(error?.message ?? error) };
   } finally {
+    trace?.cancel();
+    debuggerAddresses.delete(id);
+    if (id && profileStarted) {
+      try {await api("POST", "/session/" + id + "/goog/cdp/execute", {
+        cmd: "Profiler.stop", params: {}
+      });} catch { /* Sitzung wird geschlossen. */ }
+    }
     if (id) {
       try { await api("DELETE", "/session/" + id); }
       catch (error) { console.warn("Chromium-Sitzung nicht geschlossen: " + String(error)); }
@@ -359,7 +506,7 @@ try {
       ["baseline", "extension"] : ["extension", "baseline"];
     const ergebnisse = {};
     for (const modus of reihenfolge) {
-      ergebnisse[modus] = await browserlauf(website.url, modus);
+      ergebnisse[modus] = await browserlauf(website.url, modus, index + 1);
       console.log("INTERAKTION " + (index + 1) + "/" + anzahlPaare + " " +
         modus + " " + JSON.stringify(ergebnisse[modus]));
     }
@@ -371,14 +518,19 @@ try {
   const gesamt = zusammenfassung(paare);
   await mkdir(path.dirname(ausgabe), { recursive: true });
   await writeFile(ausgabe, JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA ?? null,
     environment: {
       node: process.version,
-      chromium: spawnSync(chromium, ["--version"], {encoding:"utf8"}).stdout.trim(),
+      chromium: browserVersion ?? null,
+      browserSource: process.env.SPRACHVERSTAND_TEST_BROWSER_SOURCE ?? "configured-or-system",
       durationMs: dauerMs,
-      pairs: anzahlPaare
+      pairs: anzahlPaare,
+      cpuThrottle,
+      cpuProfileMode, browserTrace, activeSubtitles,
+      instrumentationNotice: cpuProfile || browserTrace
+        ? "CPU-Sampling/Browsertrace verändern Laufzeiten; keine automatische Freigabe." : null
     },
     paare, gesamt
   }, null, 2) + "\n");

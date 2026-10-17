@@ -53,6 +53,11 @@ addCompactForm("ein", "e", "ein");
 
 const pairPattern =
   /(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;
+// Only dictionary prefixes can produce a replacement. ASCII word boundaries
+// are deliberately broader than the final Unicode protection boundary.
+const candidatePrefixes = [...new Set([...replacements.keys()].map(value =>
+  value.split(/[:*_\/·•’‘(]/u)[0]))];
+const pronounCandidate = new RegExp(String.raw`\b(?:${candidatePrefixes.join("|")})(?=[:*_\/·•’‘(])`, "iu");
 const followingGenderedTokenPattern =
   /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?[iI][nN]\))(?![\p{L}\p{M}])/u;
 
@@ -78,6 +83,8 @@ function applyTokenCase(source: string, replacement: string): string {
 }
 
 function transformExplicitPronouns(input: string): TransformResult {
+  if (!/[:*_\/·•’‘(]/u.test(input)) return {text: input, replacements: 0};
+  if (!pronounCandidate.test(input)) return {text: input, replacements: 0};
   let replacementCount = 0;
 
   const text = input.replace(

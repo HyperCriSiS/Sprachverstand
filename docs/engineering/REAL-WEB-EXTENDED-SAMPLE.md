@@ -1,5 +1,13 @@
 # Erweiterte Real-Web-Stichprobe (09.10.2026)
 
+**Aktueller fachlicher Stand, erneut geprüft am 16.10.2026:**
+[Issue #359](https://github.com/HyperCriSiS/Sprachverstand/issues/359) ist
+seit dem kontextgesicherten Abschluss geschlossen. Die historische
+Dativ-Zielannotation des isolierten Fragments ist keine allgemein sichere
+Korrekturvorgabe. Die unten beschriebenen ursprünglichen Messungen und
+Zwischenstände bleiben nachvollziehbar erhalten; die aktuelle Einordnung
+steht im letzten Abschnitt.
+
 Die Tests `tests/real-web-extended-20261009.test.ts` ergänzen die bisherige
 kleine Positiv-/Negativprüfung um **32 erwartete Normalisierungen und 26 Gegenproben**.
 Es handelt sich um kurze, tatsächlich beobachtete Textoberflächen von
@@ -81,8 +89,37 @@ normalisiert. Ihre **ID n04a bleibt nachvollziehbar erhalten**; sie
 gehört jetzt zu den dokumentierten gewünschten Partizipumformungen.
 Keine Stichprobe wurde weggelassen oder als unbelegter Erfolg umetikettiert.
 
-Aktueller Umfang derselben gezielt ausgewählten 58 Kurzproben:
+Zwischenstand nach der Partizipkorrektur derselben 58 Kurzproben:
 **31** richtige Positivnormalisierungen, **1** unverändert offene
 Dativlücke, **23** unverändert gebliebene Negativformen und **3**
 erwünschte Partizipumformungen. Diese Klassen sind weder eine
 repräsentative Webmessung noch eine allgemeine Genauigkeitsquote.
+
+## Fachlicher Abschluss der Dativfrage und erneute Prüfung
+
+PR #368 sichert die Kontextgrenze mit ganzen Sätzen ab:
+`Wir sprechen mit persönlichen Betreuer:innen.` wird korrekt zu
+`Wir sprechen mit persönlichen Betreuern.`; im Nicht-Dativsatz
+`Die persönlichen Betreuer:innen sprechen.` bleibt die Pluralform
+`Betreuer` ohne zusätzliches `n`. Das isolierte Fragment kann ohne linken
+Satzkontext nicht eindeutig zwischen diesen Fällen entscheiden. Seine
+ursprüngliche Zielannotation bleibt als eine mögliche Dativlesart erhalten,
+aber nicht als sicher korrigierbarer offener Produktfehler.
+
+Die aktuelle Testklassifikation derselben 58 Originalproben lautet:
+**31** korrekte Positivnormalisierungen, **23** unveränderte Negativformen,
+**1** ausdrücklich kontextmehrdeutiges Kasusfragment und **3** gewünschte
+Partizipumformungen. Keine Probe wurde entfernt oder durch eine erfundene
+Kontextannahme als Erfolg gewertet. Das ist keine repräsentative
+Präzisions-/Recall-Messung.
+
+Am 16.10.2026 auf dem aktuellen PR-Produktstand erneut ausgeführt:
+
+```text
+vitest run tests/rules/marked-dative-plural.test.ts tests/real-web-extended-20261009.test.ts
+2 Dateien / 80 Tests bestanden
+```
+
+Ein künftig belegter vollständiger Satz mit abweichender Flexion wäre als
+neuer konkreter Fehler zu prüfen. Der damalige belegte Fehlerumfang von
+Issue #359 ist abgeschlossen; die dokumentierte Kontextgrenze bleibt bestehen.

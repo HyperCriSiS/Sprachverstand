@@ -21,25 +21,40 @@ export function analysiereVideoCpu(profile, offsetMs, frameTimes, longTasks = []
   if (!profile || !Array.isArray(profile.nodes) ||
       !Array.isArray(profile.samples) || !Array.isArray(profile.timeDeltas) ||
       profile.samples.length !== profile.timeDeltas.length ||
-      !isFiniteNumber(profile.startTime) || !isFiniteNumber(offsetMs)) {
+      !isFiniteNumber(profile.startTime) || !isFiniteNumber(offsetMs) ||
+      (profile.endTime !== undefined && (!isFiniteNumber(profile.endTime) ||
+        profile.endTime < profile.startTime))) {
     throw new Error("CPU-Profil oder Zeitachsenabgleich ist unvollständig.");
   }
   const nodes = new Map(profile.nodes.map((node) => [node.id, node]));
   const samples = [];
   let zeitUs = profile.startTime;
   const gesamt = new Map();
+  const timedSamples = [];
   for (let i = 0; i < profile.samples.length; i++) {
     const deltaUs = profile.timeDeltas[i];
-    if (!isFiniteNumber(deltaUs) || deltaUs < 0) {
+    if (!isFiniteNumber(deltaUs)) {
       throw new Error("CPU-Profil enthält ungültige Sample-Zeitdeltas.");
     }
     zeitUs += deltaUs;
-    const node = nodes.get(profile.samples[i]);
+    if (!isFiniteNumber(zeitUs) || zeitUs < profile.startTime ||
+        (isFiniteNumber(profile.endTime) && zeitUs > profile.endTime)) {
+      throw new Error("CPU-Profil enthält Samples außerhalb seiner Zeitachse.");
+    }
+    timedSamples.push({timeUs: zeitUs, node: nodes.get(profile.samples[i])});
+  }
+  // V8 may emit samples slightly out of timestamp order. Like DevTools,
+  // reconstruct timestamps first and keep each sample paired when sorting.
+  timedSamples.sort((left, right) => left.timeUs - right.timeUs);
+  let previousTimeUs = profile.startTime;
+  for (const {timeUs, node} of timedSamples) {
+    const deltaUs = timeUs - previousTimeUs;
+    previousTimeUs = timeUs;
     const functionName = node?.callFrame?.functionName || "(anonym)";
     const url = node?.callFrame?.url || "(ohne URL)";
     const typ = url.startsWith("chrome-extension://") ? "erweiterung" :
       url.startsWith("http://127.0.0.1:") ? "fixture" : "laufzeit";
-    const sample = { zeitMs: zeitUs / 1000 + offsetMs, cpuMs: deltaUs / 1000,
+    const sample = { zeitMs: timeUs / 1000 + offsetMs, cpuMs: deltaUs / 1000,
       funktion: functionName, quelle: url, typ };
     samples.push(sample);
     const name = typ + " | " + functionName;

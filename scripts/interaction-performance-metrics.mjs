@@ -27,6 +27,11 @@ export function pruefePaar(paar) {
   if (basis.dynamicText !== "Nutzer:innen" || erweiterung.dynamicText !== "Nutzer") {
     return { ok: false, grund: "Dynamische DOM-Ersetzung fehlt." };
   }
+  if (basis.dynamicNodeCount !== 480 || basis.dynamicUncorrectedCount !== 480 ||
+      basis.dynamicCorrectedCount !== 0 || erweiterung.dynamicNodeCount !== 480 ||
+      erweiterung.dynamicCorrectedCount !== 480 || erweiterung.dynamicUncorrectedCount !== 0) {
+    return { ok: false, grund: "Dynamische DOM-Ersetzung nicht für alle 480 Knoten bestätigt." };
+  }
   if (!basis.protectedOk || !erweiterung.protectedOk) {
     return { ok: false, grund: "Geschützte Eingabe oder Code verändert." };
   }

@@ -31,7 +31,7 @@ describe("Popup-Ersetzungsübersicht", () => {
     expect(contentSource).toContain(
       'type: "sprachverstand.get-current-replacement-state"'
     );
-    expect(contentSource).toContain("processor?.getReplacementSummary() ?? []");
+    expect(contentSource).toContain("processor?.getReplacementSummary()");
   });
 
   it("verwendet für Anzeigen und Zurück denselben Pfeilabstand", () => {

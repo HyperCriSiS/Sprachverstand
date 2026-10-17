@@ -83,29 +83,41 @@ export function isSubtitleContainer(element: Element): boolean {
   return Boolean(ariaLabel && subtitleAriaMarker.test(ariaLabel));
 }
 
+function shadowHostOf(current: Node): Element | null {
+  const root = current.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
+}
+
 /**
  * Erkennt bewusst nur typische Untertitel-Overlays. Allgemeine Klassen wie
  * `subtitle` oder `caption` werden nicht allein ausgewertet, weil sie auf
  * Nachrichtenseiten häufig normale Unterzeilen und Bildunterschriften meinen.
  */
 // Tief verschachtelte Untertitel und offene ShadowRoots behalten den Hostkontext.
-export function isSubtitleContent(node: Node): boolean {
-  const hostOf = (current: Node): Element | null => {
-    const root = current.getRootNode();
-    return root instanceof ShadowRoot ? root.host : null;
-  };
+export function isSubtitleContent(node: Node,
+  cache?: WeakMap<Element, boolean>): boolean {
   let element: Element | null =
-    node instanceof Element ? node : node.parentElement ?? hostOf(node);
+    node instanceof Element ? node : node.parentElement ?? shadowHostOf(node);
+  if (!element) return false;
+  const hit = cache?.get(element);
+  if (hit !== undefined) return hit;
+  const visited: Element[] | undefined = cache ? [] : undefined;
+  let subtitle = false;
 
   while (element) {
+    const cached = cache?.get(element);
+    if (cached !== undefined) {subtitle = cached; break;}
+    visited?.push(element);
     if (isSubtitleContainer(element)) {
-      return true;
+      subtitle = true;
+      break;
     }
     if (element.tagName === "BODY" || element.tagName === "HTML") {
-      return false;
+      break;
     }
     const current: Element = element;
-    element = current.parentElement ?? hostOf(current);
+    element = current.parentElement ?? shadowHostOf(current);
   }
-  return false;
+  if (visited) for (const ancestor of visited) cache!.set(ancestor, subtitle);
+  return subtitle;
 }
