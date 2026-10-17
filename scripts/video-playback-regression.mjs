@@ -16,6 +16,7 @@ import {videoBrowserVersion} from "./sanitize-video-failure.mjs";
 
 const root = process.cwd();
 const sessionVersions = new Map();
+let servedVideoSha256;
 const browserIndex = process.argv.indexOf("--browser");
 const browser = browserIndex === -1 ? "chromium" : process.argv[browserIndex + 1];
 if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser erlaubt chromium oder firefox.");
@@ -383,6 +384,7 @@ function startServer() {
   const video = diagnosticFps === 60
     ? createVerified60FpsWebm()
     : Buffer.from(readFileSync(videoPath, "utf8").trim(), "base64");
+  servedVideoSha256=createHash("sha256").update(video).digest("hex");
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     if (url.pathname === "/video-playback.html") {
@@ -444,6 +446,9 @@ async function createSession(withExtension) {
       }
     }}});
     const id = sessionId(response);
+    const capabilities=response.value?.capabilities??response.capabilities;
+    sessionVersions.set(id,{browserVersion:videoBrowserVersion(capabilities?.browserVersion),
+      driverVersion:videoBrowserVersion(capabilities?.["moz:geckodriverVersion"])});
     try {
       if (withExtension) await request("POST", `/session/${id}/moz/addon/install`, {
         addon: readFileSync(firefoxXpi).toString("base64"), temporary: true
@@ -754,8 +759,7 @@ async function measureVideoPair(url, attempt) {
   await writeFile(path.join(firefoxArtifacts,
     `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
     JSON.stringify({browser, sourceFps:diagnosticFps,
-      sourceHash:diagnosticFps === 30
-        ? createHash("sha256").update(Buffer.from(readFileSync(videoPath, "utf8"), "base64")).digest("hex") : null,
+      sourceHash:servedVideoSha256,
       pairOrder: videoPairOrder, baseline, extension}, null, 2) + "\n");
 
   console.log(

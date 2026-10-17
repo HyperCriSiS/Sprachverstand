@@ -54,6 +54,12 @@ it("rejects changed sources, invalid numbers, unknown versions and unbounded arr
 });
 it("extracts only version numbers from negotiated capability strings", () => {
   expect(videoBrowserVersion("155.0.8059.39 (driver build PRIVATE)")).toBe("155.0.8059.39");
+  expect(videoBrowserVersion("157.0.1")).toBe("157.0.1");
+  expect(videoBrowserVersion("157.0")).toBe("157.0");
+  expect(videoBrowserVersion("0.36.0 (driver PRIVATE)")).toBe("0.36.0");
+  expect(videoBrowserVersion("157")).toBe("unknown");
+  expect(videoBrowserVersion("157.0.1.2.3")).toBe("unknown");
+  expect(videoBrowserVersion("157.0.1/PRIVATE")).toBe("unknown");
   expect(videoBrowserVersion(undefined)).toBe("unknown");
   expect(videoBrowserVersion("file:///PRIVATE")).toBe("unknown");
 });
