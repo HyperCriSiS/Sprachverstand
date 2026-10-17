@@ -23,7 +23,7 @@ if(!['page-dom','product'].includes(componentKind))throw Error('Unknown declared
 const pageDomBundle=readFileSync(path.join(root,'artifacts/page-dom-control.js'),'utf8');
 const pageDomBundleSha256=createHash('sha256').update(pageDomBundle).digest('hex');
 const backendKind=process.env.BACKEND_KIND;
-if(!['literal','rules'].includes(backendKind)||componentKind!=='product')throw Error('Explicit backend product comparison required');
+if(backendKind!=='rules'||componentKind!=='page-dom')throw Error('Explicit page-only no-addon comparison required');
 const backendBinding=JSON.parse(readFileSync(path.join(root,'artifacts/backend-pair',backendKind,'binding.json'),'utf8'));
 if(backendBinding.backendKind!==backendKind)throw Error('Backend binding mismatch');
 function verifyBackendPackage(){
