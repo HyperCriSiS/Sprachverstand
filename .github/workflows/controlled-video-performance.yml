@@ -27,6 +27,12 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Abhaengigkeiten installieren
         run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Bestehende 60-FPS-Medienwerkzeuge einrichten
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version
+          ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
           node scripts/check-owned-io-observation.mjs
