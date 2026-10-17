@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {validateOwnedCopyReport} from './validate-owned-browser-copy-preflight.mjs';
+const report={schemaVersion:1,diagnosticCopyOnly:true,additionalPrivilegesUsed:false,systemWideCacheControlUsed:false,pathsExported:false,processIdentifiersExported:false,rawProfilesExported:false,completed:false,failedAt:'copy'};
+assert.equal(validateOwnedCopyReport(report),true);
+assert.throws(()=>validateOwnedCopyReport({...report,privatePath:'SYNTHETIC_PRIVATE_SENTINEL'}));
+assert.throws(()=>validateOwnedCopyReport({...report,processIdentifiersExported:true}));
+assert.throws(()=>validateOwnedCopyReport({...report,sourceBinarySha256:'SYNTHETIC_PRIVATE_SENTINEL'}));
+assert.throws(()=>validateOwnedCopyReport({...report,browserVersion:'155.0.8059.39'}));
+assert.throws(()=>validateOwnedCopyReport({...report,completed:true}));
+console.log('Owned-copy metadata: unknown/private fields, wrong versions and incomplete success refused.');

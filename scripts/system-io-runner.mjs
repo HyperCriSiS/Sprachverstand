@@ -1,8 +1,12 @@
+import assert from 'node:assert/strict';
+import {tmpdir} from 'node:os';
+import {ownRenderers} from './owned-browser-copy-bindings.mjs';
+import {probeOwnedPageCache} from './owned-file-cache-probe.mjs';
 import {parseProcReadBytes} from './owned-io-observation.mjs';
 import {summarizeOwnedReport} from './system-io-export.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync, openSync, readSync, closeSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, createReadStream, openSync, readSync, closeSync } from "node:fs";
 import {mkdir, writeFile as writeAggregateFile} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -505,6 +509,9 @@ async function createSession(withExtension) {
       })).value;
       const present = commandLine?.arguments?.includes("--js-flags=--no-concurrent-recompilation");
       if (present !== (engineControl !== "standard")) throw new Error("Engine-Gegenprobe: Chromium-Argument nicht verifiziert.");
+      const raw=readFileSync('/proc/'+driverProcess.pid+'/stat','utf8'),start=raw.slice(raw.lastIndexOf(')')+2).split(/\s+/)[19];
+      const images=ownRenderers(driverProcess.pid,start).records;
+      if(!images.length||!images.every(r=>r.target===chromium&&r.ownerMatches&&r.regularFile))throw Error('Owned browser renderer binding failed');
     } catch (error) {
       try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
       throw error;
@@ -696,7 +703,9 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
   for(const line of maps.split('\n')){const match=/^([0-9a-f]+)-([0-9a-f]+)\s+([rwxps-]{4})\s+([0-9a-f]+)\s+\S+\s+\d+\s*(.*)$/i.exec(line);if(!match)continue;
    const start=BigInt('0x'+match[1]),end=BigInt('0x'+match[2]);if(pc<start||pc>=end)continue;
    const pathname=match[5],base=pathname.split('/').at(-1);const kind=!pathname?'anonymous':pathname.startsWith('[')?'kernel-named':/^(chromium|chrome|chromium-browser)$/.test(base)?'browser-executable':/^lib[^/]*\.so(?:\.[\d.]+)?$/.test(base)?'shared-library':'other-file';
-   result.mapping={kind,permissions:match[3],fileOffsetHex:'0x'+(BigInt('0x'+match[4])+pc-start).toString(16)};break;
+   result.mapping={kind,permissions:match[3],fileOffsetHex:'0x'+(BigInt('0x'+match[4])+pc-start).toString(16)};
+   if(dependencies.fileCacheProbe&&kind==='browser-executable')result.fileCachePage=probeOwnedPageCache(pathname,result.mapping.fileOffsetHex,dependencies.browserExecutable,dependencies.fileCacheProbe);
+   break;
   }
   if(dependencies.readInstructionPage===true){result.instructionPage=instructionPage(pid,pc);const after=stat(safe(prefix+"/stat"));result.sampleStable=after?.start===expectedThreadStart&&after?.state==="D"&&safe(prefix+"/syscall")===raw;}return result;
  }
@@ -726,9 +735,20 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
  return ()=>{if(!stopped){cancel(timer);sample();stopped=true;if(!samples.some(s=>s.threads.length))errors.add('no renderer threads sampled');}return {schemaVersion:6,taskDelayAccounting,nativeWaitRegisterSamples:nativeReadCount,mainThreadsOnly,workerWindowMs,cpuQuota,intervalMs:50,discoveryIntervalMs:200,schedulerStatistics,discovery,samples,errors:[...errors]};};
 }
 
+async function prepareOwnedCache(){
+ const helper=process.env.FILE_CACHE_PROBE,state=process.env.COPY_CACHE_STATE,expected=process.env.OWNED_BINARY_SHA256;
+ assert.ok(['cold','warm'].includes(state));assert.match(expected??'',/^[a-f0-9]{64}$/);
+ const parent=path.dirname(path.dirname(chromium));assert.equal(path.dirname(parent),tmpdir());assert.match(path.basename(parent),/^sv-owned-browser-copy-/);assert.equal(path.basename(path.dirname(chromium)),'distribution');assert.equal(path.dirname(helper),parent);
+ const metadata=statSync(chromium);assert.ok(metadata.isFile()&&metadata.uid===process.getuid()&&metadata.nlink===1);
+ const h=createHash('sha256');for await(const chunk of createReadStream(chromium))h.update(chunk);assert.equal(h.digest('hex'),expected);
+ if(state==='cold'){const r=spawnSync(helper,['--discard-owned',chromium],{encoding:'utf8',timeout:5000,maxBuffer:1024});assert.equal(r.status,0);assert.equal(r.stdout.trim(),'owned-file discard requested');}
+ const control=probeOwnedPageCache(chromium,'0x100000',chromium,helper);assert.equal(control.status,'sampled');assert.equal(control.resident,state==='warm');
+ return {declaredFileCacheState:state,ownedBrowserBinarySha256:expected,cacheControlPageVerified:true};
+}
 async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
+  const ownedCache=await prepareOwnedCache();
   const id=await createSession(extensionInstalled);
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
@@ -742,7 +762,7 @@ async function run(url, mode, attempt) {
       await mkdir(firefoxArtifacts, {recursive: true});
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
         "toplevel,v8,blink.user_timing,devtools.timeline,disabled-by-default-v8.compile,disabled-by-default-v8.gc,media",{deferStart:true});
-      arm.activate=async()=>{await trace.start();arm.startedAtEpochMs=Date.now();stopMonitor=startOwnRendererMonitor(driverProcess.pid,{mainThreadsOnly:true,workerWindowMs:[300,2000],sampleNativeWait:true,readInstructionPage:true,nativePageSize:4096});};
+      arm.activate=async()=>{await trace.start();arm.startedAtEpochMs=Date.now();stopMonitor=startOwnRendererMonitor(driverProcess.pid,{mainThreadsOnly:true,workerWindowMs:[300,2000],sampleNativeWait:true,readInstructionPage:true,nativePageSize:4096,browserExecutable:chromium,fileCacheProbe:process.env.FILE_CACHE_PROBE});};
 
     }
     if (focusedStart) {
@@ -759,7 +779,7 @@ async function run(url, mode, attempt) {
     await arm.pending;
     if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
-    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode), ...ownedCache,ownedRendererBindingVerified:true, browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,

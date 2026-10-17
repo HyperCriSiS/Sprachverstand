@@ -1,4 +1,4 @@
-name: Current actual product native wait verification
+name: Owned browser cache-state native diagnosis
 on:
   workflow_dispatch:
 permissions:
@@ -8,14 +8,18 @@ concurrency:
   cancel-in-progress: false
 jobs:
   native_io:
-    name: Page thread (${{ matrix.order }})
+    env:
+      RUN_NATIVE_COPY_PAIR: "true"
+      COPY_CACHE_STATE: ${{ matrix.cache_state }}
+    name: Owned cache (${{ matrix.cache_state }}, ${{ matrix.order }})
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     strategy:
       fail-fast: false
       matrix:
         order: [baseline-first, extension-first]
         backend: [rules]
+        cache_state: [cold, warm]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -35,6 +39,8 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-owned-file-cache-probe.mjs
+          node scripts/check-owned-browser-copy-preflight.mjs
           node scripts/check-owned-io-observation.mjs
           node scripts/check-system-io-export.mjs
           node scripts/check-page-worker-wait-correlation.mjs
@@ -50,23 +56,28 @@ jobs:
           DOM_COMPONENT_KIND: product
           VIDEO_PAIR_ORDER: ${{ matrix.order }}
           VIDEO_ARTIFACTS_DIR: artifacts/system-io
-        run: node scripts/system-io-runner.mjs --browser chromium --fps 60 --focused-start
+        run: node scripts/owned-browser-copy-preflight.mjs
+      - name: Kopie-Metadatenschema pruefen
+        id: copy_export
+        if: always()
+        run: node scripts/validate-owned-browser-copy-preflight.mjs
       - name: Ausschliesslich feste Aggregate pruefen
         id: export
         if: ${{ always() }}
         run: node scripts/validate-system-io-artifacts.mjs
       - name: Gepruefte numerische Aggregate sichern
-        if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
+        if: ${{ always() && steps.copy_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: current-product-waits-${{ matrix.order }}-${{ github.sha }}
+          name: owned-cache-${{ matrix.cache_state }}-${{ matrix.order }}-${{ github.sha }}
           path: |
+            artifacts/owned-browser-copy-preflight/summary.json
             artifacts/system-io/video-pair-chromium-60-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-baseline-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-extension-1.json
           if-no-files-found: error
           retention-days: 7
 
-      - name: Current actual product native wait verification bestaetigen
-        if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
+      - name: Owned browser cache-state native diagnosis bestaetigen
+        if: ${{ always() && steps.copy_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs
