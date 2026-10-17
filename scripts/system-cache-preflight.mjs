@@ -18,12 +18,20 @@ function ownRenderers(rootPid,rootStart){
  const start=pid=>{const line=safe(`/proc/${pid}/stat`);return line?.slice(line.lastIndexOf(')')+2).split(/\s+/)[19];};
  if(start(rootPid)!==rootStart)throw Error('preflight-driver-identity-changed');
  const pending=[rootPid],seen=new Set(),records=[];
+ const discovery={ownProcesses:0,rendererArgumentMatches:0,rendererCommMatches:0,commandLineUnavailable:0,childListsUnavailable:0};
  while(pending.length){
   const pid=pending.shift();if(seen.has(pid))continue;seen.add(pid);
   if(seen.size>256)throw Error('preflight-process-cap');
   const identity=start(pid);if(!identity)continue;
   const command=safe(`/proc/${pid}/cmdline`);
-  if(command?.split('\0').includes('--type=renderer')){
+  const comm=safe(`/proc/${pid}/comm`)?.trim();
+  const argumentMatch=command?.split('\0').includes('--type=renderer')===true;
+  const commMatch=comm==='CrRendererMain';
+  discovery.ownProcesses++;
+  if(command===null)discovery.commandLineUnavailable++;
+  if(argumentMatch)discovery.rendererArgumentMatches++;
+  if(commMatch)discovery.rendererCommMatches++;
+  if(argumentMatch||commMatch){
    try{
     const target=readlinkSync(`/proc/${pid}/exe`),metadata=statSync(target);
     let writable=false;try{accessSync(target,constants.W_OK);writable=true;}catch{}
@@ -33,9 +41,10 @@ function ownRenderers(rootPid,rootStart){
   let tasks=[];try{tasks=readdirSync(`/proc/${pid}/task`);}catch{}
   if(tasks.length>2048)throw Error('preflight-thread-cap');
   for(const tid of tasks){const children=safe(`/proc/${pid}/task/${tid}/children`);
+   if(children===null)discovery.childListsUnavailable++;
    if(children?.trim())pending.push(...children.trim().split(/\s+/).map(Number).filter(n=>Number.isSafeInteger(n)&&n>0));}
  }
- return records;
+ return {records,discovery};
 }
 if(process.platform!=='linux'||process.env.GITHUB_ACTIONS!=='true')throw Error('preflight-linux-actions-only');
 const driver=spawn(executable('CHROMEWEBDRIVER',['chromedriver']),['--port=9515'],{stdio:'ignore'});
@@ -65,8 +74,8 @@ try{
  if(typeof session!=='string'||!session)throw Error('preflight-session-missing');
  const caps=response.value?.capabilities??response.capabilities;
  await api('POST',`/session/${session}/url`,{url:'data:text/html,<title>Owned cache preflight</title><p>Synthetic</p>'});
- const records=ownRenderers(driver.pid,driverStart);
- if(!records.length)throw Error('preflight-owned-renderer-missing');
+ const {records,discovery}=ownRenderers(driver.pid,driverStart);
+ if(!records.length){console.log(JSON.stringify({preflightDiscovery:discovery}));throw Error('preflight-owned-renderer-missing');}
  report={schemaVersion:1,browserVersion:version(caps?.browserVersion),driverVersion:version(caps?.chrome?.chromedriverVersion),
   rendererCount:records.length,allRegularFiles:records.every(r=>r.regularFile),
   allExecutableOwnersMatch:records.every(r=>r.ownerMatches),allExecutablesWritable:records.every(r=>r.writable),
