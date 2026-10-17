@@ -1,4 +1,4 @@
-name: Current actual product native wait verification
+name: Diagnostic compiler function candidates
 on:
   workflow_dispatch:
 permissions:
@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        order: [baseline-first, extension-first]
+        order: [extension-first]
         backend: [rules]
     steps:
       - name: Repository auschecken
@@ -35,6 +35,7 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-compiler-memory-output.mjs
           node scripts/check-owned-io-observation.mjs
           node scripts/check-system-io-export.mjs
           node scripts/check-page-worker-wait-correlation.mjs
@@ -67,6 +68,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Current actual product native wait verification bestaetigen
+      - name: Diagnostic compiler function candidates bestaetigen
         if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs
+
+      - name: Feste Compiler-Symbolindizes sichern
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: synthetic-compiler-symbol-indices
+          path: |
+            artifacts/system-io/compiler-functions-baseline.json
+            artifacts/system-io/compiler-functions-extension.json
+          if-no-files-found: ignore
+          retention-days: 7

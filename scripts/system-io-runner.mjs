@@ -1,3 +1,4 @@
+import {createCompilerMemoryFile} from './compiler-memory-output.mjs';
 import {parseProcReadBytes} from './owned-io-observation.mjs';
 import {summarizeOwnedReport} from './system-io-export.mjs';
 import { createServer } from "node:http";
@@ -441,7 +442,7 @@ function startServer() {
   });
 }
 
-async function createSession(withExtension) {
+async function createSession(withExtension,compilerOutput) {
   if (browser === "firefox") {
     const addonId = JSON.parse(readFileSync(path.join(extensionDir, "manifest.json"), "utf8"))
       .browser_specific_settings.gecko.id;
@@ -477,6 +478,7 @@ async function createSession(withExtension) {
     "--mute-audio",
     "--window-size=1280,720"
   ];
+  if(compilerOutput)args.push("--js-flags="+compilerOutput.flags);
   if (engineControl !== "standard") args.push("--js-flags=--no-concurrent-recompilation");
   if (withExtension) {
     args.push(
@@ -729,7 +731,8 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
 async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
-  const id=await createSession(extensionInstalled);
+  const compilerOutput=await createCompilerMemoryFile([readFileSync(path.join(extensionDir,"background.js"),"utf8"),readFileSync(path.join(extensionDir,"content.js"),"utf8")]);
+  let id;try{id=await createSession(extensionInstalled,compilerOutput);}catch(error){compilerOutput.close();throw error;}
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
@@ -759,6 +762,8 @@ async function run(url, mode, attempt) {
     await arm.pending;
     if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
+    await mkdir(firefoxArtifacts,{recursive:true});
+    await writeAggregateFile(path.join(firefoxArtifacts,"compiler-functions-"+mode+".json"),JSON.stringify(compilerOutput.summarize(),null,2));
     return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
@@ -770,7 +775,7 @@ async function run(url, mode, attempt) {
       await arm.pending;stopMonitor?.();
       if(trace?.started)await trace.save(path.join(firefoxArtifacts,traceFile));else trace?.cancel();
     } finally {
-      try {await request("DELETE", `/session/${id}`);} catch (error) {console.error(String(error));}
+      try {await request("DELETE", `/session/${id}`);} catch (error) {console.error(String(error));}finally{compilerOutput.close();}
     }
   }
 }

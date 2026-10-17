@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {compilerSymbols,summarizeCompilerText} from './compiler-memory-output.mjs';
+const symbols=compilerSymbols(['function first(){}\n  method(){}']);
+assert.deepEqual(symbols,['first','method']);
+const raw='[compiling method 0x123 <JSFunction first (sfi = 0x456)>]\n[completed compiling 0x123 <JSFunction first (sfi = 0x456)>]\n[compiling method <JSFunction SYNTHETIC_PRIVATE_SENTINEL (sfi = 0xabc)>]';
+const result=summarizeCompilerText(raw,symbols);
+assert.equal(result.compileStarts,2);assert.equal(result.compileEnds,1);assert.equal(result.unmappedLines,1);
+assert.deepEqual(result.symbols,[{symbolIndex:0,compileStarts:1,compileEnds:1}]);
+assert.ok(!JSON.stringify(result).includes('SYNTHETIC_PRIVATE_SENTINEL'));assert.ok(!JSON.stringify(result).includes('0x'));
+console.log('Compiler symbol-index filter verified.');
