@@ -1,8 +1,10 @@
+import assert from 'node:assert/strict';
+import {ownRenderers} from './source-renderer-binding.mjs';
 import {parseProcReadBytes} from './owned-io-observation.mjs';
 import {summarizeOwnedReport} from './system-io-export.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
-import { existsSync, readFileSync, readdirSync, statSync, openSync, readSync, closeSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, createReadStream, openSync, readSync, closeSync } from "node:fs";
 import {mkdir, writeFile as writeAggregateFile} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -505,6 +507,8 @@ async function createSession(withExtension) {
       })).value;
       const present = commandLine?.arguments?.includes("--js-flags=--no-concurrent-recompilation");
       if (present !== (engineControl !== "standard")) throw new Error("Engine-Gegenprobe: Chromium-Argument nicht verifiziert.");
+      const raw=readFileSync('/proc/'+driverProcess.pid+'/stat','utf8'),start=raw.slice(raw.lastIndexOf(')')+2).split(/\s+/)[19],images=ownRenderers(driverProcess.pid,start).records;
+      if(!images.length||!images.every(r=>r.target===chromium&&r.regularFile&&!r.ownerMatches&&!r.writable))throw Error('Original renderer source binding failed');
     } catch (error) {
       try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
       throw error;
@@ -726,9 +730,20 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
  return ()=>{if(!stopped){cancel(timer);sample();stopped=true;if(!samples.some(s=>s.threads.length))errors.add('no renderer threads sampled');}return {schemaVersion:6,taskDelayAccounting,nativeWaitRegisterSamples:nativeReadCount,mainThreadsOnly,workerWindowMs,cpuQuota,intervalMs:50,discoveryIntervalMs:200,schedulerStatistics,discovery,samples,errors:[...errors]};};
 }
 
+async function prepareSourceControl(){
+ const mode=process.env.SOURCE_CONTROL_MODE,expected=process.env.EXPECTED_SOURCE_SHA256;
+ assert.ok(['browser-read','zero-scan'].includes(mode));assert.match(expected??'',/^[a-f0-9]{64}$/);
+ const metadata=statSync(chromium);assert.ok(metadata.isFile()&&metadata.uid!==process.getuid()&&metadata.size>0&&metadata.size<=2*1024**3);
+ const before=performance.now(),cpuBefore=process.cpuUsage(),h=createHash('sha256');let bytes=0;
+ if(mode==='browser-read'){for await(const chunk of createReadStream(chromium)){h.update(chunk);bytes+=chunk.length;}assert.equal(h.digest('hex'),expected);}
+ else{const buffer=Buffer.alloc(64*1024);while(bytes<metadata.size){const count=Math.min(buffer.length,metadata.size-bytes);h.update(buffer.subarray(0,count));bytes+=count;await new Promise(resolve=>setImmediate(resolve));}h.digest();}
+ assert.equal(bytes,metadata.size);const cpu=process.cpuUsage(cpuBefore);
+ return {sourceControlMode:mode,browserWarmReadPerformed:mode==='browser-read',sourceWarmupBytes:bytes,sourceWarmupWallMs:performance.now()-before,sourceWarmupCpuUs:cpu.user+cpu.system};
+}
 async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
+  const sourceControl=await prepareSourceControl();
   const id=await createSession(extensionInstalled);
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
@@ -759,7 +774,7 @@ async function run(url, mode, attempt) {
     await arm.pending;
     if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
-    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode),...sourceControl,sourceRendererBindingVerified:true, browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,

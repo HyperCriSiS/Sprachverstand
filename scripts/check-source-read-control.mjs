@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import {validateSourceSummary} from './validate-source-read-control.mjs';import {summarizeOwnedReport} from './system-io-export.mjs';import {validateSystemIoArtifact} from './validate-system-io-artifacts.mjs';
+const partial={schemaVersion:1,diagnosticOnly:true,additionalPrivilegesUsed:false,globalCacheControlUsed:false,pathsExported:false,processIdentifiersExported:false,rawLogsExported:false,discoveryCreatedBrowserSession:false,completed:false,failedAt:'source-resolution'};
+assert.equal(validateSourceSummary(partial),true);assert.throws(()=>validateSourceSummary({...partial,privatePath:'PRIVATE_SENTINEL'}));assert.throws(()=>validateSourceSummary({...partial,nativeExitCode:1}));assert.throws(()=>validateSourceSummary({...partial,resolutionMethod:'PRIVATE_SENTINEL'}));
+const fixture={baseline:{mode:'baseline',frames:{callbacks:400},sourceControlMode:'zero-scan',browserWarmReadPerformed:false,sourceWarmupBytes:1024,sourceWarmupCpuUs:25,sourceWarmupWallMs:1,privatePath:'PRIVATE_SENTINEL'},extension:{mode:'extension',frames:{callbacks:300},sourceControlMode:'browser-read',browserWarmReadPerformed:true,sourceWarmupBytes:1024,sourceWarmupCpuUs:25,sourceWarmupWallMs:2}};
+const report=JSON.parse(summarizeOwnedReport(JSON.stringify(fixture)));assert.equal(report.baseline.callbackCount,400);assert.equal(report.extension.callbackCount,300);assert.equal(report.baseline.browserWarmReadPerformed,false);assert.equal(report.extension.sourceWarmupBytes,1024);assert.ok(!JSON.stringify(report).includes('PRIVATE_SENTINEL'));validateSystemIoArtifact(report);
+console.log('Source-control summary/privacy and exact callback-count export verified.');
+
+assert.throws(()=>validateSourceSummary({...partial,completed:true}));

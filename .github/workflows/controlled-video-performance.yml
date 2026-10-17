@@ -1,4 +1,4 @@
-name: Current actual product native wait verification
+name: Original browser image read control
 on:
   workflow_dispatch:
 permissions:
@@ -7,8 +7,32 @@ concurrency:
   group: system-io-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  source_resolution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - run: node scripts/check-stop-owned-child.mjs
+      - run: node scripts/check-native-failure-class.mjs
+      - run: node scripts/source-file-control-runner.mjs --resolver-preflight
+      - id: export
+        if: always()
+        run: node scripts/validate-source-read-control.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always() && steps.export.outcome == 'success'
+        with:
+          name: source-version-only-resolution
+          path: artifacts/source-read-control/summary.json
+          if-no-files-found: error
+          retention-days: 7
   native_io:
-    name: Page thread (${{ matrix.order }})
+    needs: source_resolution
+    env:
+      SOURCE_CONTROL_MODE: ${{ matrix.source_mode }}
+    name: Original source (${{ matrix.source_mode }}, ${{ matrix.order }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -16,6 +40,7 @@ jobs:
       matrix:
         order: [baseline-first, extension-first]
         backend: [rules]
+        source_mode: [zero-scan, browser-read]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -35,6 +60,8 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-source-read-control.mjs
+          node scripts/check-native-failure-class.mjs
           node scripts/check-owned-io-observation.mjs
           node scripts/check-system-io-export.mjs
           node scripts/check-page-worker-wait-correlation.mjs
@@ -50,23 +77,28 @@ jobs:
           DOM_COMPONENT_KIND: product
           VIDEO_PAIR_ORDER: ${{ matrix.order }}
           VIDEO_ARTIFACTS_DIR: artifacts/system-io
-        run: node scripts/system-io-runner.mjs --browser chromium --fps 60 --focused-start
+        run: node scripts/source-file-control-runner.mjs
+      - name: Source-Provenienz und Metadatenschema pruefen
+        id: source_export
+        if: always()
+        run: node scripts/validate-source-read-control.mjs
       - name: Ausschliesslich feste Aggregate pruefen
         id: export
         if: ${{ always() }}
         run: node scripts/validate-system-io-artifacts.mjs
       - name: Gepruefte numerische Aggregate sichern
-        if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
+        if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: current-product-waits-${{ matrix.order }}-${{ github.sha }}
+          name: source-read-${{ matrix.source_mode }}-${{ matrix.order }}-${{ github.sha }}
           path: |
+            artifacts/source-read-control/summary.json
             artifacts/system-io/video-pair-chromium-60-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-baseline-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-extension-1.json
           if-no-files-found: error
           retention-days: 7
 
-      - name: Current actual product native wait verification bestaetigen
-        if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
+      - name: Original browser image read control bestaetigen
+        if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs

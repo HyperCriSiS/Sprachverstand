@@ -4,7 +4,7 @@ import {validateSystemIoArtifact} from './validate-system-io-artifacts.mjs';
 const report=JSON.parse(fs.readFileSync('artifacts/system-io/video-pair-chromium-60-1.json','utf8'));
 validateSystemIoArtifact(report);
 for(const role of ['baseline','extension']) {
- const r=report[role];
+ const r=report[role];assert.equal(r.sourceRendererBindingVerified,true);assert.equal(r.sourceControlMode,process.env.SOURCE_CONTROL_MODE);assert.equal(r.browserWarmReadPerformed,process.env.SOURCE_CONTROL_MODE==="browser-read");assert.ok(r.callbackCount>0);
  assert.equal(r.pageThreadWitnessVerified,true,'Native page marker must identify exactly one thread');
  assert.ok(Array.isArray(r.pageThreadPhases));
  assert.equal(r.pageThreadPhases.length,7);
