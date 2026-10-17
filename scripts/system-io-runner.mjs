@@ -755,7 +755,9 @@ async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
   const sourceControl=await prepareSourceControl();
+  const sessionStageStarted=performance.now();
   const id=await createSession(extensionInstalled);
+  const sessionCreateWallMs=performance.now()-sessionStageStarted;
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
@@ -776,7 +778,9 @@ async function run(url, mode, attempt) {
       await request("POST", `/session/${id}/window`, {handle});
       if (browser === "chromium") await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Page.bringToFront", params: {}});
     }
+    const navigationStageStarted=performance.now();
     await request("POST", `/session/${id}/url`, { url });
+    const navigationCommandWallMs=performance.now()-navigationStageStarted;
     if(trace){arm.scheduledAtEpochMs=Date.now();arm.pending=new Promise(resolve=>setTimeout(()=>resolve(arm.activate()),500)).catch(error=>{arm.error=String(error.message);});}
     if (focusedStart && !await execute(id, 'return document.visibilityState === "visible" && document.hasFocus();')) {
       throw new Error("Fokussierter Videostart nicht erreicht.");
@@ -785,7 +789,7 @@ async function run(url, mode, attempt) {
     await arm.pending;
     if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
-    return {...await collect(id, mode),...sourceControl,sourceRendererBindingVerified:true, browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode),...sourceControl,sessionCreateWallMs,navigationCommandWallMs,sourceRendererBindingVerified:true, browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,

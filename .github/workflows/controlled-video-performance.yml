@@ -1,4 +1,4 @@
-name: Original image read time and CPU control
+name: Matched source read session and navigation stages
 on:
   workflow_dispatch:
 permissions:
@@ -40,7 +40,7 @@ jobs:
       matrix:
         order: [baseline-first, extension-first]
         backend: [rules]
-        source_mode: [immediate, idle-only, zero-scan, browser-read]
+        source_mode: [zero-scan, browser-read]
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -100,6 +100,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Original image read time and CPU control bestaetigen
+      - name: Matched source read session and navigation stages bestaetigen
         if: ${{ always() && steps.source_export.outcome == 'success' && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs

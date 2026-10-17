@@ -98,3 +98,12 @@ assert.ok(!JSON.stringify(nested).includes('SECRET'));assert.ok(!JSON.stringify(
 const nestedOverlap=pagePhaseGapOverlap([{name:'V8.OptimizeConcurrentPrepare',ts:110000,dur:170000}],frames,{offsetMs:0,uncertaintyMs:0});
 assert.equal(nestedOverlap.find(p=>p.name==='V8.OptimizeConcurrentPrepare').maximumGuaranteedOverlapMs,170);
 console.log('Known compiler prepare/synchronous subscopes retained separately; nested durations not added; raw arguments refused.');
+const stageRaw={...raw,sessionCreateWallMs:123.5,navigationCommandWallMs:42.25,privateStage:secret};
+const stageExport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:stageRaw,extension:stageRaw})));
+validateSystemIoArtifact(stageExport);
+assert.equal(stageExport.extension.sessionCreateWallMs,123.5);
+assert.equal(stageExport.extension.navigationCommandWallMs,42.25);
+assert.equal(JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:raw,extension:raw}))).extension.sessionCreateWallMs,null);
+assert.ok(!JSON.stringify(stageExport).includes(secret));
+assert.throws(()=>validateSystemIoArtifact({...stageExport,sessionCreateWallMs:-1}));
+console.log('Numeric session-create and navigation-command durations exported; missing remains unknown.');
