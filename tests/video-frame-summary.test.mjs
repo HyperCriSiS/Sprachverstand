@@ -35,3 +35,23 @@ describe('Independent callback-entry clock',()=>{
   expect(summarizeVideoCallbackEntries(Array(18).fill({callbackAtMs:10})).maximumGapMs).toBe(0);
  });
 });
+
+import {validateVideoCallbackMetadata} from '../scripts/video-frame-summary.mjs';
+describe('Required callback-entry metadata',()=>{
+ const frames=()=>Array.from({length:20},(_,i)=>({nowMs:i*16,callbackAtMs:i*17,focusedAtFrame:true,visibilityAtFrame:'visible'}));
+ it('summarizes the actual entry clock independently from rendering time',()=>{
+  const samples=frames();expect(validateVideoCallbackMetadata(samples).maximumGapMs).toBe(17);
+  expect(summarizeVideoFrames(samples.map(f=>f.nowMs)).maximumGapMs).toBe(16);
+ });
+ it('retains observed focus loss and hidden state rather than inventing a focused sample',()=>{
+  const samples=frames();samples[5].focusedAtFrame=false;samples[5].visibilityAtFrame='hidden';
+  expect(validateVideoCallbackMetadata(samples).callbacks).toBe(20);expect(samples[5].focusedAtFrame).toBe(false);
+ });
+ it.each(['callbackAtMs','focusedAtFrame','visibilityAtFrame'])('rejects an unobserved %s field',key=>{
+  const samples=frames();delete samples[3][key];expect(()=>validateVideoCallbackMetadata(samples)).toThrow();
+ });
+ it('rejects non-monotonic entry clocks and an empty observation',()=>{
+  const samples=frames();samples[3].callbackAtMs=0;expect(()=>validateVideoCallbackMetadata(samples)).toThrow();
+  expect(()=>validateVideoCallbackMetadata([])).toThrow();
+ });
+});

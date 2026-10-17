@@ -28,3 +28,13 @@ export function summarizeVideoCallbackEntries(frames) {
     (index > 0 && frame.callbackAtMs < frames[index - 1].callbackAtMs))) return null;
   return summarizeVideoFrames(frames.map(frame => frame.callbackAtMs));
 }
+
+// A rendering timestamp must never silently stand in for an unobserved entry clock.
+export function validateVideoCallbackMetadata(frames) {
+  const summary = Array.isArray(frames) ? summarizeVideoCallbackEntries(frames) : null;
+  if (!summary || frames.some(frame => typeof frame.focusedAtFrame !== 'boolean' ||
+      !['visible', 'hidden'].includes(frame.visibilityAtFrame))) {
+    throw new Error('Video callback-entry clock or frame visibility metadata is missing or invalid.');
+  }
+  return summary;
+}

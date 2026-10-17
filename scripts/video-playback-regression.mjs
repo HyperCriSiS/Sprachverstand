@@ -1,4 +1,4 @@
-import {summarizeVideoFrames as summarize, summarizeVideoCallbackEntries} from './video-frame-summary.mjs';
+import {summarizeVideoFrames as summarize, summarizeVideoCallbackEntries, validateVideoCallbackMetadata} from './video-frame-summary.mjs';
 import {validateVideoBaselineSafety} from './video-baseline-safety.mjs';
 import { createServer } from "node:http";
 import {createHash} from "node:crypto";
@@ -58,6 +58,7 @@ if (!["baseline-first", "extension-first"].includes(videoPairOrder)) {
 // separate from the existing passive task/visibility observations.
 const renderSchedulingDiagnostics = process.argv.includes("--diagnose-render-scheduling");
 const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks") || renderSchedulingDiagnostics;
+const callbackEntryClock = process.env.VIDEO_CALLBACK_ENTRY_CLOCK === "1";
 const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
 const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
 if (!["standard", "no-concurrent-recompilation"].includes(engineControl)) {
@@ -270,11 +271,11 @@ function fixtureHtml() {
 
   if (typeof video.requestVideoFrameCallback === "function") {
     const onFrame = (now, metadata) => {
-      const callbackAtMs = ${browserTrace || mainTaskDiagnostics} ? performance.now() : undefined;
+      const callbackAtMs = ${browserTrace || mainTaskDiagnostics || callbackEntryClock} ? performance.now() : undefined;
       metrics.frameTimes.push(Number(now));
       const sample = {nowMs: Number(now), mediaTime: metadata.mediaTime,
         presentedFrames: metadata.presentedFrames};
-      if (${browserTrace || mainTaskDiagnostics}) Object.assign(sample, {
+      if (${browserTrace || mainTaskDiagnostics || callbackEntryClock}) Object.assign(sample, {
         callbackAtMs, presentationTimeMs: metadata.presentationTime,
         expectedDisplayTimeMs: metadata.expectedDisplayTime,
         processingDurationMs: typeof metadata.processingDuration === "number"
@@ -586,6 +587,8 @@ async function collect(id, mode) {
     `
   );
   const frameSamples = state.frameSamples;
+  const callbackFrames = callbackEntryClock ? validateVideoCallbackMetadata(frameSamples)
+    : summarizeVideoCallbackEntries(frameSamples);
   const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, mode);
   delete state.dynamicTexts;
   const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
@@ -593,7 +596,7 @@ async function collect(id, mode) {
   const schedulingEpisodes = state.schedulingProgress && callbackEpisodes
     ? callbackEpisodes.map(episode => ({...episode,
         scheduling: videoSchedulingProgress(episode, state.schedulingProgress)})) : undefined;
-  return { mode, ...state, dynamicCompletion, frames: summarize(state.frameTimes),
+  return { mode, ...state, dynamicCompletion, frames: summarize(state.frameTimes), callbackFrames,
     presentationProgress: videoPresentationProgress(frameSamples, diagnosticFps),
     ...(schedulingEpisodes ? {schedulingEpisodes} : {}),
     ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
@@ -629,7 +632,7 @@ async function run(url, mode, attempt) {
     }
     const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
-    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics || callbackEntryClock,
       ...(sessionVersions.get(id) ?? {browserVersion:"unknown", driverVersion:"unknown"}),
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
@@ -760,6 +763,7 @@ async function measureVideoPair(url, attempt) {
         gapsOver120Ms: baseline.frames.gapsOver120Ms,
         droppedVideoFrames: baseline.droppedVideoFrames,
         presentationProgress: baseline.presentationProgress,
+        callbackFrames: baseline.callbackFrames,
         presentedFramesDelta: baseline.presentedFramesDelta,
         gapEpisodes: baseline.gapEpisodes
       },
@@ -773,6 +777,7 @@ async function measureVideoPair(url, attempt) {
         gapsOver120Ms: extension.frames.gapsOver120Ms,
         droppedVideoFrames: extension.droppedVideoFrames,
         presentationProgress: extension.presentationProgress,
+        callbackFrames: extension.callbackFrames,
         presentedFramesDelta: extension.presentedFramesDelta,
         gapEpisodes: extension.gapEpisodes
       }

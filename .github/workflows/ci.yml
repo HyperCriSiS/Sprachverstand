@@ -232,6 +232,8 @@ jobs:
 
       - name: Videowiedergabe unter DOM-Last prüfen
         id: chromium_video
+        env:
+          VIDEO_CALLBACK_ENTRY_CLOCK: "1"
         run: npm run test:browser:video:chromium
 
       - name: Synthetische Videofehlerwerte filtern
