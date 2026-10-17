@@ -32,3 +32,14 @@ export function assessExternalVideoPlayback(siteSlug, videos, beforePlayback) {
     showingTextTracks: Number(videos?.showingTextTrackCount ?? 0)
   };
 }
+
+export function assessExternalSubtitlePlayback(requested, observations, mediaValidation) {
+  const changes = observations?.changes;
+  const captionChanges = Number.isSafeInteger(changes) && changes >= 0 ? changes : 0;
+  return {
+    requested,
+    captionChanges,
+    initialText: observations?.initialText === true,
+    measured: requested ? mediaValidation?.state === "measured" && captionChanges > 0 : null
+  };
+}

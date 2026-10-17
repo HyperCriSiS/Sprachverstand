@@ -11,7 +11,9 @@ const basis = process.cwd();
 const erweiterung = path.join(basis, "dist", "chromium");
 const outputDir = path.resolve(basis, argument("--output-dir", "artifacts/chromium-cpu"));
 const durationMs = zahl("--duration-ms", 4_000, 1_000, 10_000);
+const cpuThrottle = zahl("--cpu-throttle", 1, 1, 16);
 const pairs = zahl("--pairs", 1, 1, 3);
+let browserVersion;
 const port = 9517;
 const webDriverUrl = "http://127.0.0.1:" + port;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -145,6 +147,7 @@ async function sitzung(withExtension) {
     "goog:chromeOptions": { binary: chromium, args }
   } } });
   if (!response?.sessionId) throw new Error("Keine Chromium-Session-ID.");
+  browserVersion = response.capabilities?.browserVersion;
   return response.sessionId;
 }
 
@@ -153,6 +156,7 @@ async function browserlauf(url, mode, index) {
   let profilerActive = false;
   try {
     id = await sitzung(mode === "extension");
+    await cdp(id, "Emulation.setCPUThrottlingRate", { rate: cpuThrottle });
     await api("POST", "/session/" + id + "/url", { url });
     await sleep(1_200);
     const initial = await js(id, "return window.__profilSnapshot();");
@@ -227,8 +231,8 @@ try {
     version: 1,
     generatedAt: new Date().toISOString(),
     commit: process.env.GITHUB_SHA ?? null,
-    chromium: spawnSync(chromium, ["--version"], { encoding: "utf8" }).stdout.trim(),
-    durationMs, pairs, runs,
+    chromium: browserVersion ?? null,
+    durationMs, pairs, cpuThrottle, runs,
     hinweis: "Echtes Chromium-V8-Sampling mit Profiler-Overhead; keine Freigabe, " +
       "kein Hard-Gate und keine automatische kausale Attribution."
   };

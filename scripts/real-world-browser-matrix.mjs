@@ -6,7 +6,7 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { compareProtectedRuns } from "./real-world-protected-state.mjs";
 import { classifyVisibleMarkerNodes } from "./live-marker-dom-classification.mjs";
-import { assessExternalVideoPlayback } from "./real-world-media-validation.mjs";
+import { assessExternalVideoPlayback, assessExternalSubtitlePlayback } from "./real-world-media-validation.mjs";
 import { comparePhaseDurations, summarizePairedRuns } from "./real-world-performance-phases.mjs";
 
 const projectRoot = process.cwd();
@@ -37,6 +37,7 @@ function positiveIntegerArgument(name, fallback) {
 }
 
 const listOnly = process.argv.includes("--list");
+const activeSubtitles = process.argv.includes("--active-subtitles");
 const observationMs = positiveIntegerArgument("--observation-ms", 3_500);
 const pairCount = positiveIntegerArgument("--pairs", 1);
 if (pairCount > 5) {
@@ -163,7 +164,7 @@ function findCommand(...names) {
 }
 
 function commandVersion(command, args = ["--version"]) {
-  const result = spawnSync(command, args, { encoding: "utf8" });
+  const result = spawnSync(command, args, { encoding: "utf8", timeout: 5_000 });
   if (result.status !== 0) {
     return undefined;
   }
@@ -173,6 +174,7 @@ function commandVersion(command, args = ["--version"]) {
 const driverExecutable = resolveExecutable("CHROMEWEBDRIVER", "chromedriver");
 const chromiumExecutable =
   process.env.CHROMIUM_BIN ?? findCommand("chromium", "chromium-browser");
+let browserVersion;
 
 function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -280,6 +282,7 @@ async function createSession(withExtension) {
     }
   });
 
+  browserVersion = response.value?.capabilities?.browserVersion ?? browserVersion;
   return sessionIdFrom(response);
 }
 
@@ -547,6 +550,15 @@ async function collectSnapshot(sessionId) {
         },
         videos: {
           count: videos.length,
+          visibilityState: document.visibilityState,
+          documentFocused: document.hasFocus(),
+          sourceDiagnostics: videos.slice(0, 8).map(video => ({
+            readyState: video.readyState,
+            networkState: video.networkState,
+            errorCode: video.error?.code ?? null,
+            h264Support: video.canPlayType('video/mp4; codecs="avc1.42E01E"'),
+            vp8Support: video.canPlayType('video/webm; codecs="vp8"')
+          })),
           playingCount: videos.filter((video) => !video.paused && !video.ended).length,
           currentTimeSeconds: Math.max(0, ...videos.map((video) => Number(video.currentTime || 0))),
           textTrackCount: videos.reduce((sum, video) => sum + video.textTracks.length, 0),
@@ -625,6 +637,104 @@ async function exercisePage(sessionId, site) {
   }
 }
 
+async function dismissYouTubeConsent(sessionId, site) {
+  if (site.slug !== "youtube-big-buck-bunny") return false;
+  // Fresh test profiles have no saved consent. Reject optional cookies;
+  // accepting them is unnecessary for a public playback comparison.
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    const dismissed = await execute(sessionId, `
+      const button = [...document.querySelectorAll("button")].find(button =>
+        /^(?:Alle ablehnen|Reject all)$/u.test(button.textContent.trim()) &&
+        !button.disabled && button.getClientRects().length > 0);
+      if (!button) return false;
+      button.click(); return true;
+    `);
+    if (dismissed) {await sleep(750); return true;}
+    await sleep(250);
+  }
+  return false;
+}
+
+async function enableExtensionSubtitles(sessionId) {
+  const deadline=Date.now()+8_000;
+  let extension;
+  while (Date.now()<deadline) {
+    const targets=(await webdriverRequest("POST",`/session/${sessionId}/goog/cdp/execute`,
+      {cmd:"Target.getTargets",params:{}})).value?.targetInfos ?? [];
+    const url=targets.map(target=>target.url).find(url=>/^chrome-extension:\/\/[a-p]{32}\//u.test(url));
+    if (url) {extension=url.split("/")[2];break;}
+    await sleep(200);
+  }
+  if (!extension) throw new Error("Erweiterungsziel für die Untertiteloption fehlt.");
+  const original=(await webdriverRequest("GET",`/session/${sessionId}/window`)).value;
+  const options=(await webdriverRequest("POST",`/session/${sessionId}/window/new`,{type:"tab"})).value?.handle;
+  if (!options) throw new Error("Untertitel-Optionsfenster fehlt.");
+  try {
+    await webdriverRequest("POST",`/session/${sessionId}/window`,{handle:options});
+    await webdriverRequest("POST",`/session/${sessionId}/url`,{url:`chrome-extension://${extension}/options/options.html`});
+    const readyDeadline=Date.now()+8_000;
+    while (Date.now()<readyDeadline) {
+      if (await execute(sessionId,'return document.querySelector("#enabled")?.checked === true;')) break;
+      await sleep(100);
+    }
+    const switched=await execute(sessionId,`
+      const input=document.querySelector("#process-subtitles"),save=document.querySelector("#save-settings");
+      if (!document.querySelector("#enabled")?.checked || !input || !save) return false;
+      if (!input.checked) input.click(); save.click(); return input.checked;
+    `);
+    if (!switched) throw new Error("Untertiteloption konnte nicht aktiviert werden.");
+    const savedDeadline=Date.now()+8_000;
+    while (Date.now()<savedDeadline) {
+      const saved=(await webdriverRequest("POST",`/session/${sessionId}/execute/async`,{
+        script:'const done=arguments[arguments.length-1];chrome.storage.local.get("settings").then(value=>done(value.settings?.processSubtitles),()=>done(false));',args:[]
+      })).value;
+      if (saved===true) return;
+      await sleep(100);
+    }
+    throw new Error("Untertiteloption wurde nicht gespeichert.");
+  } finally {
+    await webdriverRequest("DELETE",`/session/${sessionId}/window`);
+    await webdriverRequest("POST",`/session/${sessionId}/window`,{handle:original});
+  }
+}
+
+async function activateAndObserveSubtitles(sessionId, site) {
+  if (!activeSubtitles || !["videojs-player-demo","youtube-big-buck-bunny"].includes(site.slug)) return;
+  await execute(sessionId,`
+    window.__sprachverstandActiveCaptions={changes:0,initialText:false};
+    const metrics=window.__sprachverstandActiveCaptions;
+    let lastText="";
+    const sample=()=>{
+      const text=[...document.querySelectorAll(".ytp-caption-segment,.vjs-text-track-cue")].map(node=>node.textContent).join("").trim();
+      if (text && text!==lastText) metrics.changes++;
+      lastText=text;
+    };
+    new MutationObserver(sample).observe(document.body,{childList:true,subtree:true,characterData:true});
+    const button=document.querySelector(".ytp-subtitles-button");
+    if (button && button.getAttribute("aria-pressed")!=="true") button.click();
+    for (const video of document.querySelectorAll("video")) for (const track of video.textTracks) {
+      if (track.kind==="subtitles" || track.kind==="captions") {
+        track.mode="showing";
+        track.addEventListener("cuechange",()=>{if(track.mode==="showing"&&track.activeCues?.length)metrics.changes++;});
+      }
+    }
+    sample();metrics.initialText=metrics.changes>0;
+  `);
+}
+
+async function exerciseBaselineTabSwitch(sessionId) {
+  // The extension run opens its options tab. Give the no-extension baseline
+  // the same hide/show transition before any frame measurements begin.
+  const original=(await webdriverRequest("GET",`/session/${sessionId}/window`)).value;
+  const temporary=(await webdriverRequest("POST",`/session/${sessionId}/window/new`,{type:"tab"})).value?.handle;
+  if (!temporary) throw new Error("Vergleichsfenster fehlt.");
+  await webdriverRequest("POST",`/session/${sessionId}/window`,{handle:temporary});
+  await webdriverRequest("POST",`/session/${sessionId}/url`,{url:"about:blank"});
+  await webdriverRequest("DELETE",`/session/${sessionId}/window`);
+  await webdriverRequest("POST",`/session/${sessionId}/window`,{handle:original});
+}
+
 async function saveScreenshot(sessionId, filePath) {
   const response = await webdriverRequest(
     "GET",
@@ -701,6 +811,11 @@ function compareRuns(baseline, extension) {
 
 async function runSiteMode(site, mode, pairIndex = 0) {
   const withExtension = mode === "extension";
+  const subtitleSite = ["videojs-player-demo","youtube-big-buck-bunny"].includes(site.slug);
+  // Native WebVTT cues can remain unchanged for longer than the default
+  // short DOM visit. Active-caption proof needs an actual cue transition.
+  const measuredObservationMs = activeSubtitles && subtitleSite
+    ? Math.max(observationMs, 15_000) : observationMs;
   let sessionId;
   const startedAt = Date.now();
   let phaseStartedAt = startedAt;
@@ -718,11 +833,19 @@ async function runSiteMode(site, mode, pairIndex = 0) {
       url: site.url
     });
     endPhase("navigationMs");
+    const consentDismissed = await dismissYouTubeConsent(sessionId, site);
+    endPhase("consentMs");
+    if (activeSubtitles && subtitleSite) {
+      if (withExtension) await enableExtensionSubtitles(sessionId);
+      else await exerciseBaselineTabSwitch(sessionId);
+    }
+    endPhase("subtitleSettingsMs");
     await installObservers(sessionId);
     endPhase("observerSetupMs");
     const protectedBefore = await protectedState(sessionId);
     endPhase("initialProtectionSnapshotMs");
     await exercisePage(sessionId, site);
+    await activateAndObserveSubtitles(sessionId, site);
     endPhase("interactionMs");
     const beforePlayback = site.slug === "videojs-player-demo" ||
       site.slug === "youtube-big-buck-bunny"
@@ -730,13 +853,17 @@ async function runSiteMode(site, mode, pairIndex = 0) {
           'return Number(document.querySelector("video")?.currentTime || 0);')
       : undefined;
     endPhase("playbackSetupMs");
-    await sleep(observationMs);
+    await sleep(measuredObservationMs);
     endPhase("observationWaitMs");
     const snapshot = await collectSnapshot(sessionId);
+    const captionObservations = activeSubtitles && subtitleSite ? await execute(sessionId,
+      'return window.__sprachverstandActiveCaptions ?? null;') : null;
     endPhase("domSnapshotMs");
     const mediaValidation = assessExternalVideoPlayback(
       site.slug, snapshot.videos, beforePlayback
     );
+    const subtitleValidation = assessExternalSubtitlePlayback(activeSubtitles && subtitleSite,
+      captionObservations, mediaValidation);
     if (mediaValidation?.state === "unavailable") {
       console.log("::warning title=Externes Videoplayback nicht messbar::" +
         site.slug + ": keine nachweisbare Wiedergabe. DOM-Ergebnis separat.");
@@ -754,6 +881,9 @@ async function runSiteMode(site, mode, pairIndex = 0) {
     return {
       status: "ok",
       mediaValidation,
+      consentDismissed,
+      subtitleValidation,
+      observationMs: measuredObservationMs,
       elapsedMs: Date.now() - startedAt,
       phasesMs,
       screenshot: path.relative(projectRoot, screenshotPath),
@@ -861,10 +991,12 @@ const report = {
     node: process.version,
     platform: process.platform,
     osRelease: osRelease(),
-    chromium: commandVersion(chromiumExecutable),
+    chromium: browserVersion,
+    browserSource: process.env.SPRACHVERSTAND_TEST_BROWSER_SOURCE ?? "configured-or-system",
     chromedriver: commandVersion(driverExecutable),
     observationMs,
     pairCount,
+    activeSubtitles,
     navigationTimeoutMs
   },
   results
