@@ -1,3 +1,4 @@
+import {subtitleLiteralInstallationScript} from './subtitle-literal-control.mjs';
 import {summarizeVideoFrames as summarize, summarizeVideoCallbackEntries} from './video-frame-summary.mjs';
 import {validateVideoBaselineSafety} from './video-baseline-safety.mjs';
 import { createServer } from "node:http";
@@ -49,6 +50,9 @@ const subtitleOnly = process.argv.includes("--subtitle-only");
 // Separate, opt-in sustained load; ordinary video CI remains unchanged.
 const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
 const subtitleBaseline = process.argv.includes("--subtitle-baseline");
+const subtitleLiteralControl=process.argv.includes("--subtitle-literal-control");
+if(subtitleLiteralControl&&(!subtitleBaseline||!subtitleOnly||!subtitleDomLoad))throw Error("Literal control requires no-addon subtitle DOM mode");
+const correctingSubtitles=!subtitleBaseline||subtitleLiteralControl;
 const browserTrace = process.argv.includes("--browser-trace");
 const videoPairOrder = process.env.VIDEO_PAIR_ORDER || "baseline-first";
 if (!["baseline-first", "extension-first"].includes(videoPairOrder)) {
@@ -84,6 +88,7 @@ if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
 }
 const subtitleDurationMs = Number(process.env.SUBTITLE_DURATION_MS ?? 30_000);
 const subtitleLoad = process.env.SUBTITLE_LOAD ?? "stress";
+if(subtitleLiteralControl&&(!["stress","moderate"].includes(subtitleLoad)||browserTrace))throw Error("Literal control supports only plain stress/moderate measurement");
 if (!Number.isInteger(subtitleDurationMs) || subtitleDurationMs < 30_000 ||
     subtitleDurationMs > 600_000 || !["none", "moderate", "stress", "burst", "removal"].includes(subtitleLoad)) {
   throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress/burst/removal erforderlich.");
@@ -943,7 +948,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
       const done = arguments[arguments.length - 1];
       const video = document.querySelector("#video");
       const root = document.createElement("div");
-      document.body.append(root);
+      root.id="subtitle-load-control-root"; document.body.append(root);
       const nodes = Array.from({length: 480}, (_, index) => {
         const node = document.createElement("span");
         node.textContent = "Neutraler Inhalt " + index;
@@ -1024,6 +1029,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
               ? qualityAfter.droppedVideoFrames - qualityBefore.droppedVideoFrames : null,
             totalFrames: qualityBefore && qualityAfter
               ? qualityAfter.totalVideoFrames - qualityBefore.totalVideoFrames : null,
+            literalControlStats: window.__subtitleLiteralStats ? {...window.__subtitleLiteralStats} : null,
             cueRecords: window.__subtitleCueRecords.filter(record =>
               record.issuedAt >= startedAt && record.issuedAt <= endedAt),
             longTaskSupported: PerformanceObserver.supportedEntryTypes?.includes("longtask") === true,
@@ -1043,7 +1049,8 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
   const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,
     ...sessionVersions.get(id), sourceHash:servedVideoSha256,
     ...diagnostics,
-    mode: subtitleBaseline ? "baseline" : "extension",
+    mode: subtitleLiteralControl ? "literal-control" : subtitleBaseline ? "baseline" : "extension",
+    extensionInstalled:!subtitleBaseline,correctionImplementation:subtitleLiteralControl?"synthetic-literal":subtitleBaseline?"none":"sprachverstand",
     load: subtitleLoad, mutationsPerTick, mutationIntervalMs,
     cueCount: result.cueRecords.length, correctedCues: latencies.length,
     cueP95Ms: latencies.length ? percentile(latencies, 0.95) : null,
@@ -1072,14 +1079,15 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
     longTasks: result.longTaskSupported ? result.longTasks.length : null,
     normalCorrected: result.normalCorrected
   }));
-  const expectedNormal = subtitleBaseline ? 0 : Math.min(480, result.ticks * mutationsPerTick);
+  if(subtitleLiteralControl&&(!result.literalControlStats?.installed||result.literalControlStats.normalWrites<480||result.literalControlStats.cueWrites<report.cueCount))throw Error("Literal correction control was not exercised");
+  const expectedNormal = !correctingSubtitles ? 0 : Math.min(480, result.ticks * mutationsPerTick);
   const presentedFrames = result.frames.length > 1
     ? result.frames.at(-1).presentedFrames - result.frames[0].presentedFrames : 0;
   const minimumTicks = Math.max(subtitleLoad === "stress" ? 500 : 0,
     subtitleDurationMs / mutationIntervalMs * 0.8);
   if (result.ticks < minimumTicks || report.cueCount < subtitleDurationMs / 1000 ||
-      report.correctedCues !== (subtitleBaseline ? 0 : report.cueCount) || result.normalCorrected !== expectedNormal ||
-      result.staticText !== (subtitleBaseline ? "Nutzer:innen" : "Nutzer") ||
+      report.correctedCues !== (!correctingSubtitles ? 0 : report.cueCount) || result.normalCorrected !== expectedNormal ||
+      result.staticText !== (!correctingSubtitles ? "Nutzer:innen" : "Nutzer") ||
       result.cueRecords.some(record => record.visibilityAtIssue !== "visible" || !record.focusAtIssue) ||
       presentedFrames < subtitleDurationMs / 1000 * 10 ||
       (subtitleLoad === "burst" && (result.bulk?.nodes !== 50001 ||
@@ -1091,7 +1099,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
       result.frames.length < 200 || result.frames.some(frame => frame.visibilityAtFrame !== "visible" || frame.focusedAtFrame !== true) ||
       result.visibility !== "visible" ||
       !result.focused || result.paused || result.readyState < 2 || result.error ||
-      !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {
+      !(!correctingSubtitles ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {
     throw new Error("Untertitel-/DOM-Lastprobe unvollständig; Rohbericht gespeichert.");
   }
   return report;
@@ -1265,6 +1273,10 @@ try {
       }
       if (!await execute(id, 'return document.querySelector("#video").currentTime > 0.5 && window.__subtitleTicks > 0;')) {
         throw new Error("Baseline-Video oder Untertitelwechsel nicht angelaufen.");
+      }
+      if(subtitleLiteralControl){
+        const installed=await execute(id,subtitleLiteralInstallationScript());
+        if(installed?.installed!==true)throw Error("Literal control installation failed");
       }
       await measureSubtitleDomLoad(id);
     } finally {
