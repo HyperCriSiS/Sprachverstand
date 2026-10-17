@@ -441,7 +441,7 @@ function startServer() {
   });
 }
 
-async function createSession(withExtension) {
+async function createSession(withExtension, sessionExtensionDir=extensionDir) {
   if (browser === "firefox") {
     const addonId = JSON.parse(readFileSync(path.join(extensionDir, "manifest.json"), "utf8"))
       .browser_specific_settings.gecko.id;
@@ -480,8 +480,8 @@ async function createSession(withExtension) {
   if (engineControl !== "standard") args.push("--js-flags=--no-concurrent-recompilation");
   if (withExtension) {
     args.push(
-      `--disable-extensions-except=${extensionDir}`,
-      `--load-extension=${extensionDir}`
+      `--disable-extensions-except=${sessionExtensionDir}`,
+      `--load-extension=${sessionExtensionDir}`
     );
   }
   const response = await request("POST", "/session", {
@@ -613,7 +613,7 @@ async function collect(id, mode) {
     `
   );
   const frameSamples = state.frameSamples;
-  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, mode);
+  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, "extension");
   delete state.dynamicTexts;
   const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
     state.longTaskSupported === true ? state.longTasks : []);
@@ -728,8 +728,11 @@ function startOwnRendererMonitor(rootPid, dependencies = {}) {
 
 async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
-  const extensionInstalled=mode==='extension'&&componentKind==='product';
-  const id=await createSession(extensionInstalled);
+  const extensionInstalled=true;
+  const sessionExtensionDir=mode==='baseline'?path.join(root,'artifacts/product-baseline'):extensionDir;
+  const contentSha256=createHash('sha256').update(readFileSync(path.join(sessionExtensionDir,'content.js'))).digest('hex');
+  if(createHash('sha256').update(readFileSync(path.join(sessionExtensionDir,'background.js'))).digest('hex')!==backgroundSha256)throw Error('Pair background binding mismatch');
+  const id=await createSession(extensionInstalled,sessionExtensionDir);
   if(mode==='extension'&&componentKind==='page-dom')url+='?page-dom-control=1';
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
@@ -737,7 +740,7 @@ async function run(url, mode, attempt) {
     if(sessionVersions.get(id)!=='155.0.8059.0')throw Error('System browser version differs from declared historical comparison');
     const commandLine=(await request('POST',`/session/${id}/goog/cdp/execute`,{cmd:'Browser.getBrowserCommandLine',params:{}})).value;
     const loads=commandLine?.arguments?.filter(argument=>argument.startsWith('--load-extension='));
-    if(!Array.isArray(loads)||(extensionInstalled?!loads.includes('--load-extension='+extensionDir):loads.length!==0))throw Error('Unverified component installation');
+    if(!Array.isArray(loads)||(extensionInstalled?!loads.includes('--load-extension='+sessionExtensionDir):loads.length!==0))throw Error('Unverified component installation');
     if (browserTrace) {
       await mkdir(firefoxArtifacts, {recursive: true});
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
@@ -759,7 +762,7 @@ async function run(url, mode, attempt) {
     await arm.pending;
     if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
-    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+    return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backgroundSha256,contentSha256,candidateIndexEnabled:mode==="extension",extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
       renderSchedulingDiagnostics,
       domPhaseDiagnostics,
@@ -810,7 +813,7 @@ function validateComparison(baseline, extension) {
       throw new Error(`${result.mode}: Dynamische Endtexte unvollständig: ${JSON.stringify(completion)}`);
     }
   }
-  if (baseline.staticText !== "Nutzer:innen" || extension.staticText !== "Nutzer") {
+  if (baseline.staticText !== "Nutzer" || extension.staticText !== "Nutzer") {
     throw new Error(
       `Erweiterungszustand im Videotest unerwartet: ${JSON.stringify({
         baseline: baseline.staticText,

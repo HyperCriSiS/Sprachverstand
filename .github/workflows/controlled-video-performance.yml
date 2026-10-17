@@ -1,4 +1,4 @@
-name: Current actual product native wait verification
+name: Actual product context index comparison
 on:
   workflow_dispatch:
 permissions:
@@ -40,7 +40,7 @@ jobs:
           node scripts/check-page-worker-wait-correlation.mjs
       - name: Exakten Produktstand bauen
         run: |
-          npm run build:chromium
+          node scripts/build-context-product-pair.mjs
       - name: Reale DOM-Komponente isoliert bauen und funktional pruefen
         run: |
           node scripts/build-page-dom-control.mjs
@@ -59,7 +59,7 @@ jobs:
         if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: current-product-waits-${{ matrix.order }}-${{ github.sha }}
+          name: product-context-index-${{ matrix.order }}-${{ github.sha }}
           path: |
             artifacts/system-io/video-pair-chromium-60-1.json
             artifacts/system-io/video-browser-phase-aggregates-chromium-60-baseline-1.json
@@ -67,6 +67,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Current actual product native wait verification bestaetigen
+      - name: Actual product context index comparison bestaetigen
         if: ${{ always() && steps.export.outcome == 'success' && steps.export.outputs.present == 'true' }}
         run: node scripts/check-native-page-witness.mjs
