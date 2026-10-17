@@ -1,6 +1,7 @@
 import {summarizeIoObservation} from './owned-io-observation.mjs';
 import path from 'node:path';
 // Raw diagnostics exist in process memory only. Every exported field is listed here.
+const pageThreads=new Map();
 const traces=new Map(),names=new Set(['V8.OptimizeCode','V8.OptimizeBackground','V8.GC_TIME_TO_SAFEPOINT','V8.GC_MARK_COMPACTOR','V8.GC_SCAVENGER']);
 const number=n=>Number.isFinite(n)?n:null;
 function phaseTotals(events){return [...names].map(name=>{
@@ -16,6 +17,9 @@ export function summarizeOwnedTrace(filename,text){
  const parsed=JSON.parse(text),events=parsed.traceEvents??parsed;
  if(!Array.isArray(events))throw Error('Synthetic trace shape missing');
  const phases=events.filter(e=>names.has(e.name)&&Number.isFinite(e.dur)&&e.dur>=0).map(e=>({name:e.name,ts:e.ts,dur:e.dur,tdur:e.tdur,pid:e.pid,tid:e.tid}));
+ const witnesses=events.filter(e=>e.name==='sprachverstand.diagnostic.page-thread'&&Number.isSafeInteger(e.pid)&&Number.isSafeInteger(e.tid));
+ const identities=new Map(witnesses.map(e=>[e.pid+':'+e.tid,{pid:e.pid,tid:e.tid}]));
+ pageThreads.set(path.basename(filename),identities.size===1?[...identities.values()][0]:null);
  traces.set(path.basename(filename),phases);
  return JSON.stringify({type:'synthetic-owned-browser-phase-aggregates',rawTraceExported:false,phases:phaseTotals(phases)},null,2);
 }
@@ -37,7 +41,9 @@ function role(r){
   }
  }
  const tasks=r.longTasks??[],first=samples[0],last=samples.at(-1),span=first&&last?last.afterEpochMs-first.beforeEpochMs:null;
- return {backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
+ const pageThread=pageThreads.get(path.basename(r.traceFile??''));
+ const pageThreadPhases=pageThread?phaseTotals(phases.filter(e=>e.pid===pageThread.pid&&e.tid===pageThread.tid)):null;
+ return {pageThreadWitnessVerified:Boolean(pageThread),pageThreadPhases,backendKind:r.backendKind,backgroundSha256:r.backgroundSha256,backendBodySha256:r.backendBodySha256,componentKind:r.componentKind,correctionImplementation:r.mode==='baseline'?'none':r.componentKind==='page-dom'?'page-dom-literal':'sprachverstand',
  extensionInstalled:r.extensionInstalled,installationArgumentsVerified:r.installationArgumentsVerified,driverVersion:r.driverVersion,pageDomBundleSha256:r.pageDomBundleSha256,
  pageDomControlStats:r.pageDomControlStats?{started:r.pageDomControlStats.started===true,requests:number(r.pageDomControlStats.requests),matchedMarkers:number(r.pageDomControlStats.matchedMarkers),notifications:number(r.pageDomControlStats.notifications),reportedCount:number(r.pageDomControlStats.reportedCount)}:null,
  diagnosticComplete:Boolean(r.nativeTraceSchedule)&&!r.nativeTraceSchedule.error&&Boolean(r.rendererMonitor)&&!(r.rendererMonitor.errors?.length)&&samples.length>0,clockUncertaintyMs:number(r.traceClock?.uncertaintyMs),allCallbackFramesFocused:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.focusedAtFrame==="boolean")?r.frameSamples.every(f=>f.focusedAtFrame):null,allCallbackFramesVisible:Array.isArray(r.frameSamples)&&r.frameSamples.length>0&&r.frameSamples.every(f=>typeof f.visibilityAtFrame==="string")?r.frameSamples.every(f=>f.visibilityAtFrame==="visible"):null,ioObservation:summarizeIoObservation(r.rendererMonitor),browserVersion:/^\d+\.\d+\.\d+\.\d+$/.test(r.browserVersion??'')?r.browserVersion:null,visible:r.visibilityState==='visible',focused:r.focused===true,correctDynamicTexts:number(r.dynamicCompletion?.correct),expectedDynamicTexts:number(r.dynamicCompletion?.expected),drops:number(r.droppedVideoFrames),maximumCallbackGapMs:number(r.frames?.maximumGapMs),pageLongTaskCount:tasks.length,pageLongTaskMaximumMs:tasks.length?number(Math.max(...tasks.map(t=>t.durationMs??t.duration??t.dauerMs??NaN))):0,monitorSampleCount:samples.length,monitorSpanMs:number(span),parentMonitorCpuUs:samples.reduce((s,e)=>s+(e.monitorCpuUs??0),0),childProbeCpuExcluded:true,phaseTotals:phaseTotals(phases),residency:counts};

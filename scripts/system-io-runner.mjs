@@ -752,7 +752,7 @@ async function run(url, mode, attempt) {
     if (browserTrace) {
       await mkdir(firefoxArtifacts, {recursive: true});
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
-        "toplevel,v8,devtools.timeline,disabled-by-default-v8.compile,disabled-by-default-v8.gc,media",{deferStart:true});
+        "toplevel,v8,blink.user_timing,devtools.timeline,disabled-by-default-v8.compile,disabled-by-default-v8.gc,media",{deferStart:true});
       arm.activate=async()=>{await trace.start();arm.startedAtEpochMs=Date.now();stopMonitor=startOwnRendererMonitor(driverProcess.pid,{mainThreadsOnly:true,workerWindowMs:[300,2000],sampleNativeWait:true,readInstructionPage:true,nativePageSize:4096});};
 
     }
@@ -768,6 +768,7 @@ async function run(url, mode, attempt) {
     }
     await waitForCompletion(id);
     await arm.pending;
+    if(trace?.started)await execute(id, 'performance.mark("sprachverstand.diagnostic.page-thread"); return true;');
     const traceClock = trace?.started ? await synchronizeTraceClock(id) : undefined;
     return {...await collect(id, mode), browserVersion:sessionVersions.get(id),driverVersion:sessionDriverVersions.get(id),componentKind,backendKind,...backendBinding,extensionInstalled,installationArgumentsVerified:true,pageDomBundleSha256,traceTarget:"browser-delayed-after-navigation",rendererMonitor:stopMonitor?.()??null,nativeTraceSchedule:{delayMs:500,scheduledAtEpochMs:arm.scheduledAtEpochMs,startedAtEpochMs:arm.startedAtEpochMs,error:arm.error},instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
       mainTaskDiagnostics,
