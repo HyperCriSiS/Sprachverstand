@@ -17,7 +17,7 @@ try{
  const counts=summarizeSyntheticOptOutput(result.stdout??'',result.stderr??'');
  const report={browserVersion:'155.0.8059.0',syntheticOnly:true,compilerFlagsDiagnosticOnly:true,
  rawOutputExported:false,profileExported:false,browserExitedSuccessfully:result.status===0,
- fixtureCompleted:(result.stdout??'').includes('synthetic-complete'),...counts};
+ fixtureCompleted:(result.stdout??'').includes('<title>synthetic-complete</title>'),...counts};
  await mkdir('artifacts',{recursive:true});await writeFile('artifacts/opt-source-preflight.json',JSON.stringify(report,null,2));
  assert.equal(report.browserExitedSuccessfully,true,'Synthetic browser must exit normally');
  assert.equal(report.fixtureCompleted,true,'Synthetic fixture must execute');
