@@ -37,6 +37,7 @@ jobs:
         run: |
           node scripts/check-owned-io-observation.mjs
           node scripts/check-system-io-export.mjs
+          node scripts/check-page-worker-wait-correlation.mjs
           node scripts/check-background-backend-pair.mjs
       - name: Exakten Produktstand bauen
         run: |
