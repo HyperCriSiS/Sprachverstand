@@ -89,3 +89,55 @@ the differences as a quantified rule cost. Both variants retain lexicon startup,
 so the comparison does not isolate that initialization. All-green outcomes do
 not invalidate earlier red runs or close their unresolved causes. No product
 runtime change or overall performance acceptance follows from this experiment.
+
+## Seitenthread und zeitliche Überlappung
+
+Zwei zusätzliche, jeweils auf zwei vorab festgelegte Produktpaare begrenzte
+Diagnoseeinheiten schließen konkrete Zuordnungslücken. Die bestehenden Gates
+und der Produktlaufzeitcode bleiben unverändert. Beide verwenden denselben
+vollständigen Hintergrundcode mit ausgewähltem echten Regelbackend. Ein
+Marker nach der Wiedergabe identifiziert den Testseitenthread im Browsertrace;
+Kennungen bleiben ausschließlich im Speicher. Fehlende oder mehrdeutige
+Zuordnung wird nicht als Nullmessung ausgegeben.
+
+- [Run 39008983474](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39008983474),
+  Quelle `e57625c4a4d951da55c05833d89594be13abc2e4`: beide nativen
+  Seitenthread-Zeugen bestätigt, vier gültige Rollen und 1.920 korrekte Texte.
+  Basis-zuerst bleibt mit nur 72,3 Prozent Videocallbacks rot (245/339;
+  Drops Erweiterung/Basis 140/0; maximaler Frameabstand 233,3/33,5 ms).
+  Auf dem bestätigten Seitenthread liegt eine Safepoint-Phase von 207,718 ms
+  Wandzeit bei 0,025 ms CPU-Zeit **desselben Ereignisses**. Der damalige Export
+  beweist keine genaue Überschneidung dieses Ereignisses mit der Videolücke.
+  Die andere Reihenfolge besteht. Kein Bestätigungsversuch.
+- [Run 39009180440](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/39009180440),
+  Quelle `c9e80e239ef556467ef34bebc31733bed3be3b35`: beide Paare bestehen,
+  erneut vier gültige Rollen und 1.920 korrekte Texte. Der ergänzte Export
+  verwendet tatsächliche Callback-Eintrittszeiten, Trace-Offset und gemessene
+  Uhrenunsicherheit. Im Basis-zuerst-Erweiterungslauf überlappt eine
+  Seitenthread-Safepoint-Phase einen Callback-Abstand über 120 ms garantiert
+  um mindestens 118,701 ms; konservative obere Schranke 128,913 ms bei
+  3,25 ms Uhrenunsicherheit. Die beobachtete maximale Safepoint-Dauer dieser
+  Rolle ist 125,201 ms mit 0,026 ms CPU im selben maximalen Ereignis. Die
+  separate Überlappungsaggregation bindet dieses Maximum nicht zusätzlich
+  an genau das überlappende Ereignis. In der anderen Reihenfolge gibt es
+  keinen Callback-Abstand über 120 ms. Historische rote Läufe bleiben offen.
+
+Die Intervallrechnung exportiert nur feste Zahlenaggregate. Tests decken
+Zeitoffset-Vorzeichen, unsichere Grenzfälle, getrennte Intervalle, fehlende
+Callback-Eintrittszeiten, rückläufige Zeitfolgen und unveränderte Schwelle ab.
+Es werden keine Rohzeiten, Threadkennungen, Profile oder Aufnahmen exportiert.
+
+### Versionsbezogene Quellenprüfung
+
+Der offizielle [Chromium-Tag 155.0.8059.0, DEPS](https://github.com/chromium/chromium/blob/155.0.8059.0/DEPS)
+(Blob `82931b980b808e5574643e5e012100df2c3a2bd2`) referenziert V8
+`17abeb50acb4563e253edebd0db09062d39c8c91`. Dessen
+[safepoint.cc](https://github.com/v8/v8/blob/17abeb50acb4563e253edebd0db09062d39c8c91/src/heap/safepoint.cc)
+setzt die TIME_TO_SAFEPOINT-Messung um die Safepoint-Anforderung an die
+übrigen laufenden LocalHeaps und das Warten auf deren Rückmeldung. Dies
+ordnet die Phase dem Synchronisationsvorgang zu, nicht der anschließenden
+vollständigen Speicherbereinigung. Die Quellbindung gilt für den offiziellen
+Versionsstand; sie ist kein eigenständiger Nachweis der Build-Provenienz des
+Runner-Binaries. Der konkret verzögerte Hintergrundthread und der Auslöser
+seiner Verzögerung bleiben unbestimmt. Eine zeitliche Überlappung ist noch
+kein vollständiger Ursachenbeweis und kein nachgewiesener Produktfix.
