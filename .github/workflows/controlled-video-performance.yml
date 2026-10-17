@@ -35,6 +35,7 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-owned-browser-arguments.mjs
           node scripts/check-owned-io-observation.mjs
           node scripts/check-system-io-export.mjs
           node scripts/check-page-worker-wait-correlation.mjs

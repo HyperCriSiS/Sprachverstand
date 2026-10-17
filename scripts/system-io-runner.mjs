@@ -1,3 +1,5 @@
+import {formatWebDriverFailure} from './webdriver-public-error.mjs';
+import {verifyOwnedBrowserArguments} from './owned-browser-arguments.mjs';
 import {parseProcReadBytes} from './owned-io-observation.mjs';
 import {summarizeOwnedReport} from './system-io-export.mjs';
 import { createServer } from "node:http";
@@ -67,7 +69,7 @@ const renderSchedulingDiagnostics = process.argv.includes("--diagnose-render-sch
 const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks") || renderSchedulingDiagnostics;
 const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
 const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
-if (!["standard", "no-concurrent-recompilation"].includes(engineControl)) {
+if (engineControl !== "standard") {
   throw new Error("Unbekannte Engine-Gegenprobe.");
 }
 if (engineControl !== "standard" && (browser !== "chromium" || subtitleOnly || !browserTrace)) {
@@ -153,7 +155,7 @@ async function request(method, pathname, body, timeoutMs) {
   }
   if (!response.ok || payload?.value?.error) {
     throw new Error(
-      `WebDriver ${method} ${pathname} fehlgeschlagen: ${JSON.stringify(payload)}`
+      formatWebDriverFailure(method,pathname,payload)
     );
   }
   return payload;
@@ -501,18 +503,6 @@ async function createSession(withExtension) {
   sessionVersions.set(id,response.value?.capabilities?.browserVersion);
   const driverVersion=String(response.value?.capabilities?.chrome?.chromedriverVersion??'').split(' ')[0];
   sessionDriverVersions.set(id,/^\d+\.\d+\.\d+\.\d+$/.test(driverVersion)?driverVersion:'unknown');
-  if (browserTrace) {
-    try {
-      const commandLine = (await request("POST", `/session/${id}/goog/cdp/execute`, {
-        cmd:"Browser.getBrowserCommandLine", params:{}
-      })).value;
-      const present = commandLine?.arguments?.includes("--js-flags=--no-concurrent-recompilation");
-      if (present !== (engineControl !== "standard")) throw new Error("Engine-Gegenprobe: Chromium-Argument nicht verifiziert.");
-    } catch (error) {
-      try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
-      throw error;
-    }
-  }
   if (browserTrace) debuggerAddresses.set(id, response.value?.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
   return id;
 }
@@ -739,9 +729,7 @@ async function run(url, mode, attempt) {
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
   try {
     if(sessionVersions.get(id)!=='155.0.8059.0')throw Error('System browser version differs from declared historical comparison');
-    const commandLine=(await request('POST',`/session/${id}/goog/cdp/execute`,{cmd:'Browser.getBrowserCommandLine',params:{}})).value;
-    const loads=commandLine?.arguments?.filter(argument=>argument.startsWith('--load-extension='));
-    if(!Array.isArray(loads)||(extensionInstalled?!loads.includes('--load-extension='+extensionDir):loads.length!==0))throw Error('Unverified component installation');
+    verifyOwnedBrowserArguments(driverProcess.pid,extensionInstalled,extensionDir);
     if (browserTrace) {
       await mkdir(firefoxArtifacts, {recursive: true});
       trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
