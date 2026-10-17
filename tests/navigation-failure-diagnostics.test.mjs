@@ -130,3 +130,59 @@ it("keeps load completion after the earliest timeout unproven even before the er
   summary.loadEventProvenBeforeTimeout = null;
   expect(() => validateNavigationFailureSummary(summary)).not.toThrow();
 });
+
+it('records completion of own fixture observation without exporting discovery URLs',async()=>{
+ installOwnDebuggerReply(snapshot());
+ const summary=await save();
+ expect(summary.schemaVersion).toBe(3);
+ expect(summary.observerConnection).toEqual({stage:'complete',targetState:'fixture',pageCount:1});
+});
+it('records address or discovery failure independently of the original renderer timeout',async()=>{
+ expect((await save({address:'PRIVATE'})).observerConnection).toEqual({stage:'address',targetState:'unobserved',pageCount:null});
+ vi.stubGlobal('fetch',vi.fn(async()=>{throw Error('PRIVATE discovery');}));
+ const summary=await save();
+ expect(summary.observerConnection).toEqual({stage:'discovery',targetState:'unobserved',pageCount:null});
+ expect(summary.outcome).toBe('renderer-timeout');
+});
+it.each([
+ {pages:[],targetState:'none',count:0},
+ {pages:[{type:'page',url:'https://private.invalid/PRIVATE'}],targetState:'other',count:1},
+ {pages:[{type:'page',url:'about:blank'}],targetState:'other',count:1},
+ {pages:[{type:'page',url:fixtureUrl},{type:'page',url:'PRIVATE'}],targetState:'multiple',count:2}
+])('keeps strict target selection for $targetState',async({pages,targetState,count})=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>pages})));
+ const socket=vi.fn();vi.stubGlobal('WebSocket',socket);
+ const summary=await save();
+ expect(summary.observerConnection).toEqual({stage:'target-selection',targetState,pageCount:count});
+ expect(socket).not.toHaveBeenCalled();expect(summary.snapshot).toBeNull();
+});
+it('rejects an escaped websocket endpoint and records only the fixed stage',async()=>{
+ vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>[{type:'page',url:fixtureUrl,webSocketDebuggerUrl:'ws://private.invalid/PRIVATE'}]})));
+ const summary=await save();
+ expect(summary.observerConnection).toEqual({stage:'endpoint-validation',targetState:'fixture',pageCount:1});
+});
+it('distinguishes snapshot failure after connecting to a known fixture',async()=>{
+ installOwnDebuggerReply({...snapshot(),protected:'PRIVATE'});
+ const summary=await save();
+ expect(summary.observerConnection).toEqual({stage:'snapshot',targetState:'fixture',pageCount:1});
+});
+it.each([
+ {stage:'PRIVATE',targetState:'fixture',pageCount:1},
+ {stage:'complete',targetState:'PRIVATE',pageCount:1},
+ {stage:'discovery',targetState:'unobserved',pageCount:1},
+ {stage:'target-selection',targetState:'none',pageCount:1},
+ {stage:'target-selection',targetState:'multiple',pageCount:null},
+ {stage:'complete',targetState:'fixture',pageCount:257},
+ {stage:'complete',targetState:'fixture',pageCount:1,url:'PRIVATE'}
+])('rejects invalid or private connection metadata %j',state=>{
+ const summary={...validSummary(),schemaVersion:3,observerConnection:state};
+ expect(()=>validateNavigationFailureSummary(summary)).toThrow();
+});
+it('continues accepting the unchanged legacy schema without inventing a connection stage',()=>{
+ const summary=validSummary();expect(summary.schemaVersion).toBe(2);
+ expect(()=>validateNavigationFailureSummary(summary)).not.toThrow();
+ expect(summary.observerConnection).toBeUndefined();
+});
+it('rejects missing and non-object diagnostic envelopes',()=>{
+ for(const report of [null,undefined,[],{}])expect(()=>validateNavigationFailureSummary(report)).toThrow();
+});

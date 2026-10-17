@@ -24,7 +24,7 @@ const provenBeforeTimeout = (interval, startedAt, limit) =>
   interval !== null && limit !== null && interval[1] < startedAt + limit ? true : null;
 
 export function validateNavigationFailureSummary(summary) {
-  if (!exactKeys(summary, rootKeys) || summary.schemaVersion !== 2 ||
+  if (!exactKeys(summary, summary?.schemaVersion===3?[...rootKeys,"observerConnection"]:rootKeys) || ![2,3].includes(summary.schemaVersion) ||
     !/^(?:unknown|\d+\.\d+\.\d+\.\d+)$/u.test(summary.browserVersion) ||
     !["renderer-timeout", "navigation-failed"].includes(summary.outcome) ||
     !duration(summary.navigationElapsedMs) || !duration(summary.diagnosticElapsedMs) ||
@@ -35,6 +35,14 @@ export function validateNavigationFailureSummary(summary) {
     typeof summary.fixtureDocumentConfirmed !== "boolean" ||
     summary.rawProtocolExported !== false || summary.profilesExported !== false ||
     summary.sessionIdentifiersExported !== false) throw new Error("Invalid navigation diagnostic envelope");
+  if(summary.schemaVersion===3){
+    const state=summary.observerConnection;
+    const stages=["not-attempted","address","discovery","target-selection","endpoint-validation","socket-open","enable-domains","ready","snapshot","complete"];
+    if(!exactKeys(state,["stage","targetState","pageCount"])||!stages.includes(state.stage)||
+      !["unobserved","none","multiple","fixture","webdriver-blank","other"].includes(state.targetState)||
+      (state.pageCount!==null&&(!Number.isSafeInteger(state.pageCount)||state.pageCount<0||state.pageCount>256))||
+      (state.targetState==="unobserved"?state.pageCount!==null:state.targetState==="none"?state.pageCount!==0:state.targetState==="multiple"?state.pageCount<2:state.pageCount!==1))throw Error("Invalid observer connection metadata");
+  }
   if (summary.snapshot !== null) {
     const snapshot = summary.snapshot;
     if (!exactKeys(snapshot, snapshotKeys) ||
@@ -80,9 +88,11 @@ export async function saveNavigationFailureDiagnostic({debuggerAddress, browserV
     // Connect only after the original navigation has failed. Do not warm up or
     // change the successful navigation path, and never raise its timeout.
     connection = await connectNavigationObserver(debuggerAddress, observer, true);
+    observer.connectionState.stage="snapshot";
     const readStarted = performance.now();
     const observed = await connection.snapshot();
     const readFinished = performance.now();
+    observer.connectionState.stage="complete";
     snapshot = Object.fromEntries(snapshotKeys.map(key => [key, observed[key]]));
     if (observer.ownDocument && snapshot.loadEventEndMs > 0) {
       // The browser sampled documentNow inside this request/response window.
@@ -96,7 +106,8 @@ export async function saveNavigationFailureDiagnostic({debuggerAddress, browserV
     connection?.close();
   }
   const summary = {
-    schemaVersion: 2,
+    schemaVersion: 3,
+    observerConnection:{...observer.connectionState},
     browserVersion: /^\d+\.\d+\.\d+\.\d+$/u.test(browserVersion ?? "") ? browserVersion : "unknown",
     outcome: /Timed out receiving message from renderer/u.test(String(error?.message))
       ? "renderer-timeout" : "navigation-failed",
