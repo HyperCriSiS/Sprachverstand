@@ -974,7 +974,8 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
       const frame = (now, metadata) => {
         if (stopped) return;
         frames.push({nowMs: now, mediaTime: metadata.mediaTime,
-          presentedFrames: metadata.presentedFrames});
+          presentedFrames: metadata.presentedFrames,
+          visibilityAtFrame: document.visibilityState, focusedAtFrame: document.hasFocus()});
         video.requestVideoFrameCallback(frame);
       };
       if (typeof video.requestVideoFrameCallback === "function") {
@@ -1040,6 +1041,7 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
   const latencies = result.cueRecords.map(record => record.latencyMs)
     .filter(value => typeof value === "number" && Number.isFinite(value));
   const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,
+    ...sessionVersions.get(id), sourceHash:servedVideoSha256,
     ...diagnostics,
     mode: subtitleBaseline ? "baseline" : "extension",
     load: subtitleLoad, mutationsPerTick, mutationIntervalMs,
@@ -1084,7 +1086,8 @@ async function measureSubtitleDomLoadResult(id, diagnostics) {
         result.bulk.tail !== "Nutzer:innen im normalen Text" ||
         result.removal?.correctedBefore !== !subtitleBaseline ||
         typeof result.removal?.operationToFirstFrameMs !== "number")) ||
-      result.frames.length < 200 || result.visibility !== "visible" ||
+      result.frames.length < 200 || result.frames.some(frame => frame.visibilityAtFrame !== "visible" || frame.focusedAtFrame !== true) ||
+      result.visibility !== "visible" ||
       !result.focused || result.paused || result.readyState < 2 || result.error ||
       !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {
     throw new Error("Untertitel-/DOM-Lastprobe unvollständig; Rohbericht gespeichert.");
