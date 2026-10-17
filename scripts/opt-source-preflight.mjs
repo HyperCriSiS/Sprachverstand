@@ -16,7 +16,8 @@ async function main(){
  const base='http://127.0.0.1:'+port;
  async function rpc(method,pathname,body,timeout=10000){
   const response=await fetch(base+pathname,{method,headers:{'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});
-  if(!response.ok)throw Error('Own WebDriver request failed');const value=(await response.json()).value;if(value?.error)throw Error('Own WebDriver command failed');return value;
+  const value=(await response.json()).value;
+  if(!response.ok||value?.error){const error=Error('Own WebDriver command failed');error.diagnostic={webdriverError:['session not created','unknown error','invalid argument'].includes(value?.error)?value.error:'other',binaryMissing:/no chrome binary|cannot find.*binary/i.test(value?.message??''),versionMismatch:/only supports.*version|current browser version/i.test(value?.message??''),devToolsUnavailable:/DevToolsActivePort|chrome not reachable/i.test(value?.message??'')};throw error;}return value;
  }
  try{
   stage='named-pipe';
@@ -34,6 +35,7 @@ async function main(){
   const flags='--trace-opt --trace-file-names --redirect-code-traces --redirect-code-traces-to='+fifo;
   stage='session-create';
   const created=await rpc('POST','/session',{capabilities:{alwaysMatch:{browserName:'chrome','goog:chromeOptions':{binary:'/usr/bin/chromium',args:['--headless=new','--no-sandbox','--no-first-run','--js-flags='+flags]}}}});
+  stage='version-guard';
   session=created.sessionId;assert.equal(created.capabilities.browserVersion,'155.0.8059.0');
   stage='navigation';
   await rpc('POST','/session/'+session+'/url',{url:'data:text/html,<title>synthetic-control</title>'});
@@ -49,9 +51,9 @@ async function main(){
   await mkdir('artifacts',{recursive:true});await writeFile('artifacts/opt-source-preflight.json',JSON.stringify(report,null,2));
   assert.ok(report.fixtureCompleted&&!readFailed&&!truncated);assert.ok(recognized>0);
   console.log('Own WebDriver checksum and known optimizer output verified; only fixed metadata exported.');
- }catch{
+ }catch(error){
   await mkdir('artifacts',{recursive:true});
-  await writeFile('artifacts/opt-source-preflight-failure.json',JSON.stringify({stage,syntheticOnly:true,rawOutputExported:false,profileExported:false},null,2));
+  await writeFile('artifacts/opt-source-preflight-failure.json',JSON.stringify({stage,timeout:error?.name==='TimeoutError',webdriver:error?.diagnostic??null,syntheticOnly:true,rawOutputExported:false,profileExported:false},null,2));
   throw Error('Synthetic preflight did not complete');
  }finally{
   if(session)try{await rpc('DELETE','/session/'+session,undefined,5000);}catch{}
