@@ -14,7 +14,8 @@ const controlled=new Function('fixtureHtml','pageDomBundle','Buffer',runner.slic
 const parsed=new JSDOM(controlled);
 for(const script of parsed.window.document.scripts)new Script(script.textContent);
 assert.equal(parsed.window.document.scripts.length,2);parsed.window.close();
-const dom=new JSDOM('<body><p id="normal">Nutzer:innen</p><code>Nutzer:innen</code><input value="Nutzer:innen"><div id="dynamic"></div></body>',{runScripts:'outside-only',pretendToBeVisual:true});
+for(const indexed of [false,true]){
+const dom=new JSDOM('<body><p id="normal">Nutzer:innen</p><code>Nutzer:innen</code><input value="Nutzer:innen"><div id="dynamic"></div></body>',{url:'https://synthetic.invalid/?indexed-context='+(indexed?'1':'0'),runScripts:'outside-only',pretendToBeVisual:true});
 try{
  dom.window.eval(source);dom.window.__startPageDomControl();
  const root=dom.window.document.querySelector('#dynamic');
@@ -24,10 +25,12 @@ try{
  assert.equal(dom.window.document.querySelector('#normal').textContent,'Nutzer');
  assert.equal(dom.window.document.querySelector('code').textContent,'Nutzer:innen');
  assert.equal(dom.window.document.querySelector('input').value,'Nutzer:innen');
- assert.equal(dom.window.__pageDomControlStats.started,true);
+ assert.equal(dom.window.__pageDomControlStats.started,true);assert.equal(dom.window.__pageDomControlStats.classifierRuleCount,indexed?2:18);
  assert.ok(dom.window.__pageDomControlStats.requests>0);
  await dom.window.__stopPageDomControl();
  assert.equal(dom.window.document.querySelector('#normal').textContent,'Nutzer:innen');
  assert.ok([...root.children].every((node,i)=>node.textContent==='Nutzer:innen '+i));
  console.log('Minimal classifier/literal control: 480 corrections, protected code/input and full restore passed; no extension API needed.');
 }finally{dom.window.close();}
+
+}

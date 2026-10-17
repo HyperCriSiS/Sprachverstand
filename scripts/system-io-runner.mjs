@@ -613,7 +613,7 @@ async function collect(id, mode) {
     `
   );
   const frameSamples = state.frameSamples;
-  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, mode);
+  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, "extension");
   delete state.dynamicTexts;
   const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
     state.longTaskSupported === true ? state.longTasks : []);
@@ -730,7 +730,7 @@ async function run(url, mode, attempt) {
   if(createHash("sha256").update(readFileSync(path.join(extensionDir,"background.js"))).digest("hex")!==backgroundSha256)throw Error("Product background changed after binding");
   const extensionInstalled=mode==='extension'&&componentKind==='product';
   const id=await createSession(extensionInstalled);
-  if(mode==='extension'&&componentKind==='classifier-literal')url+='?page-dom-control=1';
+  if(componentKind==='classifier-literal')url+='?page-dom-control=1&indexed-context='+(mode==='extension'?'1':'0');
   let trace,stopMonitor;const arm={token:mode+"-"+attempt+"-"+Date.now(),signal:null,error:null};
   const traceFile = `video-browser-phase-aggregates-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
   try {
@@ -776,7 +776,7 @@ async function run(url, mode, attempt) {
 }
 
 function validateRun(result) {
- if(result.mode==='extension'&&componentKind==='classifier-literal'&&(!result.pageDomControlStats?.started||!result.pageDomControlStats.requests))throw Error('Minimal classifier not exercised');
+ if(componentKind==='classifier-literal'&&(!result.pageDomControlStats?.started||!result.pageDomControlStats.requests))throw Error('Minimal classifier not exercised');
   if(result.nativeTraceSchedule?.error||result.nativeTraceSignalError||result.rendererMonitor?.errors?.length)throw new Error("Native trigger/monitor diagnostic incomplete; raw pair retained.");
   if (result.errors.length) {
     throw new Error(`${result.mode}: Videofehler: ${result.errors.join(" | ")}`);
@@ -810,7 +810,7 @@ function validateComparison(baseline, extension) {
       throw new Error(`${result.mode}: Dynamische Endtexte unvollständig: ${JSON.stringify(completion)}`);
     }
   }
-  if (baseline.staticText !== "Nutzer:innen" || extension.staticText !== "Nutzer") {
+  if (baseline.staticText !== "Nutzer" || extension.staticText !== "Nutzer") {
     throw new Error(
       `Erweiterungszustand im Videotest unerwartet: ${JSON.stringify({
         baseline: baseline.staticText,

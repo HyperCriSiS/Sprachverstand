@@ -4,7 +4,7 @@ import {defaultSettings} from '../src/settings/defaults';
 import {disabledRuleIdsForGroups} from '../src/rules/catalog';
 // Synthetic diagnostic only. No DomProcessor, extension API or transformer.
 const options={rules:domRuleMetadata,profile:'aggressive' as const,disabledRuleIds:disabledRuleIdsForGroups(defaultSettings.enabledRuleGroupIds)};
-const stats={started:false,requests:0,matchedMarkers:0,notifications:0,reportedCount:0,contextCandidates:0};
+const stats={started:false,requests:0,matchedMarkers:0,notifications:0,reportedCount:0,contextCandidates:0,classifierRuleCount:0};
 function needsLeadingContext(input:string):boolean{
  for(const rule of options.rules){
   if(!rule.applyWithLeadingContext||!rule.leadingContextCandidate||options.disabledRuleIds.has(rule.id)||!isRiskAllowed(rule.risk,options.profile))continue;
@@ -24,7 +24,10 @@ function processElement(element:Element){
  stats.matchedMarkers+=count;stats.reportedCount=changes.size;stats.notifications++;
 }
 target.__startPageDomControl=()=>{
- if(observer)throw Error('Minimal classifier already started');stats.started=true;
+ if(observer)throw Error('Minimal classifier already started');
+ const indexed=new URL(location.href).searchParams.get('indexed-context')==='1';
+ options.rules=indexed?domRuleMetadata.filter(rule=>rule.leadingContextCandidate!==undefined):domRuleMetadata;
+ stats.classifierRuleCount=options.rules.length;stats.started=true;
  observer=new MutationObserver(records=>{for(const record of records){if(record.target instanceof Element)processElement(record.target);else if(record.target.parentElement)processElement(record.target.parentElement);for(const node of record.addedNodes)if(node instanceof Element)processElement(node);}});
  observer.observe(document.body,{subtree:true,childList:true,characterData:true});
  for(const element of document.querySelectorAll('#static-target,#normal,#dynamic-root > span,#dynamic > span'))processElement(element);
