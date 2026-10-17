@@ -39,6 +39,7 @@ jobs:
           ffprobe -version
       - name: Zaehler und Exportfilter pruefen
         run: |
+          node scripts/check-stop-owned-child.mjs
           node scripts/check-owned-file-cache-probe.mjs
           node scripts/check-owned-browser-copy-preflight.mjs
           node scripts/check-owned-io-observation.mjs

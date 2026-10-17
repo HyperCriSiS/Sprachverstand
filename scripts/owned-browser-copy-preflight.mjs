@@ -1,3 +1,4 @@
+import {stopOwnedChild} from './stop-owned-child.mjs';
 import assert from 'node:assert/strict';
 import {spawn,spawnSync} from 'node:child_process';
 import {readFileSync,readdirSync,readlinkSync,statSync,accessSync,constants,openSync,readSync,closeSync,createReadStream} from 'node:fs';
@@ -92,7 +93,7 @@ try{
  if(process.env.RUN_NATIVE_COPY_PAIR==='true'){
   stage='native-pair';const state=process.env.COPY_CACHE_STATE;assert.ok(['cold','warm'].includes(state));report.declaredCacheState=state;
   await api('DELETE','/session/'+session);session=undefined;
-  driver.kill('SIGTERM');await Promise.race([new Promise(resolve=>driver.once('exit',resolve)),sleep(2000)]);if(driver.exitCode===null){driver.kill('SIGKILL');await new Promise(resolve=>driver.once('exit',resolve));}driver=undefined;
+  await stopOwnedChild(driver);driver=undefined;
   const native=spawnSync(process.execPath,['scripts/system-io-runner.mjs','--browser','chromium','--fps','60','--focused-start'],{env:{...process.env,CHROMIUM_BIN:target,FILE_CACHE_PROBE:helper,OWNED_BINARY_SHA256:sourceHash},stdio:'pipe',maxBuffer:4*1024*1024,timeout:360000});
   report.nativeExitCode=Number.isSafeInteger(native.status)?native.status:255;report.nativePairCompleted=native.status===0;assert.equal(native.status,0);
  }
@@ -100,7 +101,7 @@ try{
 }catch{report.completed=false;report.failedAt=stage;process.exitCode=1;}
 finally{
  if(session)try{await api('DELETE','/session/'+session);}catch{report.cleanupFailed=true;process.exitCode=1;}
- if(driver&&driver.exitCode===null){driver.kill('SIGTERM');await Promise.race([new Promise(resolve=>driver.once('exit',resolve)),sleep(2000)]);if(driver.exitCode===null)driver.kill('SIGKILL');}
+ if(driver)await stopOwnedChild(driver);
  if(directory){assert.equal(path.dirname(directory),tmpdir());assert.match(path.basename(directory),/^sv-owned-browser-copy-/);await rm(directory,{recursive:true,force:true});}
 }
 await mkdir('artifacts/owned-browser-copy-preflight',{recursive:true});await writeFile('artifacts/owned-browser-copy-preflight/summary.json',JSON.stringify(report,null,2),{flag:'wx'});
