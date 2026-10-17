@@ -354,3 +354,41 @@ Die danach separat vorab deklarierte gültige Reihe hat feste Rollen Literal/Pro
 | Literal | 73 / 49 | 72,78 | 6 / 906 | 53 von 53 | 1 |
 
 Damit können zusätzliche Text-Rückschreibungen bereits ohne Produktpipeline tatsächliche Callbackabstände über 70 ms erzeugen. Die zweite Produktrolle bleibt hier bei 51 ms; ein dauerhaft ausschließlich dem Produkt eigener 77-ms-Effekt ist damit nicht belegt. Der Vergleich weist weder jedem früheren Maximum eine exakte Ursache zu noch beweist er identische Leistung: Die Cue-Latenzen und P99-Werte des Produkts liegen über der minimalen Kontrolle. Das rechtfertigt keinen Austausch der echten Sprach-/Schutzregeln durch den Literaladapter. Es gibt weiterhin keinen physischen Displaynachweis und keine Long-Task-API in diesem Firefox. Ältere Gegenbefunde bleiben erhalten; weitere unveränderte Wiederholungen dieser Kontrolle sind nicht erforderlich.
+
+## Aktuelle kombinierte Windows-Chromium-Abnahme mit 30 und 60 FPS
+
+Nach dem Kontingentreset am 17.10. wurden die noch fehlenden kombinierten Prüfungen des unveränderten Produktstands `98c80cd` unter nativem Windows-Chromium ergänzt. Browser und Treiber melden jeweils `155.0.8059.39`. Es sind eigene Headless-Sitzungen, keine physische Display-/Audioaufnahme. Content-SHA `8cc5c0d2e11cbfadfd7c1191a7f62ceb0930cbe786ea4efedc1a9d144d3cee4c`, Hintergrund-SHA `c626333c1301cbb6da9c56f8a3a1890eebda2c447f4280ff5f86db8bf07eec85`; die Produktquellen sind gegenüber `98c80cd` unverändert.
+
+Für jede Bildrate wurden vorab vier feste Rollen ohne/mit/mit/ohne Erweiterung deklariert. Jeweils 30 Sekunden Video mit natürlichen Cuewechseln und 48 DOM-Textänderungen alle 50 ms laufen gleichzeitig. Alle Rollen erreichen 600 Mutationstakte, also 28.800 Textänderungen pro Messfenster. Keine Parallelbrowser, keine Browserdateivorladung, keine Compiler-/Grafikschalter; die bestehenden Last-/Funktionsgrenzen bleiben unverändert. Fokus und Sichtbarkeit werden pro Videocallback beobachtet, Rendering- und tatsächliche Eintrittszeit getrennt ausgewertet.
+
+### 30 FPS
+
+Die vier Rollen verwenden die unveränderte Quelle mit SHA `13f69752b5dc9e85842e1eacd71f03f36f83de9d3b6ce8321fd2fc4c09d842cd`. Alle Framecallbacks sind sichtbar und fokussiert, alle vier Rollen erfüllen die Funktionsbedingungen und Quell-/Versionsbindung. Die beiden Erweiterungsrollen korrigieren jeweils 57 von 57 Cues und 480 finale normale Texte; die beiden Baselines verändern diese Texte erwartungsgemäß nicht.
+
+| Rolle | Callbacks | Tatsächliches P95 / P99 / Maximum ms | Drops / gesamte Bilder | Cue-P95 / Maximum ms |
+| --- | --- | --- | --- | --- |
+| Ohne, zuerst | 900 | 41,60 / 41,60 / 55,40 | 0 / 900 | nicht anwendbar |
+| Mit | 899 | 41,60 / 41,70 / 55,40 | 0 / 900 | 3,40 / 4,50 |
+| Mit, zuerst | 900 | 41,60 / 41,70 / 54,40 | 0 / 900 | 2,30 / 5,00 |
+| Ohne | 900 | 41,60 / 41,70 / 55,40 | 0 / 901 | nicht anwendbar |
+
+Die Long-Task-API ist in allen vier Rollen verfügbar; innerhalb der gemessenen Fenster werden keine Long Tasks beobachtet. Renderzeit-Maxima liegen bei 55,5–55,6 ms. Die Messfenster dauern 30.002,5–30.015,9 ms. Dies ist eine positive kombinierte lokale 30-FPS-Teilabnahme, kein Nachweis für alle Decoder, Webseiten oder Plattformen.
+
+### 60 FPS mit byte-identischer Quelle
+
+Zwei getrennte Aufrufe des vorhandenen 60-FPS-Generators liefern unterschiedliche Containerdateihashes. Für den strengeren Vergleich über getrennte Prozesse wurde deshalb genau eine Quelle mit dem vorhandenen Generator erstellt und per FFprobe als 60 FPS geprüft. Alle vier Rollen lesen exakt diese Datei; ein Quellhashwächter vor dem Serverstart verweigert abweichende Bytes. SHA aller vier Rollen: `3f879deef1a898a6981309b7f53dbbe1f19068bb2efdc406204d5ee93ea5ae50`.
+
+Nur die lokale Diagnosekopie des bestehenden Runners verwendet diese gebundene Quelldatei; Produktcode, Browserstart, Beobachter und Grenzwerte bleiben unverändert. Das ist die Vorbereitung eines gemeinsamen synthetischen Testmediums, keine Vorladung von Browserprogrammdateien. Frühere getrennt erzeugte 60-FPS-Dateien werden nicht rückwirkend als byte-identisch bezeichnet.
+
+Alle vier Rollen bestehen Quell-/Versionsbindung und durchgängigen Framefokus/Sichtbarkeit. Die beiden Erweiterungsrollen korrigieren wiederum je 57 von 57 Cues und 480 finale normale Texte. Die Messfenster dauern 30.002,7–30.012,3 ms.
+
+| Rolle | Callbacks | Tatsächliches P95 / P99 / Maximum ms | Drops / gesamte Bilder | Cue-P95 / Maximum ms |
+| --- | --- | --- | --- | --- |
+| Ohne, zuerst | 1.799 | 21,00 / 27,80 / 27,90 | 0 / 1.800 | nicht anwendbar |
+| Mit | 1.800 | 27,20 / 27,80 / 27,90 | 0 / 1.800 | 1,70 / 2,50 |
+| Mit, zuerst | 1.800 | 27,70 / 27,80 / 29,00 | 0 / 1.799 | 2,20 / 3,10 |
+| Ohne | 1.800 | 21,00 / 27,80 / 34,40 | 0 / 1.800 | nicht anwendbar |
+
+Die beobachteten Drops und Long Tasks sind in allen vier Rollen null, bei verfügbarer Long-Task-API. Renderingmaxima liegen bei 27,9–34,8 ms. Die Abfragegrenzen von Gesamtbildzähler und Callbackfenster sind verschiedene Beobachtungen; deren Einzelbilddifferenzen werden nicht als zusätzliche Bildverluste ausgegeben.
+
+Die höheren P95-Werte der Erweiterung bei 60 FPS bleiben ausdrücklich Gegenstand der Bewertung. P99, tatsächliche Maxima, Bildverlustzähler und Cuekorrektheit zeigen in dieser begrenzten Reihe keine entsprechende schwere zusätzliche Störung; daraus folgt keine behauptete identische Leistung. Insgesamt sind es acht funktional gültige Rollen, 228 korrekt verarbeitete aktive Cues und 1.920 finale normale Texte in den vier Erweiterungsrollen. Die früheren Linux-I/O-/Navigationsgegenbefunde, die Grafik-/Zeitbasisberichte und die vollständige unabhängige Qualitäts-/Plattformfreigabe aus #419 werden dadurch nicht rückwirkend geschlossen. PR #451 bleibt Entwurf.
