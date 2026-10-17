@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import {summarizeOwnedTrace,summarizeOwnedReport} from './system-io-export.mjs';
+const secret='PRIVATE_IDENTIFIER_MUST_NOT_EXPORT',filename='/private/'+secret+'/fixture.json';
+const trace={traceEvents:[{name:'V8.OptimizeBackground',ts:1000,dur:100000,tdur:1000,pid:7777777,tid:8888888,args:{url:secret}},{name:secret,args:{url:secret},ts:88888888888,dur:100}]};
+const safeTrace=summarizeOwnedTrace(filename,JSON.stringify(trace));assert.ok(!safeTrace.includes(secret));assert.ok(!safeTrace.includes('7777777'));assert.ok(!safeTrace.includes('8888888'));
+const raw={browserVersion:'155.0.8059.0',visibilityState:'visible',focused:true,dynamicCompletion:{correct:480,expected:480,private:secret},droppedVideoFrames:1,traceFile:filename,timeOriginEpochMs:100000,traceClock:{offsetMs:0,uncertaintyMs:0},frames:{maximumGapMs:33.4},rendererMonitor:{samples:[{beforeEpochMs:100010,afterEpochMs:100011,monitorCpuUs:5,threads:[{pid:7777777,tid:8888888,nativeLocation:{status:'sampled',sampleStable:true,instructionPage:{status:'sampled',present:false},fileCachePage:{status:'sampled',resident:false,probeWallMs:1},mapping:{fileOffsetHex:secret}}}]}]},rawProfile:secret};
+const output=summarizeOwnedReport(JSON.stringify({baseline:raw,extension:raw,private:secret}));assert.ok(!output.includes(secret));assert.ok(!output.includes('7777777'));assert.ok(!output.includes('8888888'));assert.ok(!output.includes('100000'));const parsed=JSON.parse(output);assert.equal(parsed.extension.residency.workerAbsentCacheNotResidentInsideCompiler,1);assert.equal(parsed.extension.correctDynamicTexts,480);assert.equal(parsed.extension.phaseTotals.find(p=>p.name==='V8.OptimizeBackground').maximumWallMs,100);
+const subtitle=summarizeOwnedReport(JSON.stringify({cueCount:40,correctedCues:40,cueP95Ms:2,cueMaximumMs:3,profile:secret}));assert.ok(!subtitle.includes(secret));
+assert.throws(()=>summarizeOwnedReport(JSON.stringify({unknown:secret})),/refused/);assert.throws(()=>summarizeOwnedTrace(filename,'{}'),/shape missing/);
+console.log('Aggregate export whitelist: preserves causal counts, strips raw trace arguments, paths, process IDs, timestamps, offsets and unknown fields; unknown reports fail closed.');
+import {validateSystemIoArtifact} from './validate-system-io-artifacts.mjs';
+validateSystemIoArtifact(parsed);validateSystemIoArtifact(JSON.parse(safeTrace));
+assert.throws(()=>validateSystemIoArtifact({...parsed,profile:'PRIVATE'}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,browserVersion:'PRIVATE'}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,phases:Array(65).fill(0)}));
+assert.throws(()=>validateSystemIoArtifact({...parsed,drops:-1}));
+console.log('Aggregate artifact whitelist accepts generated causal summaries and refuses unknown fields/strings/unbounded data.');
