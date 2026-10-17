@@ -85,6 +85,7 @@ function applySettings(settings: Settings): Promise<void> {
       transformText: transformTextLocally,
       isTransformCandidate: isBuiltInTransformCandidate,
       replacementNotificationIntervalMs: 100,
+      replacementSummaryLimit: maximumReportedReplacementSummaries,
       rules: domRuleMetadata,
       profile: "aggressive",
       disabledRuleIds,
@@ -116,7 +117,7 @@ getExtensionApi().runtime.onMessage.addListener((message) => {
   return {
     hostname: location.hostname,
     count: processor?.getReplacementCount() ?? 0,
-    replacements: processor?.getReplacementSummary().slice(0, maximumReportedReplacementSummaries) ?? []
+    replacements: processor?.getReplacementSummary(maximumReportedReplacementSummaries).slice(0, maximumReportedReplacementSummaries) ?? []
   };
 });
 

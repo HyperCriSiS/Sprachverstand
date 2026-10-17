@@ -7,6 +7,8 @@ dokumentiert.
 
 ### Behoben
 
+- Große Ersetzungsübersichten wählen die bereits auf 250 Einträge begrenzte Meldung direkt aus, statt bei jeder Meldung den gesamten Seitenindex zu kopieren und zu sortieren. Gesamtzähler und vollständige Abfragen bleiben erhalten.
+
 - Spät angehängte offene ShadowRoots innerhalb bereits bekannter ShadowRoots
   werden jetzt ebenfalls automatisch erkannt. Die Suche behält ihre Zeit- und
   Mengengrenzen auch beim Zurückkehren aus tiefen Hierarchien; Code-/Editorschutz

@@ -38,3 +38,18 @@ describe("Begrenzte Statusmelderate", () => {
     expect(report).toHaveBeenCalledOnce();
   });
 });
+it("bounds reported summaries while retaining complete counts and direct full queries", async () => {
+  vi.useFakeTimers();
+  document.body.innerHTML = "<p>Nutzer:innen</p><p>Lehrer:innen</p><p>Student:innen</p>";
+  const report = vi.fn();
+  processor = new DomProcessor(document, {rules: defaultRules, profile: "aggressive",
+    replacementNotificationIntervalMs: 100, replacementSummaryLimit: 1,
+    onReplacementCountChange: report});
+  processor.start(); processor.flush();
+  const full = processor.getReplacementSummary();
+  expect(full).toHaveLength(3); expect(processor.getReplacementCount()).toBe(3);
+  expect(processor.getReplacementSummary(1)).toEqual(full.slice(0,1));
+  await vi.advanceTimersByTimeAsync(100);
+  expect(report).toHaveBeenLastCalledWith(3, full.slice(0,1));
+  expect(processor.getReplacementSummary()).toEqual(full);
+});

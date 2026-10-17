@@ -23,7 +23,7 @@ import {
 } from "./inline-protection";
 import {
   replacementSummaryKey,
-  compareReplacementSummaries,
+  selectReplacementSummaries,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
 
@@ -40,6 +40,7 @@ export interface DomProcessorOptions {
   readonly processQuotedText?: boolean;
   readonly processSubtitles?: boolean;
   readonly replacementNotificationIntervalMs?: number;
+  readonly replacementSummaryLimit?: number;
   readonly onReplacementCountChange?: (
     count: number,
     replacements: readonly ReplacementSummaryEntry[]
@@ -687,9 +688,10 @@ export class DomProcessor {
     return this.replacementCount;
   }
 
-  public getReplacementSummary(): ReplacementSummaryEntry[] {
-    return [...this.summaryCounts.values()].map(entry => ({...entry}))
-      .sort(compareReplacementSummaries);
+  public getReplacementSummary(limit?: number): ReplacementSummaryEntry[] {
+    // Small pages need no top-prefix heap; preserve the ordinary full sort.
+    const selectionLimit = limit !== undefined && Number.isSafeInteger(limit) && limit >= this.summaryCounts.size ? undefined : limit;
+    return selectReplacementSummaries(this.summaryCounts.values(), selectionLimit);
   }
 
   public restoreAll(): void {
@@ -3655,7 +3657,7 @@ export class DomProcessor {
       this.countNotificationScheduled = false;
       this.options.onReplacementCountChange?.(
         this.replacementCount,
-        this.getReplacementSummary()
+        this.getReplacementSummary(this.options.replacementSummaryLimit)
       );
     };
     const interval = this.options.replacementNotificationIntervalMs ?? 0;
