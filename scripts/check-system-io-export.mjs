@@ -14,3 +14,9 @@ assert.throws(()=>validateSystemIoArtifact({...parsed,browserVersion:'PRIVATE'})
 assert.throws(()=>validateSystemIoArtifact({...parsed,phases:Array(65).fill(0)}));
 assert.throws(()=>validateSystemIoArtifact({...parsed,drops:-1}));
 console.log('Aggregate artifact whitelist accepts generated causal summaries and refuses unknown fields/strings/unbounded data.');
+const measuredTask={...raw,longTasks:[{startMs:1,durationMs:311}]};
+const taskExport=JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:measuredTask,extension:measuredTask})));
+assert.equal(taskExport.extension.pageLongTaskCount,1);assert.equal(taskExport.extension.pageLongTaskMaximumMs,311);
+const unknownTask={...raw,longTasks:[{startMs:1}]};
+assert.equal(JSON.parse(summarizeOwnedReport(JSON.stringify({baseline:unknownTask,extension:unknownTask}))).extension.pageLongTaskMaximumMs,null);
+console.log('Long-task durationMs retained; missing duration stays unknown, never zero.');
