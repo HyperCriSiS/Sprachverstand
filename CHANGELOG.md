@@ -5,14 +5,120 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Spät angehängte offene ShadowRoots innerhalb bereits bekannter ShadowRoots
+  werden jetzt ebenfalls automatisch erkannt. Die Suche behält ihre Zeit- und
+  Mengengrenzen auch beim Zurückkehren aus tiefen Hierarchien; Code-/Editorschutz
+  und Wiederherstellung bleiben erhalten.
+
 ### Hinzugefügt
 
+- Die Chromium-CI sichert bei einer fehlgeschlagenen Testnavigation einen
+  begrenzten synthetischen Nachweis aus Serverfortschritt und unabhängig
+  abgefragtem DOM-Zustand. Der ursprüngliche Testfehler und das Zeitlimit
+  bleiben erhalten; Profile, Rohprotokolle und Sitzungskennungen werden
+  nicht exportiert.
+
+- Die Videodiagnose unterscheidet ausgelassene Callback-Benachrichtigungen
+  von fehlenden Quellframes im Präsentationszähler des Browsers. Eindeutig
+  lokalisierbare Auslassungen werden nach ihrer Position im Dreierzyklus
+  ausgewertet; die bestehenden Performancegrenzen bleiben erhalten.
+
+- Die Videoregression prüft nach dem bestehenden Nachlauf alle 480 dynamischen
+  Texte auf den neuesten erwarteten Stand. Fehlende, veraltete oder nicht
+  korrigierte Texte verhindern ein erfolgreiches Performanceergebnis.
+- Ein ausdrücklicher manueller Videodiagnosemodus erfasst getrennt den
+  Fortschritt von Seitentasks, Animationsframes und Videoframes. Begrenzte
+  Beobachtungsfenster verhindern Aussagen aus fehlenden, abgeschnittenen
+  oder bereits beendeten Messreihen. Der aktive Animationsbeobachter bleibt
+  von der bisherigen passiven Diagnose und der normalen CI getrennt.
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der
   Verarbeitung ausgenommen. Eine neue, standardmäßig deaktivierte Option
   erlaubt ihre gezielte Korrektur.
 
+### Korrigiert
+
+- Volle Pakete mit 32 normalen Textanfragen warten nicht mehr zusätzlich
+  auf den 8-ms-Sammeltimer. Kleine Pakete behalten ihr Sammelfenster;
+  Untertitelpriorität, Paketgrößen und Nebenläufigkeitsgrenzen bleiben erhalten.
+
+- Browserprüfungen begrenzen auch ausbleibende oder unvollständige
+  WebDriver-HTTP-Antworten. Der Smoke-Test begrenzt seine Seitennavigation
+  auf 30 Sekunden; ausdrücklich lange Untertitelproben behalten ein
+  passend längeres Antwortzeitlimit.
+- Die Videountertitelprobe wartet nach dem Ausschalten innerhalb ihres
+  bestehenden Zeitlimits auf Medien- und Cue-Fortschritt. Eine schnelle
+  Wiederherstellung desselben Cues wird nicht mehr als Unterbrechung gewertet.
+
 ### Leistung
 
+- Einzelne Wortänderungen in begrenzten Textknoten überspringen bei Korrektur
+  und Rückgabe die vollständige Tokenplanung. Textmarkierungen bleiben
+  erhalten; große Texte und Änderungen an mehreren Wörtern werden weiterhin
+  in begrenzten Schritten verarbeitet.
+- Leere Arbeitswarteschlangen erzeugen bei der budgetierten DOM-Verarbeitung
+  keine kurzlebigen Map-/Set-Iteratoren mehr. Text-, Untertitel- und
+  Rückgabereihenfolge bleiben erhalten.
+- Große Folgen einzelner DOM-Strukturänderungen werden in begrenzten
+  Schritten verarbeitet. Die synchrone Rückgabe entfernter Texte teilt
+  sich ein Budget über den gesamten Meldungsblock; Untertitel behalten
+  ihren unmittelbaren Pfad und vollständige Originale bleiben erhalten.
+- Große gemeinsame Schutzlisten und eigene Ersetzungen werden innerhalb einer
+  lokalen Textcharge nur einmal übertragen. Kleine und unterschiedlich
+  konfigurierte Anfragen behalten ihr bisheriges Format; individuelle Kontexte,
+  Schutzbereiche und die Validierungsgrenzen bleiben erhalten.
+- Identische Einstellungen sowie reine Popup- oder Sync-Auswahländerungen
+  lösen keine vollständige DOM-Rückgabe und Neuverarbeitung mehr aus.
+  Änderungen an Textregeln, Schutzbegriffen, Domains und Textoptionen
+  werden weiterhin angewendet; fehlgeschlagene Übergänge bleiben wiederholbar.
+- Verbindliche lokale Einstellungen warten nicht mehr auf eine dafür
+  unerhebliche Antwort des Sync-Speichers. Einstellungsänderungen werden
+  bereits während des Starts beobachtet; überholte Leseantworten und
+  Antworten nach dem Abmelden werden nicht mehr angewendet.
+- Auch die erneute Prüfung grammatischer Folgekontexte nach Seitenänderungen
+  läuft in begrenzten Schritten. Normale Antworten warten auf diese Prüfung;
+  Untertitel bleiben priorisiert. Wiederholte Textänderungen desselben
+  Ankers übernehmen den neuesten Kontext statt zusätzliche Scans anzuhäufen.
+- Lange grammatische Kontextsuche vor einer lokalen Textanfrage wird in
+  begrenzten Schritten vorbereitet. Vollständiger Kontext und Schutzregeln
+  bleiben erhalten; Änderungen während der Vorbereitung verwerfen den alten
+  Stand. Untertitel behalten ihren eigenen priorisierten Anfragepfad.
+- Leere Inline-Nachbarn werden bei grammatischer Kontextsuche und ihrer
+  erneuten Auswertung ohne zusätzliche TreeWalker verarbeitet. Leere
+  Blockgrenzen und geschützte Inhalte behalten ihre bisherige Bedeutung.
+- Auch die Vorbereitung der schrittweisen Wiederherstellung großer Seiten
+  erfolgt jetzt innerhalb des Arbeitsbudgets. Verfolgte Originale werden
+  ohne vollständige synchrone Kopie übernommen; fremde Änderungen und
+  bereits begonnene Rückgaben bleiben erhalten.
+- Wo die Browser-API verfügbar ist, setzt die Wiederherstellung ihre kurzen
+  Arbeitsschritte mit Hintergrundpriorität fort und vermeidet wiederholte
+  Mindestwartezeiten verschachtelter Timer. Andere Browser und fehlgeschlagene
+  Task-Anfragen behalten den Timerpfad.
+- Untertitelanfragen werden nach demselben Verarbeitungsschritt gebündelt,
+  ohne auf das acht Millisekunden lange Sammelfenster für normale Texte zu
+  warten. Die bestehenden Größen- und Parallelitätsgrenzen bleiben erhalten.
+- Wiederkehrende Untertitel verwenden den begrenzten Cache auch bei lokaler
+  Hintergrundverarbeitung. Veraltete Antworten und Ergebnisse aus früheren
+  Einstellungen werden nicht wiederverwendet.
+- Bei aktivierter Untertitelverarbeitung bleibt ein kleiner Anfragenplatz für
+  neue Untertitel frei. Untertitel erhalten eigene lokale Batches, damit ihre
+  Antworten nicht auf normale Texte im selben Batch warten müssen.
+- Große Listen neu eingefügter DOM-Knoten werden in begrenzten Schritten
+  eingereiht. Neutrale Textblätter erzeugen keine unnötigen Traversals;
+  gleichzeitig eintreffende Untertitel behalten ihren eigenen priorisierten Pfad.
+- Große Entfernungen mit wenigen veränderten Texten setzen nur die tatsächlich
+  verfolgten Einträge zurück. Neutrale Textblätter lösen keine wiederholte Suche
+  durch die gesamte Änderungsübersicht aus; vollständig entfernte offene
+  Einfügelisten werden verworfen.
+- Auch das Verwerfen bereits abgetrennter Warteschlangenknoten und die Suche
+  hinter verzögerten Texten werden in begrenzten Schritten fortgesetzt.
+- Webseitenverarbeitung, Textrückschreibung und Wiederherstellung werden in
+  kurze Arbeitsschritte aufgeteilt. Lokale Hintergrund-Batches übernehmen die
+  Sprachregeln; Untertitel erhalten Vorrang. Regelvorfilter, Suffixindizes und
+  begrenzte Kontextsuche reduzieren wiederholte Arbeit. Ersetzungszähler werden
+  inkrementell gepflegt. Die Performanceabnahme unter hoher dynamischer Last
+  ist weiterhin offen; diese Änderungen bedeuten keine Releasefreigabe.
 - Schnell wechselnde Untertitel werden pro Bild auf den zuletzt sichtbaren
   Textstand reduziert. Identische Zeilen verwenden einen begrenzten Cache;
   der normale Webseitenpfad bleibt unverändert.

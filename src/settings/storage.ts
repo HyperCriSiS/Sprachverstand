@@ -151,10 +151,11 @@ async function loadSynchronizedValues(): Promise<Record<string, unknown>> {
 
 export async function loadSettings(): Promise<Settings> {
   const api = getExtensionApi();
-  const [localResult, syncedResult] = await Promise.all([
-    api.storage.local.get([localSettingsKey, localSyncOverrideKey]),
-    loadSynchronizedValues()
-  ]);
+  // Beide Speicher starten parallel; ein verbindlicher lokaler Stand muss
+  // jedoch nicht auf eine dafür unerhebliche Sync-Antwort warten.
+  const localRead = api.storage.local.get([localSettingsKey, localSyncOverrideKey]);
+  const syncedRead = loadSynchronizedValues();
+  const localResult = await localRead;
 
   const localSettings = normalizeSettings(localResult[localSettingsKey]);
 
@@ -164,6 +165,7 @@ export async function loadSettings(): Promise<Settings> {
     return localSettings;
   }
 
+  const syncedResult = await syncedRead;
   let settings = localSettings;
   const remoteSelection = synchronizedSelection(syncedResult[syncSelectionKey]);
   const selectedCategories = remoteSelection ?? settings.syncCategoryIds;
@@ -287,10 +289,25 @@ export async function saveSettings(settings: Settings): Promise<void> {
 }
 
 export function subscribeToSettings(
-  listener: (settings: Settings) => void
+  listener: (settings: Settings) => void,
+  options: { readonly initial?: boolean } = {}
 ): () => void {
   const api = getExtensionApi();
   const synchronizedKeys = new Set<string>(allSyncKeys);
+  let active = true;
+  let generation = 0;
+
+  const loadLatest = (): void => {
+    const readingGeneration = ++generation;
+    void loadSettingsWithRetry()
+      .then((settings) => {
+        if (active && readingGeneration === generation) return listener(settings);
+      })
+      .catch((error: unknown) => {
+        if (!active || readingGeneration !== generation) return;
+        console.error("Einstellungen konnten nicht geladen oder angewendet werden.", error);
+      });
+  };
 
   const handleChange = (
     changes: Record<string, StorageChange>,
@@ -306,16 +323,14 @@ export function subscribeToSettings(
       return;
     }
 
-    void loadSettingsWithRetry()
-      .then(listener)
-      .catch((error: unknown) => {
-        console.error(
-          "Einstellungen konnten nach einer Speicheränderung nicht neu geladen werden.",
-          error
-        );
-      });
+    loadLatest();
   };
 
   api.storage.onChanged.addListener(handleChange);
-  return () => api.storage.onChanged.removeListener(handleChange);
+  if (options.initial) loadLatest();
+  return () => {
+    active = false;
+    generation += 1;
+    api.storage.onChanged.removeListener(handleChange);
+  };
 }

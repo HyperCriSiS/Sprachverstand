@@ -121,6 +121,10 @@ export const doubleFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/inn/iu.test(input)) return {text: input, replacements: 0};
+    if (!/und|oder|beziehungsweise|bzw\.|[&\/_]/iu.test(input)) {
+      return {text: input, replacements: 0};
+    }
     let replacements = 0;
 
     const text = input.replace(

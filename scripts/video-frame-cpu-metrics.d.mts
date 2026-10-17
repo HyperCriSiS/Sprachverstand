@@ -30,6 +30,7 @@ export declare function frameLuecken(
 export declare function analysiereVideoCpu(
   profile: {
     readonly startTime: number;
+    readonly endTime?: number;
     readonly nodes: readonly {
       readonly id: number;
       readonly callFrame?: { readonly functionName?: string; readonly url?: string };

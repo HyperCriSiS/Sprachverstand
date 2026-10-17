@@ -1,14 +1,30 @@
 import { createServer } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
+import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { createVerified60FpsWebm } from "./verified-60fps-media.mjs";
+import { videoGapEpisodes, videoCallbackGapEpisodes, videoPresentationProgress } from "./video-gap-episodes.mjs";
+import {videoSchedulingProgress} from "./video-scheduling-progress.mjs";
+import {videoDynamicCompletion} from "./video-dynamic-completion.mjs";
+import {isReadySubtitleState} from "./video-subtitle-state.mjs";
+import {fetchWebdriverResponse} from "./webdriver-response.mjs";
+import {startChromiumBrowserTrace} from "./chromium-browser-trace.mjs";
 
 const root = process.cwd();
-const driverPort = 9515;
+const browserIndex = process.argv.indexOf("--browser");
+const browser = browserIndex === -1 ? "chromium" : process.argv[browserIndex + 1];
+if (browser !== "chromium" && browser !== "firefox") throw new Error("--browser erlaubt chromium oder firefox.");
+const driverPort = Number(process.env.WEBDRIVER_PORT ?? 9515);
+if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) throw new Error("Ungültiger WEBDRIVER_PORT.");
 const driverBase = `http://127.0.0.1:${driverPort}`;
-const extensionDir = path.join(root, "dist", "chromium");
+const extensionDir = process.env.VIDEO_EXTENSION_DIR
+  ? path.resolve(process.env.VIDEO_EXTENSION_DIR) : path.join(root, "dist", browser);
+const firefoxUuid = "1a84d6d8-77d0-4c83-9490-18fc51c5bb5a";
+const firefoxArtifacts = process.env.VIDEO_ARTIFACTS_DIR
+  ? path.resolve(root, process.env.VIDEO_ARTIFACTS_DIR) : path.join(root, "artifacts/video-playback");
+const firefoxXpi = path.join(firefoxArtifacts, "firefox-video-probe.xpi");
 const videoPath = path.join(
   root,
   "tests",
@@ -24,13 +40,55 @@ const diagnosticFps = fpsArgumentIndex < 0 ? 30 :
 const diagnoseCuePhases = process.argv.includes("--diagnose-cue-phases");
 // Im manuellen Diagnoseworkflow auch bei rotem Frame-Gate getrennt messen.
 const subtitleOnly = process.argv.includes("--subtitle-only");
+// Separate, opt-in sustained load; ordinary video CI remains unchanged.
+const subtitleDomLoad = process.argv.includes("--subtitle-dom-load");
+const subtitleBaseline = process.argv.includes("--subtitle-baseline");
+const browserTrace = process.argv.includes("--browser-trace");
+const videoPairOrder = process.env.VIDEO_PAIR_ORDER || "baseline-first";
+if (!["baseline-first", "extension-first"].includes(videoPairOrder)) {
+  throw new Error("VIDEO_PAIR_ORDER erlaubt nur baseline-first oder extension-first.");
+}
+// A continuous rAF observer changes rendering demand. Keep it explicitly
+// separate from the existing passive task/visibility observations.
+const renderSchedulingDiagnostics = process.argv.includes("--diagnose-render-scheduling");
+const mainTaskDiagnostics = process.argv.includes("--diagnose-main-tasks") || renderSchedulingDiagnostics;
+const domPhaseDiagnostics = process.argv.includes("--diagnose-dom-phases");
+const engineControl = process.env.VIDEO_ENGINE_CONTROL || "standard";
+if (!["standard", "no-concurrent-recompilation"].includes(engineControl)) {
+  throw new Error("Unbekannte Engine-Gegenprobe.");
+}
+if (engineControl !== "standard" && (browser !== "chromium" || subtitleOnly || !browserTrace)) {
+  throw new Error("Engine-Gegenprobe benötigt einen ausdrücklich instrumentierten vollständigen Chromium-Videotrace.");
+}
+if (!domPhaseDiagnostics && existsSync(path.join(extensionDir, "dom-phase-diagnostic.json"))) {
+  throw new Error("Der DOM-Diagnosebuild muss ausdrücklich mit --diagnose-dom-phases gekennzeichnet werden.");
+}
+if (domPhaseDiagnostics && (browser !== "chromium" || subtitleOnly ||
+    !existsSync(path.join(extensionDir, "dom-phase-diagnostic.json")))) {
+  throw new Error("DOM-Phasendiagnose benötigt den isolierten Chromium-Diagnosebuild und den vollständigen Videostartvergleich.");
+}
+const focusedStart = process.argv.includes("--focused-start");
+if (mainTaskDiagnostics && subtitleOnly) throw new Error("Main-Task-Diagnose benötigt den vollständigen Videostartvergleich.");
+const debuggerAddresses = new Map();
+if (browserTrace && (browser !== "chromium" || (subtitleOnly && !subtitleDomLoad))) {
+  throw new Error("Browsertrace benötigt Chromium und ein vollständiges Video- oder Untertitel-/DOM-Messfenster.");
+}
+if (subtitleBaseline && (!subtitleOnly || !subtitleDomLoad)) {
+  throw new Error("--subtitle-baseline benötigt --subtitle-only --subtitle-dom-load.");
+}
+const subtitleDurationMs = Number(process.env.SUBTITLE_DURATION_MS ?? 30_000);
+const subtitleLoad = process.env.SUBTITLE_LOAD ?? "stress";
+if (!Number.isInteger(subtitleDurationMs) || subtitleDurationMs < 30_000 ||
+    subtitleDurationMs > 600_000 || !["none", "moderate", "stress", "burst", "removal"].includes(subtitleLoad)) {
+  throw new Error("Untertiteldiagnose: Dauer 30000..600000 ms, Last none/moderate/stress/burst/removal erforderlich.");
+}
 if (diagnosticFps !== 30 && diagnosticFps !== 60) {
   throw new Error("--fps erlaubt ausschließlich 30 oder 60.");
 }
 
 if (!existsSync(path.join(extensionDir, "manifest.json"))) {
   throw new Error(
-    "Der Chromium-Build fehlt. Vor dem Videotest zuerst npm run build:chromium ausführen."
+    "Der Build fehlt. Vor dem Videotest zuerst npm run build:" + browser + " ausführen."
   );
 }
 
@@ -58,21 +116,21 @@ function executable(environmentName, fallback) {
   return fallback;
 }
 
-const driver = executable("CHROMEWEBDRIVER", "chromedriver");
-const chromium =
-  process.env.CHROMIUM_BIN ?? command("chromium", "chromium-browser");
+const driver = browser === "firefox" ? executable("GECKOWEBDRIVER", "geckodriver") : executable("CHROMEWEBDRIVER", "chromedriver");
+const chromium = browser === "chromium" ?
+  process.env.CHROMIUM_BIN ?? command("chromium", "chromium-browser") : undefined;
 
 const sleep = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function request(method, pathname, body) {
-  const response = await fetch(`${driverBase}${pathname}`, {
+async function request(method, pathname, body, timeoutMs) {
+  const response = await fetchWebdriverResponse(`${driverBase}${pathname}`, {
     method,
     headers:
       body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body)
-  });
-  const text = await response.text();
+  }, timeoutMs);
+  const text = response.text;
   let payload;
   try {
     payload = text ? JSON.parse(text) : {};
@@ -100,7 +158,7 @@ async function waitForDriver(processHandle, logs) {
       throw new Error(`ChromeDriver wurde vorzeitig beendet.\n${logs.join("")}`);
     }
     try {
-      const response = await fetch(`${driverBase}/status`);
+      const response = await fetchWebdriverResponse(`${driverBase}/status`, undefined, 2_000);
       if (response.ok) {
         return;
       }
@@ -136,6 +194,7 @@ function fixtureHtml() {
   const root = document.querySelector("#dynamic-root");
   const metrics = {
     frameTimes: [],
+    frameSamples: [],
     waiting: 0,
     stalled: 0,
     playing: 0,
@@ -144,6 +203,33 @@ function fixtureHtml() {
   };
   window.__sprachverstandVideoMetrics = metrics;
   window.__sprachverstandVideoDone = false;
+  if (${browserTrace || mainTaskDiagnostics}) {
+    metrics.longTasks = [];
+    metrics.visibilityEvents = [];
+    const visibility = () => metrics.visibilityEvents.push({nowMs: performance.now(),
+      state: document.visibilityState, focused: document.hasFocus()});
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("focus", visibility); window.addEventListener("blur", visibility);
+    visibility();
+    metrics.longTaskSupported = PerformanceObserver.supportedEntryTypes?.includes("longtask") === true;
+    if (metrics.longTaskSupported) new PerformanceObserver(list => {
+      for (const task of list.getEntries()) metrics.longTasks.push({startMs: task.startTime, durationMs: task.duration});
+    }).observe({type: "longtask"});
+    if (${renderSchedulingDiagnostics}) {
+      metrics.schedulingProgress = {supported: typeof requestAnimationFrame === "function",
+        startedAtMs: performance.now(), finishedAtMs: null, truncated: false,
+        timerSamples: [], animationSamples: []};
+      const progress = metrics.schedulingProgress;
+      const animation = nowMs => {
+        if (window.__sprachverstandVideoDone) return;
+        if (progress.animationSamples.length < 2048) {
+          progress.animationSamples.push({nowMs, callbackAtMs: performance.now()});
+        } else progress.truncated = true;
+        requestAnimationFrame(animation);
+      };
+      if (progress.supported) requestAnimationFrame(animation);
+    }
+  }
 
   const nodes = [];
   for (let index = 0; index < 480; index += 1) {
@@ -160,6 +246,13 @@ function fixtureHtml() {
       nodes[index].textContent = "Nutzer:innen " + tick + " / " + offset;
     }
     metrics.mutationTicks += 1;
+    const progress = metrics.schedulingProgress;
+    if (progress) {
+      if (progress.timerSamples.length < 2048) {
+        progress.timerSamples.push({nowMs: performance.now(), mediaTime: video.currentTime,
+          readyState: video.readyState, paused: video.paused});
+      } else progress.truncated = true;
+    }
   }, 50);
 
   for (const name of ["waiting", "stalled", "playing"]) {
@@ -170,8 +263,18 @@ function fixtureHtml() {
   });
 
   if (typeof video.requestVideoFrameCallback === "function") {
-    const onFrame = (now) => {
+    const onFrame = (now, metadata) => {
+      const callbackAtMs = ${browserTrace || mainTaskDiagnostics} ? performance.now() : undefined;
       metrics.frameTimes.push(Number(now));
+      const sample = {nowMs: Number(now), mediaTime: metadata.mediaTime,
+        presentedFrames: metadata.presentedFrames};
+      if (${browserTrace || mainTaskDiagnostics}) Object.assign(sample, {
+        callbackAtMs, presentationTimeMs: metadata.presentationTime,
+        expectedDisplayTimeMs: metadata.expectedDisplayTime,
+        processingDurationMs: typeof metadata.processingDuration === "number"
+          ? metadata.processingDuration * 1000 : null,
+        visibilityAtFrame: document.visibilityState, focusedAtFrame: document.hasFocus()});
+      metrics.frameSamples.push(sample);
       if (!window.__sprachverstandVideoDone) {
         video.requestVideoFrameCallback(onFrame);
       }
@@ -185,6 +288,7 @@ function fixtureHtml() {
 
   setTimeout(() => {
     clearInterval(timer);
+    if (metrics.schedulingProgress) metrics.schedulingProgress.finishedAtMs = performance.now();
     window.__sprachverstandVideoDone = true;
   }, ${observationMs});
 })();
@@ -223,7 +327,7 @@ function subtitleFixtureHtml() {
       }
     }).observe({ type: "longtask" });
   } catch { /* Fehlende Longtask-Unterstützung ist kein Testfehler. */ }
-  window.__issueSubtitleCue = (source) => {
+  window.__issueSubtitleCue = (source, text) => {
     window.__subtitleTicks += 1;
     const tick = window.__subtitleTicks;
     const issuedAt = performance.now();
@@ -236,7 +340,7 @@ function subtitleFixtureHtml() {
       latencyMs: null,
       visibilityAtCorrection: null
     });
-    subtitle.textContent = "Nutzer:innen im Untertitel " + tick;
+    subtitle.textContent = text ?? "Nutzer:innen im Untertitel " + tick;
     return tick;
   };
   // Die erste Mutation ist das originale Cue, die folgende nach Korrektur
@@ -322,6 +426,31 @@ function startServer() {
 }
 
 async function createSession(withExtension) {
+  if (browser === "firefox") {
+    const addonId = JSON.parse(readFileSync(path.join(extensionDir, "manifest.json"), "utf8"))
+      .browser_specific_settings.gecko.id;
+    const response = await request("POST", "/session", {capabilities: {alwaysMatch: {
+      browserName: "firefox", pageLoadStrategy: "eager",
+      timeouts: {implicit: 0, pageLoad: 20_000, script: 15_000},
+      "moz:firefoxOptions": {
+        ...(process.env.FIREFOX_BIN ? {binary: process.env.FIREFOX_BIN} : {}),
+        args: ["-headless"], prefs: {
+          "media.autoplay.default": 0,
+          "extensions.webextensions.uuids": JSON.stringify({[addonId]: firefoxUuid})
+        }
+      }
+    }}});
+    const id = sessionId(response);
+    try {
+      if (withExtension) await request("POST", `/session/${id}/moz/addon/install`, {
+        addon: readFileSync(firefoxXpi).toString("base64"), temporary: true
+      });
+      return id;
+    } catch (error) {
+      try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
+      throw error;
+    }
+  }
   const args = [
     "--headless=new",
     "--no-sandbox",
@@ -332,14 +461,14 @@ async function createSession(withExtension) {
     "--mute-audio",
     "--window-size=1280,720"
   ];
+  if (engineControl !== "standard") args.push("--js-flags=--no-concurrent-recompilation");
   if (withExtension) {
     args.push(
       `--disable-extensions-except=${extensionDir}`,
       `--load-extension=${extensionDir}`
     );
   }
-  return sessionId(
-    await request("POST", "/session", {
+  const response = await request("POST", "/session", {
       capabilities: {
         alwaysMatch: {
           browserName: "chrome",
@@ -348,8 +477,22 @@ async function createSession(withExtension) {
           "goog:chromeOptions": { binary: chromium, args }
         }
       }
-    })
-  );
+    });
+  const id = sessionId(response);
+  if (browserTrace) {
+    try {
+      const commandLine = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+        cmd:"Browser.getBrowserCommandLine", params:{}
+      })).value;
+      const present = commandLine?.arguments?.includes("--js-flags=--no-concurrent-recompilation");
+      if (present !== (engineControl !== "standard")) throw new Error("Engine-Gegenprobe: Chromium-Argument nicht verifiziert.");
+    } catch (error) {
+      try {await request("DELETE", `/session/${id}`);} catch { /* Driver wird geschlossen. */ }
+      throw error;
+    }
+  }
+  if (browserTrace) debuggerAddresses.set(id, response.value?.capabilities?.["goog:chromeOptions"]?.debuggerAddress);
+  return id;
 }
 
 async function execute(id, script) {
@@ -413,38 +556,95 @@ async function collect(id, mode) {
   const state = await execute(
     id,
     `
+      let domPhases;
+      if (${domPhaseDiagnostics && mode === "extension"}) {
+        document.dispatchEvent(new Event("__svPhaseDiagnosticCollect"));
+        domPhases = JSON.parse(document.documentElement.getAttribute("data-sv-phase-diagnostic") || "null");
+        if (!domPhases?.methods?.start?.calls || domPhases.slow?.length > 128) {
+          throw new Error("DOM-Phasendaten fehlen oder sind ungültig.");
+        }
+      }
       const video = document.querySelector("#video");
       const metrics = window.__sprachverstandVideoMetrics || {};
       const quality = typeof video?.getVideoPlaybackQuality === "function"
         ? video.getVideoPlaybackQuality()
         : undefined;
       return {
+        ...(domPhases ? {domPhases} : {}),
         staticText: document.querySelector("#static-target")?.textContent || "",
+        dynamicTexts: Array.from(document.querySelectorAll("#dynamic-root > span"), node => node.textContent),
         currentTime: Number(video?.currentTime || 0),
         readyState: Number(video?.readyState || 0),
         videoWidth: Number(video?.videoWidth || 0),
         videoHeight: Number(video?.videoHeight || 0),
         frameTimes: Array.isArray(metrics.frameTimes) ? metrics.frameTimes : [],
+        frameSamples: Array.isArray(metrics.frameSamples) ? metrics.frameSamples : [],
         errors: Array.isArray(metrics.errors) ? metrics.errors : [],
         mutationTicks: Number(metrics.mutationTicks || 0),
+        longTaskSupported: metrics.longTaskSupported ?? null,
+        longTasks: Array.isArray(metrics.longTasks) ? metrics.longTasks : [],
+        visibilityEvents: Array.isArray(metrics.visibilityEvents) ? metrics.visibilityEvents : [],
+        schedulingProgress: metrics.schedulingProgress ?? null,
+        visibilityState: document.visibilityState, focused: document.hasFocus(),
         droppedVideoFrames: Number(quality?.droppedVideoFrames || 0)
       };
     `
   );
-  return { mode, ...state, frames: summarize(state.frameTimes) };
+  const frameSamples = state.frameSamples;
+  const dynamicCompletion = videoDynamicCompletion(state.dynamicTexts, state.mutationTicks, mode);
+  delete state.dynamicTexts;
+  const callbackEpisodes = videoCallbackGapEpisodes(frameSamples,
+    state.longTaskSupported === true ? state.longTasks : []);
+  const schedulingEpisodes = state.schedulingProgress && callbackEpisodes
+    ? callbackEpisodes.map(episode => ({...episode,
+        scheduling: videoSchedulingProgress(episode, state.schedulingProgress)})) : undefined;
+  return { mode, ...state, dynamicCompletion, frames: summarize(state.frameTimes),
+    presentationProgress: videoPresentationProgress(frameSamples, diagnosticFps),
+    ...(schedulingEpisodes ? {schedulingEpisodes} : {}),
+    ...(callbackEpisodes ? {callbackGapEpisodes: state.longTaskSupported === true
+      ? callbackEpisodes : callbackEpisodes.map(({longTasks, ...episode}) => episode)} : {}),
+    presentedFramesDelta: frameSamples.length > 1
+      ? frameSamples.at(-1).presentedFrames - frameSamples[0].presentedFrames : 0,
+    // Only the opt-in instrumented fixture observes long tasks. Default
+    // absence of correlation stays explicitly unmeasured.
+    gapEpisodes: state.longTaskSupported === true
+      ? videoGapEpisodes(frameSamples, state.longTasks)
+      : videoGapEpisodes(frameSamples, []).map(({longTasks, ...episode}) => episode)
+  };
 }
 
-async function run(url, mode) {
+async function run(url, mode, attempt) {
   const id = await createSession(mode === "extension");
+  let trace;
+  const traceFile = `video-browser-trace-${browser}-${diagnosticFps}-${mode}-${attempt}.json`;
   try {
+    if (browserTrace) {
+      await mkdir(firefoxArtifacts, {recursive: true});
+      trace = await startChromiumBrowserTrace(debuggerAddresses.get(id),
+        "v8,devtools.timeline,disabled-by-default-v8.compile,media");
+    }
+    if (focusedStart) {
+      const handle = (await request("GET", `/session/${id}/window`)).value;
+      await request("POST", `/session/${id}/window`, {handle});
+      if (browser === "chromium") await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Page.bringToFront", params: {}});
+    }
     await request("POST", `/session/${id}/url`, { url });
+    if (focusedStart && !await execute(id, 'return document.visibilityState === "visible" && document.hasFocus();')) {
+      throw new Error("Fokussierter Videostart nicht erreicht.");
+    }
+    const traceClock = trace ? await synchronizeTraceClock(id) : undefined;
     await waitForCompletion(id);
-    return await collect(id, mode);
+    return {...await collect(id, mode), instrumented: Boolean(trace) || mainTaskDiagnostics || domPhaseDiagnostics,
+      mainTaskDiagnostics,
+      renderSchedulingDiagnostics,
+      domPhaseDiagnostics,
+      focusedStart,
+      ...(trace ? {traceFile, traceClock, engineControl, engineControlArgumentVerified:true} : {})};
   } finally {
     try {
-      await request("DELETE", `/session/${id}`);
-    } catch (error) {
-      console.error(String(error));
+      if (trace) await trace.save(path.join(firefoxArtifacts, traceFile));
+    } finally {
+      try {await request("DELETE", `/session/${id}`);} catch (error) {console.error(String(error));}
     }
   }
 }
@@ -463,7 +663,7 @@ function validateRun(result) {
   }
   if (result.frames.callbacks < 90) {
     throw new Error(
-      `${result.mode}: Zu wenige präsentierte Frames (${result.frames.callbacks}).`
+      `${result.mode}: Zu wenige Videoframe-Callbacks (${result.frames.callbacks}).`
     );
   }
 }
@@ -476,6 +676,12 @@ class VideoFrameRatioError extends Error {
 }
 
 function validateComparison(baseline, extension) {
+  for (const result of [baseline, extension]) {
+    const completion = result.dynamicCompletion;
+    if (completion.total !== completion.expected || completion.correct !== completion.expected) {
+      throw new Error(`${result.mode}: Dynamische Endtexte unvollständig: ${JSON.stringify(completion)}`);
+    }
+  }
   if (baseline.staticText !== "Nutzer:innen" || extension.staticText !== "Nutzer") {
     throw new Error(
       `Erweiterungszustand im Videotest unerwartet: ${JSON.stringify({
@@ -493,7 +699,7 @@ function validateComparison(baseline, extension) {
   const frameRatio = extension.frames.callbacks / baseline.frames.callbacks;
   if (frameRatio < 0.8) {
     throw new VideoFrameRatioError(
-      `Videoframes mit Erweiterung zu stark reduziert: ${(frameRatio * 100).toFixed(1)} % der Baseline.`
+      `Videocallbacks mit Erweiterung zu stark reduziert: ${(frameRatio * 100).toFixed(1)} % der Baseline.`
     );
   }
 
@@ -527,26 +733,47 @@ function validateComparison(baseline, extension) {
 }
 
 async function measureVideoPair(url, attempt) {
-  const baseline = await run(url, "baseline");
-  const extension = await run(url, "extension");
+  // Keep labels independent of execution order. Both orders retain the same
+  // fixture and gates; the explicit control exposes native timing order bias.
+  let baseline, extension;
+  if (videoPairOrder === "extension-first") {
+    extension = await run(url, "extension", attempt);
+    baseline = await run(url, "baseline", attempt);
+  } else {
+    baseline = await run(url, "baseline", attempt);
+    extension = await run(url, "extension", attempt);
+  }
+  await mkdir(firefoxArtifacts, {recursive: true});
+  await writeFile(path.join(firefoxArtifacts,
+    `video-pair-${browser}-${diagnosticFps}-${attempt}.json`),
+    JSON.stringify({pairOrder: videoPairOrder, baseline, extension}, null, 2) + "\n");
 
   console.log(
     `Video-Rohmessung (Durchlauf ${attempt}): ${JSON.stringify({
+      pairOrder: videoPairOrder,
       baseline: {
+        dynamicCompletion: baseline.dynamicCompletion,
         currentTime: baseline.currentTime,
         callbacks: baseline.frames.callbacks,
         p95GapMs: baseline.frames.p95GapMs,
         maximumGapMs: baseline.frames.maximumGapMs,
         gapsOver120Ms: baseline.frames.gapsOver120Ms,
-        droppedVideoFrames: baseline.droppedVideoFrames
+        droppedVideoFrames: baseline.droppedVideoFrames,
+        presentationProgress: baseline.presentationProgress,
+        presentedFramesDelta: baseline.presentedFramesDelta,
+        gapEpisodes: baseline.gapEpisodes
       },
       extension: {
+        dynamicCompletion: extension.dynamicCompletion,
         currentTime: extension.currentTime,
         callbacks: extension.frames.callbacks,
         p95GapMs: extension.frames.p95GapMs,
         maximumGapMs: extension.frames.maximumGapMs,
         gapsOver120Ms: extension.frames.gapsOver120Ms,
-        droppedVideoFrames: extension.droppedVideoFrames
+        droppedVideoFrames: extension.droppedVideoFrames,
+        presentationProgress: extension.presentationProgress,
+        presentedFramesDelta: extension.presentedFramesDelta,
+        gapEpisodes: extension.gapEpisodes
       }
     })}`
   );
@@ -576,16 +803,12 @@ async function subtitleState(id) {
   `);
 }
 
-async function waitSubtitle(id, corrected) {
+async function waitSubtitle(id, corrected, previous) {
   const deadline = Date.now() + 8_000;
   let state;
   while (Date.now() < deadline) {
     state = await subtitleState(id);
-    const expected = corrected
-      ? /^Nutzer im Untertitel \d+$/u
-      : /^Nutzer:innen im Untertitel \d+$/u;
-    if (state.normal === "Nutzer" && expected.test(state.subtitle ?? "") &&
-        state.ready >= 2 && !state.paused && state.ticks >= 1) {
+    if (isReadySubtitleState(state, corrected, previous)) {
       return state;
     }
     await sleep(100);
@@ -594,6 +817,7 @@ async function waitSubtitle(id, corrected) {
 }
 
 async function extensionId(id) {
+  if (browser === "firefox") return firefoxUuid;
   // Ein MV3-Serviceworker kann beim Sitzungsstart noch nicht registriert
   // oder zwischenzeitlich wieder eingeschlafen sein. Erst nach dem
   // erfolgreichen Content-Script-Smoke suchen und die Zielabfrage begrenzen.
@@ -634,7 +858,7 @@ async function setSubtitleCheckbox(id, enabled) {
     const saved = (await request("POST", `/session/${id}/execute/async`, {
       script: `
         const done = arguments[arguments.length - 1];
-        chrome.storage.local.get("settings").then(
+        (globalThis.browser ?? globalThis.chrome).storage.local.get("settings").then(
           result => done(result.settings?.processSubtitles),
           error => done(String(error))
         );
@@ -650,7 +874,7 @@ async function setSubtitleCheckbox(id, enabled) {
 // WebDriver-Laufzeit fließt nicht in die Cue-Latenz ein: Die Zeitstempel
 // entstehen ausschließlich in der Video-Seite unmittelbar vor der DOM-Mutation
 // und im auf die Korrektur reagierenden MutationObserver.
-async function measureControlledSubtitleCues(id, number = 6) {
+async function measureControlledSubtitleCues(id, number = 6, repeated = false) {
   await execute(id, "window.__controlledCueMode = true; return true;");
   const results = [];
   try {
@@ -658,7 +882,8 @@ async function measureControlledSubtitleCues(id, number = 6) {
     await sleep(250);
     for (let index = 0; index < number; index += 1) {
       const tick = await execute(id,
-        'return window.__issueSubtitleCue("kontrolliert");');
+        repeated ? 'return window.__issueSubtitleCue("kontrolliert-wiederholt", "Nutzer:innen im Untertitel Wiederholung");'
+          : 'return window.__issueSubtitleCue("kontrolliert");');
       const deadline = Date.now() + 2_000;
       let record;
       while (Date.now() < deadline) {
@@ -682,6 +907,190 @@ async function measureControlledSubtitleCues(id, number = 6) {
   return results;
 }
 
+async function synchronizeTraceClock(id) {
+    await request("POST", `/session/${id}/goog/cdp/execute`, {cmd: "Performance.enable", params: {}});
+    const before = await execute(id, "return performance.now();");
+    const metrics = (await request("POST", `/session/${id}/goog/cdp/execute`, {
+      cmd: "Performance.getMetrics", params: {}
+    })).value;
+    const after = await execute(id, "return performance.now();");
+    const timestamp = metrics?.metrics?.find(metric => metric.name === "Timestamp")?.value;
+    if (!Number.isFinite(timestamp) || !Number.isFinite(before) || !Number.isFinite(after) ||
+        after < before || after - before > 200) throw new Error("Trace-Zeitachsenabgleich fehlt oder ist zu ungenau.");
+    return {offsetMs: (before + after) / 2 - timestamp * 1000, uncertaintyMs: (after - before) / 2};
+}
+
+async function measureSubtitleDomLoad(id) {
+  if (!browserTrace) return measureSubtitleDomLoadResult(id, {instrumented: false});
+  await mkdir(firefoxArtifacts, {recursive: true});
+  const trace = await startChromiumBrowserTrace(debuggerAddresses.get(id));
+  const traceFile = `subtitle-browser-trace-${browser}-${diagnosticFps}-${subtitleBaseline ? "baseline" : "extension"}-${subtitleLoad}-${subtitleDurationMs}.json`;
+  try {
+    const traceClock = await synchronizeTraceClock(id);
+    return await measureSubtitleDomLoadResult(id, {instrumented: true, traceFile, traceClock});
+  } finally {
+    await trace.save(path.join(firefoxArtifacts, traceFile));
+  }
+}
+
+async function measureSubtitleDomLoadResult(id, diagnostics) {
+  const mutationsPerTick = ["none", "burst", "removal"].includes(subtitleLoad) ? 0 : subtitleLoad === "moderate" ? 4 : 48;
+  const mutationIntervalMs = subtitleLoad === "moderate" ? 500 : 50;
+  await request("POST", `/session/${id}/timeouts`, {script: subtitleDurationMs + 10_000});
+  const result = (await request("POST", `/session/${id}/execute/async`, {
+    script: `
+      const done = arguments[arguments.length - 1];
+      const video = document.querySelector("#video");
+      const root = document.createElement("div");
+      document.body.append(root);
+      const nodes = Array.from({length: 480}, (_, index) => {
+        const node = document.createElement("span");
+        node.textContent = "Neutraler Inhalt " + index;
+        root.append(node); return node;
+      });
+      let bulkRoot, bulkFragment, bulkTail, bulkAppliedAt = null, bulkCorrectedAt = null;
+      let removal = null;
+      if (${["burst", "removal"].includes(subtitleLoad)}) {
+        // Prepare outside the measured window; isolate extension intake rather
+        // than the page's own allocation and visible layout cost.
+        bulkRoot = document.createElement("div"); bulkRoot.style.display = "none"; root.append(bulkRoot);
+        bulkFragment = document.createDocumentFragment();
+        for (let index = 0; index < 50000; index++) {
+          const span = document.createElement("span"); span.textContent = "neutral "; bulkFragment.append(span);
+        }
+        bulkTail = document.createElement("span"); bulkTail.textContent = "Nutzer:innen im normalen Text";
+        bulkFragment.append(bulkTail);
+        new MutationObserver(() => {
+          if (bulkTail.textContent === "Nutzer im normalen Text" && bulkCorrectedAt === null) {
+            bulkCorrectedAt = performance.now();
+          }
+        }).observe(bulkTail, {subtree: true, childList: true, characterData: true});
+      }
+      const startedAt = performance.now();
+      const qualityBefore = video.getVideoPlaybackQuality?.();
+      const frames = [];
+      let ticks = 0, stopped = false;
+      const frame = (now, metadata) => {
+        if (stopped) return;
+        frames.push({nowMs: now, mediaTime: metadata.mediaTime,
+          presentedFrames: metadata.presentedFrames});
+        video.requestVideoFrameCallback(frame);
+      };
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback(frame);
+      }
+      const timer = setInterval(() => {
+        for (let offset = 0; offset < ${mutationsPerTick}; offset++) {
+          const index = (ticks * ${mutationsPerTick} + offset) % nodes.length;
+          nodes[index].textContent = "Nutzer:innen " + ticks + " / " + offset;
+        }
+        ticks++;
+      }, ${mutationIntervalMs});
+      const burstTimer = bulkRoot ? setTimeout(() => {
+        bulkRoot.append(bulkFragment); bulkAppliedAt = performance.now();
+        window.__issueSubtitleCue("dom-burst");
+      }, 500) : null;
+      const removalTimer = ${subtitleLoad === "removal"} ? setTimeout(() => {
+        const startedAt = performance.now();
+        const correctedBefore = bulkTail.textContent === "Nutzer im normalen Text";
+        bulkRoot.replaceChildren();
+        const mutationFinishedAt = performance.now();
+        removal = {startedAt, pageMutationMs: mutationFinishedAt - startedAt,
+          correctedBefore, operationToFirstFrameMs: null};
+        window.__issueSubtitleCue("dom-removal");
+        requestAnimationFrame(() => {
+          removal.operationToFirstFrameMs = performance.now() - startedAt;
+        });
+      }, 5000) : null;
+      setTimeout(() => {
+        clearInterval(timer); if (burstTimer !== null) clearTimeout(burstTimer); stopped = true;
+        if (removalTimer !== null) clearTimeout(removalTimer);
+        const endedAt = performance.now();
+        const qualityAfter = video.getVideoPlaybackQuality?.();
+        // Freeze natural cues while checking the final cue and normal texts.
+        window.__controlledCueMode = true;
+        setTimeout(() => {
+          done({startedAt, endedAt, ticks, frames, removal,
+            bulk: bulkRoot ? {nodes: bulkRoot.childNodes.length,
+              tail: bulkTail.textContent, appliedAt: bulkAppliedAt, correctedAt: bulkCorrectedAt,
+              settleMs: bulkAppliedAt !== null && bulkCorrectedAt !== null
+                ? bulkCorrectedAt - bulkAppliedAt : null} : null,
+            visibility: document.visibilityState, focused: document.hasFocus(),
+            paused: video.paused, readyState: video.readyState,
+            error: window.__subtitlePlaybackError ?? null,
+            droppedFrames: qualityBefore && qualityAfter
+              ? qualityAfter.droppedVideoFrames - qualityBefore.droppedVideoFrames : null,
+            totalFrames: qualityBefore && qualityAfter
+              ? qualityAfter.totalVideoFrames - qualityBefore.totalVideoFrames : null,
+            cueRecords: window.__subtitleCueRecords.filter(record =>
+              record.issuedAt >= startedAt && record.issuedAt <= endedAt),
+            longTaskSupported: PerformanceObserver.supportedEntryTypes?.includes("longtask") === true,
+            longTasks: window.__subtitleLongTasks.filter(task =>
+              task.startMs >= startedAt && task.startMs <= endedAt),
+            normalCorrected: nodes.filter(node => node.textContent.startsWith("Nutzer ")).length,
+            staticText: document.querySelector("#static-target").textContent,
+            subtitle: document.querySelector("#subtitle-target").textContent});
+          root.remove(); window.__controlledCueMode = false;
+        }, 350);
+      }, ${subtitleDurationMs});
+    `,
+    args: []
+  }, subtitleDurationMs + 20_000)).value;
+  const latencies = result.cueRecords.map(record => record.latencyMs)
+    .filter(value => typeof value === "number" && Number.isFinite(value));
+  const report = {browser, fps: diagnosticFps, durationMs: subtitleDurationMs,
+    ...diagnostics,
+    mode: subtitleBaseline ? "baseline" : "extension",
+    load: subtitleLoad, mutationsPerTick, mutationIntervalMs,
+    cueCount: result.cueRecords.length, correctedCues: latencies.length,
+    cueP95Ms: latencies.length ? percentile(latencies, 0.95) : null,
+    cueP99Ms: latencies.length ? percentile(latencies, 0.99) : null,
+    cueMaximumMs: latencies.length ? Math.max(...latencies) : null,
+    frameSummary: summarize(result.frames.map(frame => frame.nowMs)),
+    gapEpisodes: videoGapEpisodes(result.frames, result.longTasks),
+    ...result};
+  await mkdir(firefoxArtifacts, {recursive: true});
+  await writeFile(path.join(firefoxArtifacts,
+    `subtitle-dom-load-${browser}-${diagnosticFps}-${report.mode}-${subtitleLoad}-${subtitleDurationMs}.json`), JSON.stringify(report, null, 2) + "\n");
+  console.log("Untertitel unter DOM-Last: " + JSON.stringify({
+    ...diagnostics,
+    browser, fps: diagnosticFps, mode: report.mode, load: subtitleLoad, durationMs: subtitleDurationMs, ticks: result.ticks,
+    cues: report.cueCount, correctedCues: report.correctedCues,
+    cueP95Ms: report.cueP95Ms, cueP99Ms: report.cueP99Ms,
+    cueMaximumMs: report.cueMaximumMs,
+    frames: report.frameSummary, droppedFrames: result.droppedFrames, totalFrames: result.totalFrames,
+    gapEpisodes: report.gapEpisodes,
+    bulk: result.bulk,
+    removal: result.removal,
+    removalCueMs: result.cueRecords.find(record => record.source === "dom-removal")?.latencyMs ?? null,
+    burstCueMs: result.cueRecords.find(record => record.source === "dom-burst")?.latencyMs ?? null,
+    longTasks: result.longTaskSupported ? result.longTasks.length : null,
+    normalCorrected: result.normalCorrected
+  }));
+  const expectedNormal = subtitleBaseline ? 0 : Math.min(480, result.ticks * mutationsPerTick);
+  const presentedFrames = result.frames.length > 1
+    ? result.frames.at(-1).presentedFrames - result.frames[0].presentedFrames : 0;
+  const minimumTicks = Math.max(subtitleLoad === "stress" ? 500 : 0,
+    subtitleDurationMs / mutationIntervalMs * 0.8);
+  if (result.ticks < minimumTicks || report.cueCount < subtitleDurationMs / 1000 ||
+      report.correctedCues !== (subtitleBaseline ? 0 : report.cueCount) || result.normalCorrected !== expectedNormal ||
+      result.staticText !== (subtitleBaseline ? "Nutzer:innen" : "Nutzer") ||
+      result.cueRecords.some(record => record.visibilityAtIssue !== "visible" || !record.focusAtIssue) ||
+      presentedFrames < subtitleDurationMs / 1000 * 10 ||
+      (subtitleLoad === "burst" && (result.bulk?.nodes !== 50001 ||
+        result.bulk.tail !== (subtitleBaseline ? "Nutzer:innen im normalen Text" : "Nutzer im normalen Text"))) ||
+      (subtitleLoad === "removal" && (result.bulk?.nodes !== 0 ||
+        result.bulk.tail !== "Nutzer:innen im normalen Text" ||
+        result.removal?.correctedBefore !== !subtitleBaseline ||
+        typeof result.removal?.operationToFirstFrameMs !== "number")) ||
+      result.frames.length < 200 || result.visibility !== "visible" ||
+      !result.focused || result.paused || result.readyState < 2 || result.error ||
+      !(subtitleBaseline ? /^Nutzer:innen im Untertitel \d+$/u : /^Nutzer im Untertitel \d+$/u).test(result.subtitle)) {
+    throw new Error("Untertitel-/DOM-Lastprobe unvollständig; Rohbericht gespeichert.");
+  }
+  return report;
+}
+
 async function validateSubtitleToggle(url) {
   const id = await createSession(true);
   try {
@@ -699,7 +1108,7 @@ async function validateSubtitleToggle(url) {
     // ChromeDriver kann nach window/new weiterhin das ursprüngliche Tab aktiv lassen.
     await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await request("POST", `/session/${id}/url`, {
-      url: `chrome-extension://${extension}/options/options.html`
+      url: `${browser === "firefox" ? "moz-extension" : "chrome-extension"}://${extension}/options/options.html`
     });
     const deadline = Date.now() + 8_000;
     while (Date.now() < deadline) {
@@ -714,12 +1123,15 @@ async function validateSubtitleToggle(url) {
     }
     await setSubtitleCheckbox(id, true);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
-    const on = await waitSubtitle(id, true);
+    const on = await waitSubtitle(id, true, {timeUpdates: off.timeUpdates});
     // In der optionalen 60-FPS-Diagnose weitere echte Untertitelwechsel abwarten.
     if (diagnosticFps === 60) await sleep(2_200);
     const onWithCues = diagnosticFps === 60 ? await subtitleState(id) : on;
     const controlledCues = diagnoseCuePhases
       ? await measureControlledSubtitleCues(id)
+      : [];
+    const repeatedCues = diagnoseCuePhases
+      ? await measureControlledSubtitleCues(id, 6, true)
       : [];
     if (diagnosticFps === 60 && onWithCues.cueLatenciesMs.length === 0) {
       throw new Error("Aktive Untertitel konnten nicht mit Cue-Latenz erfasst werden.");
@@ -728,16 +1140,19 @@ async function validateSubtitleToggle(url) {
       throw new Error("Video wurde beim Einschalten unterbrochen.");
     }
 
+    if (subtitleDomLoad) await measureSubtitleDomLoad(id);
+
+    const beforeOff = await subtitleState(id);
     await request("POST", `/session/${id}/window`, { handle: optionsWindow });
     await setSubtitleCheckbox(id, false);
     await request("POST", `/session/${id}/window`, { handle: videoWindow });
-    const againOff = await waitSubtitle(id, false);
-    if (againOff.timeUpdates <= on.timeUpdates || againOff.ticks <= on.ticks) {
+    const againOff = await waitSubtitle(id, false, beforeOff);
+    if (againOff.timeUpdates <= beforeOff.timeUpdates || againOff.ticks <= beforeOff.ticks) {
       throw new Error("Video oder Untertitel wurden beim Ausschalten unterbrochen.");
     }
     console.log(`Videountertitel-Schalter Aus/An/Aus erfolgreich: ${JSON.stringify({
       fps: diagnosticFps, off, on: onWithCues, againOff,
-      controlledCues
+      controlledCues, repeatedCues
     })}`);
   } finally {
     try {
@@ -763,7 +1178,10 @@ async function stopDriver(handle) {
 }
 
 const logs = [];
-const driverProcess = spawn(driver, [`--port=${driverPort}`], {
+// Gecko requires this for navigating to its installed addon's options page.
+// It applies only to the fresh local test browser, not extension permissions.
+const driverProcess = spawn(driver, [`--port=${driverPort}`,
+  ...(browser === "firefox" ? ["--allow-system-access"] : [])], {
   stdio: ["ignore", "pipe", "pipe"]
 });
 driverProcess.on("error", (error) => {
@@ -776,6 +1194,12 @@ driverProcess.stderr.on("data", (chunk) => logs.push(chunk.toString()));
 let server;
 try {
   await waitForDriver(driverProcess, logs);
+  if (browser === "firefox") {
+    await mkdir(firefoxArtifacts, {recursive: true});
+    const {cmd} = await import("web-ext");
+    await cmd.build({sourceDir: extensionDir, artifactsDir: firefoxArtifacts,
+      filename: path.basename(firefoxXpi), overwriteDest: true}, {showReadyMessage: false});
+  }
   const fixture = await startServer();
   server = fixture.server;
 
@@ -805,20 +1229,42 @@ try {
           p95GapMs: baseline.frames.p95GapMs,
           maximumGapMs: baseline.frames.maximumGapMs,
           gapsOver120Ms: baseline.frames.gapsOver120Ms,
-          droppedVideoFrames: baseline.droppedVideoFrames
+          droppedVideoFrames: baseline.droppedVideoFrames,
+          presentedFramesDelta: baseline.presentedFramesDelta,
+          gapEpisodes: baseline.gapEpisodes
         },
         extension: {
           callbacks: extension.frames.callbacks,
           p95GapMs: extension.frames.p95GapMs,
           maximumGapMs: extension.frames.maximumGapMs,
           gapsOver120Ms: extension.frames.gapsOver120Ms,
-          droppedVideoFrames: extension.droppedVideoFrames
+          droppedVideoFrames: extension.droppedVideoFrames,
+          presentedFramesDelta: extension.presentedFramesDelta,
+          gapEpisodes: extension.gapEpisodes
         }
       })}`
     );
   }
 
-  await validateSubtitleToggle(fixture.subtitleUrl);
+  if (subtitleBaseline) {
+    const id = await createSession(false);
+    try {
+      await request("POST", `/session/${id}/url`, {url: fixture.subtitleUrl});
+      const deadline = Date.now() + 8_000;
+      while (Date.now() < deadline) {
+        if (await execute(id, 'return document.querySelector("#video").currentTime > 0.5 && window.__subtitleTicks > 0;')) break;
+        await sleep(50);
+      }
+      if (!await execute(id, 'return document.querySelector("#video").currentTime > 0.5 && window.__subtitleTicks > 0;')) {
+        throw new Error("Baseline-Video oder Untertitelwechsel nicht angelaufen.");
+      }
+      await measureSubtitleDomLoad(id);
+    } finally {
+      await request("DELETE", `/session/${id}`);
+    }
+  } else {
+    await validateSubtitleToggle(fixture.subtitleUrl);
+  }
 } finally {
   if (server) {
     await new Promise((resolve, reject) =>
