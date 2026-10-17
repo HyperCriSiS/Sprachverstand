@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const report=JSON.parse(fs.readFileSync('artifacts/system-cache-preflight/summary.json','utf8'));
+assert.deepEqual(Object.keys(report).sort(),['schemaVersion','browserVersion','driverVersion','rendererCount','allRegularFiles','allExecutableOwnersMatch','allExecutablesWritable','existingOwnedProbeEligible','additionalPrivilegesUsed','fileContentsRead','processIdentifiersExported','pathsExported'].sort());
+assert.equal(report.schemaVersion,1);
+for(const field of ['browserVersion','driverVersion'])assert.match(report[field],/^(unknown|\d+\.\d+\.\d+\.\d+)$/u);
+assert.ok(Number.isSafeInteger(report.rendererCount)&&report.rendererCount>0&&report.rendererCount<=256);
+for(const field of ['allRegularFiles','allExecutableOwnersMatch','allExecutablesWritable','existingOwnedProbeEligible'])assert.equal(typeof report[field],'boolean');
+for(const field of ['additionalPrivilegesUsed','fileContentsRead','processIdentifiersExported','pathsExported'])assert.equal(report[field],false);
+assert.equal(report.existingOwnedProbeEligible,report.allRegularFiles&&report.allExecutableOwnersMatch);
+console.log('Fixed preflight metadata only; no paths, process IDs or raw protocol fields.');
