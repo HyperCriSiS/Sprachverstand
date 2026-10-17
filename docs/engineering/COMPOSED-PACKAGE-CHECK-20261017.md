@@ -41,6 +41,39 @@ persönliches Browserprofil noch ein Mikrofon oder Aufnahmen verwendet.
 
 ## Grenzen
 
+### Zusätzliche frische Edge-Starts
+
+Eine gesonderte Startprobe am 17. Oktober vergleicht sechs frische lokale
+Edge-Profile in der Reihenfolge Basis / Erweiterung / Erweiterung / Basis /
+Basis / Erweiterung. Die Testseite wurde vor Navigation über
+`Page.bringToFront` aktiviert; tatsächlicher Dokumentfokus und Sichtbarkeit
+wurden geprüft. Die Basis startet ohne Erweiterungen, die Gegenprobe mit dem
+oben beschriebenen zusammengesetzten Paket. Je 480 synthetische Textknoten
+und geschützte Code-/Eingabefelder werden vollständig kontrolliert.
+
+| Messgröße | Basis, drei Starts | Erweiterung, drei Starts |
+| --- | --- | --- |
+| WebDriver-Navigationsantwort | 55,3–69,1 ms | 63,0–69,6 ms |
+| Erster Animation-Frame-Callback ab Dokumentbeginn | 25,7–36,9 ms | 25,1–32,4 ms |
+| Alle 480 Texte korrigiert, ab Dokumentbeginn | Unverändert wie erwartet | 97,8–102,1 ms |
+| WebDriver-Sitzung erzeugt | 527,0–603,8 ms | 611,3–1.079,5 ms |
+
+Alle sechs Navigationsantworten liegen innerhalb des unveränderten
+30-Sekunden-Limits. In allen drei Erweiterungsläufen sind 480/480 Texte
+korrekt, in allen Basisläufen 480/480 unverändert; Schutzbereiche bleiben
+jeweils erhalten. Browser- und Driverprozesse sowie der eigene Testport
+wurden nach Abschluss unabhängig auf vollständige Bereinigung geprüft.
+
+Die beiden ersten Steuerungsversuche ohne bestätigten Fokus wurden vor der
+gültigen Messreihe abgebrochen und werden nicht ausgewertet. Frische Profile
+bedeuten keinen kalten Betriebssystem-Dateicache. Die Sitzungszeiten enthalten
+Browser-/Driverstart und beweisen bei drei Läufen keine stabile Zusatzlast der
+Erweiterung. Der erste Animation-Frame-Callback misst keine physische
+Bildschirmdarstellung. Die Probe belegt den aktuellen lokalen Edge-Startpfad;
+sie erklärt keinen historischen Linux-Navigationstimeout.
+
+### Weiterhin offene Abnahmen
+
 Dies ist eine gemeinsame **Funktions- und Paketprüfung** der angegebenen
 Quellstände. Die Laufzeiten des Prüfskripts sind keine Messung physischer
 Darstellungsverzögerung, vollständiger Erweiterungskaltstarts oder störungsfreier
