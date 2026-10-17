@@ -19,7 +19,7 @@ afterEach(async () => {
   }
 });
 
-const snapshot = () => ({readyState: "complete", focused: true, visibility: "visible",
+const snapshot = () => ({documentNowMs: 1000, loadEventEndMs: 100, readyState: "complete", focused: true, visibility: "visible",
   staticCorrect: true, staticOriginal: false, dynamicCorrect: true,
   dynamicOriginal: false, protected: true});
 function installOwnDebuggerReply(observed, malformed = false) {
@@ -46,8 +46,8 @@ async function save({address = "127.0.0.1:1234", version = "155.0.8059.0"} = {})
   observer.protocol({method: "Network.responseReceived", params: {response: {
     url: "https://private.invalid/PRIVATE", status: 200
   }}});
-  await saveNavigationFailureDiagnostic({debuggerAddress: address, browserVersion: version,
-    observer, navigationStartedAt: performance.now() - 100,
+  await saveNavigationFailureDiagnostic({debuggerAddress: address, browserVersion: version, pageLoadLimitMs: 30000,
+    observer, navigationStartedAt: performance.now(),
     error: new Error("PRIVATE session/path: Timed out receiving message from renderer: 30.000"),
     outputDirectory: directory});
   const text = await readFile(path.join(directory, "navigation-failure.json"), "utf8");
@@ -73,6 +73,8 @@ it("exports only booleans and fixed state enums from an independently read fixtu
   const summary = await save();
   expect(summary.snapshot).toEqual(snapshot());
   expect(summary.fixtureDocumentConfirmed).toBe(true);
+  expect(summary.loadEventCompletedBeforeFailure).toBe(true);
+  expect(summary.loadEventProvenBeforeTimeout).toBe(true);
 });
 
 it("keeps a malformed independent snapshot out of the diagnostic", async () => {
@@ -85,10 +87,22 @@ it("preserves the navigation failure when the independent protocol reply is malf
   expect((await save()).snapshot).toBeNull();
 });
 
-const validSummary = () => ({schemaVersion: 1, browserVersion: "155.0.8059.0",
+it("does not infer prior load completion from readyState without a load timestamp", async () => {
+  installOwnDebuggerReply({...snapshot(), loadEventEndMs: 0});
+  const summary = await save();
+  expect(summary.snapshot.readyState).toBe("complete");
+  expect(summary.loadEventEndWitnessIntervalMs).toBeNull();
+  expect(summary.loadEventProvenBeforeTimeout).toBeNull();
+});
+
+const validSummary = () => ({schemaVersion: 2, browserVersion: "155.0.8059.0",
   outcome: "renderer-timeout", navigationElapsedMs: 30000, diagnosticElapsedMs: 20,
+  navigationStartedAtWitnessMs: 50, failureObservedAtWitnessMs: 30050,
+  pageLoadLimitMs: 30000,
   observationScope: "after-navigation-failure", fixtureDocumentConfirmed: true,
   snapshot: snapshot(), witness: {events: [{event: "fixture-http-request", atMs: 50}], truncated: false},
+  loadEventEndWitnessIntervalMs: [100, 102], loadEventCompletedBeforeFailure: true,
+  loadEventProvenBeforeTimeout: true,
   rawProtocolExported: false, profilesExported: false, sessionIdentifiersExported: false});
 
 it.each([
@@ -97,9 +111,22 @@ it.each([
   ["unexpected event key", summary => {summary.witness.events[0].url = "PRIVATE";}],
   ["raw protocol", summary => {summary.rawProtocolExported = true;}],
   ["invalid timing", summary => {summary.navigationElapsedMs = -1;}],
+  ["inconsistent witness clocks", summary => {summary.failureObservedAtWitnessMs += 1;}],
+  ["invalid negotiated timeout", summary => {summary.pageLoadLimitMs = "PRIVATE";}],
+  ["unproven load conclusion", summary => {summary.loadEventCompletedBeforeFailure = false;}],
+  ["unproven timeout conclusion", summary => {summary.loadEventProvenBeforeTimeout = false;}],
   ["unbounded event list", summary => {summary.witness.events = Array(257).fill({event: "fixture-http-request", atMs: 1});}],
   ["invalid response status", summary => {summary.witness.events = [{event: "fixture-network-response", atMs: 1, status: "PRIVATE"}];}]
 ])("blocks export for %s", (_name, mutate) => {
   const summary = validSummary(); mutate(summary);
   expect(() => validateNavigationFailureSummary(summary)).toThrow();
+});
+
+it("keeps load completion after the earliest timeout unproven even before the error response", () => {
+  const summary = validSummary();
+  summary.navigationElapsedMs = 31000;
+  summary.failureObservedAtWitnessMs = 31050;
+  summary.loadEventEndWitnessIntervalMs = [30500, 30502];
+  summary.loadEventProvenBeforeTimeout = null;
+  expect(() => validateNavigationFailureSummary(summary)).not.toThrow();
 });

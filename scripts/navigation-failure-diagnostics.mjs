@@ -2,13 +2,15 @@ import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
 import {connectNavigationObserver} from "./navigation-start-observer.mjs";
 
-const snapshotKeys = ["readyState", "focused", "visibility", "staticCorrect", "staticOriginal",
+const snapshotKeys = ["documentNowMs", "loadEventEndMs", "readyState", "focused", "visibility", "staticCorrect", "staticOriginal",
   "dynamicCorrect", "dynamicOriginal", "protected"];
 const eventNames = new Set(["fixture-http-request", "fixture-http-response-finished",
   "fixture-network-request", "fixture-network-response", "fixture-main-frame-navigated",
   "fixture-dom-content-loaded", "fixture-load-event"]);
 const rootKeys = ["schemaVersion", "browserVersion", "outcome", "navigationElapsedMs",
+  "navigationStartedAtWitnessMs", "failureObservedAtWitnessMs", "pageLoadLimitMs",
   "diagnosticElapsedMs", "observationScope", "fixtureDocumentConfirmed", "snapshot",
+  "loadEventEndWitnessIntervalMs", "loadEventCompletedBeforeFailure", "loadEventProvenBeforeTimeout",
   "witness", "rawProtocolExported", "profilesExported", "sessionIdentifiersExported"];
 
 function exactKeys(value, keys) {
@@ -16,12 +18,19 @@ function exactKeys(value, keys) {
     Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 const duration = value => Number.isFinite(value) && value >= 0;
+const completedBeforeFailure = (interval, failureAt) => interval === null ? null
+  : interval[1] < failureAt ? true : interval[0] > failureAt ? false : null;
+const provenBeforeTimeout = (interval, startedAt, limit) =>
+  interval !== null && limit !== null && interval[1] < startedAt + limit ? true : null;
 
 export function validateNavigationFailureSummary(summary) {
-  if (!exactKeys(summary, rootKeys) || summary.schemaVersion !== 1 ||
+  if (!exactKeys(summary, rootKeys) || summary.schemaVersion !== 2 ||
     !/^(?:unknown|\d+\.\d+\.\d+\.\d+)$/u.test(summary.browserVersion) ||
     !["renderer-timeout", "navigation-failed"].includes(summary.outcome) ||
     !duration(summary.navigationElapsedMs) || !duration(summary.diagnosticElapsedMs) ||
+    !duration(summary.navigationStartedAtWitnessMs) || !duration(summary.failureObservedAtWitnessMs) ||
+    Math.abs(summary.failureObservedAtWitnessMs - summary.navigationStartedAtWitnessMs - summary.navigationElapsedMs) > 0.001 ||
+    (summary.pageLoadLimitMs !== null && (!Number.isSafeInteger(summary.pageLoadLimitMs) || summary.pageLoadLimitMs <= 0)) ||
     summary.observationScope !== "after-navigation-failure" ||
     typeof summary.fixtureDocumentConfirmed !== "boolean" ||
     summary.rawProtocolExported !== false || summary.profilesExported !== false ||
@@ -31,8 +40,21 @@ export function validateNavigationFailureSummary(summary) {
     if (!exactKeys(snapshot, snapshotKeys) ||
       !["loading", "interactive", "complete"].includes(snapshot.readyState) ||
       !["visible", "hidden"].includes(snapshot.visibility) ||
-      snapshotKeys.filter(key => key !== "readyState" && key !== "visibility")
+      !duration(snapshot.documentNowMs) || (snapshot.loadEventEndMs !== null && !duration(snapshot.loadEventEndMs)) ||
+      snapshotKeys.filter(key => !["documentNowMs", "loadEventEndMs", "readyState", "visibility"].includes(key))
         .some(key => typeof snapshot[key] !== "boolean")) throw new Error("Invalid navigation diagnostic snapshot");
+  }
+  const interval = summary.loadEventEndWitnessIntervalMs;
+  if (interval !== null && (!Array.isArray(interval) || interval.length !== 2 ||
+    !interval.every(Number.isFinite) || interval[1] < interval[0] ||
+    !summary.fixtureDocumentConfirmed || !(summary.snapshot?.loadEventEndMs > 0))) {
+    throw new Error("Invalid navigation timing interval");
+  }
+  if (summary.loadEventCompletedBeforeFailure !== completedBeforeFailure(interval, summary.failureObservedAtWitnessMs)) {
+    throw new Error("Invalid navigation timing conclusion");
+  }
+  if (summary.loadEventProvenBeforeTimeout !== provenBeforeTimeout(interval, summary.navigationStartedAtWitnessMs, summary.pageLoadLimitMs)) {
+    throw new Error("Unproven navigation timeout conclusion");
   }
   const witness = summary.witness;
   if (!exactKeys(witness, ["events", "truncated"]) || !Array.isArray(witness.events) ||
@@ -49,31 +71,47 @@ export function validateNavigationFailureSummary(summary) {
 }
 
 export async function saveNavigationFailureDiagnostic({debuggerAddress, browserVersion,
-  observer, error, navigationStartedAt, outputDirectory}) {
+  pageLoadLimitMs, observer, error, navigationStartedAt, outputDirectory}) {
   const diagnosticStarted = performance.now();
   let connection;
   let snapshot = null;
+  let loadEventEndWitnessIntervalMs = null;
   try {
     // Connect only after the original navigation has failed. Do not warm up or
     // change the successful navigation path, and never raise its timeout.
     connection = await connectNavigationObserver(debuggerAddress, observer, true);
+    const readStarted = performance.now();
     const observed = await connection.snapshot();
+    const readFinished = performance.now();
     snapshot = Object.fromEntries(snapshotKeys.map(key => [key, observed[key]]));
+    if (observer.ownDocument && snapshot.loadEventEndMs > 0) {
+      // The browser sampled documentNow inside this request/response window.
+      // Keep a conservative extra millisecond for timer quantization.
+      const delta = snapshot.loadEventEndMs - snapshot.documentNowMs - observer.started;
+      loadEventEndWitnessIntervalMs = [readStarted + delta - 1, readFinished + delta + 1];
+    }
   } catch {
     // The renderer can remain unavailable. Preserve server progress in that case.
   } finally {
     connection?.close();
   }
   const summary = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     browserVersion: /^\d+\.\d+\.\d+\.\d+$/u.test(browserVersion ?? "") ? browserVersion : "unknown",
     outcome: /Timed out receiving message from renderer/u.test(String(error?.message))
       ? "renderer-timeout" : "navigation-failed",
     navigationElapsedMs: diagnosticStarted - navigationStartedAt,
+    navigationStartedAtWitnessMs: navigationStartedAt - observer.started,
+    failureObservedAtWitnessMs: diagnosticStarted - observer.started,
+    pageLoadLimitMs: Number.isSafeInteger(pageLoadLimitMs) && pageLoadLimitMs > 0 ? pageLoadLimitMs : null,
     diagnosticElapsedMs: performance.now() - diagnosticStarted,
     observationScope: "after-navigation-failure",
     fixtureDocumentConfirmed: observer.ownDocument,
     snapshot,
+    loadEventEndWitnessIntervalMs,
+    loadEventCompletedBeforeFailure: completedBeforeFailure(loadEventEndWitnessIntervalMs, diagnosticStarted - observer.started),
+    loadEventProvenBeforeTimeout: provenBeforeTimeout(loadEventEndWitnessIntervalMs,
+      navigationStartedAt - observer.started, Number.isSafeInteger(pageLoadLimitMs) && pageLoadLimitMs > 0 ? pageLoadLimitMs : null),
     witness: observer.summary(),
     rawProtocolExported: false,
     profilesExported: false,

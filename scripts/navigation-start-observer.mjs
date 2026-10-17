@@ -93,12 +93,14 @@ export async function connectNavigationObserver(address, observer, allowNavigate
     return {
       async snapshot() {
         const result = await command('Runtime.evaluate', {
-          expression: `JSON.stringify({readyState:document.readyState,focused:document.hasFocus(),visibility:document.visibilityState,staticCorrect:document.querySelector('#static-target')?.textContent==='Nutzer',staticOriginal:document.querySelector('#static-target')?.textContent==='Nutzer:innen',dynamicCorrect:document.querySelector('#dynamic-target')?.textContent==='Nutzer',dynamicOriginal:document.querySelector('#dynamic-target')?.textContent==='Nutzer:innen',protected:document.querySelector('#protected-code')?.textContent==='Nutzer:innen'&&document.querySelector('#protected-input')?.value==='Nutzer:innen'})`,
+          expression: `JSON.stringify({documentNowMs:performance.now(),loadEventEndMs:performance.getEntriesByType('navigation')[0]?.loadEventEnd??null,readyState:document.readyState,focused:document.hasFocus(),visibility:document.visibilityState,staticCorrect:document.querySelector('#static-target')?.textContent==='Nutzer',staticOriginal:document.querySelector('#static-target')?.textContent==='Nutzer:innen',dynamicCorrect:document.querySelector('#dynamic-target')?.textContent==='Nutzer',dynamicOriginal:document.querySelector('#dynamic-target')?.textContent==='Nutzer:innen',protected:document.querySelector('#protected-code')?.textContent==='Nutzer:innen'&&document.querySelector('#protected-input')?.value==='Nutzer:innen'})`,
           returnByValue: true
         });
         if (result.exceptionDetails || typeof result.result?.value !== 'string') throw new Error('Invalid fixture snapshot');
         const value = JSON.parse(result.result.value);
         if (!['loading', 'interactive', 'complete'].includes(value.readyState) || !['visible', 'hidden'].includes(value.visibility)) throw new Error('Invalid fixture state');
+        if (!Number.isFinite(value.documentNowMs) || value.documentNowMs < 0 ||
+          (value.loadEventEndMs !== null && (!Number.isFinite(value.loadEventEndMs) || value.loadEventEndMs < 0))) throw new Error('Invalid fixture timing');
         for (const key of ['focused', 'staticCorrect', 'staticOriginal', 'dynamicCorrect', 'dynamicOriginal', 'protected']) {
           if (typeof value[key] !== 'boolean') throw new Error('Invalid fixture boolean');
         }

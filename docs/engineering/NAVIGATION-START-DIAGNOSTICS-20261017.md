@@ -71,6 +71,20 @@ Die reguläre Chromium-CI aktiviert einen begrenzten Fehlernachweis. Sie verbind
 ursprüngliche Seitenaufruf scheitert, versucht sie eine unabhängige Abfrage
 des eigenen Testdokuments. Ist der Renderer weiter unerreichbar, bleiben die
 HTTP-Zeitmarken erhalten. Der ursprüngliche Fehler wird unverändert weitergeworfen.
+Navigationsbeginn und Fehlerbeobachtung werden auf derselben relativen Uhr wie
+die Serverereignisse erfasst. Damit lässt sich eine Antwort vor dem Fehler von
+späterem Fortschritt während der Diagnose unterscheiden; der DOM-Snapshot
+bleibt ausdrücklich eine Beobachtung nach dem Fehler.
+Zusätzlich wird `loadEventEnd` aus der Browser-Navigationszeitachse mit der
+gemessenen Anfrage-/Antwortspanne auf diese relative Uhr abgebildet, mit einem
+zusätzlichen Millisekundenpuffer für Zeitquantisierung. Nur wenn das gesamte
+Intervall vor der Fehlerbeobachtung liegt, wird die vorherige Ladebeendigung
+bestätigt. Fehlende Ladezeitpunkte oder überlappende Intervalle bleiben unbewertet.
+Das ausgehandelte Seitenlimit wird separat erfasst. Ein vor Ablauf bestätigtes
+Ladeende wird nur ausgewiesen, wenn das gesamte Intervall auch vor
+Navigationsbeginn plus Seitenlimit liegt. Ein Ladeende nach Ablauf, aber vor
+der Fehlerrückmeldung könnte durch den Abbruch selbst entstanden sein und
+wird nicht als Beweis eines voreiligen Timeouts verwendet.
 
 Der Export ist auf eine einzelne synthetische JSON-Zusammenfassung beschränkt:
 Browserversionsnummer, Fehlerklasse, Zeitdauern, feste Zustandswerte und

@@ -619,6 +619,7 @@ try {
         await saveNavigationFailureDiagnostic({
           debuggerAddress: capabilities?.["goog:chromeOptions"]?.debuggerAddress,
           browserVersion: capabilities?.browserVersion,
+          pageLoadLimitMs: capabilities?.timeouts?.pageLoad,
           observer: fixture.navigationObserver,
           error,
           navigationStartedAt,
