@@ -702,6 +702,16 @@ function validateFunctionalComparison(baseline, extension) {
   }
 }
 
+// The baseline is the control without the extension. If the runner itself
+// cannot play it (stall, too few callbacks), that pair says nothing about the
+// extension and is measured once more. Extension failures stay immediate.
+class VideoBaselineUnusableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "VideoBaselineUnusableError";
+  }
+}
+
 async function measureVideoPair(url, attempt, order = videoPairOrder) {
   // Keep labels independent of execution order. Both orders retain the same
   // fixture and gates; the explicit control exposes native timing order bias.
@@ -754,7 +764,12 @@ async function measureVideoPair(url, attempt, order = videoPairOrder) {
     })}`
   );
 
-  validateRun(baseline);
+  try {
+    validateRun(baseline);
+    validateVideoBaselineSafety(baseline);
+  } catch (error) {
+    throw new VideoBaselineUnusableError(error instanceof Error ? error.message : String(error));
+  }
   validateRun(extension);
   return { baseline, extension };
 }
@@ -1192,7 +1207,15 @@ try {
     const orders = videoPairOrders(videoPairCount);
     if (videoPairOrder === "extension-first") orders.reverse();
     for (const [index, order] of orders.entries()) {
-      const { baseline, extension } = await measureVideoPair(fixture.url, index + 1, order);
+      let pair;
+      try {
+        pair = await measureVideoPair(fixture.url, index + 1, order);
+      } catch (error) {
+        if (!(error instanceof VideoBaselineUnusableError)) throw error;
+        console.warn(`Baseline ohne Erweiterung in Paar ${index + 1} unbrauchbar (${error.message}); einmalige Neumessung.`);
+        pair = await measureVideoPair(fixture.url, index + 1, order);
+      }
+      const { baseline, extension } = pair;
       validateFunctionalComparison(baseline, extension);
       baselines.push(baseline);
       extensions.push(extension);
