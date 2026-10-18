@@ -40,6 +40,10 @@ describe("Video-Playback-Regression", () => {
     expect(runner).toContain("validateFunctionalComparison(baseline, extension);");
     expect(runner).toContain("videoPerformanceViolations(baselines, extensions)");
     expect(runner).not.toContain("VideoFrameRatioError");
+    // Only an unusable control without the extension is measured once more.
+    expect(runner).toContain("throw new VideoBaselineUnusableError(");
+    expect(runner).toContain("if (!(error instanceof VideoBaselineUnusableError)) throw error;");
+    expect(runner.match(/measureVideoPair\(fixture\.url, index \+ 1, order\)/gu)).toHaveLength(2);
     expect(workflow).not.toContain("VIDEO_PAIRS");
   });
 
