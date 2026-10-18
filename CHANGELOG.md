@@ -5,6 +5,14 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
+  erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
+  Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
+- Die exakt geprüften Berufsbezeichnungen Marketer und Fertigungsmodelleur
+  werden mit passendem Plural, Singularpaar und Kasus erkannt.
+
 ### Hinzugefügt
 
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der
