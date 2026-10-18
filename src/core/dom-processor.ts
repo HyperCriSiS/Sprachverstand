@@ -16,7 +16,7 @@ import {
   matchesSubtitleMarker,
   subtitleClassifierAttributeNames
 } from "./subtitles";
-import { transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
+import { startsWithSplitGenderMarker, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
 import {
   collectInlineProtection,
   iterateInlineProtection,
@@ -3217,6 +3217,8 @@ export class DomProcessor {
   }
 
   private needsLeadingContext(input: string): boolean {
+    // A marker continuing the preceding inline word needs that word as context.
+    if (startsWithSplitGenderMarker(input)) return true;
     for (const rule of this.options.rules) {
       if (
         !rule.applyWithLeadingContext ||
@@ -3356,6 +3358,8 @@ export class DomProcessor {
   }
 
   private leadingContextRequiresTrailingWhitespace(input: string): boolean {
+    // Whitespace at the start of this text already separates it from the context.
+    if (/^\s/u.test(input) || startsWithSplitGenderMarker(input)) return false;
     let matched = false;
     for (const rule of this.options.rules) {
       if (!rule.applyWithLeadingContext || !rule.leadingContextCandidate ||

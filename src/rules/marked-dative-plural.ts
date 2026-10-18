@@ -90,11 +90,14 @@ export const markedDativePluralRule: Rule = {
   leadingContextCandidate: markedLeadingCandidate,
   leadingContextRequiresTrailingWhitespace: true,
   applyWithLeadingContext(input, leadingContext) {
-    const auslöser = dativeLeadingContextPattern.exec(leadingContext)?.[1];
+    // The separating whitespace may begin this text instead of ending the context.
+    const space = /^[ \t]*/u.exec(input)?.[0] ?? "";
+    const auslöser = dativeLeadingContextPattern.exec(leadingContext + space)?.[1];
     if (!auslöser) return transformMarkedDativePlural(input);
 
-    const result = transformMarkedDativePlural(auslöser + input);
-    if (!result.text.startsWith(auslöser)) return transformMarkedDativePlural(input);
-    return { text: result.text.slice(auslöser.length), replacements: result.replacements };
+    const prefix = auslöser.slice(0, auslöser.length - space.length);
+    const result = transformMarkedDativePlural(prefix + input);
+    if (!result.text.startsWith(prefix)) return transformMarkedDativePlural(input);
+    return { text: result.text.slice(prefix.length), replacements: result.replacements };
   }
 };
