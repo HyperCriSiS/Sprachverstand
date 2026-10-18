@@ -12,6 +12,9 @@ dokumentiert.
   Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
 - Die exakt geprüften Berufsbezeichnungen Marketer und Fertigungsmodelleur
   werden mit passendem Plural, Singularpaar und Kasus erkannt.
+- 190 exakt geprüfte Berufsbezeichnungen unterstützen zusätzlich zu ihren
+  bisherigen markierten Pluralformen auch ausgeschriebene Singularpaare und
+  die passende Kasusflexion. Kürzel und bestehende Schreibweisen bleiben erhalten.
 
 ### Hinzugefügt
 

@@ -1,4 +1,5 @@
 import type { GeneratedPersonForms } from "./generated-person-lexicon";
+import { getReviewedPersonPairForms } from "./reviewed-person-pair-forms";
 import { getReviewedPersonFormsWave70 } from "./reviewed-person-forms-wave-70";
 import { getReviewedPersonFormsWave71 } from "./reviewed-person-forms-wave-71";
 import { getReviewedPersonFormsWave72 } from "./reviewed-person-forms-wave-72";
@@ -333,6 +334,7 @@ export function getReviewedPersonForms(
     };
   }
   return (
+    getReviewedPersonPairForms(normalizedBase) ??
     getReviewedPersonFormsWave70(normalizedBase) ??
     getReviewedPersonFormsWave71(normalizedBase) ??
     getReviewedPersonFormsWave72(normalizedBase) ??
