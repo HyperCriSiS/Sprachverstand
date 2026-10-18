@@ -9,6 +9,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
+import {fetchWebdriverResponse} from "./webdriver-response.mjs";
+import {NavigationStartObserver} from "./navigation-start-observer.mjs";
+import {saveNavigationFailureDiagnostic} from "./navigation-failure-diagnostics.mjs";
+import {createSmokeProcessIo} from "./smoke-process-io.mjs";
 
 const projectRoot = process.cwd();
 const browserArgumentIndex = process.argv.indexOf("--browser");
@@ -19,7 +23,11 @@ if (browser !== "chromium" && browser !== "firefox") {
   throw new Error("--browser muss chromium oder firefox sein.");
 }
 
-const driverPort = browser === "chromium" ? 9515 : 4444;
+const driverPort = Number(process.env.WEBDRIVER_PORT ??
+  (browser === "chromium" ? 9515 : 4444));
+if (!Number.isInteger(driverPort) || driverPort < 1 || driverPort > 65535) {
+  throw new Error("WEBDRIVER_PORT muss eine gültige Portnummer sein.");
+}
 const driverBaseUrl = `http://127.0.0.1:${driverPort}`;
 const fixturePath = path.join(
   projectRoot,
@@ -74,12 +82,12 @@ function sleep(milliseconds) {
 }
 
 async function webdriverRequest(method, pathname, body) {
-  const response = await fetch(`${driverBaseUrl}${pathname}`, {
+  const response = await fetchWebdriverResponse(`${driverBaseUrl}${pathname}`, {
     method,
     headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
-  const payload = await response.json();
+  const payload = JSON.parse(response.text);
 
   if (!response.ok || payload?.value?.error) {
     throw new Error(
@@ -105,7 +113,7 @@ async function waitForDriver(driverProcess, logs) {
     }
 
     try {
-      const response = await fetch(`${driverBaseUrl}/status`);
+      const response = await fetchWebdriverResponse(`${driverBaseUrl}/status`, undefined, 2_000);
       if (response.ok) {
         return;
       }
@@ -121,6 +129,7 @@ async function waitForDriver(driverProcess, logs) {
 
 function startFixtureServer() {
   const html = readFileSync(fixturePath);
+  let navigationObserver;
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     if (url.pathname !== "/extension-smoke.html") {
@@ -129,6 +138,10 @@ function startFixtureServer() {
       return;
     }
 
+    if (navigationObserver) {
+      navigationObserver.served();
+      response.once("finish", () => navigationObserver.finished());
+    }
     response.writeHead(200, {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store"
@@ -145,9 +158,14 @@ function startFixtureServer() {
         return;
       }
 
+      const url = `http://127.0.0.1:${address.port}/extension-smoke.html`;
+      if (browser === "chromium" && process.env.SMOKE_NAVIGATION_DIAGNOSTICS === "1") {
+        navigationObserver = new NavigationStartObserver(url);
+      }
       resolve({
         server,
-        url: `http://127.0.0.1:${address.port}/extension-smoke.html`
+        url,
+        navigationObserver
       });
     });
   });
@@ -165,6 +183,7 @@ async function createSession() {
       capabilities: {
         alwaysMatch: {
           browserName: "chrome",
+          timeouts: {pageLoad: 30_000},
           "goog:chromeOptions": {
             binary: chromiumExecutable,
             args: [
@@ -186,7 +205,9 @@ async function createSession() {
     capabilities: {
       alwaysMatch: {
         browserName: "firefox",
+        timeouts: {pageLoad: 30_000},
         "moz:firefoxOptions": {
+          ...(process.env.FIREFOX_BIN ? {binary: process.env.FIREFOX_BIN} : {}),
           args: ["-headless"]
         }
       }
@@ -209,15 +230,9 @@ async function installFirefoxExtension(sessionId) {
   const xpiPath = path.join(temporaryDirectory, "sprachverstand-firefox.xpi");
 
   try {
-    const zip = spawnSync("zip", ["-qr", xpiPath, "."], {
-      cwd: extensionDirectory,
-      encoding: "utf8"
-    });
-    if (zip.status !== 0) {
-      throw new Error(
-        `Firefox-Test-XPI konnte nicht erstellt werden: ${zip.stderr || zip.stdout}`
-      );
-    }
+    const {cmd} = await import("web-ext");
+    await cmd.build({sourceDir: extensionDirectory, artifactsDir: temporaryDirectory,
+      filename: path.basename(xpiPath), overwriteDest: true}, {showReadyMessage: false});
 
     const addon = readFileSync(xpiPath).toString("base64");
     await webdriverRequest(
@@ -333,6 +348,49 @@ async function pruefeSpaeteShadowRoot(sessionId) {
   );
 }
 
+async function pruefeSpaeteVerschachtelteShadowRoot(sessionId) {
+  await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+    script: `
+      const outer = document.querySelector("#late-shadow-host").shadowRoot;
+      const host = document.createElement("section");
+      host.id = "nested-shadow-host";
+      outer.append(host);
+      return true;
+    `,
+    args: []
+  });
+  // Let the observed outer tree finish processing its still-empty inner host.
+  await sleep(250);
+  await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+    script: `
+      const host = document.querySelector("#late-shadow-host").shadowRoot
+        .querySelector("#nested-shadow-host");
+      host.attachShadow({mode: "open"}).innerHTML =
+        "<p>Nutzer:innen</p><code>Nutzer:innen</code>";
+      return true;
+    `,
+    args: []
+  });
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const result = await webdriverRequest("POST", `/session/${sessionId}/execute/sync`, {
+      script: `
+        const root = document.querySelector("#late-shadow-host").shadowRoot
+          .querySelector("#nested-shadow-host").shadowRoot;
+        return {text: root.querySelector("p").textContent,
+          protectedText: root.querySelector("code").textContent};
+      `,
+      args: []
+    });
+    if (result.value?.protectedText !== "Nutzer:innen") {
+      throw new Error(`Geschützter Code in verschachtelter ${browser}-ShadowRoot verändert.`);
+    }
+    if (result.value.text === "Nutzer") return;
+    await sleep(125);
+  }
+  throw new Error(`Späte verschachtelte ShadowRoot im echten ${browser}-Browser nicht korrigiert.`);
+}
+
 async function pruefeEreignislosenDesignModeWechsel(sessionId) {
   const entered = await webdriverRequest(
     "POST",
@@ -427,6 +485,122 @@ driverProcess.on("error", (error) => {
 driverProcess.stdout.on("data", (chunk) => driverLogs.push(chunk.toString()));
 driverProcess.stderr.on("data", (chunk) => driverLogs.push(chunk.toString()));
 
+async function pruefeGrosseInlineRanges(sessionId) {
+  const execute = async script => (await webdriverRequest("POST",
+    `/session/${sessionId}/execute/sync`, {script, args: []})).value;
+  await execute(`
+    const paragraph = document.createElement("p");
+    const cases = [
+      ["Hallo Nutzer:innen und Freunde.", "Hallo Nutzer und Freunde.", "Freunde"],
+      ["Nutzer:innen und Lehrer:innen heute.", "Nutzer und Lehrer heute.", "und"],
+      ["Nutzer:innen\\u00a0und Lehrer:innen", "Nutzer\\u00a0und Lehrer", "und"]
+    ];
+    window.__inlineRangeSmoke = cases.map(([original, transformed, selected]) => {
+      const span = document.createElement("span");
+      const text = document.createTextNode(original);
+      span.append(text); paragraph.append(span);
+      const range = document.createRange();
+      const begin = original.indexOf(selected);
+      range.setStart(text, begin); range.setEnd(text, begin + selected.length);
+      return {span, text, range, original, transformed, selected};
+    });
+    for (let index = cases.length; index < 128; index++) {
+      const span = document.createElement("span");
+      span.textContent = "neutral "; paragraph.append(span);
+    }
+    document.body.append(paragraph);
+  `);
+  const read = `return window.__inlineRangeSmoke.map(entry => ({
+    text: entry.text.data, original: entry.original, transformed: entry.transformed,
+    selected: entry.range.toString(), expectedSelection: entry.selected,
+    startOriginal: entry.range.startContainer === entry.text,
+    endOriginal: entry.range.endContainer === entry.text,
+    identity: entry.span.firstChild === entry.text,
+    childNodes: entry.span.childNodes.length
+  }));`;
+  const verify = (rows, restored) => Array.isArray(rows) && rows.length === 3 &&
+    rows.every(row => row.text === (restored ? row.original : row.transformed) &&
+      row.selected === row.expectedSelection && row.startOriginal && row.endOriginal &&
+      row.identity && row.childNodes === 1);
+  const deadline = Date.now() + 10_000;
+  let rows;
+  do {
+    rows = await execute(read);
+    if (verify(rows, false)) break;
+    await sleep(100);
+  } while (Date.now() < deadline);
+  if (!verify(rows, false)) throw new Error(
+    `Inline-Ranges nach Korrektur in ${browser} verändert: ${JSON.stringify(rows)}`);
+  await execute(`document.designMode = "on";
+    document.body.dispatchEvent(new Event("beforeinput", {bubbles: true}));`);
+  rows = await execute(read);
+  if (!verify(rows, true)) throw new Error(
+    `Inline-Ranges nach Restore in ${browser} verändert: ${JSON.stringify(rows)}`);
+  await execute(`document.designMode = "off";`);
+  console.log(`Native Inline-Ranges und Restore erfolgreich: ${browser}`);
+}
+
+async function pruefeGrossenEinzeltext(sessionId) {
+  const execute = async script => (await webdriverRequest("POST",
+    `/session/${sessionId}/execute/sync`, {script, args: []})).value;
+  await execute(`
+    const original = "Nutzer:innen und ".repeat(5000);
+    const paragraph = document.createElement("p"), text = document.createTextNode(original);
+    paragraph.append(text);
+    const ranges = [original.indexOf("und"), original.indexOf("und", original.length / 2),
+      original.lastIndexOf("und")].map(offset => {
+      const range = document.createRange(); range.setStart(text, offset); range.setEnd(text, offset + 3);
+      return range;
+    });
+    const cross = document.createRange(); cross.setStart(text, original.indexOf("und"));
+    cross.setEnd(text, original.indexOf("und", original.indexOf("und") + 3) + 3);
+    window.__largeTextSmoke = {original, paragraph, text, ranges, cross};
+    document.body.append(paragraph);
+  `);
+  const read = restored => `const state = window.__largeTextSmoke; return {
+    correct: state.text.data === (${restored ? "state.original" : '"Nutzer und ".repeat(5000)'}),
+    identity: state.paragraph.firstChild === state.text,
+    childNodes: state.paragraph.childNodes.length,
+    cross: state.cross.toString(),
+    ranges: state.ranges.map(range => ({text: range.toString(),
+      identity: range.startContainer === state.text && range.endContainer === state.text}))
+  };`;
+  for (const restored of [false, true]) {
+    if (restored) await execute(`
+      const state = window.__largeTextSmoke;
+      state.paragraph.remove();
+      // Removing a subtree relocates existing Ranges by DOM contract. Create
+      // fresh cached-node Ranges after removal, before automatic restoration.
+      const current = state.text.data;
+      state.ranges = [current.indexOf("und"), current.indexOf("und", current.length / 2),
+        current.lastIndexOf("und")].map(offset => {
+        const range = document.createRange(); range.setStart(state.text, offset);
+        range.setEnd(state.text, offset + 3); return range;
+      });
+      state.cross.setStart(state.text, current.indexOf("und"));
+      state.cross.setEnd(state.text, current.indexOf("und", current.indexOf("und") + 3) + 3);
+    `);
+    const deadline = Date.now() + 20_000;
+    let state;
+    const valid = () => state?.correct && state.identity && state.childNodes === 1 &&
+      state.cross === (restored ? "und Nutzer:innen und" : "und Nutzer und") &&
+      state.ranges.length === 3 && state.ranges.every(range => range.text === "und" && range.identity);
+    do {
+      state = await execute(read(restored));
+      if (valid()) break;
+      await sleep(50);
+    } while (Date.now() < deadline);
+    if (!valid()) throw new Error(`Großer Einzeltext/Range-Restore in ${browser} (restored=${restored}): ${JSON.stringify(state)}`);
+  }
+  console.log(`Nativer großer Einzeltext mit vier Ranges und Restore erfolgreich: ${browser}`);
+}
+
+const processIo = createSmokeProcessIo({
+  enabled: browser === "chromium" && process.platform === "linux" && process.env.GITHUB_ACTIONS === "true" && process.env.SMOKE_PROCESS_IO === "1",
+  outputDirectory: path.join(projectRoot, "artifacts/browser-smoke-navigation"),
+  unavailable: () => console.error("Process I/O diagnostic unavailable; original result is preserved.")
+});
+
 let fixtureServer;
 let sessionId;
 
@@ -435,24 +609,48 @@ try {
   const fixture = await startFixtureServer();
   fixtureServer = fixture.server;
 
-  const sessionResponse = await createSession();
+  await processIo.start(driverProcess.pid);
+  const sessionResponse = await processIo.measure("session", createSession);
   sessionId = sessionIdFrom(sessionResponse);
 
   if (browser === "firefox") {
     await installFirefoxExtension(sessionId);
   }
 
-  await webdriverRequest("POST", `/session/${sessionId}/url`, {
-    url: fixture.url
-  });
+  const navigationStartedAt = performance.now();
+  try {
+    await processIo.measure("navigation", () => webdriverRequest("POST", `/session/${sessionId}/url`, {url: fixture.url}));
+  } catch (error) {
+    if (fixture.navigationObserver) {
+      try {
+        const capabilities = sessionResponse.value?.capabilities ?? sessionResponse.capabilities;
+        await saveNavigationFailureDiagnostic({
+          debuggerAddress: capabilities?.["goog:chromeOptions"]?.debuggerAddress,
+          browserVersion: capabilities?.browserVersion,
+          pageLoadLimitMs: capabilities?.timeouts?.pageLoad,
+          observer: fixture.navigationObserver,
+          error,
+          navigationStartedAt,
+          outputDirectory: path.join(projectRoot, "artifacts/browser-smoke-navigation")
+        });
+      } catch {
+        console.error("Navigation diagnostic unavailable; original failure is preserved.");
+      }
+    }
+    throw error;
+  }
 
   const state = await waitForExpectedState(sessionId);
   await pruefeSpaeteShadowRoot(sessionId);
+  await pruefeSpaeteVerschachtelteShadowRoot(sessionId);
   await pruefeEreignislosenDesignModeWechsel(sessionId);
+  await pruefeGrosseInlineRanges(sessionId);
+  await pruefeGrossenEinzeltext(sessionId);
   console.log(
     `Echter Browser-Smoke-Test erfolgreich: ${browser} ${JSON.stringify(state)}`
   );
 } finally {
+  await processIo.close();
   if (sessionId) {
     try {
       await webdriverRequest("DELETE", `/session/${sessionId}`);

@@ -1,4 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
+import { contextSuffix } from "./context-suffix";
+import {participleSource, participleLeadingCandidate as leadingContextCandidate} from "./context-candidates";
 
 const locale = "de-DE";
 
@@ -18,36 +21,16 @@ const participleReplacements = new Map<string, string>([
   ["theatermachende", "theatermacher"]
 ]);
 
-const participleSource = [
-  "Mitarbeitende",
-  "Teilnehmende",
-  "Nutzende",
-  "Studierende",
-  "Forschende",
-  "Lehrende",
-  "Lesende",
-  "Zuhörende",
-  "Arbeitnehmende",
-  "Arbeitgebende",
-  "Dozierende",
-  "Fördergebende",
-  "Theatermachende"
-].join("|");
-
-const salutationPattern = new RegExp(
+const salutationPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])((?:sehr\s+geehrte|liebe)\s+)(${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`,
   "giu"
 );
-const standalonePattern = new RegExp(
+const standalonePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${participleSource})(\s+Personen)?(?![\p{L}\p{M}])`,
   "giu"
 );
-const leadingContextCandidate = new RegExp(
-  String.raw`^\s*(?:${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`,
-  "iu"
-);
 const leadingSalutationPattern = /(?:sehr\s+geehrte|liebe)\s*$/iu;
-const leadingTokenPattern = new RegExp(
+const leadingTokenPattern = lazyPattern(
   String.raw`^(\s*)(${participleSource})(?:\s+Personen)?`,
   "iu"
 );
@@ -59,6 +42,7 @@ const followingNounPattern = /^\s+[\p{Lu}][\p{Ll}\p{M}-]+/u;
 const extendedSingularPrefixPattern =
   /(?:^|\s)(?:eine|die|der|diese|dieser|jene|jener|welche|welcher|keine|meine|deine|seine|ihre|unsere|eure)\s+(?:[\p{L}\p{M}-]+\s+){1,6}$/iu;
 const singularRolePrefixPattern = /(?:^|\s)als\s*$/iu;
+const prefixTokenCharacter = /[\p{L}\p{M}-]/u;
 
 function applyTokenCase(source: string, replacement: string): string {
   const lowerSource = source.toLocaleLowerCase(locale);
@@ -91,7 +75,7 @@ function transformSalutations(input: string): TransformResult {
   let replacements = 0;
 
   const text = input.replace(
-    salutationPattern,
+    salutationPattern(),
     (match: string, salutation: string, participle: string, offset: number, source: string) => {
       // Anreden können auch attributive Adjektive einleiten.
       // Das folgende Substantiv bzw. Kleinschreibung schützt diese Fälle.
@@ -119,7 +103,7 @@ function transformStandaloneParticiples(input: string): TransformResult {
   let replacements = 0;
 
   const text = input.replace(
-    standalonePattern,
+    standalonePattern(),
     (
       match: string,
       participle: string,
@@ -132,7 +116,7 @@ function transformStandaloneParticiples(input: string): TransformResult {
         return match;
       }
 
-      const before = source.slice(0, offset);
+      const before = contextSuffix(source, offset, 7, prefixTokenCharacter);
       const after = source.slice(offset + match.length);
       const startsWithLowercase =
         participle === participle.toLocaleLowerCase(locale);
@@ -157,6 +141,7 @@ function transformStandaloneParticiples(input: string): TransformResult {
 }
 
 function transformParticiples(input: string): TransformResult {
+  if (!/ende/iu.test(input)) return {text: input, replacements: 0};
   const contextual = transformContextualParticiples(input);
   const salutations = transformSalutations(contextual.text);
   const standalone = transformStandaloneParticiples(salutations.text);
@@ -190,7 +175,7 @@ function transformWithLeadingContext(
     return transformParticiples(input);
   }
 
-  const match = leadingTokenPattern.exec(input);
+  const match = leadingTokenPattern().exec(input);
   const participle = match?.[2];
   if (!match || !participle) {
     return transformParticiples(input);
@@ -221,7 +206,7 @@ const participleStemSource = [...participleReplacements.keys()]
   .sort((left, right) => right.length - left.length)
   .join("|");
 
-const contextualParticiplePattern = new RegExp(
+const contextualParticiplePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])((?:(?:mit|bei|von|zu|aus|nach|seit)\s+den|die|den|der|dem|ein|eine|einen|einem|eines))(\s+)(${participleStemSource})(en|er|e)(?![\p{L}\p{M}-])`,
   "giu"
 );
@@ -231,7 +216,7 @@ const weakMasculineSingulars = new Set(["studierende", "dozierende"]);
 function transformContextualParticiples(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    contextualParticiplePattern,
+    contextualParticiplePattern(),
     (
       match: string,
       determiner: string,

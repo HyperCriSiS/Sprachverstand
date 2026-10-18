@@ -10,6 +10,8 @@ export interface Rule {
   readonly id: string;
   readonly risk: RuleRisk;
   readonly leadingContextCandidate?: RegExp;
+  // A context with a non-whitespace suffix cannot affect this rule.
+  readonly leadingContextRequiresTrailingWhitespace?: boolean;
   apply(input: string): TransformResult;
   applyWithLeadingContext?(
     input: string,

@@ -4,6 +4,21 @@ export interface ReplacementSummaryEntry {
   readonly count: number;
 }
 
+// The background/UI protocol has always retained at most this many entries.
+export const maximumReportedReplacementSummaries = 250;
+
+export function replacementSummaryKey(entry: ReplacementSummaryEntry): string {
+  return JSON.stringify([entry.original, entry.replacement]);
+}
+
+export function compareReplacementSummaries(
+  left: ReplacementSummaryEntry,
+  right: ReplacementSummaryEntry
+): number {
+  return right.count - left.count || left.original.localeCompare(right.original, "de") ||
+    left.replacement.localeCompare(right.replacement, "de");
+}
+
 const wordLikeCharacter = /[\p{L}\p{M}\p{N}’'_-]/u;
 const nonWhitespaceTokenPattern = /\S+/gu;
 const maximumTokenDiffCells = 160_000;
@@ -253,7 +268,7 @@ export function aggregateReplacementSummaries(
   const aggregated = new Map<string, ReplacementSummaryEntry>();
 
   for (const entry of entries) {
-    const key = `${entry.original}\u0000${entry.replacement}`;
+    const key = replacementSummaryKey(entry);
     const existing = aggregated.get(key);
     aggregated.set(key, {
       original: entry.original,
@@ -262,8 +277,38 @@ export function aggregateReplacementSummaries(
     });
   }
 
-  return [...aggregated.values()].sort(
-    (left, right) =>
-      right.count - left.count || left.original.localeCompare(right.original, "de")
-  );
+  return [...aggregated.values()].sort(compareReplacementSummaries);
+}
+
+// Select the report prefix without cloning/sorting the complete page index.
+// Keep the worst selected entry at the heap root; the public full summary
+// remains available when no limit is supplied.
+export function selectReplacementSummaries(
+  entries: Iterable<ReplacementSummaryEntry>, limit = Infinity
+): ReplacementSummaryEntry[] {
+  if (limit === Infinity) return [...entries].map(entry => ({...entry})).sort(compareReplacementSummaries);
+  if (!Number.isSafeInteger(limit) || limit < 0) throw new RangeError("Invalid summary limit");
+  if (limit === 0) return [];
+  const heap: ReplacementSummaryEntry[] = [];
+  for (const entry of entries) {
+    if (heap.length < limit) {
+      heap.push(entry);
+      let index = heap.length - 1;
+      while (index > 0) {
+        const parent = Math.floor((index - 1) / 2);
+        if (compareReplacementSummaries(heap[index]!, heap[parent]!) <= 0) break;
+        [heap[index], heap[parent]] = [heap[parent]!, heap[index]!]; index = parent;
+      }
+    } else if (compareReplacementSummaries(entry, heap[0]!) < 0) {
+      heap[0] = entry;
+      let index = 0;
+      while (index * 2 + 1 < heap.length) {
+        let worst = index * 2 + 1;
+        if (worst + 1 < heap.length && compareReplacementSummaries(heap[worst + 1]!, heap[worst]!) > 0) worst++;
+        if (compareReplacementSummaries(heap[index]!, heap[worst]!) >= 0) break;
+        [heap[index], heap[worst]] = [heap[worst]!, heap[index]!]; index = worst;
+      }
+    }
+  }
+  return heap.map(entry => ({...entry})).sort(compareReplacementSummaries);
 }

@@ -86,7 +86,7 @@ const stack = [];
 for (const name of [
   "handleMutationRecords", "flushRegularNodesBudgeted", "processTraversalStep",
   "processTextNode", "transformValue", "getReplacementSummary",
-  "takeNextReadyNode", "invalidateFollowingContext",
+  "takeNextReadyNode", "invalidateFollowingContext", "processFollowingContextStep",
   "invalidatePrecedingParticipleContext", "invalidateInlineProtectionAround",
   "queue", "scheduleFlush", "replaceTextKeepingRanges"
 ]) {
