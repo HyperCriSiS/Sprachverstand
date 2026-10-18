@@ -39,6 +39,13 @@ dokumentiert.
   `viele Angestellte`). Ohne eindeutigen Anker bleibt der Text unverändert.
 - Häufige Formen `Azubi:innen`, `Fan:innen` und `Flüchtling:innen` werden zu
   „Azubis“, „Fans“ und „Flüchtlinge“ umgewandelt.
+- Über Inline-Elemente getrennte Genderformen wie `Lehrer<em>:innen</em>`,
+  `<a>Lehrer</a>:innen` oder `Mitarbeiter<b>Innen</b>` werden erkannt. Geändert
+  wird nur der Markerteil; Elementstruktur und Wiederherstellung bleiben
+  erhalten. Formen mit Umlautwechsel bleiben bewusst unverändert.
+- Ein Dativauslöser in einem vorangehenden Inline-Element wird auch erkannt,
+  wenn das trennende Leerzeichen erst im folgenden Text steht
+  (`Mit <em>allen</em> Lehrer*innen` → „Lehrern“).
 - Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
   erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
   Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.

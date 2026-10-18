@@ -351,7 +351,46 @@ function applyRulesOutsideQuotes(
   return { text, replacements, summaries };
 }
 
+// A gender marker that continues a word from the preceding inline text,
+// e.g. `Lehrer<em>:innen</em>` or `Mitarbeiter<b>Innen</b>`.
+const splitMarkerStartPattern =
+  /^(?:[:*_·•/∕⁄／]-?innen(?![\p{L}\p{M}])|\(-?innen\)|Innen(?![\p{Ll}\p{M}]))/u;
+const contextStemPattern = /(?<![\p{L}\p{M}’'-])[\p{L}\p{M}]{2,}$/u;
+
+export function startsWithSplitGenderMarker(input: string): boolean {
+  return splitMarkerStartPattern.test(input);
+}
+
+// The whole word is transformed, but only this text's own part changes:
+// the result must keep the preceding stem unchanged, otherwise (e.g. an
+// umlaut change) the split word is left alone.
+function transformSplitWord(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult | undefined {
+  const leading = options.leadingContext;
+  if (!leading || !splitMarkerStartPattern.test(input)) return undefined;
+  const stem = contextStemPattern.exec(leading)?.[0];
+  if (!stem) return undefined;
+  const rest = leading.slice(0, -stem.length);
+  const {leadingContext: _leading, ...plainOptions} = options;
+  const combined = transformTextCoreUnsplit(stem + input, rules,
+    rest ? {...plainOptions, leadingContext: rest} : plainOptions);
+  if (combined.replacements === 0 || !combined.text.startsWith(stem)) return undefined;
+  return {...combined, text: combined.text.slice(stem.length)};
+}
+
 function transformTextCore(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult {
+  return transformSplitWord(input, rules, options) ??
+    transformTextCoreUnsplit(input, rules, options);
+}
+
+function transformTextCoreUnsplit(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions
