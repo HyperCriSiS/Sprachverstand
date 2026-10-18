@@ -280,18 +280,96 @@ function transformStandalone(input: string): TransformResult {
   return { text, replacements };
 }
 
+// Plural forms without the adjective's own -e, e.g. `Angestellt:innen`.
+// The declension follows the preceding word: weak "-en" after articles,
+// possessives, dative prepositions or -en adjectives; strong "-e" without a
+// determiner or after quantifiers. Coordinations without a clear anchor stay.
+const pluralStemAlternation = [...adjectiveBases]
+  .map((base) => base.slice(0, -1))
+  .sort((left, right) => right.length - left.length)
+  .join("|");
+const markedPluralPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])(${pluralStemAlternation})(${marker}innen|innen)(?![\p{L}\p{M}])`,
+  "giu"
+);
+const weakPluralTriggers = new Set([
+  "die", "der", "den", "alle", "allen", "beide", "beiden", "diese", "diesen",
+  "jene", "jenen", "welche", "welchen", "solche", "solchen", "keine", "keinen",
+  "meine", "meinen", "deine", "deinen", "seine", "seinen", "ihre", "ihren",
+  "unsere", "unseren", "eure", "euren", "sämtliche", "sämtlichen",
+  "mit", "bei", "von", "zu", "zum", "zur", "aus", "nach", "seit", "gegenüber"
+]);
+const strongPluralTriggers = new Set([
+  "viele", "einige", "mehrere", "wenige", "zahlreiche", "etliche", "manche",
+  "andere", "weitere", "liebe", "zwei", "drei", "vier", "fünf", "für", "an", "über"
+]);
+const coordinationWords = new Set(["und", "oder", "sowie"]);
+
+function pluralEnding(input: string, index: number): "en" | "e" | undefined {
+  const words = (input.slice(Math.max(0, index - 120), index)
+    .match(/[\p{L}\p{M}\d:*_\/·•’‘-]+[.!?]?|[,;()]/gu) ?? []);
+  let position = words.length - 1;
+  if (position >= 0 && coordinationWords.has(words[position]!.toLocaleLowerCase(locale))) {
+    // `die Kolleg:innen und Angestellt:innen`: follow the first conjunct.
+    position -= 2;
+    if (position < -1) return undefined;
+  }
+  // Attributive -e adjectives (`viele neue …`) inherit the decision before them.
+  while (position >= 0 && /^\p{Ll}+e$/u.test(words[position]!) &&
+      !weakPluralTriggers.has(words[position]!) && !strongPluralTriggers.has(words[position]!)) {
+    position -= 1;
+  }
+  if (position < 0) return "e";
+  const previous = words[position]!;
+  const lower = previous.toLocaleLowerCase(locale);
+  if (/^[,;(]$/u.test(previous)) return undefined;
+  if (/[.!?]$/u.test(previous)) return "e";
+  if (weakPluralTriggers.has(lower)) return "en";
+  if (strongPluralTriggers.has(lower) || /^\d+$/u.test(lower)) return "e";
+  if (/^\p{Ll}+en$/u.test(previous)) {
+    // Only an -en adjective after a weak determiner (`die neuen …`); a verb
+    // such as `suchen` gives no declension information.
+    while (position >= 0 && /^\p{Ll}+en$/u.test(words[position]!) &&
+        !weakPluralTriggers.has(words[position]!)) position -= 1;
+    return position >= 0 && weakPluralTriggers.has(words[position]!.toLocaleLowerCase(locale))
+      ? "en" : undefined;
+  }
+  // Sentence start or capitalized heading word: no determiner in reach.
+  return previous[0] !== lower[0] ? "e" : undefined;
+}
+
+function transformMarkedPlurals(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    markedPluralPattern(),
+    (match: string, stem: string, suffix: string, offset: number, fullInput: string) => {
+      // Binnen-I needs the capital I; plain `-innen` words are not markers.
+      if (suffix.startsWith("i") || suffix.startsWith("I") && suffix !== "Innen") return match;
+      const ending = pluralEnding(fullInput, offset);
+      if (!ending) return match;
+      replacements += 1;
+      return applyTokenCase(stem, stem.toLocaleLowerCase(locale) + ending);
+    }
+  );
+  return { text, replacements };
+}
+
 export const substantivizedAdjectivesRule: Rule = {
   id: "adjective.substantivized-markers",
   risk: "safe",
 
   apply(input) {
-    // Both patterns require a marked adjective ending, never plain prose.
-    if (!/[:*_\/·•.’‘][rnms]/iu.test(input)) return {text: input, replacements: 0};
-    const phraseResult = transformPhrases(input);
-    const standaloneResult = transformStandalone(phraseResult.text);
+    // All patterns require a marked adjective ending, never plain prose.
+    const singular = /[:*_\/·•.’‘][rnms]/iu.test(input);
+    const plural = /innen/iu.test(input);
+    if (!singular && !plural) return {text: input, replacements: 0};
+    const phraseResult = singular ? transformPhrases(input) : {text: input, replacements: 0};
+    const standaloneResult = singular ? transformStandalone(phraseResult.text) : phraseResult;
+    const pluralResult = plural ? transformMarkedPlurals(standaloneResult.text) : {text: standaloneResult.text, replacements: 0};
     return {
-      text: standaloneResult.text,
-      replacements: phraseResult.replacements + standaloneResult.replacements
+      text: pluralResult.text,
+      replacements: phraseResult.replacements +
+        (singular ? standaloneResult.replacements : 0) + pluralResult.replacements
     };
   }
 };

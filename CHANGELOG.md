@@ -33,6 +33,12 @@ dokumentiert.
 
 ### Behoben
 
+- Substantivierte Adjektive und Partizipien im markierten Plural ohne
+  eigenes -e (`Angestellt:innen`, `Vorgesetzt*innen`, `BeschäftigtInnen`) werden
+  mit der zum Begleitwort passenden Endung umgewandelt (`die Angestellten`,
+  `viele Angestellte`). Ohne eindeutigen Anker bleibt der Text unverändert.
+- Häufige Formen `Azubi:innen`, `Fan:innen` und `Flüchtling:innen` werden zu
+  „Azubis“, „Fans“ und „Flüchtlinge“ umgewandelt.
 - Über Inline-Elemente getrennte Genderformen wie `Lehrer<em>:innen</em>`,
   `<a>Lehrer</a>:innen` oder `Mitarbeiter<b>Innen</b>` werden erkannt. Geändert
   wird nur der Markerteil; Elementstruktur und Wiederherstellung bleiben
