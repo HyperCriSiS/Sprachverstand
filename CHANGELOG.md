@@ -33,6 +33,17 @@ dokumentiert.
 
 ### Behoben
 
+- Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
+  erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
+  Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
+- Die exakt geprüften Berufsbezeichnungen Marketer und Fertigungsmodelleur
+  werden mit passendem Plural, Singularpaar und Kasus erkannt.
+- 190 exakt geprüfte Berufsbezeichnungen unterstützen zusätzlich zu ihren
+  bisherigen markierten Pluralformen auch ausgeschriebene Singularpaare und
+  die passende Kasusflexion. Kürzel und bestehende Schreibweisen bleiben erhalten.
+- 13 exakt geprüfte Berufsbezeichnungen mit abweichenden Singular- und
+  Femininumstämmen werden als Paarformen und in markierten Schreibweisen
+  mit passender Flexion erkannt, etwa Audiologe/Audiologin und Matrose/Matrosin.
 - Nach einem Update oder Deaktivieren der Erweiterung beendet ein in Chromium
   verbliebenes Content-Script seine Arbeit, statt Anfragen an den nicht mehr
   vorhandenen Hintergrund jede Sekunde zu wiederholen.
