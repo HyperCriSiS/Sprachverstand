@@ -1,4 +1,6 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
+import { contextSuffix } from "./context-suffix";
 import type { GrammaticalCase } from "./person-lexicon";
 
 interface DeterminerForm {
@@ -81,7 +83,7 @@ const adjectiveAlternation = [...adjectiveBases]
   .sort((left, right) => right.length - left.length)
   .join("|");
 const marker = String.raw`[:*_\/·•.’‘]`;
-const standalonePattern = new RegExp(
+const standalonePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${adjectiveAlternation})(${marker})([rnm])(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -163,7 +165,7 @@ const determinerAlternation = [...determinerForms.keys()]
   .sort((left, right) => right.length - left.length)
   .map((value) => value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"))
   .join("|");
-const phrasePattern = new RegExp(
+const phrasePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerAlternation})(\s+)(${adjectiveAlternation})(${marker})([rnms])(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -207,7 +209,7 @@ function adjectiveForm(
 function transformPhrases(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    phrasePattern,
+    phrasePattern(),
     (
       match: string,
       determiner: string,
@@ -235,7 +237,7 @@ function transformPhrases(input: string): TransformResult {
 }
 
 function hasMarkedDeterminer(input: string, index: number): boolean {
-  const prefix = input.slice(0, index);
+  const prefix = contextSuffix(input, index, 1);
   const match = /([\p{L}\p{M}:*_\/·•.’‘-]+)\s+$/u.exec(prefix);
   return Boolean(match?.[1] && determinerForms.has(match[1].toLocaleLowerCase(locale)));
 }
@@ -243,7 +245,7 @@ function hasMarkedDeterminer(input: string, index: number): boolean {
 function transformStandalone(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    standalonePattern,
+    standalonePattern(),
     (
       match: string,
       base: string,
@@ -283,6 +285,8 @@ export const substantivizedAdjectivesRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    // Both patterns require a marked adjective ending, never plain prose.
+    if (!/[:*_\/·•.’‘][rnms]/iu.test(input)) return {text: input, replacements: 0};
     const phraseResult = transformPhrases(input);
     const standaloneResult = transformStandalone(phraseResult.text);
     return {

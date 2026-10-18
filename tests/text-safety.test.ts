@@ -25,6 +25,29 @@ describe("isProbablyTechnicalText", () => {
       isProbablyTechnicalText("Die Nutzer:innen lesen diesen Absatz.")
     ).toBe(false);
   });
+
+  it.each([
+    ["FTP://host", true],
+    ["DATA://payload", true],
+    ["WWW.example", true],
+    ["https://", false],
+    ["WWW.", false],
+    ["G".repeat(47), false],
+    ["G".repeat(48), true],
+    ["G".repeat(48) + "=", true],
+    ["G".repeat(48) + "==", true],
+    ["0".repeat(31), false],
+    ["0".repeat(32), true],
+    ["0x" + "0".repeat(31), false],
+    ["0x" + "0".repeat(32), true],
+    ["*".repeat(9) + "A".repeat(15), true],
+    ["*".repeat(8) + "A".repeat(16), false],
+    ['{"name": 1}', true],
+    ['[ { Prosa } ]', true],
+    ["Nutzer:innen 4 / 12", false]
+  ])("bewahrt technische Schutzgrenzen für %s", (input, expected) => {
+    expect(isProbablyTechnicalText(input)).toBe(expected);
+  });
 });
 
 describe("shouldProcessTextNode", () => {

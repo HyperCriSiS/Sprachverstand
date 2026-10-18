@@ -9,7 +9,7 @@ describe("Gezielte DOM-Last-CPU-Diagnose", () => {
     for (const name of [
       "handleMutationRecords", "flushRegularNodesBudgeted",
       "processTextNode", "transformValue", "getReplacementSummary",
-      "takeNextReadyNode", "invalidateFollowingContext",
+      "takeNextReadyNode", "invalidateFollowingContext", "processFollowingContextStep",
       "replaceTextKeepingRanges"
     ]) {
       expect(script).toContain('"' + name + '"');

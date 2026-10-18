@@ -16,6 +16,34 @@ dokumentiert.
 - Schnell wechselnde Untertitel werden pro Bild auf den zuletzt sichtbaren
   Textstand reduziert. Identische Zeilen verwenden einen begrenzten Cache;
   der normale Webseitenpfad bleibt unverändert.
+- Regeln und Lexikon laufen nicht mehr im Seitenprozess, sondern lokal im
+  Erweiterungshintergrund (ohne externe API oder neue Berechtigung). Das
+  Content-Script schrumpft von rund 340 auf rund 97 KB. Schnelle
+  Kandidatenprüfungen überspringen neutrale Texte; die Regelverarbeitung ist
+  auf neutralem Text rund zehnmal, auf gegendertem Text rund doppelt so schnell
+  bei identischen Ergebnissen.
+- DOM-Arbeit läuft in kurzen, zeitbegrenzten Scheiben mit Hintergrundpriorität.
+  Große Einfüge-, Entfernungs- und Wiederherstellungsvorgänge sowie lange
+  Kontexte werden kooperativ abgearbeitet; Untertitel haben Vorrang.
+  Warteschlangen führen ihren Lesezeiger fort, statt gelöschte Einträge
+  wiederholt zu durchlaufen.
+- Einstellungen, die die Textverarbeitung nicht betreffen, starten die
+  DOM-Verarbeitung nicht mehr neu; die Optionsseite wartet nicht mehr auf den
+  Live-Zähler.
+
+### Behoben
+
+- Nach einem Update oder Deaktivieren der Erweiterung beendet ein in Chromium
+  verbliebenes Content-Script seine Arbeit, statt Anfragen an den nicht mehr
+  vorhandenen Hintergrund jede Sekunde zu wiederholen.
+- Spät angehängte offene ShadowRoots innerhalb bekannter ShadowRoots werden
+  erkannt.
+
+### Tests
+
+- Die Chromium-Videoprüfung vergleicht drei Paare in wechselnder Reihenfolge
+  über den Median. Verworfene Frames zählen wie die übrigen Kennzahlen erst
+  nach der Startphase; funktionale Prüfungen gelten weiterhin für jedes Paar.
 
 ## 0.6.6 (2026-08-02)
 

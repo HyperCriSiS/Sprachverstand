@@ -9,6 +9,34 @@ dass sie unterschiedliche Risiken der DOM-Verarbeitung abdecken. Live-Webseiten
 Integrations- und Lasttests gedacht und sollen normale Pull-Request-Tests nicht
 blockieren.
 
+## Separat ausgewiesene Browserquelle (12.10.2026)
+
+Der manuelle Workflow verwendet standardmäßig das bisherige System-Chromium.
+Optional ist `browser_source=chrome-for-testing` wählbar: Browser und passender
+Driver werden in Version 155.0.8059.39 aus den offiziellen Google-Artefakten
+in das temporäre Linux-Runnerverzeichnis geladen. Dies ist die am 12.10.2026
+verifizierte [offizielle Stable-Version](https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json).
+[Chrome for Testing](https://developer.chrome.com/docs/automation-and-testing/chrome-for-testing)
+ist für Automation vorgesehen und unterstützt weiterhin das Laden der
+entpackten Test-Erweiterung gemäß der
+[Chromium-Ankündigung](https://groups.google.com/a/chromium.org/g/chromium-extensions/c/1-g8EFx2BBY/m/S0ET5wPjCAAJ).
+Die Binärdateien werden nicht mit der Erweiterung
+gebündelt oder als Projektartefakte veröffentlicht. Browserquelle und tatsächlich
+gemessene Version werden im Report getrennt ausgewiesen; Ergebnisse verschiedener
+Browserbuilds sind keine unmittelbaren Vorher-/Nachher-Werte eines Produktfixes.
+
+Die zusätzlichen Mediendiagnosen enthalten nur Bereitschaft, Netzwerkstatus,
+Fehlercode, Codecunterstützung, Sichtbarkeit und Fokus. Quellen-URLs oder
+Caption-Texte werden dafür nicht gespeichert. In der bisherigen Linux-CI
+liefert die Caption-Demo Fehlercode 4, `readyState=0`, `networkState=3` und
+keine H.264-Unterstützung, während VP8 unterstützt wird. Der getrennte CfT-Lauf
+soll diese konkrete Messlücke prüfen; keine positive Wiedergabe wird vorab
+unterstellt.
+Bei aktiver Caption-Prüfung auf VideoJS oder YouTube beträgt die Beobachtung
+mindestens 15 Sekunden, damit längere WebVTT-Cues tatsächlich wechseln können.
+Andere Seiten behalten die angeforderte Dauer. Die tatsächlich verwendete
+Dauer steht im einzelnen Lauf und in dessen Phasenmessung.
+
 ## Textknoten-Klassifizierung (09.10.2026)
 
 Zusätzlich zum historischen `document.body.innerText`-Zähler prüft die
@@ -142,14 +170,16 @@ absoluten Videowerte sind ausdrücklich keine CI-Grenzwerte.
 | 8 | `https://github.com/HyperCriSiS/Sprachverstand` | normale Texte direkt neben Code, dynamische GitHub-Oberfläche | normaler README-Text darf korrigiert werden; `code` und `pre` müssen bytegenau unverändert bleiben; Navigations- und Aktionsschaltflächen weiter funktionsfähig | hoch |
 | 9 | `https://en.wikipedia.org/wiki/List_of_Nvidia_graphics_processing_units` | extrem lange Seite, sehr große Tabellen, sehr viele DOM-Knoten, kaum sinnvolle Ersetzungen | Seite muss schnell sichtbar und bedienbar bleiben; kein langer Freeze durch Sprachverstand; Tabelleninhalt darf nicht beschädigt werden; Ersetzungszahl sollte sehr niedrig sein | hoch |
 | 10 | `https://taz.de/Moeglicher-AfD-Sieg-in-Sachsen-Anhalt/!6202713/` | redaktioneller Text mit Soft-Hyphens (`U+00AD`) innerhalb gegenderter Wörter | Formen wie `Künst\u00ADle\u00ADr:in\u00ADnen` trotz unsichtbarer Trennzeichen erkennen; unveränderte Wörter mit Soft-Hyphens bytegenau erhalten; keine typografischen Nebenwirkungen im restlichen Artikel | hoch |
-| 11 | `https://videojs.org/` | offizielle Video.js-10-Webseite mit Player-Demo, dynamischer Steuerung und aktueller Player-UI | reale Wiedergabe mit Frame-Callbacks und messbarem Fortschritt nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls, geschützte DOM-Felder und Spielerinteraktionen gegenüber Baseline vergleichen; Textspuren nur bei tatsächlicher Verfügbarkeit zählen | mittel (externe Medien-CDN) |
+| 11 | `https://videojs.org/docs/framework/html/guides/captions` | offizielle Video.js-10-Caption-Demo mit realer WebVTT-Spur und Player-Steuerung | reale Wiedergabe und Caption-Wechsel nachweisen; Hauptthread-Long-Tasks, Frame-Lücken, Stalls und geschützte DOM-Felder gegenüber Baseline vergleichen | mittel (externe Medien-CDN) |
 | 12 | `https://www.youtube.com/watch?v=aqz-KE-bpKQ` | lange Videowiedergabe auf einer mutationsreichen SPA; Big Buck Bunny als stabiler öffentlicher Videoinhalt | Wiedergabe stumm anstoßen und Video-/Long-Task-Metriken gegen die Baseline vergleichen; ein Consent-, Werbe- oder Bot-Blocker wird nur diagnostisch protokolliert | niedrig bis mittel |
 
 ### Externer Player-Stack (10.10.2026)
 
-Die offizielle Video.js-10-Webseite
-`https://videojs.org/` enthält eine HTML5-Player-Demo mit
-Steuerelementen und dynamischer Bedienoberfläche. Dieser Test bietet eine
+Die offizielle Video.js-10-Caption-Demo
+`https://videojs.org/docs/framework/html/guides/captions` enthält einen Player
+mit echter WebVTT-Spur und Untertitelschalter. Die Startseite zeigte in der
+nativen Prüfung nur ein Hintergrundvideo ohne aktive Caption-Spur und wurde
+deshalb als Quelle ersetzt. Dieser Test bietet eine
 andere Player-Implementierung als YouTube, das als eigener Fall erhalten bleibt.
 Er prüft nicht nur die Erreichbarkeit der Seite, sondern einen tatsächlichen
 Wiedergabefortschritt und Frame-Callbacks. Snapshotdaten enthalten zudem
@@ -157,11 +187,33 @@ vorhandene und aktivierte Textspuren, ohne solche Spuren zu unterstellen.
 Externes Video kann durch Netzwerk, Codec oder CDN ausfallen; der Lauf gilt
 dann **nicht** als bestandener Videotest.
 
+Mit `--active-subtitles` wird die Erweiterungsoption in frischen Testprofilen
+über die echte Optionsseite gespeichert. Beide Modi durchlaufen einen
+Tabwechsel vor der Beobachtung, damit die Video-Sichtbarkeit vergleichbar
+bleibt. `subtitleSettingsMs` erfasst diese Vorbereitung getrennt.
+Caption-Wechsel bei tatsächlich laufendem Video sind zusätzlich erforderlich;
+der gespeicherte Schalter allein gilt nicht als Nachweis. Bei YouTube werden
+optionale Cookies im temporären Profil abgelehnt und `consentMs` getrennt
+erfasst. Nicht verfügbare Untertitel bleiben ausdrücklich ungemessen.
+
 Zusätzliche harte Videolast- und DOM-Untertitelregressionen bleiben in der
 deterministischen lokalen Chromium-Fixture; dort hängen Ergebnisse nicht von
 externen Videodiensten ab. Ein einzelner Live-A/B-Lauf ist **keine**
 Freigabebestätigung für ungestörte 60-FPS-Videos und für native WebVTT-Cues
 (Issue #419).
+
+Die optionale lokale Probe
+`node scripts/video-playback-regression.mjs --fps 60 --subtitle-only --diagnose-cue-phases --subtitle-dom-load`
+misst außerdem 30 Sekunden lang natürliche DOM-Cue-Wechsel aus laufendem Video
+bei 48 Textänderungen alle 50 ms auf 480 normalen Knoten. Sie speichert alle
+Cue-Zeitstempel, Frame-Metadaten, Drops und verfügbare Long Tasks unter
+`artifacts/video-playback/subtitle-dom-load-<browser>-<fps>.json`.
+Alle Cues und normalen Endtexte müssen vollständig korrigiert werden; die
+Performancewerte sind Diagnosewerte und keine zusätzliche Freigabegrenze.
+Der Standardtest bleibt unverändert, der manuelle 60-FPS-Workflow führt die
+Probe getrennt aus. Firefox/Waterfox können mit `--browser firefox` und ihren
+jeweiligen Browser-/Driverpfaden separat geprüft werden. Native WebVTT-Cues
+sind damit nicht als transformiert nachgewiesen.
 
 ## Automatisierbare Aussagen
 

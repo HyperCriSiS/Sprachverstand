@@ -62,8 +62,8 @@
   {
     "id": 11,
     "slug": "videojs-player-demo",
-    "url": "https://videojs.org/",
-    "focus": "Offizielle Video.js-10-Player-Demo: Video, dynamische Steuerelemente, geschützte UI-Bereiche und Frame-Regression"
+    "url": "https://videojs.org/docs/framework/html/guides/captions",
+    "focus": "Offizielle Video.js-10-Caption-Demo mit realer WebVTT-Spur, Player-Steuerung und Frame-Regression"
   },
   {
     "id": 12,

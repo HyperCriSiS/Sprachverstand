@@ -21,6 +21,30 @@ on:
         options: ["on", "off"]
         default: "on"
         required: true
+      browser_trace:
+        description: "Zusätzliche Chromium-Render-/Compilertrace (verändert Laufzeiten)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
+      allocation_profile:
+        description: "Zusätzliches Allokationssampling inklusive gesammelter Objekte"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
+        required: true
+      browser_source:
+        description: "System-Chromium oder separat gepinntes Chrome for Testing"
+        type: choice
+        options: ["system-chromium", "chrome-for-testing"]
+        default: "system-chromium"
+        required: true
+      wait_strategy:
+        description: "Wiederholte WebDriver-Abfragen oder einmaliger asynchroner Abschluss"
+        type: choice
+        options: ["poll", "async"]
+        default: "poll"
+        required: true
 
 permissions:
   contents: read
@@ -30,6 +54,8 @@ jobs:
     name: 60-FPS-Videoframe und V8-Samples korrelieren
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      SPRACHVERSTAND_TEST_BROWSER_SOURCE: ${{ inputs.browser_source || 'system-chromium' }}
     steps:
       - name: Repository auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -41,6 +67,9 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Abhängigkeiten installieren
         run: npm ci --prefer-offline --no-audit --no-fund
+      - name: Gepinntes Chrome for Testing separat vorbereiten
+        if: ${{ inputs.browser_source == 'chrome-for-testing' }}
+        run: bash scripts/setup-chrome-for-testing.sh
       - name: Videoencoder installieren
         run: |
           sudo apt-get update -qq
@@ -54,7 +83,14 @@ jobs:
           PAIRS: ${{ inputs.pairs }}
           MUTATION_MODE: ${{ inputs.mutation_mode }}
           CPU_PROFILE: ${{ inputs.cpu_profile }}
-        run: node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE" --cpu-profile "$CPU_PROFILE"
+          BROWSER_TRACE: ${{ inputs.browser_trace }}
+          ALLOCATION_PROFILE: ${{ inputs.allocation_profile }}
+          WAIT_STRATEGY: ${{ inputs.wait_strategy }}
+        run: |
+          trace_args=()
+          if [ "$BROWSER_TRACE" = "on" ]; then trace_args+=(--browser-trace); fi
+          if [ "$ALLOCATION_PROFILE" = "on" ]; then trace_args+=(--allocation-profile); fi
+          node scripts/video-frame-cpu-correlation.mjs --pairs "$PAIRS" --mutation-mode "$MUTATION_MODE" --cpu-profile "$CPU_PROFILE" --wait-strategy "$WAIT_STRATEGY" "${trace_args[@]}"
       - name: Profile und Messbericht archivieren
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
