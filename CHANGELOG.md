@@ -16,6 +16,67 @@ dokumentiert.
 - Schnell wechselnde Untertitel werden pro Bild auf den zuletzt sichtbaren
   Textstand reduziert. Identische Zeilen verwenden einen begrenzten Cache;
   der normale Webseitenpfad bleibt unverändert.
+- Regeln und Lexikon laufen nicht mehr im Seitenprozess, sondern lokal im
+  Erweiterungshintergrund (ohne externe API oder neue Berechtigung). Das
+  Content-Script schrumpft von rund 340 auf rund 97 KB. Schnelle
+  Kandidatenprüfungen überspringen neutrale Texte; die Regelverarbeitung ist
+  auf neutralem Text rund zehnmal, auf gegendertem Text rund doppelt so schnell
+  bei identischen Ergebnissen.
+- DOM-Arbeit läuft in kurzen, zeitbegrenzten Scheiben mit Hintergrundpriorität.
+  Große Einfüge-, Entfernungs- und Wiederherstellungsvorgänge sowie lange
+  Kontexte werden kooperativ abgearbeitet; Untertitel haben Vorrang.
+  Warteschlangen führen ihren Lesezeiger fort, statt gelöschte Einträge
+  wiederholt zu durchlaufen.
+- Einstellungen, die die Textverarbeitung nicht betreffen, starten die
+  DOM-Verarbeitung nicht mehr neu; die Optionsseite wartet nicht mehr auf den
+  Live-Zähler.
+
+### Behoben
+
+- „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
+  Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
+  Genitivform. Unbekannte Nomen bleiben unverändert.
+- Dreigeteilte Formen wie `Lehrer<span>*</span>innen` und
+  `Lehrer*<b>innen</b>` werden erkannt; der getrennte Marker wird nur entfernt,
+  wenn er ungeschützt und unverändert ist, und mit wiederhergestellt.
+- Substantivierte Adjektive und Partizipien im markierten Plural ohne
+  eigenes -e (`Angestellt:innen`, `Vorgesetzt*innen`, `BeschäftigtInnen`) werden
+  mit der zum Begleitwort passenden Endung umgewandelt (`die Angestellten`,
+  `viele Angestellte`). Ohne eindeutigen Anker bleibt der Text unverändert.
+- Häufige Formen `Azubi:innen`, `Fan:innen` und `Flüchtling:innen` werden zu
+  „Azubis“, „Fans“ und „Flüchtlinge“ umgewandelt.
+- Über Inline-Elemente getrennte Genderformen wie `Lehrer<em>:innen</em>`,
+  `<a>Lehrer</a>:innen` oder `Mitarbeiter<b>Innen</b>` werden erkannt. Geändert
+  wird nur der Markerteil; Elementstruktur und Wiederherstellung bleiben
+  erhalten. Formen mit Umlautwechsel bleiben bewusst unverändert.
+- Ein Dativauslöser in einem vorangehenden Inline-Element wird auch erkannt,
+  wenn das trennende Leerzeichen erst im folgenden Text steht
+  (`Mit <em>allen</em> Lehrer*innen` → „Lehrern“).
+- Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
+  erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
+  Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
+- Die exakt geprüften Berufsbezeichnungen Marketer und Fertigungsmodelleur
+  werden mit passendem Plural, Singularpaar und Kasus erkannt.
+- 190 exakt geprüfte Berufsbezeichnungen unterstützen zusätzlich zu ihren
+  bisherigen markierten Pluralformen auch ausgeschriebene Singularpaare und
+  die passende Kasusflexion. Kürzel und bestehende Schreibweisen bleiben erhalten.
+- 13 exakt geprüfte Berufsbezeichnungen mit abweichenden Singular- und
+  Femininumstämmen werden als Paarformen und in markierten Schreibweisen
+  mit passender Flexion erkannt, etwa Audiologe/Audiologin und Matrose/Matrosin.
+- Nach einem Update oder Deaktivieren der Erweiterung beendet ein in Chromium
+  verbliebenes Content-Script seine Arbeit, statt Anfragen an den nicht mehr
+  vorhandenen Hintergrund jede Sekunde zu wiederholen.
+- Spät angehängte offene ShadowRoots innerhalb bekannter ShadowRoots werden
+  erkannt.
+
+### Tests
+
+- Der Reale-Seiten-Test sammelt nach der Verarbeitung noch sichtbare
+  Markerwörter als mögliche Abdeckungslücken und akzeptiert mit
+  `--sites-config` eine eigene Seitenliste.
+- Die Chromium-Videoprüfung vergleicht drei Paare in wechselnder Reihenfolge
+  über den Median. Verworfene Frames zählen wie die übrigen Kennzahlen erst
+  nach der Startphase; funktionale Prüfungen gelten weiterhin für jedes Paar.
 
 ## 0.6.6 (2026-08-02)
 

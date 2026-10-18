@@ -10,7 +10,7 @@ import {
   type ReplacementSummaryEntry
 } from "./replacement-summary";
 
-interface DetailedTransformResult extends TransformResult {
+export interface DetailedTransformResult extends TransformResult {
   readonly summaries: readonly ReplacementSummaryEntry[];
 }
 
@@ -21,10 +21,12 @@ export interface TransformOptions {
   readonly customReplacements?: readonly CustomReplacement[];
   readonly processQuotedText?: boolean;
   readonly leadingContext?: string;
+  readonly protectedRanges?: readonly {readonly start: number; readonly end: number}[];
 }
 
 const protectedPatternSourceCache = new Map<string, string>();
 const customPatternSourceCache = new Map<string, string>();
+const maximumPatternSourceCacheEntries = 128;
 
 function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
@@ -43,13 +45,17 @@ function createLiteralPattern(
     return undefined;
   }
 
-  const cacheKey = normalizedValues.join("\u0000");
+  const cacheKey = JSON.stringify(normalizedValues);
   let source = cache.get(cacheKey);
 
   if (!source) {
     source = String.raw`(?<![\p{L}\p{M}\p{N}])(?:${normalizedValues
       .map(escapeRegularExpression)
       .join("|")})(?![\p{L}\p{M}\p{N}])`;
+    if (cache.size >= maximumPatternSourceCacheEntries) {
+      const oldestKey = cache.keys().next().value;
+      if (oldestKey !== undefined) cache.delete(oldestKey);
+    }
     cache.set(cacheKey, source);
   }
 
@@ -140,9 +146,7 @@ function applyBuiltInRules(
     summaries.push(...before.summaries);
 
     const normalizedToken = originalToken.replaceAll("\u00ad", "");
-    const tokenContext = `${leadingContext ?? ""}${input.slice(0, index)}`
-      .replaceAll("\u00ad", "")
-      .slice(-120);
+    const tokenContext = softHyphenContextSuffix(input, index, leadingContext);
     const result = applyBuiltInRulesPlain(
       normalizedToken,
       rules,
@@ -166,6 +170,24 @@ function applyBuiltInRules(
   replacements += after.replacements;
   summaries.push(...after.summaries);
   return { text, replacements, summaries };
+}
+
+function softHyphenContextSuffix(
+  input: string,
+  end: number,
+  leadingContext?: string
+): string {
+  // Only 120 non-soft-hyphen UTF-16 units can affect the next token.
+  // Removing soft hyphens from the entire prefix per token was quadratic.
+  let cursor = end;
+  let length = 0;
+  while (cursor > 0 && length < 120) {
+    cursor -= 1;
+    if (input[cursor] !== "\u00ad") length += 1;
+  }
+  const suffix = input.slice(cursor, end).replaceAll("\u00ad", "");
+  return length === 120 ? suffix :
+    ((leadingContext ?? "").replaceAll("\u00ad", "") + suffix).slice(-120);
 }
 
 function applyRulesAndCustomReplacements(
@@ -286,16 +308,18 @@ function applyRulesOutsideQuotes(
   let text = "";
   let replacements = 0;
   const summaries: ReplacementSummaryEntry[] = [];
+  const missingClosings = new Set<string>();
 
   for (let index = 0; index < input.length; index += 1) {
     const opening = input[index];
     const closing = opening ? pairedQuotes.get(opening) : undefined;
-    if (!closing) {
+    if (!closing || missingClosings.has(closing)) {
       continue;
     }
 
     const closingIndex = input.indexOf(closing, index + 1);
     if (closingIndex < 0) {
+      missingClosings.add(closing);
       continue;
     }
 
@@ -327,7 +351,62 @@ function applyRulesOutsideQuotes(
   return { text, replacements, summaries };
 }
 
+// A gender marker that continues a word from the preceding inline text,
+// e.g. `Lehrer<em>:innen</em>` or `Mitarbeiter<b>Innen</b>`.
+const splitMarkerStartPattern =
+  /^(?:[:*_·•/∕⁄／]-?innen(?![\p{L}\p{M}])|\(-?innen\)|Innen(?![\p{Ll}\p{M}]))/u;
+// `Lehrer*<b>innen</b>` / `Lehrer<span>*</span>innen`: the marker ends the
+// preceding text. The DOM removes that marker together with this result.
+const splitSuffixStartPattern = /^innen(?![\p{L}\p{M}])/u;
+const contextStemPattern = /(?<![\p{L}\p{M}’'-])[\p{L}\p{M}]{2,}$/u;
+const contextStemMarkerPattern = /(?<![\p{L}\p{M}’'-])([\p{L}\p{M}]{2,})([:*_·•/∕⁄／]-?)$/u;
+
+export function startsWithSplitGenderMarker(input: string): boolean {
+  return splitMarkerStartPattern.test(input) || splitSuffixStartPattern.test(input);
+}
+
+export function startsWithSplitGenderSuffix(input: string): boolean {
+  return splitSuffixStartPattern.test(input);
+}
+
+// The whole word is transformed, but only this text's own part changes:
+// the result must keep the preceding stem unchanged, otherwise (e.g. an
+// umlaut change) the split word is left alone.
+function transformSplitWord(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult | undefined {
+  const leading = options.leadingContext;
+  if (!leading) return undefined;
+  let stem: string | undefined;
+  let marker = "";
+  if (splitMarkerStartPattern.test(input)) {
+    stem = contextStemPattern.exec(leading)?.[0];
+  } else if (splitSuffixStartPattern.test(input)) {
+    const match = contextStemMarkerPattern.exec(leading);
+    if (match) [, stem, marker] = match as unknown as [string, string, string];
+  }
+  if (!stem) return undefined;
+  const rest = leading.slice(0, -(stem.length + marker.length));
+  const {leadingContext: _leading, ...plainOptions} = options;
+  const combined = transformTextCoreUnsplit(stem + marker + input, rules,
+    rest ? {...plainOptions, leadingContext: rest} : plainOptions);
+  if (combined.replacements === 0 || !combined.text.startsWith(stem) ||
+      (marker && combined.text.startsWith(stem + marker))) return undefined;
+  return {...combined, text: combined.text.slice(stem.length)};
+}
+
 function transformTextCore(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult {
+  return transformSplitWord(input, rules, options) ??
+    transformTextCoreUnsplit(input, rules, options);
+}
+
+function transformTextCoreUnsplit(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions
@@ -358,6 +437,28 @@ export function transformTextWithSummary(
   rules: readonly Rule[],
   options: TransformOptions
 ): DetailedTransformResult {
+  if (options.protectedRanges?.length) {
+    const {protectedRanges, leadingContext, ...plainOptions} = options;
+    let cursor = 0;
+    let text = "";
+    let replacements = 0;
+    const summaries: ReplacementSummaryEntry[] = [];
+    const append = (end: number): void => {
+      if (end <= cursor) return;
+      const result = transformTextCore(input.slice(cursor, end), rules, {
+        ...plainOptions, ...(cursor === 0 && leadingContext ? {leadingContext} : {})
+      });
+      text += result.text; replacements += result.replacements;
+      summaries.push(...result.summaries);
+    };
+    for (const range of protectedRanges) {
+      append(range.start);
+      text += input.slice(range.start, range.end);
+      cursor = range.end;
+    }
+    append(input.length);
+    return {text, replacements, summaries};
+  }
   return transformTextCore(input, rules, options);
 }
 

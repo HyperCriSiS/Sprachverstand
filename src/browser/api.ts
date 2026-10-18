@@ -54,6 +54,8 @@ export interface ExtensionApi {
     };
   };
   readonly runtime: {
+    // Fehlt nach Update/Deaktivierung in einem verwaisten Content-Script.
+    readonly id?: string;
     openOptionsPage(): Promise<void> | void;
     getURL(path: string): string;
     sendMessage(message: unknown): Promise<unknown>;

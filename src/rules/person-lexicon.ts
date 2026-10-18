@@ -83,6 +83,20 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  // Exakt geprüfte Berufsformen mit abweichendem Singular-/Femininumstamm.
+  { ...weak("audiolog", "audiologe", "audiologen"), match: "exact" as const },
+  { ...weak("choreolog", "choreologe", "choreologen"), match: "exact" as const },
+  { ...weak("diätolog", "diätologe", "diätologen"), match: "exact" as const },
+  { ...weak("flugmeteorolog", "flugmeteorologe", "flugmeteorologen"), match: "exact" as const },
+  { ...weak("grafolog", "grafologe", "grafologen"), match: "exact" as const },
+  { ...weak("kosmolog", "kosmologe", "kosmologen"), match: "exact" as const },
+  { ...weak("metrolog", "metrologe", "metrologen"), match: "exact" as const },
+  { ...weak("sophrolog", "sophrologe", "sophrologen"), match: "exact" as const },
+  { ...weak("thanatolog", "thanatologe", "thanatologen"), match: "exact" as const },
+  { ...weak("matros", "matrose", "matrosen"), match: "exact" as const },
+  { ...weak("leichtmatros", "leichtmatrose", "leichtmatrosen"), match: "exact" as const },
+  { ...regular("industriekletter", "industriekletterer", "industriekletterer", "industriekletterers"), match: "exact" as const },
+  { ...regular("möbelpolster", "möbelpolsterer", "möbelpolsterer", "möbelpolsterers"), match: "exact" as const },
   { ...regular("tischler", "tischler"), match: "exact" as const },
   { ...regular("torhüter", "torhüter"), match: "exact" as const },
   { ...regular("turner", "turner"), match: "exact" as const },
@@ -765,14 +779,11 @@ function findSingularMapping(base: string): PersonForms | undefined {
 }
 
 function hasMatchingPrefixes(
-  masculine: string,
-  feminine: string,
+  normalizedMasculine: string,
+  normalizedFeminine: string,
   masculineSuffix: string,
   feminineSuffix: string
 ): boolean {
-  const normalizedMasculine = masculine.toLocaleLowerCase(locale);
-  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
-
   if (
     !normalizedMasculine.endsWith(masculineSuffix) ||
     !normalizedFeminine.endsWith(feminineSuffix)
@@ -787,14 +798,11 @@ function hasMatchingPrefixes(
 }
 
 function hasMatchingShortenedFeminine(
-  masculine: string,
-  feminine: string,
+  normalizedMasculine: string,
+  normalizedFeminine: string,
   masculineSuffix: string,
   feminineSuffix: string
 ): boolean {
-  const normalizedMasculine = masculine.toLocaleLowerCase(locale);
-  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
-
   return (
     normalizedMasculine.endsWith(masculineSuffix) &&
     normalizedFeminine === `-${feminineSuffix}`
@@ -896,6 +904,15 @@ function mapGeneratedSingularPairOrientation(
   return masculine;
 }
 
+const manualFeminineSuffixEndings = [...new Set(personForms.filter(mapping => mapping.singular)
+  .flatMap(mapping => [mapping.feminineSingular ?? `${mapping.stem}in`,
+    ...(mapping.compoundFeminineSingular ? [mapping.compoundFeminineSingular] : [])])
+  .map(form => form.slice(-2)))];
+
+function hasPossibleManualFeminineSuffix(left: string, right: string): boolean {
+  return manualFeminineSuffixEndings.some(ending => left.endsWith(ending) || right.endsWith(ending));
+}
+
 export function mapMappedSingularPair(
   left: string,
   right: string
@@ -909,17 +926,24 @@ export function mapMappedSingularPair(
     return generatedReverse;
   }
 
+  const normalizedLeft = left.toLocaleLowerCase(locale);
+  const normalizedRight = right.toLocaleLowerCase(locale);
+
+  // Every manual orientation must end in one of the actual feminine suffixes.
+  // Reject impossible endings before scanning the complete dictionary.
+  if (!hasPossibleManualFeminineSuffix(normalizedLeft, normalizedRight)) return undefined;
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;
     }
 
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
-    const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
-    const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
+    const direct = hasMatchingPrefixes(normalizedLeft, normalizedRight, mapping.singular, feminine);
+    const reverse = hasMatchingPrefixes(normalizedRight, normalizedLeft, mapping.singular, feminine);
     const directShort = hasMatchingShortenedFeminine(
-      left,
-      right,
+      normalizedLeft,
+      normalizedRight,
       mapping.singular,
       feminine
     );
@@ -942,8 +966,8 @@ export function mapMappedSingularPair(
 
     if (
       hasMatchingPrefixes(
-        left,
-        right,
+        normalizedLeft,
+        normalizedRight,
         mapping.singular,
         mapping.compoundFeminineSingular
       )
@@ -953,8 +977,8 @@ export function mapMappedSingularPair(
 
     if (
       hasMatchingPrefixes(
-        right,
-        left,
+        normalizedRight,
+        normalizedLeft,
         mapping.singular,
         mapping.compoundFeminineSingular
       )
@@ -1014,6 +1038,11 @@ export function mapMappedInflectedSingularPair(
     return generatedReverse;
   }
 
+  const normalizedLeft = left.toLocaleLowerCase(locale);
+  const normalizedRight = right.toLocaleLowerCase(locale);
+
+  if (!hasPossibleManualFeminineSuffix(normalizedLeft, normalizedRight)) return undefined;
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;
@@ -1029,10 +1058,10 @@ export function mapMappedInflectedSingularPair(
           : mapping.obliqueSingular ?? mapping.singular;
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
 
-    if (hasMatchingPrefixes(left, right, feminine, masculine)) {
+    if (hasMatchingPrefixes(normalizedLeft, normalizedRight, feminine, masculine)) {
       return right;
     }
-    if (hasMatchingPrefixes(right, left, feminine, masculine)) {
+    if (hasMatchingPrefixes(normalizedRight, normalizedLeft, feminine, masculine)) {
       return left;
     }
 
@@ -1041,8 +1070,8 @@ export function mapMappedInflectedSingularPair(
     }
     if (
       hasMatchingPrefixes(
-        left,
-        right,
+        normalizedLeft,
+        normalizedRight,
         mapping.compoundFeminineSingular,
         masculine
       )
@@ -1051,8 +1080,8 @@ export function mapMappedInflectedSingularPair(
     }
     if (
       hasMatchingPrefixes(
-        right,
-        left,
+        normalizedRight,
+        normalizedLeft,
         mapping.compoundFeminineSingular,
         masculine
       )

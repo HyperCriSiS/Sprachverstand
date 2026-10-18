@@ -6,6 +6,9 @@ function lauf(erweitert: boolean, zusatz = 0) {
     status: "ok",
     staticText: erweitert ? "Nutzer" : "Nutzer:innen",
     dynamicText: erweitert ? "Nutzer" : "Nutzer:innen",
+    dynamicNodeCount: 480,
+    dynamicCorrectedCount: erweitert ? 480 : 0,
+    dynamicUncorrectedCount: erweitert ? 0 : 480,
     protectedOk: true,
     interactionCount: 2,
     mutationTicks: 100,
@@ -22,6 +25,17 @@ function lauf(erweitert: boolean, zusatz = 0) {
 }
 
 describe("Kontrollierte Interaktions- und Longtask-Diagnose", () => {
+  it("verwirft eine korrigierte erste Node bei liegen gebliebenen Geschwistern", () => {
+    expect(pruefePaar({baseline: lauf(false), extension: {
+      ...lauf(true), dynamicCorrectedCount: 180, dynamicUncorrectedCount: 300
+    }}).ok).toBe(false);
+    expect(pruefePaar({baseline: lauf(false), extension: {
+      ...lauf(true), dynamicNodeCount: 479
+    }}).ok).toBe(false);
+    expect(pruefePaar({baseline: lauf(false), extension: {
+      ...lauf(true), dynamicCorrectedCount: undefined
+    }}).ok).toBe(false);
+  });
   it("berechnet ungerade und gerade Mediane ohne Leere als Nullleistung darzustellen", () => {
     expect(median([100, 12, 20])).toBe(20);
     expect(median([8, 4, 12, 16])).toBe(10);

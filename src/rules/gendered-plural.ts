@@ -20,6 +20,9 @@ export function transformGenderedPlural(
   mapBase: GenderedPluralMapper,
   pattern: RegExp = separatorPluralPattern
 ): TransformResult {
+  // All callers use inn-based plural endings; avoid cold Unicode scans on
+  // ordinary text, including their article-pair scan.
+  if (!/inn/iu.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
 
   // Die zu schützenden Artikelpaare werden genau einmal bestimmt.
@@ -27,7 +30,7 @@ export function transformGenderedPlural(
   const protectedOffsets = new Set<number>();
   const articlePairs =
     /(?:^|\s)(?:der|die|den|dem|des)[:*_/·•’‘](?:die|der|den|dem|des)(?=\s)/giu;
-  for (const match of input.matchAll(articlePairs)) {
+  for (const match of /[:*_\/·•’‘]d/iu.test(input) ? input.matchAll(articlePairs) : []) {
     let end = (match.index ?? 0) + match[0].length;
     while (end < input.length && /\s/u.test(input[end] as string)) {
       end += 1;

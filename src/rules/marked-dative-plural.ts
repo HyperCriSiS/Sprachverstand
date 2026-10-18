@@ -1,12 +1,13 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapKnownPlural } from "./known-plural-separators";
+import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
 
 // Nur lexikalisch bekannte, markierte Pluralformen werden in eindeutig
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
 const dativePhrasePattern =
-  /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
+  /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
 
 function mapDativePlural(base: string): string | undefined {
   const plural = mapMappedPlural(base) ?? mapKnownPlural(base);
@@ -19,9 +20,8 @@ function mapDativePlural(base: string): string | undefined {
 }
 
 // Aufzählungen werden nur bei eindeutigem Dativauslöser als Ganzes flexiert.
-const markedWord = String.raw`[\p{L}\p{M}’'-]+(?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n)`;
 const dativeEnumerationPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den)\s+)((?:${markedWord}[ \t]*,[ \t]*)+${markedWord}[ \t]+und[ \t]+${markedWord})(?![\p{L}\p{M}-])`,
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+)((?:${markedWord}[ \t]*,[ \t]*)+${markedWord}[ \t]+und[ \t]+${markedWord})(?![\p{L}\p{M}-])`,
   "giu"
 );
 const markedWordPattern = new RegExp(
@@ -29,8 +29,7 @@ const markedWordPattern = new RegExp(
   "giu"
 );
 const dativeLeadingContextPattern =
-  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
-const markedLeadingCandidate = new RegExp(String.raw`^\s*${markedWord}`, "iu");
+  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
 
 function transformDativeEnumeration(input: string): TransformResult {
   let replacements = 0;
@@ -52,6 +51,8 @@ function transformDativeEnumeration(input: string): TransformResult {
 }
 
 function transformMarkedDativePlural(input: string): TransformResult {
+  if (!/inn/iu.test(input)) return {text: input, replacements: 0};
+  if (!/mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen/iu.test(input)) return {text: input, replacements: 0};
   const aufzählung = transformDativeEnumeration(input);
   let replacements = aufzählung.replacements;
   const text = aufzählung.text.replace(
@@ -87,12 +88,16 @@ export const markedDativePluralRule: Rule = {
   risk: "safe",
   apply: transformMarkedDativePlural,
   leadingContextCandidate: markedLeadingCandidate,
+  leadingContextRequiresTrailingWhitespace: true,
   applyWithLeadingContext(input, leadingContext) {
-    const auslöser = dativeLeadingContextPattern.exec(leadingContext)?.[1];
+    // The separating whitespace may begin this text instead of ending the context.
+    const space = /^[ \t]*/u.exec(input)?.[0] ?? "";
+    const auslöser = dativeLeadingContextPattern.exec(leadingContext + space)?.[1];
     if (!auslöser) return transformMarkedDativePlural(input);
 
-    const result = transformMarkedDativePlural(auslöser + input);
-    if (!result.text.startsWith(auslöser)) return transformMarkedDativePlural(input);
-    return { text: result.text.slice(auslöser.length), replacements: result.replacements };
+    const prefix = auslöser.slice(0, auslöser.length - space.length);
+    const result = transformMarkedDativePlural(prefix + input);
+    if (!result.text.startsWith(prefix)) return transformMarkedDativePlural(input);
+    return { text: result.text.slice(prefix.length), replacements: result.replacements };
   }
 };

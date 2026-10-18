@@ -26,22 +26,25 @@ describe("Video-Playback-Regression", () => {
   });
 
   it("vergleicht lokale Baseline und Erweiterung ohne externes Videonetzwerk", () => {
-    expect(runner).toContain('run(url, "baseline")');
-    expect(runner).toContain('run(url, "extension")');
-    expect(runner).toContain("measureVideoPair(fixture.url, 1)");
+    expect(runner).toContain('run(url, "baseline", attempt)');
+    expect(runner).toContain('run(url, "extension", attempt)');
+    expect(runner).toContain("measureVideoPair(fixture.url, index + 1, order)");
     expect(runner).toContain("requestVideoFrameCallback");
     expect(runner).toContain("getVideoPlaybackQuality");
-    expect(runner).toContain("gapsOver120Ms");
+    expect(runner).toContain("settledDroppedVideoFramesStart");
     expect(runner).not.toMatch(/https:\/\//u);
   });
 
-  it("bestätigt ausschließlich eine Frame-Ratio-Unterschreitung einmalig", () => {
-    expect(runner).toContain("class VideoFrameRatioError extends Error");
-    expect(runner).toContain("if (frameRatio < 0.8)");
-    expect(runner).toContain("if (!(error instanceof VideoFrameRatioError))");
-    expect(runner).toContain("measureVideoPair(fixture.url, 2)");
-    expect(runner).toContain("validateComparison(baseline, extension);");
-    expect(runner).not.toContain("measureVideoPair(fixture.url, 3)");
+  it("prüft jedes Paar funktional und bewertet Timing über den Median mehrerer Paare", () => {
+    expect(runner).toContain("const videoPairCount = Number(process.env.VIDEO_PAIRS ?? 3);");
+    expect(runner).toContain("validateFunctionalComparison(baseline, extension);");
+    expect(runner).toContain("videoPerformanceViolations(baselines, extensions)");
+    expect(runner).not.toContain("VideoFrameRatioError");
+    // Only an unusable control without the extension is measured once more.
+    expect(runner).toContain("throw new VideoBaselineUnusableError(");
+    expect(runner).toContain("if (!(error instanceof VideoBaselineUnusableError)) throw error;");
+    expect(runner.match(/measureVideoPair\(fixture\.url, index \+ 1, order\)/gu)).toHaveLength(2);
+    expect(workflow).not.toContain("VIDEO_PAIRS");
   });
 
   it("testet im realen Chromium-Browser Videountertitel bei Aus/An/Aus", () => {
@@ -51,14 +54,15 @@ describe("Video-Playback-Regression", () => {
     expect(runner).toContain('document.querySelector("#process-subtitles")');
     expect(runner).toContain("await setSubtitleCheckbox(id, true)");
     expect(runner).toContain("await setSubtitleCheckbox(id, false)");
-    expect(runner).toContain("await waitSubtitle(id, true)");
+    expect(runner).toContain("await waitSubtitle(id, true, {timeUpdates: off.timeUpdates})");
     expect(runner).toContain("await waitSubtitle(id, false)");
+    expect(runner).toContain("await waitSubtitle(id, false, beforeOff)");
     expect(runner).toContain("validateSubtitleToggle(fixture.subtitleUrl)");
   });
 
   it("protokolliert Cue-Phasen und misst kontrollierte Cues nur manuell", () => {
     expect(runner).toContain('process.argv.includes("--diagnose-cue-phases")');
-    expect(runner).toContain('window.__issueSubtitleCue = (source) =>');
+    expect(runner).toContain('window.__issueSubtitleCue =');
     expect(runner).toContain('visibilityAtIssue: document.visibilityState');
     expect(runner).toContain('window.__subtitleLongTasks.push(');
     expect(runner).toContain('measureControlledSubtitleCues(id)');
@@ -77,5 +81,15 @@ describe("Video-Playback-Regression", () => {
     expect(Buffer.from(videoFixture, "base64").subarray(0, 4).toString("hex")).toBe(
       "1a45dfa3"
     );
+  });
+
+  it("requires an explicit mode for the active render observer and leaves ordinary CI unchanged", () => {
+    expect(runner).toContain('process.argv.includes("--diagnose-render-scheduling")');
+    expect(runner).toContain('if (${renderSchedulingDiagnostics})');
+    expect(runner).toContain('progress.animationSamples.length < 2048');
+    expect(runner).toContain('progress.timerSamples.length < 2048');
+    expect(diagnoseWorkflow).toContain('render_scheduling_diagnostics:');
+    expect(diagnoseWorkflow).toContain('--fps 60 --diagnose-render-scheduling');
+    expect(workflow).not.toContain('--diagnose-render-scheduling');
   });
 });

@@ -11,9 +11,11 @@ export interface LiveMarkerNodeAudit {
   readonly otherOccurrences: number;
   readonly reasons: Record<string, number>;
   readonly samples: LiveMarkerNodeSample[];
+  /** Only with `collectResidualWords`: visible unprotected marker words and counts. */
+  readonly residualWords?: Record<string, number>;
 }
 
 export declare function classifyVisibleMarkerNodes(
   documentRef: Document,
-  options?: { checkLayout?: boolean }
+  options?: { checkLayout?: boolean; collectResidualWords?: boolean }
 ): LiveMarkerNodeAudit;

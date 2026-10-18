@@ -19,8 +19,11 @@ DOM-Arbeit auf `127.0.0.1`, ohne fremdes Netzwerk:
   Frameabstände, Lücken über 120 ms, Browser-Longtasks (falls unterstützt),
   Zeit von Klick-/Eingabehandler bis zum nächsten Frame sowie Mutations- und Interaktionszähler.
 
-**Vertragsprüfung:** statischer und dynamischer Text müssen nur mit Erweiterung
-transformiert werden; Eingabe und Code bleiben unverändert.
+**Vertragsprüfung:** statischer Text und alle 480 dynamischen Knoten müssen nur
+mit Erweiterung transformiert werden; Eingabe und Code bleiben unverändert.
+Eine korrigierte erste Node reicht nicht aus. JSON-Schema 2 enthält dafür
+`dynamicNodeCount`, `dynamicCorrectedCount` und `dynamicUncorrectedCount`;
+ältere Reports ohne diese Angaben beweisen keine vollständige Abarbeitung.
 Da die Erweiterung größere DOM-Arbeiten absichtlich in Zeitscheiben ausführt,
 wird die dynamische Korrektur zunächst circa 400 ms nach dem Lastende und
 anschließend höchstens 3,5 Sekunden lang erneut geprüft. Startzustand,
@@ -44,6 +47,8 @@ Nach `npm ci` und `npm run build:chromium`:
 
 ```bash
 npm run test:browser:interaction:chromium -- --pairs 3
+# Zusätzliche Diagnose mit vierfach verlangsamter Renderer-CPU:
+npm run test:browser:interaction:chromium -- --pairs 3 --cpu-throttle 4
 ```
 
 Erfordert ein installiertes Chromium und ChromeDriver. Die normale
@@ -53,3 +58,9 @@ Der manuelle Workflow `Kontrollierte Interaktionsperformance` erlaubt
 1, 3 oder 5 Paare und lädt den JSON-Report als befristetes CI-Artefakt hoch.
 Die komplette Fixture ist synthetisch; ihre 2-%-Markerrate
 ist **kein repräsentativer Anteil realer Webseiten**.
+
+`--cpu-throttle` akzeptiert ganze Faktoren von 1 bis 16 (Standard: 1).
+Der Faktor wird vor der Navigation identisch auf beide Sitzungen angewendet
+und im Report gespeichert. Die CDP-Drosselung simuliert zusätzliche CPU-Kosten;
+sie ersetzt keine Messung auf echter schwächerer Hardware und drosselt nicht
+sämtliche Browserprozesse oder den GPU-Decoder.
