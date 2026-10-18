@@ -3,6 +3,9 @@ import type { GeneratedPersonForms } from "./generated-person-lexicon";
 // Exakte geprüfte Berufsbezeichnungen und Schreibvarianten. Keine allgemeine
 // ß/ss-Normalisierung: Schreibweise und Flexion bleiben am jeweiligen Eintrag.
 const variants: ReadonlyMap<string, readonly [plural: string, weak: boolean]> = new Map([
+  ["azubi", ["azubis", false]],
+  ["fan", ["fans", false]],
+  ["flüchtling", ["flüchtlinge", false]],
   ["berufsfußballer", ["berufsfußballer", false]],
   ["fertigungsmodelleur", ["fertigungsmodelleure", false]],
   ["fußjongleur", ["fußjongleure", false]],

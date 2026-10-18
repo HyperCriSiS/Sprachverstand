@@ -37,6 +37,8 @@ dokumentiert.
   eigenes -e (`Angestellt:innen`, `Vorgesetzt*innen`, `BeschäftigtInnen`) werden
   mit der zum Begleitwort passenden Endung umgewandelt (`die Angestellten`,
   `viele Angestellte`). Ohne eindeutigen Anker bleibt der Text unverändert.
+- Häufige Formen `Azubi:innen`, `Fan:innen` und `Flüchtling:innen` werden zu
+  „Azubis“, „Fans“ und „Flüchtlinge“ umgewandelt.
 - Acht bereits geprüfte Berufsbezeichnungen werden auch in ihrer ß-Schreibweise
   erkannt; etwa Berufsfußballer und Straßenartist. Plural, Singularpaare und
   Kasus bewahren die Schreibweise, bestehende ss-Varianten bleiben unterstützt.
