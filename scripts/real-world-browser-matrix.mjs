@@ -6,11 +6,16 @@ import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import { compareProtectedRuns } from "./real-world-protected-state.mjs";
 import { classifyVisibleMarkerNodes } from "./live-marker-dom-classification.mjs";
+import { summarizeResidualMarkerWords } from "./real-world-residual-words.mjs";
 import { assessExternalVideoPlayback, assessExternalSubtitlePlayback } from "./real-world-media-validation.mjs";
 import { comparePhaseDurations, summarizePairedRuns } from "./real-world-performance-phases.mjs";
 
 const projectRoot = process.cwd();
-const configPath = path.join(projectRoot, "config", "real-world-sites.json");
+const sitesConfigIndex = process.argv.indexOf("--sites-config");
+// Optional own site list (same schema and validation), e.g. for gap searches.
+const configPath = sitesConfigIndex >= 0 && process.argv[sitesConfigIndex + 1]
+  ? path.resolve(process.argv[sitesConfigIndex + 1])
+  : path.join(projectRoot, "config", "real-world-sites.json");
 const extensionDirectory = path.join(projectRoot, "dist", "chromium");
 const driverPort = 9515;
 const driverBaseUrl = `http://127.0.0.1:${driverPort}`;
@@ -450,7 +455,7 @@ async function collectSnapshot(sessionId) {
         };
       });
 
-      const nodePatternAudit = (${classifyVisibleMarkerNodes.toString()})(document);
+      const nodePatternAudit = (${classifyVisibleMarkerNodes.toString()})(document, {collectResidualWords: true});
 
       const navigation = performance.getEntriesByType("navigation")[0];
       const metrics = window.__sprachverstandLiveMetrics || {
@@ -999,7 +1004,8 @@ const report = {
     activeSubtitles,
     navigationTimeoutMs
   },
-  results
+  results,
+  residualMarkerWords: summarizeResidualMarkerWords(results)
 };
 
 await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`);
@@ -1011,6 +1017,13 @@ const failedExtensionRuns = results.length - successfulExtensionRuns;
 console.log(
   `Real-World-Report geschrieben: ${path.relative(projectRoot, outputPath)} (${successfulExtensionRuns} erfolgreich, ${failedExtensionRuns} fehlgeschlagen).`
 );
+
+if (report.residualMarkerWords.length) {
+  console.log("Nach der Erweiterung sichtbare Markerwörter (mögliche Lücken):");
+  for (const entry of report.residualMarkerWords.slice(0, 40)) {
+    console.log(`  ${String(entry.count).padStart(4)}× ${entry.word} [${entry.sites.join(", ")}]`);
+  }
+}
 
 if (successfulExtensionRuns === 0) {
   throw new Error(

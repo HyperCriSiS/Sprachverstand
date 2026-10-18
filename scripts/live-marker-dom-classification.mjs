@@ -12,13 +12,41 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
     "VAR", "SVG", "MATH", "CANVAS", "IFRAME", "OBJECT", "EMBED"
   ]);
   const excludedRoles = new Set(["textbox", "searchbox", "combobox", "spinbutton"]);
+  // Optional: every visible, unprotected word with a gender marker, counted.
+  // Collected after the extension ran, these words are coverage gaps.
+  const residualExpression =
+    /(?<![\p{L}\p{N}])\p{Lu}[\p{L}\p{M}’'-]*?(?:[:*_·•]innen|[:*_·•]in|\/-?innen|\/-?in|\(-?innen\)|\(in\)|\p{Ll}Innen)(?![\p{L}\p{N}])/gu;
+  const maximumResidualWords = 500;
   const result = {
     matchedTextNodeOccurrences: 0,
     excludedOccurrences: 0,
     otherOccurrences: 0,
     reasons: {},
-    samples: []
+    samples: [],
+    ...(options.collectResidualWords ? { residualWords: {} } : {})
   };
+  function isProtected(parent) {
+    for (let element = parent; element; element = element.parentElement) {
+      if (excludedTags.has(element.tagName) ||
+          element.hasAttribute("data-sprachverstand-ignore") ||
+          element.getAttribute("aria-hidden") === "true" ||
+          excludedRoles.has(element.getAttribute("role")?.toLowerCase())) return true;
+      const editable = element.getAttribute("contenteditable");
+      if (editable === "" || editable === "true" || editable === "plaintext-only") return true;
+    }
+    return false;
+  }
+  function collectResidual(node, parent) {
+    const matches = [...node.data.matchAll(residualExpression)];
+    if (matches.length === 0 || isProtected(parent)) return;
+    for (const match of matches) {
+      const word = String(match[0]).slice(0, 64);
+      if (Object.hasOwn(result.residualWords, word)) result.residualWords[word] += 1;
+      else if (Object.keys(result.residualWords).length < maximumResidualWords) {
+        result.residualWords[word] = 1;
+      }
+    }
+  }
   const root = documentRef.body || documentRef.documentElement;
   if (!root) return result;
   const walker = documentRef.createTreeWalker(
@@ -29,6 +57,7 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
     const node = walker.currentNode;
     const parent = node.parentElement;
     if (!parent || parent.closest("[hidden]")) continue;
+    if (result.residualWords) collectResidual(node, parent);
     const candidates = [];
     for (const { id, expression } of patterns) {
       for (const match of node.data.matchAll(expression)) {

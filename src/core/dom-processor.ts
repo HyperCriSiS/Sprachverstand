@@ -16,7 +16,7 @@ import {
   matchesSubtitleMarker,
   subtitleClassifierAttributeNames
 } from "./subtitles";
-import { startsWithSplitGenderMarker, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
+import { startsWithSplitGenderMarker, startsWithSplitGenderSuffix, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
 import {
   collectInlineProtection,
   iterateInlineProtection,
@@ -161,6 +161,9 @@ const followingInlineNounPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]+/u;
 const possibleInlineNounPrefixPattern = /^\s*[\p{Lu}][\p{Ll}\p{M}-]*$/u;
 const maximumPreviousInlineNodes = 64;
 const inlineQuoteMarkerPattern = /["„“”‚‘«»‹›]/u;
+// Gender marker ending a stem, as split from a following `innen` text.
+const splitMarkerEndPattern = /(?<=[\p{L}\p{M}]{2})[:*_·•/∕⁄／]-?$|^[:*_·•/∕⁄／]-?$/u;
+const markerOnlyPattern = /^[:*_·•/∕⁄／]-?$/u;
 
 const regularWorkBudgetMs = 4;
 // Time may be coarse or jump past a deadline before the first work unit.
@@ -2724,6 +2727,13 @@ export class DomProcessor {
       if (restoreUnchanged) this.restoreText(node, original, budgeted);
       return;
     }
+    // `Lehrer*<b>innen</b>`: the result already includes the whole word, so
+    // the marker ending the preceding text must go too. Without that, keep both.
+    if (startsWithSplitGenderSuffix(original) && !startsWithSplitGenderSuffix(result.text) &&
+        !this.removeSplitMarkerBefore(node)) {
+      if (restoreUnchanged) this.restoreText(node, original, budgeted);
+      return;
+    }
 
     // A bounded single-token edit needs no complete token plan. Large inputs
     // still prepare incrementally, even when the rule reports one replacement.
@@ -2738,6 +2748,36 @@ export class DomProcessor {
     if (budgeted && this.deferTextEdits(node, original, result)) return;
     this.recordTextResult(node, original, result);
     this.replaceTextKeepingRanges(node, result.text);
+  }
+
+  private previousInlineText(node: Node): Text | undefined {
+    let current: Node = node;
+    for (;;) {
+      while (!current.previousSibling) {
+        const parent: Node | null = current.parentNode;
+        if (!parent || (parent instanceof Element && blockBoundaryTags.has(parent.tagName))) return undefined;
+        current = parent;
+      }
+      current = current.previousSibling;
+      if (current instanceof Element && blockBoundaryTags.has(current.tagName)) return undefined;
+      while (current.lastChild) current = current.lastChild;
+      if (current.nodeType === Node.TEXT_NODE && (current as Text).data !== "") return current as Text;
+    }
+  }
+
+  // Removes the marker that ends the directly preceding, otherwise untouched
+  // text. The change is tracked like any own edit and restored with it.
+  private removeSplitMarkerBefore(node: Text): boolean {
+    const previous = this.previousInlineText(node);
+    if (!previous || this.textChanges.has(previous) || this.pendingTextTransforms.has(previous) ||
+        this.pendingTextEdits.has(previous) || this.hasTextNodeProtection(previous) ||
+        (!markerOnlyPattern.test(previous.data) && !this.shouldProcessTextNode(previous))) return false;
+    const marker = splitMarkerEndPattern.exec(previous.data)?.[0];
+    if (!marker) return false;
+    const next = previous.data.slice(0, -marker.length);
+    this.recordTextResult(previous, previous.data, {text: next, replacements: 0, summaries: []});
+    this.replaceTextKeepingRanges(previous, next);
+    return true;
   }
 
   private isTransformCandidate(input: string): boolean {
@@ -3249,6 +3289,12 @@ export class DomProcessor {
     const chunks: string[] = [];
 
     const readText = (text: Text): boolean => {
+      // A lone gender marker (`<span>*</span>`) has no letters but is part of
+      // the surrounding word, as long as it is not protected itself.
+      if (markerOnlyPattern.test(text.data) && !this.hasTextNodeProtection(text)) {
+        chunks.push(text.data);
+        return true;
+      }
       if (!this.shouldProcessTextNode(text)) {
         if (text.data.trim() === "") {
           // Auch reine Leerräume sind echte Wortgrenzen. Ihr Weglassen

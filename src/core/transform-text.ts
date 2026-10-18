@@ -355,10 +355,18 @@ function applyRulesOutsideQuotes(
 // e.g. `Lehrer<em>:innen</em>` or `Mitarbeiter<b>Innen</b>`.
 const splitMarkerStartPattern =
   /^(?:[:*_·•/∕⁄／]-?innen(?![\p{L}\p{M}])|\(-?innen\)|Innen(?![\p{Ll}\p{M}]))/u;
+// `Lehrer*<b>innen</b>` / `Lehrer<span>*</span>innen`: the marker ends the
+// preceding text. The DOM removes that marker together with this result.
+const splitSuffixStartPattern = /^innen(?![\p{L}\p{M}])/u;
 const contextStemPattern = /(?<![\p{L}\p{M}’'-])[\p{L}\p{M}]{2,}$/u;
+const contextStemMarkerPattern = /(?<![\p{L}\p{M}’'-])([\p{L}\p{M}]{2,})([:*_·•/∕⁄／]-?)$/u;
 
 export function startsWithSplitGenderMarker(input: string): boolean {
-  return splitMarkerStartPattern.test(input);
+  return splitMarkerStartPattern.test(input) || splitSuffixStartPattern.test(input);
+}
+
+export function startsWithSplitGenderSuffix(input: string): boolean {
+  return splitSuffixStartPattern.test(input);
 }
 
 // The whole word is transformed, but only this text's own part changes:
@@ -370,14 +378,22 @@ function transformSplitWord(
   options: TransformOptions
 ): DetailedTransformResult | undefined {
   const leading = options.leadingContext;
-  if (!leading || !splitMarkerStartPattern.test(input)) return undefined;
-  const stem = contextStemPattern.exec(leading)?.[0];
+  if (!leading) return undefined;
+  let stem: string | undefined;
+  let marker = "";
+  if (splitMarkerStartPattern.test(input)) {
+    stem = contextStemPattern.exec(leading)?.[0];
+  } else if (splitSuffixStartPattern.test(input)) {
+    const match = contextStemMarkerPattern.exec(leading);
+    if (match) [, stem, marker] = match as unknown as [string, string, string];
+  }
   if (!stem) return undefined;
-  const rest = leading.slice(0, -stem.length);
+  const rest = leading.slice(0, -(stem.length + marker.length));
   const {leadingContext: _leading, ...plainOptions} = options;
-  const combined = transformTextCoreUnsplit(stem + input, rules,
+  const combined = transformTextCoreUnsplit(stem + marker + input, rules,
     rest ? {...plainOptions, leadingContext: rest} : plainOptions);
-  if (combined.replacements === 0 || !combined.text.startsWith(stem)) return undefined;
+  if (combined.replacements === 0 || !combined.text.startsWith(stem) ||
+      (marker && combined.text.startsWith(stem + marker))) return undefined;
   return {...combined, text: combined.text.slice(stem.length)};
 }
 

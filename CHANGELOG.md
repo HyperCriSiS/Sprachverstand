@@ -33,6 +33,12 @@ dokumentiert.
 
 ### Behoben
 
+- „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
+  Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
+  Genitivform. Unbekannte Nomen bleiben unverändert.
+- Dreigeteilte Formen wie `Lehrer<span>*</span>innen` und
+  `Lehrer*<b>innen</b>` werden erkannt; der getrennte Marker wird nur entfernt,
+  wenn er ungeschützt und unverändert ist, und mit wiederhergestellt.
 - Substantivierte Adjektive und Partizipien im markierten Plural ohne
   eigenes -e (`Angestellt:innen`, `Vorgesetzt*innen`, `BeschäftigtInnen`) werden
   mit der zum Begleitwort passenden Endung umgewandelt (`die Angestellten`,
@@ -65,6 +71,9 @@ dokumentiert.
 
 ### Tests
 
+- Der Reale-Seiten-Test sammelt nach der Verarbeitung noch sichtbare
+  Markerwörter als mögliche Abdeckungslücken und akzeptiert mit
+  `--sites-config` eine eigene Seitenliste.
 - Die Chromium-Videoprüfung vergleicht drei Paare in wechselnder Reihenfolge
   über den Median. Verworfene Frames zählen wie die übrigen Kennzahlen erst
   nach der Startphase; funktionale Prüfungen gelten weiterhin für jedes Paar.
