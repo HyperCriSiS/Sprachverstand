@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import { mapMappedSingular } from "./person-lexicon";
 
 const locale = "de-DE";
 const separators = [":", "*", "_", "/", "·", "•", "’", "‘"] as const;
@@ -34,6 +35,7 @@ addPair("der", "die");
 addPair("den", "die");
 addPair("dem", "der");
 addPair("des", "der");
+addPair("eines", "einer");
 addPair("dessen", "deren");
 addPair("dieser", "diese");
 addPair("diesen", "diese");
@@ -82,6 +84,26 @@ function applyTokenCase(source: string, replacement: string): string {
   return replacement;
 }
 
+// A resolved genitive determiner needs the genitive of a following
+// gender-neutral noun (`des:der Azubi` -> `des Azubis`). Only lexicon nouns
+// whose singular is exactly this word and which have their own genitive.
+const genitiveDeterminers = new Set(["des", "eines", "dieses", "seines"]);
+const resolvedGenitiveMark = "\u0000";
+const resolvedGenitiveNounPattern =
+  /\u0000(\s+)(\p{Lu}[\p{L}\p{M}]*)(?![\p{L}\p{M}:*_/·•’‘(-])/gu;
+
+function inflectFollowingGenitives(input: string): {text: string; replacements: number} {
+  let replacements = 0;
+  const text = input.replace(resolvedGenitiveNounPattern, (_match: string, space: string, noun: string) => {
+    if (mapMappedSingular(noun, "nominative") !== noun) return space + noun;
+    const genitive = mapMappedSingular(noun, "genitive");
+    if (!genitive || genitive === noun) return space + noun;
+    replacements += 1;
+    return space + genitive;
+  });
+  return {text: text.replaceAll(resolvedGenitiveMark, ""), replacements};
+}
+
 function transformExplicitPronouns(input: string): TransformResult {
   if (!/[:*_\/·•’‘(]/u.test(input)) return {text: input, replacements: 0};
   if (!pronounCandidate.test(input)) return {text: input, replacements: 0};
@@ -110,11 +132,13 @@ function transformExplicitPronouns(input: string): TransformResult {
       }
 
       replacementCount += 1;
-      return applyTokenCase(match, replacement);
+      return applyTokenCase(match, replacement) +
+        (genitiveDeterminers.has(replacement) ? resolvedGenitiveMark : "");
     }
   );
 
-  return { text, replacements: replacementCount };
+  const genitives = inflectFollowingGenitives(text);
+  return { text: genitives.text, replacements: replacementCount + genitives.replacements };
 }
 
 export const explicitPronounsRule: Rule = {

@@ -66,6 +66,25 @@ Wortproben von je höchstens 64 Zeichen. Die Proben sind ausschließlich
 zur manuellen Klassifizierung bestimmt und ersetzen keine unabhängige
 Fehlerannotation. Sie enthalten keine Seitenauszüge.
 
+## Lückensuche: verbliebene Markerwörter (19.10.2026)
+
+Jeder Lauf sammelt zusätzlich alle sichtbaren, nicht geschützten Wörter mit
+Gendermarker (`:innen`, `*in`, `/-innen`, `(innen)`, Binnen-I) samt Anzahl.
+Der Report führt unter `residualMarkerWords` die Wörter, die **mit**
+Erweiterung noch sichtbar sind, also mögliche Abdeckungslücken; die Konsole
+zeigt die häufigsten 40. Mit `--sites-config <datei>` lässt sich dafür eine
+eigene Seitenliste im gleichen Schema verwenden, etwa:
+
+```bash
+npm run test:real-world -- --sites-config eigene-seiten.json --pairs 1 --output artifacts/real-world/luecken.json
+```
+
+Erste Stichprobe (20 Startseiten von Hochschulen, Städten, Gewerkschaften,
+Sozialverbänden, bpb, NDR, taz): 30 Markerwörter ohne Erweiterung, darunter
+`Erfinder/innen`, `Professor*in`, `Preisträger/-innen`, `Berater(innen)`;
+mit Erweiterung keines mehr sichtbar. Startseiten enthalten wenig Fließtext,
+die Aussage ist entsprechend begrenzt.
+
 ## Zielbild
 
 Für jeden Lauf werden mindestens folgende Werte erfasst:
