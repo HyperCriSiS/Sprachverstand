@@ -1,280 +1,51 @@
-name: Reale Webseiten
+name: Discovery single-runner load probe
 
 on:
   workflow_dispatch:
-    inputs:
-      site:
-        description: "Optional: Seiten-ID oder Slug, mehrere durch Komma getrennt"
-        required: false
-        default: ""
-        type: string
-      pairs:
-        description: "Optionale gepaarte A/B-Durchläufe je Seite (1–5)"
-        required: false
-        default: "1"
-        type: string
-      active_subtitles:
-        description: "Externe Player mit aktiven Untertiteln und Erweiterungsoption prüfen"
-        required: false
-        default: false
-        type: boolean
-      browser_source:
-        description: "Browserquelle separat ausweisen; CfT für proprietäre Mediencodecs"
-        required: true
-        default: "system-chromium"
-        type: choice
-        options: ["system-chromium", "chrome-for-testing"]
 
 permissions:
   contents: read
 
 concurrency:
-  group: real-world-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  CI: true
-  SPRACHVERSTAND_TEST_BROWSER_SOURCE: ${{ inputs.browser_source || 'system-chromium' }}
+  group: discovery-single-runner-probe
+  cancel-in-progress: false
 
 jobs:
-  live:
-    name: Chromium Live-Matrix
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+  probe:
+    name: One Ubuntu runner, serial versus four browser workers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CI: true
+      SPRACHVERSTAND_TEST_BROWSER_SOURCE: chrome-for-testing
     steps:
-      - name: Repository auschecken
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Node.js einrichten und npm-Cache laden
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Abhängigkeiten reproduzierbar installieren
+      - name: Install locked dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
-
-      - name: Gepinntes Chrome for Testing separat vorbereiten
-        if: ${{ inputs.browser_source == 'chrome-for-testing' }}
+      - name: Validate link and robots policy
+        run: node --test scripts/discovery-diagnostic/helpers.test.mjs
+      - name: Install pinned official Chrome for Testing
         run: bash scripts/setup-chrome-for-testing.sh
-
-      - name: Chromium-Build erstellen
+      - name: Build unchanged Chromium product
         run: npm run build:chromium
-
-      - name: Erweiterung lokal im echten Chromium beweisen
+      - name: Prove extension operation in Chromium
         run: npm run test:browser:chromium
-
-      - name: Reale Webseiten diagnostisch prüfen
-        env:
-          SITE_FILTER: ${{ inputs.site }}
-          PAIR_COUNT: ${{ inputs.pairs }}
-          ACTIVE_SUBTITLES: ${{ inputs.active_subtitles }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          ARGS=(
-            --output artifacts/real-world/report.json
-            --screenshots artifacts/real-world/screenshots
-          )
-          if [[ -n "$SITE_FILTER" ]]; then
-            ARGS+=(--site "$SITE_FILTER")
-          fi
-          ARGS+=(--pairs "$PAIR_COUNT")
-          if [[ "$ACTIVE_SUBTITLES" == "true" ]]; then ARGS+=(--active-subtitles); fi
-          npm run test:real-world -- "${ARGS[@]}"
-
-      # Die unabhängige Live-Diagnose darf durch einen Video-Regressionstest
-      # nicht vorzeitig verhindert werden. Der Videotest bleibt fail-closed.
-      - name: Lokale Videowiedergabe unter DOM-Last prüfen
-        run: npm run test:browser:video:chromium
-
-      - name: Live-Ergebnisse kompakt ausgeben
+      - name: Prepare local diagnostic adapter
+        run: node scripts/discovery-diagnostic/prepare.mjs
+      - name: Compare one and four browser workers on this runner
+        run: node scripts/discovery-diagnostic/benchmark.mjs
+      - name: Preserve probe results even on failure
         if: ${{ always() }}
-        shell: bash
-        run: |
-          if [[ ! -s artifacts/real-world/report.json ]]; then
-            echo "::warning title=Kein Live-Report::Es wurde kein auswertbarer Real-World-Report erzeugt."
-            exit 0
-          fi
-
-          node <<'NODE'
-          const fs = require("node:fs");
-
-          const report = JSON.parse(
-            fs.readFileSync("artifacts/real-world/report.json", "utf8")
-          );
-          const summary = [
-            "## Real-World-Browsermatrix",
-            "",
-            `Commit: \`${report.commit || "unbekannt"}\``,
-            "",
-            "| Seite | Baseline | Erweiterung | Δ Laufzeit | Δ Long Tasks | Δ Video-Frames | Δ >120-ms-Lücken | Δ Dropped Frames | Restmuster | JS/Promise | Geschützte Bereiche |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"
-          ];
-
-          const patternNotes = [];
-          for (const result of report.results || []) {
-            const baseline = result.baseline || {};
-            const extension = result.extension || {};
-            const comparison = result.comparison || {};
-            const patterns = Array.isArray(extension.snapshot?.remainingPatterns)
-              ? extension.snapshot.remainingPatterns.reduce(
-                  (sum, entry) => sum + Number(entry.count || 0),
-                  0
-                )
-              : undefined;
-            // Nur kurze Marker-Wortformen aus dem ohnehin vorhandenen Report ausgeben.
-            // Keine Volltexte, HTML-Abschnitte oder URLs in den CI-Logs veröffentlichen.
-            const countPatterns = (snapshot) =>
-              Array.isArray(snapshot?.remainingPatterns)
-                ? snapshot.remainingPatterns.reduce(
-                    (sum, entry) => sum + Number(entry.count || 0),
-                    0
-                  )
-                : undefined;
-            const baselinePatternCount = countPatterns(baseline.snapshot);
-            const patternDelta = Object.values(comparison.patternDelta || {})
-              .reduce((sum, count) => sum + Number(count || 0), 0);
-            const samples = Array.isArray(extension.snapshot?.remainingPatterns)
-              ? extension.snapshot.remainingPatterns.flatMap((entry) =>
-                  (Array.isArray(entry.samples) ? entry.samples : [])
-                    .filter((sample) => typeof sample === "string")
-                    .slice(0, 8)
-                    .map((sample) => sample.slice(0, 64))
-                ).slice(0, 12)
-              : [];
-            const compactSamples = [...new Set(samples)]
-              .map((sample) => sample.replace(/[^\p{L}\p{N}:*_·-]/gu, ""))
-              .filter(Boolean)
-              .join(",");
-            const nodeAudit = extension.snapshot?.nodePatternAudit;
-            const excludedNodeMarkers = nodeAudit?.excludedOccurrences ?? "n/a";
-            const otherNodeMarkers = nodeAudit?.otherOccurrences ?? "n/a";
-            const nodeSamples = Array.isArray(nodeAudit?.samples)
-              ? nodeAudit.samples.map(({ word, reason }) =>
-                  `${String(word).slice(0, 64)}:${String(reason).slice(0, 32)}`
-                ).slice(0, 12).join(",")
-              : "none";
-            const javascriptErrors = Array.isArray(extension.snapshot?.javascriptErrors)
-              ? extension.snapshot.javascriptErrors.length
-              : 0;
-            const rejections = Array.isArray(extension.snapshot?.unhandledRejections)
-              ? extension.snapshot.unhandledRejections.length
-              : 0;
-            const protectedBaselineChanged = comparison.protectedBaselineChanged || [];
-            const protectedExtensionChanged = comparison.protectedExtensionChanged || [];
-            const protectedOnlyExtensionChanged = comparison.protectedOnlyExtensionChanged || [];
-            const elapsedDelta = Number.isFinite(comparison.elapsedDeltaMs)
-              ? `${Math.round(comparison.elapsedDeltaMs)} ms`
-              : "–";
-            const paired = result.aggregate || {};
-            const medianPhase = paired.medianPhaseDeltaMs || {};
-            const longTaskDelta = Number.isFinite(comparison.totalLongTaskDeltaMs)
-              ? `${Math.round(comparison.totalLongTaskDeltaMs)} ms`
-              : "–";
-            const videoFrameDelta = Number.isFinite(comparison.videoFrameDelta)
-              ? String(comparison.videoFrameDelta)
-              : "–";
-            const baselineVideos = baseline.snapshot?.videos || {};
-            const extensionVideos = extension.snapshot?.videos || {};
-            const videoElements = `${baselineVideos.count ?? "–"}/${extensionVideos.count ?? "–"}`;
-            const videoFrames = `${baselineVideos.frameCallbacks ?? "–"}/${extensionVideos.frameCallbacks ?? "–"}`;
-            // Ohne belegte Frames in beiden Sitzungen kein Live-Video-Nachweis.
-            const externalVideoSite = result.slug === "videojs-player-demo" ||
-              result.slug === "youtube-big-buck-bunny";
-            const videoMeasured = !externalVideoSite ? "n/a" :
-              baseline.mediaValidation?.state === "measured" &&
-              extension.mediaValidation?.state === "measured" ? "yes" : "no";
-            const videoLongGapDelta = Number.isFinite(comparison.videoLongGapDelta)
-              ? String(comparison.videoLongGapDelta)
-              : "–";
-            const videoDroppedFrameDelta = Number.isFinite(comparison.videoDroppedFrameDelta)
-              ? String(comparison.videoDroppedFrameDelta)
-              : "–";
-            const protectedLabel =
-              baseline.status !== "ok" || extension.status !== "ok"
-                ? "nicht messbar"
-                : `Basis: ${protectedBaselineChanged.join(",") || "-"}; Erweiterung: ${protectedExtensionChanged.join(",") || "-"}; nur Erweiterung: ${protectedOnlyExtensionChanged.join(",") || "-"}`;
-
-            console.log(
-              [
-                "REAL-WORLD",
-                result.slug,
-                `baseline=${baseline.status || "unbekannt"}`,
-                `extension=${extension.status || "unbekannt"}`,
-                `elapsedDeltaMs=${comparison.elapsedDeltaMs ?? "n/a"}`,
-                `longTaskDeltaMs=${comparison.totalLongTaskDeltaMs ?? "n/a"}`,
-                `pairs=${paired.validPairs ?? 0}/${paired.requestedPairs ?? 0}`,
-                `startupDeltaMs=${comparison.phaseDeltaMs?.browserStartupMs ?? "n/a"}`,
-                `navigationDeltaMs=${comparison.phaseDeltaMs?.navigationMs ?? "n/a"}`,
-                `interactionDeltaMs=${comparison.phaseDeltaMs?.interactionMs ?? "n/a"}`,
-                `snapshotDeltaMs=${comparison.phaseDeltaMs?.domSnapshotMs ?? "n/a"}`,
-                `screenshotDeltaMs=${comparison.phaseDeltaMs?.screenshotMs ?? "n/a"}`,
-                `visitDeltaMs=${comparison.visitDeltaMs ?? "n/a"}`,
-                `afterObserverLongTaskDeltaMs=${comparison.afterObserverLongTaskDeltaMs ?? "n/a"}`,
-                `medianStartupDeltaMs=${medianPhase.browserStartupMs ?? "n/a"}`,
-                `medianNavigationDeltaMs=${medianPhase.navigationMs ?? "n/a"}`,
-                `medianInteractionDeltaMs=${medianPhase.interactionMs ?? "n/a"}`,
-                `medianVisitDeltaMs=${paired.medianVisitDeltaMs ?? "n/a"}`,
-                `medianLongTaskDeltaMs=${paired.medianLongTaskDeltaMs ?? "n/a"}`,
-                `medianAfterObserverLongTaskDeltaMs=${paired.medianAfterObserverLongTaskDeltaMs ?? "n/a"}`,
-                `videoElements=${videoElements}`,
-                `videoFrames=${videoFrames}`,
-                `videoMeasured=${videoMeasured}`,
-                `videoFrameDelta=${comparison.videoFrameDelta ?? "n/a"}`,
-                `videoLongGapDelta=${comparison.videoLongGapDelta ?? "n/a"}`,
-                `videoDroppedFrameDelta=${comparison.videoDroppedFrameDelta ?? "n/a"}`,
-                `remainingPatterns=${patterns ?? "n/a"}`,
-                `remainingBaselinePatterns=${baselinePatternCount ?? "n/a"}`,
-                `remainingPatternDelta=${comparison.patternDelta ? patternDelta : "n/a"}`,
-                `remainingPatternSamples=${compactSamples || "none"}`,
-                `nodeExcludedMarkers=${excludedNodeMarkers}`,
-                `nodeOtherMarkers=${otherNodeMarkers}`,
-                `nodeMarkerSamples=${nodeSamples}`,
-                `javascriptErrors=${javascriptErrors}`,
-                `unhandledRejections=${rejections}`,
-                `protectedBaselineChanged=${protectedBaselineChanged.join(",") || "none"}`,
-                `protectedExtensionChanged=${protectedExtensionChanged.join(",") || "none"}`,
-                `protectedOnlyExtensionChanged=${protectedOnlyExtensionChanged.join(",") || "none"}`,
-                `protected=${protectedLabel}`
-              ].join(" ")
-            );
-
-            if (patterns > 0) {
-              patternNotes.push(
-                `- **${result.slug}, Musterdiagnose:** Basis ${baselinePatternCount ?? "–"} → Erweiterung ${patterns}; ` +
-                `Differenz ${comparison.patternDelta ? patternDelta : "–"}; ` +
-                `kurze Wortformen: ${compactSamples || "keine"}` +
-                `; DOM-Knoten: geschützt ${excludedNodeMarkers}, andere ${otherNodeMarkers}; ` +
-                `Wort-/Bereichsproben: ${nodeSamples}`
-              );
-            }
-
-            summary.push(
-              `| ${result.slug} | ${baseline.status || "unbekannt"} | ${extension.status || "unbekannt"} | ${elapsedDelta} | ${longTaskDelta} | ${videoFrameDelta} | ${videoLongGapDelta} | ${videoDroppedFrameDelta} | ${patterns ?? "–"} | ${javascriptErrors}/${rejections} | ${protectedLabel} |`
-            );
-          }
-
-          if (patternNotes.length > 0) {
-            summary.push("", "### Restmuster: kurze Diagnose", "", ...patternNotes);
-          }
-
-          if (process.env.GITHUB_STEP_SUMMARY) {
-            fs.appendFileSync(
-              process.env.GITHUB_STEP_SUMMARY,
-              `${summary.join("\n")}\n`
-            );
-          }
-          NODE
-
-      - name: Live-Report und Screenshots hochladen
-        if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: sprachverstand-real-world-${{ github.sha }}
-          path: artifacts/real-world/
+          name: discovery-single-runner-${{ github.run_id }}
+          path: artifacts/discovery-probe/
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 7
           compression-level: 6
