@@ -35,6 +35,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  retire:
+    if: inputs.profile == 'retire'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: echo Retiring the obsolete pending matrix wave
   crawl:
     if: ${{ inputs.profile != 'retire' }}
     name: Batch ${{ inputs.batch }} (12 workers, slot ${{ inputs.slot }})
@@ -93,4 +99,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/discovery-diagnostic/chain-next.mjs
-
