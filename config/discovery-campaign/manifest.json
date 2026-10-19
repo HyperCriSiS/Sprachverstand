@@ -4,7 +4,7 @@
   "batchSize": 12,
   "batches": 834,
   "workersPerRunner": 12,
-  "maxParallelRunners": 18,
+  "maxParallelRunners": 19,
   "maxSubpages": 50,
   "productBaseline": "6b135fc8dcfb2942ac96906583616e25874a8e4c",
   "domainSha256": "dd03ec038022fc24935f4a0af6a5156487f2722c3a7f7cbf502f8ec3e2e8f3a2",
