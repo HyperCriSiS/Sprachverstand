@@ -2,22 +2,29 @@ name: Discovery single-runner load probe
 
 on:
   workflow_dispatch:
+    inputs:
+      target_workers:
+        description: Browser workers to compare with four workers
+        type: choice
+        options: ['8', '12', '16']
+        default: '8'
 
 permissions:
   contents: read
 
 concurrency:
-  group: discovery-single-runner-probe
+  group: discovery-single-runner-probe-${{ inputs.target_workers }}
   cancel-in-progress: false
 
 jobs:
   probe:
-    name: One Ubuntu runner, four versus eight browser workers
+    name: One Ubuntu runner, four versus ${{ inputs.target_workers }} browser workers
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
       CI: true
       SPRACHVERSTAND_TEST_BROWSER_SOURCE: chrome-for-testing
+      DISCOVERY_TEST_WORKERS: ${{ inputs.target_workers }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -38,7 +45,7 @@ jobs:
         run: npm run test:browser:chromium
       - name: Prepare local diagnostic adapter
         run: node scripts/discovery-diagnostic/prepare.mjs
-      - name: Compare four and eight workers in balanced blocks
+      - name: Compare browser worker counts in balanced blocks
         run: node scripts/discovery-diagnostic/benchmark.mjs
       - name: Preserve probe results even on failure
         if: ${{ always() }}
