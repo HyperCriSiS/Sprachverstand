@@ -1,61 +1,54 @@
 name: Discovery resumable 10000-domain campaign
+run-name: deep10000 ${{ inputs.profile }} slot ${{ inputs.slot }} batch ${{ inputs.batch }}
 
 on:
   workflow_dispatch:
     inputs:
-      batches:
-        description: JSON array of batch IDs, at most 216 batches per wave
-        type: string
+      slot:
+        description: Campaign execution slot 0 to 17
         required: true
-        default: '[1]'
+        type: string
+      batch:
+        description: Assigned batch 433 to 834
+        required: true
+        type: string
       profile:
-        description: Canary or authorized full campaign
         type: choice
-        options: ['canary', 'full']
-        default: 'canary'
+        options: ['full', 'canary']
+        default: 'full'
+      chain_end:
+        description: Full campaign requires 834; canary can stop earlier
+        type: string
+        default: '834'
       resume_run:
-        description: Optional earlier run containing checkpoints for these batches
+        description: Optional earlier checkpoint run
         type: string
         default: ''
 
 permissions:
   contents: read
-  actions: read
+  actions: write
 
+# One running workflow per fixed slot, including successor jobs and retries.
 concurrency:
-  group: discovery-deep10000-${{ inputs.profile }}
+  group: discovery-deep10000-${{ inputs.profile }}-slot-${{ inputs.slot }}
   cancel-in-progress: false
 
 jobs:
-  validate:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      batches: ${{ steps.check.outputs.batches }}
-    steps:
-      - id: check
-        env:
-          BATCHES: ${{ inputs.batches }}
-        run: |
-          node -e 'const fs=require("fs"),a=JSON.parse(process.env.BATCHES);if(!Array.isArray(a)||!a.length||a.length>216||new Set(a).size!==a.length||a.some(x=>!Number.isInteger(x)||x<1||x>834))throw Error("Invalid batch IDs");fs.appendFileSync(process.env.GITHUB_OUTPUT,"batches="+JSON.stringify(a)+"\n")'
   crawl:
-    needs: validate
-    name: Batch ${{ matrix.batch }} (12 workers)
-    strategy:
-      fail-fast: false
-      max-parallel: 18
-      matrix:
-        batch: ${{ fromJSON(needs.validate.outputs.batches) }}
+    name: Batch ${{ inputs.batch }} (12 workers, slot ${{ inputs.slot }})
     runs-on: ubuntu-24.04
     timeout-minutes: 270
     env:
       CI: true
       SPRACHVERSTAND_TEST_BROWSER_SOURCE: chrome-for-testing
-      CRAWL_BATCH: ${{ matrix.batch }}
+      CRAWL_BATCH: ${{ inputs.batch }}
+      CRAWL_SLOT: ${{ inputs.slot }}
       CRAWL_PROFILE: ${{ inputs.profile }}
+      CRAWL_CHAIN_END: ${{ inputs.chain_end }}
       CRAWL_RESUME_RUN: ${{ inputs.resume_run }}
-      CRAWL_MAX_SUBPAGES: ${{ inputs.profile == 'canary' && '2' || '50' }}
-      CRAWL_BUDGET_MINUTES: ${{ inputs.profile == 'canary' && '15' || '230' }}
+      CRAWL_MAX_SUBPAGES: ${{ inputs.profile == 'canary' && '0' || '50' }}
+      CRAWL_BUDGET_MINUTES: ${{ inputs.profile == 'canary' && '10' || '230' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -65,10 +58,12 @@ jobs:
         with:
           node-version: 24.21.0
           cache: npm
+      - name: Validate finite slot assignment
+        run: node -e 'import("./scripts/discovery-diagnostic/chain-policy.mjs").then(m=>m.assignment(Number(process.env.CRAWL_SLOT),Number(process.env.CRAWL_BATCH),process.env.CRAWL_PROFILE,Number(process.env.CRAWL_CHAIN_END)))'
       - name: Install locked dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
-      - name: Verify queue, checkpoint and robots policy
-        run: node --test scripts/discovery-diagnostic/helpers.test.mjs scripts/discovery-diagnostic/campaign.test.mjs
+      - name: Verify checkpoint and finite chain policy
+        run: node --test scripts/discovery-diagnostic/helpers.test.mjs scripts/discovery-diagnostic/campaign.test.mjs scripts/discovery-diagnostic/chain-policy.test.mjs
       - name: Install pinned official Chrome for Testing
         run: bash scripts/setup-chrome-for-testing.sh
       - name: Build unchanged product and prove extension operation
@@ -87,9 +82,14 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: crawl-${{ inputs.profile }}-batch-${{ matrix.batch }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          name: crawl-${{ inputs.profile }}-batch-${{ inputs.batch }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: artifacts/discovery-campaign/
           if-no-files-found: warn
           retention-days: 14
           compression-level: 6
+      - name: Queue next batch in the same exclusive slot
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/discovery-diagnostic/chain-next.mjs
 
