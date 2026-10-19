@@ -14,7 +14,7 @@ on:
         type: string
       profile:
         type: choice
-        options: ['full', 'canary']
+        options: ['full', 'canary', 'retire']
         default: 'full'
       chain_end:
         description: Full campaign requires 834; canary can stop earlier
@@ -31,11 +31,12 @@ permissions:
 
 # One running workflow per fixed slot, including successor jobs and retries.
 concurrency:
-  group: discovery-deep10000-${{ inputs.profile }}-slot-${{ inputs.slot }}
+  group: ${{ inputs.profile == 'retire' && 'discovery-deep10000-full' || format('discovery-deep10000-{0}-slot-{1}', inputs.profile, inputs.slot) }}
   cancel-in-progress: false
 
 jobs:
   crawl:
+    if: ${{ inputs.profile != 'retire' }}
     name: Batch ${{ inputs.batch }} (12 workers, slot ${{ inputs.slot }})
     runs-on: ubuntu-24.04
     timeout-minutes: 270
