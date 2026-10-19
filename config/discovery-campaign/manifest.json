@@ -11,5 +11,8 @@
   "importedLocalPages": 1020,
   "importedRobotsSkippedDomains": 47,
   "selection": "First 2500 existing domains followed by unique registrable domains from the existing Wikidata candidate research. Newly added domains are targets, not prevalidated reachable or marker-bearing websites.",
-  "createdAt": "2026-10-19T01:04:03.460Z"
+  "createdAt": "2026-10-19T01:04:03.460Z",
+  "importedCanaryPages": 22,
+  "canaryRun": 39183836745,
+  "resumeProofRun": 39184058233
 }

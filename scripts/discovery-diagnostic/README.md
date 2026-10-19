@@ -17,3 +17,11 @@ Example local preparation:
 ```sh
 node scripts/discovery-diagnostic/make-batches.mjs --domains config/discovery-domains.json --state-dir artifacts/real-world/deep-2500/states --output artifacts/discovery-batches --batches 128
 ```
+
+## Authorized 10000-domain campaign
+
+The active workflow now processes explicit JSON batch-ID arrays in a matrix capped at 18 concurrent standard Ubuntu runners, twelve isolated domain workers per runner. Inputs are profile (canary/full), batches (up to 216 IDs), and optional resume_run. There are 834 batches of twelve domains, with four domains in the last batch. At most fifty additional suitable URLs per domain; no global root-page barrier. The frozen product baseline remains 6b135fc8dcfb2942ac96906583616e25874a8e4c.
+
+Campaign scripts persist every completed URL, supervise domain processes, bound retries and restore checkpoint artifacts with verified provenance. Every package uploads at job end, including partial failure. Full jobs stop work after 230 minutes and have a 270-minute hard timeout. Artifacts last fourteen days. Context evidence is retained without screenshots or browser profiles. The 1020 prior local comparisons and 22 new canary comparisons are retained in seeds; healthy canary states are reopened for the full fifty-subpage limit. No product fixes, PR, merge or release.
+
+Canary run 39183836745 completed twelve domains and 34 valid comparisons (including twelve imported comparisons). Run 39184058233 restored that checkpoint and completed with the same 34 comparisons, without repeating web visits. The three recorded bundle hashes match the frozen local build. New domains are candidate targets, not prevalidated reachable or marker-bearing sites. The desktop chat's ten-minute monitor manages subsequent waves and recovery.
