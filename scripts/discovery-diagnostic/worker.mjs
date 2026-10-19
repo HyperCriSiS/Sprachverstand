@@ -1,7 +1,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {runSiteMode,stopDriver,driverProcess} from '../../artifacts/discovery-probe/browser-library.mjs';
 const phase=process.env.DISCOVERY_PHASE,worker=Number(process.env.DISCOVERY_WORKER),count=Number(process.env.DISCOVERY_WORKERS);
-if(!['serial','parallel'].includes(phase)||!Number.isInteger(worker)||worker<0||worker>=count)throw new Error('Invalid worker assignment');
+if(!/^(?:four|eight)-[ab]$/.test(phase)||![4,8].includes(count)||!Number.isInteger(worker)||worker<0||worker>=count)throw new Error('Invalid worker assignment');
 const all=JSON.parse(await readFile('config/discovery-runner-probe.json','utf8'));
 const sites=all.filter((_,i)=>i%count===worker),dir='artifacts/discovery-probe/'+phase;
 await mkdir(dir,{recursive:true});const results=[];

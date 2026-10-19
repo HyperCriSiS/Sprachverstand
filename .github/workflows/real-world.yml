@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   probe:
-    name: One Ubuntu runner, serial versus four browser workers
+    name: One Ubuntu runner, four versus eight browser workers
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
-          node-version: 24
+          node-version: 24.21.0
           cache: npm
       - name: Install locked dependencies
         run: npm ci --prefer-offline --no-audit --no-fund
@@ -38,7 +38,7 @@ jobs:
         run: npm run test:browser:chromium
       - name: Prepare local diagnostic adapter
         run: node scripts/discovery-diagnostic/prepare.mjs
-      - name: Compare one and four browser workers on this runner
+      - name: Compare four and eight workers in balanced blocks
         run: node scripts/discovery-diagnostic/benchmark.mjs
       - name: Preserve probe results even on failure
         if: ${{ always() }}

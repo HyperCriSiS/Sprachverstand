@@ -11,8 +11,8 @@ const timer=setInterval(async()=>{const now=cpuTotals(),delta=now.total-previous
 const phases=[];const active=new Set();let timedOut=false;
 const deadline=setTimeout(()=>{timedOut=true;for(const child of active){try{if(process.platform==='linux')process.kill(-child.pid,'SIGTERM');else child.kill();}catch{}}},50*60*1000);
 try{
- for(const workers of [1,4]){
-  phase=workers===1?'serial':'parallel';const name=phase,started=Date.now();await mkdir(dir+'/'+name,{recursive:true});let childFailures=0;
+ for(const [workers,label] of [[4,'four-a'],[8,'eight-a'],[8,'eight-b'],[4,'four-b']]){
+  phase=label;const name=phase,started=Date.now();await mkdir(dir+'/'+name,{recursive:true});let childFailures=0;
   const tasks=[];
   for(let i=0;i<workers;i++){
    const log=await open(dir+'/'+name+'/worker-'+i+'.log','w');
@@ -31,11 +31,11 @@ try{
   console.log(JSON.stringify(data));if(timedOut||childFailures)break;
  }
 }finally{clearInterval(timer);clearTimeout(deadline);await writeFile(dir+'/resource-samples.json',JSON.stringify(samples));}
-const serial=phases.find(x=>x.name==='serial'),parallel=phases.find(x=>x.name==='parallel');
-const structural=phases.length===2&&phases.every(x=>x.completed===sites.length&&x.uniqueIds===sites.length&&!x.childFailures&&!x.crashes);
-const health=structural&&phases.every(x=>x.validPairs>=Math.ceil(sites.length*.9)&&x.accessProblems<=Math.floor(sites.length*.25))&&parallel.minimumAvailableMemoryGiB>=1;
-const speedup=serial&&parallel?serial.elapsedMs/parallel.elapsedMs:null;
-const result={schemaVersion:1,generatedAt:new Date().toISOString(),oneRunner:true,logicalCpus:os.cpus().length,totalMemoryGiB:os.totalmem()/1024**3,phases,timedOut,structurallyComplete:structural,loadProbePassed:health,speedup,qualification:health?'Vier Worker technisch bestanden; Durchsatz und Websitefehler separat bewerten.':'Belastungsprobe nicht bestanden oder unvollständig; keine Freigabe für große Verteilung.',note:'Gleiche öffentliche URLs, frische Browsersitzungen; Reihenfolge 1 dann 4 Worker. Netzwerk-/Seitenänderungen können die Geschwindigkeitsmessung beeinflussen. Keine Produktkorrekturen.'};
+const aggregate=[4,8].map(workers=>{const rows=phases.filter(x=>x.workers===workers);const elapsedMs=rows.reduce((n,x)=>n+x.elapsedMs,0),validPairs=rows.reduce((n,x)=>n+x.validPairs,0);return {workers,blocks:rows.length,elapsedMs,validPairs,pairsPerMinute:validPairs/(elapsedMs/60000),minimumAvailableMemoryGiB:rows.length?Math.min(...rows.map(x=>x.minimumAvailableMemoryGiB)):null};});
+const structural=phases.length===4&&phases.every(x=>x.completed===sites.length&&x.uniqueIds===sites.length&&!x.childFailures&&!x.crashes);
+const health=structural&&phases.every(x=>x.validPairs>=Math.ceil(sites.length*.9)&&x.accessProblems<=Math.floor(sites.length*.25)&&x.minimumAvailableMemoryGiB>=1);
+const speedup=aggregate.every(x=>x.blocks===2)?aggregate[0].elapsedMs/aggregate[1].elapsedMs:null;
+const result={schemaVersion:2,generatedAt:new Date().toISOString(),oneRunner:true,baselineWorkers:4,testedWorkers:8,logicalCpus:os.cpus().length,totalMemoryGiB:os.totalmem()/1024**3,phases,aggregate,timedOut,structurallyComplete:structural,loadProbePassed:health,speedup,qualification:health?'Acht Worker technisch bestanden; Durchsatzgewinn gegenüber vier Workern separat bewerten.':'Belastungsprobe nicht bestanden oder unvollständig; keine Freigabe für große Verteilung.',note:'Gleiche 16 öffentliche URLs je Block, frische Browsersitzungen; gegenbalancierte Reihenfolge 4–8–8–4 Worker. Je 32 URL-Vergleiche pro Konfiguration. Netzwerk-/Seitenänderungen können die Geschwindigkeitsmessung beeinflussen. Keine Produktkorrekturen.'};
 await writeFile(dir+'/benchmark.json',JSON.stringify(result,null,2));
 const md=['# Ein-Runner-Belastungsprobe','',`Runner: ${os.cpus().length} logische CPUs; ${(os.totalmem()/1024**3).toFixed(1)} GiB RAM.`,`Status: ${result.qualification}`,`Gemessener Durchsatzfaktor: ${speedup?.toFixed(2)??'nicht verfügbar'}×`,'','| Phase | Dauer min | Vollständig | Gültige Paare | Absturzindikatoren | Min. verfügbarer RAM GiB | Median CPU % |','| --- | ---: | ---: | ---: | ---: | ---: | ---: |',...phases.map(x=>`| ${x.name} (${x.workers} Worker) | ${(x.elapsedMs/60000).toFixed(2)} | ${x.completed}/${x.expected} | ${x.validPairs} | ${x.crashes} | ${x.minimumAvailableMemoryGiB?.toFixed(2)} | ${x.medianCpuPercent?.toFixed(1)} |`),'',result.note,''].join('\n');
 await writeFile(dir+'/benchmark.md',md);if(process.env.GITHUB_STEP_SUMMARY)await appendFile(process.env.GITHUB_STEP_SUMMARY,md);
