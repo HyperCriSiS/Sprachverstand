@@ -14,7 +14,7 @@ on:
         type: string
       profile:
         type: choice
-        options: ['full', 'canary', 'retire']
+        options: ['full', 'canary', 'retire', 'followup']
         default: 'full'
       chain_end:
         description: Full campaign requires 834; canary can stop earlier
@@ -42,7 +42,7 @@ jobs:
     steps:
       - run: echo Retiring the obsolete pending matrix wave
   crawl:
-    if: ${{ inputs.profile != 'retire' }}
+    if: ${{ inputs.profile != 'retire' && inputs.profile != 'followup' }}
     name: Batch ${{ inputs.batch }} (12 workers, slot ${{ inputs.slot }})
     runs-on: ubuntu-24.04
     timeout-minutes: 270
@@ -99,3 +99,37 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/discovery-diagnostic/chain-next.mjs
+
+
+  followup:
+    if: inputs.profile == 'followup'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    env:
+      CI: true
+      SPRACHVERSTAND_TEST_BROWSER_SOURCE: chrome-for-testing
+      DISCOVERY_DRIVER_PORT: '9650'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - run: bash scripts/setup-chrome-for-testing.sh
+      - run: npm run build:chromium
+      - run: npm run test:browser:chromium
+      - run: node scripts/discovery-diagnostic/campaign-prepare.mjs
+      - run: node scripts/discovery-diagnostic/followup-run.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: discovery-followup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/discovery-followup/
+          retention-days: 14
+          if-no-files-found: warn
