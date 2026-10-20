@@ -1,100 +1,67 @@
 [
   {
     "id": 1,
-    "slug": "followup-1",
-    "url": "https://deutscher-frauenring.de/foto-galerie/",
-    "domain": "deutscher-frauenring.de",
-    "words": [
-      "Praktikant*in"
-    ],
-    "selector": "#jet-toggle-control-1501 > div:nth-of-type(2) > h3:nth-of-type(1)",
-    "source": "artifacts/real-world/cloud-10000/results/12212403111/pages/3941cb06326f4c3f06a7b4a9.json",
-    "question": "Determine protection, technical-text, dynamic replacement or DOM processing cause",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
+    "slug": "protection-1",
+    "url": "https://bosch-stiftung.de/story/neuer-report-ueber-die-eu-aussengrenze-die-kartografierung-der-todeszone",
+    "domain": "bosch-stiftung.de",
+    "words": [],
+    "selector": "__sv_diagnostic_no_match__",
+    "source": "artifacts/real-world/cloud-10000/results/12157199431/pages/ee71e5327cdc541e9da95959.json",
+    "channel": "input",
+    "question": "Separate protected marker text changes from page-driven value/count changes",
+    "hypothesis": "Aggregate protected-selector hash changes can be caused by dynamic website forms, tokens, widgets or error documents without extension text writes",
+    "stopCriterion": "One paired visit per representative selector class; inaccessible pages stay unresolved, no bypass"
   },
   {
     "id": 2,
-    "slug": "followup-2",
-    "url": "https://www.forumostwest.ch/blog/",
-    "domain": "forumostwest.ch",
-    "words": [
-      "AutorInnen"
-    ],
-    "selector": "#text-7 > div:nth-of-type(1) > p:nth-of-type(1)",
-    "source": "artifacts/real-world/cloud-10000/results/12177091828/pages/cc2bb8f2329da7e61689a191.json",
-    "question": "Determine protection, technical-text, dynamic replacement or DOM processing cause",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
+    "slug": "protection-2",
+    "url": "https://www.aletheia-scimed.ch/de/aktuell/page/4/",
+    "domain": "aletheia-scimed.ch",
+    "words": [],
+    "selector": "__sv_diagnostic_no_match__",
+    "source": "artifacts/real-world/cloud-10000/results/12157942619/pages/1f27e32620959e1ba792cd6c.json",
+    "channel": "textarea",
+    "question": "Separate protected marker text changes from page-driven value/count changes",
+    "hypothesis": "Aggregate protected-selector hash changes can be caused by dynamic website forms, tokens, widgets or error documents without extension text writes",
+    "stopCriterion": "One paired visit per representative selector class; inaccessible pages stay unresolved, no bypass"
   },
   {
     "id": 3,
-    "slug": "followup-3",
-    "url": "https://hiik.de/news/",
-    "domain": "hiik.de",
-    "words": [
-      "Wissenschaftler*innen"
-    ],
-    "selector": "#post-4092 > div:nth-of-type(2) > div:nth-of-type(2) > p:nth-of-type(7)",
-    "source": "artifacts/real-world/cloud-10000/results/12164427893/pages/9147e1ed326f97e2631ccf36.json",
-    "question": "Determine protection, technical-text, dynamic replacement or DOM processing cause",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
+    "slug": "protection-3",
+    "url": "https://jobs.borkenerzeitung.de/?p=21",
+    "domain": "borkenerzeitung.de",
+    "words": [],
+    "selector": "__sv_diagnostic_no_match__",
+    "source": "artifacts/real-world/cloud-10000/results/12162789105/pages/c9b78509f52d9c8c9602e54e.json",
+    "channel": "pre",
+    "question": "Separate protected marker text changes from page-driven value/count changes",
+    "hypothesis": "Aggregate protected-selector hash changes can be caused by dynamic website forms, tokens, widgets or error documents without extension text writes",
+    "stopCriterion": "One paired visit per representative selector class; inaccessible pages stay unresolved, no bypass"
   },
   {
     "id": 4,
-    "slug": "followup-4",
-    "url": "https://www.lmg-koenigsbach.de/category/aktuelles/page/22/",
-    "domain": "lmg-koenigsbach.de",
-    "words": [
-      "Schüler*innen"
-    ],
-    "selector": "#post-5384 > div:nth-of-type(1) > p:nth-of-type(2)",
-    "source": "artifacts/real-world/cloud-10000/results/12241088437/pages/f91ea2593e210feee12c0ddd.json",
-    "question": "Determine protection, technical-text, dynamic replacement or DOM processing cause",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
+    "slug": "protection-4",
+    "url": "https://www.icanw.org/high_level_week_2026",
+    "domain": "icanw.org",
+    "words": [],
+    "selector": "__sv_diagnostic_no_match__",
+    "source": "artifacts/real-world/cloud-10000/results/12162729342/pages/7e4a072ca6f7d915a2f36a74.json",
+    "channel": "code",
+    "question": "Separate protected marker text changes from page-driven value/count changes",
+    "hypothesis": "Aggregate protected-selector hash changes can be caused by dynamic website forms, tokens, widgets or error documents without extension text writes",
+    "stopCriterion": "One paired visit per representative selector class; inaccessible pages stay unresolved, no bypass"
   },
   {
     "id": 5,
-    "slug": "followup-5",
-    "url": "https://www.walk-space.at/index.php/56-projekte",
-    "domain": "walk-space.at",
-    "words": [
-      "TeilnehmerInnen"
-    ],
-    "selector": "#t3-content > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(8) > article:nth-of-type(1) > section:nth-of-type(1) > p:nth-of-type(161)",
-    "source": "artifacts/real-world/cloud-10000/results/12228402532/pages/3fe63c807c9e355f18a62da5.json",
-    "question": "Determine protection, technical-text, dynamic replacement or DOM processing cause",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
-  },
-  {
-    "id": 6,
-    "slug": "followup-6",
-    "url": "https://www.kk-km.de/zentrale/unsere-angebote/krankenhaeuser/krankenhaeuser/gk_bonn.php",
-    "domain": "kk-km.de",
-    "words": [
-      "Mitarbeiter:in"
-    ],
-    "selector": "div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > p:nth-of-type(1)",
-    "source": "artifacts/real-world/cloud-10000/results/12159358267/pages/1f2518718e81ab75edfa2d7c.json",
-    "question": "Distinguish actual text-node context guard from block-context approximation",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
-  },
-  {
-    "id": 7,
-    "slug": "followup-7",
-    "url": "https://www.kunstuni-linz.at/aktuelles/wettbewerbe-ausschreibungen/wettbewerbe-detailseite/urban-ecologies-coexistence-and-control",
-    "domain": "kunstuni-linz.at",
-    "words": [
-      "Künstler:innen"
-    ],
-    "selector": "#c4364 > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > p:nth-of-type(2)",
-    "source": "artifacts/real-world/cloud-10000/results/12158773098/pages/3aa948d503e5b0f588e37955.json",
-    "question": "Confirm decomposed text node in actual live DOM",
-    "hypothesis": "Captured block context alone cannot establish the processed text node or timing",
-    "stopCriterion": "One baseline/extension pair, no additional URL discovery; inaccessible page remains unresolved"
+    "slug": "protection-5",
+    "url": "https://www.iz3w.org/artikel/alpa-shah-naxaliten-maoisten-forschung",
+    "domain": "iz3w.org",
+    "words": [],
+    "selector": "__sv_diagnostic_no_match__",
+    "source": "artifacts/real-world/cloud-10000/results/12177091828/pages/8edf2ff144958dcaaea4cd1c.json",
+    "channel": "[contenteditable='true']",
+    "question": "Separate protected marker text changes from page-driven value/count changes",
+    "hypothesis": "Aggregate protected-selector hash changes can be caused by dynamic website forms, tokens, widgets or error documents without extension text writes",
+    "stopCriterion": "One paired visit per representative selector class; inaccessible pages stay unresolved, no bypass"
   }
 ]
