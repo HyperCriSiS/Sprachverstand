@@ -475,19 +475,51 @@ function mapSingular(
 // marked noun and is never touched.
 const pairSpace = String.raw`[   ]`;
 const spacedPairSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*\/${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*[\/*:]${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
 
+// Contracted and written-out preposition in one pair: `vom:von der
+// Arbeitgeber:in`, `von der/vom …`, `beim*bei der …`, `zum/zu der …`. Before,
+// only the noun changed (`vom:von der Arbeitgeber`).
+const contractedPrepositions = new Map([["vom", "von"], ["beim", "bei"], ["zum", "zu"]]);
+const contractedPairSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])(vom|beim|zum|von der|bei der|zu der)[   ]*[:*\/·][   ]*(vom|beim|zum|von der|bei der|zu der)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?)|[:*_·•’‘])in(?![\p{L}\p{M}_-])`,
+  "giu"
+);
+
+function transformContractedPairs(input: string): TransformResult {
+  if (!/(?:vom|beim|zum)[   ]*[:*\/·]|der[   ]*[:*\/·][   ]*(?:vom|beim|zum)/iu.test(input)) {
+    return {text: input, replacements: 0};
+  }
+  let replacements = 0;
+  const text = input.replace(
+    contractedPairSingularPattern(),
+    (match: string, left: string, right: string, adjectives: string, base: string) => {
+      const [contracted, written] = contractedPrepositions.has(left.toLocaleLowerCase(locale))
+        ? [left, right] : [right, left];
+      const preposition = contractedPrepositions.get(contracted.toLocaleLowerCase(locale));
+      if (!preposition || written.toLocaleLowerCase(locale) !== `${preposition} der`) return match;
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const noun = mapSingular(base, "dative");
+      if (!noun) return match;
+      replacements += 1;
+      return applyTokenCase(left, contracted.toLocaleLowerCase(locale)) + adjectives + noun;
+    }
+  );
+  return {text, replacements};
+}
+
 function transformSpacedPairs(input: string): TransformResult {
-  if (!/[   ]\/|\/[   ]|\soder\s/iu.test(input)) {
+  if (!/[   ][\/*:]|[\/*:][   ]|\soder\s/iu.test(input)) {
     return {text: input, replacements: 0};
   }
   let replacements = 0;
   const text = input.replace(
     spacedPairSingularPattern(),
     (match: string, left: string, separator: string, right: string, whitespace: string, base: string) => {
-      if (separator === "/") return match;
+      // Compact pairs (`der/die`, `der*die`) belong to the other pair rules.
+      if (/^[\/*:]$/u.test(separator)) return match;
       const form = determinerForms.get(`${left}/${right}`.toLocaleLowerCase(locale));
       const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
       if (!form || !noun) return match;
@@ -963,7 +995,12 @@ export const singularContextRule: Rule = {
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const spacedPairResult = transformSpacedPairs(input);
+    const contractedPairResult = transformContractedPairs(input);
+    const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
+    const spacedPairResult = {
+      text: spacedPairResult0.text,
+      replacements: contractedPairResult.replacements + spacedPairResult0.replacements
+    };
     const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
       spacedPairResult.text
     );
