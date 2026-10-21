@@ -775,7 +775,7 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
 // compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
 // pair (`beim:bei der …`) and not before a coordinated marked noun.
 const feminineDerSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
   "gu"
 );
 const dativePrepositionSet = new Set(dativePrepositions.split("|"));
