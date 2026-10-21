@@ -21,7 +21,20 @@ describe("Dativ nur in einer zusammenhängenden Nominalphrase", () => {
     ["zu unseren Lehrer*innen", "zu unseren Lehrern"],
     ["zu gewalttätigen Funktionär*innen", "zu gewalttätigen Funktionären"],
     ["bei den Jungen Kunstfreund*innen", "bei den Jungen Kunstfreunden"],
-    ["mit allen Lehrer*innen und Schüler*innen", "mit allen Lehrern und Schülern"]
+    ["mit allen Lehrer*innen und Schüler*innen", "mit allen Lehrern und Schülern"],
+    // Großgeschriebene Höflichkeits- und Duzform sowie Mengennomen gehören
+    // zur Phrase (Regression aus #470, Webanalyse 21.10.2026).
+    ["Sie legen mit Ihren Schüler*innen einen Zweck fest", "Sie legen mit Ihren Schülern einen Zweck fest"],
+    ["Komm mit Deinen Freund*innen", "Komm mit Deinen Freunden"],
+    ["Erzähle von Deinen Schüler:innen.", "Erzähle von Deinen Schülern."],
+    ["bei Ihren Freund:innen oder Kolleg:innen", "bei Ihren Freunden oder Kollegen"],
+    ["Rechnungen von Tausenden Unterstützer:innen", "Rechnungen von Tausenden Unterstützern"],
+    ["von Millionen Verbraucher*innen verwendet", "von Millionen Verbrauchern verwendet"],
+    // Normale Feminina bleiben auch nach großgeschriebenem Begleitwort.
+    ["Komm mit Deinen Freundinnen.", "Komm mit Deinen Freundinnen."],
+    ["mit Ihren Schülerinnen", "mit Ihren Schülerinnen"],
+    // Großgeschriebenes Nomen beendet die Phrase weiterhin.
+    ["Seit Monaten arbeiten Schüler*innen", "Seit Monaten arbeiten Schüler"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });
 
