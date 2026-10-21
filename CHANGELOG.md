@@ -33,15 +33,6 @@ dokumentiert.
 
 ### Behoben
 
-- Zweite Lexikontranche aus der Webanalyse: rund 1.250 bisher offene
-  Personenbezeichnungen werden umgewandelt, jede einzeln geprüft, darunter
-  seltene Bildungen („Kurzfilmer*innen“), schwache Komposita
-  („Sprachpat*innen“ → „Sprachpaten“), Bauer-Komposita („Kleinbauer*innen“
-  → „Kleinbauern“ statt „Kleinbauer“), Gruppen- und Herkunftsbezeichnungen
-  sowie Ausgangsschreibweisen, die nur entgendert, nicht korrigiert werden.
-- Neue, standardmäßig aktive Regelgruppe „Englische Lehnwörter“: „Maker:innen“,
-  „Researcher*in“ oder „Creator*innen“ werden wie deutsche
-  Personenbezeichnungen umgewandelt und lassen sich gesondert abschalten.
 - Markierter Singular nach Präposition und femininem Begleitwort wird wie
   beim Binnen-I aufgelöst: „mit der Patient*in“ ergab „mit der Patient“ und
   wird jetzt zu „mit dem Patienten“, „für die Kolleg:in“ zu „für den
