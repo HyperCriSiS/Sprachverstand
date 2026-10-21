@@ -33,6 +33,13 @@ dokumentiert.
 
 ### Behoben
 
+- Lexikontranche aus der Webanalyse vom 21.10.2026: Wissenschafter, Innovator,
+  Wiedereinsteiger, Pensionist, Dissertant, Ohrenzeuge (Paradigmen gegen
+  Duden geprüft), dazu regelmäßige Formen auf mehreren Domains wie
+  Asylwerber, Zuweiser, Dienstnehmer, Zuseher, Kollegiat, Initiant,
+  Famulant, Promotor, Junior, Mandatar, Kassier und Lesepate. Berufe auf
+  „-bauer“ („Metallbauer/in“, „Straßenbauer/in“) werden im Singular
+  erkannt; ihre weibliche Form ist „-bauerin“, nicht „-bäuerin“.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
