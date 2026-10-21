@@ -33,6 +33,7 @@ interface PaleMoonGBrowser extends HTMLElement {
   selectedTab?: PaleMoonTab;
   readonly tabContainer?: EventTarget;
   addTab(url: string): PaleMoonTab;
+  getTabForBrowser?(browser: PaleMoonBrowser): PaleMoonTab | null;
 }
 
 interface PaleMoonServices {
@@ -86,6 +87,8 @@ interface GetInspectedCountMessage {
 interface PaleMoonBridge {
   openPopup(): void;
   openOptions(): void;
+  openExtensionPage(url: string): number | undefined;
+  selectTab(tabId: number): void;
   getActiveTabId(): number | undefined;
   getCountText(tabId?: number): string;
   handleMessage(message: unknown): unknown;
@@ -522,6 +525,30 @@ function openOptions(): void {
   browser.selectedTab = tab;
 }
 
+// `tabs.create`/`tabs.update` of the shared options opener: only pages of
+// this add-on open in a tab, never arbitrary URLs from a message.
+const extensionPagePrefix = "chrome://sprachverstand/content/";
+
+function openExtensionPage(url: string): number | undefined {
+  const browser = windowObject.gBrowser;
+  if (!browser || !url.startsWith(extensionPagePrefix)) {
+    return undefined;
+  }
+
+  const tab = browser.addTab(url);
+  browser.selectedTab = tab;
+  return tab.linkedBrowser ? tabIdForBrowser(tab.linkedBrowser) : undefined;
+}
+
+function selectTab(tabId: number): void {
+  const browser = windowObject.gBrowser;
+  const target = browsersByTabId.get(tabId);
+  const tab = target ? browser?.getTabForBrowser?.(target) : undefined;
+  if (browser && tab) {
+    browser.selectedTab = tab;
+  }
+}
+
 function countText(tabId?: number): string {
   const resolvedTabId = tabId ?? activeTabId();
   if (resolvedTabId === undefined) {
@@ -611,6 +638,8 @@ function isGetInspectedCountMessage(
 const bridge: PaleMoonBridge = {
   openPopup,
   openOptions,
+  openExtensionPage,
+  selectTab,
   getActiveTabId: activeTabId,
   getCountText: countText,
   handleMessage(message) {

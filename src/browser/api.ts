@@ -5,6 +5,7 @@ export interface StorageChange {
 
 export interface ExtensionTab {
   readonly id?: number;
+  readonly url?: string;
 }
 
 export interface MessageSender {
@@ -36,6 +37,7 @@ export interface ExtensionApi {
   readonly storage: {
     readonly sync: StorageArea;
     readonly local: StorageArea;
+    readonly session?: StorageArea;
     readonly onChanged: {
       addListener(
         listener: (
@@ -52,6 +54,8 @@ export interface ExtensionApi {
     };
   };
   readonly runtime: {
+    // Fehlt nach Update/Deaktivierung in einem verwaisten Content-Script.
+    readonly id?: string;
     openOptionsPage(): Promise<void> | void;
     getURL(path: string): string;
     sendMessage(message: unknown): Promise<unknown>;
@@ -72,6 +76,7 @@ export interface ExtensionApi {
     }): Promise<void> | void;
   };
   readonly tabs: {
+    get?(tabId: number): Promise<ExtensionTab>;
     create(createProperties: {
       readonly url: string;
       readonly active?: boolean;
@@ -80,6 +85,10 @@ export interface ExtensionApi {
       readonly active: boolean;
       readonly currentWindow: boolean;
     }): Promise<ExtensionTab[]>;
+    update(
+      tabId: number,
+      updateProperties: { readonly active?: boolean }
+    ): Promise<ExtensionTab>;
     sendMessage(tabId: number, message: unknown): Promise<unknown>;
     readonly onUpdated: {
       addListener(

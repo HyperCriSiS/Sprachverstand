@@ -553,16 +553,27 @@ function scheduleInteractiveUpdate(): void {
   }, 120);
 }
 
+let countRequestGeneration = 0;
+let liveCountRevision = 0;
 async function renderCurrentCount(): Promise<void> {
-  const api = getExtensionApi();
-  const response = (await api.runtime.sendMessage({
-    type: "sprachverstand.get-inspected-count"
-  })) as { readonly tabId?: unknown; readonly text?: unknown } | undefined;
-
-  activeTabId =
-    typeof response?.tabId === "number" ? response.tabId : activeTabId;
-  countOutput.textContent =
-    typeof response?.text === "string" ? response.text : "0";
+  const generation = ++countRequestGeneration;
+  const liveRevision = liveCountRevision;
+  try {
+    const response = (await getExtensionApi().runtime.sendMessage({
+      type: "sprachverstand.get-inspected-count"
+    })) as { readonly tabId?: unknown; readonly text?: unknown } | undefined;
+    if (generation !== countRequestGeneration) return;
+    const tabId =
+      typeof response?.tabId === "number" ? response.tabId : activeTabId;
+    if (tabId === activeTabId && liveRevision !== liveCountRevision) return;
+    activeTabId = tabId;
+    countOutput.textContent =
+      typeof response?.text === "string" ? response.text : "0";
+  } catch {
+    if (generation === countRequestGeneration && liveRevision === liveCountRevision) {
+      countOutput.textContent = "0";
+    }
+  }
 }
 
 function refreshCountAfterChange(): void {
@@ -755,6 +766,7 @@ function handleRuntimeMessage(message: unknown): void {
     isCountUpdatedMessage(message) &&
     message.tabId === activeTabId
   ) {
+    liveCountRevision++;
     countOutput.textContent = message.text || "0";
   }
 }
@@ -765,7 +777,6 @@ async function start(): Promise<void> {
   render(await loadSettings());
   renderCustomReplacementFeedback();
   renderCustomReplacementPreview();
-  await renderCurrentCount();
 
   const api = getExtensionApi();
   api.runtime.onMessage.addListener(handleRuntimeMessage);
@@ -852,7 +863,8 @@ async function start(): Promise<void> {
         importSettingsFile.value = "";
       });
   });
-
+  // The optional live count must not delay form interaction or saving.
+  await renderCurrentCount();
 }
 
 void start();

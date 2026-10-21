@@ -1,0 +1,17 @@
+{
+  "settingsRevision": 7,
+  "enabled": true,
+  "excludedDomains": ["sub.example.org"],
+  "enabledRuleGroupIds": ["plural-separators", "plural-binnen-i"],
+  "protectedTerms": ["Sonderbegriff"],
+  "customReplacements": [
+    {
+      "source": "Studierende",
+      "replacement": "Studenten"
+    }
+  ],
+  "processAccessibleAttributes": true,
+  "processQuotedText": false,
+  "processSubtitles": true,
+  "syncCategoryIds": ["text-options"]
+}

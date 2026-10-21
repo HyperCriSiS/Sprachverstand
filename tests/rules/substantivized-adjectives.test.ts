@@ -16,6 +16,7 @@ describe("substantivizedAdjectivesRule", () => {
     ["mein:e Angehörige:r", "mein Angehöriger"],
     ["Sachverständige:r", "Sachverständiger"],
     ["Vorgesetzte:r", "Vorgesetzter"],
+    ["Verbündete:r", "Verbündeter"],
     ["einem:einer Arbeitslose:n", "einem Arbeitslosen"],
     ["AUSZUBILDENDE:R", "AUSZUBILDENDER"]
   ])("wandelt %s in %s um", (input, expected) => {
@@ -30,7 +31,6 @@ describe("substantivizedAdjectivesRule", () => {
     "erwachsene Kinder",
     "Unbekannte:r",
     "Verantwortliche",
-    "Verbündete:r",
     "ein:e Erwachsene:n",
     "einem:einer Erwachsene:r"
   ])("lässt %s unverändert", (input) => {

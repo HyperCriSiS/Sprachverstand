@@ -1,20 +1,21 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
 
 const titleToken = String.raw`(?:Prof|Dr)(?:\.in|[:*_]in)`;
 const feminineDeterminer =
   String.raw`(?:die|eine|keine|jede|diese|jene|welche|meine|deine|seine|ihre|unsere|eure|der|einer|keiner|jeder|dieser|jener|welcher|meiner|deiner|seiner|ihrer|unserer|eurer|zur)`;
 
-const articlePattern = new RegExp(
+const articlePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${feminineDeterminer})(\s+)(${titleToken})(?![\p{L}\p{M}])`,
   "giu"
 );
 
-const titleBeforeNamePattern = new RegExp(
+const titleBeforeNamePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${titleToken})(?![\p{L}\p{M}])(?=\s+(?:(?:Prof|Dr)(?:\.in|[:*_]in|\.)|\p{Lu}[\p{L}\p{M}'’.-]+))`,
   "giu"
 );
 
-const standalonePattern = new RegExp(
+const standalonePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${titleToken})(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -70,12 +71,13 @@ export const titleAbbreviationsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     let text = input;
     let replacements = 0;
 
     const articleResult = replaceAndCount(
       text,
-      articlePattern,
+      articlePattern(),
       (_match, determiner, whitespace, token) =>
         `${determiner}${whitespace}${expandedTitle(token)}`
     );
@@ -84,7 +86,7 @@ export const titleAbbreviationsRule: Rule = {
 
     const titleResult = replaceAndCount(
       text,
-      titleBeforeNamePattern,
+      titleBeforeNamePattern(),
       (_match, token) => neutralTitle(token)
     );
     text = titleResult.text;
@@ -92,7 +94,7 @@ export const titleAbbreviationsRule: Rule = {
 
     const standaloneResult = replaceAndCount(
       text,
-      standalonePattern,
+      standalonePattern(),
       (_match, token) => expandedTitle(token)
     );
     text = standaloneResult.text;

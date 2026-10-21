@@ -115,6 +115,10 @@ describe("Popup-Anzeige", () => {
     expect(switchBlock).toContain("justify-content: flex-start");
     expect(domainBlock).toContain("margin-left: auto");
     expect(domainBlock).not.toContain("position: absolute");
+    // Lange Beschriftungen brechen auf zwei Zeilen um statt mit „…“ zu enden.
+    expect(domainBlock).toContain("white-space: normal");
+    expect(domainBlock).toContain("-webkit-line-clamp: 2");
+    expect(domainBlock).not.toContain("text-overflow: ellipsis");
   });
 
   it("bietet die aktuelle Website als separat ausblendbare Domain-Aktion an", () => {

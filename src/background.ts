@@ -1,6 +1,11 @@
 import { getExtensionApi } from "./browser/api";
 import { badgeBackgroundColor, formatBadgeCount } from "./browser/badge";
 import { parseOptionsPageTabId } from "./browser/options";
+import {isLocalTransformRequest, isLocalTransformBatchRequest, type LocalTransformRequest} from "./core/local-transform-message";
+import {expandSharedLocalTransformBatch} from "./core/shared-local-transform-batch";
+import {transformTextWithSummary} from "./core/transform-text";
+import {defaultRules} from "./rules";
+import {maximumReportedReplacementSummaries, aggregateReplacementSummaries} from "./core/replacement-summary";
 
 interface ReplacementSummaryEntry {
   readonly original: string;
@@ -47,6 +52,9 @@ interface CachedReplacementState {
 
 const api = getExtensionApi();
 const statesByTab = new Map<number, CachedReplacementState>();
+const publishedStatesByTab = new Map<number, CachedReplacementState>();
+const activeStatePublications = new Map<number, number>();
+const runtimeStateStoragePrefix = "sprachverstand.runtime-state.";
 let inspectedTabId: number | undefined;
 
 function hostnameFromSenderUrl(url: string | undefined): string | undefined {
@@ -117,12 +125,93 @@ function normalizedReplacementEntries(
       count: Math.max(1, Math.trunc(candidate.count))
     });
 
-    if (normalized.length >= 250) {
+    if (normalized.length >= maximumReportedReplacementSummaries) {
       break;
     }
   }
 
   return normalized;
+}
+
+function runtimeStateStorageKey(tabId: number): string {
+  return `${runtimeStateStoragePrefix}${tabId}`;
+}
+
+function normalizedCachedState(value: unknown): CachedReplacementState | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const candidate = value as { readonly hostname?: unknown; readonly count?: unknown; readonly replacements?: unknown };
+  if (typeof candidate.count !== "number" || !Number.isFinite(candidate.count) || !Array.isArray(candidate.replacements)) {
+    return undefined;
+  }
+
+  return {
+    hostname: typeof candidate.hostname === "string" && candidate.hostname ? candidate.hostname : undefined,
+    count: Math.max(0, Math.trunc(candidate.count)),
+    replacements: normalizedReplacementEntries(candidate.replacements)
+  };
+}
+
+async function hostnameFromTab(tabId: number): Promise<string | undefined> {
+  if (!api.tabs.get) {
+    return undefined;
+  }
+  try {
+    const tab = await api.tabs.get(tabId);
+    return hostnameFromSenderUrl(tab.url);
+  } catch {
+    return undefined;
+  }
+}
+
+async function readCachedTabState(tabId: number): Promise<CachedReplacementState | undefined> {
+  const memoryState = statesByTab.get(tabId);
+  if (memoryState) {
+    return memoryState;
+  }
+  const session = api.storage.session;
+  if (!session) {
+    return undefined;
+  }
+  try {
+    const key = runtimeStateStorageKey(tabId);
+    const values = await session.get(key);
+    const state = normalizedCachedState(values[key]);
+    if (!state) {
+      return undefined;
+    }
+    const restored = { ...state, hostname: state.hostname ?? (await hostnameFromTab(tabId)) };
+    statesByTab.set(tabId, restored);
+    return restored;
+  } catch {
+    return undefined;
+  }
+}
+
+async function persistTabState(tabId: number, state: CachedReplacementState): Promise<boolean> {
+  const session = api.storage.session;
+  if (!session) { return true; }
+  try {
+    await session.set({ [runtimeStateStorageKey(tabId)]: state });
+    return true;
+  } catch {
+    // Session-Speicher ist auf älteren Browsern nicht verfügbar.
+    return false;
+  }
+}
+
+async function removePersistedTabState(tabId: number): Promise<void> {
+  const session = api.storage.session;
+  if (!session) {
+    return;
+  }
+  try {
+    await session.remove(runtimeStateStorageKey(tabId));
+  } catch {
+    // Der flüchtige Session-Speicher ist nur eine Robustheitsschicht.
+  }
 }
 
 async function notifyStateUpdate(
@@ -278,27 +367,42 @@ async function readLiveReplacementState(
   }
 }
 
-async function updateTabState(
-  tabId: number,
-  state: CachedReplacementState
-): Promise<void> {
-  statesByTab.set(tabId, state);
-
-  await Promise.all([
-    api.action.setBadgeBackgroundColor({
-      color: badgeBackgroundColor,
-      tabId
-    }),
-    api.action.setBadgeText({
-      text: formatBadgeCount(state.count),
-      tabId
-    })
-  ]);
-  await notifyStateUpdate(tabId, state);
+function sameReplacementState(left: CachedReplacementState | undefined, right: CachedReplacementState): boolean {
+  return Boolean(left && left.hostname === right.hostname && left.count === right.count &&
+    left.replacements.length === right.replacements.length && left.replacements.every((entry, index) => {
+      const other = right.replacements[index]!;
+      return entry.original === other.original && entry.replacement === other.replacement && entry.count === other.count;
+    }));
 }
 
+async function updateTabState(tabId: number, state: CachedReplacementState): Promise<void> {
+  if (!activeStatePublications.has(tabId) && sameReplacementState(statesByTab.get(tabId), state) &&
+      sameReplacementState(publishedStatesByTab.get(tabId), state)) return;
+  statesByTab.set(tabId, state);
+  activeStatePublications.set(tabId, (activeStatePublications.get(tabId) ?? 0) + 1);
+  try {
+    const persisted = await persistTabState(tabId, state);
+    await Promise.all([
+      api.action.setBadgeBackgroundColor({color: badgeBackgroundColor, tabId}),
+      api.action.setBadgeText({text: formatBadgeCount(state.count), tabId})
+    ]);
+    await notifyStateUpdate(tabId, state);
+    // A late completion or navigation must never certify a different state.
+    if (persisted && statesByTab.get(tabId) === state) publishedStatesByTab.set(tabId, state);
+    else publishedStatesByTab.delete(tabId);
+  } catch (error) {
+    publishedStatesByTab.delete(tabId);
+    throw error;
+  } finally {
+    const pending = (activeStatePublications.get(tabId) ?? 1) - 1;
+    if (pending) activeStatePublications.set(tabId, pending);
+    else activeStatePublications.delete(tabId);
+  }
+}
 async function resetTabState(tabId: number): Promise<void> {
   statesByTab.delete(tabId);
+  publishedStatesByTab.delete(tabId);
+  await removePersistedTabState(tabId);
 
   try {
     await api.action.setBadgeText({ text: "", tabId });
@@ -317,11 +421,12 @@ async function getCountState(tabId: number): Promise<{
   readonly tabId: number;
   readonly text: string;
 }> {
-  const cached = statesByTab.get(tabId);
+  const cached = await readCachedTabState(tabId);
   const live = await readLiveReplacementState(tabId);
   if (live) {
     const merged = mergeCompatibleState(live, cached);
     statesByTab.set(tabId, merged);
+    await persistTabState(tabId, merged);
     return { tabId, text: formatBadgeCount(merged.count) || "0" };
   }
 
@@ -333,7 +438,26 @@ async function getCountState(tabId: number): Promise<{
   return { tabId, text: badgeText || "0" };
 }
 
+function transformLocalRequest(request: LocalTransformRequest) {
+  const {disabledRuleIds, ...options} = request.options;
+  const result = transformTextWithSummary(request.input, defaultRules, {
+    ...options, ...(disabledRuleIds ? {disabledRuleIds: new Set(disabledRuleIds)} : {})
+  });
+  // Repeated words need one counted entry, not thousands of objects cloned
+  // back into the page renderer. No distinct pair or count is discarded.
+  return {...result, summaries: aggregateReplacementSummaries(result.summaries)};
+}
+
 api.runtime.onMessage.addListener(async (message, sender) => {
+  const batch = isLocalTransformBatchRequest(message) ? message : expandSharedLocalTransformBatch(message);
+  if (batch) {
+    if (sender.tab?.id === undefined) return undefined;
+    return batch.requests.map(transformLocalRequest);
+  }
+  if (isLocalTransformRequest(message)) {
+    if (sender.tab?.id === undefined) return undefined;
+    return transformLocalRequest(message);
+  }
   if (isReplacementStateMessage(message)) {
     const tabId = sender.tab?.id;
     if (tabId === undefined) {
@@ -349,7 +473,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
         count: Math.max(0, Math.trunc(message.count)),
         replacements: normalizedReplacementEntries(message.replacements)
       },
-      statesByTab.get(tabId)
+      await readCachedTabState(tabId)
     );
     await updateTabState(tabId, incoming);
     return undefined;
@@ -362,11 +486,11 @@ api.runtime.onMessage.addListener(async (message, sender) => {
       return undefined;
     }
 
+    const cached = await readCachedTabState(tabId);
     await updateTabState(tabId, {
-      hostname:
-        statesByTab.get(tabId)?.hostname ?? hostnameFromSenderUrl(sender.url),
+      hostname: cached?.hostname ?? hostnameFromSenderUrl(sender.url),
       count: Math.max(0, Math.trunc(message.count)),
-      replacements: statesByTab.get(tabId)?.replacements ?? []
+      replacements: cached?.replacements ?? []
     });
     return undefined;
   }
@@ -385,11 +509,12 @@ api.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   if (isGetReplacementStateMessage(message)) {
-    const cached = statesByTab.get(message.tabId);
+    const cached = await readCachedTabState(message.tabId);
     const live = await readLiveReplacementState(message.tabId);
     if (live) {
       const merged = mergeCompatibleState(live, cached);
       statesByTab.set(message.tabId, merged);
+      await persistTabState(message.tabId, merged);
       return {
         text: formatBadgeCount(merged.count) || "0",
         hostname: merged.hostname,
@@ -410,7 +535,7 @@ api.runtime.onMessage.addListener(async (message, sender) => {
     const badgeText = await api.action.getBadgeText({ tabId: message.tabId });
     return {
       text: badgeText || "0",
-      hostname: undefined,
+      hostname: await hostnameFromTab(message.tabId),
       count: Number.parseInt(badgeText, 10) || 0,
       replacements: []
     };
@@ -432,4 +557,6 @@ api.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
 api.tabs.onRemoved.addListener((tabId) => {
   statesByTab.delete(tabId);
+  publishedStatesByTab.delete(tabId);
+  void removePersistedTabState(tabId);
 });

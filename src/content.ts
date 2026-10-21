@@ -1,20 +1,40 @@
 import { getExtensionApi } from "./browser/api";
+import {transformTextLocally} from "./browser/local-transform";
 import { DomProcessor } from "./core/dom-processor";
-import { defaultRules } from "./rules";
+import {domRuleMetadata} from "./rules/dom-metadata";
+import {isBuiltInTransformCandidate} from "./rules/transform-candidate";
+import {maximumReportedReplacementSummaries} from "./core/replacement-summary";
 import { disabledRuleIdsForGroups } from "./rules/catalog";
 import { shouldProcessDomain } from "./settings/domain";
 import type { Settings } from "./settings/defaults";
-import {
-  loadSettings,
-  subscribeToSettings
-} from "./settings/storage";
+import { subscribeToSettings } from "./settings/storage";
+import {sameDomSettings, snapshotDomSettings} from "./settings/dom-settings";
 
 let processor: DomProcessor | undefined;
+let settingsTransition: Promise<void> = Promise.resolve();
+let settingsGeneration = 0;
+let requestedSettings: Settings | undefined;
 
-function shouldRun(settings: Settings): boolean {
+interface GetCurrentReplacementStateMessage {
+  readonly type: "sprachverstand.get-current-replacement-state";
+}
+
+function isGetCurrentReplacementStateMessage(
+  message: unknown
+): message is GetCurrentReplacementStateMessage {
+  return (
+    Boolean(message) &&
+    typeof message === "object" &&
+    (message as Partial<GetCurrentReplacementStateMessage>).type ===
+      "sprachverstand.get-current-replacement-state"
+  );
+}
+
+function shouldRun(settings: Settings, disabledRuleIds: ReadonlySet<string>): boolean {
   return (
     settings.enabled &&
-    defaultRules.length > 0 &&
+    (settings.customReplacements.length > 0 ||
+      domRuleMetadata.some(rule => !disabledRuleIds.has(rule.id))) &&
     shouldProcessDomain(
       location.hostname,
       settings.excludedDomains,
@@ -23,52 +43,101 @@ function shouldRun(settings: Settings): boolean {
   );
 }
 
-function reportReplacementCount(count: number): void {
+function reportReplacementState(
+  count: number,
+  replacements: readonly {
+    readonly original: string;
+    readonly replacement: string;
+    readonly count: number;
+  }[] = []
+): void {
   void getExtensionApi()
     .runtime.sendMessage({
-      type: "sprachverstand.replacement-count",
+      type: "sprachverstand.replacement-state",
       hostname: location.hostname,
-      count
+      count,
+      replacements: replacements.slice(0, maximumReportedReplacementSummaries)
     })
     .catch(() => {
       // Der Hintergrundkontext kann während eines Erweiterungs-Reloads kurz fehlen.
     });
 }
 
-function applySettings(settings: Settings): void {
-  if (!shouldRun(settings)) {
-    processor?.stop({ restore: true });
-    processor = undefined;
-    reportReplacementCount(0);
-    return;
-  }
+// Nach einem Update oder Deaktivieren läuft dieses Skript in Chromium ohne
+// Hintergrundkontext weiter. Statt jeden offenen Text im Sekundentakt erneut
+// anzufragen, wird die Verarbeitung beendet; bisherige Ersetzungen bleiben.
+function transformTextOrStop(
+  input: string,
+  options: Parameters<typeof transformTextLocally>[1],
+  subtitle?: boolean
+): ReturnType<typeof transformTextLocally> {
+  return transformTextLocally(input, options, subtitle).catch((error: unknown) => {
+    if (!getExtensionApi().runtime.id) {
+      settingsGeneration += 1;
+      processor?.stop();
+      processor = undefined;
+    }
+    throw error;
+  });
+}
 
-  const options = {
-    rules: defaultRules,
-    profile: "aggressive" as const,
-    disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
-    protectedTerms: settings.protectedTerms,
-    customReplacements: settings.customReplacements,
-    processAccessibleAttributes: settings.processAccessibleAttributes,
-    processQuotedText: settings.processQuotedText,
-    processSubtitles: settings.processSubtitles,
-    onReplacementCountChange: reportReplacementCount
-  };
+function applySettings(settings: Settings): Promise<void> {
+  if (sameDomSettings(requestedSettings, settings)) return settingsTransition;
+  requestedSettings = snapshotDomSettings(settings);
+  const generation = ++settingsGeneration;
+  settingsTransition = settingsTransition.catch(() => undefined).then(async () => {
+    if (generation !== settingsGeneration) return;
+    if (processor) {
+      const previous = processor;
+      processor = undefined;
+      await previous.stopBudgeted();
+    }
+    if (generation !== settingsGeneration) return;
+    const disabledRuleIds = disabledRuleIdsForGroups(settings.enabledRuleGroupIds);
+    if (!shouldRun(settings, disabledRuleIds)) {
+      reportReplacementState(0);
+      return;
+    }
 
-  if (processor) {
-    processor.updateOptions(options);
-    return;
-  }
-
-  processor = new DomProcessor(document, options);
-  processor.start();
+    processor = new DomProcessor(document, {
+      transformText: transformTextOrStop,
+      isTransformCandidate: isBuiltInTransformCandidate,
+      replacementNotificationIntervalMs: 100,
+      replacementSummaryLimit: maximumReportedReplacementSummaries,
+      rules: domRuleMetadata,
+      profile: "aggressive",
+      disabledRuleIds,
+      protectedTerms: settings.protectedTerms,
+      customReplacements: settings.customReplacements,
+      processAccessibleAttributes: settings.processAccessibleAttributes,
+      processQuotedText: settings.processQuotedText,
+      processSubtitles: settings.processSubtitles,
+      onReplacementCountChange: reportReplacementState
+    });
+    processor.start();
+  }).catch((error: unknown) => {
+    if (generation === settingsGeneration) requestedSettings = undefined;
+    throw error;
+  });
+  return settingsTransition;
 }
 
 async function start(): Promise<void> {
-  reportReplacementCount(0);
-  applySettings(await loadSettings());
-  subscribeToSettings(applySettings);
+  reportReplacementState(0);
+  subscribeToSettings(applySettings, { initial: true });
 }
+
+getExtensionApi().runtime.onMessage.addListener((message) => {
+  if (!isGetCurrentReplacementStateMessage(message)) {
+    return undefined;
+  }
+
+  return {
+    hostname: location.hostname,
+    count: processor?.getReplacementCount() ?? 0,
+    replacements: processor?.getReplacementSummary(maximumReportedReplacementSummaries).slice(0, maximumReportedReplacementSummaries) ?? []
+  };
+});
 
 void start().catch((error: unknown) => {
   console.error("Sprachverstand konnte nicht gestartet werden.", error);

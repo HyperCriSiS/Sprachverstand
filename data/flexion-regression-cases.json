@@ -10,8 +10,8 @@
     { "id": "binnen-i-genitive-preposition", "input": "wegen einer ÄrztIn", "expected": "wegen eines Arztes" },
 
     { "id": "double-singular-nominative", "input": "eine Nutzerin oder ein Nutzer", "expected": "ein Nutzer" },
-    { "id": "double-singular-accusative", "input": "einen Studenten und eine Studentin", "expected": "einen Studenten" },
-    { "id": "double-singular-dative", "input": "einer Studentin und einem Studenten", "expected": "einem Studenten" },
+    { "id": "double-singular-accusative", "input": "einen Studenten und eine Studentin", "expected": "einen Studenten und eine Studentin" },
+    { "id": "double-singular-dative", "input": "einer Studentin und einem Studenten", "expected": "einer Studentin und einem Studenten" },
     { "id": "double-singular-genitive", "input": "eines Arztes oder einer Ärztin", "expected": "eines Arztes" },
     { "id": "double-plural-repeated-article", "input": "die Nutzerinnen und die Nutzer", "expected": "die Nutzer" },
     { "id": "double-plural-dative-article", "input": "den Ärztinnen und den Ärzten", "expected": "den Ärzten" },

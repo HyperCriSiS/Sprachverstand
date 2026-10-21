@@ -2,6 +2,22 @@ import {
   getGeneratedPersonForms,
   type GeneratedPersonForms
 } from "./generated-person-lexicon";
+import { getLoanwordPersonForms } from "./loanword-person-forms";
+import { nationalityPersonForms } from "./nationality-person-forms";
+import { getReviewedPersonForms } from "./reviewed-person-forms";
+import { getWebAnalysisPersonForms } from "./reviewed-person-forms-webanalyse";
+import { getReviewedPersonFormsWave59 } from "./reviewed-person-forms-wave-59";
+import { getReviewedPersonFormsWave60 } from "./reviewed-person-forms-wave-60";
+import { getReviewedPersonFormsWave61 } from "./reviewed-person-forms-wave-61";
+import { getReviewedPersonFormsWave62 } from "./reviewed-person-forms-wave-62";
+import { getReviewedPersonFormsWave63 } from "./reviewed-person-forms-wave-63";
+import { getReviewedPersonFormsWave64 } from "./reviewed-person-forms-wave-64";
+import { getReviewedPersonFormsWave65 } from "./reviewed-person-forms-wave-65";
+import { getReviewedPersonFormsWave66 } from "./reviewed-person-forms-wave-66";
+import { getReviewedPersonFormsWave67 } from "./reviewed-person-forms-wave-67";
+import { getReviewedPersonFormsWave68 } from "./reviewed-person-forms-wave-68";
+import { getReviewedPersonFormsWave69 } from "./reviewed-person-forms-wave-69";
+import { preserveInnerCase } from "./inner-case";
 
 export type GrammaticalCase =
   | "nominative"
@@ -24,6 +40,28 @@ interface PersonForms {
 }
 
 const locale = "de-DE";
+
+function getExactPersonForms(
+  normalizedBase: string
+): GeneratedPersonForms | undefined {
+  return (
+    getGeneratedPersonForms(normalizedBase) ??
+    getReviewedPersonForms(normalizedBase) ??
+    getReviewedPersonFormsWave59(normalizedBase) ??
+    getReviewedPersonFormsWave60(normalizedBase) ??
+    getReviewedPersonFormsWave61(normalizedBase) ??
+    getReviewedPersonFormsWave62(normalizedBase) ??
+    getReviewedPersonFormsWave63(normalizedBase) ??
+    getReviewedPersonFormsWave64(normalizedBase) ??
+    getReviewedPersonFormsWave65(normalizedBase) ??
+    getReviewedPersonFormsWave66(normalizedBase) ??
+    getReviewedPersonFormsWave67(normalizedBase) ??
+    getReviewedPersonFormsWave68(normalizedBase) ??
+    getReviewedPersonFormsWave69(normalizedBase) ??
+    getWebAnalysisPersonForms(normalizedBase) ??
+    getLoanwordPersonForms(normalizedBase)
+  );
+}
 
 function weak(
   stem: string,
@@ -50,6 +88,425 @@ function regular(
 }
 
 const personForms: readonly PersonForms[] = [
+  // Exakt geprüfte Berufsformen mit abweichendem Singular-/Femininumstamm.
+  { ...weak("audiolog", "audiologe", "audiologen"), match: "exact" as const },
+  { ...weak("choreolog", "choreologe", "choreologen"), match: "exact" as const },
+  { ...weak("diätolog", "diätologe", "diätologen"), match: "exact" as const },
+  { ...weak("flugmeteorolog", "flugmeteorologe", "flugmeteorologen"), match: "exact" as const },
+  { ...weak("grafolog", "grafologe", "grafologen"), match: "exact" as const },
+  { ...weak("kosmolog", "kosmologe", "kosmologen"), match: "exact" as const },
+  { ...weak("metrolog", "metrologe", "metrologen"), match: "exact" as const },
+  { ...weak("sophrolog", "sophrologe", "sophrologen"), match: "exact" as const },
+  { ...weak("thanatolog", "thanatologe", "thanatologen"), match: "exact" as const },
+  { ...weak("matros", "matrose", "matrosen"), match: "exact" as const },
+  { ...weak("leichtmatros", "leichtmatrose", "leichtmatrosen"), match: "exact" as const },
+  { ...regular("industriekletter", "industriekletterer", "industriekletterer", "industriekletterers"), match: "exact" as const },
+  { ...regular("möbelpolster", "möbelpolsterer", "möbelpolsterer", "möbelpolsterers"), match: "exact" as const },
+  { ...regular("tischler", "tischler"), match: "exact" as const },
+  { ...regular("torhüter", "torhüter"), match: "exact" as const },
+  { ...regular("turner", "turner"), match: "exact" as const },
+  { ...regular("torwart", "torwarte", "torwart", "torwarts"), match: "exact" as const },
+  { ...weak("vorfahr", "vorfahre", "vorfahren"), match: "exact" as const },
+  { ...regular("scharlatan", "scharlatane", "scharlatan", "scharlatans"), match: "exact" as const },
+  { ...regular("schelm", "schelme", "schelm", "schelms"), match: "exact" as const },
+  { ...weak("sexist"), match: "exact" as const },
+  { ...regular("sparringspartner", "sparringspartner", "sparringspartner", "sparringspartners"), match: "exact" as const },
+  { ...regular("speaker", "speaker", "speaker", "speakers"), match: "exact" as const },
+  { ...weak("südostasiat"), match: "exact" as const },
+  { ...regular("lateinamerikaner", "lateinamerikaner"), match: "exact" as const },
+  { ...weak("lebensgefährt", "lebensgefährte", "lebensgefährten"), match: "exact" as const },
+  { ...regular("leutnant", "leutnants"), match: "exact" as const },
+  { ...regular("metzger", "metzger"), match: "exact" as const },
+  { ...weak("misanthrop"), match: "exact" as const },
+  { ...weak("nachkomm", "nachkomme", "nachkommen"), match: "exact" as const },
+  { ...regular("neuling", "neulinge", "neuling", "neulings"), match: "exact" as const },
+  { ...regular("ordner", "ordner"), match: "exact" as const },
+  { ...weak("ostasiat"), match: "exact" as const },
+  { ...weak("pedant"), match: "exact" as const },
+  { ...weak("philanthrop"), match: "exact" as const },
+  { ...weak("egoman", "egomane", "egomanen"), match: "exact" as const },
+  { ...weak("ehegatt", "ehegatte", "ehegatten"), match: "exact" as const },
+  { ...weak("ergonom"), match: "exact" as const },
+  { ...regular("intermediär", "intermediäre", "intermediär", "intermediärs"), match: "exact" as const },
+  { ...weak("adjutant"), match: "exact" as const },
+  { ...weak("autodidakt"), match: "exact" as const },
+  weak("banaus", "banause", "banausen"),
+  { ...weak("dilettant"), match: "exact" as const },
+  { ...weak("technolog", "technologe", "technologen") },
+  { ...regular("zimmerer", "zimmerer"), feminineSingular: "zimmerin" },
+  { ...regular("polsterer", "polsterer"), feminineSingular: "polsterin", match: "exact" as const },
+  { ...weak("skandinavist"), match: "exact" as const },
+  { ...weak("albanolog", "albanologe", "albanologen"), match: "exact" as const },
+  { ...weak("japanolog", "japanologe", "japanologen"), match: "exact" as const },
+  { ...weak("sinolog", "sinologe", "sinologen"), match: "exact" as const },
+  { ...weak("anglist"), match: "exact" as const },
+  { ...weak("amerikanist"), match: "exact" as const },
+  { ...weak("arabist"), match: "exact" as const },
+  { ...regular("audiodeskriptor", "audiodeskriptoren"), match: "exact" as const },
+  { ...weak("baltist"), match: "exact" as const },
+  { ...weak("finnougrist"), match: "exact" as const },
+  { ...weak("ägyptolog", "ägyptologe", "ägyptologen"), match: "exact" as const },
+  { ...weak("astrolog", "astrologe", "astrologen"), match: "exact" as const },
+  { ...regular("dekorateur", "dekorateure", "dekorateur", "dekorateurs"), match: "exact" as const },
+  { ...weak("indolog", "indologe", "indologen"), match: "exact" as const },
+  { ...weak("kinesiolog", "kinesiologe", "kinesiologen"), match: "exact" as const },
+  { ...weak("kryptolog", "kryptologe", "kryptologen"), match: "exact" as const },
+  { ...weak("lots", "lotse", "lotsen"), match: "exact" as const },
+  { ...weak("metallurg", "metallurge", "metallurgen"), match: "exact" as const },
+  { ...weak("museolog", "museologe", "museologen"), match: "exact" as const },
+  { ...weak("politolog", "politologe", "politologen"), match: "exact" as const },
+  { ...weak("orthopäd", "orthopäde", "orthopäden"), match: "exact" as const },
+  { ...weak("podolog", "podologe", "podologen"), match: "exact" as const },
+  { ...weak("urolog", "urologe", "urologen"), match: "exact" as const },
+  { ...weak("kardiolog", "kardiologe", "kardiologen"), match: "exact" as const },
+  { ...weak("neurolog", "neurologe", "neurologen"), match: "exact" as const },
+  { ...weak("hämatolog", "hämatologe", "hämatologen"), match: "exact" as const },
+  { ...weak("gastroenterolog", "gastroenterologe", "gastroenterologen"), match: "exact" as const },
+  { ...weak("immunolog", "immunologe", "immunologen"), match: "exact" as const },
+  { ...weak("physiolog", "physiologe", "physiologen"), match: "exact" as const },
+  { ...weak("pharmakolog", "pharmakologe", "pharmakologen"), match: "exact" as const },
+  { ...weak("bakteriolog", "bakteriologe", "bakteriologen"), match: "exact" as const },
+  { ...weak("endokrinolog", "endokrinologe", "endokrinologen"), match: "exact" as const },
+  { ...weak("entomolog", "entomologe", "entomologen"), match: "exact" as const },
+  { ...weak("etymolog", "etymologe", "etymologen"), match: "exact" as const },
+  { ...weak("gemmolog", "gemmologe", "gemmologen"), match: "exact" as const },
+  { ...weak("genealog", "genealoge", "genealogen"), match: "exact" as const },
+  { ...weak("gerontolog", "gerontologe", "gerontologen"), match: "exact" as const },
+  { ...weak("kriminolog", "kriminologe", "kriminologen"), match: "exact" as const },
+  { ...weak("limnolog", "limnologe", "limnologen"), match: "exact" as const },
+  { ...weak("ornitholog", "ornithologe", "ornithologen"), match: "exact" as const },
+  { ...weak("turkolog", "turkologe", "turkologen"), match: "exact" as const },
+  { ...weak("toxikolog", "toxikologe", "toxikologen"), match: "exact" as const },
+  { ...weak("radiolog", "radiologe", "radiologen"), match: "exact" as const },
+  { ...weak("pneumolog", "pneumologe", "pneumologen"), match: "exact" as const },
+  { ...weak("philolog", "philologe", "philologen"), match: "exact" as const },
+  { ...weak("parasitolog", "parasitologe", "parasitologen"), match: "exact" as const },
+  { ...weak("paläontolog", "paläontologe", "paläontologen"), match: "exact" as const },
+  { ...weak("glaziolog", "glaziologe", "glaziologen"), match: "exact" as const },
+  { ...weak("lichenolog", "lichenologe", "lichenologen"), match: "exact" as const },
+  { ...weak("hungarolog", "hungarologe", "hungarologen"), match: "exact" as const },
+  { ...weak("dermatolog", "dermatologe", "dermatologen"), match: "exact" as const },
+  { ...weak("epidemiolog", "epidemiologe", "epidemiologen"), match: "exact" as const },
+  { ...weak("hydrolog", "hydrologe", "hydrologen"), match: "exact" as const },
+  { ...weak("mineralog", "mineraloge", "mineralogen"), match: "exact" as const },
+  { ...weak("mykolog", "mykologe", "mykologen"), match: "exact" as const },
+  { ...weak("nephrolog", "nephrologe", "nephrologen"), match: "exact" as const },
+  { ...weak("klimatolog", "klimatologe", "klimatologen"), match: "exact" as const },
+  { ...weak("histolog", "histologe", "histologen"), match: "exact" as const },
+  { ...weak("fluglots", "fluglotse", "fluglotsen"), match: "exact" as const },
+  { ...weak("gehilf", "gehilfe", "gehilfen"), match: "exact" as const },
+  { ...weak("grapholog", "graphologe", "graphologen"), match: "exact" as const },
+  { ...weak("keltolog", "keltologe", "keltologen"), match: "exact" as const },
+  { ...weak("ophthalmolog", "ophthalmologe", "ophthalmologen"), match: "exact" as const },
+  { ...weak("petrolog", "petrologe", "petrologen"), match: "exact" as const },
+  { ...weak("serolog", "serologe", "serologen"), match: "exact" as const },
+  { ...weak("önolog", "önologe", "önologen"), match: "exact" as const },
+  { ...weak("pädaudiolog", "pädaudiologe", "pädaudiologen"), match: "exact" as const },
+  { ...weak("zytolog", "zytologe", "zytologen"), match: "exact" as const },
+  { ...weak("heilgehilf", "heilgehilfe", "heilgehilfen"), match: "exact" as const },
+  { ...weak("kosmetolog", "kosmetologe", "kosmetologen"), match: "exact" as const },
+  { ...weak("motopäd", "motopäde", "motopäden"), match: "exact" as const },
+  { ...weak("pantomim", "pantomime", "pantomimen"), match: "exact" as const },
+  { ...regular("parfumeur", "parfumeure", "parfumeur", "parfumeurs"), match: "exact" as const },
+  { ...weak("planetolog", "planetologe", "planetologen"), match: "exact" as const },
+  { ...weak("röntgenolog", "röntgenologe", "röntgenologen"), match: "exact" as const },
+  { ...weak("sedimentolog", "sedimentologe", "sedimentologen"), match: "exact" as const },
+  { ...weak("tibetolog", "tibetologe", "tibetologen"), match: "exact" as const },
+  { ...weak("ökotropholog", "ökotrophologe", "ökotrophologen"), match: "exact" as const },
+  { ...regular("ausbesserer", "ausbesserer", "ausbesserer", "ausbesserers"), match: "exact" as const },
+  { ...weak("badegehilf", "badegehilfe", "badegehilfen"), match: "exact" as const },
+  { ...regular("beiköch", "beiköche", "beikoch", "beikochs"), match: "exact" as const },
+  { ...weak("bürobot", "bürobote", "büroboten"), match: "exact" as const },
+  { ...weak("geragog", "geragoge", "geragogen"), match: "exact" as const },
+  { ...weak("hispanolog", "hispanologe", "hispanologen"), match: "exact" as const },
+  { ...weak("infektolog", "infektologe", "infektologen"), match: "exact" as const },
+  { ...weak("malaiolog", "malaiologe", "malaiologen"), match: "exact" as const },
+  { ...weak("motolog", "motologe", "motologen"), match: "exact" as const },
+  { ...weak("ökotoxikolog", "ökotoxikologe", "ökotoxikologen"), match: "exact" as const },
+  { ...weak("aerolog", "aerologe", "aerologen"), match: "exact" as const },
+  { ...weak("algesiolog", "algesiologe", "algesiologen"), match: "exact" as const },
+  { ...weak("anaplastolog", "anaplastologe", "anaplastologen"), match: "exact" as const },
+  { ...weak("atlaslog", "atlasloge", "atlaslogen"), match: "exact" as const },
+  { ...weak("kaukasiolog", "kaukasiologe", "kaukasiologen"), match: "exact" as const },
+  { ...weak("morpholog", "morphologe", "morphologen"), match: "exact" as const },
+  { ...weak("sozialgerontolog", "sozialgerontologe", "sozialgerontologen"), match: "exact" as const },
+  { ...weak("töpfergesell", "töpfergeselle", "töpfergesellen"), match: "exact" as const },
+  { ...weak("vitalog", "vitaloge", "vitalogen"), match: "exact" as const },
+  { ...weak("wirtschaftsjapanolog", "wirtschaftsjapanologe", "wirtschaftsjapanologen"), match: "exact" as const },
+  { ...regular("fernheiler", "fernheiler", "fernheiler", "fernheilers"), match: "exact" as const },
+  { ...weak("gerontagog", "gerontagoge", "gerontagogen"), match: "exact" as const },
+  { ...weak("oecolog", "oecologe", "oecologen"), match: "exact" as const },
+  { ...weak("paradontolog", "paradontologe", "paradontologen"), match: "exact" as const },
+  { ...weak("wirtschaftsmalaiolog", "wirtschaftsmalaiologe", "wirtschaftsmalaiologen"), match: "exact" as const },
+  { ...weak("wirtschaftssinolog", "wirtschaftssinologe", "wirtschaftssinologen"), match: "exact" as const },
+  { ...weak("akrobat", "akrobat", "akrobaten"), match: "exact" as const },
+  { ...weak("aktienanalyst", "aktienanalyst", "aktienanalysten"), match: "exact" as const },
+  { ...regular("aktuar", "aktuare", "aktuar", "aktuars"), match: "exact" as const },
+  { ...regular("altbierbrauer", "altbierbrauer", "altbierbrauer", "altbierbrauers"), match: "exact" as const },
+  { ...weak("anatom", "anatom", "anatomen"), match: "exact" as const },
+  { ...weak("anästhesist", "anästhesist", "anästhesisten"), match: "exact" as const },
+  { ...regular("adremadrucker", "adremadrucker", "adremadrucker", "adremadruckers"), match: "exact" as const },
+  { ...regular("adressendrucker", "adressendrucker", "adressendrucker", "adressendruckers"), match: "exact" as const },
+  { ...regular("akquisiteur", "akquisiteure", "akquisiteur", "akquisiteurs"), match: "exact" as const },
+  { ...regular("akustikschreiner", "akustikschreiner", "akustikschreiner", "akustikschreiners"), match: "exact" as const },
+  { ...regular("aluminiumdrucker", "aluminiumdrucker", "aluminiumdrucker", "aluminiumdruckers"), match: "exact" as const },
+  { ...regular("anilindrucker", "anilindrucker", "anilindrucker", "anilindruckers"), match: "exact" as const },
+  { ...regular("antikschreiner", "antikschreiner", "antikschreiner", "antikschreiners"), match: "exact" as const },
+  { ...regular("anzeigenakquisiteur", "anzeigenakquisiteure", "anzeigenakquisiteur", "anzeigenakquisiteurs"), match: "exact" as const },
+  { ...regular("aquarelldrucker", "aquarelldrucker", "aquarelldrucker", "aquarelldruckers"), match: "exact" as const },
+  {
+    stem: "ackerbäuer",
+    singular: "ackerbauer",
+    feminineSingular: "ackerbäuerin",
+    obliqueSingular: "ackerbauern",
+    genitiveSingular: "ackerbauern",
+    plural: "ackerbauern",
+    match: "exact" as const
+  },
+  { ...weak("ackergehilf", "ackergehilfe", "ackergehilfen"), match: "exact" as const },
+  { ...regular("alleinköch", "alleinköche", "alleinkoch", "alleinkochs"), feminineSingular: "alleinköchin", match: "exact" as const },
+  {
+    stem: "almbäuer",
+    singular: "almbauer",
+    feminineSingular: "almbäuerin",
+    obliqueSingular: "almbauern",
+    genitiveSingular: "almbauern",
+    plural: "almbauern",
+    match: "exact" as const
+  },
+  { ...weak("anwaltsgehilf", "anwaltsgehilfe", "anwaltsgehilfen"), match: "exact" as const },
+  { ...regular("archivrestaurator", "archivrestauratoren", "archivrestaurator", "archivrestaurators"), match: "exact" as const },
+  { ...regular("auftragsakquisiteur", "auftragsakquisiteure", "auftragsakquisiteur", "auftragsakquisiteurs"), match: "exact" as const },
+  { ...regular("aufzugschlosser", "aufzugschlosser", "aufzugschlosser", "aufzugschlossers"), match: "exact" as const },
+  { ...weak("augenarztgehilf", "augenarztgehilfe", "augenarztgehilfen"), match: "exact" as const },
+  { ...weak("augenoptikergehilf", "augenoptikergehilfe", "augenoptikergehilfen"), match: "exact" as const },
+  { ...regular("ausstellungsschreiner", "ausstellungsschreiner", "ausstellungsschreiner", "ausstellungsschreiners"), match: "exact" as const },
+  { ...regular("autoreparaturschlosser", "autoreparaturschlosser", "autoreparaturschlosser", "autoreparaturschlossers"), match: "exact" as const },
+  { ...regular("autoschlosser", "autoschlosser", "autoschlosser", "autoschlossers"), match: "exact" as const },
+  { ...regular("bahnbetriebsschlosser", "bahnbetriebsschlosser", "bahnbetriebsschlosser", "bahnbetriebsschlossers"), match: "exact" as const },
+  { ...weak("bandagist", "bandagist", "bandagisten"), match: "exact" as const },
+  { ...weak("bankenanalyst", "bankenanalyst", "bankenanalysten"), match: "exact" as const },
+  { ...regular("bankrevisor", "bankrevisoren", "bankrevisor", "bankrevisors"), match: "exact" as const },
+  { ...weak("bargehilf", "bargehilfe", "bargehilfen"), match: "exact" as const },
+  { ...regular("baumaschinenschlosser", "baumaschinenschlosser", "baumaschinenschlosser", "baumaschinenschlossers"), match: "exact" as const },
+  { ...regular("bauschlosser", "bauschlosser", "bauschlosser", "bauschlossers"), match: "exact" as const },
+  { ...regular("bauschreiner", "bauschreiner", "bauschreiner", "bauschreiners"), match: "exact" as const },
+  { ...regular("bausparkassenrevisor", "bausparkassenrevisoren", "bausparkassenrevisor", "bausparkassenrevisors"), match: "exact" as const },
+  { ...regular("beilagenköch", "beilagenköche", "beilagenkoch", "beilagenkochs"), match: "exact" as const },
+  { ...weak("bestattungsgehilf", "bestattungsgehilfe", "bestattungsgehilfen"), match: "exact" as const },
+  { ...regular("betriebsschlosser", "betriebsschlosser", "betriebsschlosser", "betriebsschlossers"), match: "exact" as const },
+  { ...regular("betriebsschreiner", "betriebsschreiner", "betriebsschreiner", "betriebsschreiners"), match: "exact" as const },
+  { ...weak("bienenzuchtgehilf", "bienenzuchtgehilfe", "bienenzuchtgehilfen"), match: "exact" as const },
+  { ...regular("bierbrauer", "bierbrauer", "bierbrauer", "bierbrauers"), match: "exact" as const },
+  { ...regular("blaudrucker", "blaudrucker", "blaudrucker", "blaudruckers"), match: "exact" as const },
+  { ...regular("blechdrucker", "blechdrucker", "blechdrucker", "blechdruckers"), match: "exact" as const },
+  { ...regular("blechschlosser", "blechschlosser", "blechschlosser", "blechschlossers"), match: "exact" as const },
+  { ...regular("blindenschriftdrucker", "blindenschriftdrucker", "blindenschriftdrucker", "blindenschriftdruckers"), match: "exact" as const },
+  { ...weak("bodenakrobat", "bodenakrobat", "bodenakrobaten"), match: "exact" as const },
+  { ...weak("bohrgehilf", "bohrgehilfe", "bohrgehilfen"), match: "exact" as const },
+  { ...weak("bonitätsanalyst", "bonitätsanalyst", "bonitätsanalysten"), match: "exact" as const },
+  { ...regular("bratenköch", "bratenköche", "bratenkoch", "bratenkochs"), match: "exact" as const },
+  { ...regular("brauer", "brauer", "brauer", "brauers"), match: "exact" as const },
+  { ...regular("brückenbauschlosser", "brückenbauschlosser", "brückenbauschlosser", "brückenbauschlossers"), match: "exact" as const },
+  { ...regular("buchdrucker", "buchdrucker", "buchdrucker", "buchdruckers"), match: "exact" as const },
+  { ...regular("buchrestaurator", "buchrestauratoren", "buchrestaurator", "buchrestaurators"), match: "exact" as const },
+  { ...regular("buntdrucker", "buntdrucker", "buntdrucker", "buntdruckers"), match: "exact" as const },
+  { ...weak("business-analyst", "business-analyst", "business-analysten"), match: "exact" as const },
+  { ...weak("bäckergehilf", "bäckergehilfe", "bäckergehilfen"), match: "exact" as const },
+  { ...weak("büchereigehilf", "büchereigehilfe", "büchereigehilfen"), match: "exact" as const },
+  { ...weak("büfettgehilf", "büfettgehilfe", "büfettgehilfen"), match: "exact" as const },
+  { ...weak("bühnenakrobat", "bühnenakrobat", "bühnenakrobaten"), match: "exact" as const },
+  { ...regular("bühnenschreiner", "bühnenschreiner", "bühnenschreiner", "bühnenschreiners"), match: "exact" as const },
+  { ...weak("bürogehilf", "bürogehilfe", "bürogehilfen"), match: "exact" as const },
+  { ...weak("cash-flow-analyst", "cash-flow-analyst", "cash-flow-analysten"), match: "exact" as const },
+  { ...regular("chefköch", "chefköche", "chefkoch", "chefkochs"), match: "exact" as const },
+  { ...weak("data-analyst", "data-analyst", "data-analysten"), match: "exact" as const },
+  { ...weak("data-warehouse-analyst", "data-warehouse-analyst", "data-warehouse-analysten"), match: "exact" as const },
+  { ...regular("denkmalrestaurator", "denkmalrestauratoren", "denkmalrestaurator", "denkmalrestaurators"), match: "exact" as const },
+  { ...regular("dieselmotorenschlosser", "dieselmotorenschlosser", "dieselmotorenschlosser", "dieselmotorenschlossers"), match: "exact" as const },
+  { ...weak("digital-analyst", "digital-analyst", "digital-analysten"), match: "exact" as const },
+  { ...regular("digitaldrucker", "digitaldrucker", "digitaldrucker", "digitaldruckers"), match: "exact" as const },
+  { ...regular("diplom-restaurator", "diplom-restauratoren", "diplom-restaurator", "diplom-restaurators"), match: "exact" as const },
+  { ...regular("diätköch", "diätköche", "diätkoch", "diätkochs"), match: "exact" as const },
+  { ...regular("drahtschlosser", "drahtschlosser", "drahtschlosser", "drahtschlossers"), match: "exact" as const },
+  { ...weak("drahtseilakrobat", "drahtseilakrobat", "drahtseilakrobaten"), match: "exact" as const },
+  { ...regular("drucker", "drucker", "drucker", "druckers"), match: "exact" as const },
+  { ...regular("druckereirevisor", "druckereirevisoren", "druckereirevisor", "druckereirevisors"), match: "exact" as const },
+  { ...regular("dv-revisor", "dv-revisoren", "dv-revisor", "dv-revisors"), match: "exact" as const },
+  { ...regular("edv-revisor", "edv-revisoren", "edv-revisor", "edv-revisors"), match: "exact" as const },
+  { ...regular("einfarbenoffsetdrucker", "einfarbenoffsetdrucker", "einfarbenoffsetdrucker", "einfarbenoffsetdruckers"), match: "exact" as const },
+  { ...regular("eisenbahnschlosser", "eisenbahnschlosser", "eisenbahnschlosser", "eisenbahnschlossers"), match: "exact" as const },
+  { ...regular("eisenbauschlosser", "eisenbauschlosser", "eisenbauschlosser", "eisenbauschlossers"), match: "exact" as const },
+  { ...regular("eisenmöbelschlosser", "eisenmöbelschlosser", "eisenmöbelschlosser", "eisenmöbelschlossers"), match: "exact" as const },
+  { ...regular("elektrofahrzeugschlosser", "elektrofahrzeugschlosser", "elektrofahrzeugschlosser", "elektrofahrzeugschlossers"), match: "exact" as const },
+  { ...regular("elektrosignalschlosser", "elektrosignalschlosser", "elektrosignalschlosser", "elektrosignalschlossers"), match: "exact" as const },
+  { ...weak("fachgehilf", "fachgehilfe", "fachgehilfen"), match: "exact" as const },
+  { ...regular("fahrzeugschlosser", "fahrzeugschlosser", "fahrzeugschlosser", "fahrzeugschlossers"), match: "exact" as const },
+  { ...weak("fehleranalyst", "fehleranalyst", "fehleranalysten"), match: "exact" as const },
+  { ...regular("feinblechschlosser", "feinblechschlosser", "feinblechschlosser", "feinblechschlossers"), match: "exact" as const },
+  {
+    stem: "feldgemüsebäuer",
+    singular: "feldgemüsebauer",
+    feminineSingular: "feldgemüsebäuerin",
+    obliqueSingular: "feldgemüsebauern",
+    genitiveSingular: "feldgemüsebauern",
+    plural: "feldgemüsebauern",
+    match: "exact" as const
+  },
+  { ...regular("fensterschreiner", "fensterschreiner", "fensterschreiner", "fensterschreiners"), match: "exact" as const },
+  { ...regular("fernmelderevisor", "fernmelderevisoren", "fernmelderevisor", "fernmelderevisors"), match: "exact" as const },
+  { ...regular("filmlichtdrucker", "filmlichtdrucker", "filmlichtdrucker", "filmlichtdruckers"), match: "exact" as const },
+  { ...regular("filmrestaurator", "filmrestauratoren", "filmrestaurator", "filmrestaurators"), match: "exact" as const },
+  { ...weak("finanzanalyst", "finanzanalyst", "finanzanalysten"), match: "exact" as const },
+  { ...weak("fischergehilf", "fischergehilfe", "fischergehilfen"), match: "exact" as const },
+  { ...regular("fischköch", "fischköche", "fischkoch", "fischkochs"), match: "exact" as const },
+  { ...weak("fischzuchtgehilf", "fischzuchtgehilfe", "fischzuchtgehilfen"), match: "exact" as const },
+  { ...regular("flachdrucker", "flachdrucker", "flachdrucker", "flachdruckers"), match: "exact" as const },
+  { ...weak("fleischergehilf", "fleischergehilfe", "fleischergehilfen"), match: "exact" as const },
+  { ...regular("flexodrucker", "flexodrucker", "flexodrucker", "flexodruckers"), match: "exact" as const },
+  { ...regular("foliendrucker", "foliendrucker", "foliendrucker", "foliendruckers"), match: "exact" as const },
+  { ...weak("fondsanalyst", "fondsanalyst", "fondsanalysten"), match: "exact" as const },
+  { ...weak("fotomatongehilf", "fotomatongehilfe", "fotomatongehilfen"), match: "exact" as const },
+  { ...regular("fotorestaurator", "fotorestauratoren", "fotorestaurator", "fotorestaurators"), match: "exact" as const },
+  { ...weak("fraud-analyst", "fraud-analyst", "fraud-analysten"), match: "exact" as const },
+  { ...weak("funkgehilf", "funkgehilfe", "funkgehilfen"), match: "exact" as const },
+  { ...weak("fährgehilf", "fährgehilfe", "fährgehilfen"), match: "exact" as const },
+  { ...weak("gasthofgehilf", "gasthofgehilfe", "gasthofgehilfen"), match: "exact" as const },
+  { ...weak("gaststättengehilf", "gaststättengehilfe", "gaststättengehilfen"), match: "exact" as const },
+  { ...weak("geflügelzuchtgehilf", "geflügelzuchtgehilfe", "geflügelzuchtgehilfen"), match: "exact" as const },
+  { ...regular("gemälderestaurator", "gemälderestauratoren", "gemälderestaurator", "gemälderestaurators"), match: "exact" as const },
+  {
+    stem: "gemüsebäuer",
+    singular: "gemüsebauer",
+    feminineSingular: "gemüsebäuerin",
+    obliqueSingular: "gemüsebauern",
+    genitiveSingular: "gemüsebauern",
+    plural: "gemüsebauern",
+    match: "exact" as const
+  },
+  { ...regular("gestellbauschlosser", "gestellbauschlosser", "gestellbauschlosser", "gestellbauschlossers"), match: "exact" as const },
+  { ...weak("gestütsgehilf", "gestütsgehilfe", "gestütsgehilfen"), match: "exact" as const },
+  { ...regular("getriebeschlosser", "getriebeschlosser", "getriebeschlosser", "getriebeschlossers"), match: "exact" as const },
+  { ...weak("gewerbegehilf", "gewerbegehilfe", "gewerbegehilfen"), match: "exact" as const },
+  { ...regular("glasbedrucker", "glasbedrucker", "glasbedrucker", "glasbedruckers"), match: "exact" as const },
+  { ...weak("goldschmiedegehilf", "goldschmiedegehilfe", "goldschmiedegehilfen"), match: "exact" as const },
+  { ...regular("grafikrestaurator", "grafikrestauratoren", "grafikrestaurator", "grafikrestaurators"), match: "exact" as const },
+  { ...weak("afrikanist"), match: "exact" as const },
+  weak("hirt", "hirte", "hirten"),
+  regular("schäfer", "schäfer"),
+  regular("mesner", "mesner"),
+  {
+    stem: "schwäger",
+    singular: "schwager",
+    feminineSingular: "schwägerin",
+    genitiveSingular: "schwagers",
+    plural: "schwäger"
+  },
+  { ...regular("operator", "operatoren"), match: "exact" as const },
+  { ...weak("trauzeug", "trauzeuge", "trauzeugen"), match: "exact" as const },
+  { ...regular("sünder", "sünder"), match: "exact" as const },
+  { ...weak("ries", "riese", "riesen"), match: "exact" as const },
+  { ...weak("finn", "finne", "finnen"), match: "exact" as const },
+  { ...weak("dän", "däne", "dänen"), match: "exact" as const },
+  { ...weak("tschech", "tscheche", "tschechen"), match: "exact" as const },
+  { ...weak("ir", "ire", "iren"), match: "exact" as const },
+  { ...weak("schwed", "schwede", "schweden"), match: "exact" as const },
+  { ...weak("lett", "lette", "letten"), match: "exact" as const },
+  { ...weak("est", "este", "esten"), match: "exact" as const },
+  { ...weak("slowak", "slowake", "slowaken"), match: "exact" as const },
+  { ...weak("pol", "pole", "polen"), match: "exact" as const },
+  { ...weak("ungar", "ungar", "ungarn"), match: "exact" as const },
+  { ...weak("serb", "serbe", "serben"), match: "exact" as const },
+  { ...weak("kroat", "kroate", "kroaten"), match: "exact" as const },
+  { ...weak("slowen", "slowene", "slowenen"), match: "exact" as const },
+  { ...regular("belgier", "belgier"), match: "exact" as const },
+  regular("koreaner", "koreaner"),
+  { ...regular("pakistaner", "pakistaner"), match: "exact" as const },
+  { ...regular("iraker", "iraker"), match: "exact" as const },
+  { ...regular("araber", "araber"), match: "exact" as const },
+  { ...regular("marokkaner", "marokkaner"), match: "exact" as const },
+  { ...regular("algerier", "algerier"), match: "exact" as const },
+  { ...regular("tunesier", "tunesier"), match: "exact" as const },
+  { ...regular("holländer", "holländer"), match: "exact" as const },
+  { ...regular("engländer", "engländer"), match: "exact" as const },
+  { ...regular("thailänder", "thailänder"), match: "exact" as const },
+  { ...regular("indonesier", "indonesier"), match: "exact" as const },
+  { ...regular("philippiner", "philippiner"), match: "exact" as const },
+  { ...weak("portugies", "portugiese", "portugiesen"), match: "exact" as const },
+  { ...regular("luxemburger", "luxemburger"), match: "exact" as const },
+  { ...regular("bosnier", "bosnier"), match: "exact" as const },
+  { ...regular("montenegriner", "montenegriner"), match: "exact" as const },
+  { ...regular("litauer", "litauer"), match: "exact" as const },
+  { ...regular("georgier", "georgier"), match: "exact" as const },
+  { ...regular("armenier", "armenier"), match: "exact" as const },
+  { ...weak("kasach", "kasache", "kasachen"), match: "exact" as const },
+  { ...weak("kosovar", "kosovare", "kosovaren"), match: "exact" as const },
+  { ...weak("belaruss", "belarusse", "belarussen"), match: "exact" as const },
+  { ...weak("mongol", "mongole", "mongolen"), match: "exact" as const },
+  { ...weak("tadschik", "tadschike", "tadschiken"), match: "exact" as const },
+  { ...weak("usbek", "usbeke", "usbeken"), match: "exact" as const },
+  { ...weak("kirgis", "kirgise", "kirgisen"), match: "exact" as const },
+  { ...weak("turkmen", "turkmene", "turkmenen"), match: "exact" as const },
+  { ...weak("nepales", "nepalese", "nepalesen"), match: "exact" as const },
+  { ...regular("aserbaidschaner", "aserbaidschaner"), match: "exact" as const },
+  { ...regular("mazedonier", "mazedonier"), match: "exact" as const },
+  { ...regular("moldauer", "moldauer"), match: "exact" as const },
+  { ...regular("bahamaer", "bahamaer"), match: "exact" as const },
+  { ...regular("bahrainer", "bahrainer"), match: "exact" as const },
+  { ...regular("bangladescher", "bangladescher"), match: "exact" as const },
+  { ...regular("barbadier", "barbadier"), match: "exact" as const },
+  { ...regular("belizer", "belizer"), match: "exact" as const },
+  { ...regular("beniner", "beniner"), match: "exact" as const },
+  { ...regular("bhutaner", "bhutaner"), match: "exact" as const },
+  { ...regular("bolivianer", "bolivianer"), match: "exact" as const },
+  { ...regular("botsuaner", "botsuaner"), match: "exact" as const },
+  { ...regular("bruneier", "bruneier"), match: "exact" as const },
+  { ...regular("burkiner", "burkiner"), match: "exact" as const },
+  { ...regular("burundier", "burundier"), match: "exact" as const },
+  ...nationalityPersonForms,
+  regular("graveur", "graveure"),
+  regular("rotisseur", "rotisseure"),
+  regular("poissonnier", "poissonniers"),
+  regular("desinfektor", "desinfektoren"),
+  regular("präparator", "präparatoren"),
+  regular("repetitor", "repetitoren"),
+  regular("arrangeur", "arrangeure"),
+  regular("gardemanger", "gardemangers"),
+  regular("prior", "prioren"),
+  weak("reprograf"),
+  weak("modist"),
+  weak("visagist"),
+  weak("katechet"),
+  weak("kartograf"),
+  weak("galerist"),
+  weak("chemigraf"),
+  weak("flexograf"),
+  weak("illusionist"),
+  weak("humorist"),
+  weak("orientalist"),
+  regular("polier", "poliere"),
+  regular("platzwart", "platzwarte"),
+  regular("orchesterwart", "orchesterwarte"),
+  regular("galvaniseur", "galvaniseure"),
+  regular("kalkulator", "kalkulatoren"),
+  regular("stuckateur", "stuckateure"),
+  regular("dokumentar", "dokumentare"),
+  regular("registrator", "registratoren"),
+  regular("konservator", "konservatoren"),
+  regular("requisiteur", "requisiteure"),
+  regular("juwelier", "juweliere"),
+  regular("kastellan", "kastellane"),
+  weak("typist"),
+  weak("telefonist"),
+  weak("dozent"),
+  weak("pharmakant"),
+  weak("expedient"),
+  weak("drogist"),
+  weak("pharmazeut"),
+  weak("maschinist"),
+  weak("chemikant"),
+  weak("fachlagerist"),
+  weak("orthoptist"),
   weak("hochschulabsolvent"),
   weak("psychotherapeut"),
   regular("psychiater", "psychiater"),
@@ -101,6 +558,7 @@ const personForms: readonly PersonForms[] = [
   weak("abonnent"),
   weak("adressat"),
   weak("absolvent"),
+  weak("habilitand"),
   weak("doktorand"),
   weak("praktikant"),
   weak("präsident"),
@@ -151,7 +609,14 @@ const personForms: readonly PersonForms[] = [
   weak("jurist"),
   weak("pilot"),
   weak("poet"),
-  weak("herr", "herr", "herrn"),
+  {
+    stem: "herr",
+    singular: "herr",
+    feminineSingular: "herrin",
+    obliqueSingular: "herrn",
+    genitiveSingular: "herrn",
+    plural: "herren"
+  },
   weak("narr"),
   weak("prinz"),
   weak("held"),
@@ -225,6 +690,7 @@ const personForms: readonly PersonForms[] = [
     genitiveSingular: "bischofs",
     plural: "bischöfe"
   },
+  { ...regular("päpst", "päpste", "papst", "papstes"), match: "exact" as const },
   {
     stem: "rät",
     singular: "rat",
@@ -258,6 +724,19 @@ const personForms: readonly PersonForms[] = [
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
+  if (source.includes("-") && replacement.includes("-")) {
+    const sourceParts = source.split("-");
+    const replacementParts = replacement.split("-");
+
+    if (sourceParts.length === replacementParts.length) {
+      return replacementParts
+        .map((part, index) => applyCase(sourceParts[index] ?? "", part))
+        .join("-");
+    }
+  }
+
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
@@ -307,14 +786,11 @@ function findSingularMapping(base: string): PersonForms | undefined {
 }
 
 function hasMatchingPrefixes(
-  masculine: string,
-  feminine: string,
+  normalizedMasculine: string,
+  normalizedFeminine: string,
   masculineSuffix: string,
   feminineSuffix: string
 ): boolean {
-  const normalizedMasculine = masculine.toLocaleLowerCase(locale);
-  const normalizedFeminine = feminine.toLocaleLowerCase(locale);
-
   if (
     !normalizedMasculine.endsWith(masculineSuffix) ||
     !normalizedFeminine.endsWith(feminineSuffix)
@@ -328,9 +804,21 @@ function hasMatchingPrefixes(
   );
 }
 
-export function mapMappedPlural(base: string): string | undefined {
+function hasMatchingShortenedFeminine(
+  normalizedMasculine: string,
+  normalizedFeminine: string,
+  masculineSuffix: string,
+  feminineSuffix: string
+): boolean {
+  return (
+    normalizedMasculine.endsWith(masculineSuffix) &&
+    normalizedFeminine === `-${feminineSuffix}`
+  );
+}
+
+function mapMappedPluralWhole(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
 
   if (generated) {
     return applyCase(base, generated.plural);
@@ -378,12 +866,12 @@ function selectSingularForm(
   return forms.obliqueSingular ?? forms.singular;
 }
 
-export function mapMappedSingular(
+function mapMappedSingularWhole(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
-  const generated = getGeneratedPersonForms(normalizedBase);
+  const generated = getExactPersonForms(normalizedBase);
   const generatedReplacement = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
@@ -401,6 +889,34 @@ export function mapMappedSingular(
   return replacement ? applyMapping(base, mapping, replacement) : undefined;
 }
 
+// Hyphenated compounds (`US-Amerikaner*innen`, `NS-Zeitzeug:innen`): when the
+// whole word is unknown, the capitalized head after the last hyphen decides,
+// as it already does for suffix-based known plurals (`PV-Expert*innen`).
+// Lowercase heads (`Bilanzbuch-halter/in`) are word breaks, not compounds.
+function mapHyphenHead(
+  base: string,
+  map: (head: string) => string | undefined
+): string | undefined {
+  const index = base.lastIndexOf("-");
+  if (index <= 0) return undefined;
+  const head = base.slice(index + 1);
+  if (head.length < 3 || !/^\p{Lu}\p{Ll}/u.test(head)) return undefined;
+  const mapped = map(head);
+  return mapped === undefined ? undefined : base.slice(0, index + 1) + mapped;
+}
+
+export function mapMappedPlural(base: string): string | undefined {
+  return mapMappedPluralWhole(base) ?? mapHyphenHead(base, mapMappedPluralWhole);
+}
+
+export function mapMappedSingular(
+  base: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  return mapMappedSingularWhole(base, grammaticalCase) ??
+    mapHyphenHead(base, (head) => mapMappedSingularWhole(head, grammaticalCase));
+}
+
 function mapGeneratedSingularPairOrientation(
   masculine: string,
   feminine: string
@@ -410,7 +926,7 @@ function mapGeneratedSingularPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   if (
     !generated?.singular ||
     !generated.feminineSingular ||
@@ -421,6 +937,15 @@ function mapGeneratedSingularPairOrientation(
   }
 
   return masculine;
+}
+
+const manualFeminineSuffixEndings = [...new Set(personForms.filter(mapping => mapping.singular)
+  .flatMap(mapping => [mapping.feminineSingular ?? `${mapping.stem}in`,
+    ...(mapping.compoundFeminineSingular ? [mapping.compoundFeminineSingular] : [])])
+  .map(form => form.slice(-2)))];
+
+function hasPossibleManualFeminineSuffix(left: string, right: string): boolean {
+  return manualFeminineSuffixEndings.some(ending => left.endsWith(ending) || right.endsWith(ending));
 }
 
 export function mapMappedSingularPair(
@@ -436,17 +961,30 @@ export function mapMappedSingularPair(
     return generatedReverse;
   }
 
+  const normalizedLeft = left.toLocaleLowerCase(locale);
+  const normalizedRight = right.toLocaleLowerCase(locale);
+
+  // Every manual orientation must end in one of the actual feminine suffixes.
+  // Reject impossible endings before scanning the complete dictionary.
+  if (!hasPossibleManualFeminineSuffix(normalizedLeft, normalizedRight)) return undefined;
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;
     }
 
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
-    const direct = hasMatchingPrefixes(left, right, mapping.singular, feminine);
-    const reverse = hasMatchingPrefixes(right, left, mapping.singular, feminine);
+    const direct = hasMatchingPrefixes(normalizedLeft, normalizedRight, mapping.singular, feminine);
+    const reverse = hasMatchingPrefixes(normalizedRight, normalizedLeft, mapping.singular, feminine);
+    const directShort = hasMatchingShortenedFeminine(
+      normalizedLeft,
+      normalizedRight,
+      mapping.singular,
+      feminine
+    );
 
     if (mapping.match !== "exact" || left.length === mapping.singular.length) {
-      if (direct) {
+      if (direct || (mapping.match !== "exact" && directShort)) {
         return left;
       }
     }
@@ -463,8 +1001,8 @@ export function mapMappedSingularPair(
 
     if (
       hasMatchingPrefixes(
-        left,
-        right,
+        normalizedLeft,
+        normalizedRight,
         mapping.singular,
         mapping.compoundFeminineSingular
       )
@@ -474,8 +1012,8 @@ export function mapMappedSingularPair(
 
     if (
       hasMatchingPrefixes(
-        right,
-        left,
+        normalizedRight,
+        normalizedLeft,
         mapping.singular,
         mapping.compoundFeminineSingular
       )
@@ -497,7 +1035,7 @@ function mapGeneratedInflectedPairOrientation(
     return undefined;
   }
 
-  const generated = getGeneratedPersonForms(normalizedFeminine.slice(0, -2));
+  const generated = getExactPersonForms(normalizedFeminine.slice(0, -2));
   const expectedMasculine = generated
     ? selectSingularForm(generated, grammaticalCase)
     : undefined;
@@ -535,6 +1073,11 @@ export function mapMappedInflectedSingularPair(
     return generatedReverse;
   }
 
+  const normalizedLeft = left.toLocaleLowerCase(locale);
+  const normalizedRight = right.toLocaleLowerCase(locale);
+
+  if (!hasPossibleManualFeminineSuffix(normalizedLeft, normalizedRight)) return undefined;
+
   for (const mapping of personForms) {
     if (!mapping.singular) {
       continue;
@@ -550,10 +1093,10 @@ export function mapMappedInflectedSingularPair(
           : mapping.obliqueSingular ?? mapping.singular;
     const feminine = mapping.feminineSingular ?? `${mapping.stem}in`;
 
-    if (hasMatchingPrefixes(left, right, feminine, masculine)) {
+    if (hasMatchingPrefixes(normalizedLeft, normalizedRight, feminine, masculine)) {
       return right;
     }
-    if (hasMatchingPrefixes(right, left, feminine, masculine)) {
+    if (hasMatchingPrefixes(normalizedRight, normalizedLeft, feminine, masculine)) {
       return left;
     }
 
@@ -562,8 +1105,8 @@ export function mapMappedInflectedSingularPair(
     }
     if (
       hasMatchingPrefixes(
-        left,
-        right,
+        normalizedLeft,
+        normalizedRight,
         mapping.compoundFeminineSingular,
         masculine
       )
@@ -572,8 +1115,8 @@ export function mapMappedInflectedSingularPair(
     }
     if (
       hasMatchingPrefixes(
-        right,
-        left,
+        normalizedRight,
+        normalizedLeft,
         mapping.compoundFeminineSingular,
         masculine
       )

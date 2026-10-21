@@ -8,6 +8,7 @@ export const jobAdSuffixesRule: Rule = {
   risk: "contextual",
 
   apply(input) {
+    if (!input.includes("(")) return {text: input, replacements: 0};
     let replacements = 0;
     const text = input.replace(suffixPattern, () => {
       replacements += 1;

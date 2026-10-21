@@ -26,7 +26,10 @@ const unchangedExamples = [
   "NUTZERINNEN",
   "Bäckerinnung",
   "Bauer/Bauerin",
-  "sein:ihr Hebamme:in"
+  "sein:ihr Hebamme:in",
+  // „und“ bei Singularpersonen kann zwei ausdrücklich verschiedene
+  // Personen meinen und wird daher konservativ erhalten.
+  "Nutzerin und Nutzer"
 ] as const;
 
 const correctedExamples = [
@@ -49,7 +52,6 @@ const correctedExamples = [
   ["Messebauer*innen", "Messebauer"],
   ["US-Bürger’innen", "US-Bürger"],
   ["Kunde/Kundin", "Kunde"],
-  ["Nutzerin und Nutzer", "Nutzer"],
   ["Tierärztin/Tierarzt", "Tierarzt"],
   ["mein:e Nutzer:in", "mein Nutzer"],
   ["eure:n Pilot:in", "euren Piloten"],
