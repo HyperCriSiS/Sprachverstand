@@ -9,6 +9,7 @@ function unavailable(): never {
 // A parity test keeps order, risk and contextual metadata in sync with rules.
 const definitions: readonly (readonly [string, RuleRisk])[] = [
   ["marker.source-repairs", "safe"],
+  ["plural.nested-compound", "safe"],
   ["singular.explicit-context", "safe"],
   ["singular.natural-family-forms", "safe"],
   ["adjective.substantivized-markers", "safe"],
@@ -16,6 +17,7 @@ const definitions: readonly (readonly [string, RuleRisk])[] = [
   ["singular.additional-person-forms", "contextual"],
   ["special.visible-gender-forms", "safe"],
   ["singular.explicit-double-form", "safe"],
+  ["marker.inflected-stem-singular", "safe"],
   ["pronoun.explicit-pairs", "safe"],
   ["title.gendered-abbreviations", "safe"],
   ["salutation.participial-forms", "contextual"],
@@ -26,6 +28,7 @@ const definitions: readonly (readonly [string, RuleRisk])[] = [
   ["plural.known-separator-innen", "safe"],
   ["plural.mapped-separator-innen", "safe"],
   ["plural.binnen-i", "safe"],
+  ["marker.inflected-stem-plural", "safe"],
   ["job-ad.gender-suffixes", "contextual"]
 ];
 export const domRuleMetadata: readonly Rule[] = definitions.map(([id, risk]) => ({

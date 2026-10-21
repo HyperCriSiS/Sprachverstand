@@ -105,6 +105,11 @@ addPossessiveDeterminers(
   "eurer"
 );
 
+// Contracted prepositions: `zum/zur`, `zur/zum`, `zum/r`, `zur/m`.
+addDeterminer("zum", "zur", "zum", "dative", true);
+addDeterminer("zum", "r", "zum", "dative");
+addDeterminer("zur", "m", "zum", "dative");
+
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
 addDeterminer("seinem", "ihrem", "seinem", "dative", true);
@@ -171,6 +176,12 @@ function addOrdinaryDeterminerSet(
   );
   dativeFeminineDeterminers.set(feminineDativeGenitive, masculineDative);
   genitiveFeminineDeterminers.set(feminineDativeGenitive, masculineGenitive);
+  // Fully written pairs in both orders: `eine/einen`, `einer*einem`,
+  // `Ihrer/Ihrem`, `deiner*deinem` (compact `eine/n` forms are above).
+  addDeterminer(masculineNominative, feminineNominativeAccusative, masculineNominative, "nominative", true);
+  addDeterminer(masculineAccusative, feminineNominativeAccusative, masculineAccusative, "accusative", true);
+  addDeterminer(masculineDative, feminineDativeGenitive, masculineDative, "dative", true);
+  addDeterminer(masculineGenitive, feminineDativeGenitive, masculineGenitive, "genitive", true);
 }
 
 addOrdinaryDeterminerSet("der", "den", "dem", "des", "die", "der");
@@ -222,6 +233,52 @@ const ordinaryBinnenIPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${ordinaryDeterminerAlternation})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
+// Oblique masculine determiners fix the case of a following marked singular
+// (`dem Kund*in` -> `dem Kunden`, `des Mitarbeiter*in` -> `des Mitarbeiters`).
+// The nominative forms stay with the unmarked rule and its ambiguity guard.
+const obliqueMasculineDeterminers = new Set(
+  [...ordinaryMasculineDeterminers]
+    .filter(([, form]) => form.grammaticalCase !== "nominative")
+    .map(([determiner]) => determiner)
+);
+// After an oblique masculine determiner every attributive adjective is weak
+// (`dem neuen`, `eines erfahrenen`); up to two of them may stand in between.
+const weakAdjectives = String.raw`(?:[\p{L}\p{M}]+en\s+){0,2}`;
+// A determiner that is the second half of a pair (`eine/einen`, `deiner*deinem`,
+// `eine oder einen`) belongs to the pair rules; resolving only the noun would
+// leave a half-converted phrase.
+// `den einen Kritiker` uses `einen` as a numeral after another determiner.
+const notSecondPairHalf = String.raw`(?<![\p{L}\p{M}])(?<![:*_\/·•.’‘]\s*)(?<!(?:oder|bzw\.|beziehungsweise|der|die|das|den|dem|des)\s+)`;
+const ordinaryObliqueSeparatorPattern = lazyPattern(
+  String.raw`${notSecondPairHalf}(${[...obliqueMasculineDeterminers].sort((left, right) => right.length - left.length).join("|")})(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\))(?![\p{L}\p{M}-])`,
+  "giu"
+);
+const obliqueDeterminerBeforeNoun = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(\s+${weakAdjectives})$`,
+  "u"
+);
+
+function hasLowercaseAdjectives(adjectives: string): boolean {
+  return adjectives.split(/\s+/u).every(word =>
+    word === "" || word === word.toLocaleLowerCase(locale));
+}
+
+// The case an oblique masculine determiner directly before a noun fixes,
+// e.g. `dative` for `mit dem neuen |Kund*in`.
+export function obliqueDeterminerCaseBefore(
+  input: string,
+  nounIndex: number
+): GrammaticalCase | undefined {
+  const match = obliqueDeterminerBeforeNoun.exec(
+    input.slice(Math.max(0, nounIndex - 96), nounIndex)
+  );
+  const [, rawDeterminer = "", adjectives = ""] = match ?? [];
+  if (!match || !hasLowercaseAdjectives(adjectives)) return undefined;
+  const determiner = rawDeterminer.toLocaleLowerCase(locale);
+  return obliqueMasculineDeterminers.has(determiner)
+    ? ordinaryMasculineDeterminers.get(determiner)?.grammaticalCase
+    : undefined;
+}
 
 function mapAlternation(values: ReadonlyMap<string, string>): string {
   return [...values.keys()].sort((left, right) => right.length - left.length).join("|");
@@ -369,6 +426,98 @@ function mapSingular(
   );
 }
 
+// `der / die Nutzer*in`, `der/ die …`, `eine oder einen Mitarbeiter*in`:
+// a pair with spaces around the slash or a written `oder`. Only the
+// determiner table decides; `der / die Variablenbeschreibung` has no
+// marked noun and is never touched.
+const pairSpace = String.raw`[   ]`;
+const spacedPairSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*\/${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "giu"
+);
+
+function transformSpacedPairs(input: string): TransformResult {
+  if (!/[   ]\/|\/[   ]|\soder\s/iu.test(input)) {
+    return {text: input, replacements: 0};
+  }
+  let replacements = 0;
+  const text = input.replace(
+    spacedPairSingularPattern(),
+    (match: string, left: string, separator: string, right: string, whitespace: string, base: string) => {
+      if (separator === "/") return match;
+      const form = determinerForms.get(`${left}/${right}`.toLocaleLowerCase(locale));
+      const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
+      if (!form || !noun) return match;
+      replacements += 1;
+      return applyTokenCase(left, form.masculine) + whitespace + noun;
+    }
+  );
+  return {text, replacements};
+}
+
+// `Medizinische*r Technolog*in`, `engagierte/r Mitarbeiter:in` without a
+// determiner: the `e/r` adjective marks the strong nominative. Before, only
+// the noun changed (`Medizinische*r Technologe`).
+const bareMarkedAdjectivePattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}:*_/·•.’‘-])(${nounBase}e)(?:[:*_·•]|\/-?)r(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "giu"
+);
+// `eine*r`, `deine:r`, `jede/r` are determiners, not adjectives; their case
+// is not fixed by the ending (`je eine:r`, `mit deine*r`).
+const markedDeterminerStems = new Set([
+  "de", "eine", "keine", "meine", "deine", "seine", "ihre", "unsere", "eure",
+  "jede", "diese", "jene", "welche", "manche", "solche"
+]);
+// After a preposition or a marked word the case is not the nominative:
+// `zur/zum Anästhesietechnische*r …`, `mit jede:r andere:r …`.
+const nonNominativeBefore = new Set([
+  "zum", "zur", "im", "am", "beim", "vom", "ins", "ans", "aufs",
+  "mit", "bei", "von", "zu", "aus", "nach", "seit", "für", "durch", "gegen",
+  "ohne", "um", "an", "auf", "in", "über", "unter", "vor", "hinter", "neben",
+  "zwischen", "wegen", "trotz", "während", "statt"
+]);
+const determinerWords = new Set([
+  ...ordinaryMasculineDeterminers.keys(),
+  ...nominativeFeminineDeterminers.keys(),
+  ...dativeFeminineDeterminers.keys(),
+  "das", "die"
+]);
+
+function mapNominativeSingular(base: string): string | undefined {
+  // `Technologe/in`: the marker follows the full masculine form.
+  return mapSingular(base, "nominative") ??
+    (base.endsWith("e") &&
+      mapSingular(base.slice(0, -1), "nominative")?.toLocaleLowerCase(locale) ===
+        base.toLocaleLowerCase(locale)
+      ? base
+      : undefined);
+}
+
+function transformBareMarkedAdjectives(input: string): TransformResult {
+  if (!/e(?:[:*_·•]|\/-?)r\s/iu.test(input)) return {text: input, replacements: 0};
+  let replacements = 0;
+  const text = input.replace(
+    bareMarkedAdjectivePattern(),
+    (match: string, adjective: string, whitespace: string, base: string, offset: number, source: string) => {
+      if (markedDeterminerStems.has(adjective.toLocaleLowerCase(locale))) return match;
+      const previous = /(\S+)\s+$/u.exec(source.slice(Math.max(0, offset - 32), offset))?.[1]
+        ?.toLocaleLowerCase(locale);
+      if (
+        previous &&
+        (determinerWords.has(previous) || nonNominativeBefore.has(previous) ||
+          /[\p{L}\p{M}][:*_\/·•]/u.test(previous))
+      ) {
+        return match;
+      }
+      const noun = mapNominativeSingular(base);
+      if (!noun) return match;
+      replacements += 1;
+      return `${adjective}r${whitespace}${noun}`;
+    }
+  );
+  return {text, replacements};
+}
+
 function transformPattern(input: string, pattern: RegExp): TransformResult {
   let replacements = 0;
 
@@ -498,6 +647,26 @@ function transformAttributivePhrases(
     }
   );
 
+  return { text, replacements };
+}
+
+function transformObliqueSeparatorSingulars(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    ordinaryObliqueSeparatorPattern(),
+    (match: string, determiner: string, adjectives: string, base: string) => {
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const form = ordinaryMasculineDeterminers.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
+      if (!noun) {
+        return match;
+      }
+      replacements += 1;
+      return determiner + adjectives + noun;
+    }
+  );
   return { text, replacements };
 }
 
@@ -671,12 +840,16 @@ export const singularContextRule: Rule = {
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
+    const spacedPairResult = transformSpacedPairs(input);
     const attributiveSeparatorResult = transformAttributivePhrases(
-      input,
+      spacedPairResult.text,
       attributiveSeparatorSingularPattern()
     );
+    const bareAdjectiveResult = transformBareMarkedAdjectives(
+      attributiveSeparatorResult.text
+    );
     const attributiveBinnenIResult = transformAttributivePhrases(
-      attributiveSeparatorResult.text,
+      bareAdjectiveResult.text,
       attributiveBinnenISingularPattern()
     );
     const separatorResult = transformPattern(
@@ -722,11 +895,14 @@ export const singularContextRule: Rule = {
     const ordinaryResult = transformOrdinaryMasculineDeterminers(
       standaloneResult.text
     );
+    const obliqueResult = transformObliqueSeparatorSingulars(ordinaryResult.text);
 
     return {
-      text: ordinaryResult.text,
+      text: obliqueResult.text,
       replacements:
+        spacedPairResult.replacements +
         attributiveSeparatorResult.replacements +
+        bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +
         separatorResult.replacements +
         markedBinnenIResult.replacements +
@@ -737,7 +913,8 @@ export const singularContextRule: Rule = {
         predicateResult.replacements +
         nominativeResult.replacements +
         standaloneResult.replacements +
-        ordinaryResult.replacements
+        ordinaryResult.replacements +
+        obliqueResult.replacements
     };
   }
 };

@@ -809,7 +809,7 @@ function hasMatchingShortenedFeminine(
   );
 }
 
-export function mapMappedPlural(base: string): string | undefined {
+function mapMappedPluralWhole(base: string): string | undefined {
   const normalizedBase = base.toLocaleLowerCase(locale);
   const generated = getExactPersonForms(normalizedBase);
 
@@ -859,7 +859,7 @@ function selectSingularForm(
   return forms.obliqueSingular ?? forms.singular;
 }
 
-export function mapMappedSingular(
+function mapMappedSingularWhole(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
@@ -880,6 +880,34 @@ export function mapMappedSingular(
 
   const replacement = selectSingularForm(mapping, grammaticalCase);
   return replacement ? applyMapping(base, mapping, replacement) : undefined;
+}
+
+// Hyphenated compounds (`US-Amerikaner*innen`, `NS-Zeitzeug:innen`): when the
+// whole word is unknown, the capitalized head after the last hyphen decides,
+// as it already does for suffix-based known plurals (`PV-Expert*innen`).
+// Lowercase heads (`Bilanzbuch-halter/in`) are word breaks, not compounds.
+function mapHyphenHead(
+  base: string,
+  map: (head: string) => string | undefined
+): string | undefined {
+  const index = base.lastIndexOf("-");
+  if (index <= 0) return undefined;
+  const head = base.slice(index + 1);
+  if (head.length < 3 || !/^\p{Lu}\p{Ll}/u.test(head)) return undefined;
+  const mapped = map(head);
+  return mapped === undefined ? undefined : base.slice(0, index + 1) + mapped;
+}
+
+export function mapMappedPlural(base: string): string | undefined {
+  return mapMappedPluralWhole(base) ?? mapHyphenHead(base, mapMappedPluralWhole);
+}
+
+export function mapMappedSingular(
+  base: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  return mapMappedSingularWhole(base, grammaticalCase) ??
+    mapHyphenHead(base, (head) => mapMappedSingularWhole(head, grammaticalCase));
 }
 
 function mapGeneratedSingularPairOrientation(
