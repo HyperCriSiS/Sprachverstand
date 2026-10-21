@@ -33,6 +33,11 @@ dokumentiert.
 
 ### Behoben
 
+- Verschachtelte Komposita mit zwei Markern werden vollständig umgewandelt:
+  „Patient*innenvertreter*innen“ → „Patientenvertreter“, „mit
+  Schüler*innenvertreter*innen“ → „mit Schülervertretern“. Bisher blieb
+  „Patientenvertreter*innen“ stehen. Ist das äußere Wort keine bekannte
+  Person („Nutzer*innenkonto*innen“), gilt das bisherige Verhalten.
 - Markierter Singular nach `dem`, `des`, `eines`, `den` usw. erhält den
   passenden Kasus: „dem Kund*in“ → „dem Kunden“, „eines Patient*in“ →
   „eines Patienten“, „des neuen Mitarbeiter*in“ → „des neuen Mitarbeiters“.
