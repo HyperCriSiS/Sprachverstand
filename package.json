@@ -8,6 +8,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "setup:local-browsers": "node scripts/setup-local-browsers.mjs",
     "clean": "node scripts/build.mjs --clean",
     "build": "node scripts/build.mjs",
     "build:chromium": "node scripts/build.mjs --target chromium",
