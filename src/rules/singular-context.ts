@@ -300,7 +300,9 @@ function mapAlternation(values: ReadonlyMap<string, string>): string {
 }
 
 const accusativePrepositions = "für|durch|gegen|ohne|um";
-const dativePrepositions = "aus|außer|bei|gegenüber|mit|nach|seit|von|zu";
+// Two-way prepositions with feminine `der` are always dative (`zwischen der
+// Spender:in`); the accusative would be `die`.
+const dativePrepositions = "an|auf|aus|außer|bei|gegenüber|hinter|mit|nach|neben|seit|unter|von|vor|zu|zwischen";
 const genitivePrepositions = "anstatt|außerhalb|innerhalb|statt|trotz|während|wegen";
 const accusativeFemininePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${accusativePrepositions})(\s+)(${mapAlternation(accusativeFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
@@ -332,6 +334,22 @@ function prepositionalSeparatorPattern(
     "giu"
   );
 }
+// Coordinated marked nouns after one preposition share its case:
+// `zwischen der Spender:in und Empfänger:in` -> `zwischen dem Spender und
+// Empfänger`, `zwischen der Patient*in und der Ärzt*in` -> `… und dem Arzt`.
+function coordinatedSeparatorPattern(
+  prepositions: string,
+  determiners: ReadonlyMap<string, string>
+): () => RegExp {
+  const determinerSource = mapAlternation(determiners);
+  return lazyPattern(
+    String.raw`${notAfterPairSeparator}(${prepositions})(\s+)(${determinerSource})(\s+)(${nounBase})(?:${separatorSingularMarker})(\s+(?:und|oder|bzw\.|sowie)\s+)(?:(${determinerSource})(\s+))?(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+    "giu"
+  );
+}
+const accusativeCoordinatedPattern = coordinatedSeparatorPattern(accusativePrepositions, accusativeFeminineDeterminers);
+const dativeCoordinatedPattern = coordinatedSeparatorPattern(dativePrepositions, dativeFeminineDeterminers);
+const genitiveCoordinatedPattern = coordinatedSeparatorPattern(genitivePrepositions, genitiveFeminineDeterminers);
 const accusativeFeminineSeparatorPattern = prepositionalSeparatorPattern(accusativePrepositions, accusativeFeminineDeterminers);
 const dativeFeminineSeparatorPattern = prepositionalSeparatorPattern(dativePrepositions, dativeFeminineDeterminers);
 const genitiveFeminineSeparatorPattern = prepositionalSeparatorPattern(genitivePrepositions, genitiveFeminineDeterminers);
@@ -757,7 +775,7 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
 // compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
 // pair (`beim:bei der …`) and not before a coordinated marked noun.
 const feminineDerSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
   "gu"
 );
 const dativePrepositionSet = new Set(dativePrepositions.split("|"));
@@ -858,6 +876,47 @@ function transformPrepositionalFeminine(
   return { text, replacements };
 }
 
+function transformCoordinatedPrepositional(
+  input: string,
+  pattern: RegExp,
+  determinerMap: ReadonlyMap<string, string>,
+  grammaticalCase: GrammaticalCase
+): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (
+      match: string,
+      preposition: string,
+      firstWhitespace: string,
+      determiner: string,
+      secondWhitespace: string,
+      firstBase: string,
+      coordinator: string,
+      secondDeterminer: string | undefined,
+      thirdWhitespace: string | undefined,
+      secondBase: string
+    ) => {
+      const masculineDeterminer = determinerMap.get(determiner.toLocaleLowerCase(locale));
+      const secondMasculine = secondDeterminer === undefined
+        ? "" : determinerMap.get(secondDeterminer.toLocaleLowerCase(locale));
+      const first = mapSingular(firstBase, grammaticalCase);
+      const second = mapSingular(secondBase, grammaticalCase);
+      if (!masculineDeterminer || secondMasculine === undefined || !first || !second) {
+        return match;
+      }
+      replacements += 2;
+      return preposition + firstWhitespace +
+        applyTokenCase(determiner, masculineDeterminer) + secondWhitespace + first +
+        coordinator +
+        (secondDeterminer === undefined
+          ? "" : applyTokenCase(secondDeterminer, secondMasculine) + thirdWhitespace) +
+        second;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformContractedZur(input: string, pattern: RegExp): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -878,6 +937,9 @@ function transformPrepositionalSeparatorSingulars(input: string): TransformResul
   let text = input;
   let replacements = 0;
   for (const result of [
+    (value: string) => transformCoordinatedPrepositional(value, accusativeCoordinatedPattern(), accusativeFeminineDeterminers, "accusative"),
+    (value: string) => transformCoordinatedPrepositional(value, dativeCoordinatedPattern(), dativeFeminineDeterminers, "dative"),
+    (value: string) => transformCoordinatedPrepositional(value, genitiveCoordinatedPattern(), genitiveFeminineDeterminers, "genitive"),
     (value: string) => transformPrepositionalFeminine(value, accusativeFeminineSeparatorPattern(), accusativeFeminineDeterminers, "accusative", false),
     (value: string) => transformPrepositionalFeminine(value, dativeFeminineSeparatorPattern(), dativeFeminineDeterminers, "dative", false),
     (value: string) => transformPrepositionalFeminine(value, genitiveFeminineSeparatorPattern(), genitiveFeminineDeterminers, "genitive", false),

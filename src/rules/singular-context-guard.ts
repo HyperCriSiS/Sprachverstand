@@ -121,7 +121,7 @@ const phraseOpeningPrepositions = new Set([
 ]);
 const dativePrepositionsBeforeDer = new Set([
   "mit", "von", "bei", "zu", "aus", "nach", "seit", "gegenüber", "samt",
-  "nebst", "außer", "entgegen"
+  "nebst", "außer", "entgegen", "zwischen", "neben", "vor", "hinter", "unter", "an", "auf"
 ]);
 const markedCompoundAt =
   /^[\p{L}\p{M}’'-]*?(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)-/u;

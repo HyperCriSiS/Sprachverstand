@@ -41,8 +41,8 @@ describe("bleibt unverändert oder wie bisher", () => {
     ["Ausbildung zur/zum Erzieher*in", "Ausbildung zum Erzieher"],
     // Kompositum mit Bindestrich: kein Personensingular.
     ["Mit dieser Täter*in-Opfer-Umkehr", "Mit dieser Täter*in-Opfer-Umkehr"],
-    // Koordination: das zweite Glied bekäme sonst den Nominativ.
-    ["Lab wird von einer Künstler:in oder Technolog:in geleitet", "Lab wird von einer Künstler:in oder Technolog:in geleitet"],
+    // Koordination: beide Glieder bekommen den Kasus der Präposition.
+    ["Lab wird von einer Künstler:in oder Technolog:in geleitet", "Lab wird von einem Künstler oder Technologen geleitet"],
     // Ohne Präposition gilt weiter der Mehrdeutigkeitsschutz.
     ["die Lehrer*in", "die Lehrer*in"],
     ["eine Patient*in", "eine Patient*in"],

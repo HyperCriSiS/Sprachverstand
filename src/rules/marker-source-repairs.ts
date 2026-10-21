@@ -20,13 +20,26 @@ const hyphenSlashPattern =
 const doubledPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*?\p{L})([:*_·•])in\2(in|innen)(?![\p{L}\p{M}])/gu;
 
+// Marker inside the first half of a hyphenated adjective:
+// `Medizinisch:e-Technische:r` is `Medizinisch-Technische:r`; the first
+// half never inflects. Only when both halves use the same marker.
+const innerAdjectivePattern =
+  /(?<![\p{L}\p{M}])(\p{L}[\p{L}\p{M}]*?(?:isch|lich|ig|al|iv))([:*_·•])e-(\p{L}[\p{L}\p{M}]*e)\2(?=[rn](?![\p{L}\p{M}]))/gu;
+
 function isKnownStem(stem: string): boolean {
   return (mapKnownPlural(stem) ?? mapMappedPlural(stem)) !== undefined;
 }
 
 function transformMarkerSourceRepairs(input: string): TransformResult {
-  if (!/in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
+  if (/[:*_·•]e-/u.test(input)) {
+    input = input.replace(innerAdjectivePattern,
+      (_match: string, first: string, separator: string, second: string) => {
+        replacements += 1;
+        return `${first}-${second}${separator}`;
+      });
+  }
+  if (!/in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u.test(input)) return {text: input, replacements};
   const repair = (match: string, stem: string, separator: string, ending: string): string => {
     if (!isKnownStem(stem)) return match;
     replacements += 1;
