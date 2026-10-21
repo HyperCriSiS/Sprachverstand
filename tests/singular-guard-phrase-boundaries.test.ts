@@ -8,13 +8,20 @@ const t = (input: string) => transformText(input, defaultRules, { profile: "aggr
 describe("feminines der direkt vor markiertem Singular", () => {
   it.each([
     // Genitiv nach Nomen ergab `der Künstler` bzw. `der Experte`.
-    ["Das Projekt der Künstler*in.", "Das Projekt der Künstler*in."],
-    ["Publikationen der Expert*in sind online.", "Publikationen der Expert*in sind online."],
-    ["Tag der verfolgten Anwält:in", "Tag der verfolgten Anwält:in"],
-    ["die Rolle der Gastgeber:in", "die Rolle der Gastgeber:in"],
+    ["Das Projekt der Künstler*in.", "Das Projekt des Künstlers."],
+    ["Publikationen der Expert*in sind online.", "Publikationen des Experten sind online."],
+    ["die Rolle der Gastgeber:in", "die Rolle des Gastgebers"],
+    ["Tag der verfolgten Anwält:in", "Tag des verfolgten Anwalts"],
     // Dativ nach Präposition mit Adjektiv ergab `mit der neuen Kollege`.
-    ["mit der neuen Kolleg*in", "mit der neuen Kolleg*in"],
-    ["beim:bei der aktuellen Arbeitgeber:in", "beim:bei der aktuellen Arbeitgeber:in"]
+    ["mit der neuen Kolleg*in", "mit dem neuen Kollegen"],
+    ["bei der zuständigen Sachbearbeiter:in", "bei dem zuständigen Sachbearbeiter"]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+
+  it.each([
+    // Paare: nicht halb umwandeln.
+    ["beim:bei der aktuellen Arbeitgeber:in", "beim:bei der aktuellen Arbeitgeber:in"],
+    // Normale Feminina bleiben.
+    ["Das Projekt der Künstlerin.", "Das Projekt der Künstlerin."]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([

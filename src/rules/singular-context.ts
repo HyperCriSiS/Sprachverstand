@@ -670,6 +670,40 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
   return { text, replacements };
 }
 
+// A lowercase `der` before a marked singular after a noun or a dative
+// preposition is feminine genitive/dative: `Publikationen der Expert*in`
+// -> `Publikationen des Experten`, `mit der neuen Kolleg*in` -> `mit dem
+// neuen Kollegen` (before: `der Experte`, `der neuen Kollege`). Not inside a
+// compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
+// pair (`beim:bei der …`) and not before a coordinated marked noun.
+const feminineDerSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  "gu"
+);
+const dativePrepositionSet = new Set(dativePrepositions.split("|"));
+
+function transformFeminineDerSingulars(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    feminineDerSingularPattern(),
+    (match: string, previous: string, space: string, adjectives: string, base: string) => {
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const lowerPrevious = previous.toLocaleLowerCase(locale);
+      const grammaticalCase: GrammaticalCase | undefined =
+        previous === lowerPrevious
+          ? dativePrepositionSet.has(lowerPrevious) ? "dative" : undefined
+          : "genitive";
+      if (!grammaticalCase) return match;
+      const noun = mapSingular(base, grammaticalCase);
+      if (!noun) return match;
+      replacements += 1;
+      return previous + space + (grammaticalCase === "dative" ? "dem" : "des") +
+        adjectives + noun;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -841,8 +875,9 @@ export const singularContextRule: Rule = {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
     const spacedPairResult = transformSpacedPairs(input);
+    const feminineDerResult = transformFeminineDerSingulars(spacedPairResult.text);
     const attributiveSeparatorResult = transformAttributivePhrases(
-      spacedPairResult.text,
+      feminineDerResult.text,
       attributiveSeparatorSingularPattern()
     );
     const bareAdjectiveResult = transformBareMarkedAdjectives(
@@ -901,6 +936,7 @@ export const singularContextRule: Rule = {
       text: obliqueResult.text,
       replacements:
         spacedPairResult.replacements +
+        feminineDerResult.replacements +
         attributiveSeparatorResult.replacements +
         bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +
