@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
+  „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
+  „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
+  „Praktikant“. Nur bei bekanntem Stamm, keine Rechtschreibkorrektur.
 - Eine URL oder E-Mail-Adresse schützt nicht mehr den ganzen Textknoten,
   sondern nur ihre eigene Spanne: „Nutzer*innen lesen auf https://…“ →
   „Nutzer lesen auf https://…“, die Adresse bleibt bytegleich. Reine

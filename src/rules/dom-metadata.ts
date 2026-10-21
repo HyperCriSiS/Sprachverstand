@@ -8,6 +8,7 @@ function unavailable(): never {
 // No lexicon or transformation patterns are loaded in the page renderer.
 // A parity test keeps order, risk and contextual metadata in sync with rules.
 const definitions: readonly (readonly [string, RuleRisk])[] = [
+  ["marker.source-repairs", "safe"],
   ["plural.nested-compound", "safe"],
   ["singular.explicit-context", "safe"],
   ["singular.natural-family-forms", "safe"],
