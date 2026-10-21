@@ -9,6 +9,7 @@ import { mapMappedSingular } from "./person-lexicon";
 import { obliqueDeterminerCaseBefore } from "./singular-context";
 import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
 import { createSuffixLookup } from "./suffix-index";
+import { preserveInnerCase } from "./inner-case";
 
 interface SupplementalForm {
   readonly stem: string;
@@ -394,6 +395,8 @@ const mappedForms: readonly SupplementalForm[] = [
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 

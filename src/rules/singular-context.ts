@@ -8,6 +8,7 @@ import {
   mapMappedSingular,
   type GrammaticalCase
 } from "./person-lexicon";
+import { preserveInnerCase } from "./inner-case";
 
 interface DeterminerForm {
   readonly masculine: string;
@@ -438,6 +439,8 @@ function hatSichtbaresBinnenI(text: string): boolean {
 }
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
   const upperLetters = letters.toLocaleUpperCase(locale);

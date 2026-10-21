@@ -2,6 +2,7 @@ import type { Rule, TransformResult } from "../core/rule";
 import {lazyPattern} from "../core/lazy-pattern";
 import { contextSuffix } from "./context-suffix";
 import {participleSource, participleLeadingCandidate as leadingContextCandidate} from "./context-candidates";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 
@@ -45,6 +46,8 @@ const singularRolePrefixPattern = /(?:^|\s)als\s*$/iu;
 const prefixTokenCharacter = /[\p{L}\p{M}-]/u;
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
