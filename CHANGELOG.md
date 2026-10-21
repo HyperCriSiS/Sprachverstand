@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Weitere kurze Begleitwortpaare werden aufgelöst: „mit einem*r Dozent*in“
+  blieb unverändert und wird jetzt zu „mit einem Dozenten“, „einer*m
+  Mentor*in“ ergab „einer*m Mentor“ und wird jetzt zu „einem Mentor“
+  (ebenso dem/r, der*m, des/r, eines/r, jeder*m, einer/s).
 - Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
   „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
   „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
