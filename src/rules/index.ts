@@ -2,6 +2,7 @@ import type { Rule } from "../core/rule";
 import { binnenIPluralRule } from "./binnen-i";
 import { doubleFormsRule } from "./double-forms";
 import { explicitPronounsRule } from "./explicit-pronouns";
+import { loanwordPersonFormsRule } from "./loanword-person-forms";
 import {
   inflectedStemPluralRule,
   inflectedStemSingularRule
@@ -27,6 +28,7 @@ import { titleAbbreviationsRule } from "./title-abbreviations";
 import { unmarkedSingularRule } from "./unmarked-singular";
 
 export const defaultRules: readonly Rule[] = [
+  loanwordPersonFormsRule,
   markerSourceRepairsRule,
   nestedCompoundPluralsRule,
   singularContextRule,

@@ -47,12 +47,15 @@ describe("Lexikontranche aus der Webanalyse", () => {
 
   it.each([
     ["Bauer:in", "Bauer"],
-    ["Kakaobäuer*innen", "Kakaobäuer*innen"],
     ["Juniorinnen", "Juniorinnen"],
     ["Junior-Team", "Junior-Team"],
-    ["Wissenschafterin", "Wissenschafterin"],
-    // Lehnwörter bleiben bewusst außerhalb dieser Tranche.
-    ["Creator*innen", "Creator*innen"],
-    ["Panelist*innen", "Panelist*innen"]
+    ["Wissenschafterin", "Wissenschafterin"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
+
+  // Umlautkomposita und Lehnwörter kommen aus der zweiten Tranche.
+  it.each([
+    ["Kakaobäuer*innen", "Kakaobauern"],
+    ["Creator*innen", "Creators"],
+    ["Panelist*innen", "Panelisten"]
+  ])("zweite Tranche: %s", (input, expected) => expect(t(input)).toBe(expected));
 });

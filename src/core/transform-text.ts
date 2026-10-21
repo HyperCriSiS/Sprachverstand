@@ -6,6 +6,10 @@ import {
 } from "./rule";
 import type { CustomReplacement } from "../settings/defaults";
 import {
+  loanwordPersonFormsRuleId,
+  setLoanwordPersonFormsEnabled
+} from "../rules/loanword-person-forms";
+import {
   summarizeReplacements,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
@@ -468,6 +472,11 @@ export function transformTextWithSummary(
   rules: readonly Rule[],
   options: TransformOptions
 ): DetailedTransformResult {
+  // The loanword lexicon is data for all rules; its group switches it
+  // through the id of its marker rule.
+  setLoanwordPersonFormsEnabled(
+    !options.disabledRuleIds?.has(loanwordPersonFormsRuleId)
+  );
   if (options.protectedRanges?.length) {
     const {protectedRanges, leadingContext, ...plainOptions} = options;
     let cursor = 0;
