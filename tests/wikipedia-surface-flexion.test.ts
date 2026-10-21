@@ -15,7 +15,10 @@ const cases = [
   ["Ortsvorsteher(in)", "Ortsvorsteher"],
   ["Benediktiner(innen)", "Benediktiner"],
   ["Nachwuchssportler(in)", "Nachwuchssportler"],
-  ["Tennisspieler(in)", "Tennisspieler"]
+  ["Tennisspieler(in)", "Tennisspieler"],
+  // Bis 10/2026 bewusst unverändert. Seit der Regel für Marker hinter
+  // flektierter maskuliner Form bleibt die vom Autor geschriebene Form.
+  ["Gewerkschaftern/innen", "Gewerkschaftern"]
 ] as const;
 
 describe("enge Wikipedia-Oberflächenflexionen", () => {
@@ -28,7 +31,7 @@ describe("enge Wikipedia-Oberflächenflexionen", () => {
     ).toBe(expected);
   });
 
-  it.each(["Gewerkschaftern/innen", "Check-In"])(
+  it.each(["Check-In"])(
     "lässt die bewusst nicht freigegebene Form %s unverändert",
     (input) => {
       expect(

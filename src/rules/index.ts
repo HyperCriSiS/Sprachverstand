@@ -2,6 +2,10 @@ import type { Rule } from "../core/rule";
 import { binnenIPluralRule } from "./binnen-i";
 import { doubleFormsRule } from "./double-forms";
 import { explicitPronounsRule } from "./explicit-pronouns";
+import {
+  inflectedStemPluralRule,
+  inflectedStemSingularRule
+} from "./inflected-stem-markers";
 import { jobAdSuffixesRule } from "./job-ad-suffixes";
 import { knownPluralSeparatorsRule } from "./known-plural-separators";
 import { mappedPluralSeparatorsRule } from "./mapped-plural-separators";
@@ -30,6 +34,7 @@ export const defaultRules: readonly Rule[] = [
   additionalPersonSingularRule,
   specialGenderFormsRule,
   singularDoubleFormsRule,
+  inflectedStemSingularRule,
   explicitPronounsRule,
   titleAbbreviationsRule,
   salutationParticiplesRule,
@@ -40,5 +45,6 @@ export const defaultRules: readonly Rule[] = [
   knownPluralSeparatorsRule,
   mappedPluralSeparatorsRule,
   binnenIPluralRule,
+  inflectedStemPluralRule,
   jobAdSuffixesRule
 ];
