@@ -299,6 +299,37 @@ const genitiveFemininePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${genitivePrepositions})(\s+)(${mapAlternation(genitiveFeminineDeterminers)})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
+// The same prepositional contexts for separator singulars: `mit der
+// Lehrer*in` -> `mit dem Lehrer` (before, the unmarked rule left `mit der
+// Lehrer`). Not as the second half of a pair (`vom:von der …`), not inside
+// a compound (`Täter*in-Opfer-Umkehr`) and not before a coordinated marked
+// noun, whose case this rule would not set (`von einer Künstler:in oder
+// Technolog:in`).
+const separatorSingularMarker = String.raw`(?:(?:\/-?)|[:*_·•’‘])in|\(-?in\)`;
+const notAfterPairSeparator = String.raw`(?<![\p{L}\p{M}])(?<![:*_\/·•.’‘]\s*)`;
+const singularPhraseEnd = String.raw`(?![\p{L}\p{M}-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:${separatorSingularMarker}|\p{Ll}In)(?![\p{L}\p{M}]))`;
+function prepositionalSeparatorPattern(
+  prepositions: string,
+  determiners: ReadonlyMap<string, string>
+): () => RegExp {
+  return lazyPattern(
+    String.raw`${notAfterPairSeparator}(${prepositions})(\s+)(${mapAlternation(determiners)})(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+    "giu"
+  );
+}
+const accusativeFeminineSeparatorPattern = prepositionalSeparatorPattern(accusativePrepositions, accusativeFeminineDeterminers);
+const dativeFeminineSeparatorPattern = prepositionalSeparatorPattern(dativePrepositions, dativeFeminineDeterminers);
+const genitiveFeminineSeparatorPattern = prepositionalSeparatorPattern(genitivePrepositions, genitiveFeminineDeterminers);
+// `zur` is `zu der`: `zur Erzieher*in` / `zur ErzieherIn` -> `zum Erzieher`
+// (before: `zur Erzieher`). Pairs like `zum/zur` stay with the pair rules.
+const contractedZurSeparatorPattern = lazyPattern(
+  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+  "gu"
+);
+const contractedZurBinnenIPattern = lazyPattern(
+  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase}\p{Ll})In${singularPhraseEnd}`,
+  "gu"
+);
 const commonFiniteVerbs = [
   "arbeitet",
   "bekommt",
@@ -697,7 +728,8 @@ function transformPrepositionalFeminine(
   input: string,
   pattern: RegExp,
   determinerMap: ReadonlyMap<string, string>,
-  grammaticalCase: GrammaticalCase
+  grammaticalCase: GrammaticalCase,
+  binnenI = true
 ): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -710,7 +742,7 @@ function transformPrepositionalFeminine(
       secondWhitespace: string,
       base: string
     ) => {
-      if (!hatSichtbaresBinnenI(match)) return match;
+      if (binnenI && !hatSichtbaresBinnenI(match)) return match;
       const masculineDeterminer = determinerMap.get(
         determiner.toLocaleLowerCase(locale)
       );
@@ -728,6 +760,39 @@ function transformPrepositionalFeminine(
       );
     }
   );
+  return { text, replacements };
+}
+
+function transformContractedZur(input: string, pattern: RegExp): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (match: string, zur: string, whitespace: string, base: string) => {
+      const noun = mapSingular(base, "dative");
+      if (!noun) return match;
+      replacements += 1;
+      return applyTokenCase(zur, "zum") + whitespace + noun;
+    }
+  );
+  return { text, replacements };
+}
+
+// Prepositional separator singulars run before the general separator rule,
+// which would otherwise keep the feminine determiner (`mit der Lehrer`).
+function transformPrepositionalSeparatorSingulars(input: string): TransformResult {
+  let text = input;
+  let replacements = 0;
+  for (const result of [
+    (value: string) => transformPrepositionalFeminine(value, accusativeFeminineSeparatorPattern(), accusativeFeminineDeterminers, "accusative", false),
+    (value: string) => transformPrepositionalFeminine(value, dativeFeminineSeparatorPattern(), dativeFeminineDeterminers, "dative", false),
+    (value: string) => transformPrepositionalFeminine(value, genitiveFeminineSeparatorPattern(), genitiveFeminineDeterminers, "genitive", false),
+    (value: string) => transformContractedZur(value, contractedZurSeparatorPattern()),
+    (value: string) => transformContractedZur(value, contractedZurBinnenIPattern())
+  ]) {
+    const next = result(text);
+    text = next.text;
+    replacements += next.replacements;
+  }
   return { text, replacements };
 }
 
@@ -841,8 +906,11 @@ export const singularContextRule: Rule = {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
     const spacedPairResult = transformSpacedPairs(input);
+    const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
+      spacedPairResult.text
+    );
     const attributiveSeparatorResult = transformAttributivePhrases(
-      spacedPairResult.text,
+      prepositionalSeparatorResult.text,
       attributiveSeparatorSingularPattern()
     );
     const bareAdjectiveResult = transformBareMarkedAdjectives(
@@ -901,6 +969,7 @@ export const singularContextRule: Rule = {
       text: obliqueResult.text,
       replacements:
         spacedPairResult.replacements +
+        prepositionalSeparatorResult.replacements +
         attributiveSeparatorResult.replacements +
         bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +
