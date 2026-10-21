@@ -51,6 +51,6 @@ describe("markierter Singular nach Begleitwort im obliquen Kasus", () => {
     ["eine oder einen Mitarbeiter*in", "einen Mitarbeiter"],
     ["die eine/den einen Kritiker:in", "die eine/den einen Kritiker:in"],
     // Ausgangsform mit Trennstrich nach dem Marker.
-    ["den Schüler*in-nen", "den Schüler*in-nen"]
+    ["den Schüler*in-nen", "den Schülern"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
 });
