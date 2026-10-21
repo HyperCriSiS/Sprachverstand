@@ -713,6 +713,52 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
   return { text, replacements };
 }
 
+// A lowercase `der` before a marked singular after a noun or a dative
+// preposition is feminine genitive/dative: `Publikationen der Expert*in`
+// -> `Publikationen des Experten`, `mit der neuen Kolleg*in` -> `mit dem
+// neuen Kollegen` (before: `der Experte`, `der neuen Kollege`). Not inside a
+// compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
+// pair (`beim:bei der …`) and not before a coordinated marked noun.
+const feminineDerSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  "gu"
+);
+const dativePrepositionSet = new Set(dativePrepositions.split("|"));
+// Capitalized at the start of a sentence, these are no nouns: `Viele der
+// Ehrenamtler*innen` is partitive, `In der …` a two-way preposition.
+const nonNounWordsBeforeDer = new Set([
+  "alle", "beide", "einige", "manche", "mehrere", "viele", "wenige", "jede",
+  "jeder", "keine", "keiner", "eine", "einer", "die", "das", "den", "dem",
+  "des", "in", "an", "auf", "unter", "über", "vor", "hinter", "neben",
+  "zwischen", "für", "durch", "gegen", "ohne", "um", "als", "wie", "und",
+  "oder", "aber", "auch", "nur", "noch", "so", "da", "wo", "wenn", "weil",
+  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt"
+]);
+
+function transformFeminineDerSingulars(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    feminineDerSingularPattern(),
+    (match: string, previous: string, space: string, adjectives: string, base: string) => {
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const lowerPrevious = previous.toLocaleLowerCase(locale);
+      const grammaticalCase: GrammaticalCase | undefined =
+        dativePrepositionSet.has(lowerPrevious)
+          ? "dative"
+          : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious)
+            ? "genitive"
+            : undefined;
+      if (!grammaticalCase) return match;
+      const noun = mapSingular(base, grammaticalCase);
+      if (!noun) return match;
+      replacements += 1;
+      return previous + space + (grammaticalCase === "dative" ? "dem" : "des") +
+        adjectives + noun;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -921,8 +967,11 @@ export const singularContextRule: Rule = {
     const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
       spacedPairResult.text
     );
+    const feminineDerResult = transformFeminineDerSingulars(
+      prepositionalSeparatorResult.text
+    );
     const attributiveSeparatorResult = transformAttributivePhrases(
-      prepositionalSeparatorResult.text,
+      feminineDerResult.text,
       attributiveSeparatorSingularPattern()
     );
     const bareAdjectiveResult = transformBareMarkedAdjectives(
@@ -982,6 +1031,7 @@ export const singularContextRule: Rule = {
       replacements:
         spacedPairResult.replacements +
         prepositionalSeparatorResult.replacements +
+        feminineDerResult.replacements +
         attributiveSeparatorResult.replacements +
         bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +
