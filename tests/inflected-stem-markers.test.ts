@@ -42,7 +42,9 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     // Markiertes Adjektiv ohne Artikel löst die Begleitwortregel auf.
     ["Medizinische/r Technologe/in", "Medizinischer Technologe"],
     ["mit Lehrer*innen", "mit Lehrern"],
-    ["mit Kollegen*innen", "mit Kollegen"]
+    ["mit Kollegen*innen", "mit Kollegen"],
+    // Marker am bereits pluralischen Stamm (Lexikontranche 2).
+    ["Mitglieder*innen", "Mitglieder"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
@@ -51,7 +53,6 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     ["noch im Kinderwagen/in der Trage", "noch im Kinderwagen/in der Trage"],
     ["Wagen/innen", "Wagen/innen"],
     ["Daten*innen", "Daten*innen"],
-    ["Mitglieder*innen", "Mitglieder*innen"],
     // Normale Feminina und Tippfehlerformen.
     ["Kolleginnen", "Kolleginnen"],
     ["Patientinnen", "Patientinnen"],

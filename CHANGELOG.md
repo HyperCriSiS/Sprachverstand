@@ -33,6 +33,15 @@ dokumentiert.
 
 ### Behoben
 
+- Zweite Lexikontranche aus der Webanalyse: rund 1.250 bisher offene
+  Personenbezeichnungen werden umgewandelt, jede einzeln geprüft, darunter
+  seltene Bildungen („Kurzfilmer*innen“), schwache Komposita
+  („Sprachpat*innen“ → „Sprachpaten“), Bauer-Komposita („Kleinbauer*innen“
+  → „Kleinbauern“ statt „Kleinbauer“), Gruppen- und Herkunftsbezeichnungen
+  sowie Ausgangsschreibweisen, die nur entgendert, nicht korrigiert werden.
+- Neue, standardmäßig aktive Regelgruppe „Englische Lehnwörter“: „Maker:innen“,
+  „Researcher*in“ oder „Creator*innen“ werden wie deutsche
+  Personenbezeichnungen umgewandelt und lassen sich gesondert abschalten.
 - Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
   „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
   „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu

@@ -62,7 +62,8 @@ describe("Einstellungen", () => {
       "title-abbreviations",
       "unmarked-singular",
       "substantivized-adjectives",
-      "special-gender-forms"
+      "special-gender-forms",
+      "loanword-person-terms"
     ]);
     expect(settings.settingsRevision).toBe(currentSettingsRevision);
   });

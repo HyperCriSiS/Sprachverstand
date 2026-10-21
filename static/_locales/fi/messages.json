@@ -113,6 +113,9 @@
   "groupJobAdSuffixesLabel": {
     "message": "Sukupuolilisäykset työpaikkailmoituksissa"
   },
+  "groupLoanwordsLabel": {
+    "message": "Englanninkieliset lainasanat"
+  },
   "ruleGroupsDescription": {
     "message": "Jokainen sääntöryhmä voidaan valita erikseen. Selvästi naispuolisia nimityksiä ei muuteta yleisesti."
   },
@@ -286,6 +289,9 @@
   },
   "rule_job_ad_suffixes_description": {
     "message": "Poistaa yleisiä lisäyksiä, kuten (m/w/d)."
+  },
+  "rule_loanwords_description": {
+    "message": "Englanninkieliset henkilönimitykset kuten Maker, Researcher tai Creator käsitellään kuten saksankieliset."
   },
   "noticeMore": {
     "message": "$COUNT$ muuta ilmoitusta ei näytetä tilanpuutteen vuoksi.",

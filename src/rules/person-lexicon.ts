@@ -2,8 +2,10 @@ import {
   getGeneratedPersonForms,
   type GeneratedPersonForms
 } from "./generated-person-lexicon";
+import { getLoanwordPersonForms } from "./loanword-person-forms";
 import { nationalityPersonForms } from "./nationality-person-forms";
 import { getReviewedPersonForms } from "./reviewed-person-forms";
+import { getWebAnalysisPersonForms } from "./reviewed-person-forms-webanalyse";
 import { getReviewedPersonFormsWave59 } from "./reviewed-person-forms-wave-59";
 import { getReviewedPersonFormsWave60 } from "./reviewed-person-forms-wave-60";
 import { getReviewedPersonFormsWave61 } from "./reviewed-person-forms-wave-61";
@@ -54,7 +56,9 @@ function getExactPersonForms(
     getReviewedPersonFormsWave66(normalizedBase) ??
     getReviewedPersonFormsWave67(normalizedBase) ??
     getReviewedPersonFormsWave68(normalizedBase) ??
-    getReviewedPersonFormsWave69(normalizedBase)
+    getReviewedPersonFormsWave69(normalizedBase) ??
+    getWebAnalysisPersonForms(normalizedBase) ??
+    getLoanwordPersonForms(normalizedBase)
   );
 }
 

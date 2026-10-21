@@ -174,6 +174,17 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     example: "Erzieher (m/w/d) → Erzieher",
     ruleIds: ["job-ad.gender-suffixes"],
     defaultEnabled: false
+  },
+  {
+    id: "loanword-person-terms",
+    label: "Englische Lehnwörter",
+    labelKey: "groupLoanwordsLabel",
+    description:
+      "Englische Personenbezeichnungen wie Maker, Researcher oder Creator werden wie deutsche behandelt.",
+    descriptionKey: "rule_loanwords_description",
+    example: "Maker:innen → Maker",
+    ruleIds: ["lexicon.loanwords"],
+    defaultEnabled: true
   }
 ] as const;
 
