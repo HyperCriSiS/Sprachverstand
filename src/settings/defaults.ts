@@ -12,7 +12,7 @@ export const maximumCustomReplacements = 100;
 export const maximumCustomReplacementSourceLength = 120;
 export const maximumCustomReplacementTargetLength = 200;
 export const maximumExcludedDomainLength = 253;
-export const currentSettingsRevision = 10;
+export const currentSettingsRevision = 11;
 
 export const syncCategoryIds = [
   "activation",
@@ -70,7 +70,8 @@ const introducedDefaultGroups = [
   { revision: 2, groupId: "title-abbreviations" },
   { revision: 3, groupId: "unmarked-singular" },
   { revision: 4, groupId: "substantivized-adjectives" },
-  { revision: 5, groupId: "special-gender-forms" }
+  { revision: 5, groupId: "special-gender-forms" },
+  { revision: 11, groupId: "loanword-person-terms" }
 ] as const;
 
 export interface CustomReplacement {

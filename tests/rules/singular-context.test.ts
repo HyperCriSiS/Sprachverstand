@@ -90,7 +90,7 @@ describe("singularContextRule", () => {
     "mein:e Hebamme:in",
     "jede:r NutzerInnen",
     "jede:r Nutzer:innen",
-    "des:der Windwander:in",
+    "des:der Zwiebelwander:in",
     "eine:n neue Lehrer:in",
     "der:die neuen Lehrer:in",
     "den:die fleißige:r Schüler:in",

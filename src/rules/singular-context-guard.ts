@@ -115,6 +115,26 @@ function markedNounBefore(input: string, end: number): number | undefined {
   return start === 0 || whitespaceCharacter.test(input[start - 1] ?? "") ? start : undefined;
 }
 
+const phraseOpeningPrepositions = new Set([
+  "pro", "je", "für", "von", "mit", "bei", "ohne", "gegen", "durch",
+  "zwischen", "nach", "aus", "seit", "laut", "gemäß", "samt", "nebst"
+]);
+const dativePrepositionsBeforeDer = new Set([
+  "mit", "von", "bei", "zu", "aus", "nach", "seit", "gegenüber", "samt",
+  "nebst", "außer", "entgegen"
+]);
+const markedCompoundAt =
+  /^[\p{L}\p{M}’'-]*?(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)-/u;
+
+function isNounOrDativePrepositionBefore(input: string, end: number): boolean {
+  const previous = input.slice(0, end).trimEnd()
+    .match(/([\p{L}\p{M}-]+)([.!?:;,)"“»]?)$/u);
+  if (!previous || previous[2]) return false;
+  const word = previous[1] ?? "";
+  return dativePrepositionsBeforeDer.has(word.toLocaleLowerCase(locale)) ||
+    /^\p{Lu}/u.test(word);
+}
+
 export function hasAmbiguousSingularDeterminer(
   input: string,
   nounIndex: number
@@ -134,7 +154,10 @@ export function hasAmbiguousSingularDeterminer(
     return false;
   }
   let afterCoordinator = false;
-  for (let token = 0; token < 4; token += 1) {
+  // Only weak adjectives (`der verfolgten`) seen so far between the token
+  // and the noun.
+  let onlyWeakAdjectives = true;
+  for (let tokenIndex = 0; tokenIndex < 4; tokenIndex += 1) {
     while (cursor > 0 && whitespaceCharacter.test(input[cursor - 1] ?? "")) {
       cursor -= 1;
     }
@@ -164,10 +187,27 @@ export function hasAmbiguousSingularDeterminer(
     if (isAmbiguousDeterminer(token)) {
       return true;
     }
+    const lowerToken = token.toLocaleLowerCase(locale);
+    // `Projekt der Künstler*in`, `mit der neuen Kolleg*in`: `der` right
+    // before the noun after a noun or a dative preposition is feminine
+    // genitive/dative, never the masculine nominative (`der Künstler`).
+    // A compound (`der Therapeut:in-Arzt-Beziehung`) is not a singular.
+    if (onlyWeakAdjectives && lowerToken === "der" &&
+        !markedCompoundAt.test(input.slice(nounIndex)) &&
+        isNounOrDativePrepositionBefore(input, cursor)) {
+      return true;
+    }
+    if (!/^[\p{L}\p{M}]+en$/u.test(token)) onlyWeakAdjectives = false;
     // `als` opens a new phrase: in `welche Benefits Sie als Mitarbeiter:in`
     // or `Ihre Angaben als Teilnehmer*in` the earlier determiner belongs to
     // another noun. A determiner after `als` was already read above.
-    if (token.toLocaleLowerCase(locale) === "als") {
+    if (lowerToken === "als") {
+      return false;
+    }
+    // So does a preposition right before the noun (`Die Kosten pro
+    // Schüler:in`, `Beziehung zwischen Patient/in`): a determiner of this
+    // noun would stand after the preposition.
+    if (tokenIndex === 0 && phraseOpeningPrepositions.has(lowerToken)) {
       return false;
     }
     if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) {

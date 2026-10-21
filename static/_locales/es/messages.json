@@ -113,6 +113,9 @@
   "groupJobAdSuffixesLabel": {
     "message": "Sufijos de género en ofertas de empleo"
   },
+  "groupLoanwordsLabel": {
+    "message": "Préstamos del inglés"
+  },
   "ruleGroupsDescription": {
     "message": "Cada grupo de reglas puede seleccionarse por separado. Los términos explícitamente femeninos no se modifican de forma generalizada."
   },
@@ -286,6 +289,9 @@
   },
   "rule_job_ad_suffixes_description": {
     "message": "Elimina sufijos habituales como (m/w/d)."
+  },
+  "rule_loanwords_description": {
+    "message": "Las denominaciones de personas inglesas como Maker, Researcher o Creator se tratan como las alemanas."
   },
   "noticeMore": {
     "message": "No se muestran $COUNT$ avisos más por falta de espacio.",
