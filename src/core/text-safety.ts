@@ -196,6 +196,13 @@ export function isProbablyTechnicalText(input: string): boolean {
 
 const urlSpanPattern = /(?:(?:https?|ftp|data):\/\/|www\.)\S+/giu;
 const emailSpanPattern = /(?<![^\s@])[^\s@]+@[^\s@]+\.[^\s@]+/gu;
+// Host with path but without scheme (`uni-berlin.de/…/Mitarbeiter_innen/…`)
+// and file names (`Verhaltensregeln_Funktionaer_innen.pdf`): before, their
+// marker words were changed like ordinary text.
+const bareHostPathSpanPattern =
+  /(?<![\p{L}\p{N}@.\/-])(?:[a-z0-9-]+\.)+(?:de|at|ch|li|lu|eu|com|org|net|info|edu|gov|int|io)\/[^\s"'„“”«»()<>]*/giu;
+const fileNameSpanPattern =
+  /(?<![^\s"'„“”«»(\[<>])[^\s"'„“”«»()<>]*[\p{L}\p{N}_-]\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|rtf|txt|csv|zip|jpe?g|png|gif|svg|webp|mp3|mp4|mov|html?|php|aspx?)(?![\p{L}\p{N}])/giu;
 
 // URL and e-mail spans in a text node. Within otherwise natural text only
 // these spans are protected (`Nutzer*innen lesen auf https://…`); before,
@@ -203,7 +210,7 @@ const emailSpanPattern = /(?<![^\s@])[^\s@]+@[^\s@]+\.[^\s@]+/gu;
 export function technicalSpanRanges(text: string): readonly {start: number; end: number}[] {
   if (!text.includes("/") && !text.includes(".") && !text.includes("@")) return [];
   const ranges: {start: number; end: number}[] = [];
-  for (const pattern of [urlSpanPattern, emailSpanPattern]) {
+  for (const pattern of [urlSpanPattern, emailSpanPattern, bareHostPathSpanPattern, fileNameSpanPattern]) {
     for (const match of text.matchAll(pattern)) {
       ranges.push({start: match.index, end: match.index + match[0].length});
     }

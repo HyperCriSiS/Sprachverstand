@@ -2,6 +2,7 @@ import type { Rule, TransformResult } from "../core/rule";
 import {lazyPattern} from "../core/lazy-pattern";
 import { contextSuffix } from "./context-suffix";
 import type { GrammaticalCase } from "./person-lexicon";
+import { preserveInnerCase } from "./inner-case";
 
 interface DeterminerForm {
   readonly masculine: string;
@@ -193,6 +194,8 @@ const phrasePattern = lazyPattern(
 );
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lower = source.toLocaleLowerCase(locale);
   const upper = source.toLocaleUpperCase(locale);
   if (source === upper && source !== lower) {

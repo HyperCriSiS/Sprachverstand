@@ -1,4 +1,5 @@
 import type { Rule } from "../core/rule";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const replacements = new Map<string, string>([
@@ -38,6 +39,8 @@ const pattern = new RegExp(
 );
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lower = letters.toLocaleLowerCase(locale);
   const upper = letters.toLocaleUpperCase(locale);

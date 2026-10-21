@@ -8,6 +8,7 @@ import {
   mapMappedSingular,
   type GrammaticalCase
 } from "./person-lexicon";
+import { preserveInnerCase } from "./inner-case";
 
 interface DeterminerForm {
   readonly masculine: string;
@@ -54,6 +55,8 @@ function addPossessiveDeterminers(
   addDeterminer(base, "e", base, "nominative");
   addDeterminer(inflectedBase, "n", accusative, "accusative");
   addDeterminer(inflectedBase, "m", dative, "dative");
+  // `Ihrem:r`, `seinem/r`: dative written from the masculine form.
+  addDeterminer(dative, "r", dative, "dative");
   addDeterminer(
     genitiveMasculine,
     genitiveFeminine,
@@ -436,6 +439,8 @@ function hatSichtbaresBinnenI(text: string): boolean {
 }
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
   const upperLetters = letters.toLocaleUpperCase(locale);

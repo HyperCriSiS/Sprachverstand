@@ -1,6 +1,7 @@
 import type { Rule } from "../core/rule";
 import { transformGenderedPlural } from "./gendered-plural";
 import { mapMappedPlural as mapLexiconPlural } from "./person-lexicon";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const additionalPluralForms = new Map<string, string>([
@@ -23,6 +24,8 @@ function isTitleCasePart(part: string): boolean {
 }
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
