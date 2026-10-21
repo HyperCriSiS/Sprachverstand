@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Kein falscher Dativ mehr über Phrasengrenzen: „Mit ihnen können Lehrer*innen
+  arbeiten“ und „Seit Wochen streiken Lehrer*innen“ ergaben „Lehrern“.
+  Zwischen Auslöser und Nomen zählen nur noch Begleiter und Adjektive. Neu:
+  Dativ beim Binnen-I („von LehrerInnen“ → „von Lehrern“ statt „von Lehrer“).
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
