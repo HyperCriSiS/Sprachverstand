@@ -1,5 +1,6 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { mapMappedSingular } from "./person-lexicon";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const separators = [":", "*", "_", "/", "·", "•", "’", "‘"] as const;
@@ -69,6 +70,8 @@ export function isExplicitPairToken(token: string): boolean {
 }
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
   const upperLetters = letters.toLocaleUpperCase(locale);

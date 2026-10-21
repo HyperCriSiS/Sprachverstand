@@ -1,4 +1,5 @@
 import type { Rule } from "../core/rule";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 
@@ -11,6 +12,8 @@ const contextualPattern =
   /(?<![\p{L}\p{M}])(mitarbeitende\s+personen|Benutzungshandbuch)(?![\p{L}\p{M}])/giu;
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lower = source.toLocaleLowerCase(locale);
   const upper = source.toLocaleUpperCase(locale);
 

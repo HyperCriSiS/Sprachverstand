@@ -17,6 +17,7 @@ import { getReviewedPersonFormsWave66 } from "./reviewed-person-forms-wave-66";
 import { getReviewedPersonFormsWave67 } from "./reviewed-person-forms-wave-67";
 import { getReviewedPersonFormsWave68 } from "./reviewed-person-forms-wave-68";
 import { getReviewedPersonFormsWave69 } from "./reviewed-person-forms-wave-69";
+import { preserveInnerCase } from "./inner-case";
 
 export type GrammaticalCase =
   | "nominative"
@@ -723,6 +724,8 @@ const personForms: readonly PersonForms[] = [
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   if (source.includes("-") && replacement.includes("-")) {
     const sourceParts = source.split("-");
     const replacementParts = replacement.split("-");

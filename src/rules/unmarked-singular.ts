@@ -3,6 +3,7 @@ import { mapKnownSingular } from "./known-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
 import { obliqueDeterminerCaseBefore } from "./singular-context";
 import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const markerPattern =
@@ -23,6 +24,8 @@ const additionalSingularForms = new Map<string, string>([
 ]);
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
