@@ -42,6 +42,11 @@ dokumentiert.
 - Neue, standardmäßig aktive Regelgruppe „Englische Lehnwörter“: „Maker:innen“,
   „Researcher*in“ oder „Creator*innen“ werden wie deutsche
   Personenbezeichnungen umgewandelt und lassen sich gesondert abschalten.
+- Markierter Singular nach Präposition und femininem Begleitwort wird wie
+  beim Binnen-I aufgelöst: „mit der Patient*in“ ergab „mit der Patient“ und
+  wird jetzt zu „mit dem Patienten“, „für die Kolleg:in“ zu „für den
+  Kollegen“. „zur Erzieher*in“ ergab „zur Erzieher“ und wird jetzt zu „zum
+  Erzieher“. Paare, Komposita und Koordinationen bleiben unberührt.
 - Dativ nach großgeschriebenem Begleitwort wieder richtig: „mit Ihren
   Schüler*innen“ ergab seit der Phrasengrenze aus #470 „mit Ihren Schüler“
   und wird wieder zu „mit Ihren Schülern“; ebenso „von Deinen …“ und nach
