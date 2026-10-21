@@ -16,11 +16,17 @@ describe("Restfehler der Webanalyse", () => {
     ["vor der Lehrer*in", "vor dem Lehrer"],
     ["Medizinisch:e-Technische:r Assistent:in", "Medizinisch-Technischer Assistent"],
     ["Medizinisch*e-Technische*r Assistent*in", "Medizinisch-Technischer Assistent"],
-    ["Inklusionsbeauftragte*r der Arbeitgeber*in", "Inklusionsbeauftragter des Arbeitgebers"]
+    ["Inklusionsbeauftragte*r der Arbeitgeber*in", "Inklusionsbeauftragter des Arbeitgebers"],
+    // Binnen-I wie Trennzeichenformen (vorher „Das Projekt der Künstler“).
+    ["Das Projekt der KünstlerIn.", "Das Projekt des Künstlers."],
+    ["Die Aufgaben der KollegIn", "Die Aufgaben des Kollegen"],
+    ["Die Rolle der neuen LeiterIn", "Die Rolle des neuen Leiters"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
     "zwischen die Kolleg:in",
+    // Ohne Kennzeichen ist eine Frau gemeint.
+    "Das Projekt der Künstlerin.",
     "die Künstler:in oder Kurator:in"
   ])("lässt %s unverändert", (input) => expect(t(input)).toBe(input));
 });
