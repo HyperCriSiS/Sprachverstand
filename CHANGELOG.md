@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Markierte Wörter mit zerlegten Umlauten (Unicode NFD, z. B. aus Mac- oder
+  CMS-Texten) werden erkannt: zerlegtes „Schüler:innen“ → „Schüler“. Nur solche Wörter
+  werden für die Regeln zusammengesetzt; der übrige Text behält seine
+  Codeeinheiten, und beim Ausschalten wird exakt wiederhergestellt.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
