@@ -39,6 +39,8 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     ["der/die Psychologe/in", "der Psychologe"],
     // Bestehende Pluralregeln einschließlich Dativ bleiben zuständig.
     ["Lehrer/innen", "Lehrer"],
+    // Markiertes Adjektiv ohne Artikel löst die Begleitwortregel auf.
+    ["Medizinische/r Technologe/in", "Medizinischer Technologe"],
     ["mit Lehrer*innen", "mit Lehrern"],
     ["mit Kollegen*innen", "mit Kollegen"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
@@ -59,8 +61,7 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     ["Kollege_in", "Kollege_in"],
     // Schrägstrichreihen und nicht auflösbare Paare davor: nicht halb umwandeln.
     ["Fotografen*in/Videografen*in", "Fotografen*in/Videografen*in"],
-    ["Medizinische/r Technologe/in", "Medizinische/r Technologe/in"],
-    ["zum/zur Pflegefachassistenten/-in", "zum/zur Pflegefachassistenten/-in"],
+        ["zum/zur Pflegefachassistenten/-in", "zum/zur Pflegefachassistenten/-in"],
     ["eine/n engagierte/n Studenten/in", "eine/n engagierte/n Studenten/in"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
 });

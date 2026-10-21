@@ -44,11 +44,11 @@ describe("markierter Singular nach Begleitwort im obliquen Kasus", () => {
     ["dem Mitarbeiter*innen-Team", "dem Mitarbeiter-Team"],
     // Ohne Kasusform im Lexikon lieber unverändert als falscher Nominativ.
     ["des Arzt*in", "des Arzt*in"],
-    // Zweite Hälfte eines Begleitwortpaars: kein halb umgewandelter Ausdruck.
-    ["eine/einen Sachbearbeiter/-in", "eine/einen Sachbearbeiter/-in"],
-    ["eine/ einen Sachbearbeiter/-in", "eine/ einen Sachbearbeiter/-in"],
-    ["Ihrer/Ihrem Leser/in", "Ihrer/Ihrem Leser/in"],
-    ["eine oder einen Mitarbeiter*in", "eine oder einen Mitarbeiter*in"],
+    // Begleitwortpaare werden als Ganzes aufgelöst, nie halb.
+    ["eine/einen Sachbearbeiter/-in", "einen Sachbearbeiter"],
+    ["eine/ einen Sachbearbeiter/-in", "einen Sachbearbeiter"],
+    ["Ihrer/Ihrem Leser/in", "Ihrem Leser"],
+    ["eine oder einen Mitarbeiter*in", "einen Mitarbeiter"],
     ["die eine/den einen Kritiker:in", "die eine/den einen Kritiker:in"],
     // Ausgangsform mit Trennstrich nach dem Marker.
     ["den Schüler*in-nen", "den Schüler*in-nen"]

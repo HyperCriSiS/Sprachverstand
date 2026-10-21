@@ -33,6 +33,15 @@ dokumentiert.
 
 ### Behoben
 
+- Begleitwortpaare und Singularkontext: „der / die Nutzer*in“ und „der oder
+  die Nutzer*in“ → „der Nutzer“, „eine/einen Sachbearbeiter/-in“ → „einen
+  Sachbearbeiter“, „Ihrer/Ihrem Leser/in“ → „Ihrem Leser“, „Ausbildung
+  zum/zur Erzieher/-in“ → „Ausbildung zum Erzieher“, „Medizinische/r
+  Technologe/in“ → „Medizinischer Technologe“. Vorher entstanden teils halbe
+  oder falsche Formen („zum/zur Sozialpädagoge“, „einer*einem Facharzt“).
+  „Ihre Angaben als Teilnehmer*in“ wird umgewandelt: „als“ beginnt eine neue
+  Phrase. Ein nicht auflösbares markiertes Adjektiv davor schützt das Nomen
+  („mit engagierte*n Mitarbeiter*in“ bleibt).
 - Marker hinter einer schon flektierten maskulinen Form werden entfernt:
   „Kollegen/-innen“, „Patienten*innen“, „Ärzte/innen“ → „Kollegen“,
   „Patienten“, „Ärzte“; Dativ „mit Mitarbeitern/innen“ → „mit
