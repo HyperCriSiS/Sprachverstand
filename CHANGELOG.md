@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Eine URL oder E-Mail-Adresse schützt nicht mehr den ganzen Textknoten,
+  sondern nur ihre eigene Spanne: „Nutzer*innen lesen auf https://…“ →
+  „Nutzer lesen auf https://…“, die Adresse bleibt bytegleich. Reine
+  Technikknoten, Code, Editoren und Attribute bleiben wie bisher geschützt.
 - Bindestrich-Komposita mit bekanntem Personenkopf werden umgewandelt:
   „US-Amerikaner*innen“, „NS-Zeitzeug:innen“, „AfD-Sympathisant*innen“,
   „Exil-IranerInnen“. Der Kopf nach dem letzten Bindestrich muss großgeschrieben
