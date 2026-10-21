@@ -37,6 +37,10 @@ dokumentiert.
   blieb unverändert und wird jetzt zu „mit einem Dozenten“, „einer*m
   Mentor*in“ ergab „einer*m Mentor“ und wird jetzt zu „einem Mentor“
   (ebenso dem/r, der*m, des/r, eines/r, jeder*m, einer/s).
+- Dativ nach großgeschriebenem Begleitwort wieder richtig: „mit Ihren
+  Schüler*innen“ ergab seit der Phrasengrenze aus #470 „mit Ihren Schüler“
+  und wird wieder zu „mit Ihren Schülern“; ebenso „von Deinen …“ und nach
+  Mengennomen („von Tausenden Unterstützer:innen“ → „Unterstützern“).
 - Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
   „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
   „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
