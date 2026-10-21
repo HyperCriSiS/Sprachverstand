@@ -233,6 +233,52 @@ const ordinaryBinnenIPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${ordinaryDeterminerAlternation})(\s+)(${nounBase})In(?![\p{L}\p{M}])`,
   "giu"
 );
+// Oblique masculine determiners fix the case of a following marked singular
+// (`dem Kund*in` -> `dem Kunden`, `des Mitarbeiter*in` -> `des Mitarbeiters`).
+// The nominative forms stay with the unmarked rule and its ambiguity guard.
+const obliqueMasculineDeterminers = new Set(
+  [...ordinaryMasculineDeterminers]
+    .filter(([, form]) => form.grammaticalCase !== "nominative")
+    .map(([determiner]) => determiner)
+);
+// After an oblique masculine determiner every attributive adjective is weak
+// (`dem neuen`, `eines erfahrenen`); up to two of them may stand in between.
+const weakAdjectives = String.raw`(?:[\p{L}\p{M}]+en\s+){0,2}`;
+// A determiner that is the second half of a pair (`eine/einen`, `deiner*deinem`,
+// `eine oder einen`) belongs to the pair rules; resolving only the noun would
+// leave a half-converted phrase.
+// `den einen Kritiker` uses `einen` as a numeral after another determiner.
+const notSecondPairHalf = String.raw`(?<![\p{L}\p{M}])(?<![:*_\/·•.’‘]\s*)(?<!(?:oder|bzw\.|beziehungsweise|der|die|das|den|dem|des)\s+)`;
+const ordinaryObliqueSeparatorPattern = lazyPattern(
+  String.raw`${notSecondPairHalf}(${[...obliqueMasculineDeterminers].sort((left, right) => right.length - left.length).join("|")})(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\))(?![\p{L}\p{M}-])`,
+  "giu"
+);
+const obliqueDeterminerBeforeNoun = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(\s+${weakAdjectives})$`,
+  "u"
+);
+
+function hasLowercaseAdjectives(adjectives: string): boolean {
+  return adjectives.split(/\s+/u).every(word =>
+    word === "" || word === word.toLocaleLowerCase(locale));
+}
+
+// The case an oblique masculine determiner directly before a noun fixes,
+// e.g. `dative` for `mit dem neuen |Kund*in`.
+export function obliqueDeterminerCaseBefore(
+  input: string,
+  nounIndex: number
+): GrammaticalCase | undefined {
+  const match = obliqueDeterminerBeforeNoun.exec(
+    input.slice(Math.max(0, nounIndex - 96), nounIndex)
+  );
+  const [, rawDeterminer = "", adjectives = ""] = match ?? [];
+  if (!match || !hasLowercaseAdjectives(adjectives)) return undefined;
+  const determiner = rawDeterminer.toLocaleLowerCase(locale);
+  return obliqueMasculineDeterminers.has(determiner)
+    ? ordinaryMasculineDeterminers.get(determiner)?.grammaticalCase
+    : undefined;
+}
 
 function mapAlternation(values: ReadonlyMap<string, string>): string {
   return [...values.keys()].sort((left, right) => right.length - left.length).join("|");
@@ -604,6 +650,26 @@ function transformAttributivePhrases(
   return { text, replacements };
 }
 
+function transformObliqueSeparatorSingulars(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    ordinaryObliqueSeparatorPattern(),
+    (match: string, determiner: string, adjectives: string, base: string) => {
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const form = ordinaryMasculineDeterminers.get(
+        determiner.toLocaleLowerCase(locale)
+      );
+      const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
+      if (!noun) {
+        return match;
+      }
+      replacements += 1;
+      return determiner + adjectives + noun;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -829,9 +895,10 @@ export const singularContextRule: Rule = {
     const ordinaryResult = transformOrdinaryMasculineDeterminers(
       standaloneResult.text
     );
+    const obliqueResult = transformObliqueSeparatorSingulars(ordinaryResult.text);
 
     return {
-      text: ordinaryResult.text,
+      text: obliqueResult.text,
       replacements:
         spacedPairResult.replacements +
         attributiveSeparatorResult.replacements +
@@ -846,7 +913,8 @@ export const singularContextRule: Rule = {
         predicateResult.replacements +
         nominativeResult.replacements +
         standaloneResult.replacements +
-        ordinaryResult.replacements
+        ordinaryResult.replacements +
+        obliqueResult.replacements
     };
   }
 };
