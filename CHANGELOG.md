@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Markierte Wörter mit zerlegten Umlauten (Unicode NFD, z. B. aus Mac- oder
+  CMS-Texten) werden erkannt: zerlegtes „Schüler:innen“ → „Schüler“. Nur solche Wörter
+  werden für die Regeln zusammengesetzt; der übrige Text behält seine
+  Codeeinheiten, und beim Ausschalten wird exakt wiederhergestellt.
 - Begleitwortpaare und Singularkontext: „der / die Nutzer*in“ und „der oder
   die Nutzer*in“ → „der Nutzer“, „eine/einen Sachbearbeiter/-in“ → „einen
   Sachbearbeiter“, „Ihrer/Ihrem Leser/in“ → „Ihrem Leser“, „Ausbildung
