@@ -6,6 +6,7 @@ import { jobAdSuffixesRule } from "./job-ad-suffixes";
 import { knownPluralSeparatorsRule } from "./known-plural-separators";
 import { mappedPluralSeparatorsRule } from "./mapped-plural-separators";
 import { markedDativePluralRule } from "./marked-dative-plural";
+import { markerSourceRepairsRule } from "./marker-source-repairs";
 import { neutralPersonTermsRule } from "./neutral-person-terms";
 import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
@@ -21,6 +22,7 @@ import { titleAbbreviationsRule } from "./title-abbreviations";
 import { unmarkedSingularRule } from "./unmarked-singular";
 
 export const defaultRules: readonly Rule[] = [
+  markerSourceRepairsRule,
   singularContextRule,
   specialSingularFormsRule,
   substantivizedAdjectivesRule,

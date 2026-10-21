@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
+  „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
+  „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
+  „Praktikant“. Nur bei bekanntem Stamm, keine Rechtschreibkorrektur.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
