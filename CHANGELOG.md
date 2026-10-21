@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Bindestrich-Komposita mit bekanntem Personenkopf werden umgewandelt:
+  „US-Amerikaner*innen“, „NS-Zeitzeug:innen“, „AfD-Sympathisant*innen“,
+  „Exil-IranerInnen“. Der Kopf nach dem letzten Bindestrich muss großgeschrieben
+  und als Person bekannt sein; „Bilanzbuch-halter/in“ bleibt.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
