@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Eine URL oder E-Mail-Adresse schützt nicht mehr den ganzen Textknoten,
+  sondern nur ihre eigene Spanne: „Nutzer*innen lesen auf https://…“ →
+  „Nutzer lesen auf https://…“, die Adresse bleibt bytegleich. Reine
+  Technikknoten, Code, Editoren und Attribute bleiben wie bisher geschützt.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.

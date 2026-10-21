@@ -7,7 +7,8 @@ import {
   shouldProcessTextNode as textNodeIsProcessable,
   isProtectedTextSubtree,
   isProbablyTechnicalText,
-  hasTextNodeProtection as textNodeIsProtected
+  hasTextNodeProtection as textNodeIsProtected,
+  technicalSpanRanges
 } from "./text-safety";
 import type { CustomReplacement } from "../settings/defaults";
 import {
@@ -178,6 +179,24 @@ const maximumTextEditsPerPartition = 128;
 const maximumTextEditPartitionChars = 8_192;
 const maximumTextPreparationSteps = 256;
 const largeTextTransformThreshold = 8_192;
+
+// URL and e-mail spans inside natural text stay byte-identical; the rest of
+// the node is processed. Ranges stay sorted and non-overlapping.
+function withTechnicalSpans(
+  ranges: readonly InlineProtectionRange[],
+  text: string
+): readonly InlineProtectionRange[] {
+  const spans = technicalSpanRanges(text);
+  if (spans.length === 0) return ranges;
+  const sorted = [...ranges, ...spans].sort((left, right) => left.start - right.start);
+  const merged: {start: number; end: number}[] = [];
+  for (const range of sorted) {
+    const last = merged.at(-1);
+    if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+    else merged.push({start: range.start, end: range.end});
+  }
+  return merged;
+}
 const maximumConcurrentLargeTransforms = 2;
 // Sehr kleine Startdokumente bleiben unmittelbar verfügbar. Große DOMs
 // werden nach einer begrenzten Vorprüfung kooperativ abgearbeitet.
@@ -2666,7 +2685,7 @@ export class DomProcessor {
     }
     const protectedRanges = subtitle
       ? []
-      : this.getInlineProtectionRanges(node, original);
+      : withTechnicalSpans(this.getInlineProtectionRanges(node, original), original);
     if (protectedRanges.length === 1 && protectedRanges[0]!.start === 0 &&
         protectedRanges[0]!.end >= original.length) {
       if (originalFromContext !== undefined) this.replaceTextKeepingRanges(node, original);
