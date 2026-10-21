@@ -105,6 +105,11 @@ addPossessiveDeterminers(
   "eurer"
 );
 
+// Contracted prepositions: `zum/zur`, `zur/zum`, `zum/r`, `zur/m`.
+addDeterminer("zum", "zur", "zum", "dative", true);
+addDeterminer("zum", "r", "zum", "dative");
+addDeterminer("zur", "m", "zum", "dative");
+
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
 addDeterminer("seinem", "ihrem", "seinem", "dative", true);
@@ -171,6 +176,12 @@ function addOrdinaryDeterminerSet(
   );
   dativeFeminineDeterminers.set(feminineDativeGenitive, masculineDative);
   genitiveFeminineDeterminers.set(feminineDativeGenitive, masculineGenitive);
+  // Fully written pairs in both orders: `eine/einen`, `einer*einem`,
+  // `Ihrer/Ihrem`, `deiner*deinem` (compact `eine/n` forms are above).
+  addDeterminer(masculineNominative, feminineNominativeAccusative, masculineNominative, "nominative", true);
+  addDeterminer(masculineAccusative, feminineNominativeAccusative, masculineAccusative, "accusative", true);
+  addDeterminer(masculineDative, feminineDativeGenitive, masculineDative, "dative", true);
+  addDeterminer(masculineGenitive, feminineDativeGenitive, masculineGenitive, "genitive", true);
 }
 
 addOrdinaryDeterminerSet("der", "den", "dem", "des", "die", "der");
@@ -367,6 +378,98 @@ function mapSingular(
     mapKnownSingular(base, grammaticalCase) ??
     (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base))
   );
+}
+
+// `der / die Nutzer*in`, `der/ die …`, `eine oder einen Mitarbeiter*in`:
+// a pair with spaces around the slash or a written `oder`. Only the
+// determiner table decides; `der / die Variablenbeschreibung` has no
+// marked noun and is never touched.
+const pairSpace = String.raw`[   ]`;
+const spacedPairSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*\/${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "giu"
+);
+
+function transformSpacedPairs(input: string): TransformResult {
+  if (!/[   ]\/|\/[   ]|\soder\s/iu.test(input)) {
+    return {text: input, replacements: 0};
+  }
+  let replacements = 0;
+  const text = input.replace(
+    spacedPairSingularPattern(),
+    (match: string, left: string, separator: string, right: string, whitespace: string, base: string) => {
+      if (separator === "/") return match;
+      const form = determinerForms.get(`${left}/${right}`.toLocaleLowerCase(locale));
+      const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
+      if (!form || !noun) return match;
+      replacements += 1;
+      return applyTokenCase(left, form.masculine) + whitespace + noun;
+    }
+  );
+  return {text, replacements};
+}
+
+// `Medizinische*r Technolog*in`, `engagierte/r Mitarbeiter:in` without a
+// determiner: the `e/r` adjective marks the strong nominative. Before, only
+// the noun changed (`Medizinische*r Technologe`).
+const bareMarkedAdjectivePattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}:*_/·•.’‘-])(${nounBase}e)(?:[:*_·•]|\/-?)r(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "giu"
+);
+// `eine*r`, `deine:r`, `jede/r` are determiners, not adjectives; their case
+// is not fixed by the ending (`je eine:r`, `mit deine*r`).
+const markedDeterminerStems = new Set([
+  "de", "eine", "keine", "meine", "deine", "seine", "ihre", "unsere", "eure",
+  "jede", "diese", "jene", "welche", "manche", "solche"
+]);
+// After a preposition or a marked word the case is not the nominative:
+// `zur/zum Anästhesietechnische*r …`, `mit jede:r andere:r …`.
+const nonNominativeBefore = new Set([
+  "zum", "zur", "im", "am", "beim", "vom", "ins", "ans", "aufs",
+  "mit", "bei", "von", "zu", "aus", "nach", "seit", "für", "durch", "gegen",
+  "ohne", "um", "an", "auf", "in", "über", "unter", "vor", "hinter", "neben",
+  "zwischen", "wegen", "trotz", "während", "statt"
+]);
+const determinerWords = new Set([
+  ...ordinaryMasculineDeterminers.keys(),
+  ...nominativeFeminineDeterminers.keys(),
+  ...dativeFeminineDeterminers.keys(),
+  "das", "die"
+]);
+
+function mapNominativeSingular(base: string): string | undefined {
+  // `Technologe/in`: the marker follows the full masculine form.
+  return mapSingular(base, "nominative") ??
+    (base.endsWith("e") &&
+      mapSingular(base.slice(0, -1), "nominative")?.toLocaleLowerCase(locale) ===
+        base.toLocaleLowerCase(locale)
+      ? base
+      : undefined);
+}
+
+function transformBareMarkedAdjectives(input: string): TransformResult {
+  if (!/e(?:[:*_·•]|\/-?)r\s/iu.test(input)) return {text: input, replacements: 0};
+  let replacements = 0;
+  const text = input.replace(
+    bareMarkedAdjectivePattern(),
+    (match: string, adjective: string, whitespace: string, base: string, offset: number, source: string) => {
+      if (markedDeterminerStems.has(adjective.toLocaleLowerCase(locale))) return match;
+      const previous = /(\S+)\s+$/u.exec(source.slice(Math.max(0, offset - 32), offset))?.[1]
+        ?.toLocaleLowerCase(locale);
+      if (
+        previous &&
+        (determinerWords.has(previous) || nonNominativeBefore.has(previous) ||
+          /[\p{L}\p{M}][:*_\/·•]/u.test(previous))
+      ) {
+        return match;
+      }
+      const noun = mapNominativeSingular(base);
+      if (!noun) return match;
+      replacements += 1;
+      return `${adjective}r${whitespace}${noun}`;
+    }
+  );
+  return {text, replacements};
 }
 
 function transformPattern(input: string, pattern: RegExp): TransformResult {
@@ -671,12 +774,16 @@ export const singularContextRule: Rule = {
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
+    const spacedPairResult = transformSpacedPairs(input);
     const attributiveSeparatorResult = transformAttributivePhrases(
-      input,
+      spacedPairResult.text,
       attributiveSeparatorSingularPattern()
     );
+    const bareAdjectiveResult = transformBareMarkedAdjectives(
+      attributiveSeparatorResult.text
+    );
     const attributiveBinnenIResult = transformAttributivePhrases(
-      attributiveSeparatorResult.text,
+      bareAdjectiveResult.text,
       attributiveBinnenISingularPattern()
     );
     const separatorResult = transformPattern(
@@ -726,7 +833,9 @@ export const singularContextRule: Rule = {
     return {
       text: ordinaryResult.text,
       replacements:
+        spacedPairResult.replacements +
         attributiveSeparatorResult.replacements +
+        bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +
         separatorResult.replacements +
         markedBinnenIResult.replacements +
