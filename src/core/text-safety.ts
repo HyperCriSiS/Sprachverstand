@@ -194,10 +194,54 @@ export function isProbablyTechnicalText(input: string): boolean {
   return false;
 }
 
+const urlSpanPattern = /(?:(?:https?|ftp|data):\/\/|www\.)\S+/giu;
+const emailSpanPattern = /(?<![^\s@])[^\s@]+@[^\s@]+\.[^\s@]+/gu;
+
+// URL and e-mail spans in a text node. Within otherwise natural text only
+// these spans are protected (`Nutzer*innen lesen auf https://…`); before,
+// the whole node stayed unchanged.
+export function technicalSpanRanges(text: string): readonly {start: number; end: number}[] {
+  if (!text.includes("/") && !text.includes(".") && !text.includes("@")) return [];
+  const ranges: {start: number; end: number}[] = [];
+  for (const pattern of [urlSpanPattern, emailSpanPattern]) {
+    for (const match of text.matchAll(pattern)) {
+      ranges.push({start: match.index, end: match.index + match[0].length});
+    }
+  }
+  ranges.sort((left, right) => left.start - right.start);
+  const merged: {start: number; end: number}[] = [];
+  for (const range of ranges) {
+    const last = merged.at(-1);
+    if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+    else merged.push({...range});
+  }
+  return merged;
+}
+
+function hasNaturalTextOutside(text: string, spans: readonly {start: number; end: number}[]): boolean {
+  let rest = "";
+  let cursor = 0;
+  for (const span of spans) {
+    rest += text.slice(cursor, span.start) + " ";
+    cursor = span.end;
+  }
+  rest += text.slice(cursor);
+  return (rest.match(/\p{L}{2,}/gu)?.length ?? 0) >= 2 && !isProbablyTechnicalText(rest);
+}
+
+// Text nodes: like isProbablyTechnicalText, but URL/e-mail spans inside
+// natural text no longer protect the whole node; the DomProcessor protects
+// exactly those spans. Attributes keep the strict whole-value check.
+export function isTechnicalTextNodeValue(input: string): boolean {
+  if (!isProbablyTechnicalText(input)) return false;
+  const spans = technicalSpanRanges(input);
+  return spans.length === 0 || !hasNaturalTextOutside(input, spans);
+}
+
 export function shouldProcessTextNode(node: Text,
   cache?: WeakMap<Element, boolean>): boolean {
   return node.isConnected && !hasTextNodeProtection(node, cache) &&
-    !isProbablyTechnicalText(node.data);
+    !isTechnicalTextNodeValue(node.data);
 }
 
 export function hasTextNodeProtection(node: Text,

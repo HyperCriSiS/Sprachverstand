@@ -33,6 +33,63 @@ dokumentiert.
 
 ### Behoben
 
+- Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
+  „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
+  „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
+  „Praktikant“. Nur bei bekanntem Stamm, keine Rechtschreibkorrektur.
+- Eine URL oder E-Mail-Adresse schützt nicht mehr den ganzen Textknoten,
+  sondern nur ihre eigene Spanne: „Nutzer*innen lesen auf https://…“ →
+  „Nutzer lesen auf https://…“, die Adresse bleibt bytegleich. Reine
+  Technikknoten, Code, Editoren und Attribute bleiben wie bisher geschützt.
+- Bindestrich-Komposita mit bekanntem Personenkopf werden umgewandelt:
+  „US-Amerikaner*innen“, „NS-Zeitzeug:innen“, „AfD-Sympathisant*innen“,
+  „Exil-IranerInnen“. Der Kopf nach dem letzten Bindestrich muss großgeschrieben
+  und als Person bekannt sein; „Bilanzbuch-halter/in“ bleibt.
+- Kein falscher Dativ mehr über Phrasengrenzen: „Mit ihnen können Lehrer*innen
+  arbeiten“ und „Seit Wochen streiken Lehrer*innen“ ergaben „Lehrern“.
+  Zwischen Auslöser und Nomen zählen nur noch Begleiter und Adjektive. Neu:
+  Dativ beim Binnen-I („von LehrerInnen“ → „von Lehrern“ statt „von Lehrer“).
+- Lexikontranche aus der Webanalyse vom 21.10.2026: Wissenschafter, Innovator,
+  Wiedereinsteiger, Pensionist, Dissertant, Ohrenzeuge (Paradigmen gegen
+  Duden geprüft), dazu regelmäßige Formen auf mehreren Domains wie
+  Asylwerber, Zuweiser, Dienstnehmer, Zuseher, Kollegiat, Initiant,
+  Famulant, Promotor, Junior, Mandatar, Kassier und Lesepate. Berufe auf
+  „-bauer“ („Metallbauer/in“, „Straßenbauer/in“) werden im Singular
+  erkannt; ihre weibliche Form ist „-bauerin“, nicht „-bäuerin“.
+- Markierte Wörter mit zerlegten Umlauten (Unicode NFD, z. B. aus Mac- oder
+  CMS-Texten) werden erkannt: zerlegtes „Schüler:innen“ → „Schüler“. Nur solche Wörter
+  werden für die Regeln zusammengesetzt; der übrige Text behält seine
+  Codeeinheiten, und beim Ausschalten wird exakt wiederhergestellt.
+- Begleitwortpaare und Singularkontext: „der / die Nutzer*in“ und „der oder
+  die Nutzer*in“ → „der Nutzer“, „eine/einen Sachbearbeiter/-in“ → „einen
+  Sachbearbeiter“, „Ihrer/Ihrem Leser/in“ → „Ihrem Leser“, „Ausbildung
+  zum/zur Erzieher/-in“ → „Ausbildung zum Erzieher“, „Medizinische/r
+  Technologe/in“ → „Medizinischer Technologe“. Vorher entstanden teils halbe
+  oder falsche Formen („zum/zur Sozialpädagoge“, „einer*einem Facharzt“).
+  „Ihre Angaben als Teilnehmer*in“ wird umgewandelt: „als“ beginnt eine neue
+  Phrase. Ein nicht auflösbares markiertes Adjektiv davor schützt das Nomen
+  („mit engagierte*n Mitarbeiter*in“ bleibt).
+- Marker hinter einer schon flektierten maskulinen Form werden entfernt:
+  „Kollegen/-innen“, „Patienten*innen“, „Ärzte/innen“ → „Kollegen“,
+  „Patienten“, „Ärzte“; Dativ „mit Mitarbeitern/innen“ → „mit
+  Mitarbeitern“; Singular „Psychologe/in“ → „Psychologe“, „zum
+  Assistenten/in“ → „zum Assistenten“, „ein/e Kollege:in“ → „ein Kollege“.
+  Die maskuline Form stammt aus dem Text selbst; sie muss im Lexikon genau
+  so gebildet werden. In der Webanalyse vom 21.10.2026 war das mit rund
+  1.560 Vorkommen auf über 500 Domains die größte zusammenhängende Lücke.
+  Unbekannte Stämme („Kinderwagen/in“), Dateinamen, Schrägstrichreihen und
+  nicht auflösbare Paare davor bleiben unverändert. „Gewerkschaftern/innen“
+  war bisher bewusst ausgenommen und wird jetzt ebenfalls umgewandelt.
+- Verschachtelte Komposita mit zwei Markern werden vollständig umgewandelt:
+  „Patient*innenvertreter*innen“ → „Patientenvertreter“, „mit
+  Schüler*innenvertreter*innen“ → „mit Schülervertretern“. Bisher blieb
+  „Patientenvertreter*innen“ stehen. Ist das äußere Wort keine bekannte
+  Person („Nutzer*innenkonto*innen“), gilt das bisherige Verhalten.
+- Markierter Singular nach `dem`, `des`, `eines`, `den` usw. erhält den
+  passenden Kasus: „dem Kund*in“ → „dem Kunden“, „eines Patient*in“ →
+  „eines Patienten“, „des neuen Mitarbeiter*in“ → „des neuen Mitarbeiters“.
+  Bisher entstand der Nominativ („dem Kunde“). Ohne bekannte Kasusform und
+  bei Begleitwortpaaren bleibt der Text unverändert.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.

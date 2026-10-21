@@ -93,10 +93,14 @@ function isAmbiguousDeterminer(token: string): boolean {
   }
 
   const separatorIndex = normalized.search(separatorPattern);
-  return (
-    separatorIndex > 0 &&
-    markedDeterminerPrefixes.has(normalized.slice(0, separatorIndex))
-  );
+  if (separatorIndex <= 0) return false;
+  const prefix = normalized.slice(0, separatorIndex);
+  // A marked adjective the context rule could not resolve
+  // (`mit engagierte*n Mitarbeiter*in`): changing only the noun would leave
+  // a half-converted phrase.
+  return markedDeterminerPrefixes.has(prefix) ||
+    (/^[\p{L}\p{M}]{3,}e$/u.test(prefix) &&
+      /^[:*_\/·•.’‘]-?[rnms]$/u.test(normalized.slice(separatorIndex)));
 }
 
 export function hasAmbiguousSingularDeterminer(
@@ -126,8 +130,15 @@ export function hasAmbiguousSingularDeterminer(
     if (cursor === end) {
       return false;
     }
-    if (isAmbiguousDeterminer(input.slice(cursor, end))) {
+    const token = input.slice(cursor, end);
+    if (isAmbiguousDeterminer(token)) {
       return true;
+    }
+    // `als` opens a new phrase: in `welche Benefits Sie als Mitarbeiter:in`
+    // or `Ihre Angaben als Teilnehmer*in` the earlier determiner belongs to
+    // another noun. A determiner after `als` was already read above.
+    if (token.toLocaleLowerCase(locale) === "als") {
+      return false;
     }
     if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) {
       return false;
