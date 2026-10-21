@@ -206,7 +206,7 @@ jobs:
 
       - name: Geprüften synthetischen Navigationsfehlernachweis sichern
         if: ${{ failure() && steps.navigation_diagnostic.outcome == 'success' && steps.navigation_diagnostic.outputs.present == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: navigation-failure-${{ github.sha }}
           path: artifacts/browser-smoke-navigation/navigation-failure.json
@@ -220,7 +220,7 @@ jobs:
 
       - name: Geprüften synthetischen Prozessnachweis sichern
         if: ${{ failure() && steps.process_io_diagnostic.outcome == 'success' && steps.process_io_diagnostic.outputs.present == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: startup-process-io-${{ github.sha }}
           path: artifacts/browser-smoke-navigation/process-io.json
@@ -243,7 +243,7 @@ jobs:
 
       - name: Ausschließlich gefilterte Videofehlerwerte sichern
         if: ${{ failure() && steps.video_diagnostic.outcome == 'success' && steps.video_diagnostic.outputs.present == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: video-failure-${{ github.sha }}
           path: |
