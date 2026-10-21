@@ -20,6 +20,11 @@ describe("feminines der direkt vor markiertem Singular", () => {
   it.each([
     // Paare: nicht halb umwandeln.
     ["beim:bei der aktuellen Arbeitgeber:in", "beim:bei der aktuellen Arbeitgeber:in"],
+    // Großgeschriebenes Funktionswort am Satzanfang ist kein Nomen.
+    ["Viele der Ehrenamtler*in", "Viele der Ehrenamtler*in"],
+    ["In der Natur-Mentaltrainer*in", "In der Natur-Mentaltrainer*in"],
+    // Unterstrich-Kompositum ist kein Personensingular.
+    ["Verlängerung der Jugendleiter_in_card", "Verlängerung der Jugendleiter_in_card"],
     // Normale Feminina bleiben.
     ["Das Projekt der Künstlerin.", "Das Projekt der Künstlerin."]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
