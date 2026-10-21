@@ -1,6 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { mapKnownSingular } from "./known-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
+import { obliqueDeterminerCaseBefore } from "./singular-context";
 import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
 
 const locale = "de-DE";
@@ -82,6 +83,12 @@ function transformMarkerPattern(
         protectAmbiguousDeterminer &&
         hasAmbiguousSingularDeterminer(fullInput, offset)
       ) {
+        return match;
+      }
+      // The context rule already chose the case form after `dem`, `des`, …;
+      // a remaining marker has no known case form, and the nominative
+      // (`dem Dozent`) would be wrong.
+      if (obliqueDeterminerCaseBefore(fullInput, offset)) {
         return match;
       }
 

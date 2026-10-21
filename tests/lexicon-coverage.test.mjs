@@ -11,7 +11,7 @@ describe("Lexikon-Coverage", () => {
         { base: "physikingenieure", surface: "Physikingenieure/innen", count: 1 },
         { base: "bürgermeister", surface: "Bürgermeister*innen", count: 2 },
         { base: "datei", surface: "Datei:In", count: 4 },
-        { base: "gewerkschaftern", surface: "Gewerkschaftern/innen", count: 1 }
+        { base: "kinderwagen", surface: "Kinderwagen/in", count: 1 }
       ]
     });
 
@@ -30,7 +30,7 @@ describe("Lexikon-Coverage", () => {
     });
     expect(report.unknown.map((entry) => entry.base)).toEqual([
       "datei",
-      "gewerkschaftern"
+      "kinderwagen"
     ]);
   });
 

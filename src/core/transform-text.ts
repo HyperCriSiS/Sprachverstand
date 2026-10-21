@@ -397,7 +397,38 @@ function transformSplitWord(
   return {...combined, text: combined.text.slice(stem.length)};
 }
 
+// Decomposed umlauts (`Schüler:innen`, NFD) never match the lexicon.
+// Only words that carry a gender marker and a combining mark are composed
+// (NFC) for the rules; everything else keeps its exact code units, and a
+// composed word the rules left alone gets its original form back.
+const combiningMarkedWord = /[\p{L}\p{M}’'*:_·•/()-]*\p{M}[\p{L}\p{M}’'*:_·•/()-]*/gu;
+const genderMarkerInWord = /[:*_·•/(]|\p{Ll}In/u;
+
 function transformTextCore(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult {
+  if (/\p{M}/u.test(input)) {
+    const originals = new Map<string, string>();
+    const composed = input.replace(combiningMarkedWord, (word: string) => {
+      if (!genderMarkerInWord.test(word)) return word;
+      const nfc = word.normalize("NFC");
+      if (nfc !== word) originals.set(nfc, word);
+      return nfc;
+    });
+    if (originals.size > 0) {
+      const result = transformTextCoreSplit(composed, rules, options);
+      if (result.replacements === 0) return transformTextCoreSplit(input, rules, options);
+      let text = result.text;
+      for (const [nfc, original] of originals) text = text.replaceAll(nfc, original);
+      return {...result, text};
+    }
+  }
+  return transformTextCoreSplit(input, rules, options);
+}
+
+function transformTextCoreSplit(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions

@@ -63,6 +63,11 @@ const pronounCandidate = new RegExp(String.raw`\b(?:${candidatePrefixes.join("|"
 const followingGenderedTokenPattern =
   /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?[iI][nN]\))(?![\p{L}\p{M}])/u;
 
+// Whether this rule resolves a marked pair token such as `ein/e` or `des/der`.
+export function isExplicitPairToken(token: string): boolean {
+  return replacements.has(token.toLocaleLowerCase(locale));
+}
+
 function applyTokenCase(source: string, replacement: string): string {
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
