@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Bindestrich-Komposita mit bekanntem Personenkopf werden umgewandelt:
+  „US-Amerikaner*innen“, „NS-Zeitzeug:innen“, „AfD-Sympathisant*innen“,
+  „Exil-IranerInnen“. Der Kopf nach dem letzten Bindestrich muss großgeschrieben
+  und als Person bekannt sein; „Bilanzbuch-halter/in“ bleibt.
 - Kein falscher Dativ mehr über Phrasengrenzen: „Mit ihnen können Lehrer*innen
   arbeiten“ und „Seit Wochen streiken Lehrer*innen“ ergaben „Lehrern“.
   Zwischen Auslöser und Nomen zählen nur noch Begleiter und Adjektive. Neu:
