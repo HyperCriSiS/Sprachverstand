@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-18  
+Stand: 2026-10-22  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -12,6 +12,14 @@ Autorität: `main`
 - **Codex arbeitet nicht mehr an diesem Strang** (Nutzerentscheidung 18.10.2026). Die `X/*`-Branches sind Archiv.
 - **Nächste Schritte:** Abnahme auf echter Hardware (Chrome, Firefox, Android) mit normalen Seiten, Video und Untertiteln; danach #419-Entscheidung. Später: `src/core/dom-processor.ts` modularisieren.
 - Frühere Chronologie bis 11.10.: [archive/CURRENT-WORK-419-BIS-20261011.md](archive/CURRENT-WORK-419-BIS-20261011.md).
+
+## Webanalyse deep10000 (21.–22.10.2026)
+
+- Grundlage: Codex-Kampagne `deep10000-20261019` (Branch `origin/X/diagnostic-runner-loadtest-20261019`, 119.535 eindeutige Kontexte, Produktbasis `6b135fc` = #462). Codex-Daten nur als Eingabe; jeder Befund gegen `main` nachgeprüft.
+- **Gemergt:** #476 Dativ nach großgeschriebenem Begleitwort/Mengennomen, #477 markierter Singular nach Präposition und `zur`, #478 kurze Begleitwortpaare (`einem/r`, `des/r`), #479 Singularschutz und Genitiv-/Dativ-`der` (`Projekt der Künstler*in` → „des Künstlers“), #480 zweite Lexikontranche (1.249 geprüfte Stämme) plus neue Regelgruppe **Englische Lehnwörter** (`lexicon.loanwords`, Standard an, Settings-Revision 11), #481 **Changelog-Fragmente** (`changes/unreleased/*.md`, `npm run changelog:check`/`changelog:collect`), #482 `Stamm-/innen` und Kurzformpaare (`vom:von der`), #483 Dateinamen/URLs ohne Schema geschützt, #484 Binnenmajuskeln erhalten (`AfDler`), #485 Schrägstrich-/Koordinationspaare nicht halb, #486 `data-testid="image-caption"` ist kein Untertitel (bechtle.com-Initialscan), #487 markierte Partizipien (`Mitarbeitende:r` → „Mitarbeiter“), Adjektiv-Komposita, `der/die` vor femininem Substantiv. #488 als überholt geschlossen.
+- **Offen:** [PR #489](https://github.com/HyperCriSiS/Sprachverstand/pull/489) Koordination nach Präposition (`zwischen der Spender:in und Empfänger:in` → „zwischen dem Spender und Empfänger“), Bindestrich-Adjektiv mit Marker, Genitiv-`der` nach markiertem Adjektiv.
+- **Bewusst unverändert:** mehrdeutiges Begleitwort + markierter Singular ohne weiteren Kontext (`die/eine/Ihre Lehrer*in`), Ausgangsfehler der Seiten (`Ansprechparter*innen`), unmarkierte Feminina (`Freundinnen`).
+- **Nächster Schritt:** nach #489 die Kampagne erneut gegen `main` laufen lassen und Restbefunde zählen. Changelog-Einträge nur noch als Fragment, nicht direkt in `CHANGELOG.md`.
 
 ## Sprache und DOM-Abdeckung (18.10.2026)
 
