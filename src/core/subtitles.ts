@@ -28,7 +28,14 @@ const subtitleDataAttributeNames = [
 ] as const;
 
 const subtitleDataMarker = /(?:caption|timedtext|text-track|cue-(?:text|window)|(?:player|video)[-_ ]*subtitle|subtitle[-_ ]*(?:cue|overlay|container|renderer))/iu;
+// `data-testid="image-caption"` (bechtle.com) is a picture caption, not a
+// player overlay: with subtitle processing off its text stayed unconverted.
+const imageCaptionMarker = /(?:image|img|photo|picture|figure|teaser|bild)[\w -]*caption/iu;
 const subtitleAriaMarker = /(?:untertitel|subtitles?|closed captions?)/iu;
+
+function isSubtitleDataValue(value: string): boolean {
+  return subtitleDataMarker.test(value) && !imageCaptionMarker.test(value);
+}
 export const subtitleClassifierAttributeNames = [
   "class",
   "id",
@@ -61,7 +68,7 @@ export function matchesSubtitleMarker(
     return subtitleIdentifierMarker.test(value.toLowerCase());
   }
   if (subtitleDataAttributeNames.some((name) => name === attributeName)) {
-    return subtitleDataMarker.test(value);
+    return isSubtitleDataValue(value);
   }
   return attributeName === "aria-label" && subtitleAriaMarker.test(value);
 }
@@ -74,7 +81,7 @@ export function isSubtitleContainer(element: Element): boolean {
 
   for (const attributeName of subtitleDataAttributeNames) {
     const value = element.getAttribute(attributeName);
-    if (value && subtitleDataMarker.test(value)) {
+    if (value && isSubtitleDataValue(value)) {
         return true;
     }
   }
