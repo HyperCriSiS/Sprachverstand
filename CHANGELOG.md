@@ -33,6 +33,11 @@ dokumentiert.
 
 ### Behoben
 
+- Markierter Singular nach `dem`, `des`, `eines`, `den` usw. erhält den
+  passenden Kasus: „dem Kund*in“ → „dem Kunden“, „eines Patient*in“ →
+  „eines Patienten“, „des neuen Mitarbeiter*in“ → „des neuen Mitarbeiters“.
+  Bisher entstand der Nominativ („dem Kunde“). Ohne bekannte Kasusform und
+  bei Begleitwortpaaren bleibt der Text unverändert.
 - „des:der Azubi“ wird zu „des Azubis“: Nach einem aufgelösten
   Genitiv-Begleitwort erhält ein geschlechtsneutrales Lexikonnomen seine
   Genitivform. Unbekannte Nomen bleiben unverändert.
