@@ -23,7 +23,8 @@ describe("Settings-Migration veröffentlichter Versionen", () => {
       enabledRuleGroupIds: [
         "plural-separators",
         "unmarked-singular",
-        "special-gender-forms"
+        "special-gender-forms",
+        "loanword-person-terms"
       ],
       protectedTerms: ["Nutzer:innen", "trans* Personen"],
       customReplacements: [
@@ -46,7 +47,7 @@ describe("Settings-Migration veröffentlichter Versionen", () => {
       settingsRevision: currentSettingsRevision,
       enabled: true,
       excludedDomains: ["sub.example.org"],
-      enabledRuleGroupIds: ["plural-separators", "plural-binnen-i"],
+      enabledRuleGroupIds: ["plural-separators", "plural-binnen-i", "loanword-person-terms"],
       protectedTerms: ["Sonderbegriff"],
       customReplacements: [
         { source: "Studierende", replacement: "Studenten" }
@@ -68,7 +69,7 @@ describe("Settings-Migration veröffentlichter Versionen", () => {
       settingsRevision: currentSettingsRevision,
       enabled: true,
       excludedDomains: ["example.net"],
-      enabledRuleGroupIds: ["plural-separators"],
+      enabledRuleGroupIds: ["plural-separators", "loanword-person-terms"],
       processAccessibleAttributes: false,
       processQuotedText: false,
       processSubtitles: false,

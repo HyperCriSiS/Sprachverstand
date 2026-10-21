@@ -113,6 +113,9 @@
   "groupJobAdSuffixesLabel": {
     "message": "Geschlechtszusätze in Stellenanzeigen"
   },
+  "groupLoanwordsLabel": {
+    "message": "Englische Lehnwörter"
+  },
   "ruleGroupsDescription": {
     "message": "Jede Regelgruppe ist einzeln wählbar. Ausdrücklich weibliche Bezeichnungen werden nicht pauschal verändert."
   },
@@ -286,6 +289,9 @@
   },
   "rule_job_ad_suffixes_description": {
     "message": "Entfernt verbreitete Zusätze wie (m/w/d)."
+  },
+  "rule_loanwords_description": {
+    "message": "Englische Personenbezeichnungen wie Maker, Researcher oder Creator werden wie deutsche behandelt."
   },
   "noticeMore": {
     "message": "$COUNT$ weitere Hinweise werden aus Platzgründen nicht angezeigt.",

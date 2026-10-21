@@ -113,6 +113,9 @@
   "groupJobAdSuffixesLabel": {
     "message": "Gender suffixes in job ads"
   },
+  "groupLoanwordsLabel": {
+    "message": "English loanwords"
+  },
   "ruleGroupsDescription": {
     "message": "Each rule group can be selected individually. Explicitly female terms are not changed across the board."
   },
@@ -286,6 +289,9 @@
   },
   "rule_job_ad_suffixes_description": {
     "message": "Removes common suffixes such as (m/w/d)."
+  },
+  "rule_loanwords_description": {
+    "message": "English person nouns such as Maker, Researcher or Creator are treated like German ones."
   },
   "noticeMore": {
     "message": "$COUNT$ more notices are not shown due to space limits.",
