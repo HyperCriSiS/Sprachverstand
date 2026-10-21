@@ -9,6 +9,33 @@ import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./co
 const dativePhrasePattern =
   /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
 
+// Words between trigger and noun must form one noun phrase: lowercase
+// determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
+// a pronoun (`Mit ihnen`) or an auxiliary (`können`) ends the phrase
+// before the marked word, which is then no dative.
+const phraseBreakingWords = new Set([
+  "ihnen", "denen", "haben", "können", "müssen", "sollen", "wollen",
+  "dürfen", "werden", "möchten", "helfen", "arbeiten", "erhalten",
+  "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen"
+]);
+const determinerLikeWords = new Set([
+  "den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
+  "keinen", "diesen", "jenen", "allen", "vielen", "einigen", "mehreren",
+  "beiden"
+]);
+
+function isDativeNounPhrase(prefix: string): boolean {
+  const words = prefix.trim().split(/\s+/u);
+  return words.every((word, index) => {
+    if (index === 0) return true;
+    if (phraseBreakingWords.has(word)) return false;
+    // A capitalized word is a noun (`Seit Wochen`) unless it is an
+    // adjective in a name right after a determiner (`den Jungen …`).
+    return word === word.toLocaleLowerCase("de-DE") ||
+      determinerLikeWords.has((words[index - 1] ?? "").toLocaleLowerCase("de-DE"));
+  });
+}
+
 function mapDativePlural(base: string): string | undefined {
   const plural = mapMappedPlural(base) ?? mapKnownPlural(base);
   if (plural === undefined) return undefined;
@@ -50,6 +77,19 @@ function transformDativeEnumeration(input: string): TransformResult {
   return { text, replacements };
 }
 
+// Binnen-I (`von LehrerInnen` → `von Lehrern`) needs a case-sensitive `Innen`;
+// with the i flag, ordinary feminine plurals (`Lehrerinnen`) would match.
+const caseInsensitiveTriggers = ["mit", "bei", "von", "zu", "aus", "nach", "seit",
+  "den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen", "keinen",
+  "diesen", "jenen", "allen"]
+  .map((word) => [...word].map((letter) =>
+    `[${letter}${letter.toLocaleUpperCase("de-DE")}]`).join(""))
+  .join("|");
+const binnenIDativePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:${caseInsensitiveTriggers})\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]*\p{Ll})Innen(?![\p{L}\p{M}-])`,
+  "gu"
+);
+
 function transformMarkedDativePlural(input: string): TransformResult {
   if (!/inn/iu.test(input)) return {text: input, replacements: 0};
   if (!/mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen/iu.test(input)) return {text: input, replacements: 0};
@@ -66,6 +106,7 @@ function transformMarkedDativePlural(input: string): TransformResult {
       second: string | undefined,
       secondMarker: string | undefined
     ) => {
+      if (!isDativeNounPhrase(prefix)) return original;
       const mappedFirst = mapDativePlural(first);
       if (mappedFirst === undefined) return original;
       replacements += 1;
@@ -80,7 +121,17 @@ function transformMarkedDativePlural(input: string): TransformResult {
       return prefix + mappedFirst + conjunction + mappedSecond;
     }
   );
-  return { text, replacements };
+  const binnenI = /\p{Ll}Innen/u.test(text) ? text.replace(
+    binnenIDativePattern,
+    (original: string, prefix: string, base: string) => {
+      if (!isDativeNounPhrase(prefix)) return original;
+      const mapped = mapDativePlural(base);
+      if (mapped === undefined) return original;
+      replacements += 1;
+      return prefix + mapped;
+    }
+  ) : text;
+  return { text: binnenI, replacements };
 }
 
 export const markedDativePluralRule: Rule = {
