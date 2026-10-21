@@ -14,12 +14,12 @@ describe("feminines der direkt vor markiertem Singular", () => {
     ["Tag der verfolgten Anwält:in", "Tag des verfolgten Anwalts"],
     // Dativ nach Präposition mit Adjektiv ergab `mit der neuen Kollege`.
     ["mit der neuen Kolleg*in", "mit dem neuen Kollegen"],
-    ["bei der zuständigen Sachbearbeiter:in", "bei dem zuständigen Sachbearbeiter"]
+    ["bei der zuständigen Sachbearbeiter:in", "bei dem zuständigen Sachbearbeiter"],
+    // Paare werden als Ganzes aufgelöst, nie halb (Kurzformpaare seit #482).
+    ["beim:bei der aktuellen Arbeitgeber:in", "beim aktuellen Arbeitgeber"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
-    // Paare: nicht halb umwandeln.
-    ["beim:bei der aktuellen Arbeitgeber:in", "beim:bei der aktuellen Arbeitgeber:in"],
     // Großgeschriebenes Funktionswort am Satzanfang ist kein Nomen.
     ["Viele der Ehrenamtler*in", "Viele der Ehrenamtler*in"],
     ["In der Natur-Mentaltrainer*in", "In der Natur-Mentaltrainer*in"],
