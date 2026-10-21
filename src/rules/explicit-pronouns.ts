@@ -1,5 +1,6 @@
 import type { Rule, TransformResult } from "../core/rule";
-import { mapMappedSingular } from "./person-lexicon";
+import { mapKnownPlural } from "./known-plural-separators";
+import { mapMappedPlural, mapMappedSingular } from "./person-lexicon";
 import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
@@ -63,6 +64,15 @@ const candidatePrefixes = [...new Set([...replacements.keys()].map(value =>
 const pronounCandidate = new RegExp(String.raw`\b(?:${candidatePrefixes.join("|")})(?=[:*_\/·•’‘(])`, "iu");
 const followingGenderedTokenPattern =
   /^\s+[\p{L}\p{M}’'-]+(?:[:*_/·•.’‘][\p{L}\p{M}]+|In|\((?:-)?[iI][nN]\))(?![\p{L}\p{M}])/u;
+
+// `der/die Besucherin`: the pair belongs to a plain feminine person noun.
+// Resolving only the determiner gave „der Besucherin“; the phrase stays.
+const followingFeminineNounPattern = /^\s+(\p{Lu}[\p{L}\p{M}-]*?)in(?![\p{L}\p{M}:*_/·•.’‘(-])/u;
+
+function followsFeminineNoun(followingText: string): boolean {
+  const stem = followingFeminineNounPattern.exec(followingText)?.[1];
+  return stem !== undefined && (mapKnownPlural(stem) ?? mapMappedPlural(stem)) !== undefined;
+}
 
 // Whether this rule resolves a marked pair token such as `ein/e` or `des/der`.
 export function isExplicitPairToken(token: string): boolean {
@@ -135,7 +145,7 @@ function transformExplicitPronouns(input: string): TransformResult {
       }
 
       const followingText = source.slice(offset + match.length);
-      if (followingGenderedTokenPattern.test(followingText)) {
+      if (followingGenderedTokenPattern.test(followingText) || followsFeminineNoun(followingText)) {
         return match;
       }
 
