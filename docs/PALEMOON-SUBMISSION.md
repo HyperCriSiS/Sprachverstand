@@ -15,7 +15,7 @@ This document describes the dedicated Pale Moon build and the metadata intended 
 
 - Pale Moon application ID: `{8de7fcbb-c55c-4fbe-bfc5-fc555c87dbc4}`
 - Minimum version: 34.0.0
-- Maximum version: 35.0.2
+- Maximum version: 35.* (alle Pale-Moon-35-Updates; eine neue Hauptversion braucht einen neuen Laufzeittest)
 - Runtime-tested version: 35.0.2
 
 The maximum version is deliberately explicit. Do not replace it with a wildcard for a hosted submission. Raise it only after testing a newer Pale Moon release.

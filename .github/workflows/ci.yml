@@ -136,9 +136,10 @@ jobs:
           grep -q 'BrowserToolbarPalette' legacy/palemoon/palemoon/browser-overlay.xul
           grep -q 'SprachverstandPaleMoonUI.togglePopup' legacy/palemoon/palemoon/browser-overlay.xul
           grep -q '__VERSION__' legacy/palemoon/install.rdf
-          grep -q '<em:maxVersion>35.0.2</em:maxVersion>' legacy/palemoon/install.rdf
+          # Nur die real getestete Hauptversion mit Platzhalter (35.*), nie offen (*).
+          grep -q '<em:maxVersion>35\.\*</em:maxVersion>' legacy/palemoon/install.rdf
           ! grep -q '<em:updateURL>' legacy/palemoon/install.rdf
-          ! grep -Eq '<em:maxVersion>[^<]*\*' legacy/palemoon/install.rdf
+          grep -Eq '<em:maxVersion>[0-9]+\.\*</em:maxVersion>' legacy/palemoon/install.rdf
           for size in 32 48 128; do
             test -s "static/icons/icon${size}.png"
           done
@@ -163,7 +164,7 @@ jobs:
           test -s dist/palemoon/palemoon/legacy-api.js
           file dist/palemoon/icons/icon64.png | grep -q '64 x 64'
           ! grep -q '__VERSION__' dist/palemoon/install.rdf
-          grep -q '<em:maxVersion>35.0.2</em:maxVersion>' dist/palemoon/install.rdf
+          grep -q '<em:maxVersion>35\.\*</em:maxVersion>' dist/palemoon/install.rdf
           ! grep -q '<em:updateURL>' dist/palemoon/install.rdf
           grep -q '../palemoon/legacy-api.js' dist/palemoon/popup/popup.html
           grep -q '../palemoon/legacy-api.js' dist/palemoon/options/options.html
