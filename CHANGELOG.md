@@ -33,6 +33,11 @@ dokumentiert.
 
 ### Behoben
 
+- Feminines „der“ direkt vor markiertem Singular wird nicht mehr als
+  maskuliner Nominativ gelesen: „Publikationen der Expert*in“ ergab „der
+  Experte“, „mit der neuen Kolleg*in“ ergab „mit der neuen Kollege“; beides
+  bleibt jetzt unverändert. Eine Präposition direkt vor dem Nomen beendet den
+  Mehrdeutigkeitsschutz: „Die Kosten pro Schüler:in“ wird zu „pro Schüler“.
 - Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
   „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
   „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
