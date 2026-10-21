@@ -57,6 +57,9 @@ jobs:
       - name: Gesamte Testsuite ausführen
         run: npm run test
 
+      - name: Changelog-Fragmente prüfen
+        run: npm run changelog:check
+
       - name: Lokalisierungen und Store-Metadaten prüfen
         run: |
           npm run validate:locales

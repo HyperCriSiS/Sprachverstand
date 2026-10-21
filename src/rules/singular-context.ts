@@ -110,6 +110,18 @@ addDeterminer("zum", "zur", "zum", "dative", true);
 addDeterminer("zum", "r", "zum", "dative");
 addDeterminer("zur", "m", "zum", "dative");
 
+// Further compact pairs: `einem/r`, `dem*r`, `der:m`, `des/r`, `eines*r`,
+// `einer/m`, `jeder*m`, `einer/s`. Without them the noun was resolved and
+// the pair stayed (`einer*m Mentor`) or the whole phrase kept its markers.
+addDeterminer("einem", "r", "einem", "dative");
+addDeterminer("dem", "r", "dem", "dative");
+addDeterminer("der", "m", "dem", "dative");
+addDeterminer("des", "r", "des", "genitive");
+addDeterminer("eines", "r", "eines", "genitive");
+addDeterminer("einer", "m", "einem", "dative");
+addDeterminer("jeder", "m", "jedem", "dative");
+addDeterminer("einer", "s", "eines", "genitive");
+
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
 addDeterminer("seinem", "ihrem", "seinem", "dative", true);
@@ -463,19 +475,51 @@ function mapSingular(
 // marked noun and is never touched.
 const pairSpace = String.raw`[   ]`;
 const spacedPairSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*\/${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}]+)(${pairSpace}*[\/*:]${pairSpace}*|${pairSpace}+oder${pairSpace}+)([\p{L}\p{M}]+)(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
   "giu"
 );
 
+// Contracted and written-out preposition in one pair: `vom:von der
+// Arbeitgeber:in`, `von der/vom …`, `beim*bei der …`, `zum/zu der …`. Before,
+// only the noun changed (`vom:von der Arbeitgeber`).
+const contractedPrepositions = new Map([["vom", "von"], ["beim", "bei"], ["zum", "zu"]]);
+const contractedPairSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])(vom|beim|zum|von der|bei der|zu der)[   ]*[:*\/·][   ]*(vom|beim|zum|von der|bei der|zu der)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?)|[:*_·•’‘])in(?![\p{L}\p{M}_-])`,
+  "giu"
+);
+
+function transformContractedPairs(input: string): TransformResult {
+  if (!/(?:vom|beim|zum)[   ]*[:*\/·]|der[   ]*[:*\/·][   ]*(?:vom|beim|zum)/iu.test(input)) {
+    return {text: input, replacements: 0};
+  }
+  let replacements = 0;
+  const text = input.replace(
+    contractedPairSingularPattern(),
+    (match: string, left: string, right: string, adjectives: string, base: string) => {
+      const [contracted, written] = contractedPrepositions.has(left.toLocaleLowerCase(locale))
+        ? [left, right] : [right, left];
+      const preposition = contractedPrepositions.get(contracted.toLocaleLowerCase(locale));
+      if (!preposition || written.toLocaleLowerCase(locale) !== `${preposition} der`) return match;
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const noun = mapSingular(base, "dative");
+      if (!noun) return match;
+      replacements += 1;
+      return applyTokenCase(left, contracted.toLocaleLowerCase(locale)) + adjectives + noun;
+    }
+  );
+  return {text, replacements};
+}
+
 function transformSpacedPairs(input: string): TransformResult {
-  if (!/[   ]\/|\/[   ]|\soder\s/iu.test(input)) {
+  if (!/[   ][\/*:]|[\/*:][   ]|\soder\s/iu.test(input)) {
     return {text: input, replacements: 0};
   }
   let replacements = 0;
   const text = input.replace(
     spacedPairSingularPattern(),
     (match: string, left: string, separator: string, right: string, whitespace: string, base: string) => {
-      if (separator === "/") return match;
+      // Compact pairs (`der/die`, `der*die`) belong to the other pair rules.
+      if (/^[\/*:]$/u.test(separator)) return match;
       const form = determinerForms.get(`${left}/${right}`.toLocaleLowerCase(locale));
       const noun = form ? mapSingular(base, form.grammaticalCase) : undefined;
       if (!form || !noun) return match;
@@ -701,6 +745,52 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
   return { text, replacements };
 }
 
+// A lowercase `der` before a marked singular after a noun or a dative
+// preposition is feminine genitive/dative: `Publikationen der Expert*in`
+// -> `Publikationen des Experten`, `mit der neuen Kolleg*in` -> `mit dem
+// neuen Kollegen` (before: `der Experte`, `der neuen Kollege`). Not inside a
+// compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
+// pair (`beim:bei der …`) and not before a coordinated marked noun.
+const feminineDerSingularPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\))(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  "gu"
+);
+const dativePrepositionSet = new Set(dativePrepositions.split("|"));
+// Capitalized at the start of a sentence, these are no nouns: `Viele der
+// Ehrenamtler*innen` is partitive, `In der …` a two-way preposition.
+const nonNounWordsBeforeDer = new Set([
+  "alle", "beide", "einige", "manche", "mehrere", "viele", "wenige", "jede",
+  "jeder", "keine", "keiner", "eine", "einer", "die", "das", "den", "dem",
+  "des", "in", "an", "auf", "unter", "über", "vor", "hinter", "neben",
+  "zwischen", "für", "durch", "gegen", "ohne", "um", "als", "wie", "und",
+  "oder", "aber", "auch", "nur", "noch", "so", "da", "wo", "wenn", "weil",
+  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt"
+]);
+
+function transformFeminineDerSingulars(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    feminineDerSingularPattern(),
+    (match: string, previous: string, space: string, adjectives: string, base: string) => {
+      if (!hasLowercaseAdjectives(adjectives)) return match;
+      const lowerPrevious = previous.toLocaleLowerCase(locale);
+      const grammaticalCase: GrammaticalCase | undefined =
+        dativePrepositionSet.has(lowerPrevious)
+          ? "dative"
+          : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious)
+            ? "genitive"
+            : undefined;
+      if (!grammaticalCase) return match;
+      const noun = mapSingular(base, grammaticalCase);
+      if (!noun) return match;
+      replacements += 1;
+      return previous + space + (grammaticalCase === "dative" ? "dem" : "des") +
+        adjectives + noun;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformOrdinaryMasculineDeterminers(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -905,12 +995,20 @@ export const singularContextRule: Rule = {
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const spacedPairResult = transformSpacedPairs(input);
+    const contractedPairResult = transformContractedPairs(input);
+    const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
+    const spacedPairResult = {
+      text: spacedPairResult0.text,
+      replacements: contractedPairResult.replacements + spacedPairResult0.replacements
+    };
     const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
       spacedPairResult.text
     );
+    const feminineDerResult = transformFeminineDerSingulars(
+      prepositionalSeparatorResult.text
+    );
     const attributiveSeparatorResult = transformAttributivePhrases(
-      prepositionalSeparatorResult.text,
+      feminineDerResult.text,
       attributiveSeparatorSingularPattern()
     );
     const bareAdjectiveResult = transformBareMarkedAdjectives(
@@ -970,6 +1068,7 @@ export const singularContextRule: Rule = {
       replacements:
         spacedPairResult.replacements +
         prepositionalSeparatorResult.replacements +
+        feminineDerResult.replacements +
         attributiveSeparatorResult.replacements +
         bareAdjectiveResult.replacements +
         attributiveBinnenIResult.replacements +

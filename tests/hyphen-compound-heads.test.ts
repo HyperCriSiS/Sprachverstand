@@ -23,13 +23,13 @@ describe("Bindestrich-Komposita mit bekanntem Personenkopf", () => {
     // Bisher schon unterstützte Fälle bleiben.
     ["PV-Expert*innen", "PV-Experten"],
     ["EU-Bürger*innen", "EU-Bürger"],
-    ["Expert*innen-Workshops", "Experten-Workshops"]
+    ["Expert*innen-Workshops", "Experten-Workshops"],
+    // Worttrennung im Ausgangstext wird nur entgendert (Lexikontranche 2).
+    ["Bilanzbuch-halter/in", "Bilanzbuch-halter"],
+    ["Arbeit-nehmerInnen", "Arbeit-nehmer"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
-    // Kleingeschriebener Teil nach dem Bindestrich ist eine Worttrennung.
-    ["Bilanzbuch-halter/in", "Bilanzbuch-halter/in"],
-    ["Arbeit-nehmerInnen", "Arbeit-nehmerInnen"],
     // Unbekannter Kopf und Marken bleiben.
     ["Projekt-Wizard*innen", "Projekt-Wizard*innen"],
     ["InteGREATer:in", "InteGREATer:in"],
