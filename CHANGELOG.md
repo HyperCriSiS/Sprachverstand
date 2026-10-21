@@ -33,6 +33,10 @@ dokumentiert.
 
 ### Behoben
 
+- Kein falscher Dativ mehr über Phrasengrenzen: „Mit ihnen können Lehrer*innen
+  arbeiten“ und „Seit Wochen streiken Lehrer*innen“ ergaben „Lehrern“.
+  Zwischen Auslöser und Nomen zählen nur noch Begleiter und Adjektive. Neu:
+  Dativ beim Binnen-I („von LehrerInnen“ → „von Lehrern“ statt „von Lehrer“).
 - Lexikontranche aus der Webanalyse vom 21.10.2026: Wissenschafter, Innovator,
   Wiedereinsteiger, Pensionist, Dissertant, Ohrenzeuge (Paradigmen gegen
   Duden geprüft), dazu regelmäßige Formen auf mehreren Domains wie
