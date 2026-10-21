@@ -19,6 +19,14 @@ bestätigt das [Developer Certificate of Origin 1.1](https://developercertificat
 Du hast den Beitrag selbst erstellt oder darfst ihn unter der Projektlizenz
 weitergeben.
 
+## Changelog
+
+Pull Requests ändern `CHANGELOG.md` nicht direkt. Der Eintrag kommt als eigene
+Datei nach `changes/unreleased/`; Format und Kategorien stehen in
+[`changes/unreleased/README.md`](changes/unreleased/README.md). So
+kollidieren parallele Pull Requests nicht im Changelog. Vor einem Release
+überträgt `npm run changelog:collect` die Fragmente.
+
 ## Sprachregeln und Daten
 
 Neue Sprachregeln benötigen:
