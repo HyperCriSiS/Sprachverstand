@@ -33,6 +33,11 @@ dokumentiert.
 
 ### Behoben
 
+- Markierter Singular nach Präposition und femininem Begleitwort wird wie
+  beim Binnen-I aufgelöst: „mit der Patient*in“ ergab „mit der Patient“ und
+  wird jetzt zu „mit dem Patienten“, „für die Kolleg:in“ zu „für den
+  Kollegen“. „zur Erzieher*in“ ergab „zur Erzieher“ und wird jetzt zu „zum
+  Erzieher“. Paare, Komposita und Koordinationen bleiben unberührt.
 - Ausgangsfehler im Marker werden nicht mehr falsch umgewandelt:
   „Schüler*in-nen“ (Zeilentrennung) ergab „Schüler-nen“ und wird jetzt zu
   „Schüler“; „Praktikant*in*in“ ergab „Praktikant*in“ und wird jetzt zu
