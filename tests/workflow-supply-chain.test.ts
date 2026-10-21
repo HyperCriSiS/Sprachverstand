@@ -13,15 +13,15 @@ const workflows = workflowPaths.map((workflowPath) => ({
 }));
 const expectedActionRefs = new Set([
   "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-  "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
-  "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+  "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1",
+  "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
   "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093"
 ]);
 
 const expectedMajorComments = new Map([
   ["actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1", "v7"],
-  ["actions/setup-node@820762786026740c76f36085b0efc47a31fe5020", "v7"],
-  ["actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a", "v7"],
+  ["actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1", "v7"],
+  ["actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9", "v7"],
   ["google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093", "v3"]
 ]);
 
