@@ -23,15 +23,26 @@ const determinerLikeWords = new Set([
   "keinen", "diesen", "jenen", "allen", "vielen", "einigen", "mehreren",
   "beiden"
 ]);
+// Quantity nouns keep the dative of the following noun
+// (`von Tausenden Unterstützer:innen` → `Unterstützern`).
+const quantityNouns = new Set([
+  "dutzenden", "hunderten", "tausenden", "zehntausenden",
+  "hunderttausenden", "millionen"
+]);
 
 function isDativeNounPhrase(prefix: string): boolean {
   const words = prefix.trim().split(/\s+/u);
   return words.every((word, index) => {
     if (index === 0) return true;
     if (phraseBreakingWords.has(word)) return false;
-    // A capitalized word is a noun (`Seit Wochen`) unless it is an
-    // adjective in a name right after a determiner (`den Jungen …`).
-    return word === word.toLocaleLowerCase("de-DE") ||
+    // A capitalized word is a noun (`Seit Wochen`) unless it is a
+    // determiner in polite form (`mit Ihren`), a quantity noun
+    // (`von Tausenden`) or an adjective in a name right after a
+    // determiner (`den Jungen …`).
+    const lower = word.toLocaleLowerCase("de-DE");
+    return word === lower ||
+      determinerLikeWords.has(lower) ||
+      quantityNouns.has(lower) ||
       determinerLikeWords.has((words[index - 1] ?? "").toLocaleLowerCase("de-DE"));
   });
 }
