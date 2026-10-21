@@ -33,6 +33,13 @@ dokumentiert.
 
 ### Behoben
 
+- Lexikontranche aus der Webanalyse vom 21.10.2026: Wissenschafter, Innovator,
+  Wiedereinsteiger, Pensionist, Dissertant, Ohrenzeuge (Paradigmen gegen
+  Duden geprüft), dazu regelmäßige Formen auf mehreren Domains wie
+  Asylwerber, Zuweiser, Dienstnehmer, Zuseher, Kollegiat, Initiant,
+  Famulant, Promotor, Junior, Mandatar, Kassier und Lesepate. Berufe auf
+  „-bauer“ („Metallbauer/in“, „Straßenbauer/in“) werden im Singular
+  erkannt; ihre weibliche Form ist „-bauerin“, nicht „-bäuerin“.
 - Markierte Wörter mit zerlegten Umlauten (Unicode NFD, z. B. aus Mac- oder
   CMS-Texten) werden erkannt: zerlegtes „Schüler:innen“ → „Schüler“. Nur solche Wörter
   werden für die Regeln zusammengesetzt; der übrige Text behält seine
