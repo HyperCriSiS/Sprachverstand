@@ -54,6 +54,8 @@ function addPossessiveDeterminers(
   addDeterminer(base, "e", base, "nominative");
   addDeterminer(inflectedBase, "n", accusative, "accusative");
   addDeterminer(inflectedBase, "m", dative, "dative");
+  // `Ihrem:r`, `seinem/r`: dative written from the masculine form.
+  addDeterminer(dative, "r", dative, "dative");
   addDeterminer(
     genitiveMasculine,
     genitiveFeminine,

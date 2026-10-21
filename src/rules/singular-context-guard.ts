@@ -103,6 +103,18 @@ function isAmbiguousDeterminer(token: string): boolean {
       /^[:*_\/·•.’‘]-?[rnms]$/u.test(normalized.slice(separatorIndex)));
 }
 
+const coordinators = new Set(["und", "oder", "bzw.", "sowie"]);
+const markedSingularToken = /^[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u;
+
+// Start index of a marked singular directly before `end` (`Hausärzt:in`).
+function markedNounBefore(input: string, end: number): number | undefined {
+  const match = /[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u
+    .exec(input.slice(Math.max(0, end - 64), end));
+  if (!match) return undefined;
+  const start = end - match[0].length;
+  return start === 0 || whitespaceCharacter.test(input[start - 1] ?? "") ? start : undefined;
+}
+
 const phraseOpeningPrepositions = new Set([
   "pro", "je", "für", "von", "mit", "bei", "ohne", "gegen", "durch",
   "zwischen", "nach", "aus", "seit", "laut", "gemäß", "samt", "nebst"
@@ -132,9 +144,16 @@ export function hasAmbiguousSingularDeterminer(
   // können die Entscheidung beeinflussen: direkt rückwärts lesen, ohne
   // ein Zeichenlimit, das lange Wörter/Unicode-Kontexte abschneiden würde.
   let cursor = nounIndex;
+  // Second noun of a slash pair (`die Hausärzt:in/Fachärzt:in`): it shares
+  // the determiner of the first one and must not be resolved alone.
+  if (cursor > 0 && input[cursor - 1] === "/") {
+    const previous = markedNounBefore(input, cursor - 1);
+    return previous !== undefined && hasAmbiguousSingularDeterminer(input, previous);
+  }
   if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) {
     return false;
   }
+  let afterCoordinator = false;
   // Only weak adjectives (`der verfolgten`) seen so far between the token
   // and the noun.
   let onlyWeakAdjectives = true;
@@ -154,6 +173,17 @@ export function hasAmbiguousSingularDeterminer(
       return false;
     }
     const token = input.slice(cursor, end);
+    // `die Künstler:in oder Kurator:in`: a coordinated marked noun follows
+    // the decision for the first one instead of being resolved alone.
+    if (afterCoordinator && markedSingularToken.test(token)) {
+      return hasAmbiguousSingularDeterminer(input, cursor);
+    }
+    afterCoordinator = false;
+    if (coordinators.has(token.toLocaleLowerCase(locale))) {
+      afterCoordinator = true;
+      if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) return false;
+      continue;
+    }
     if (isAmbiguousDeterminer(token)) {
       return true;
     }
