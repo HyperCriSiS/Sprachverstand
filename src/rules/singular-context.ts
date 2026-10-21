@@ -110,6 +110,18 @@ addDeterminer("zum", "zur", "zum", "dative", true);
 addDeterminer("zum", "r", "zum", "dative");
 addDeterminer("zur", "m", "zum", "dative");
 
+// Further compact pairs: `einem/r`, `dem*r`, `der:m`, `des/r`, `eines*r`,
+// `einer/m`, `jeder*m`, `einer/s`. Without them the noun was resolved and
+// the pair stayed (`einer*m Mentor`) or the whole phrase kept its markers.
+addDeterminer("einem", "r", "einem", "dative");
+addDeterminer("dem", "r", "dem", "dative");
+addDeterminer("der", "m", "dem", "dative");
+addDeterminer("des", "r", "des", "genitive");
+addDeterminer("eines", "r", "eines", "genitive");
+addDeterminer("einer", "m", "einem", "dative");
+addDeterminer("jeder", "m", "jedem", "dative");
+addDeterminer("einer", "s", "eines", "genitive");
+
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
 addDeterminer("seinem", "ihrem", "seinem", "dative", true);
