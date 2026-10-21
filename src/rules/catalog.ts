@@ -19,10 +19,13 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     descriptionKey: "rule_plural_separators_description",
     example: "Nutzer:innen → Nutzer",
     ruleIds: [
+      "plural.nested-compound",
       "plural.known-separator-innen",
       "plural.mapped-separator-innen",
       "plural.marked-dative-context",
-      "plural.additional-person-forms"
+      "plural.additional-person-forms",
+      "marker.inflected-stem-singular",
+      "marker.inflected-stem-plural"
     ],
     defaultEnabled: true
   },
