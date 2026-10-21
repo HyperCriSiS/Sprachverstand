@@ -39,8 +39,8 @@ describe("Präposition direkt vor dem Nomen öffnet eine eigene Phrase", () => {
 
   it.each([
     // Begleitwort nach der Präposition: Schutz wie bisher.
-    ["für eine Betreuer:in", "für eine Betreuer:in"],
-    ["mit einer Patient*in", "mit einer Patient*in"],
+    ["für eine neue Betreuer:in", "für eine neue Betreuer:in"],
+    ["mit einer erfahrenen Patient*in", "mit einer erfahrenen Patient*in"],
     // Erweitertes Attribut mit Präposition: Schutz bleibt.
     ["die mit Kindern arbeitende Erzieher*in", "die mit Kindern arbeitende Erzieher*in"],
     ["die Lehrer*in", "die Lehrer*in"]
