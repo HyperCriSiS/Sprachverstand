@@ -1,5 +1,6 @@
 import type {TransformOptions, DetailedTransformResult} from "./transform-text";
 import type {CustomReplacement} from "../settings/defaults";
+import {isLeadingContextEdit} from "./leading-context-edit";
 
 export interface LocalTransformRequest {
   readonly type: "sprachverstand.transform-large-text";
@@ -67,5 +68,6 @@ export function isDetailedTransformResult(value: unknown): value is DetailedTran
   return typeof result.text === "string" && Number.isSafeInteger(result.replacements) &&
     result.replacements! >= 0 && Array.isArray(result.summaries) &&
     result.summaries.every(entry => entry && typeof entry.original === "string" &&
-      typeof entry.replacement === "string" && Number.isSafeInteger(entry.count) && entry.count > 0);
+      typeof entry.replacement === "string" && Number.isSafeInteger(entry.count) && entry.count > 0) &&
+    (result.leadingContextEdit === undefined || isLeadingContextEdit(result.leadingContextEdit));
 }

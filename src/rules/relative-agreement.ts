@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import { acceptContextResult } from "../core/leading-context-edit";
 import { markedSingularLeadingCandidate } from "./context-candidates";
 
 /*
@@ -71,10 +72,10 @@ export function withRelativeAgreementRule(rule: Rule): Rule {
 }
 
 // A marked singular at the start of an inline element (`mit der
-// <em>Patient*in</em>`): its article lives in the previous text node, which
-// a rule cannot rewrite. The rule sees both; a result that would have to
-// change the context is dropped instead of half converting the phrase
-// („mit der Patient“).
+// <em>Patient*in</em>`): its article lives in the previous text node. The
+// rule sees both; a result that changes the context is kept only when the
+// caller accepts that context edit („mit dem Patienten“), otherwise it is
+// dropped instead of half converting the phrase („mit der Patient“).
 export function withLeadingContextRule(rule: Rule): Rule {
   return {
     ...rule,
@@ -85,7 +86,10 @@ export function withLeadingContextRule(rule: Rule): Rule {
       // word; only a separate preceding word can be the article.
       if (!/\s$/u.test(leadingContext)) return rule.apply(input);
       const result = rule.apply(leadingContext + input);
-      if (!result.text.startsWith(leadingContext)) return {text: input, replacements: 0};
+      if (!result.text.startsWith(leadingContext)) {
+        const text = acceptContextResult(leadingContext, input, result.text);
+        return text === undefined ? {text: input, replacements: 0} : {text, replacements: result.replacements};
+      }
       return {text: result.text.slice(leadingContext.length), replacements: result.replacements};
     }
   };

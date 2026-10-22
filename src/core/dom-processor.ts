@@ -17,6 +17,7 @@ import {
   matchesSubtitleMarker,
   subtitleClassifierAttributeNames
 } from "./subtitles";
+import type { LeadingContextEdit } from "./leading-context-edit";
 import { startsWithSplitGenderMarker, startsWithSplitGenderSuffix, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
 import {
   collectInlineProtection,
@@ -2426,6 +2427,7 @@ export class DomProcessor {
     let text = "";
     let replacements = 0;
     const summaries: ReplacementSummaryEntry[] = [];
+    let leadingContextEdit: LeadingContextEdit | undefined;
     const transformSegment = (end: number): void => {
       if (end <= cursor) {
         return;
@@ -2435,6 +2437,7 @@ export class DomProcessor {
         cursor === 0 ? leadingContext : undefined,
         protectParticiple
       );
+      if (cursor === 0) leadingContextEdit = result.leadingContextEdit;
       text += result.text;
       replacements += result.replacements;
       summaries.push(...result.summaries);
@@ -2446,7 +2449,7 @@ export class DomProcessor {
       cursor = range.end;
     }
     transformSegment(input.length);
-    return { text, replacements, summaries };
+    return { text, replacements, summaries, ...(leadingContextEdit ? {leadingContextEdit} : {}) };
   }
 
 
@@ -2760,7 +2763,8 @@ export class DomProcessor {
 
   private finishTextTransform(node: Text, original: string, restoreUnchanged: boolean,
     result: DetailedTransformResult, budgeted: boolean): void {
-    if (result.replacements === 0 || result.text === original) {
+    if (result.replacements === 0 || result.text === original ||
+        (result.leadingContextEdit && !this.applyLeadingContextEdit(node, result.leadingContextEdit))) {
       if (restoreUnchanged) this.restoreText(node, original, budgeted);
       return;
     }
@@ -2800,6 +2804,24 @@ export class DomProcessor {
       while (current.lastChild) current = current.lastChild;
       if (current.nodeType === Node.TEXT_NODE && (current as Text).data !== "") return current as Text;
     }
+  }
+
+  // `Das Projekt der <em>Künstler*in</em>`: the article at the end of the
+  // directly preceding text changes with the converted noun („des
+  // Künstlers“). Only that one text node, only while it still ends with the
+  // context the rules saw; tracked and restored like any own edit.
+  private applyLeadingContextEdit(node: Text, edit: LeadingContextEdit): boolean {
+    const previous = this.previousInlineText(node);
+    if (!previous || !previous.data.endsWith(edit.removed) ||
+        this.pendingTextTransforms.has(previous) || this.pendingTextEdits.has(previous) ||
+        this.hasTextNodeProtection(previous) || !this.shouldProcessTextNode(previous)) return false;
+    const next = previous.data.slice(0, -edit.removed.length) + edit.inserted;
+    const recorded = this.textChanges.get(previous);
+    this.textChanges.set(previous, recorded
+      ? {...recorded, transformed: next}
+      : {original: previous.data, transformed: next, replacements: 0, summaries: []});
+    this.replaceTextKeepingRanges(previous, next);
+    return true;
   }
 
   // Removes the marker that ends the directly preceding, otherwise untouched
