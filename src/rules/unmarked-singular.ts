@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import { withLeadingContextRule, withRelativeAgreementRule } from "./relative-agreement";
 import { mapKnownSingular } from "./known-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
 import { obliqueDeterminerCaseBefore } from "./singular-context";
@@ -108,7 +109,7 @@ function transformMarkerPattern(
   return { text, replacements };
 }
 
-export const unmarkedSingularRule: Rule = {
+export const unmarkedSingularRule: Rule = withLeadingContextRule(withRelativeAgreementRule({
   id: "singular.unmarked-marker",
   risk: "contextual",
 
@@ -140,4 +141,4 @@ export const unmarkedSingularRule: Rule = {
         parentheticalResult.replacements
     };
   }
-};
+}));

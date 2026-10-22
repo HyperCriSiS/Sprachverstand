@@ -25,6 +25,7 @@ const adjectiveBases = [
   "arbeitsuchende",
   "asylsuchende",
   "bankangestellte",
+  "beamte",
   "auszubildende",
   "befragte",
   "beauftragte",
@@ -393,7 +394,9 @@ const pluralStemAlternation = [...adjectiveBases]
   .sort((left, right) => right.length - left.length)
   .join("|");
 const markedPluralPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}])(${pluralStemAlternation})(${marker}innen|innen)(?![\p{L}\p{M}])`,
+  // Not after a hyphen (`ICE-Beamt:innen`): the word before the compound
+  // gives no reliable declension; the general plural rules decide there.
+  String.raw`(?<![\p{L}\p{M}-])(${pluralStemAlternation})(${marker}innen|innen)(?![\p{L}\p{M}])`,
   "giu"
 );
 const weakPluralTriggers = new Set([
@@ -463,6 +466,13 @@ export const substantivizedAdjectivesRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    // `Beamter/in`: the strong masculine form with the feminine suffix, as the
+    // marked adjective form `Beamte/r`, so determiner and attributes follow.
+    const beamter = /(?<![\p{L}\p{M}])(\p{Lu}?[\p{L}\p{M}-]*?[Bb]eamt)er([:*_·•]|\/-?)in(?![\p{L}\p{M}])/gu;
+    if (beamter.test(input)) {
+      beamter.lastIndex = 0;
+      return substantivizedAdjectivesRule.apply(input.replace(beamter, "$1e$2r"));
+    }
     // All patterns require a marked adjective ending, never plain prose.
     const singular = /(?:[:*_·•.’‘]|\/-?)[rnms]/iu.test(input);
     const plural = /innen/iu.test(input);
