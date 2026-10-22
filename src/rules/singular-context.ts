@@ -1103,7 +1103,7 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const pairResult0 = normalizeDeterminerPairs(input);
+    const pairResult0 = normalizeDeterminerPairs(input, mapSingular);
     const compactResult = normalizeCompactDeterminers(pairResult0.text, mapSingular);
     const clauseResult = transformClauseCase(compactResult.text, mapSingular);
     const pairResult = {

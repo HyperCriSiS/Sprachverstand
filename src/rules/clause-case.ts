@@ -48,7 +48,7 @@ const standalonePattern = new RegExp(
   "iu"
 );
 const sentenceStartPattern = new RegExp(
-  String.raw`(^|[.!?]\s+)(${determiner})(\s+)${attributes}${marked}${end}(?=\s+([\p{Ll}]+))`,
+  String.raw`(^|[.!?]\s+)(${determiner})(\s+)${attributes}${marked}${end}(?=\s+([\p{Ll}]+)(?:\s+([\p{L}]+))?)`,
   "gu"
 );
 const copulaPattern = new RegExp(
@@ -97,7 +97,10 @@ export function transformClauseCase(
   }
   text = text.replace(sentenceStartPattern,
     (match: string, prefix: string, determinerWord: string, space: string, attributeText: string,
-      base: string, next: string) => {
+      base: string, next: string, afterVerb: string | undefined) => {
+      // `Ihre Stromanbieter:in können Sie … auswählen`: a subject pronoun after
+      // the verb makes the fronted phrase the object.
+      if (afterVerb && /^(?:ich|du|er|sie|es|wir|ihr|Sie|man)$/u.test(afterVerb)) return match;
       if (!finiteVerbsBeforeDer.has(next) && !/^(?:erhält|kommt|arbeitet|leitet|bietet|beginnt|unterrichtet|berät|begleitet|übernimmt|trägt|stellt|hilft|zeigt|spricht)$/u.test(next)) return match;
       const converted = phrase(determinerWord, space, attributeText, base, "nominative", mapNoun);
       if (!converted) return match;

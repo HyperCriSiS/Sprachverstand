@@ -52,6 +52,9 @@ function compact(left: string, right: string, masculine: string,
   pairs.set(`${left}|${right}`, {masculine, grammaticalCase, strong});
 }
 compact("die", "en", "den", "accusative");
+compact("zum", "zur", "zum", "dative");
+compact("zur", "zum", "zum", "dative");
+compact("zum", "r", "zum", "dative");
 compact("die", "n", "den", "accusative");
 compact("der", "m", "dem", "dative");
 compact("dem", "r", "dem", "dative");
@@ -69,10 +72,12 @@ compact("jede", "n", "jeden", "accusative");
 compact("jede", "m", "jedem", "dative");
 
 const separator = String.raw`(?:\s*\/\s*|\s+(?:oder|bzw\.|und|beziehungsweise)\s+)`;
-const attribute = String.raw`[\p{Ll}][\p{L}\p{M}]*(?:(?:\/-?|[:*_·•])[\p{Ll}]{1,4})?`;
+// Capitalized attributes in job titles (`Operationstechnischen`) only with
+// an adjective ending.
+const attribute = String.raw`(?:[\p{Ll}][\p{L}\p{M}]*|\p{Lu}[\p{Ll}\p{M}-]*(?:e|en|er|es|em))(?:(?:\/-?|[:*_·•])[\p{Ll}]{1,4})?`;
 const markedSingular = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:(?:\/-?|[:*_·•])in|\(-?in\)|\p{Ll}In)`;
 const pairPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator})([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(?=${markedSingular}(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator})([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(${markedSingular})(?![\p{L}\p{M}])`,
   "gu"
 );
 
@@ -84,34 +89,42 @@ function applyCase(source: string, replacement: string): string {
 
 // `behandelnde` after `den` → `behandelnden`; `benannter/e` → `benannter`.
 function inflectAttribute(word: string, form: PairForm): string {
-  const marked = /^(\p{Ll}[\p{L}\p{M}]*?)(?:\/-?|[:*_·•])(\p{Ll}{1,4})$/u.exec(word);
+  const marked = /^(\p{L}[\p{L}\p{M}]*?)(?:\/-?|[:*_·•])(\p{Ll}{1,4})$/u.exec(word);
   if (marked) {
-    const [, left, right] = marked;
+    const [, left] = marked;
     // `benannter/e`, `erster/erste`: the masculine half ends in -r/-n/-m/-s.
     if (/[rnms]$/u.test(left!)) return left!;
-    if (/^[rnms]$/u.test(right!)) return left! + right!;
-    return word;
+    // `Anästhesietechnische*r`, `engagierte/n`: the stem takes the case ending.
+    if (!/e$/u.test(left!)) return word;
+    word = left!;
   }
   if (!/e$/u.test(word)) return word;
   if (form.grammaticalCase === "nominative") return form.strong ? `${word}r` : word;
   return `${word}n`;
 }
 
-export function normalizeDeterminerPairs(input: string): TransformResult {
+export function normalizeDeterminerPairs(
+  input: string,
+  mapNoun?: (base: string, grammaticalCase: GrammaticalCase) => string | undefined
+): TransformResult {
   if (!/(?:\/|oder|bzw\.|und|beziehungsweise)/u.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
   const text = input.replace(pairPattern,
     (match: string, left: string, separator: string, right: string, space: string, attributes: string,
-      offset: number, source: string) => {
+      noun: string) => {
       const form = pairs.get(`${left.toLocaleLowerCase(locale)}|${right.toLocaleLowerCase(locale)}`);
       if (!form) return match;
       // A compact pair directly before the noun (`der/die Ärzt/in`) is resolved
       // by the determiner table itself; only `(in)` forms need the reduction.
-      if (!attributes && separator === "/" &&
-          !/^\S*\(-?in\)/u.test(source.slice(offset + match.length))) return match;
+      if (!attributes && separator === "/" && !/\(-?in\)$/u.test(noun)) return match;
       replacements += 1;
       const inflected = attributes.replace(/\S+/gu, (word) => inflectAttribute(word, form));
-      return applyCase(left, form.masculine) + space + inflected;
+      // With attributes between, the noun is inflected here too; later rules
+      // only see a determiner directly before the noun (`zum … Assistenten`).
+      const base = /^(.*?)(?:(?:\/-?|[:*_·•])in|\(-?in\))$/u.exec(noun)?.[1] ??
+        /^(.*\p{Ll})In$/u.exec(noun)?.[1];
+      const masculineNoun = attributes && base && mapNoun ? mapNoun(base, form.grammaticalCase) : undefined;
+      return applyCase(left, form.masculine) + space + inflected + (masculineNoun ?? noun);
     });
   return {text, replacements};
 }
