@@ -1,5 +1,12 @@
 import { formatBadgeCount } from "../browser/badge";
-import type { ReplacementSummaryEntry } from "../core/replacement-summary";
+import {
+  aggregateReplacementSummaries,
+  type ReplacementSummaryEntry
+} from "../core/replacement-summary";
+import {
+  transformTextWithSummary,
+  type TransformOptions
+} from "../core/transform-text";
 import { defaultRules } from "../rules";
 import { shouldProcessDomain } from "../settings/domain";
 import { normalizeSettings, type Settings } from "../settings/defaults";
@@ -15,6 +22,11 @@ declare const Components: {
       }
     ): Record<string, unknown>;
     evalInSandbox(source: string, sandbox: Record<string, unknown>): unknown;
+    exportFunction(
+      fn: (...args: never[]) => unknown,
+      target: Record<string, unknown>,
+      options: { readonly defineAs: string }
+    ): unknown;
     nukeSandbox?(sandbox: Record<string, unknown>): void;
   };
 };
@@ -343,6 +355,36 @@ function destroySandbox(documentToStop: Document, restore: boolean): void {
   Components.utils.nukeSandbox?.(sandbox);
 }
 
+// Rules and lexicon live once in this window; each page sandbox only holds
+// the DOM runtime and asks here. Strings in, a JSON string out: nothing but
+// primitives crosses the compartment boundary.
+let cachedOptionsSource = "";
+let cachedOptions: TransformOptions | undefined;
+
+function optionsFromSource(source: string): TransformOptions {
+  if (source === cachedOptionsSource && cachedOptions) {
+    return cachedOptions;
+  }
+  const parsed = JSON.parse(source) as Omit<TransformOptions, "disabledRuleIds"> & {
+    readonly disabledRuleIds?: readonly string[];
+  };
+  const { disabledRuleIds, ...options } = parsed;
+  cachedOptions = {
+    ...options,
+    ...(Array.isArray(disabledRuleIds) ? { disabledRuleIds: new Set(disabledRuleIds) } : {})
+  };
+  cachedOptionsSource = source;
+  return cachedOptions;
+}
+
+function transformForContent(input: unknown, optionsSource: unknown): string {
+  if (typeof input !== "string" || typeof optionsSource !== "string") {
+    throw new TypeError("Ungültige Pale-Moon-Transformationsanfrage.");
+  }
+  const result = transformTextWithSummary(input, defaultRules, optionsFromSource(optionsSource));
+  return JSON.stringify({ ...result, summaries: aggregateReplacementSummaries(result.summaries) });
+}
+
 function createSandbox(documentToProcess: Document): ContentSandbox | undefined {
   const contentWindow = documentToProcess.defaultView;
   if (!contentWindow) {
@@ -354,6 +396,9 @@ function createSandbox(documentToProcess: Document): ContentSandbox | undefined 
     wantXrays: true
   }) as ContentSandbox;
 
+  Components.utils.exportFunction(transformForContent, sandbox, {
+    defineAs: "__sprachverstandTransform"
+  });
   Services.scriptloader.loadSubScript(contentRuntimeUrl, sandbox, "UTF-8");
   if (!sandboxHasRuntime(sandbox)) {
     Components.utils.nukeSandbox?.(sandbox);

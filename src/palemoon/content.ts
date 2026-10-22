@@ -1,6 +1,8 @@
 import { PaleMoonDomProcessor } from "./dom-processor";
-import { defaultRules } from "../rules";
+import type { DetailedTransformResult, TransformOptions } from "../core/transform-text";
 import { disabledRuleIdsForGroups } from "../rules/catalog";
+import { domRuleMetadata } from "../rules/dom-metadata";
+import { isBuiltInTransformCandidate } from "../rules/transform-candidate";
 import type { Settings } from "../settings/defaults";
 import type { ReplacementSummaryEntry } from "../core/replacement-summary";
 
@@ -13,6 +15,9 @@ interface PaleMoonContentRuntime {
 
 type PaleMoonContentGlobal = typeof globalThis & {
   SprachverstandPaleMoonContent?: PaleMoonContentRuntime;
+  // Exported by the controller once per window: rules and lexicon are built
+  // there a single time instead of being loaded into every page sandbox.
+  __sprachverstandTransform?: (input: string, options: string) => string;
   __sprachverstandReplacementCount?: number;
 };
 
@@ -26,9 +31,30 @@ function reportReplacementCount(count: number): void {
   );
 }
 
+function transformViaController(
+  input: string,
+  options: TransformOptions
+): Promise<DetailedTransformResult> {
+  const transform = runtimeGlobal.__sprachverstandTransform;
+  if (!transform) {
+    return Promise.reject(new Error("Pale-Moon-Regelmodul nicht verfügbar."));
+  }
+  const { disabledRuleIds, ...plainOptions } = options;
+  try {
+    return Promise.resolve(JSON.parse(transform(input, JSON.stringify({
+      ...plainOptions,
+      ...(disabledRuleIds ? { disabledRuleIds: [...disabledRuleIds] } : {})
+    }))) as DetailedTransformResult);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
 function optionsFor(settings: Settings) {
   return {
-    rules: defaultRules,
+    rules: domRuleMetadata,
+    transformText: transformViaController,
+    isTransformCandidate: isBuiltInTransformCandidate,
     profile: "aggressive" as const,
     disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
     protectedTerms: settings.protectedTerms,
