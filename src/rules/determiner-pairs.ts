@@ -85,6 +85,32 @@ const pairPattern = new RegExp(
   "gu"
 );
 
+// A nominative pair after a preposition is the author's shorthand; the
+// preposition gives the case (`mit der oder die Kolleg*in` → „mit dem
+// Kollegen“). Two-way prepositions stay open, and `um` mostly opens an
+// infinitive clause (`um ein:e Spezialist:in zu werden`).
+const prepositionCase = new Map<string, "accusative" | "dative">([
+  ...["mit", "von", "bei", "zu", "aus", "nach", "seit", "gegenüber", "außer", "samt", "nebst"]
+    .map((word) => [word, "dative"] as const),
+  ...["für", "durch", "gegen", "ohne", "wider"].map((word) => [word, "accusative"] as const)
+]);
+const nominativeOblique = new Map<string, readonly [accusative: string, dative: string]>([
+  ["der", ["den", "dem"]], ["jeder", ["jeden", "jedem"]], ["ein", ["einen", "einem"]],
+  ["kein", ["keinen", "keinem"]], ["mein", ["meinen", "meinem"]], ["dein", ["deinen", "deinem"]],
+  ["sein", ["seinen", "seinem"]], ["ihr", ["ihren", "ihrem"]], ["unser", ["unseren", "unserem"]],
+  ["euer", ["euren", "eurem"]]
+]);
+const prepositionBefore = /(?:^|[^\p{L}\p{M}])(\p{L}+)\s+$/u;
+
+function caseFromPreposition(form: PairForm, before: string): PairForm | undefined {
+  if (form.grammaticalCase !== "nominative") return undefined;
+  const preposition = prepositionBefore.exec(before)?.[1];
+  const grammaticalCase = preposition ? prepositionCase.get(preposition.toLocaleLowerCase(locale)) : undefined;
+  const oblique = nominativeOblique.get(form.masculine);
+  if (!grammaticalCase || !oblique) return undefined;
+  return {masculine: oblique[grammaticalCase === "accusative" ? 0 : 1], grammaticalCase, strong: false};
+}
+
 function applyCase(source: string, replacement: string): string {
   return source[0] === source[0]?.toLocaleUpperCase(locale)
     ? replacement[0]!.toLocaleUpperCase(locale) + replacement.slice(1)
@@ -120,17 +146,20 @@ export function normalizeDeterminerPairs(
     /^(.*\p{Ll})In$/u.exec(noun)?.[1];
   const text = input.replace(pairPattern,
     (match: string, left: string, separator: string, right: string, space: string, attributes: string,
-      noun: string, coordinator: string | undefined, secondNoun: string | undefined) => {
-      const form = pairs.get(`${left.toLocaleLowerCase(locale)}|${right.toLocaleLowerCase(locale)}`);
-      if (!form) return match;
+      noun: string, coordinator: string | undefined, secondNoun: string | undefined,
+      offset: number, source: string) => {
+      const written = pairs.get(`${left.toLocaleLowerCase(locale)}|${right.toLocaleLowerCase(locale)}`);
+      if (!written) return match;
+      const oblique = caseFromPreposition(written, source.slice(Math.max(0, offset - 30), offset));
+      const form = oblique ?? written;
       // `zu:r` has no other rule; a compact determiner pair directly before
       // the noun (`der/die Ärzt/in`) is resolved by the determiner table itself,
       // only `(in)` forms need the reduction there.
       const contractedZu = left.toLocaleLowerCase(locale) === "zu";
       // Marker-separated pairs (`jede:r`, `der:die`) keep the determiner
       // table, which reads their case from the context.
-      if (/^[:*_·•]$/u.test(separator) && !contractedZu) return match;
-      if (!attributes && !contractedZu && !/\s/u.test(separator) && !/\(-?in\)$/u.test(noun)) return match;
+      if (!oblique && /^[:*_·•]$/u.test(separator) && !contractedZu) return match;
+      if (!oblique && !attributes && !contractedZu && !/\s/u.test(separator) && !/\(-?in\)$/u.test(noun)) return match;
       replacements += 1;
       const inflected = attributes.replace(/\S+/gu, (word) => inflectAttribute(word, form));
       // The noun is inflected here too: the pair is gone, so the later pair

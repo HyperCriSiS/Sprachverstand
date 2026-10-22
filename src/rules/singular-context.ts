@@ -830,8 +830,14 @@ const nonNounWordsBeforeDer = new Set([
   // Pronouns before a dative object: `Geben Sie der Ärzt*in Bescheid`.
   "sie", "ich", "er", "es", "wir", "ihr", "man", "ihnen", "uns", "euch", "mir", "dir", "ihm"
 ]);
-// `Laut der Ärzt*in` → „Laut dem Arzt“, not the genitive.
-const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "entsprechend"]);
+// `Laut der Ärzt*in` → „Laut dem Arzt“, not the genitive; `Wir danken der
+// Patient*in` → „dem Patienten“: verbs with a dative object, not the
+// nominative.
+const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "entsprechend",
+  ...["dank", "helf", "gratulier", "folg", "begegn", "vertrau", "antwort", "widersprech", "zuhör",
+    "zustimm", "assistier", "dien", "misstrau", "kündig", "schad", "nütz"].flatMap((stem) =>
+    ["e", "st", "t", "en", "et", "te", "ten", "test"].map((ending) => stem + ending)),
+  "hilft", "hilfst", "half", "halfen", "widerspricht", "widersprichst", "widersprach", "widersprachen"]);
 
 // A verb or participle that takes the dative right after the phrase makes
 // `der` a dative object: `(dass die) Umsetzung der Antragsteller:in

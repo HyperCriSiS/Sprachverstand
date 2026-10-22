@@ -96,6 +96,14 @@ describe("Kasus aus dem Satzbau", () => {
     ["mit dem Comic einer Autor*in", "mit dem Comic eines Autors"],
     ["Mit einer erfahrenen Mitarbeiter:in", "Mit einem erfahrenen Mitarbeiter"],
     ["Laut der Ärzt*in ist das so.", "Laut dem Arzt ist das so."],
+    // Verb mit Dativobjekt vor `der`.
+    ["Wir danken der Patient*in, die half.", "Wir danken dem Patienten, der half."],
+    ["Sie folgt der neuen Trainer*in.", "Sie folgt dem neuen Trainer."],
+    // Präposition legt den Fall eines Nominativpaars fest.
+    ["Gespräch mit der oder die Kolleg*in.", "Gespräch mit dem Kollegen."],
+    ["Gespräch mit der/die Kolleg*in.", "Gespräch mit dem Kollegen."],
+    ["Ein Brief für der oder die neue Kolleg*in.", "Ein Brief für den neuen Kollegen."],
+    ["Der oder die Kolleg*in kommt.", "Der Kollege kommt."],
     // Überschrift ohne Trennung vor dem Fließtext.
     ["Ihre Arbeitgeber:in Das Diakoniewerk ist groß.", "Ihr Arbeitgeber Das Diakoniewerk ist groß."],
     ["Werden Sie unsere Freund*in!", "Werden Sie unser Freund!"],

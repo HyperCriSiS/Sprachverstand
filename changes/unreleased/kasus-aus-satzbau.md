@@ -20,3 +20,8 @@ kategorie: Behoben
   → „RosaLila Panther“).
 - „Geben Sie der Ärzt*in Bescheid“ wird nicht mehr fälschlich zu „des
   Arztes“.
+- „mit der oder die Kolleg*in“ und „mit der/die Kolleg*in“ ergaben „mit der
+  Kollege“; die Präposition legt jetzt den Fall fest („mit dem Kollegen“,
+  „für den neuen Kollegen“). „Wir danken der Patient*in“ ergab „der
+  Patient“ und wird jetzt zu „dem Patienten“ (ebenso helfen, folgen,
+  gratulieren und weitere Verben mit Dativobjekt).

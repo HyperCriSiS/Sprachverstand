@@ -9,6 +9,8 @@ const t = (input: string) => transformText(input, defaultRules, { profile: "aggr
 // markierte Adjektive ohne Artikel und die Phrasengrenze bei „als“.
 describe("Begleitwortpaare und Singularkontext", () => {
   it.each([
+    // Die Präposition legt den Fall eines Nominativpaars fest.
+    ["mit jede:r andere:r Kapitalist:in", "mit jedem anderen Kapitalisten"],
     // Leerraum um den Schrägstrich (CTX-02).
     ["der/ die Nutzer*in", "der Nutzer"],
     ["der / die Nutzer*in", "der Nutzer"],
@@ -53,8 +55,6 @@ describe("Begleitwortpaare und Singularkontext", () => {
     ["eine weitere Mitarbeiter:in", "eine weitere Mitarbeiter:in"],
     ["als eine weitere Mitarbeiter:in", "als eine weitere Mitarbeiter:in"],
     ["einer Patient*in", "einer Patient*in"],
-    // Kein Nominativ nach Präposition oder markiertem Wort.
-    ["mit jede:r andere:r Kapitalist:in", "mit jede:r andere:r Kapitalist:in"],
     // Nicht auflösbares markiertes Adjektiv: Nomen nicht allein umwandeln.
     ["mit engagierte*n Mitarbeiter*in", "mit engagierte*n Mitarbeiter*in"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
