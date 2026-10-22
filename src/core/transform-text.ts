@@ -13,9 +13,13 @@ import {
   summarizeReplacements,
   type ReplacementSummaryEntry
 } from "./replacement-summary";
+import { collectLeadingContextEdit, type LeadingContextEdit } from "./leading-context-edit";
 
 export interface DetailedTransformResult extends TransformResult {
   readonly summaries: readonly ReplacementSummaryEntry[];
+  // The result assumes this edit of the end of `leadingContext`; a caller
+  // that cannot apply it must discard the result.
+  readonly leadingContextEdit?: LeadingContextEdit;
 }
 
 export interface TransformOptions {
@@ -472,6 +476,16 @@ export function transformTextWithSummary(
   rules: readonly Rule[],
   options: TransformOptions
 ): DetailedTransformResult {
+  const {result, edit} = collectLeadingContextEdit(options.leadingContext,
+    () => transformTextWithSummaryUnedited(input, rules, options));
+  return edit ? {...result, leadingContextEdit: edit} : result;
+}
+
+function transformTextWithSummaryUnedited(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions
+): DetailedTransformResult {
   // The loanword lexicon is data for all rules; its group switches it
   // through the id of its marker rule.
   setLoanwordPersonFormsEnabled(
@@ -507,7 +521,8 @@ export function transformText(
   rules: readonly Rule[],
   options: TransformOptions
 ): TransformResult {
-  const result = transformTextWithSummary(input, rules, options);
+  // A plain text result has no context to rewrite.
+  const result = transformTextWithSummaryUnedited(input, rules, options);
 
   return {
     text: result.text,

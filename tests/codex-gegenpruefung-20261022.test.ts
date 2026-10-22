@@ -56,10 +56,21 @@ function dom(html: string): string {
 }
 
 describe("Singular am Anfang eines Inline-Elements", () => {
-  it("wandelt nicht halb um, wenn das Begleitwort im vorigen Textknoten anders lauten müsste", () => {
-    expect(dom("<p>Wir sprechen mit der <em>Patient*in</em> heute.</p>")).toBe("Wir sprechen mit der Patient*in heute.");
+  it("ändert das Begleitwort im vorigen Textknoten mit", () => {
+    expect(dom("<p>Wir sprechen mit der <em>Patient*in</em> heute.</p>")).toBe("Wir sprechen mit dem Patienten heute.");
+    expect(dom("<p>Projekt der <em>Künstler*in</em></p>")).toBe("Projekt des Künstlers");
+    expect(dom("<p>Gespräch mit der <b>neuen Kolleg*in</b>.</p>")).toBe("Gespräch mit dem neuen Kollegen.");
+  });
+
+  it("wandelt nicht halb um, wenn das Begleitwort mehrdeutig ist", () => {
     expect(dom("<p>Die <a href=\"#\">Lehrer*in</a> kommt.</p>")).toBe("Die Lehrer*in kommt.");
-    expect(dom("<p>Projekt der <em>Künstler*in</em></p>")).toBe("Projekt der Künstler*in");
+  });
+
+  it("stellt beide Textknoten wieder her", () => {
+    const html = "<p>Das Projekt der <em>Künstler*in</em> ist neu.</p>";
+    expect(dom(html)).toBe("Das Projekt des Künstlers ist neu.");
+    processor?.stop({restore: true}); processor = undefined;
+    expect(document.body.innerHTML).toBe(html);
   });
 
   it("nutzt das Begleitwort davor, wenn es unverändert bleiben kann", () => {
