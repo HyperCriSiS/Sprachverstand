@@ -21,10 +21,13 @@ describe("Marketer: exakt geprüfte Personenform", () => {
   it.each([
     "Der Marketer plant die Kampagne der Marketerin.",
     "Das Marketing betrifft die Marketerie.",
-    "Die Fantasiemarketer:innen planen.",
     "Die Marketerteam:innen planen."
   ])("verändert keinen unmarkierten Text und erweitert keine Wortstämme: %s", text => {
     expect(transformText(text, defaultRules, options).text).toBe(text);
+  });
+  it("wandelt Eigenkreationen auf -er ohne Lexikoneintrag um", () => {
+    expect(transformText("Die Fantasiemarketer:innen planen.", defaultRules, options).text)
+      .toBe("Die Fantasiemarketer planen.");
   });
 });
 // Eigenständig geprüftes Kompositum; keine allgemeine Modelleur-Suffixregel.

@@ -447,7 +447,7 @@ function rememberSupplemental(cache: Map<string, string | undefined>, base: stri
   return result;
 }
 
-function mapSupplementalPlural(base: string): string | undefined {
+export function mapSupplementalPlural(base: string): string | undefined {
   if (supplementalPluralCache.has(base)) return supplementalPluralCache.get(base);
   const mapped = findMappedForm(base);
   if (mapped) {
@@ -459,7 +459,7 @@ function mapSupplementalPlural(base: string): string | undefined {
   return rememberSupplemental(supplementalPluralCache, base, unchanged ? base : undefined);
 }
 
-function mapSupplementalSingular(base: string): string | undefined {
+export function mapSupplementalSingular(base: string): string | undefined {
   if (supplementalSingularCache.has(base)) return supplementalSingularCache.get(base);
   const mapped = findMappedForm(base);
   if (mapped) {

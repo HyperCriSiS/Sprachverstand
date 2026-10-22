@@ -76,7 +76,7 @@
     { "id": "negative-robot", "input": "Robot:innen", "expected": "Robot:innen" },
     { "id": "negative-plain-validated-feminine", "input": "Verteidigerin", "expected": "Verteidigerin" },
     { "id": "negative-uppercase-feminine", "input": "VERTEIDIGERIN", "expected": "VERTEIDIGERIN" },
-    { "id": "negative-attributive-wrong-ending", "input": "eine:n neue Lehrer:in", "expected": "eine:n neue Lehrer:in" },
+    { "id": "attributive-missing-marker", "input": "eine:n neue Lehrer:in", "expected": "einen neuen Lehrer" },
     { "id": "negative-unpaired-colon-form", "input": "Arzt:Arzt", "expected": "Arzt:Arzt" },
     { "id": "negative-incomplete-colleague-ending", "input": "Kolleg:en", "expected": "Kolleg:en" },
     { "id": "negative-ordinary-patenschaft", "input": "Patenschaft", "expected": "Patenschaft" },

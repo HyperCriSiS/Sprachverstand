@@ -163,3 +163,8 @@ function lookup(normalizedBase: string): GeneratedPersonForms | undefined {
 export function getLoanwordPersonForms(normalizedBase: string): GeneratedPersonForms | undefined {
   return enabled ? lookup(normalizedBase) : undefined;
 }
+
+// A listed loanword while its group is off: other rules must leave it too.
+export function isDisabledLoanword(normalizedBase: string): boolean {
+  return !enabled && lookup(normalizedBase) !== undefined;
+}

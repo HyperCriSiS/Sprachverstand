@@ -44,7 +44,10 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     ["mit Lehrer*innen", "mit Lehrern"],
     ["mit Kollegen*innen", "mit Kollegen"],
     // Marker am bereits pluralischen Stamm (Lexikontranche 2).
-    ["Mitglieder*innen", "Mitglieder"]
+    ["Mitglieder*innen", "Mitglieder"],
+    // Paare davor werden mit dem Nomen aufgelöst (Gegenprüfung 22.10.2026).
+    ["zum/zur Pflegefachassistenten/-in", "zum Pflegefachassistenten"],
+    ["eine/n engagierte/n Studenten/in", "einen engagierten Studenten"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
@@ -60,9 +63,7 @@ describe("Marker hinter flektierter maskuliner Form", () => {
     // Dateinamen, Pfade, Unterstrich-Singular.
     ["27.12.23_TA_Favoriten_in_Apolda.pdf", "27.12.23_TA_Favoriten_in_Apolda.pdf"],
     ["Kollege_in", "Kollege_in"],
-    // Schrägstrichreihen und nicht auflösbare Paare davor: nicht halb umwandeln.
-    ["Fotografen*in/Videografen*in", "Fotografen*in/Videografen*in"],
-        ["zum/zur Pflegefachassistenten/-in", "zum/zur Pflegefachassistenten/-in"],
-    ["eine/n engagierte/n Studenten/in", "eine/n engagierte/n Studenten/in"]
+    // Schrägstrichreihe ohne Begleitwort: Kasus offen, nicht halb umwandeln.
+    ["Fotografen*in/Videografen*in", "Fotografen*in/Videografen*in"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
 });

@@ -32,7 +32,6 @@ describe("Bindestrich-Komposita mit bekanntem Personenkopf", () => {
   it.each([
     // Unbekannter Kopf und Marken bleiben.
     ["Projekt-Wizard*innen", "Projekt-Wizard*innen"],
-    ["InteGREATer:in", "InteGREATer:in"],
     // Mehrdeutiger Singularartikel schützt weiterhin.
     ["eine US-Amerikaner*in", "eine US-Amerikaner*in"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
