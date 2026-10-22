@@ -11,6 +11,7 @@ import {
   type GrammaticalCase
 } from "./person-lexicon";
 import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
+import { transformClauseCase } from "./clause-case";
 import { normalizeCompactDeterminers, normalizeDeterminerPairs } from "./determiner-pairs";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
@@ -1104,9 +1105,10 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
     const pairResult0 = normalizeDeterminerPairs(input);
     const compactResult = normalizeCompactDeterminers(pairResult0.text, mapSingular);
+    const clauseResult = transformClauseCase(compactResult.text, mapSingular);
     const pairResult = {
-      text: compactResult.text,
-      replacements: pairResult0.replacements + compactResult.replacements
+      text: clauseResult.text,
+      replacements: pairResult0.replacements + compactResult.replacements + clauseResult.replacements
     };
     const contractedPairResult = transformContractedPairs(pairResult.text);
     const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
