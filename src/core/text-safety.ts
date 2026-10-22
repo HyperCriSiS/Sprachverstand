@@ -17,8 +17,6 @@ const excludedTags = new Set([
   "TEMPLATE",
   "TEXTAREA",
   "INPUT",
-  "SELECT",
-  "OPTION",
   "CODE",
   "PRE",
   "KBD",
@@ -131,9 +129,18 @@ function isDocumentEditor(document: Document): boolean {
   return document.designMode?.toLowerCase() === "on";
 }
 
+// An option without its own `value` submits its visible text: changing it
+// would change the form data. With `value` only the label is converted
+// (real-page study 22.10.2026: 99 % of options carry a value, no page read
+// option text after load beyond custom dropdown widgets).
+function isOptionWithoutValue(element: Element): boolean {
+  return element.tagName === "OPTION" && !element.hasAttribute("value");
+}
+
 // For a traversal that has already established the ancestor protection.
 export function hasOwnTextProtection(element: Element): boolean {
-  if (excludedTags.has(element.tagName) || isContentEditable(element) ||
+  if (excludedTags.has(element.tagName) || isOptionWithoutValue(element) ||
+      isContentEditable(element) ||
       element.hasAttribute("data-sprachverstand-ignore") ||
       element.getAttribute("aria-hidden")?.toLowerCase() === "true") return true;
   const role = element.getAttribute("role")?.toLowerCase();
