@@ -755,19 +755,18 @@ function transformAttributivePhrases(
       if (!form) {
         return match;
       }
-      // A capitalized unmarked word is an attribute only with a German
-      // adjective suffix (`Wissenschaftliche`); `eine:n Office Manager:in`
-      // has an English noun there.
-      if (!markerEnding && /^\p{Lu}/u.test(adjective) &&
-          !/(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)(?:e|en|er|es|em)?$/u.test(adjective)) {
-        return match;
-      }
-
       const mappedAdjective = mapAttributiveAdjective(
         adjective,
         markerEnding,
         expectedAdjectiveEnding(form)
       );
+      // A capitalized unmarked word is inflected only with a German adjective
+      // suffix (`Wissenschaftliche`); `eine:n Office Manager:in` has an English
+      // noun there. Left unchanged (`der Performance Künstler*in`) it may stay.
+      if (!markerEnding && /^\p{Lu}/u.test(adjective) && mappedAdjective !== adjective &&
+          !/(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)(?:e|en|er|es|em)?$/u.test(adjective)) {
+        return match;
+      }
       const noun = mapSingular(base, form.grammaticalCase);
       if (!mappedAdjective || !noun) {
         return match;
