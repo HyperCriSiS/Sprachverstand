@@ -63,7 +63,10 @@ describe("Singular am Anfang eines Inline-Elements", () => {
   });
 
   it("wandelt nicht halb um, wenn das Begleitwort mehrdeutig ist", () => {
-    expect(dom("<p>Die <a href=\"#\">Lehrer*in</a> kommt.</p>")).toBe("Die Lehrer*in kommt.");
+    // Nominalphrase im Vorfeld: Subjekt oder Objekt offen.
+    expect(dom("<p>Das Kind mag die <a href=\"#\">Lehrer*in</a> sehr.</p>")).toBe("Das Kind mag die Lehrer*in sehr.");
+    // Satzanfang mit Verb macht es eindeutig: beide Knoten ändern sich.
+    expect(dom("<p>Die <a href=\"#\">Lehrer*in</a> kommt.</p>")).toBe("Der Lehrer kommt.");
   });
 
   it("stellt beide Textknoten wieder her", () => {
