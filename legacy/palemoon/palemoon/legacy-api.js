@@ -454,6 +454,21 @@
         var tabId = bridge ? bridge.getActiveTabId() : undefined;
         return Promise.resolve(tabId === undefined ? [] : [{ id: tabId }]);
       },
+      create: function (createProperties) {
+        var bridge = mostRecentBridge();
+        var url = createProperties && typeof createProperties.url === "string"
+          ? createProperties.url
+          : "";
+        var tabId = bridge ? bridge.openExtensionPage(url) : undefined;
+        return Promise.resolve(tabId === undefined ? {} : { id: tabId });
+      },
+      update: function (tabId, updateProperties) {
+        var bridge = mostRecentBridge();
+        if (bridge && updateProperties && updateProperties.active) {
+          bridge.selectTab(tabId);
+        }
+        return Promise.resolve({ id: tabId });
+      },
       onRemoved: {
         addListener: function () {},
         removeListener: function () {}

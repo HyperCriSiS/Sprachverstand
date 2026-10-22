@@ -1,4 +1,5 @@
 import type { Rule } from "../core/rule";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const replacements = new Map<string, string>([
@@ -9,6 +10,15 @@ const replacements = new Map<string, string>([
   ["sinti:zze", "sinti"],
   ["sinti_zze", "sinti"],
   ["kolleg:en:innen", "kollegen"],
+  ["bürgermeisters/in", "bürgermeisters"],
+  ["athleten*innen", "athleten"],
+  ["physikingenieure/innen", "physikingenieure"],
+  ["ortsvorsteher(in)", "ortsvorsteher"],
+  ["benediktiner(innen)", "benediktiner"],
+  ["nachwuchssportler(in)", "nachwuchssportler"],
+  ["tennisspieler(in)", "tennisspieler"],
+  ["notfallsanitäter/-in", "notfallsanitäter"],
+  ["pflegefachassistent/-in", "pflegefachassistent"],
   ["studentys", "studenten"],
   ["lesys", "leser"],
   ["lehrys", "lehrer"],
@@ -29,6 +39,8 @@ const pattern = new RegExp(
 );
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
   const lower = letters.toLocaleLowerCase(locale);
   const upper = letters.toLocaleUpperCase(locale);
@@ -51,6 +63,7 @@ export const specialGenderFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    if (!/in(?![a-z])|inn|nja|zze|ys/iu.test(input)) return {text: input, replacements: 0};
     let replacementCount = 0;
     const text = input.replace(pattern, (match: string) => {
       const replacement = replacements.get(match.toLocaleLowerCase(locale));

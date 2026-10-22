@@ -1,13 +1,18 @@
 import type { Rule, TransformResult } from "../core/rule";
+import { withLeadingContextRule, withRelativeAgreementRule } from "./relative-agreement";
 import { mapKnownSingular } from "./known-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
+import { obliqueDeterminerCaseBefore } from "./singular-context";
 import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
+import { preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const markerPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])/giu;
 const binnenIMarkerPattern =
   /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)In(?![\p{L}\p{M}])/gu;
+const parentheticalMarkerPattern =
+  /(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)\((?:-)?in\)(?![\p{L}\p{M}])/giu;
 const markedAdjectivePattern =
   /(?<![\p{L}\p{M}])(Verbündete)(?:[:*_\/·•.’‘])r(?![\p{L}\p{M}])/giu;
 const unchangedSingularForms = new Set(["content-creator", "creator"]);
@@ -20,6 +25,8 @@ const additionalSingularForms = new Map<string, string>([
 ]);
 
 function applyTokenCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
@@ -82,6 +89,12 @@ function transformMarkerPattern(
       ) {
         return match;
       }
+      // The context rule already chose the case form after `dem`, `des`, …;
+      // a remaining marker has no known case form, and the nominative
+      // (`dem Dozent`) would be wrong.
+      if (obliqueDeterminerCaseBefore(fullInput, offset)) {
+        return match;
+      }
 
       const replacement = mapBase(base);
       if (!replacement) {
@@ -96,11 +109,12 @@ function transformMarkerPattern(
   return { text, replacements };
 }
 
-export const unmarkedSingularRule: Rule = {
+export const unmarkedSingularRule: Rule = withLeadingContextRule(withRelativeAgreementRule({
   id: "singular.unmarked-marker",
   risk: "contextual",
 
   apply(input) {
+    if (!/in(?![a-z])|verbündete/iu.test(input)) return {text: input, replacements: 0};
     const adjectiveResult = transformMarkedAdjectives(input);
     const separatorResult = transformMarkerPattern(
       adjectiveResult.text,
@@ -112,13 +126,19 @@ export const unmarkedSingularRule: Rule = {
       binnenIMarkerPattern,
       true
     );
+    const parentheticalResult = transformMarkerPattern(
+      binnenIResult.text,
+      parentheticalMarkerPattern,
+      true
+    );
 
     return {
-      text: binnenIResult.text,
+      text: parentheticalResult.text,
       replacements:
         adjectiveResult.replacements +
         separatorResult.replacements +
-        binnenIResult.replacements
+        binnenIResult.replacements +
+        parentheticalResult.replacements
     };
   }
-};
+}));

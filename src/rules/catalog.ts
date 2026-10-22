@@ -19,9 +19,14 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     descriptionKey: "rule_plural_separators_description",
     example: "Nutzer:innen → Nutzer",
     ruleIds: [
+      "marker.source-repairs",
+      "plural.nested-compound",
       "plural.known-separator-innen",
       "plural.mapped-separator-innen",
-      "plural.additional-person-forms"
+      "plural.marked-dative-context",
+      "plural.additional-person-forms",
+      "marker.inflected-stem-singular",
+      "marker.inflected-stem-plural"
     ],
     defaultEnabled: true
   },
@@ -169,6 +174,17 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     example: "Erzieher (m/w/d) → Erzieher",
     ruleIds: ["job-ad.gender-suffixes"],
     defaultEnabled: false
+  },
+  {
+    id: "loanword-person-terms",
+    label: "Englische Lehnwörter",
+    labelKey: "groupLoanwordsLabel",
+    description:
+      "Englische Personenbezeichnungen wie Maker, Researcher oder Creator werden wie deutsche behandelt.",
+    descriptionKey: "rule_loanwords_description",
+    example: "Maker:innen → Maker",
+    ruleIds: ["lexicon.loanwords"],
+    defaultEnabled: true
   }
 ] as const;
 

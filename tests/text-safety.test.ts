@@ -25,6 +25,29 @@ describe("isProbablyTechnicalText", () => {
       isProbablyTechnicalText("Die Nutzer:innen lesen diesen Absatz.")
     ).toBe(false);
   });
+
+  it.each([
+    ["FTP://host", true],
+    ["DATA://payload", true],
+    ["WWW.example", true],
+    ["https://", false],
+    ["WWW.", false],
+    ["G".repeat(47), false],
+    ["G".repeat(48), true],
+    ["G".repeat(48) + "=", true],
+    ["G".repeat(48) + "==", true],
+    ["0".repeat(31), false],
+    ["0".repeat(32), true],
+    ["0x" + "0".repeat(31), false],
+    ["0x" + "0".repeat(32), true],
+    ["*".repeat(9) + "A".repeat(15), true],
+    ["*".repeat(8) + "A".repeat(16), false],
+    ['{"name": 1}', true],
+    ['[ { Prosa } ]', true],
+    ["Nutzer:innen 4 / 12", false]
+  ])("bewahrt technische Schutzgrenzen für %s", (input, expected) => {
+    expect(isProbablyTechnicalText(input)).toBe(expected);
+  });
 });
 
 describe("shouldProcessTextNode", () => {
@@ -103,5 +126,32 @@ describe("shouldProcessAccessibleAttribute", () => {
     expect(
       shouldProcessAccessibleAttribute(image, "alt", image.alt)
     ).toBe(false);
+  });
+});
+describe("Pre-Release: case-insensitive Editoren und Shadow-Hosts", () => {
+  it("erhält Text und zugängliche Attribute bei contenteditable=TRUE/PLAINTEXT-ONLY", () => {
+    document.body.innerHTML = `
+      <div contenteditable="TRUE" aria-label="Nutzer:innen">Nutzer:innen schreiben</div>
+      <div contenteditable="PLAINTEXT-ONLY">Nutzer:innen schreiben</div>
+      <div contenteditable="FALSE">Nutzer:innen schreiben</div>
+    `;
+    const nodes = [...document.querySelectorAll("div")];
+    expect(shouldProcessTextNode(nodes[0]?.firstChild as Text)).toBe(false);
+    expect(shouldProcessAccessibleAttribute(nodes[0] as Element, "aria-label", "Nutzer:innen")).toBe(false);
+    expect(shouldProcessTextNode(nodes[1]?.firstChild as Text)).toBe(false);
+    expect(shouldProcessTextNode(nodes[2]?.firstChild as Text)).toBe(true);
+  });
+
+  it("respektiert einen ignorierten Host über eine offene Shadow-DOM-Grenze", () => {
+    const host = document.createElement("div");
+    host.setAttribute("data-sprachverstand-ignore", "");
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: "open" });
+    const span = document.createElement("span");
+    span.textContent = "Nutzer:innen schreiben";
+    span.setAttribute("title", "Nutzer:innen");
+    shadow.append(span);
+    expect(shouldProcessTextNode(span.firstChild as Text)).toBe(false);
+    expect(shouldProcessAccessibleAttribute(span, "title", "Nutzer:innen")).toBe(false);
   });
 });

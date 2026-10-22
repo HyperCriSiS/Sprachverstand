@@ -113,6 +113,9 @@
   "groupJobAdSuffixesLabel": {
     "message": "Mga dagdag na markang pangkasarian sa job ad"
   },
+  "groupLoanwordsLabel": {
+    "message": "Mga hiram na salitang Ingles"
+  },
   "ruleGroupsDescription": {
     "message": "Maaaring piliin nang hiwalay ang bawat grupo ng panuntunan. Hindi pangkalahatang binabago ang mga terminong tahasang pambabae."
   },
@@ -286,6 +289,9 @@
   },
   "rule_job_ad_suffixes_description": {
     "message": "Inaalis ang karaniwang dagdag gaya ng (m/w/d)."
+  },
+  "rule_loanwords_description": {
+    "message": "Itinuturing na parang Aleman ang mga Ingles na tawag sa tao gaya ng Maker, Researcher o Creator."
   },
   "noticeMore": {
     "message": "Hindi ipinapakita ang $COUNT$ pang abiso dahil sa limitasyon ng espasyo.",

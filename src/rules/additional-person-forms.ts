@@ -6,7 +6,10 @@ import {
 } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapMappedSingular } from "./person-lexicon";
+import { obliqueDeterminerCaseBefore } from "./singular-context";
 import { hasAmbiguousSingularDeterminer } from "./singular-context-guard";
+import { createSuffixLookup } from "./suffix-index";
+import { preserveInnerCase } from "./inner-case";
 
 interface SupplementalForm {
   readonly stem: string;
@@ -392,6 +395,8 @@ const mappedForms: readonly SupplementalForm[] = [
 ].sort((left, right) => right.stem.length - left.stem.length);
 
 function applyCase(source: string, replacement: string): string {
+  const inner = preserveInnerCase(source, replacement);
+  if (inner !== undefined) return inner;
   const lowerSource = source.toLocaleLowerCase(locale);
   const upperSource = source.toLocaleUpperCase(locale);
 
@@ -419,34 +424,51 @@ function applySuffix(base: string, stem: string, replacement: string): string {
 
 function findMappedForm(base: string): SupplementalForm | undefined {
   const normalized = base.toLocaleLowerCase(locale);
-  return mappedForms.find((form) =>
-    form.exact ? normalized === form.stem : normalized.endsWith(form.stem)
-  );
+  return lookupMappedForm(normalized);
 }
 
 function findUnchangedStem(base: string): string | undefined {
   const normalized = base.toLocaleLowerCase(locale);
-  return unchangedForms.find((stem) => normalized.endsWith(stem));
+  return lookupUnchangedStem(normalized);
 }
 
-function mapSupplementalPlural(base: string): string | undefined {
+const lookupMappedForm = createSuffixLookup(mappedForms, form => form.stem,
+  form => form.exact === true);
+const lookupUnchangedStem = createSuffixLookup(unchangedForms, stem => stem);
+
+const maximumSupplementalCacheEntries = 256;
+const supplementalPluralCache = new Map<string, string | undefined>();
+const supplementalSingularCache = new Map<string, string | undefined>();
+
+function rememberSupplemental(cache: Map<string, string | undefined>, base: string,
+  result: string | undefined): string | undefined {
+  if (cache.size >= maximumSupplementalCacheEntries) cache.delete(cache.keys().next().value!);
+  cache.set(base, result);
+  return result;
+}
+
+export function mapSupplementalPlural(base: string): string | undefined {
+  if (supplementalPluralCache.has(base)) return supplementalPluralCache.get(base);
   const mapped = findMappedForm(base);
   if (mapped) {
-    return applySuffix(base, mapped.stem, mapped.plural);
+    return rememberSupplemental(supplementalPluralCache, base,
+      applySuffix(base, mapped.stem, mapped.plural));
   }
 
   const unchanged = findUnchangedStem(base);
-  return unchanged ? base : undefined;
+  return rememberSupplemental(supplementalPluralCache, base, unchanged ? base : undefined);
 }
 
-function mapSupplementalSingular(base: string): string | undefined {
+export function mapSupplementalSingular(base: string): string | undefined {
+  if (supplementalSingularCache.has(base)) return supplementalSingularCache.get(base);
   const mapped = findMappedForm(base);
   if (mapped) {
-    return applySuffix(base, mapped.stem, mapped.singular);
+    return rememberSupplemental(supplementalSingularCache, base,
+      applySuffix(base, mapped.stem, mapped.singular));
   }
 
   const unchanged = findUnchangedStem(base);
-  return unchanged ? base : undefined;
+  return rememberSupplemental(supplementalSingularCache, base, unchanged ? base : undefined);
 }
 
 function mapAllPlural(base: string): string | undefined {
@@ -491,6 +513,12 @@ function transformPattern(
       if (replacement === undefined) {
         return match;
       }
+      if (
+        protectAmbiguousDeterminer &&
+        !hasCaselessSingular(fullInput, offset, replacement)
+      ) {
+        return match;
+      }
 
       replacements += 1;
       return replacement;
@@ -498,6 +526,17 @@ function transformPattern(
   );
 
   return { text, replacements };
+}
+
+// These forms carry no case information. After `des`/`eines` the genitive
+// needs an ending, and weak nouns (`dem Kollege`) need `-n` in every oblique
+// case, so both stay unchanged rather than become a wrong nominative.
+const weakNounEnding = /(?:e|ant|ent|and|ist|at|et|oge|om|af|oph)$/iu;
+
+function hasCaselessSingular(input: string, offset: number, singular: string): boolean {
+  const grammaticalCase = obliqueDeterminerCaseBefore(input, offset);
+  return grammaticalCase === undefined ||
+    (grammaticalCase !== "genitive" && !weakNounEnding.test(singular));
 }
 
 function combine(input: string, transforms: readonly ((text: string) => TransformResult)[]): TransformResult {
@@ -531,6 +570,8 @@ export const additionalPersonPluralRule: Rule = {
   risk: "safe",
 
   apply(input) {
+    // Every supported plural marker contains inn or the spaced I + nnen.
+    if (!/inn|nnen/iu.test(input)) return {text: input, replacements: 0};
     return combine(input, [
       (text) => transformGenderedPlural(text, mapSupplementalPlural),
       (text) =>
@@ -551,6 +592,7 @@ export const additionalPersonSingularRule: Rule = {
   risk: "contextual",
 
   apply(input) {
+    if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     return combine(input, [
       (text) =>
         transformPattern(

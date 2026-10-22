@@ -1,0 +1,44 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const popupHtml = readFileSync("static/popup/popup.html", "utf8");
+const popupCss = readFileSync("static/popup/popup.css", "utf8");
+const popupSource = readFileSync("src/popup.ts", "utf8");
+const contentSource = readFileSync("src/content.ts", "utf8");
+
+describe("Popup-Ersetzungsübersicht", () => {
+  it("hält Marke links und Status getrennt rechts im Kopf", () => {
+    expect(popupHtml).toContain('class="brand-lockup"');
+    expect(popupHtml).toMatch(/<output\b(?=[^>]*id="state")(?=[^>]*class="status-badge")[^>]*>/u);
+    expect(popupCss).toMatch(/\.brand-header\s*\{[\s\S]*?justify-content:\s*space-between/u);
+    expect(popupCss).toMatch(/\.brand-lockup\s*\{[\s\S]*?justify-content:\s*flex-start/u);
+  });
+
+  it("bietet die Seitenkarte und eine eigene Detailansicht", () => {
+    expect(popupHtml).toContain('id="open-replacements"');
+    expect(popupHtml).toContain('id="details-view"');
+    expect(popupHtml).toContain('id="replacement-list"');
+    expect(popupHtml).toContain('id="close-replacements"');
+    expect(popupHtml).toContain('class="visually-hidden" data-i18n="currentPage"');
+    expect(popupHtml).toContain('<strong><output id="count">0</output> <span data-i18n="corrections">Korrekturen</span></strong>');
+    expect(popupHtml).toContain("unterschiedliche Ersetzungen");
+  });
+
+  it("lädt die Detaildaten gezielt für den aktiven Tab", () => {
+    expect(popupSource).toContain('type: "sprachverstand.get-replacement-state"');
+    expect(popupSource).toContain("tabId: activeTabId");
+    expect(popupSource).not.toContain('type: "sprachverstand.get-inspected-count"');
+    expect(contentSource).toContain(
+      'type: "sprachverstand.get-current-replacement-state"'
+    );
+    expect(contentSource).toContain("processor?.getReplacementSummary(maximumReportedReplacementSummaries)");
+  });
+
+  it("verwendet für Anzeigen und Zurück denselben Pfeilabstand", () => {
+    expect(popupCss).toMatch(
+      /\.page-summary-action\s*\{[\s\S]*?display:\s*inline-flex;[\s\S]*?gap:\s*4px/u
+    );
+    expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?display:\s*inline-flex/u);
+    expect(popupCss).toMatch(/\.back-button\s*\{[\s\S]*?gap:\s*4px/u);
+  });
+});

@@ -26,12 +26,17 @@ describe("Pale-Moon-Port Regressionen", () => {
   });
 
   it("öffnet die Einstellungen über die implementierte Pale-Moon-Legacy-API und erhält den Tabkontext", () => {
-    expect(browserOptions).toContain("api.runtime.openOptionsPage()");
+    // Der gemeinsame Öffner nutzt tabs.create/update; die Legacy-API
+    // öffnet darüber nur erweiterungseigene Seiten im Vordergrund.
     expect(browserOptions).toContain("api.tabs.query(");
     expect(browserOptions).toContain('type: "sprachverstand.set-inspected-tab"');
-    expect(browserOptions).not.toContain("api.tabs.create(");
+    expect(browserOptions).toContain("api.tabs.create({");
+    expect(browserOptions).toContain('api.runtime.getURL("options/options.html")');
+    expect(legacyApi).toContain("bridge.openExtensionPage(url)");
+    expect(legacyApi).toContain("bridge.selectTab(tabId)");
     expect(legacyApi).toContain("openOptionsPage: function ()");
-    expect(legacyApi).toContain("bridge.openOptions()");
+    expect(controller).toContain('const extensionPagePrefix = "chrome://sprachverstand/content/"');
+    expect(controller).toContain("!url.startsWith(extensionPagePrefix)");
   });
 
   it("liefert dem Popup den vollständigen Ersetzungsstatus über die Legacy-Bridge", () => {
@@ -40,7 +45,7 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(controller).toContain("replacementSummaryFromSandbox");
     expect(controller).toContain("replacementSummaryForDocument");
     expect(paleMoonContent).toContain("getReplacementSummary()");
-    expect(coreDomProcessor).toContain("getReplacementSummary(): ReplacementSummaryEntry[]");
+    expect(coreDomProcessor).toContain("getReplacementSummary(limit?: number): ReplacementSummaryEntry[]");
     expect(transformText).toContain("transformTextWithSummary");
   });
 
@@ -64,12 +69,11 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(popupCss).toContain(".details-summary");
   });
 
-  it("nutzt für die Änderungsansicht den gemeinsamen Statuspfad ohne moderne Tab-Erzeugungs-API", () => {
+  it("nutzt für die Änderungsansicht den gemeinsamen Statuspfad ohne eigene Tab-Erzeugung im Popup", () => {
     expect(popup).toContain('type: "sprachverstand.state-updated"');
     expect(popup).toContain('type: "sprachverstand.get-replacement-state"');
     expect(popup).not.toContain("window.setInterval");
     expect(popup).not.toContain("api.tabs.create(");
-    expect(browserOptions).not.toContain("api.tabs.create(");
   });
 
   it("wendet Ausschluss- und Einschlussmodus auch im Pale-Moon-Controller an", () => {

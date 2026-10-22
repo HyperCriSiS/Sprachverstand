@@ -1,5 +1,12 @@
 import { formatBadgeCount } from "../browser/badge";
-import type { ReplacementSummaryEntry } from "../core/replacement-summary";
+import {
+  aggregateReplacementSummaries,
+  type ReplacementSummaryEntry
+} from "../core/replacement-summary";
+import {
+  transformTextWithSummary,
+  type TransformOptions
+} from "../core/transform-text";
 import { defaultRules } from "../rules";
 import { shouldProcessDomain } from "../settings/domain";
 import { normalizeSettings, type Settings } from "../settings/defaults";
@@ -15,6 +22,11 @@ declare const Components: {
       }
     ): Record<string, unknown>;
     evalInSandbox(source: string, sandbox: Record<string, unknown>): unknown;
+    exportFunction(
+      fn: (...args: never[]) => unknown,
+      target: Record<string, unknown>,
+      options: { readonly defineAs: string }
+    ): unknown;
     nukeSandbox?(sandbox: Record<string, unknown>): void;
   };
 };
@@ -33,6 +45,7 @@ interface PaleMoonGBrowser extends HTMLElement {
   selectedTab?: PaleMoonTab;
   readonly tabContainer?: EventTarget;
   addTab(url: string): PaleMoonTab;
+  getTabForBrowser?(browser: PaleMoonBrowser): PaleMoonTab | null;
 }
 
 interface PaleMoonServices {
@@ -86,6 +99,8 @@ interface GetInspectedCountMessage {
 interface PaleMoonBridge {
   openPopup(): void;
   openOptions(): void;
+  openExtensionPage(url: string): number | undefined;
+  selectTab(tabId: number): void;
   getActiveTabId(): number | undefined;
   getCountText(tabId?: number): string;
   handleMessage(message: unknown): unknown;
@@ -340,6 +355,36 @@ function destroySandbox(documentToStop: Document, restore: boolean): void {
   Components.utils.nukeSandbox?.(sandbox);
 }
 
+// Rules and lexicon live once in this window; each page sandbox only holds
+// the DOM runtime and asks here. Strings in, a JSON string out: nothing but
+// primitives crosses the compartment boundary.
+let cachedOptionsSource = "";
+let cachedOptions: TransformOptions | undefined;
+
+function optionsFromSource(source: string): TransformOptions {
+  if (source === cachedOptionsSource && cachedOptions) {
+    return cachedOptions;
+  }
+  const parsed = JSON.parse(source) as Omit<TransformOptions, "disabledRuleIds"> & {
+    readonly disabledRuleIds?: readonly string[];
+  };
+  const { disabledRuleIds, ...options } = parsed;
+  cachedOptions = {
+    ...options,
+    ...(Array.isArray(disabledRuleIds) ? { disabledRuleIds: new Set(disabledRuleIds) } : {})
+  };
+  cachedOptionsSource = source;
+  return cachedOptions;
+}
+
+function transformForContent(input: unknown, optionsSource: unknown): string {
+  if (typeof input !== "string" || typeof optionsSource !== "string") {
+    throw new TypeError("Ungültige Pale-Moon-Transformationsanfrage.");
+  }
+  const result = transformTextWithSummary(input, defaultRules, optionsFromSource(optionsSource));
+  return JSON.stringify({ ...result, summaries: aggregateReplacementSummaries(result.summaries) });
+}
+
 function createSandbox(documentToProcess: Document): ContentSandbox | undefined {
   const contentWindow = documentToProcess.defaultView;
   if (!contentWindow) {
@@ -351,6 +396,9 @@ function createSandbox(documentToProcess: Document): ContentSandbox | undefined 
     wantXrays: true
   }) as ContentSandbox;
 
+  Components.utils.exportFunction(transformForContent, sandbox, {
+    defineAs: "__sprachverstandTransform"
+  });
   Services.scriptloader.loadSubScript(contentRuntimeUrl, sandbox, "UTF-8");
   if (!sandboxHasRuntime(sandbox)) {
     Components.utils.nukeSandbox?.(sandbox);
@@ -522,6 +570,30 @@ function openOptions(): void {
   browser.selectedTab = tab;
 }
 
+// `tabs.create`/`tabs.update` of the shared options opener: only pages of
+// this add-on open in a tab, never arbitrary URLs from a message.
+const extensionPagePrefix = "chrome://sprachverstand/content/";
+
+function openExtensionPage(url: string): number | undefined {
+  const browser = windowObject.gBrowser;
+  if (!browser || !url.startsWith(extensionPagePrefix)) {
+    return undefined;
+  }
+
+  const tab = browser.addTab(url);
+  browser.selectedTab = tab;
+  return tab.linkedBrowser ? tabIdForBrowser(tab.linkedBrowser) : undefined;
+}
+
+function selectTab(tabId: number): void {
+  const browser = windowObject.gBrowser;
+  const target = browsersByTabId.get(tabId);
+  const tab = target ? browser?.getTabForBrowser?.(target) : undefined;
+  if (browser && tab) {
+    browser.selectedTab = tab;
+  }
+}
+
 function countText(tabId?: number): string {
   const resolvedTabId = tabId ?? activeTabId();
   if (resolvedTabId === undefined) {
@@ -611,6 +683,8 @@ function isGetInspectedCountMessage(
 const bridge: PaleMoonBridge = {
   openPopup,
   openOptions,
+  openExtensionPage,
+  selectTab,
   getActiveTabId: activeTabId,
   getCountText: countText,
   handleMessage(message) {

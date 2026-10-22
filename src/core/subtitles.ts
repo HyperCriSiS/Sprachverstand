@@ -28,9 +28,22 @@ const subtitleDataAttributeNames = [
 ] as const;
 
 const subtitleDataMarker = /(?:caption|timedtext|text-track|cue-(?:text|window)|(?:player|video)[-_ ]*subtitle|subtitle[-_ ]*(?:cue|overlay|container|renderer))/iu;
+// `data-testid="image-caption"` (bechtle.com) is a picture caption, not a
+// player overlay: with subtitle processing off its text stayed unconverted.
+const imageCaptionMarker = /(?:image|img|photo|picture|figure|teaser|bild)[\w -]*caption/iu;
 const subtitleAriaMarker = /(?:untertitel|subtitles?|closed captions?)/iu;
-const maximumAncestorDepth = 12;
-const knownSubtitleElements = new WeakSet<Element>();
+
+function isSubtitleDataValue(value: string): boolean {
+  return subtitleDataMarker.test(value) && !imageCaptionMarker.test(value);
+}
+export const subtitleClassifierAttributeNames = [
+  "class",
+  "id",
+  "data-purpose",
+  "data-testid",
+  "data-uia",
+  "aria-label"
+] as const;
 const escapedIdentifierMarkers = subtitleIdentifierMarkers.map((marker) =>
   marker.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")
 );
@@ -43,31 +56,47 @@ function identifierText(element: Element): string {
   return `${element.id} ${element.getAttribute("class") ?? ""}`.toLowerCase();
 }
 
-export function isSubtitleContainer(element: Element): boolean {
-  if (knownSubtitleElements.has(element)) {
-    return true;
+// Nur einschlägige Klassifikationsattribute lösen einen erneuten DOM-Scan aus.
+export function matchesSubtitleMarker(
+  attributeName: string,
+  value: string | null
+): boolean {
+  if (!value) {
+    return false;
   }
+  if (attributeName === "class" || attributeName === "id") {
+    return subtitleIdentifierMarker.test(value.toLowerCase());
+  }
+  if (subtitleDataAttributeNames.some((name) => name === attributeName)) {
+    return isSubtitleDataValue(value);
+  }
+  return attributeName === "aria-label" && subtitleAriaMarker.test(value);
+}
 
+export function isSubtitleContainer(element: Element): boolean {
+  // Every marker lives in an attribute; most text containers have none.
+  if (!element.hasAttributes()) {
+    return false;
+  }
   const identifiers = identifierText(element);
   if (subtitleIdentifierMarker.test(identifiers)) {
-    knownSubtitleElements.add(element);
     return true;
   }
 
   for (const attributeName of subtitleDataAttributeNames) {
     const value = element.getAttribute(attributeName);
-    if (value && subtitleDataMarker.test(value)) {
-      knownSubtitleElements.add(element);
-      return true;
+    if (value && isSubtitleDataValue(value)) {
+        return true;
     }
   }
 
   const ariaLabel = element.getAttribute("aria-label");
-  const subtitle = Boolean(ariaLabel && subtitleAriaMarker.test(ariaLabel));
-  if (subtitle) {
-    knownSubtitleElements.add(element);
-  }
-  return subtitle;
+  return Boolean(ariaLabel && subtitleAriaMarker.test(ariaLabel));
+}
+
+function shadowHostOf(current: Node): Element | null {
+  const root = current.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
 }
 
 /**
@@ -75,22 +104,31 @@ export function isSubtitleContainer(element: Element): boolean {
  * `subtitle` oder `caption` werden nicht allein ausgewertet, weil sie auf
  * Nachrichtenseiten häufig normale Unterzeilen und Bildunterschriften meinen.
  */
-export function isSubtitleContent(node: Node): boolean {
-  let element =
-    node.nodeType === Node.ELEMENT_NODE
-      ? (node as Element)
-      : node.parentElement;
+// Tief verschachtelte Untertitel und offene ShadowRoots behalten den Hostkontext.
+export function isSubtitleContent(node: Node,
+  cache?: WeakMap<Element, boolean>): boolean {
+  let element: Element | null =
+    node instanceof Element ? node : node.parentElement ?? shadowHostOf(node);
+  if (!element) return false;
+  const hit = cache?.get(element);
+  if (hit !== undefined) return hit;
+  const visited: Element[] | undefined = cache ? [] : undefined;
+  let subtitle = false;
 
-  for (let depth = 0; element && depth < maximumAncestorDepth; depth += 1) {
+  while (element) {
+    const cached = cache?.get(element);
+    if (cached !== undefined) {subtitle = cached; break;}
+    visited?.push(element);
     if (isSubtitleContainer(element)) {
-      return true;
+      subtitle = true;
+      break;
     }
-
     if (element.tagName === "BODY" || element.tagName === "HTML") {
       break;
     }
-    element = element.parentElement;
+    const current: Element = element;
+    element = current.parentElement ?? shadowHostOf(current);
   }
-
-  return false;
+  if (visited) for (const ancestor of visited) cache!.set(ancestor, subtitle);
+  return subtitle;
 }

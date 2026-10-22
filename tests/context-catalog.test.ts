@@ -40,9 +40,9 @@ describe("Kontextkatalog für neutrale Umschreibungen", () => {
     }
   });
 
-  it("enthält umgesetzte, gesammelte und abgelehnte Kontexte", () => {
+  it("enthält umgesetzte und abgelehnte Kontexte ohne offenen Altbestand", () => {
     expect(catalog.entries.some((entry) => entry.status === "implemented")).toBe(true);
-    expect(catalog.entries.some((entry) => entry.status === "collect")).toBe(true);
     expect(catalog.entries.some((entry) => entry.status === "reject")).toBe(true);
+    expect(catalog.entries.some((entry) => entry.status === "collect")).toBe(false);
   });
 });

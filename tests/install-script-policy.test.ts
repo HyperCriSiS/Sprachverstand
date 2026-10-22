@@ -19,11 +19,11 @@ const packageLock = JSON.parse(readFileSync("package-lock.json", "utf8")) as {
 };
 const npmrc = readFileSync(".npmrc", "utf8");
 
-describe("Install-Skript-Policy des Pale-Moon-Ports", () => {
-  it("erlaubt nur die geprüften, versionsgenauen Install-Skripte", () => {
-    expect(packageJson.devDependencies?.esbuild).toBe("0.28.1");
+describe("Install-Skript-Policy", () => {
+  it("erlaubt ausschließlich die beiden geprüften, versionsgenauen Install-Skripte", () => {
+    expect(packageJson.devDependencies?.esbuild).toBe("0.28.2");
     expect(packageJson.allowScripts).toEqual({
-      "esbuild@0.28.1": true,
+      "esbuild@0.28.2": true,
       "fsevents@2.3.3": true
     });
   });
@@ -40,7 +40,7 @@ describe("Install-Skript-Policy des Pale-Moon-Ports", () => {
     );
   });
 
-  it("blockiert neue ungeprüfte Dependency-Skripte", () => {
+  it("behandelt neue ungeprüfte Dependency-Skripte als Installationsfehler", () => {
     expect(npmrc).toMatch(/^strict-allow-scripts=true\s*$/u);
   });
 });

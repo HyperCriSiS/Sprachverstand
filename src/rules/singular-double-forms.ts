@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import {lazyPattern} from "../core/lazy-pattern";
 import {
   mapKnownInflectedSingularPair,
   mapKnownSingularPair
@@ -18,10 +19,16 @@ interface DeterminerPair {
 const locale = "de-DE";
 const word = String.raw`[\p{L}\p{M}’'-]+`;
 const connector = String.raw`(?:\s*(?:/|&|:)\s*|\s+(?:und|oder|bzw\.|beziehungsweise)\s+)`;
-const singularDoubleFormPattern = new RegExp(
+const singularDoubleFormPattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${word})(${connector})(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
+const mannFrauShorthandPattern = lazyPattern(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]*mann)\s*/\s*-frau(?![\p{L}\p{M}])`,
+  "giu"
+);
+const kaufmannFrauShorthandPattern =
+  /(?<![\p{L}\p{M}’'-])(Kaufmann)\s*\/\s*frau(?![\p{L}\p{M}’'-])/giu;
 const determinerPairs: DeterminerPair[] = [];
 
 function addDeterminerPair(
@@ -50,8 +57,8 @@ addDeterminerPair("jeder", "jedem", "dative");
 addDeterminerPair("jeder", "jedes", "genitive");
 addDeterminerPair("welche", "welcher", "nominative");
 addDeterminerPair("welche", "welchen", "accusative");
-addDeterminerPair("welcher", "welchem", "dative");
 addDeterminerPair("welcher", "welches", "genitive");
+addDeterminerPair("welcher", "welchem", "dative");
 addDeterminerPair("diese", "dieser", "nominative");
 addDeterminerPair("diese", "diesen", "accusative");
 addDeterminerPair("dieser", "diesem", "dative");
@@ -100,7 +107,7 @@ const determinerAlternation = [
 ]
   .sort((left, right) => right.length - left.length)
   .join("|");
-const inflectedPhrasePattern = new RegExp(
+const inflectedPhrasePattern = lazyPattern(
   String.raw`(?<![\p{L}\p{M}])(${determinerAlternation})(\s+)(${word})(${connector})(${determinerAlternation})(\s+)(${word})(?![\p{L}\p{M}])`,
   "giu"
 );
@@ -125,20 +132,41 @@ function mapPair(left: string, right: string): string | undefined {
   );
 }
 
+function transformMannFrauShorthand(
+  input: string,
+  pattern = mannFrauShorthandPattern()
+): TransformResult {
+  let replacements = 0;
+  const text = input.replace(
+    pattern,
+    (_match: string, masculine: string) => {
+      replacements += 1;
+      return masculine;
+    }
+  );
+  return { text, replacements };
+}
+
 function transformInflectedPhrases(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
-    inflectedPhrasePattern,
+    inflectedPhrasePattern(),
     (
       match: string,
       leftDeterminer: string,
       leftWhitespace: string,
       leftNoun: string,
-      _connector: string,
+      matchedConnector: string,
       rightDeterminer: string,
       rightWhitespace: string,
       rightNoun: string
     ) => {
+      // „und“ verbindet bei Singularpersonen potenziell zwei tatsächlich
+      // verschiedene Menschen. Ohne semantischen Beleg keine Zusammenziehung.
+      if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
+        return match;
+      }
+
       const normalizedLeftDeterminer = leftDeterminer.toLocaleLowerCase(locale);
       const normalizedRightDeterminer = rightDeterminer.toLocaleLowerCase(locale);
 
@@ -196,8 +224,21 @@ function transformSingularDoubleForms(input: string): TransformResult {
   let replacements = 0;
 
   const text = input.replace(
-    singularDoubleFormPattern,
-    (match: string, left: string, _connector: string, right: string) => {
+    singularDoubleFormPattern(),
+    (match: string, left: string, matchedConnector: string, right: string) => {
+      if (matchedConnector.trim().toLocaleLowerCase(locale) === "und") {
+        return match;
+      }
+
+      // Markersuffixe sind keine ausgeschriebenen Singularpaare.
+      // Die dafür zuständigen Regeln dürfen ohne Lexikon-Vollsuche übernehmen.
+      if (
+        (matchedConnector.trim() === ":" || matchedConnector.trim() === "/") &&
+        /^-?(?:in|innen)$/iu.test(right)
+      ) {
+        return match;
+      }
+
       const masculine = mapPair(left, right);
 
       if (!masculine) {
@@ -217,11 +258,26 @@ export const singularDoubleFormsRule: Rule = {
   risk: "safe",
 
   apply(input) {
-    const phraseResult = transformInflectedPhrases(input);
+    // All current lexical pairs require a feminine -in form; the separate
+    // mann/frau shorthand is the only exception.
+    if (!/in(?![a-z])|frau/iu.test(input)) return {text: input, replacements: 0};
+    if (!/[/&:]|und|oder|bzw\.|beziehungsweise/iu.test(input)) {
+      return {text: input, replacements: 0};
+    }
+    const shorthandResult = transformMannFrauShorthand(input);
+    const kaufmannResult = transformMannFrauShorthand(
+      shorthandResult.text,
+      kaufmannFrauShorthandPattern
+    );
+    const phraseResult = transformInflectedPhrases(kaufmannResult.text);
     const wordResult = transformSingularDoubleForms(phraseResult.text);
     return {
       text: wordResult.text,
-      replacements: phraseResult.replacements + wordResult.replacements
+      replacements:
+        shorthandResult.replacements +
+        kaufmannResult.replacements +
+        phraseResult.replacements +
+        wordResult.replacements
     };
   }
 };

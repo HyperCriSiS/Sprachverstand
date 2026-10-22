@@ -7,6 +7,7 @@ import {
 } from "./defaults";
 
 const localSettingsKey = "settings";
+const localSyncOverrideKey = "settings.sync-local-override";
 const syncSelectionKey = "sync.selection";
 const maximumSyncItemBytes = 7500;
 const settingsRetryDelaysMs = [100, 500, 1500] as const;
@@ -150,12 +151,21 @@ async function loadSynchronizedValues(): Promise<Record<string, unknown>> {
 
 export async function loadSettings(): Promise<Settings> {
   const api = getExtensionApi();
-  const [localResult, syncedResult] = await Promise.all([
-    api.storage.local.get(localSettingsKey),
-    loadSynchronizedValues()
-  ]);
+  // Beide Speicher starten parallel; ein verbindlicher lokaler Stand muss
+  // jedoch nicht auf eine dafür unerhebliche Sync-Antwort warten.
+  const localRead = api.storage.local.get([localSettingsKey, localSyncOverrideKey]);
+  const syncedRead = loadSynchronizedValues();
+  const localResult = await localRead;
 
   const localSettings = normalizeSettings(localResult[localSettingsKey]);
+
+  // Bei einem lokalen Speichervorgang oder ausdrücklich abgeschalteter
+  // Synchronisierung darf ein älterer Sync-Stand nicht zurückschreiben.
+  if (localResult[localSyncOverrideKey] === true) {
+    return localSettings;
+  }
+
+  const syncedResult = await syncedRead;
   let settings = localSettings;
   const remoteSelection = synchronizedSelection(syncedResult[syncSelectionKey]);
   const selectedCategories = remoteSelection ?? settings.syncCategoryIds;
@@ -171,10 +181,8 @@ export async function loadSettings(): Promise<Settings> {
     }
   }
 
-  if (JSON.stringify(settings) !== JSON.stringify(localSettings)) {
-    await api.storage.local.set({ [localSettingsKey]: settings });
-  }
-
+  // Ein Lesevorgang darf nicht neben einem Speichervorgang alte
+  // Sync-Daten in den lokalen Speicher zurückschreiben.
   return settings;
 }
 
@@ -240,7 +248,13 @@ export async function saveSettings(settings: Settings): Promise<void> {
     syncItems[key] = value;
   }
 
-  await api.storage.local.set({ [localSettingsKey]: normalized });
+  // Beide Werte werden in einem lokalen Storage-Set geschrieben. Solange
+  // die Sync-Schreiboperation nicht vollständig bestätigt wurde, bleiben
+  // lokale Änderungen und der lokale Widerruf verbindlich.
+  await api.storage.local.set({
+    [localSettingsKey]: normalized,
+    [localSyncOverrideKey]: true
+  });
 
   if (!synchronizationWasOrIsEnabled) {
     return;
@@ -253,6 +267,19 @@ export async function saveSettings(settings: Settings): Promise<void> {
         ? api.storage.sync.remove(keysToRemove)
         : Promise.resolve()
     ]);
+
+    // Eine explizite Sync-Abwahl bleibt auf diesem Gerät dauerhaft lokal
+    // autoritativ. Bei aktiver Synchronisierung wird die Sperre dagegen
+    // erst nach bestätigtem Abschluss aufgehoben.
+    if (normalized.syncCategoryIds.length > 0) {
+      const current = await api.storage.local.get(localSettingsKey);
+      if (
+        JSON.stringify(normalizeSettings(current[localSettingsKey])) ===
+        JSON.stringify(normalized)
+      ) {
+        await api.storage.local.remove(localSyncOverrideKey);
+      }
+    }
   } catch (error) {
     throw new Error(
       "Die Einstellungen wurden lokal gespeichert, konnten aber nicht vollständig über den Browser synchronisiert werden. Bitte die Synchronisierung prüfen oder betroffene Kategorien lokal belassen.",
@@ -262,10 +289,25 @@ export async function saveSettings(settings: Settings): Promise<void> {
 }
 
 export function subscribeToSettings(
-  listener: (settings: Settings) => void
+  listener: (settings: Settings) => void,
+  options: { readonly initial?: boolean } = {}
 ): () => void {
   const api = getExtensionApi();
   const synchronizedKeys = new Set<string>(allSyncKeys);
+  let active = true;
+  let generation = 0;
+
+  const loadLatest = (): void => {
+    const readingGeneration = ++generation;
+    void loadSettingsWithRetry()
+      .then((settings) => {
+        if (active && readingGeneration === generation) return listener(settings);
+      })
+      .catch((error: unknown) => {
+        if (!active || readingGeneration !== generation) return;
+        console.error("Einstellungen konnten nicht geladen oder angewendet werden.", error);
+      });
+  };
 
   const handleChange = (
     changes: Record<string, StorageChange>,
@@ -281,16 +323,14 @@ export function subscribeToSettings(
       return;
     }
 
-    void loadSettingsWithRetry()
-      .then(listener)
-      .catch((error: unknown) => {
-        console.error(
-          "Einstellungen konnten nach einer Speicheränderung nicht neu geladen werden.",
-          error
-        );
-      });
+    loadLatest();
   };
 
   api.storage.onChanged.addListener(handleChange);
-  return () => api.storage.onChanged.removeListener(handleChange);
+  if (options.initial) loadLatest();
+  return () => {
+    active = false;
+    generation += 1;
+    api.storage.onChanged.removeListener(handleChange);
+  };
 }

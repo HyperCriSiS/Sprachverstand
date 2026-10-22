@@ -2,9 +2,17 @@ import type { Rule } from "../core/rule";
 import { binnenIPluralRule } from "./binnen-i";
 import { doubleFormsRule } from "./double-forms";
 import { explicitPronounsRule } from "./explicit-pronouns";
+import { loanwordPersonFormsRule } from "./loanword-person-forms";
+import {
+  inflectedStemPluralRule,
+  inflectedStemSingularRule
+} from "./inflected-stem-markers";
 import { jobAdSuffixesRule } from "./job-ad-suffixes";
 import { knownPluralSeparatorsRule } from "./known-plural-separators";
 import { mappedPluralSeparatorsRule } from "./mapped-plural-separators";
+import { markedDativePluralRule } from "./marked-dative-plural";
+import { markerSourceRepairsRule } from "./marker-source-repairs";
+import { nestedCompoundPluralsRule } from "./nested-compound-plurals";
 import { neutralPersonTermsRule } from "./neutral-person-terms";
 import { salutationParticiplesRule } from "./salutation-participles";
 import { singularContextRule } from "./singular-context";
@@ -20,6 +28,9 @@ import { titleAbbreviationsRule } from "./title-abbreviations";
 import { unmarkedSingularRule } from "./unmarked-singular";
 
 export const defaultRules: readonly Rule[] = [
+  loanwordPersonFormsRule,
+  markerSourceRepairsRule,
+  nestedCompoundPluralsRule,
   singularContextRule,
   specialSingularFormsRule,
   substantivizedAdjectivesRule,
@@ -27,14 +38,17 @@ export const defaultRules: readonly Rule[] = [
   additionalPersonSingularRule,
   specialGenderFormsRule,
   singularDoubleFormsRule,
+  inflectedStemSingularRule,
   explicitPronounsRule,
   titleAbbreviationsRule,
   salutationParticiplesRule,
   neutralPersonTermsRule,
   doubleFormsRule,
+  markedDativePluralRule,
   additionalPersonPluralRule,
   knownPluralSeparatorsRule,
   mappedPluralSeparatorsRule,
   binnenIPluralRule,
+  inflectedStemPluralRule,
   jobAdSuffixesRule
 ];

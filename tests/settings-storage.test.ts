@@ -1,17 +1,26 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionApi, StorageChange } from "../src/browser/api";
 import { defaultSettings, type Settings } from "../src/settings/defaults";
-import { loadSettings, saveSettings } from "../src/settings/storage";
+import {
+  loadSettings,
+  loadSettingsWithRetry,
+  saveSettings,
+  subscribeToSettings
+} from "../src/settings/storage";
 
 class MemoryStorageArea {
   readonly values = new Map<string, unknown>();
   failReads = false;
+  remainingReadFailures = 0;
   failWrites = false;
 
   async get(
     keys?: string | readonly string[] | Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    if (this.failReads) {
+    if (this.failReads || this.remainingReadFailures > 0) {
+      if (this.remainingReadFailures > 0) {
+        this.remainingReadFailures -= 1;
+      }
       throw new Error("Speicher nicht verfügbar");
     }
 
@@ -53,35 +62,38 @@ function settings(overrides: Partial<Settings> = {}): Settings {
   return { ...defaultSettings, ...overrides };
 }
 
+type StorageListener = (
+  changes: Record<string, StorageChange>,
+  areaName: string
+) => void;
+
 let local: MemoryStorageArea;
 let sync: MemoryStorageArea;
+let storageListeners: Set<StorageListener>;
 
 beforeEach(() => {
   local = new MemoryStorageArea();
   sync = new MemoryStorageArea();
-  const listeners = new Set<(
-    changes: Record<string, StorageChange>,
-    areaName: string
-  ) => void>();
+  storageListeners = new Set<StorageListener>();
   const api = {
     storage: {
       local,
       sync,
       onChanged: {
-        addListener: (
-          listener: typeof listeners extends Set<infer T> ? T : never
-        ) => {
-          listeners.add(listener);
+        addListener: (listener: StorageListener) => {
+          storageListeners.add(listener);
         },
-        removeListener: (
-          listener: typeof listeners extends Set<infer T> ? T : never
-        ) => {
-          listeners.delete(listener);
+        removeListener: (listener: StorageListener) => {
+          storageListeners.delete(listener);
         }
       }
     }
   } as unknown as ExtensionApi;
   (globalThis as typeof globalThis & { browser?: ExtensionApi }).browser = api;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("Einstellungsspeicher", () => {
@@ -115,6 +127,38 @@ describe("Einstellungsspeicher", () => {
     expect(sync.values.get("sync.activation")).toBe(false);
     expect(sync.values.get("sync.protected-terms")).toEqual(["Privat"]);
     expect(sync.values.has("sync.excluded-domains")).toBe(false);
+  });
+
+  it("synchronisiert Arbeitsmodus und Domainliste gemeinsam", async () => {
+    await saveSettings(
+      settings({
+        excludedDomains: ["allowed.example"],
+        domainListMode: "include",
+        syncCategoryIds: ["excluded-domains"]
+      })
+    );
+
+    expect(sync.values.get("sync.excluded-domains")).toEqual({
+      mode: "include",
+      domains: ["allowed.example"]
+    });
+
+    await local.set({ settings: defaultSettings });
+    const loaded = await loadSettings();
+    expect(loaded.domainListMode).toBe("include");
+    expect(loaded.excludedDomains).toEqual(["allowed.example"]);
+  });
+
+  it("liest ältere synchronisierte Domain-Arrays weiterhin als Ausschlussliste", async () => {
+    await local.set({ settings: defaultSettings });
+    await sync.set({
+      "sync.selection": ["excluded-domains"],
+      "sync.excluded-domains": ["legacy.example"]
+    });
+
+    const loaded = await loadSettings();
+    expect(loaded.domainListMode).toBe("exclude");
+    expect(loaded.excludedDomains).toEqual(["legacy.example"]);
   });
 
   it("synchronisiert die Untertiteloption zusammen mit den Textoptionen", async () => {
@@ -197,6 +241,65 @@ describe("Einstellungsspeicher", () => {
     expect(local.values.get("settings")).toEqual(value);
   });
 
+  it("behält lokale Werte bei expliziter Synchronisierungsabwahl", async () => {
+    await local.set({
+      settings: settings({
+        protectedTerms: ["Alter Wert"],
+        syncCategoryIds: ["protected-terms"]
+      })
+    });
+    await sync.set({
+      "sync.selection": ["protected-terms"],
+      "sync.protected-terms": ["Veralteter Sync-Wert"]
+    });
+
+    const neu = settings({
+      protectedTerms: ["Nur lokal"],
+      syncCategoryIds: []
+    });
+    await saveSettings(neu);
+
+    expect(await loadSettings()).toEqual(neu);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+    expect(sync.values.get("sync.selection")).toEqual([]);
+  });
+
+  it("behält lokale Änderungen trotz fehlgeschlagener Sync-Schreiboperation", async () => {
+    await local.set({
+      settings: settings({
+        protectedTerms: ["Alt"],
+        syncCategoryIds: ["protected-terms"]
+      })
+    });
+    await sync.set({
+      "sync.selection": ["protected-terms"],
+      "sync.protected-terms": ["Veraltet"]
+    });
+
+    sync.failWrites = true;
+    const neu = settings({
+      protectedTerms: ["Neu und lokal"],
+      syncCategoryIds: []
+    });
+    await expect(saveSettings(neu)).rejects.toThrow(/lokal gespeichert/u);
+
+    expect(await loadSettings()).toEqual(neu);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+  });
+
+  it("übernimmt nach bestätigtem Sync-Abschluss wieder entfernte Änderungen", async () => {
+    const neu = settings({
+      protectedTerms: ["Synchronisiert"],
+      syncCategoryIds: ["protected-terms"]
+    });
+    await saveSettings(neu);
+    expect(local.values.has("settings.sync-local-override")).toBe(false);
+
+    await sync.set({ "sync.protected-terms": ["Von anderem Gerät"] });
+    const loaded = await loadSettings();
+    expect(loaded.protectedTerms).toEqual(["Von anderem Gerät"]);
+  });
+
   it("weist zu große Synchronisierungskategorien vor dem Speichern zurück", async () => {
     const replacements = Array.from({ length: 100 }, (_, index) => ({
       source: `Quelle ${index} ${"x".repeat(90)}`,
@@ -212,5 +315,46 @@ describe("Einstellungsspeicher", () => {
       )
     ).rejects.toThrow(/sichere Limit/u);
     expect(local.values.size).toBe(0);
+  });
+
+  it("erholt sich beim Laden von transienten lokalen Speicherfehlern", async () => {
+    vi.useFakeTimers();
+    const value = settings({
+      enabled: false,
+      protectedTerms: ["Nach Retry"]
+    });
+    local.values.set("settings", value);
+    local.remainingReadFailures = 2;
+
+    const loading = loadSettingsWithRetry();
+    await vi.runAllTimersAsync();
+
+    await expect(loading).resolves.toEqual(value);
+    expect(local.remainingReadFailures).toBe(0);
+  });
+
+  it("lädt nach einer Speicheränderung auch nach einem transienten Fehler neu", async () => {
+    vi.useFakeTimers();
+    const listener = vi.fn();
+    const unsubscribe = subscribeToSettings(listener);
+    const value = settings({
+      enabled: false,
+      protectedTerms: ["Aktualisiert"]
+    });
+    local.values.set("settings", value);
+    local.remainingReadFailures = 1;
+
+    for (const storageListener of storageListeners) {
+      storageListener(
+        { settings: { newValue: value } },
+        "local"
+      );
+    }
+
+    await vi.runAllTimersAsync();
+
+    expect(listener).toHaveBeenCalledWith(value);
+    unsubscribe();
+    expect(storageListeners.size).toBe(0);
   });
 });
