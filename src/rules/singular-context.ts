@@ -6,9 +6,11 @@ import {
   mapKnownSingular
 } from "./known-plural-separators";
 import {
+  mapMappedPlural,
   mapMappedSingular,
   type GrammaticalCase
 } from "./person-lexicon";
+import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
 
@@ -358,11 +360,11 @@ const genitiveFeminineSeparatorPattern = prepositionalSeparatorPattern(genitiveP
 // `zur` is `zu der`: `zur Erzieher*in` / `zur ErzieherIn` -> `zum Erzieher`
 // (before: `zur Erzieher`). Pairs like `zum/zur` stay with the pair rules.
 const contractedZurSeparatorPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
   "gu"
 );
 const contractedZurBinnenIPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase}\p{Ll})In${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)(${nounBase}\p{Ll})In${singularPhraseEnd}`,
   "gu"
 );
 const commonFiniteVerbs = [
@@ -490,8 +492,33 @@ function mapSingular(
   return (
     mapMappedSingular(base, grammaticalCase) ??
     mapKnownSingular(base, grammaticalCase) ??
-    (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base))
+    (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base)) ??
+    singularFromStrongPlural(base, grammaticalCase)
   );
+}
+
+// Nouns known only to the plural or supplementary lexicon (`Operateur`,
+// `Psychoanalytiker`): the case forms follow from singular and plural.
+// Plural = singular or singular + -e: strong, genitive -s. Singular on -e
+// with plural -n: weak, -n in every oblique case. Otherwise only the
+// nominative (`Professoren` is strong, `Assistenten` weak).
+function singularFromStrongPlural(
+  base: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  const singular = mapSupplementalSingular(base) ??
+    (mapMappedPlural(base)?.toLocaleLowerCase(locale) === base.toLocaleLowerCase(locale) ||
+      mapMappedPlural(base)?.toLocaleLowerCase(locale) === `${base.toLocaleLowerCase(locale)}e`
+      ? base : undefined);
+  if (!singular) return undefined;
+  if (grammaticalCase === "nominative") return singular;
+  const plural = (mapSupplementalPlural(base) ?? mapMappedPlural(base))?.toLocaleLowerCase(locale);
+  const lowerSingular = singular.toLocaleLowerCase(locale);
+  if (plural === lowerSingular || plural === `${lowerSingular}e`) {
+    return grammaticalCase === "genitive" ? `${singular}s` : singular;
+  }
+  if (lowerSingular.endsWith("e") && plural === `${lowerSingular}n`) return `${singular}n`;
+  return undefined;
 }
 
 // `der / die Nutzer*in`, `der/ die …`, `eine oder einen Mitarbeiter*in`:
@@ -935,7 +962,9 @@ function transformContractedZur(input: string, pattern: RegExp): TransformResult
       const noun = mapSingular(base, "dative");
       if (!noun) return match;
       replacements += 1;
-      return applyTokenCase(zur, "zum") + whitespace + noun;
+      // `zur` becomes `zum`; `zum`, `vom`, `beim` already are dative masculine.
+      const contracted = zur.toLocaleLowerCase(locale) === "zur" ? applyTokenCase(zur, "zum") : zur;
+      return contracted + whitespace + noun;
     }
   );
   return { text, replacements };

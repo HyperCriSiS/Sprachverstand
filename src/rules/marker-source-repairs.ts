@@ -30,6 +30,46 @@ function isKnownStem(stem: string): boolean {
   return (mapKnownPlural(stem) ?? mapMappedPlural(stem)) !== undefined;
 }
 
+// The inflected masculine form before the marker: `zum/r Assistenten/in`,
+// `Medizinpädagoge/-in`, `Rechtssekretäre/innen`, `Patienten*innen`. It is
+// written back to the stem form (`Assistent/in`, `Rechtssekretär/innen`)
+// only when the lexicon's masculine plural of that stem is exactly the
+// written form (or its dative -n), so the regular rules decide the case.
+const inflectedMarkerPattern =
+  /(?<![\p{L}\p{M}_])(\p{Lu}[\p{L}\p{M}’'-]*?\p{Ll})([:*_·•]|\/-?)(innen|in)(?![\p{L}\p{M}_])/gu;
+// A singular needs a determiner or preposition before it (up to two
+// attributes); without one its case is open (`Fotografen*in/Videografen*in`).
+const singularContextBefore =
+  /(?:^|\s)(?:\S*[\/*:_·]\S*|zum|zur|vom|beim|im|am|als|dem|den|des|einem|einen|eines|ein|der|die|eine|einer|mit|von|bei|zu|für)\s+(?:[\p{L}\p{M}*:_\/·-]+\s+){0,2}$/iu;
+
+function stemForInflected(word: string): string | undefined {
+  const lower = word.toLocaleLowerCase("de-DE");
+  for (const cut of [2, 1]) {
+    const stem = word.slice(0, -cut);
+    if (stem.length < 3) continue;
+    const plural = (mapMappedPlural(stem) ?? mapKnownPlural(stem))?.toLocaleLowerCase("de-DE");
+    if (!plural || plural === stem.toLocaleLowerCase("de-DE")) continue;
+    if (plural === lower || `${plural}n` === lower) return stem;
+  }
+  return undefined;
+}
+
+function repairInflectedMarkers(input: string): TransformResult {
+  let replacements = 0;
+  const text = input.replace(inflectedMarkerPattern,
+    (match: string, word: string, separator: string, ending: string, offset: number, source: string) => {
+      if (isKnownStem(word)) return match;
+      if (ending === "in" && !singularContextBefore.test(source.slice(Math.max(0, offset - 80), offset))) return match;
+      const stem = stemForInflected(word);
+      if (!stem) return match;
+      replacements += 1;
+      // A plural is already inflected by the author (`Ärzten/innen` keeps
+      // its dative); a singular goes through the case rules.
+      return ending === "innen" ? word : stem + separator + ending;
+    });
+  return {text, replacements};
+}
+
 function transformMarkerSourceRepairs(input: string): TransformResult {
   let replacements = 0;
   if (/[:*_·•]e-/u.test(input)) {
@@ -38,6 +78,11 @@ function transformMarkerSourceRepairs(input: string): TransformResult {
         replacements += 1;
         return `${first}-${second}${separator}`;
       });
+  }
+  if (/\p{Ll}(?:[:*_·•]|\/-?)in/u.test(input)) {
+    const inflected = repairInflectedMarkers(input);
+    input = inflected.text;
+    replacements += inflected.replacements;
   }
   if (!/in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u.test(input)) return {text: input, replacements};
   const repair = (match: string, stem: string, separator: string, ending: string): string => {
