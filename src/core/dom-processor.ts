@@ -219,7 +219,9 @@ const protectionAttributeNames = new Set([
   "contenteditable",
   "aria-hidden",
   "role",
-  "data-sprachverstand-ignore"
+  "data-sprachverstand-ignore",
+  // Removing an option's value makes its text the submitted value again.
+  "value"
 ]);
 const subtitleClassificationAttributeSet =
   new Set<string>(subtitleClassifierAttributeNames);
@@ -1589,6 +1591,10 @@ export class DomProcessor {
             if (record.attributeName !== "aria-label") {
               continue;
             }
+          }
+          if (record.attributeName === "value" && record.target.tagName !== "OPTION") {
+            // Frameworks mirror input values into the attribute while typing.
+            continue;
           }
           if (protectionAttributeNames.has(record.attributeName)) {
             // Schutzstatuswechsel betreffen ganze Unterbäume.
