@@ -126,6 +126,8 @@ addDeterminer("einem", "r", "einem", "dative");
 addDeterminer("dem", "r", "dem", "dative");
 addDeterminer("der", "m", "dem", "dative");
 addDeterminer("des", "r", "des", "genitive");
+// `der/s Patient/in`: der/des written from the feminine form.
+addDeterminer("der", "s", "des", "genitive");
 addDeterminer("eines", "r", "eines", "genitive");
 addDeterminer("einer", "m", "einem", "dative");
 addDeterminer("jeder", "m", "jedem", "dative");
@@ -751,6 +753,13 @@ function transformAttributivePhrases(
       if (pattern === attributiveBinnenISingularPattern() && !hatSichtbaresBinnenI(match)) return match;
       const form = determinerForms.get(determiner.toLocaleLowerCase(locale));
       if (!form) {
+        return match;
+      }
+      // A capitalized unmarked word is an attribute only with a German
+      // adjective suffix (`Wissenschaftliche`); `eine:n Office Manager:in`
+      // has an English noun there.
+      if (!markerEnding && /^\p{Lu}/u.test(adjective) &&
+          !/(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)(?:e|en|er|es|em)?$/u.test(adjective)) {
         return match;
       }
 

@@ -52,7 +52,9 @@ const sentenceStartPattern = new RegExp(
   "gu"
 );
 const copulaPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:${copulas})\s+(?:\p{Ll}+\s+){0,2})(${determiner})(\s+)${attributes}${marked}${end}`,
+  // Only adverbs between copula and phrase; a preposition (`ist für die …`)
+  // governs its own case.
+  String.raw`((?<![\p{L}\p{M}])(?:${copulas})\s+(?:(?:auch|nun|jetzt|immer|noch|schon|bereits|ebenfalls|zudem|hier|dort|nicht|stets|wieder|weiterhin)\s+){0,2})(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
 const accusativePattern = new RegExp(

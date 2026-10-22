@@ -38,7 +38,7 @@ function isKnownStem(stem: string): boolean {
 const inflectedMarkerPattern =
   /(?<![\p{L}\p{M}_])(\p{Lu}[\p{L}\p{M}’'-]*?\p{Ll})([:*_·•]|\/-?)(innen|in)(?![\p{L}\p{M}_])/gu;
 const determinerContextBefore =
-  /(?:^|\s)(?:(?:als|zum|zur|vom|beim|im|am|dem|den|des|einem|einen|eines|ein|der|die|eine|einer|jede[mnrs]?|meine?[mnrs]?|deine?[mnrs]?|seine?[mnrs]?|ihre?[mnrs]?|unsere?[mnrs]?)(?:\s*[\/*:_·]\s*-?\p{L}*)?|von der|bei der|zu der)\s+(?:[\p{L}\p{M}*:_\/·-]+\s+){0,2}$/iu;
+  /(?:^|\s)(?:(?:als|zum|zur|vom|beim|im|am|dem|den|des|einem|einen|eines|ein|der|die|eine|einer|jede[mnrs]?|meine?[mnrs]?|deine?[mnrs]?|seine?[mnrs]?|ihre?[mnrs]?|unsere?[mnrs]?)(?:\s*[\/*:_·]\s*-?\p{L}*)?|von der|bei der|zu der)\s+(?:(?:\p{Ll}[\p{L}\p{M}*:_\/·-]*|\p{Lu}[\p{L}\p{M}-]*?(?:e|en|es|em|er)(?:[*:_\/·]-?\p{Ll}{0,2})?)\s+){0,2}$/u;
 // A singular needs a determiner or preposition before it (up to two
 // attributes); without one its case is open (`Fotografen*in/Videografen*in`).
 const singularContextBefore =
