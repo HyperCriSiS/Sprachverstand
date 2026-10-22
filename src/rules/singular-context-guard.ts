@@ -106,6 +106,9 @@ function isAmbiguousDeterminer(token: string): boolean {
 }
 
 const coordinators = new Set(["und", "oder", "bzw.", "sowie"]);
+// Capitalized words with unambiguous noun suffixes (never adjectives).
+const headNounSuffix =
+  /^\p{Lu}[\p{L}\p{M}-]*(?:ung|ungen|ion|ionen|heit|keit|schaft|tät|gang|kurs|tum|nis|ment|ismus)$/u;
 const markedSingularToken = /^[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u;
 
 // Start index of a marked singular directly before `end` (`Hausärzt:in`).
@@ -194,6 +197,12 @@ export function hasAmbiguousSingularDeterminer(
       afterCoordinator = true;
       if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) return false;
       continue;
+    }
+    // `die berufliche Grundbildung Metallbaukonstrukteur/in`, `die Umschulung
+    // Industrieelektriker*in`: a noun right before the title owns the
+    // determiner further left; the title itself stands without one.
+    if (headNounSuffix.test(token)) {
+      return false;
     }
     if (isAmbiguousDeterminer(token)) {
       return true;

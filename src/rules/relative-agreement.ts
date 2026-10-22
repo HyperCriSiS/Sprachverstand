@@ -22,7 +22,11 @@ const markBefore = new RegExp(String.raw`(?<=\p{L}${markedEnding})(?=${relativeA
 const markedPronoun = new RegExp(String.raw`([^${mark}]{0,6})${mark}((?:\s+\p{Ll}[\p{L}\p{M}-]*){0,2},\s+)(deren|die|der)(\s+)([\p{L}\p{M}]*)`, "gu");
 // `Die Ausbildung zum/zur Krankenpflegehelfer/in, die wir anbieten`: after
 // `zum`/`zur`/`als` the noun names a role; the clause belongs to the post.
-const roleTitleBefore = /(?:^|\s)(?:zum|zur|als|zum\/zur|zur\/zum)\s+(?:\p{Ll}[\p{L}\p{M}*:_\/·-]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/iu;
+// `die Rückfrage de*r Kolleg*in, die war gut`: a genitive attribute after a
+// noun; the clause usually continues the head noun, not the person.
+const genitiveAttributeBefore =
+  /\p{Lu}\p{Ll}[\p{L}\p{M}-]*\s+(?:der|de[:*_·•]r?|einer|eine?[:*_·•]e?r|ihrer|ihre[:*_·•]r|seiner|seine[:*_·•]r)\s+(?:\p{Ll}[\p{L}\p{M}*:_·•]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/u;
+const roleTitleBefore =/(?:^|\s)(?:zum|zur|als|zum\/zur|zur\/zum)\s+(?:\p{Ll}[\p{L}\p{M}*:_\/·-]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/iu;
 const stillMarked = new RegExp(String.raw`${markedEnding}$`, "u");
 // `es` is left out: in `die es sich leisten kann` the relative is the subject.
 const subjectPronouns = new Set(["ich", "du", "er", "wir", "ihr", "man"]);
@@ -46,7 +50,8 @@ export function withRelativeAgreement(
 ): TransformResult {
   if (!/,\s+(?:deren|die|der)\s/u.test(input)) return transform(input);
   const marked = input.replace(markBefore, (_empty: string, offset: number) =>
-    roleTitleBefore.test(input.slice(Math.max(0, offset - 80), offset)) ? "" : mark);
+    roleTitleBefore.test(input.slice(Math.max(0, offset - 80), offset)) ||
+      genitiveAttributeBefore.test(input.slice(Math.max(0, offset - 80), offset)) ? "" : mark);
   if (marked === input) return transform(input);
   const result = transform(marked);
   let replacements = result.replacements;

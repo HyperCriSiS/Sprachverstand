@@ -115,3 +115,77 @@ export function normalizeDeterminerPairs(input: string): TransformResult {
     });
   return {text, replacements};
 }
+
+/*
+ * Determiners carrying the marker themselves (`eine*n feste*n und
+ * nahbare*n Ansprechpartner*in`, `von eine:r weiteren Mitarbeiter:in`,
+ * `Rückfrage de*r Kolleg*in`, `Einweisungsschein Ihre*r Ärzt*in`, `Abwehr
+ * ein:er übermächtigen Gegner:in`). An explicit ending gives the case
+ * (-n/-en accusative, -m dative, -s genitive); `-r`/`-er` and a bare `de*`
+ * are read from the word before: a dative preposition gives the dative, a
+ * noun the genitive, otherwise the nominative. Determiner, attributes and
+ * noun are converted together; without a known noun nothing changes.
+ */
+const compactBases = new Map<string, readonly [nominative: string, accusative: string, dative: string, genitive: string, strong: boolean]>([
+  ["eine", ["ein", "einen", "einem", "eines", true]],
+  ["ein", ["ein", "einen", "einem", "eines", true]],
+  ["keine", ["kein", "keinen", "keinem", "keines", true]],
+  ["de", ["der", "den", "dem", "des", false]],
+  ["meine", ["mein", "meinen", "meinem", "meines", true]],
+  ["deine", ["dein", "deinen", "deinem", "deines", true]],
+  ["seine", ["sein", "seinen", "seinem", "seines", true]],
+  ["ihre", ["ihr", "ihren", "ihrem", "ihres", true]],
+  ["unsere", ["unser", "unseren", "unserem", "unseres", true]]
+]);
+const dativePrepositions = new Set(["mit", "von", "bei", "zu", "aus", "nach", "seit", "gegenüber", "samt", "nebst", "außer"]);
+const compactAttribute = String.raw`(?:\p{L}[\p{L}\p{M}-]*(?:[:*_·•]n)?|\p{Lu}{2,})`;
+const compactPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(eine|ein|keine|de|meine|deine|seine|ihre|unsere)([:*_·•])(en|er|n|r|m|s)?(\s+)((?:${compactAttribute}(?:\s+und\s+${compactAttribute})?\s+){0,2})(\p{Lu}[\p{L}\p{M}’'-]*?)(?:[:*_·•]in)(?![\p{L}\p{M}])`,
+  "giu"
+);
+
+function caseFromEnding(ending: string | undefined, before: string): GrammaticalCase {
+  const lower = ending?.toLocaleLowerCase(locale);
+  if (lower === "n" || lower === "en") return "accusative";
+  if (lower === "m") return "dative";
+  if (lower === "s") return "genitive";
+  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(before)?.[1] ?? "";
+  if (dativePrepositions.has(previous.toLocaleLowerCase(locale))) return "dative";
+  // A noun right before (not a sentence start): genitive attribute.
+  if (/^\p{Lu}\p{Ll}/u.test(previous) && !/[.!?:]\s*$/u.test(before.slice(0, -previous.length - 1)) &&
+      before.trim().length > previous.length) return "genitive";
+  return "nominative";
+}
+
+function compactAttributeForm(word: string, grammaticalCase: GrammaticalCase, strong: boolean): string {
+  if (word === "und" || /^\p{Lu}{2,}$/u.test(word)) return word;
+  const marked = /^(.*?)([:*_·•])n$/u.exec(word);
+  const plain = marked ? marked[1]! : word;
+  if (!/e$/u.test(plain)) return word;
+  if (grammaticalCase === "nominative") return strong ? `${plain}r` : plain;
+  return `${plain}n`;
+}
+
+export function normalizeCompactDeterminers(
+  input: string,
+  mapNoun: (base: string, grammaticalCase: GrammaticalCase) => string | undefined
+): TransformResult {
+  if (!/(?:eine?|keine|de|meine|deine|seine|ihre|unsere)[:*_·•]/iu.test(input)) return {text: input, replacements: 0};
+  let replacements = 0;
+  const text = input.replace(compactPattern,
+    (match: string, base: string, _marker: string, ending: string | undefined, space: string,
+      attributes: string, noun: string, offset: number, source: string) => {
+      const forms = compactBases.get(base.toLocaleLowerCase(locale));
+      if (!forms) return match;
+      const grammaticalCase = caseFromEnding(ending, source.slice(Math.max(0, offset - 60), offset));
+      const masculine = noun && mapNoun(noun, grammaticalCase);
+      if (!masculine) return match;
+      const index = {nominative: 0, accusative: 1, dative: 2, genitive: 3}[grammaticalCase];
+      const determiner = applyCase(base, String(forms[index]));
+      const strong = forms[4] === true;
+      const inflected = attributes.replace(/\S+/gu, (word) => compactAttributeForm(word, grammaticalCase, strong));
+      replacements += 1;
+      return determiner + space + inflected + masculine;
+    });
+  return {text, replacements};
+}

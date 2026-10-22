@@ -53,15 +53,19 @@ describe("Begleitwortpaare und Singularkontext", () => {
     ["eine weitere Mitarbeiter:in", "eine weitere Mitarbeiter:in"],
     ["als eine weitere Mitarbeiter:in", "als eine weitere Mitarbeiter:in"],
     ["einer Patient*in", "einer Patient*in"],
-    // Markierte Begleitwörter sind keine Adjektive.
-    ["[4] Eine*r Beamt*in eines LKA,", "[4] Eine*r Beamt*in eines LKA,"],
-    ["je eine:r Hundeführer:in", "je eine:r Hundeführer:in"],
-    ["sprich mit deine*r Bürgermeister*in.", "sprich mit deine*r Bürgermeister*in."],
-    ["die Rückfrage de*r Kolleg*in", "die Rückfrage de*r Kolleg*in"],
     // Kein Nominativ nach Präposition oder markiertem Wort.
     ["Ausbildung zur/zum Anästhesietechnische*r Assistent*in", "Ausbildung zur/zum Anästhesietechnische*r Assistent*in"],
     ["mit jede:r andere:r Kapitalist:in", "mit jede:r andere:r Kapitalist:in"],
     // Nicht auflösbares markiertes Adjektiv: Nomen nicht allein umwandeln.
     ["mit engagierte*n Mitarbeiter*in", "mit engagierte*n Mitarbeiter*in"]
   ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
+
+  // Markierte Begleitwörter werden mit Nomen und Kasus aufgelöst
+  // (Gegenprüfung 22.10.2026); vorher blieben sie zum Schutz stehen.
+  it.each([
+    ["[4] Eine*r Beamt*in eines LKA,", "[4] Ein Beamter eines LKA,"],
+    ["je eine:r Hundeführer:in", "je ein Hundeführer"],
+    ["sprich mit deine*r Bürgermeister*in.", "sprich mit deinem Bürgermeister."],
+    ["die Rückfrage de*r Kolleg*in", "die Rückfrage des Kollegen"]
+  ])("löst auf: %s", (input, expected) => expect(t(input)).toBe(expected));
 });
