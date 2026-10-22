@@ -55,6 +55,8 @@ compact("die", "en", "den", "accusative");
 compact("zum", "zur", "zum", "dative");
 compact("zur", "zum", "zum", "dative");
 compact("zum", "r", "zum", "dative");
+compact("zu", "r", "zum", "dative");
+compact("zu", "m", "zum", "dative");
 compact("die", "n", "den", "accusative");
 compact("der", "m", "dem", "dative");
 compact("dem", "r", "dem", "dative");
@@ -71,13 +73,15 @@ compact("jede", "r", "jeder", "nominative");
 compact("jede", "n", "jeden", "accusative");
 compact("jede", "m", "jedem", "dative");
 
-const separator = String.raw`(?:\s*\/\s*|\s+(?:oder|bzw\.|und|beziehungsweise)\s+)`;
+const separator = String.raw`(?:\s*\/\s*|[:*_·•]|\s+(?:oder|bzw\.|und|beziehungsweise)\s+)`;
 // Capitalized attributes in job titles (`Operationstechnischen`) only with
 // an adjective ending.
-const attribute = String.raw`(?:[\p{Ll}][\p{L}\p{M}]*|\p{Lu}[\p{Ll}\p{M}-]*(?:e|en|er|es|em))(?:(?:\/-?|[:*_·•])[\p{Ll}]{1,4})?`;
+// The marker on an attribute carries an adjective ending (`/r`, `:n`, `/-r`),
+// never `in`, so a marked noun (`Melder:in`) is no attribute.
+const attribute = String.raw`(?!(?:die|der|den|dem|des|eine|einer|einen|einem|eines|ein)\s)(?:[\p{Ll}][\p{L}\p{M}]*|\p{Lu}[\p{Ll}\p{M}-]*(?:e|en|es|em))(?:(?:\/-?|[:*_·•])(?:e|en|er|es|em|r|n|m|s))?(?![\p{L}\p{M}])`;
 const markedSingular = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:(?:\/-?|[:*_·•])in|\(-?in\)|\p{Ll}In)`;
 const pairPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator})([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(${markedSingular})(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator})([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(${markedSingular})(?![\p{L}\p{M}])(?:(\s+(?:oder|und|bzw\.)\s+)(${markedSingular})(?![\p{L}\p{M}]))?`,
   "gu"
 );
 
@@ -107,24 +111,37 @@ export function normalizeDeterminerPairs(
   input: string,
   mapNoun?: (base: string, grammaticalCase: GrammaticalCase) => string | undefined
 ): TransformResult {
-  if (!/(?:\/|oder|bzw\.|und|beziehungsweise)/u.test(input)) return {text: input, replacements: 0};
+  if (!/(?:[\/:*_·•]|oder|bzw\.|und|beziehungsweise)/u.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
+  const baseOf = (noun: string) => /^(.*?)(?:(?:\/-?|[:*_·•])in|\(-?in\))$/u.exec(noun)?.[1] ??
+    /^(.*\p{Ll})In$/u.exec(noun)?.[1];
   const text = input.replace(pairPattern,
     (match: string, left: string, separator: string, right: string, space: string, attributes: string,
-      noun: string) => {
+      noun: string, coordinator: string | undefined, secondNoun: string | undefined) => {
       const form = pairs.get(`${left.toLocaleLowerCase(locale)}|${right.toLocaleLowerCase(locale)}`);
       if (!form) return match;
-      // A compact pair directly before the noun (`der/die Ärzt/in`) is resolved
-      // by the determiner table itself; only `(in)` forms need the reduction.
-      if (!attributes && separator === "/" && !/\(-?in\)$/u.test(noun)) return match;
+      // `zu:r` has no other rule; a compact determiner pair directly before
+      // the noun (`der/die Ärzt/in`) is resolved by the determiner table itself,
+      // only `(in)` forms need the reduction there.
+      const contractedZu = left.toLocaleLowerCase(locale) === "zu";
+      // Marker-separated pairs (`jede:r`, `der:die`) keep the determiner
+      // table, which reads their case from the context.
+      if (/^[:*_·•]$/u.test(separator) && !contractedZu) return match;
+      if (!attributes && !contractedZu && !/\s/u.test(separator) && !/\(-?in\)$/u.test(noun)) return match;
       replacements += 1;
       const inflected = attributes.replace(/\S+/gu, (word) => inflectAttribute(word, form));
       // With attributes between, the noun is inflected here too; later rules
       // only see a determiner directly before the noun (`zum … Assistenten`).
-      const base = /^(.*?)(?:(?:\/-?|[:*_·•])in|\(-?in\))$/u.exec(noun)?.[1] ??
-        /^(.*\p{Ll})In$/u.exec(noun)?.[1];
-      const masculineNoun = attributes && base && mapNoun ? mapNoun(base, form.grammaticalCase) : undefined;
-      return applyCase(left, form.masculine) + space + inflected + (masculineNoun ?? noun);
+      const convert = attributes || contractedZu;
+      const base = baseOf(noun);
+      const masculineNoun = convert && base && mapNoun ? mapNoun(base, form.grammaticalCase) : undefined;
+      // A coordinated second noun shares the case (`den oder die behandelnde/n
+      // Arzt*in oder Psycholog*in`).
+      const secondBase = secondNoun ? baseOf(secondNoun) : undefined;
+      const secondMasculine = convert && secondBase && mapNoun
+        ? mapNoun(secondBase, form.grammaticalCase) : undefined;
+      return applyCase(left, form.masculine) + space + inflected + (masculineNoun ?? noun) +
+        (coordinator && secondNoun ? coordinator + (secondMasculine ?? secondNoun) : "");
     });
   return {text, replacements};
 }
@@ -151,7 +168,9 @@ const compactBases = new Map<string, readonly [nominative: string, accusative: s
   ["unsere", ["unser", "unseren", "unserem", "unseres", true]]
 ]);
 const dativePrepositions = new Set(["mit", "von", "bei", "zu", "aus", "nach", "seit", "gegenüber", "samt", "nebst", "außer"]);
-const compactAttribute = String.raw`(?:\p{L}[\p{L}\p{M}-]*(?:[:*_·•]n)?|\p{Lu}{2,})`;
+// Attributes, brand words (`BRITA`) and truncated compounds (`Bildungs-`);
+// never a determiner (`Eine Welt-…` is a name).
+const compactAttribute = String.raw`(?!(?:eine|einer|einen|einem|eines|ein|die|der|den|dem|des)\s)(?:\p{L}[\p{L}\p{M}-]*(?:[:*_·•](?:n|r))?|\p{Lu}{2,})`;
 const compactPattern = new RegExp(
   String.raw`(?<![\p{L}\p{M}])(eine|ein|keine|de|meine|deine|seine|ihre|unsere)([:*_·•])(en|er|n|r|m|s)?(\s+)((?:${compactAttribute}(?:\s+und\s+${compactAttribute})?\s+){0,2})(\p{Lu}[\p{L}\p{M}’'-]*?)(?:[:*_·•]in)(?![\p{L}\p{M}])`,
   "giu"

@@ -37,6 +37,8 @@ function isKnownStem(stem: string): boolean {
 // written form (or its dative -n), so the regular rules decide the case.
 const inflectedMarkerPattern =
   /(?<![\p{L}\p{M}_])(\p{Lu}[\p{L}\p{M}’'-]*?\p{Ll})([:*_·•]|\/-?)(innen|in)(?![\p{L}\p{M}_])/gu;
+const determinerContextBefore =
+  /(?:^|\s)(?:(?:als|zum|zur|vom|beim|im|am|dem|den|des|einem|einen|eines|ein|der|die|eine|einer|jede[mnrs]?|meine?[mnrs]?|deine?[mnrs]?|seine?[mnrs]?|ihre?[mnrs]?|unsere?[mnrs]?)(?:\s*[\/*:_·]\s*-?\p{L}*)?|von der|bei der|zu der)\s+(?:[\p{L}\p{M}*:_\/·-]+\s+){0,2}$/iu;
 // A singular needs a determiner or preposition before it (up to two
 // attributes); without one its case is open (`Fotografen*in/Videografen*in`).
 const singularContextBefore =
@@ -63,9 +65,16 @@ function repairInflectedMarkers(input: string): TransformResult {
       const stem = stemForInflected(word);
       if (!stem) return match;
       replacements += 1;
-      // A plural is already inflected by the author (`Ärzten/innen` keeps
-      // its dative); a singular goes through the case rules.
-      return ending === "innen" ? word : stem + separator + ending;
+      // A determiner (pair) before a singular: the stem form lets the singular
+      // rules convert the whole phrase (`zum/r … Assistent/in` → „zum …
+      // Assistenten“). Otherwise the author's inflected masculine part stays
+      // and only the marker goes (`Ärzten/innen` keeps its dative,
+      // `anerkannte/n Heilpädagogen/in`).
+      if (ending === "in" &&
+          determinerContextBefore.test(source.slice(Math.max(0, offset - 80), offset))) {
+        return stem + separator + ending;
+      }
+      return word;
     });
   return {text, replacements};
 }
