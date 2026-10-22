@@ -67,3 +67,18 @@ describe("Singular am Anfang eines Inline-Elements", () => {
     expect(dom("<p>Alle <b>Lehrer*innen</b> kommen.</p>")).toBe("Alle Lehrer kommen.");
   });
 });
+
+// Eigenkreationen und Gruppennamen werden wie Personenbezeichnungen
+// umgewandelt (Nutzerentscheidung 22.10.2026); die Schreibung bleibt.
+describe("Eigenkreationen", () => {
+  it.each([
+    ["Werde jetzt InteGREATer:in", "Werde jetzt InteGREATer"],
+    ["InteGREATer:innen sind Vorbilder", "InteGREATer sind Vorbilder"],
+    ["die RosaLila PantherInnen", "die RosaLila Panther"],
+    ["DünenPat:innen - wir tun was!", "DünenPaten - wir tun was!"],
+    ["Von Landwirten zu LandVirt:innen", "Von Landwirten zu LandVirten"],
+    ["Die Brandenburg:innen damals und heute", "Die Brandenburger damals und heute"],
+    // Normale Feminina bleiben.
+    ["Drei Pantherinnen im Zoo", "Drei Pantherinnen im Zoo"]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+});
