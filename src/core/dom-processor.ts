@@ -180,6 +180,15 @@ const maximumTextEditPartitionChars = 8_192;
 const maximumTextPreparationSteps = 256;
 const largeTextTransformThreshold = 8_192;
 
+// Stops after `minimum` element children; never builds a live collection.
+function hasElementChildren(element: Element, minimum: number): boolean {
+  let count = 0;
+  for (let child = element.firstElementChild; child; child = child.nextElementSibling) {
+    if (++count >= minimum) return true;
+  }
+  return false;
+}
+
 // URL and e-mail spans inside natural text stay byte-identical; the rest of
 // the node is processed. Ranges stay sorted and non-overlapping.
 function withTechnicalSpans(
@@ -2479,14 +2488,17 @@ export class DomProcessor {
     value: string
   ): void {
     const parent = node.parentNode;
-    if (offset > 0 && node.isConnected && parent instanceof Element &&
-        parent.childNodes.length === 1) {
+    // Sibling checks instead of `childNodes.length` / `children.item()`: both
+    // materialize a live collection for every edited Text node, which made
+    // this eligibility test cost more than the edit itself.
+    if (offset > 0 && node.previousSibling === null && node.nextSibling === null &&
+        parent instanceof Element && node.isConnected) {
       const boundary = findInlineBoundary(node, blockBoundaryTags);
       const partitions = this.textSafetyScope?.partitions;
       const existing = boundary instanceof Element ? partitions?.get(boundary) : undefined;
       if (boundary instanceof Element &&
           (existing?.parentNode === boundary ||
-            boundary.children.item(minimumPartitionedInlineChildren - 1) !== null)) {
+            hasElementChildren(boundary, minimumPartitionedInlineChildren))) {
         // One temporary final Text per inline boundary invalidates Chromium's
         // eager partial shaping path for the entire synchronous work slice.
         // Every Range stays on its original Text; hundreds of childList
