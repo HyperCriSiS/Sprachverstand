@@ -1,4 +1,5 @@
 import type { Rule, TransformResult } from "../core/rule";
+import { withLeadingContextRule, withRelativeAgreementRule } from "./relative-agreement";
 import {lazyPattern} from "../core/lazy-pattern";
 import {
   mapKnownPlural,
@@ -8,6 +9,7 @@ import {
   mapMappedSingular,
   type GrammaticalCase
 } from "./person-lexicon";
+import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
 
 interface DeterminerForm {
@@ -790,17 +792,25 @@ const nonNounWordsBeforeDer = new Set([
   "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt"
 ]);
 
+// A verb or participle that takes the dative right after the phrase makes
+// `der` a dative object: `(dass die) Umsetzung der Antragsteller:in
+// obliegt` → „Umsetzung dem Antragsteller obliegt“, not the genitive.
+const dativeGoverningAfter = /^[ \t\u00a0]+(?:obliegt|obliegen|oblag|oblagen|zusteht|zustehen|zustand|zukommt|zukommen|zufällt|zufallen|untersteht|unterstehen|unterstellt|vorbehalten|überlassen|übertragen|zugeordnet|gehört|gehören|gebührt|gebühren)(?![p{L}p{M}])/u;
+
 function transformFeminineDerSingulars(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
     feminineDerSingularPattern(),
-    (match: string, previous: string, space: string, adjectives: string, base: string) => {
+    (match: string, previous: string, space: string, adjectives: string, base: string,
+      offset: number, source: string) => {
       if (!hasLowercaseAdjectives(adjectives)) return match;
       const lowerPrevious = previous.toLocaleLowerCase(locale);
       const grammaticalCase: GrammaticalCase | undefined =
-        dativePrepositionSet.has(lowerPrevious)
+        dativePrepositionSet.has(lowerPrevious) ||
+          dativeGoverningAfter.test(source.slice(offset + match.length, offset + match.length + 40))
           ? "dative"
-          : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious)
+          : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious) &&
+              !finiteVerbsBeforeDer.has(lowerPrevious)
             ? "genitive"
             : undefined;
       if (!grammaticalCase) return match;
@@ -1055,7 +1065,7 @@ function transformVerbContext(
   return { text, replacements };
 }
 
-export const singularContextRule: Rule = {
+export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgreementRule({
   id: "singular.explicit-context",
   risk: "safe",
 
@@ -1152,4 +1162,4 @@ export const singularContextRule: Rule = {
         obliqueResult.replacements
     };
   }
-};
+}));

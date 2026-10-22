@@ -1,5 +1,6 @@
 import type {Rule, RuleRisk} from "../core/rule";
-import {markedLeadingCandidate, participleLeadingCandidate} from "./context-candidates";
+import {markedLeadingCandidate, markedSingularLeadingCandidate,
+  participleLeadingCandidate} from "./context-candidates";
 
 function unavailable(): never {
   throw new Error("DOM rule metadata requires the local asynchronous transformer.");
@@ -36,6 +37,11 @@ export const domRuleMetadata: readonly Rule[] = definitions.map(([id, risk]) => 
   id, risk, apply: unavailable,
   ...(id === "salutation.participial-forms" ? {
     leadingContextCandidate: participleLeadingCandidate,
+    applyWithLeadingContext: unavailable
+  } : {}),
+  ...(id === "singular.explicit-context" || id === "singular.unmarked-marker" ? {
+    leadingContextCandidate: markedSingularLeadingCandidate,
+    leadingContextRequiresTrailingWhitespace: true,
     applyWithLeadingContext: unavailable
   } : {}),
   ...(id === "plural.marked-dative-context" ? {

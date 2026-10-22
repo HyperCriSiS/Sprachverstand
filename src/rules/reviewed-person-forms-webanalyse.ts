@@ -610,6 +610,7 @@ const regular: ReadonlyMap<string, readonly [plural: string, weak: boolean]> = n
   ["nachwuchsrodler", ["nachwuchsrodler", false]],
   ["nachwuchstheatergänger", ["nachwuchstheatergänger", false]],
   ["nachwuchswisseschaftler", ["nachwuchswisseschaftler", false]],
+  ["nageldesigner", ["nageldesigner", false]],
   ["namenspatron", ["namenspatrone", false]],
   ["naturalist", ["naturalisten", true]],
   ["naturanimator", ["naturanimatoren", false]],

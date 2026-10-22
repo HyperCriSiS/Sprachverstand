@@ -1,3 +1,5 @@
+import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
+
 const locale = "de-DE";
 const plainAmbiguousDeterminers = new Set([
   "die",
@@ -131,8 +133,9 @@ function isNounOrDativePrepositionBefore(input: string, end: number): boolean {
     .match(/([\p{L}\p{M}-]+)([.!?:;,)"“»]?)$/u);
   if (!previous || previous[2]) return false;
   const word = previous[1] ?? "";
-  return dativePrepositionsBeforeDer.has(word.toLocaleLowerCase(locale)) ||
-    /^\p{Lu}/u.test(word);
+  const lower = word.toLocaleLowerCase(locale);
+  return dativePrepositionsBeforeDer.has(lower) ||
+    (/^\p{Lu}/u.test(word) && !finiteVerbsBeforeDer.has(lower));
 }
 
 export function hasAmbiguousSingularDeterminer(
@@ -154,6 +157,7 @@ export function hasAmbiguousSingularDeterminer(
     return false;
   }
   let afterCoordinator = false;
+  let plainConjunct = false;
   // Only weak adjectives (`der verfolgten`) seen so far between the token
   // and the noun.
   let onlyWeakAdjectives = true;
@@ -178,6 +182,13 @@ export function hasAmbiguousSingularDeterminer(
     if (afterCoordinator && markedSingularToken.test(token)) {
       return hasAmbiguousSingularDeterminer(input, cursor);
     }
+    // `Diese Doppelposition Studierende_r und Mitarbeiter_in`: the first
+    // conjunct is already resolved („Student“). A capitalized word before it
+    // is another noun, so a determiner further left belongs to that noun.
+    if (plainConjunct && /^\p{Lu}[\p{Ll}\p{M}-]+$/u.test(token) && !isAmbiguousDeterminer(token)) {
+      return false;
+    }
+    plainConjunct = afterCoordinator && /^\p{Lu}[\p{Ll}\p{M}-]+$/u.test(token);
     afterCoordinator = false;
     if (coordinators.has(token.toLocaleLowerCase(locale))) {
       afterCoordinator = true;
