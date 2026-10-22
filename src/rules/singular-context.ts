@@ -6,9 +6,13 @@ import {
   mapKnownSingular
 } from "./known-plural-separators";
 import {
+  mapMappedPlural,
   mapMappedSingular,
   type GrammaticalCase
 } from "./person-lexicon";
+import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
+import { transformClauseCase } from "./clause-case";
+import { normalizeCompactDeterminers, normalizeDeterminerPairs } from "./determiner-pairs";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
 
@@ -21,7 +25,7 @@ const locale = "de-DE";
 // Every pattern below requires a singular in/In ending at a word boundary.
 // Plural markers and neutral texts need none of the twelve context scans.
 const singularEndingCandidate = /in(?![\p{L}\p{M}])/iu;
-const separators = [":", "*", "_", "/", "·", "•", ".", "’", "‘"] as const;
+const separators = [":", "*", "_", "/", "/-", "·", "•", ".", "’", "‘"] as const;
 const determinerForms = new Map<string, DeterminerForm>();
 
 function addDeterminer(
@@ -122,10 +126,19 @@ addDeterminer("einem", "r", "einem", "dative");
 addDeterminer("dem", "r", "dem", "dative");
 addDeterminer("der", "m", "dem", "dative");
 addDeterminer("des", "r", "des", "genitive");
+// `der/s Patient/in`: der/des written from the feminine form.
+addDeterminer("der", "s", "des", "genitive");
 addDeterminer("eines", "r", "eines", "genitive");
 addDeterminer("einer", "m", "einem", "dative");
 addDeterminer("jeder", "m", "jedem", "dative");
 addDeterminer("einer", "s", "eines", "genitive");
+// `dem*er Gewinner*in`, `einem/-er Stellvertreter*in`, `Ihres:r Arbeitgeber:in`.
+addDeterminer("dem", "er", "dem", "dative");
+addDeterminer("einem", "er", "einem", "dative");
+for (const base of ["mein", "dein", "sein", "ihr", "unser", "eur"]) {
+  addDeterminer(`${base}es`, "r", `${base}es`, "genitive");
+  addDeterminer(`${base}em`, "r", `${base}em`, "dative");
+}
 
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
@@ -358,11 +371,11 @@ const genitiveFeminineSeparatorPattern = prepositionalSeparatorPattern(genitiveP
 // `zur` is `zu der`: `zur Erzieher*in` / `zur ErzieherIn` -> `zum Erzieher`
 // (before: `zur Erzieher`). Pairs like `zum/zur` stay with the pair rules.
 const contractedZurSeparatorPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)((?:\p{L}[\p{L}\p{M}]*en\s+){0,2})(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
   "gu"
 );
 const contractedZurBinnenIPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur)(\s+)(${nounBase}\p{Ll})In${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)((?:\p{L}[\p{L}\p{M}]*en\s+){0,2})(${nounBase}\p{Ll})In${singularPhraseEnd}`,
   "gu"
 );
 const commonFiniteVerbs = [
@@ -483,15 +496,40 @@ function applyTokenCase(source: string, replacement: string): string {
   return replacement;
 }
 
-function mapSingular(
+export function mapSingular(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
   return (
     mapMappedSingular(base, grammaticalCase) ??
     mapKnownSingular(base, grammaticalCase) ??
-    (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base))
+    (grammaticalCase === "genitive" ? undefined : mapKnownPlural(base)) ??
+    singularFromStrongPlural(base, grammaticalCase)
   );
+}
+
+// Nouns known only to the plural or supplementary lexicon (`Operateur`,
+// `Psychoanalytiker`): the case forms follow from singular and plural.
+// Plural = singular or singular + -e: strong, genitive -s. Singular on -e
+// with plural -n: weak, -n in every oblique case. Otherwise only the
+// nominative (`Professoren` is strong, `Assistenten` weak).
+function singularFromStrongPlural(
+  base: string,
+  grammaticalCase: GrammaticalCase
+): string | undefined {
+  const singular = mapSupplementalSingular(base) ??
+    (mapMappedPlural(base)?.toLocaleLowerCase(locale) === base.toLocaleLowerCase(locale) ||
+      mapMappedPlural(base)?.toLocaleLowerCase(locale) === `${base.toLocaleLowerCase(locale)}e`
+      ? base : undefined);
+  if (!singular) return undefined;
+  if (grammaticalCase === "nominative") return singular;
+  const plural = (mapSupplementalPlural(base) ?? mapMappedPlural(base))?.toLocaleLowerCase(locale);
+  const lowerSingular = singular.toLocaleLowerCase(locale);
+  if (plural === lowerSingular || plural === `${lowerSingular}e`) {
+    return grammaticalCase === "genitive" ? `${singular}s` : singular;
+  }
+  if (lowerSingular.endsWith("e") && plural === `${lowerSingular}n`) return `${singular}n`;
+  return undefined;
 }
 
 // `der / die Nutzer*in`, `der/ die …`, `eine oder einen Mitarbeiter*in`:
@@ -724,12 +762,18 @@ function transformAttributivePhrases(
       if (!form) {
         return match;
       }
-
       const mappedAdjective = mapAttributiveAdjective(
         adjective,
         markerEnding,
         expectedAdjectiveEnding(form)
       );
+      // A capitalized unmarked word is inflected only with a German adjective
+      // suffix (`Wissenschaftliche`); `eine:n Office Manager:in` has an English
+      // noun there. Left unchanged (`der Performance Künstler*in`) it may stay.
+      if (!markerEnding && /^\p{Lu}/u.test(adjective) && mappedAdjective !== adjective &&
+          !/(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)(?:e|en|er|es|em)?$/u.test(adjective)) {
+        return match;
+      }
       const noun = mapSingular(base, form.grammaticalCase);
       if (!mappedAdjective || !noun) {
         return match;
@@ -777,7 +821,7 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
 // compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
 // pair (`beim:bei der …`) and not before a coordinated marked noun.
 const feminineDerSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)(der|einer|meiner|deiner|seiner|ihrer|Ihrer|unserer|eurer|keiner)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
   "gu"
 );
 const dativePrepositionSet = new Set(dativePrepositions.split("|"));
@@ -789,8 +833,18 @@ const nonNounWordsBeforeDer = new Set([
   "des", "in", "an", "auf", "unter", "über", "vor", "hinter", "neben",
   "zwischen", "für", "durch", "gegen", "ohne", "um", "als", "wie", "und",
   "oder", "aber", "auch", "nur", "noch", "so", "da", "wo", "wenn", "weil",
-  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt"
+  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt",
+  // Pronouns before a dative object: `Geben Sie der Ärzt*in Bescheid`.
+  "sie", "ich", "er", "es", "wir", "ihr", "man", "ihnen", "uns", "euch", "mir", "dir", "ihm"
 ]);
+// `Laut der Ärzt*in` → „Laut dem Arzt“, not the genitive; `Wir danken der
+// Patient*in` → „dem Patienten“: verbs with a dative object, not the
+// nominative.
+const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "entsprechend",
+  ...["dank", "helf", "gratulier", "folg", "begegn", "vertrau", "antwort", "widersprech", "zuhör",
+    "zustimm", "assistier", "dien", "misstrau", "kündig", "schad", "nütz"].flatMap((stem) =>
+    ["e", "st", "t", "en", "et", "te", "ten", "test"].map((ending) => stem + ending)),
+  "hilft", "hilfst", "half", "halfen", "widerspricht", "widersprichst", "widersprach", "widersprachen"]);
 
 // A verb or participle that takes the dative right after the phrase makes
 // `der` a dative object: `(dass die) Umsetzung der Antragsteller:in
@@ -801,12 +855,15 @@ function transformFeminineDerSingulars(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
     feminineDerSingularPattern(),
-    (match: string, previous: string, space: string, adjectives: string, base: string,
+    (match: string, previous: string, space: string, article: string, adjectives: string, base: string,
       offset: number, source: string) => {
       if (!hasLowercaseAdjectives(adjectives)) return match;
+      // `der` → d-, `einer` → ein-, `ihrer` → ihr- (`Institution ihrer
+      // externen Betreuer*in` → „ihres externen Betreuers“).
+      const stem = article.slice(0, -2);
       const lowerPrevious = previous.toLocaleLowerCase(locale);
       const grammaticalCase: GrammaticalCase | undefined =
-        dativePrepositionSet.has(lowerPrevious) ||
+        dativePrepositionSet.has(lowerPrevious) || dativeWordsBeforeDer.has(lowerPrevious) ||
           dativeGoverningAfter.test(source.slice(offset + match.length, offset + match.length + 40))
           ? "dative"
           : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious) &&
@@ -817,7 +874,7 @@ function transformFeminineDerSingulars(input: string): TransformResult {
       const noun = mapSingular(base, grammaticalCase);
       if (!noun) return match;
       replacements += 1;
-      return previous + space + (grammaticalCase === "dative" ? "dem" : "des") +
+      return previous + space + stem + (grammaticalCase === "dative" ? "em" : "es") +
         adjectives + noun;
     }
   );
@@ -931,11 +988,14 @@ function transformContractedZur(input: string, pattern: RegExp): TransformResult
   let replacements = 0;
   const text = input.replace(
     pattern,
-    (match: string, zur: string, whitespace: string, base: string) => {
+    (match: string, zur: string, whitespace: string, attributes: string, base: string) => {
       const noun = mapSingular(base, "dative");
       if (!noun) return match;
       replacements += 1;
-      return applyTokenCase(zur, "zum") + whitespace + noun;
+      // `zur` becomes `zum`; `zum`, `vom`, `beim` already are dative masculine.
+      // Attributes after them already carry the dative -en.
+      const contracted = zur.toLocaleLowerCase(locale) === "zur" ? applyTokenCase(zur, "zum") : zur;
+      return contracted + whitespace + attributes + noun;
     }
   );
   return { text, replacements };
@@ -1072,11 +1132,19 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const contractedPairResult = transformContractedPairs(input);
+    const pairResult0 = normalizeDeterminerPairs(input, mapSingular);
+    const compactResult = normalizeCompactDeterminers(pairResult0.text, mapSingular);
+    const clauseResult = transformClauseCase(compactResult.text, mapSingular);
+    const pairResult = {
+      text: clauseResult.text,
+      replacements: pairResult0.replacements + compactResult.replacements + clauseResult.replacements
+    };
+    const contractedPairResult = transformContractedPairs(pairResult.text);
     const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
     const spacedPairResult = {
       text: spacedPairResult0.text,
-      replacements: contractedPairResult.replacements + spacedPairResult0.replacements
+      replacements: pairResult.replacements + contractedPairResult.replacements +
+        spacedPairResult0.replacements
     };
     const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
       spacedPairResult.text

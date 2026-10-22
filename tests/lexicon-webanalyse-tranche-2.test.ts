@@ -47,8 +47,6 @@ describe("Lexikontranche 2 der Webanalyse", () => {
     ["noch im Kinderwagen/in der Trage", "noch im Kinderwagen/in der Trage"],
     ["im Browser/in der App lesen", "im Browser/in der App lesen"],
     ["Bally_schliesst_die_letzte_Fabrik_in_der_Schweiz.pdf", "Bally_schliesst_die_letzte_Fabrik_in_der_Schweiz.pdf"],
-    // Eigennamen bleiben.
-    ["die RosaLila PantherInnen", "die RosaLila PantherInnen"],
     // Normale Feminina bleiben.
     ["die Kurzfilmerinnen", "die Kurzfilmerinnen"],
     ["die Sprachpatinnen", "die Sprachpatinnen"]

@@ -39,8 +39,8 @@ describe("bleibt unverändert oder wie bisher", () => {
     // Paare werden nur als Ganzes aufgelöst.
     ["Ausbildung zum/zur Erzieher*in", "Ausbildung zum Erzieher"],
     ["Ausbildung zur/zum Erzieher*in", "Ausbildung zum Erzieher"],
-    // Kompositum mit Bindestrich: kein Personensingular.
-    ["Mit dieser Täter*in-Opfer-Umkehr", "Mit dieser Täter*in-Opfer-Umkehr"],
+    // Kompositum mit Bindestrich: nur der erste Teil wird männlich.
+    ["Mit dieser Täter*in-Opfer-Umkehr", "Mit dieser Täter-Opfer-Umkehr"],
     // Koordination: beide Glieder bekommen den Kasus der Präposition.
     ["Lab wird von einer Künstler:in oder Technolog:in geleitet", "Lab wird von einem Künstler oder Technologen geleitet"],
     // Ohne Präposition gilt weiter der Mehrdeutigkeitsschutz.
