@@ -9,7 +9,8 @@ export const markedLeadingCandidate = new RegExp(String.raw`^\s*${markedPluralWo
 export const participleLeadingCandidate = new RegExp(
   String.raw`^\s*(?:${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`, "iu"
 );
-// A marked singular opening an inline element; its article may sit in the
-// previous text node (`mit der <em>Patient*in</em>`).
+// A marked singular opening an inline element, possibly after up to two
+// attributes; its article may sit in the previous text node (`mit der
+// <em>Patient*in</em>`, `mit der <b>neuen Kolleg*in</b>`).
 export const markedSingularLeadingCandidate =
-  /^\s*[\p{L}\p{M}’'-]+(?:[:*_·•’‘]in|\/-?in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}])/u;
+  /^\s*(?:\p{Ll}[\p{L}\p{M}-]*(?:e|en|er|es|em)\s+){0,2}[\p{L}\p{M}’'-]+(?:[:*_·•’‘]in|\/-?in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}])/u;
