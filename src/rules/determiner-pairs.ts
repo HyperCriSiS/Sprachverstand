@@ -81,7 +81,7 @@ const separator = String.raw`(?:\s*\/\s*|[:*_·•]|\s+(?:oder|bzw\.|und|beziehu
 const attribute = String.raw`(?!(?:die|der|den|dem|des|eine|einer|einen|einem|eines|ein|Ihnen|Ihrem|Ihren|Ihrer|Ihres|Sie|Euch|Uns)\s)(?:[\p{Ll}][\p{L}\p{M}]*|\p{Lu}[\p{Ll}\p{M}-]*(?:e|en|es|em))(?:(?:\/-?|[:*_·•])(?:e|en|er|es|em|r|n|m|s))?(?![\p{L}\p{M}])`;
 const markedSingular = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:(?:\/-?|[:*_·•])in|\(-?in\)|\p{Ll}In)`;
 const pairPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator})([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(${markedSingular})(?![\p{L}\p{M}])(?:(\s+(?:oder|und|bzw\.)\s+)(${markedSingular})(?![\p{L}\p{M}]))?`,
+  String.raw`(?<![\p{L}\p{M}/])([\p{L}]+)(${separator}-?)([\p{L}]+)(\s+)((?:${attribute}\s+){0,2})(${markedSingular})(?![\p{L}\p{M}])(?:(\s+(?:oder|und|bzw\.)\s+)(${markedSingular})(?![\p{L}\p{M}]))?`,
   "gu"
 );
 
@@ -212,7 +212,7 @@ const dativePrepositions = new Set(["mit", "von", "bei", "zu", "aus", "nach", "s
 // Lowercase attributes; capitalized ones only with a German adjective suffix
 // (`Wissenschaftliche`, `Psychologische`), so `Office Manager:in` keeps its
 // English noun; truncated compounds (`Bildungs-`) and brands (`BRITA`).
-const compactAttribute = String.raw`(?!(?:eine|einer|einen|einem|eines|ein|die|der|den|dem|des)\s)(?:\p{Ll}[\p{L}\p{M}-]*(?:[:*_·•](?:n|r))?|\p{Lu}[\p{L}\p{M}]*(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)e(?:[:*_·•](?:n|r))?|\p{L}[\p{L}\p{M}]*-|\p{Lu}{2,})`;
+const compactAttribute = String.raw`(?!(?:eine|einer|einen|einem|eines|ein|die|der|den|dem|des)\s)(?:\p{Ll}[\p{L}\p{M}-]*(?:[:*_·•](?:en|er|n|r))?|\p{Lu}[\p{L}\p{M}]*(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)e(?:[:*_·•](?:n|r))?|\p{L}[\p{L}\p{M}]*-|\p{Lu}{2,})`;
 const compactPattern = new RegExp(
   // No `i` flag: it would make `\p{Lu}`/`\p{Ll}` caseless (`Office` as a brand).
   String.raw`(?<![\p{L}\p{M}])([Ee]iner|[Ee]ine|[Ee]in|[Kk]eine|[Dd]e|[Mm]einer|[Mm]eine|[Dd]einer|[Dd]eine|[Ss]einer|[Ss]eine|[Ii]hrer|[Ii]hre|[Uu]nserer|[Uu]nsere)([:*_·•])(en|er|n|r|m|s)?(\s+)((?:${compactAttribute}(?:\s+und\s+${compactAttribute})?\s+){0,2})(\p{Lu}[\p{L}\p{M}’'-]*?)(?:[:*_·•]in)(?![\p{L}\p{M}])`,
@@ -235,8 +235,10 @@ function caseFromEnding(ending: string | undefined, before: string): Grammatical
 
 function compactAttributeForm(word: string, grammaticalCase: GrammaticalCase, strong: boolean): string {
   if (word === "und" || /^\p{Lu}{2,}$/u.test(word)) return word;
-  const marked = /^(.*?)([:*_·•])n$/u.exec(word);
-  const plain = marked ? marked[1]! : word;
+  // `passende:n`, `feste*n`, and a participle with the ending after the
+  // marker (`begünstigt*en`).
+  const marked = /^(.*?)([:*_·•])(?:en|er|e|n|r)$/u.exec(word);
+  const plain = marked ? (/e$/u.test(marked[1]!) ? marked[1]! : `${marked[1]!}e`) : word;
   if (!/e$/u.test(plain)) return word;
   if (grammaticalCase === "nominative") return strong ? `${plain}r` : plain;
   return `${plain}n`;
@@ -255,8 +257,10 @@ export function normalizeCompactDeterminers(
       if (!forms) return match;
       // A bare `ein:` before a space is mostly a verb particle and a colon
       // (`führt … ein: Jeder …`); bare forms count only with `*`, `_`, `·`.
-      if (!ending && _marker === ":") return match;
-      const grammaticalCase = caseFromEnding(ending, source.slice(Math.max(0, offset - 60), offset));
+      // `keine: passende:n Spender:in`: the attribute carries the ending.
+      const attributeEnding = /[:*_·•](n|r)(?=\s)/u.exec(attributes)?.[1];
+      if (!ending && _marker === ":" && !attributeEnding) return match;
+      const grammaticalCase = caseFromEnding(ending ?? attributeEnding, source.slice(Math.max(0, offset - 60), offset));
       const masculine = noun && mapNoun(noun, grammaticalCase);
       if (!masculine) return match;
       const index = {nominative: 0, accusative: 1, dative: 2, genitive: 3}[grammaticalCase];

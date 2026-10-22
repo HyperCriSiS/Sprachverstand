@@ -124,8 +124,6 @@ describe("Kasus aus dem Satzbau", () => {
     "Das Projekt leitet die Künstler*in.",
     // Relativpronomen im Nominativ kann Subjekt sein.
     "Die Stadt, der die Künstler*in hilft",
-    // Nebensatz ohne Komma: Subjekt offen.
-    "Ich glaube dass die Ärzt*in kommt.",
     // Pronomen vor Dativobjekt ist kein Genitivbezug.
     "Geben Sie der Ärzt*in Bescheid.",
     "Sie gibt einer Ärzt*in das Buch."

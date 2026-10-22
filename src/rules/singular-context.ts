@@ -25,7 +25,7 @@ const locale = "de-DE";
 // Every pattern below requires a singular in/In ending at a word boundary.
 // Plural markers and neutral texts need none of the twelve context scans.
 const singularEndingCandidate = /in(?![\p{L}\p{M}])/iu;
-const separators = [":", "*", "_", "/", "·", "•", ".", "’", "‘"] as const;
+const separators = [":", "*", "_", "/", "/-", "·", "•", ".", "’", "‘"] as const;
 const determinerForms = new Map<string, DeterminerForm>();
 
 function addDeterminer(
@@ -132,6 +132,13 @@ addDeterminer("eines", "r", "eines", "genitive");
 addDeterminer("einer", "m", "einem", "dative");
 addDeterminer("jeder", "m", "jedem", "dative");
 addDeterminer("einer", "s", "eines", "genitive");
+// `dem*er Gewinner*in`, `einem/-er Stellvertreter*in`, `Ihres:r Arbeitgeber:in`.
+addDeterminer("dem", "er", "dem", "dative");
+addDeterminer("einem", "er", "einem", "dative");
+for (const base of ["mein", "dein", "sein", "ihr", "unser", "eur"]) {
+  addDeterminer(`${base}es`, "r", `${base}es`, "genitive");
+  addDeterminer(`${base}em`, "r", `${base}em`, "dative");
+}
 
 addDeterminer("sein", "ihr", "sein", "nominative", true);
 addDeterminer("seinen", "ihren", "seinen", "accusative", true);
@@ -489,7 +496,7 @@ function applyTokenCase(source: string, replacement: string): string {
   return replacement;
 }
 
-function mapSingular(
+export function mapSingular(
   base: string,
   grammaticalCase: GrammaticalCase
 ): string | undefined {
@@ -814,7 +821,7 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
 // compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
 // pair (`beim:bei der …`) and not before a coordinated marked noun.
 const feminineDerSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)(der|einer)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)(der|einer|meiner|deiner|seiner|ihrer|Ihrer|unserer|eurer|keiner)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
   "gu"
 );
 const dativePrepositionSet = new Set(dativePrepositions.split("|"));
@@ -851,7 +858,9 @@ function transformFeminineDerSingulars(input: string): TransformResult {
     (match: string, previous: string, space: string, article: string, adjectives: string, base: string,
       offset: number, source: string) => {
       if (!hasLowercaseAdjectives(adjectives)) return match;
-      const indefinite = article === "einer";
+      // `der` → d-, `einer` → ein-, `ihrer` → ihr- (`Institution ihrer
+      // externen Betreuer*in` → „ihres externen Betreuers“).
+      const stem = article.slice(0, -2);
       const lowerPrevious = previous.toLocaleLowerCase(locale);
       const grammaticalCase: GrammaticalCase | undefined =
         dativePrepositionSet.has(lowerPrevious) || dativeWordsBeforeDer.has(lowerPrevious) ||
@@ -865,7 +874,7 @@ function transformFeminineDerSingulars(input: string): TransformResult {
       const noun = mapSingular(base, grammaticalCase);
       if (!noun) return match;
       replacements += 1;
-      return previous + space + (indefinite ? "ein" : "d") + (grammaticalCase === "dative" ? "em" : "es") +
+      return previous + space + stem + (grammaticalCase === "dative" ? "em" : "es") +
         adjectives + noun;
     }
   );
