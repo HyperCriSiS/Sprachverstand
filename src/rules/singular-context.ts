@@ -362,11 +362,11 @@ const genitiveFeminineSeparatorPattern = prepositionalSeparatorPattern(genitiveP
 // `zur` is `zu der`: `zur Erzieher*in` / `zur ErzieherIn` -> `zum Erzieher`
 // (before: `zur Erzieher`). Pairs like `zum/zur` stay with the pair rules.
 const contractedZurSeparatorPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)((?:\p{L}[\p{L}\p{M}]*en\s+){0,2})(${nounBase})(?:${separatorSingularMarker})${singularPhraseEnd}`,
   "gu"
 );
 const contractedZurBinnenIPattern = lazyPattern(
-  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)(${nounBase}\p{Ll})In${singularPhraseEnd}`,
+  String.raw`${notAfterPairSeparator}([Zz]ur|[Zz]um|[Vv]om|[Bb]eim)(\s+)((?:\p{L}[\p{L}\p{M}]*en\s+){0,2})(${nounBase}\p{Ll})In${singularPhraseEnd}`,
   "gu"
 );
 const commonFiniteVerbs = [
@@ -960,13 +960,14 @@ function transformContractedZur(input: string, pattern: RegExp): TransformResult
   let replacements = 0;
   const text = input.replace(
     pattern,
-    (match: string, zur: string, whitespace: string, base: string) => {
+    (match: string, zur: string, whitespace: string, attributes: string, base: string) => {
       const noun = mapSingular(base, "dative");
       if (!noun) return match;
       replacements += 1;
       // `zur` becomes `zum`; `zum`, `vom`, `beim` already are dative masculine.
+      // Attributes after them already carry the dative -en.
       const contracted = zur.toLocaleLowerCase(locale) === "zur" ? applyTokenCase(zur, "zum") : zur;
-      return contracted + whitespace + noun;
+      return contracted + whitespace + attributes + noun;
     }
   );
   return { text, replacements };

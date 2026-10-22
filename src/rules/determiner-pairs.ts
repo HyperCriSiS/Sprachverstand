@@ -102,6 +102,9 @@ function inflectAttribute(word: string, form: PairForm): string {
     if (!/e$/u.test(left!)) return word;
     word = left!;
   }
+  // `Der/die ausländischen Partner/in`: a written -en in the nominative is
+  // the source's slip for -e.
+  if (form.grammaticalCase === "nominative" && /\p{Ll}en$/u.test(word)) word = word.slice(0, -1);
   if (!/e$/u.test(word)) return word;
   if (form.grammaticalCase === "nominative") return form.strong ? `${word}r` : word;
   return `${word}n`;
@@ -183,6 +186,7 @@ function caseFromEnding(ending: string | undefined, before: string): Grammatical
   if (lower === "s") return "genitive";
   const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(before)?.[1] ?? "";
   if (dativePrepositions.has(previous.toLocaleLowerCase(locale))) return "dative";
+  if (/^(?:für|durch|gegen|ohne|um|wider)$/iu.test(previous)) return "accusative";
   // A noun right before (not a sentence start): genitive attribute.
   if (/^\p{Lu}\p{Ll}/u.test(previous) && !/[.!?:]\s*$/u.test(before.slice(0, -previous.length - 1)) &&
       before.trim().length > previous.length) return "genitive";
@@ -209,6 +213,9 @@ export function normalizeCompactDeterminers(
       attributes: string, noun: string, offset: number, source: string) => {
       const forms = compactBases.get(base.toLocaleLowerCase(locale));
       if (!forms) return match;
+      // A bare `ein:` before a space is mostly a verb particle and a colon
+      // (`führt … ein: Jeder …`); bare forms count only with `*`, `_`, `·`.
+      if (!ending && _marker === ":") return match;
       const grammaticalCase = caseFromEnding(ending, source.slice(Math.max(0, offset - 60), offset));
       const masculine = noun && mapNoun(noun, grammaticalCase);
       if (!masculine) return match;

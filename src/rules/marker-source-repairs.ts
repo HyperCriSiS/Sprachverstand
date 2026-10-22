@@ -61,6 +61,8 @@ function repairInflectedMarkers(input: string): TransformResult {
   const text = input.replace(inflectedMarkerPattern,
     (match: string, word: string, separator: string, ending: string, offset: number, source: string) => {
       if (isKnownStem(word)) return match;
+      // Slash series (`Fotografen*in/Videografen*in`): both or none.
+      if (source[offset + match.length] === "/" || source[offset - 1] === "/") return match;
       if (ending === "in" && !singularContextBefore.test(source.slice(Math.max(0, offset - 80), offset))) return match;
       const stem = stemForInflected(word);
       if (!stem) return match;
