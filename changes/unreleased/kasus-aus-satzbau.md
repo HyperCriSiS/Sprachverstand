@@ -10,7 +10,11 @@ kategorie: Behoben
   oder nach Relativpronomen im Dativ/Akkusativ („über den die Patient*in
   verfügen kann“), Akkusativ nach „Wir suchen …“, Genitiv „einer“ nach
   einem Nomen („Comic einer Autor*in“), Dativ nach „mit einer“ und „laut
-  der“ sowie Überschriften ohne Trennung vom Fließtext.
+  der“, Objekt nach Subjektpronomen („Werden Sie die Ärzt*in anrufen?“ →
+  „den Arzt“, „Sind Sie die Ärzt*in?“ → „der Arzt“), Objekt nach
+  vorangestelltem Subjekt bei Verben mit typischem Personenobjekt („Das
+  Projekt unterstützt die Künstler*in“) sowie Überschriften ohne Trennung
+  vom Fließtext.
 - Eigenkreationen und Gruppennamen werden wie Personenbezeichnungen
   umgewandelt („InteGREATer:innen“ → „InteGREATer“, „RosaLila PantherInnen“
   → „RosaLila Panther“).

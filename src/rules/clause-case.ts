@@ -98,6 +98,23 @@ const imperativePattern = new RegExp(
   String.raw`((?:^|[.!?]\s+)(?:Werden|Bleiben|Seien)\s+Sie\s+)(${determiner})(\s+)${attributes}${marked}(?=\s*(?:[!.]|$))`,
   "gu"
 );
+// (i) object after a clause-initial subject pronoun and any finite verb
+// (`Werden Sie die Ärzt*in anrufen?`, `Sie unterstützt eine Künstler*in`,
+// `Rufen Sie die Ärzt*in an`). `die/eine` cannot be dative, so with the
+// subject taken it is the accusative object; a copula keeps the nominative.
+const pronounObjectPattern = new RegExp(
+  String.raw`((?:^|[.!?:]\s+)(?:(?:Sie|Ich|Wir|Du|Er|Man)\s+\p{Ll}[\p{L}\p{M}]*|\p{Lu}\p{Ll}[\p{L}\p{M}]*\s+(?:Sie|ich|wir|du|er|man))(?:\s+(?!(?:dass|ob|wenn|weil|als|wie|und|oder|aber|denn|sondern|bis|damit|obwohl|während|nachdem|bevor)\s)[\p{L}\p{M}\d.]+){0,4}?\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
+  "gu"
+);
+const nonObjectVerbs = /(?:^|\s)(?:sind|ist|bin|bist|seid|sei|seien|war|waren|wäre|wären|bleiben|bleibt|bleibe|blieb|wird|werde|wirst|werden|wurde|wurden|würde|würden)(?=\s)/iu;
+// (j) a fronted subject (`Der Verein`, `Das Projekt`) and a verb whose object
+// is typically a person: `Das Projekt unterstützt die Künstler*in`. Verbs
+// where the person is usually the agent (`leitet`, `betreut`) stay open.
+const personObjectVerbs = "unterstützt|unterstützte|fördert|förderte|sucht|suchte|begleitet|begleitete|berät|beriet|informiert|informierte|ehrt|ehrte|würdigt|würdigte|porträtiert|porträtierte|beschäftigt|beschäftigte|stärkt|stärkte|entlastet|entlastete|schützt|schützte|vermittelt|vermittelte|qualifiziert|qualifizierte|auszeichnet|zeichnet|zeichnete|benötigt|braucht|begrüßt|begrüßte|lädt|lud|stellt|stellte|ernennt|ernannte|wählt|wählte";
+const frontedSubjectPattern = new RegExp(
+  String.raw`((?:^|[.!?]\s+)(?:Das|Der|Ein|Dieses|Dieser|Jedes|Jeder|Unser|Mein|Dein|Euer|Sein)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*\s+(?:${personObjectVerbs})\s+(?:(?:auch|nun|jetzt|seit|ab|zudem|gezielt|aktiv|künftig)\s+){0,2})(${determiner})(\s+)${attributes}${marked}${end}`,
+  "gu"
+);
 const accusativePattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}])(?:(?:${subjectPronouns})\s+(?:${accusativeVerbs})|(?:${accusativeVerbs})\s+(?:${subjectPronouns}))(?:\s+[\p{L}\p{M}\d.]+){0,4}?\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
@@ -156,6 +173,36 @@ export function transformClauseCase(
       return prefix + converted;
     });
   }
+  text = text.replace(frontedSubjectPattern, (match: string, prefix: string, determinerWord: string, space: string,
+    attributeText: string, base: string) => {
+    const converted = phrase(determinerWord, space, attributeText, base, "accusative", mapNoun);
+    if (!converted) return match;
+    replacements += 1;
+    return prefix + converted;
+  });
+  text = text.replace(pronounObjectPattern, (match: string, prefix: string, determinerWord: string, space: string,
+    attributeText: string, base: string, offset: number, source: string) => {
+    // The pronoun is the subject, so the phrase is the accusative object, or
+    // a predicative nominative with a copula: `Sind Sie die Ärzt*in?`,
+    // `Wenn Sie die Ärzt*in sind`, `Wollen Sie eine Ärzt*in werden?`. A
+    // future auxiliary with a full infinitive takes the object again:
+    // `Werden Sie die Ärzt*in anrufen?`.
+    const tail = source.slice(offset + match.length, offset + match.length + 80);
+    const finalInfinitive = /^(?:\s+\p{Ll}[\p{L}\p{M}]*){0,3}?\s+(\p{Ll}[\p{L}\p{M}]*en)\s*(?:[.,;!?]|$)/u.exec(tail)?.[1];
+    let grammaticalCase: "nominative" | "accusative" = "accusative";
+    if (/^(?:\s+\p{Ll}[\p{L}\p{M}]*){0,2}?\s+(?:sind|ist|bin|bist|seid|sei|seien|waren|war|wären|wäre|werden|wird|wurden|wurde|bleiben|bleibt)(?:\s*[.,;!?]|\s*$)/u.test(tail) ||
+        (finalInfinitive !== undefined && /^(?:werden|sein|bleiben)$/u.test(finalInfinitive))) {
+      grammaticalCase = "nominative";
+    } else if (nonObjectVerbs.test(prefix)) {
+      const futureWithObject = /(?:^|\s)(?:wird|werde|wirst|werden|würde|würden)\s/iu.test(prefix) &&
+        finalInfinitive !== undefined;
+      if (!futureWithObject) grammaticalCase = "nominative";
+    }
+    const converted = phrase(determinerWord, space, attributeText, base, grammaticalCase, mapNoun);
+    if (!converted) return match;
+    replacements += 1;
+    return prefix + converted;
+  });
   text = text.replace(sentenceStartPattern,
     (match: string, prefix: string, determinerWord: string, space: string, attributeText: string,
       base: string, next: string, afterVerb: string | undefined) => {

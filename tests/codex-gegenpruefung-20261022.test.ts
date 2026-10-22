@@ -98,16 +98,26 @@ describe("Kasus aus dem Satzbau", () => {
     ["Laut der Ärzt*in ist das so.", "Laut dem Arzt ist das so."],
     // Überschrift ohne Trennung vor dem Fließtext.
     ["Ihre Arbeitgeber:in Das Diakoniewerk ist groß.", "Ihr Arbeitgeber Das Diakoniewerk ist groß."],
-    ["Werden Sie unsere Freund*in!", "Werden Sie unser Freund!"]
+    ["Werden Sie unsere Freund*in!", "Werden Sie unser Freund!"],
+    // Subjektpronomen vergeben das Subjekt: Objekt im Akkusativ, mit Kopula Nominativ.
+    ["Werden Sie die Ärzt*in anrufen?", "Werden Sie den Arzt anrufen?"],
+    ["Rufen Sie die Ärzt*in an.", "Rufen Sie den Arzt an."],
+    ["Wenn Sie die Ärzt*in sehen, grüßen Sie.", "Wenn Sie den Arzt sehen, grüßen Sie."],
+    ["Sind Sie die Ärzt*in?", "Sind Sie der Arzt?"],
+    ["Wenn Sie die Ärzt*in sind, melden Sie sich.", "Wenn Sie der Arzt sind, melden Sie sich."],
+    ["Wollen Sie eine Ärzt*in werden?", "Wollen Sie ein Arzt werden?"],
+    // Vorangestelltes Subjekt und Verb mit typischem Personenobjekt.
+    ["Das Projekt unterstützt die Künstler*in.", "Das Projekt unterstützt den Künstler."],
+    ["Der Verein fördert eine junge Künstler*in.", "Der Verein fördert einen jungen Künstler."]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
-    // Vorangestellte Nominalphrase kann selbst Subjekt sein.
-    "Das Projekt unterstützt die Künstler*in.",
+    // Bei Verben wie „leiten“ ist die Person meist selbst Subjekt.
+    "Das Projekt leitet die Künstler*in.",
     // Relativpronomen im Nominativ kann Subjekt sein.
     "Die Stadt, der die Künstler*in hilft",
-    // Futur mit Objekt.
-    "Werden Sie die Ärzt*in anrufen?",
+    // Nebensatz ohne Komma: Subjekt offen.
+    "Ich glaube dass die Ärzt*in kommt.",
     // Pronomen vor Dativobjekt ist kein Genitivbezug.
     "Geben Sie der Ärzt*in Bescheid.",
     "Sie gibt einer Ärzt*in das Buch."
