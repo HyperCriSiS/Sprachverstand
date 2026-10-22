@@ -74,6 +74,10 @@ export function matchesSubtitleMarker(
 }
 
 export function isSubtitleContainer(element: Element): boolean {
+  // Every marker lives in an attribute; most text containers have none.
+  if (!element.hasAttributes()) {
+    return false;
+  }
   const identifiers = identifierText(element);
   if (subtitleIdentifierMarker.test(identifiers)) {
     return true;
