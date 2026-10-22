@@ -106,7 +106,12 @@ function isAmbiguousDeterminer(token: string): boolean {
 }
 
 const coordinators = new Set(["und", "oder", "bzw.", "sowie"]);
-const markedSingularToken = /^[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u;
+// Capitalized words with unambiguous noun suffixes (never adjectives).
+const headNounSuffix =
+  /^\p{Lu}[\p{L}\p{M}-]*(?:ung|ungen|ion|ionen|heit|keit|schaft|tät|gang|kurs|tum|nis|ment|ismus)$/u;
+const categoryNoun =
+  /^\p{Lu}[\p{L}\p{M}-]*(?:beruf|berufe|bild|bilder|angebot|angebote|ebene|kategorie|bereich|bereiche|lizenz|titel|rolle|stelle|profil|abschluss|zertifikat|kurs|kurse|lehrgang|programm|modul|studiengang|marke|bezeichnung|funktion|position|Beruf|Berufe|Ebene|Kategorie|Marke|Rolle|Stelle)$/u;
+const markedSingularToken =/^[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u;
 
 // Start index of a marked singular directly before `end` (`Hausärzt:in`).
 function markedNounBefore(input: string, end: number): number | undefined {
@@ -136,6 +141,22 @@ function isNounOrDativePrepositionBefore(input: string, end: number): boolean {
   const lower = word.toLocaleLowerCase(locale);
   return dativePrepositionsBeforeDer.has(lower) ||
     (/^\p{Lu}/u.test(word) && !finiteVerbsBeforeDer.has(lower));
+}
+
+// Abbreviations end in a dot without ending the sentence (`die ggf. neue
+// Lehrer*in`, `Dipl. Biomedizinische/r Analytiker/in`).
+const abbreviations = new Set([
+  "bzw", "ggf", "inkl", "exkl", "evtl", "bspw", "insb", "usw", "etc", "vgl", "ca", "sog", "zzgl", "max", "min",
+  "dr", "prof", "hr", "fr", "nr", "st", "str", "dipl", "ing", "mag", "staatl", "gepr", "akad", "approb",
+  "med", "rer", "nat", "phil", "jur", "dent", "vet", "techn", "kaufm", "kfm", "fachl", "wiss", "zert", "allg",
+  "psych", "päd", "soz", "pol", "kath", "ev", "evang", "pharm", "univ", "ehem", "stellv", "gem", "geb", "verh",
+  "zzt", "tlw", "ugs", "jur", "oec", "sen", "jun",
+  "u", "z", "d", "i", "e", "o", "a", "s", "v"
+]);
+
+function isSentenceEnd(token: string): boolean {
+  const word = /^([\p{L}\p{M}-]+)\.$/u.exec(token)?.[1];
+  return word !== undefined && !abbreviations.has(word.toLocaleLowerCase(locale));
 }
 
 export function hasAmbiguousSingularDeterminer(
@@ -177,6 +198,9 @@ export function hasAmbiguousSingularDeterminer(
       return false;
     }
     const token = input.slice(cursor, end);
+    // A sentence end (`Die Arbeit. Werden Sie Umweltstifter*in!`): a
+    // determiner further left belongs to the previous sentence.
+    if (isSentenceEnd(token)) return false;
     // `die Künstler:in oder Kurator:in`: a coordinated marked noun follows
     // the decision for the first one instead of being resolved alone.
     if (afterCoordinator && markedSingularToken.test(token)) {
@@ -194,6 +218,19 @@ export function hasAmbiguousSingularDeterminer(
       afterCoordinator = true;
       if (cursor === 0 || !whitespaceCharacter.test(input[cursor - 1] ?? "")) return false;
       continue;
+    }
+    // `die berufliche Grundbildung Metallbaukonstrukteur/in`, `die Umschulung
+    // Industrieelektriker*in`: a noun right before the title owns the
+    // determiner further left; the title itself stands without one.
+    if (headNounSuffix.test(token)) {
+      return false;
+    }
+    // `die Berufe Altenpfleger*in, …`, `die Ebene Leiter*in`, `ihrer DOSB
+    // Übungsleiter:in B-Lizenz`: a category noun or an abbreviation right
+    // before the title.
+    if (tokenIndex === 0 && !isAmbiguousDeterminer(token) &&
+        (categoryNoun.test(token) || /^\p{Lu}{2,}$/u.test(token))) {
+      return false;
     }
     if (isAmbiguousDeterminer(token)) {
       return true;

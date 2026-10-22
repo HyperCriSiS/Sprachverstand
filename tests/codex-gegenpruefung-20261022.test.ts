@@ -78,3 +78,65 @@ describe("Singular am Anfang eines Inline-Elements", () => {
     expect(dom("<p>Alle <b>Lehrer*innen</b> kommen.</p>")).toBe("Alle Lehrer kommen.");
   });
 });
+
+// Eigenkreationen und Gruppennamen werden wie Personenbezeichnungen
+// umgewandelt (Nutzerentscheidung 22.10.2026); die Schreibung bleibt.
+describe("Eigenkreationen", () => {
+  it.each([
+    ["Werde jetzt InteGREATer:in", "Werde jetzt InteGREATer"],
+    ["InteGREATer:innen sind Vorbilder", "InteGREATer sind Vorbilder"],
+    ["die RosaLila PantherInnen", "die RosaLila Panther"],
+    ["DünenPat:innen - wir tun was!", "DünenPaten - wir tun was!"],
+    ["Von Landwirten zu LandVirt:innen", "Von Landwirten zu LandVirten"],
+    ["Die Brandenburg:innen damals und heute", "Die Brandenburger damals und heute"],
+    // Normale Feminina bleiben.
+    ["Drei Pantherinnen im Zoo", "Drei Pantherinnen im Zoo"]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+});
+
+// Satzbau entscheidet den Fall bei mehrdeutigem Begleitwort.
+describe("Kasus aus dem Satzbau", () => {
+  it.each([
+    // Subjekt nach Verb an zweiter Stelle.
+    ["In der Praxis findet die Ärzt*in kaum Zeit.", "In der Praxis findet der Arzt kaum Zeit."],
+    ["Dann griff die Referent*in das Thema auf.", "Dann griff der Referent das Thema auf."],
+    // Subjekt nach Relativpronomen im Dativ/Akkusativ oder nach Präposition.
+    ["der Datenraum, über den die Patient*in verfügen kann", "der Datenraum, über den der Patient verfügen kann"],
+    ["Der Schlauch, den die Ärzt*in legt", "Der Schlauch, den der Arzt legt"],
+    // Genitiv `einer` nach Nomen, Dativ nach Präposition.
+    ["mit dem Comic einer Autor*in", "mit dem Comic eines Autors"],
+    ["Mit einer erfahrenen Mitarbeiter:in", "Mit einem erfahrenen Mitarbeiter"],
+    ["Laut der Ärzt*in ist das so.", "Laut dem Arzt ist das so."],
+    // Verb mit Dativobjekt vor `der`.
+    ["Wir danken der Patient*in, die half.", "Wir danken dem Patienten, der half."],
+    ["Sie folgt der neuen Trainer*in.", "Sie folgt dem neuen Trainer."],
+    // Präposition legt den Fall eines Nominativpaars fest.
+    ["Gespräch mit der oder die Kolleg*in.", "Gespräch mit dem Kollegen."],
+    ["Gespräch mit der/die Kolleg*in.", "Gespräch mit dem Kollegen."],
+    ["Ein Brief für der oder die neue Kolleg*in.", "Ein Brief für den neuen Kollegen."],
+    ["Der oder die Kolleg*in kommt.", "Der Kollege kommt."],
+    // Überschrift ohne Trennung vor dem Fließtext.
+    ["Ihre Arbeitgeber:in Das Diakoniewerk ist groß.", "Ihr Arbeitgeber Das Diakoniewerk ist groß."],
+    ["Werden Sie unsere Freund*in!", "Werden Sie unser Freund!"],
+    // Subjektpronomen vergeben das Subjekt: Objekt im Akkusativ, mit Kopula Nominativ.
+    ["Werden Sie die Ärzt*in anrufen?", "Werden Sie den Arzt anrufen?"],
+    ["Rufen Sie die Ärzt*in an.", "Rufen Sie den Arzt an."],
+    ["Wenn Sie die Ärzt*in sehen, grüßen Sie.", "Wenn Sie den Arzt sehen, grüßen Sie."],
+    ["Sind Sie die Ärzt*in?", "Sind Sie der Arzt?"],
+    ["Wenn Sie die Ärzt*in sind, melden Sie sich.", "Wenn Sie der Arzt sind, melden Sie sich."],
+    ["Wollen Sie eine Ärzt*in werden?", "Wollen Sie ein Arzt werden?"],
+    // Vorangestelltes Subjekt und Verb mit typischem Personenobjekt.
+    ["Das Projekt unterstützt die Künstler*in.", "Das Projekt unterstützt den Künstler."],
+    ["Der Verein fördert eine junge Künstler*in.", "Der Verein fördert einen jungen Künstler."]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+
+  it.each([
+    // Bei Verben wie „leiten“ ist die Person meist selbst Subjekt.
+    "Das Projekt leitet die Künstler*in.",
+    // Relativpronomen im Nominativ kann Subjekt sein.
+    "Die Stadt, der die Künstler*in hilft",
+    // Pronomen vor Dativobjekt ist kein Genitivbezug.
+    "Geben Sie der Ärzt*in Bescheid.",
+    "Sie gibt einer Ärzt*in das Buch."
+  ])("bleibt: %s", (input) => expect(t(input)).toBe(input));
+});
