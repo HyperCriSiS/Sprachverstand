@@ -11,6 +11,7 @@ import {
   type GrammaticalCase
 } from "./person-lexicon";
 import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
+import { normalizeDeterminerPairs } from "./determiner-pairs";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
 
@@ -1101,11 +1102,13 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const contractedPairResult = transformContractedPairs(input);
+    const pairResult = normalizeDeterminerPairs(input);
+    const contractedPairResult = transformContractedPairs(pairResult.text);
     const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
     const spacedPairResult = {
       text: spacedPairResult0.text,
-      replacements: contractedPairResult.replacements + spacedPairResult0.replacements
+      replacements: pairResult.replacements + contractedPairResult.replacements +
+        spacedPairResult0.replacements
     };
     const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
       spacedPairResult.text
