@@ -57,6 +57,47 @@ const copulaPattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}])(?:${copulas})\s+(?:(?:auch|nun|jetzt|immer|noch|schon|bereits|ebenfalls|zudem|hier|dort|nicht|stets|wieder|weiterhin)\s+){0,2})(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
+// (e) heading run into the following text in one node (`Ihre Arbeitgeber:in
+// Das Diakoniewerk …`): a capitalized determiner at the start and a new
+// sentence right after the noun.
+const headingPattern = new RegExp(
+  String.raw`^(\s*)(${determiner})(\s+)${attributes}${marked}(?=\s+(?:Das|Der|Die|Ein|Eine|Wir|Ich|Sie|Unser|Unsere|Ihr|Ihre|Bei|Mit|Im|In|Am|Als|Seit|Hier)\s)`,
+  "u"
+);
+// (f) subject right after a singular finite verb in second position, with a
+// prepositional phrase or adverb in front (`In der Praxis findet die
+// Ärzt*in …`, `Dann griff die Referent*in …`); a fronted noun phrase could be
+// the subject itself and is left alone.
+const singularVerbs = [
+  "ist", "war", "wäre", "sei", "hat", "hatte", "hätte", "wird", "wurde", "würde", "kann", "konnte",
+  "könnte", "muss", "musste", "müsste", "soll", "sollte", "darf", "durfte", "dürfte", "will", "wollte",
+  "möchte", "mag", "bekommt", "bekam", "erhält", "erhielt", "braucht", "brauchte", "kennt", "kannte",
+  "sieht", "sah", "findet", "fand", "macht", "machte", "geht", "ging", "kommt", "kam", "bleibt", "blieb",
+  "steht", "stand", "weiß", "wusste", "sagt", "sagte", "schreibt", "schrieb", "liest", "las",
+  "arbeitet", "arbeitete", "hilft", "half", "zeigt", "zeigte", "trägt", "trug", "übernimmt", "übernahm",
+  "entscheidet", "entschied", "spricht", "sprach", "greift", "griff", "leitet", "leitete", "beginnt",
+  "begann", "berät", "beriet", "erklärt", "erklärte", "erzählt", "erzählte", "berichtet", "berichtete",
+  "präsentiert", "präsentierte", "führt", "führte", "stellt", "stellte", "bietet", "bot"
+].join("|");
+const frontPrepositions = "In|Im|Am|An|Auf|Bei|Beim|Nach|Seit|Mit|Vor|Für|Während|Zum|Zur|Durch|Über|Unter|Neben|Aus|Vom|Von|Ab";
+const frontAdverbs = "Dann|Danach|Anschließend|Zunächst|Zuerst|Heute|Hier|Dort|Nun|Jetzt|Zudem|Außerdem|Dabei|Hierbei|Daher|Deshalb|Oft|Meist|Meistens|Häufig|Manchmal|Gemeinsam|Später|Bald|Morgen|Gestern|Danach|Schließlich|Abschließend|Später|Davor|Damals|Inzwischen|Mittlerweile|Seitdem";
+const verbSecondPattern = new RegExp(
+  String.raw`((?:^|[.!?]\s+)(?:(?:${frontPrepositions})(?:\s+[\p{L}\p{M}\d-]+){1,4}?|${frontAdverbs})\s+(?:${singularVerbs})\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
+  "gu"
+);
+// (g) subject after a relative pronoun governed by a preposition, or after
+// an oblique one (`über den die Patient*in verfügen kann`, `, dem die
+// Ärzt*in hilft`). `, die/der/das die …` stays: the pronoun may be the
+// subject.
+const relativePattern = new RegExp(
+  String.raw`((?:,\s*|(?<![\p{L}\p{M}])(?:an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen)\s+)(?:den|dem|denen|dessen|deren)\s+|,\s*(?:an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen)\s+(?:der|die|das)\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
+  "gu"
+);
+// (h) imperative copula: `Werden Sie unsere Freund*in!`
+const imperativePattern = new RegExp(
+  String.raw`((?:^|[.!?]\s+)(?:Werden|Bleiben|Seien)\s+Sie\s+)(${determiner})(\s+)${attributes}${marked}(?=\s*(?:[!.]|$))`,
+  "gu"
+);
 const accusativePattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}])(?:(?:${subjectPronouns})\s+(?:${accusativeVerbs})|(?:${accusativeVerbs})\s+(?:${subjectPronouns}))(?:\s+[\p{L}\p{M}\d.]+){0,4}?\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
@@ -96,6 +137,24 @@ export function transformClauseCase(
     const [, lead, determinerWord, space, attributeText, base, tail] = standalone;
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "nominative", mapNoun);
     if (converted) return {text: lead + converted + tail, replacements: 1};
+  }
+  const heading = headingPattern.exec(text);
+  if (heading && /^\p{Lu}/u.test(heading[2]!)) {
+    const [whole, lead, determinerWord, space, attributeText, base] = heading;
+    const converted = phrase(determinerWord!, space!, attributeText!, base!, "nominative", mapNoun);
+    if (converted) {
+      text = lead + converted + text.slice(whole.length);
+      replacements += 1;
+    }
+  }
+  for (const pattern of [verbSecondPattern, relativePattern, imperativePattern]) {
+    text = text.replace(pattern, (match: string, prefix: string, determinerWord: string, space: string,
+      attributeText: string, base: string) => {
+      const converted = phrase(determinerWord, space, attributeText, base, "nominative", mapNoun);
+      if (!converted) return match;
+      replacements += 1;
+      return prefix + converted;
+    });
   }
   text = text.replace(sentenceStartPattern,
     (match: string, prefix: string, determinerWord: string, space: string, attributeText: string,

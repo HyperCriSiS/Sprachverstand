@@ -82,3 +82,34 @@ describe("Eigenkreationen", () => {
     ["Drei Pantherinnen im Zoo", "Drei Pantherinnen im Zoo"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });
+
+// Satzbau entscheidet den Fall bei mehrdeutigem Begleitwort.
+describe("Kasus aus dem Satzbau", () => {
+  it.each([
+    // Subjekt nach Verb an zweiter Stelle.
+    ["In der Praxis findet die Ärzt*in kaum Zeit.", "In der Praxis findet der Arzt kaum Zeit."],
+    ["Dann griff die Referent*in das Thema auf.", "Dann griff der Referent das Thema auf."],
+    // Subjekt nach Relativpronomen im Dativ/Akkusativ oder nach Präposition.
+    ["der Datenraum, über den die Patient*in verfügen kann", "der Datenraum, über den der Patient verfügen kann"],
+    ["Der Schlauch, den die Ärzt*in legt", "Der Schlauch, den der Arzt legt"],
+    // Genitiv `einer` nach Nomen, Dativ nach Präposition.
+    ["mit dem Comic einer Autor*in", "mit dem Comic eines Autors"],
+    ["Mit einer erfahrenen Mitarbeiter:in", "Mit einem erfahrenen Mitarbeiter"],
+    ["Laut der Ärzt*in ist das so.", "Laut dem Arzt ist das so."],
+    // Überschrift ohne Trennung vor dem Fließtext.
+    ["Ihre Arbeitgeber:in Das Diakoniewerk ist groß.", "Ihr Arbeitgeber Das Diakoniewerk ist groß."],
+    ["Werden Sie unsere Freund*in!", "Werden Sie unser Freund!"]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+
+  it.each([
+    // Vorangestellte Nominalphrase kann selbst Subjekt sein.
+    "Das Projekt unterstützt die Künstler*in.",
+    // Relativpronomen im Nominativ kann Subjekt sein.
+    "Die Stadt, der die Künstler*in hilft",
+    // Futur mit Objekt.
+    "Werden Sie die Ärzt*in anrufen?",
+    // Pronomen vor Dativobjekt ist kein Genitivbezug.
+    "Geben Sie der Ärzt*in Bescheid.",
+    "Sie gibt einer Ärzt*in das Buch."
+  ])("bleibt: %s", (input) => expect(t(input)).toBe(input));
+});

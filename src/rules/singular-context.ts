@@ -814,7 +814,7 @@ function transformObliqueSeparatorSingulars(input: string): TransformResult {
 // compound (`der Therapeut:in-Arzt-Beziehung`), not as the second half of a
 // pair (`beim:bei der …`) and not before a coordinated marked noun.
 const feminineDerSingularPattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)der(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•.’‘-])([\p{L}\p{M}][\p{L}\p{M}-]*(?:(?:\/-?|[:*_·•’‘])[rn])?)([ \t ]+)(der|einer)(\s+${weakAdjectives})(${nounBase})(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|(?<=\p{Ll})In)(?![\p{L}\p{M}_-])(?!\s+(?:und|oder|bzw\.|sowie)\s+[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•’‘])in|\(-?in\)|\p{Ll}In)(?![\p{L}\p{M}]))`,
   "gu"
 );
 const dativePrepositionSet = new Set(dativePrepositions.split("|"));
@@ -826,8 +826,12 @@ const nonNounWordsBeforeDer = new Set([
   "des", "in", "an", "auf", "unter", "über", "vor", "hinter", "neben",
   "zwischen", "für", "durch", "gegen", "ohne", "um", "als", "wie", "und",
   "oder", "aber", "auch", "nur", "noch", "so", "da", "wo", "wenn", "weil",
-  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt"
+  "dass", "ob", "während", "wegen", "trotz", "statt", "anstatt",
+  // Pronouns before a dative object: `Geben Sie der Ärzt*in Bescheid`.
+  "sie", "ich", "er", "es", "wir", "ihr", "man", "ihnen", "uns", "euch", "mir", "dir", "ihm"
 ]);
+// `Laut der Ärzt*in` → „Laut dem Arzt“, not the genitive.
+const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "entsprechend"]);
 
 // A verb or participle that takes the dative right after the phrase makes
 // `der` a dative object: `(dass die) Umsetzung der Antragsteller:in
@@ -838,12 +842,13 @@ function transformFeminineDerSingulars(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
     feminineDerSingularPattern(),
-    (match: string, previous: string, space: string, adjectives: string, base: string,
+    (match: string, previous: string, space: string, article: string, adjectives: string, base: string,
       offset: number, source: string) => {
       if (!hasLowercaseAdjectives(adjectives)) return match;
+      const indefinite = article === "einer";
       const lowerPrevious = previous.toLocaleLowerCase(locale);
       const grammaticalCase: GrammaticalCase | undefined =
-        dativePrepositionSet.has(lowerPrevious) ||
+        dativePrepositionSet.has(lowerPrevious) || dativeWordsBeforeDer.has(lowerPrevious) ||
           dativeGoverningAfter.test(source.slice(offset + match.length, offset + match.length + 40))
           ? "dative"
           : previous !== lowerPrevious && !nonNounWordsBeforeDer.has(lowerPrevious) &&
@@ -854,7 +859,7 @@ function transformFeminineDerSingulars(input: string): TransformResult {
       const noun = mapSingular(base, grammaticalCase);
       if (!noun) return match;
       replacements += 1;
-      return previous + space + (grammaticalCase === "dative" ? "dem" : "des") +
+      return previous + space + (indefinite ? "ein" : "d") + (grammaticalCase === "dative" ? "em" : "es") +
         adjectives + noun;
     }
   );

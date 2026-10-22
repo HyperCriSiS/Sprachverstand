@@ -46,13 +46,14 @@ describe("Präposition direkt vor dem Nomen öffnet eine eigene Phrase", () => {
     ["die Beziehung zwischen Patient*in und Therapeut", "die Beziehung zwischen Patient und Therapeut"],
     ["die Ersparnis pro Dienstnehmer:in", "die Ersparnis pro Dienstnehmer"],
     ["die ÖH ohne Wirtschaftsreferent:in", "die ÖH ohne Wirtschaftsreferent"],
-    ["Keine Unterschrift von Vertreter:in nötig", "Keine Unterschrift von Vertreter nötig"]
+    ["Keine Unterschrift von Vertreter:in nötig", "Keine Unterschrift von Vertreter nötig"],
+    // Dativpräposition vor `einer`: eindeutig.
+    ["mit einer erfahrenen Patient*in", "mit einem erfahrenen Patienten"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
-    // Begleitwort nach der Präposition: Schutz wie bisher.
+    // Mehrdeutiges Begleitwort nach der Präposition: Schutz wie bisher.
     ["für eine neue Betreuer:in", "für eine neue Betreuer:in"],
-    ["mit einer erfahrenen Patient*in", "mit einer erfahrenen Patient*in"],
     // Erweitertes Attribut mit Präposition: Schutz bleibt.
     ["die mit Kindern arbeitende Erzieher*in", "die mit Kindern arbeitende Erzieher*in"],
     ["die Lehrer*in", "die Lehrer*in"]
