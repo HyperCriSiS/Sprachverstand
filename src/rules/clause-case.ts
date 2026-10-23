@@ -32,7 +32,7 @@ function capitalizable(words: readonly string[]): string {
 const determiner = `(?:${capitalizable(["welche", "die", "eine", "jede", "keine", "diese", "meine", "deine", "seine", "ihre", "unsere", "eure"])})`;
 // Adjectives in any ending (normalized by `phrase`), and indeclinable place
 // adjectives (`eine Leipziger Philosoph/-in`).
-const notAdjectives = "beide|beiden|alle|allen|viele|vielen|einige|einigen|mehrere|mehreren|wenige|wenigen|sämtliche|sämtlichen|aber|oder|immer|wieder|hier|weiter|sehr|mehr|daher|bisher|früher|später|seither|außer|unter|über|hinter|wer|der|er|ihr|mir|dir|wir|unser|euer|jeder|jener|dieser|welcher|keiner|einer|deren|dessen|denen|einen|einem|eines";
+const notAdjectives = "die|eine|keine|jede|diese|meine|deine|seine|ihre|unsere|eure|welche|beide|beiden|alle|allen|viele|vielen|einige|einigen|mehrere|mehreren|wenige|wenigen|sämtliche|sämtlichen|aber|oder|immer|wieder|hier|weiter|sehr|mehr|daher|bisher|früher|später|seither|außer|unter|über|hinter|wer|der|er|ihr|mir|dir|wir|unser|euer|jeder|jener|dieser|welcher|keiner|einer|deren|dessen|denen|einen|einem|eines";
 // Place adjectives only from a list; a capitalized word on -er is
 // otherwise a noun (`die beiden Berufsbilder Notfallsanitäter*in`).
 const placeAdjectives = [
@@ -117,6 +117,7 @@ const determinerLeftBefore = new RegExp(String.raw`(?:^|(?<![,;])\s)(?:${capital
 // `zukünftige/r`, `Ihr:e`, `Studentische/-r OP`): its phrase is resolved
 // as a whole by the attribute rules, never the noun alone.
 const markedWordBefore = /\S*[:*_·•\/]\S*\s+(?:\S+\s+){0,3}$/u;
+const singularVerbSet = new Set(singularVerbs.split("|"));
 const finiteVerbPattern = new RegExp(String.raw`^${finiteVerb}$`, "u");
 const verbSecondPattern = new RegExp(
   String.raw`((?:^|[.!?]\s+)(?:(?:${frontPrepositions})(?:\s+[\p{L}\p{M}\d/-]+){1,5}?|(?:${frontAdverbs})(?:\s+(?:zur|zum|zu|mit|bei|nach|von|aus|im|in|am|an|auf)(?:\s+[\p{L}\p{M}\d-]+){1,2})?|${frontPlural})\s+${finiteVerb}(?:\s+(?:und|oder)\s+${finiteVerb})?\s+(?:(?:je|jeweils)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
@@ -152,6 +153,24 @@ const postverbalSubjectPattern = new RegExp(
 // Verstärkung des Teams eine … Schlossmitarbeiter*in`.
 const searchPattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}])\p{Lu}[\p{L}\p{M}-]+\s+(?:sucht|suchen|suchte|suchten)\s+(?:[^\s,.;:!?]+\s+){0,6}?)(${determiner})(\s+)${attributes}${marked}${end}(?!\s+nach)`,
+  "gu"
+);
+// (t) a fronted phrase before a plural verb and its subject pronoun is the
+// object (`Ihre Stromanbieter:in können Sie … auswählen`); a singular verb
+// (`Ihre Ärzt*in kann Sie beraten`) leaves it the subject.
+const frontedObjectPattern = new RegExp(
+  String.raw`((?:^|[.!?]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:Sie|wir|ihr)(?![\p{L}\p{M}]))`,
+  "gu"
+);
+// (u) `es gibt` takes the accusative: `gibt es eine Projektentwickler*in`.
+const existentialPattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}])(?:gibt\s+es|gab\s+es|[Ee]s\s+gibt|[Ee]s\s+gab)\s+(?:(?:auch|nun|jetzt|immer|noch|schon|bereits|hier|dort|nur|meist|oft)\s+){0,2})(${determiner})(\s+)${attributes}${marked}${end}`,
+  "gu"
+);
+// (v) the subject of a coordinated main clause: `… und die Therapeut*in
+// kann den Muskel dehnen`. Only listed singular verbs directly after it.
+const coordinatedClausePattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}])(?:und|aber|doch|denn|sondern)\s+)(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:${singularVerbs})(?![\p{L}\p{M}]))`,
   "gu"
 );
 // (n) prepositions that govern the accusative before `die/eine/…`, which
@@ -310,8 +329,12 @@ export function transformClauseCase(
   // `zu werden/sein` after the phrase makes it predicative.
   const predicative = (tail: string) =>
     /^(?:\s+[^\s,.;:!?]+){0,5}?\s+(?:zu\s+)?(?:werden|sein|bleiben)(?![\p{L}\p{M}])/u.test(tail);
-  for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern, subordinateSubjectPattern]) {
+  for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
+    subordinateSubjectPattern, coordinatedClausePattern]) {
     convert(pattern, () => "nominative");
+  }
+  for (const pattern of [frontedObjectPattern, existentialPattern]) {
+    convert(pattern, () => "accusative");
   }
   convert(wideCopulaPattern, () => "nominative");
   for (const pattern of [subordinateObjectPattern, postverbalSubjectPattern, searchPattern]) {
@@ -374,8 +397,11 @@ export function transformClauseCase(
     (match: string, prefix: string, determinerWord: string, space: string, attributeText: string,
       base: string, next: string, afterVerb: string | undefined) => {
       // `Ihre Stromanbieter:in können Sie … auswählen`: a subject pronoun after
-      // the verb makes the fronted phrase the object.
-      if (afterVerb && /^(?:ich|du|er|sie|es|wir|ihr|Sie|man)$/u.test(afterVerb)) return match;
+      // the verb makes the fronted phrase the object. After a singular verb
+      // (`Ihre Ärzt*in kann Sie beraten`) `Sie` is the object instead.
+      const singularBeforeSie = afterVerb === "Sie" && !/en$/u.test(next) &&
+        (singularVerbSet.has(next) || finiteVerbPattern.test(next));
+      if (afterVerb && /^(?:ich|du|er|sie|es|wir|ihr|Sie|man)$/u.test(afterVerb) && !singularBeforeSie) return match;
       if (!finiteVerbsBeforeDer.has(next) && !finiteVerbPattern.test(next)) return match;
       const converted = phrase(determinerWord, space, attributeText, base, "nominative", mapNoun);
       if (!converted) return match;

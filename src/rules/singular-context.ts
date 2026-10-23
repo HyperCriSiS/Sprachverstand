@@ -288,9 +288,13 @@ const obliqueDeterminerBeforeNoun = new RegExp(
   "u"
 );
 
+// Capitalized as self-designation, still adjectives (`mit einer Schwarzen
+// Künstler:in`); any other capitalized word before the noun is a noun.
+const capitalizedIdentityAdjective = /^(?:Schwarz|Weiß|Indigen)(?:e|en)$/u;
+
 function hasLowercaseAdjectives(adjectives: string): boolean {
   return adjectives.split(/\s+/u).every(word =>
-    word === "" || word === word.toLocaleLowerCase(locale));
+    word === "" || word === word.toLocaleLowerCase(locale) || capitalizedIdentityAdjective.test(word));
 }
 
 // The case an oblique masculine determiner directly before a noun fixes,
