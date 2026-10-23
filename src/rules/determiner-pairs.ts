@@ -226,6 +226,22 @@ const sentenceWords = new Set([
   "hier", "dort", "heute", "jetzt", "nun", "denn", "doch", "also", "zudem", "außerdem", "bitte", "wer", "was"
 ]);
 
+const enumerationItemPattern = /(?:[Ee]ine?[:*_·•][rn]?|[Ee]iner|[Ee]inem)\s+[^,]{1,50}$/u;
+
+// One item at a time and only a few, so a long run of commas stays cheap.
+function withoutEnumerationItems(before: string): string {
+  let head = before;
+  for (let items = 0; items < 8; items++) {
+    const trimmed = head.trimEnd();
+    if (!trimmed.endsWith(",")) return head;
+    const body = trimmed.slice(0, -1);
+    const item = enumerationItemPattern.exec(body.slice(-80))?.[0];
+    if (!item) return head;
+    head = body.slice(0, body.length - item.length);
+  }
+  return head;
+}
+
 function caseFromEnding(ending: string | undefined, before: string): GrammaticalCase {
   const lower = ending?.toLocaleLowerCase(locale);
   if (lower === "n" || lower === "en") return "accusative";
@@ -233,9 +249,7 @@ function caseFromEnding(ending: string | undefined, before: string): Grammatical
   if (lower === "s") return "genitive";
   // Earlier items of an enumeration and a distributive `je` share the
   // preposition before them (`aus je eine:r Hundeführer:in, eine:r SAR-Helfer:in`).
-  const head = before
-    .replace(/(?:(?:[Ee]ine?[:*_·•][rn]?|[Ee]iner|[Ee]inem)\s+[^,]{1,50},\s*)+$/u, "")
-    .replace(/\s(?:je|jeweils)\s*$/u, " ");
+  const head = withoutEnumerationItems(before).replace(/\s(?:je|jeweils)\s*$/u, " ");
   const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(head)?.[1] ?? "";
   const lowerPrevious = previous.toLocaleLowerCase(locale);
   if (dativePrepositions.has(lowerPrevious)) return "dative";
