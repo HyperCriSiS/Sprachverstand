@@ -270,8 +270,9 @@ export class DomProcessor {
   }>();
   private leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
   // Article changes made for a noun in the next text, by that noun and by
-  // the changed text, so a page change to either noun recomputes both.
-  private leadingContextEdits = new WeakMap<Text, {previous: Text; before: string; after: string}>();
+  // the changed text, so a page change to either noun recomputes both. A
+  // Map: removing the noun's subtree must find its edits (few per page).
+  private leadingContextEdits = new Map<Text, {previous: Text; before: string; after: string}>();
   private leadingContextEditSources = new WeakMap<Text, Text>();
   private customReplacementSources?: {
     readonly list: DomProcessorOptions["customReplacements"];
@@ -491,6 +492,7 @@ export class DomProcessor {
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
     this.leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
+    this.leadingContextEdits.clear();
     this.partitionTemporaryNodes = new WeakSet<Node>();
 
     const MutationObserverConstructor =
@@ -554,6 +556,7 @@ export class DomProcessor {
     this.pendingSubtitleRoots.clear();
     this.activeSubtitleTraversal = undefined;
     this.pendingAttributes.clear();
+    this.leadingContextEdits.clear();
     this.cancelSubtitleFlush();
     this.subtitleTransformCache.clear();
     this.observedShadowRoots = new WeakSet<ShadowRoot>();
@@ -1658,6 +1661,7 @@ export class DomProcessor {
           if (removedNode.isConnected && removedNode.getRootNode({ composed: true }) === this.document) {
             continue;
           }
+          this.revertLeadingContextEditsWithin(removedNode);
           if (removedRoots < maximumRegularStepsPerSlice &&
               (removedRoots === 0 || this.now() < removalDeadline)) {
             removedRoots++;
@@ -2859,6 +2863,16 @@ export class DomProcessor {
     this.replaceTextKeepingRanges(previous, before);
   }
 
+  // The page removed the noun (or its inline element, `<strong>Gemeinde</strong>`
+  // in its place): no text is processed again, so its article goes back now.
+  private revertLeadingContextEditsWithin(root: Node): void {
+    if (this.leadingContextEdits.size === 0) return;
+    for (const [source, edit] of [...this.leadingContextEdits]) {
+      if (source === root || root.contains(source)) this.revertLeadingContextEdit(source);
+      else if (!edit.previous.isConnected && !source.isConnected) this.leadingContextEdits.delete(source);
+    }
+  }
+
   // Removes the marker that ends the directly preceding, otherwise untouched
   // text. The change is tracked like any own edit and restored with it.
   private removeSplitMarkerBefore(node: Text): boolean {
@@ -3493,8 +3507,9 @@ export class DomProcessor {
         let text = yield* this.iterateSafeContextSibling(sibling, allowShortFragment);
         // `<code>der </code><em>Künstler*in</em>`: the protected article is
         // never read for the grammar, but it still prevents converting the
-        // noun alone where that article would have to change.
-        if (text === undefined && collectedLength === 0) {
+        // noun alone where that article would have to change. Whitespace of
+        // its own may stand between (`<code>der</code> <em>…</em>`).
+        if (text === undefined && chunks.every((chunk) => chunk.trim() === "")) {
           text = this.adjacentProtectedText(sibling);
           protectedEnd = text !== undefined;
         }
