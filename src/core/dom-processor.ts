@@ -267,6 +267,10 @@ export class DomProcessor {
     deferredNodes: Set<Text>;
   }>();
   private leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
+  private customReplacementSources?: {
+    readonly list: DomProcessorOptions["customReplacements"];
+    readonly sources: readonly string[];
+  };
   private partitionTemporaryNodes = new WeakSet<Node>();
   private readonly pendingSubtitleTextNodes = new PendingSet<Text>();
   private readonly pendingSubtitleRoots = new PendingSet<Node>();
@@ -2840,8 +2844,24 @@ export class DomProcessor {
   }
 
   private isTransformCandidate(input: string): boolean {
-    return Boolean(this.options.customReplacements?.length) ||
-      !this.options.isTransformCandidate || this.options.isTransformCandidate(input);
+    return !this.options.isTransformCandidate || this.options.isTransformCandidate(input) ||
+      this.containsCustomReplacementSource(input);
+  }
+
+  // One own replacement used to make every text a candidate. A literal
+  // substring test is enough to keep the early skip: the engine still decides
+  // word boundaries and protected ranges. Decomposed text stays a candidate,
+  // the engine may compose it before matching.
+  private containsCustomReplacementSource(input: string): boolean {
+    const list = this.options.customReplacements;
+    if (!list?.length) return false;
+    if (this.customReplacementSources?.list !== list) {
+      this.customReplacementSources = {
+        list, sources: [...new Set(list.map((entry) => entry.source.trim()).filter(Boolean))]
+      };
+    }
+    return this.customReplacementSources.sources.some((source) => input.includes(source)) ||
+      /\p{M}/u.test(input);
   }
 
   private deferTextTransform(node: Text, original: string, leadingContext: string | undefined,
