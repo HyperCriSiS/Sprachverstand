@@ -7,7 +7,7 @@ import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./co
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
 const dativePhrasePattern =
-  /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
+  /(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|folgen|zuhören)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
 
 // Words between trigger and noun must form one noun phrase: lowercase
 // determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
@@ -17,6 +17,11 @@ const phraseBreakingWords = new Set([
   "ihnen", "denen", "haben", "können", "müssen", "sollen", "wollen",
   "dürfen", "werden", "möchten", "helfen", "arbeiten", "erhalten",
   "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen"
+]);
+// Verbs with a dative object: `Wir danken Lehrer:innen` → `Lehrern`.
+const dativeVerbs = new Set([
+  "danken", "dankt", "gratulieren", "gratuliert", "helfen", "hilft",
+  "vertrauen", "vertraut", "begegnen", "folgen", "zuhören"
 ]);
 const determinerLikeWords = new Set([
   "den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
@@ -33,7 +38,8 @@ const quantityNouns = new Set([
 function isDativeNounPhrase(prefix: string): boolean {
   const words = prefix.trim().split(/\s+/u);
   return words.every((word, index) => {
-    if (index === 0) return true;
+    // A dative verb counts only lowercase: `Vertrauen` is a noun.
+    if (index === 0) return !dativeVerbs.has(word.toLocaleLowerCase("de-DE")) || dativeVerbs.has(word);
     if (phraseBreakingWords.has(word)) return false;
     // A capitalized word is a noun (`Seit Wochen`) unless it is a
     // determiner in polite form (`mit Ihren`), a quantity noun
@@ -67,7 +73,7 @@ const markedWordPattern = new RegExp(
   "giu"
 );
 const dativeLeadingContextPattern =
-  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
+  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|folgen|zuhören)\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
 
 function transformDativeEnumeration(input: string): TransformResult {
   let replacements = 0;
@@ -92,7 +98,8 @@ function transformDativeEnumeration(input: string): TransformResult {
 // with the i flag, ordinary feminine plurals (`Lehrerinnen`) would match.
 const caseInsensitiveTriggers = ["mit", "bei", "von", "zu", "aus", "nach", "seit",
   "den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen", "keinen",
-  "diesen", "jenen", "allen"]
+  "diesen", "jenen", "allen", "danken", "dankt", "gratulieren", "gratuliert", "helfen", "hilft",
+  "vertrauen", "vertraut", "begegnen", "folgen", "zuhören"]
   .map((word) => [...word].map((letter) =>
     `[${letter}${letter.toLocaleUpperCase("de-DE")}]`).join(""))
   .join("|");
@@ -103,7 +110,7 @@ const binnenIDativePattern = new RegExp(
 
 function transformMarkedDativePlural(input: string): TransformResult {
   if (!/inn/iu.test(input)) return {text: input, replacements: 0};
-  if (!/mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen/iu.test(input)) return {text: input, replacements: 0};
+  if (!/mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|dank|gratul|helf|hilft|vertrau|begegn|folg|zuhör/iu.test(input)) return {text: input, replacements: 0};
   const aufzählung = transformDativeEnumeration(input);
   let replacements = aufzählung.replacements;
   const text = aufzählung.text.replace(
