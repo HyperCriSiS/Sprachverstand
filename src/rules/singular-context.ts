@@ -11,7 +11,7 @@ import {
   type GrammaticalCase
 } from "./person-lexicon";
 import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
-import { transformClauseCase } from "./clause-case";
+import { transformClauseCase, transformCoordinatedGenitives } from "./clause-case";
 import { normalizeCompactDeterminers, normalizeDeterminerPairs } from "./determiner-pairs";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
@@ -133,6 +133,7 @@ addDeterminer("der", "s", "des", "genitive");
 addDeterminer("eines", "r", "eines", "genitive");
 addDeterminer("einer", "m", "einem", "dative");
 addDeterminer("jeder", "m", "jedem", "dative");
+addDeterminer("jedem", "r", "jedem", "dative");
 addDeterminer("einer", "s", "eines", "genitive");
 // `dem*er Gewinner*in`, `einem/-er Stellvertreter*in`, `Ihres:r Arbeitgeber:in`.
 addDeterminer("dem", "er", "dem", "dative");
@@ -1215,9 +1216,10 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
       standaloneResult.text
     );
     const obliqueResult = transformObliqueSeparatorSingulars(ordinaryResult.text);
+    const coordinatedResult = transformCoordinatedGenitives(obliqueResult.text, mapSingular);
 
     return {
-      text: obliqueResult.text,
+      text: coordinatedResult.text,
       replacements:
         spacedPairResult.replacements +
         prepositionalSeparatorResult.replacements +
@@ -1235,7 +1237,8 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
         nominativeResult.replacements +
         standaloneResult.replacements +
         ordinaryResult.replacements +
-        obliqueResult.replacements
+        obliqueResult.replacements +
+        coordinatedResult.replacements
     };
   }
 }));

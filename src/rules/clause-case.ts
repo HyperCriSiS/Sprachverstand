@@ -489,3 +489,34 @@ export function transformClauseCase(
   }
   return {text, replacements};
 }
+
+// A marked phrase coordinated after a converted genitive takes the
+// genitive too: `die Rolle eines Wählers der Grünen oder einer
+// Politiker*in`, `eines Trainers mit Migrationsgeschichte und einer
+// Trainer*in ohne`. `einer`/`der` cannot start a new nominative or
+// accusative here. A doubled form (`eines Lehrers und einer Lehrer*in`)
+// stays as written.
+const coordinatedGenitivePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*|\s+(?:mit|ohne|aus|von)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
+  "gu"
+);
+
+export function transformCoordinatedGenitives(
+  input: string,
+  mapNoun: (base: string, grammaticalCase: GrammaticalCase) => string | undefined
+): TransformResult {
+  if (!/(?:eines|des)\s/u.test(input)) return {text: input, replacements: 0};
+  let replacements = 0;
+  const text = input.replace(coordinatedGenitivePattern, (match: string, head: string, first: string,
+    attribute: string, conjunction: string, determinerWord: string, space: string, attributeText: string,
+    base: string) => {
+    if (!attribute && first === base) return match;
+    const noun = mapNoun(base, "genitive");
+    if (!noun) return match;
+    replacements += 1;
+    const inflected = attributeText.replace(/(?<![\p{L}\p{M}])\p{Ll}[\p{L}\p{M}]*e(?=\s)/gu, (word) => `${word}n`);
+    return head + conjunction + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "des" : "eines") +
+      space + inflected + noun;
+  });
+  return {text, replacements};
+}
