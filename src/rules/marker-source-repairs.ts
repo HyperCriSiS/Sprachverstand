@@ -128,16 +128,70 @@ const quotedPrefixPattern =
   /([»“"]-|(?<=\s)-)(\p{Lu}[\p{L}\p{M}’']*?\p{Ll})(?:(?:[:*_·•]|\/-?)(in|innen)|(Innen))(?![\p{L}\p{M}])/gu;
 // Not after a soft hyphen inside a word, not before a compound hyphen.
 const plainErPluralPattern =
-  /(?<![\p{L}\p{M}’'_­])([\p{L}\p{M}\d’'-]*\p{Ll}er)(n?)(?:(?:[:*_·•]|\/-?)innen|Innen)(?![\p{L}\p{M}-])/gu;
+  /(?<![\p{L}\p{M}’'_­])([\p{L}\p{M}\d’'-]*\p{L}er)(n?)(?:(?:[:*_·•]|\/-?)innen|Innen)(?![\p{L}\p{M}-])/gu;
 // -ier has the plural -iere (`Passagier`, `Pionier`); adjectives and
 // participles used as nouns end in -e/-en (`Sachverständige`).
 const notPlainEr = /(?:ier|(?:ig|lich|isch|end|bar|sam|haft|los|iert|ordnet|stellt|setzt|tragt|wandt|kannt|amt)er)$/u;
-const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren";
-// Directly after the trigger, only adjectives between.
-const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$`, "u");
-// A dative plural coordinated before it: `von Antifaschisten und …`.
+const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|folgen|zuhören";
+// Directly after the trigger, only adjectives, numbers or name parts
+// between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`).
+const dativeGap = String.raw`(?:(?:\p{Ll}[\p{L}\p{M}]*en|\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+){0,2}`;
+const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+${dativeGap}$`, "u");
+const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
+const coordinatedEnding = /\s(?:und|oder|sowie)\s+(?:\d+\s+)?$/u;
+const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+$`, "u");
+// A dative plural coordinated before it: `von Antifaschisten und …`. The
+// first conjunct must name persons: in `Überlebende von Genoziden und
+// Zeichner:innen` or `Rechtsanwält*innen aus Bremen und …` the
+// prepositional phrase is an attribute and the plural coordinates with its
+// head. A relative `den` (`, den Bauernfamilien und …`) is no trigger.
 const coordinatedDativeBefore = new RegExp(
-  String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}\p{Lu}[\p{L}\p{M}-]*n\s+(?:und|oder|sowie)\s+$`, "u");
+  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(\p{Lu}[\p{L}\p{M}’'-]*n)\s+(?:und|oder|sowie)\s+(?:\d+\s+)?$`, "u");
+// A plural right before the preposition may own it as an attribute; when the
+// prepositional object names no persons, the coordinated noun belongs to
+// that plural: `Überlebende von Genoziden und Zeichner:innen`,
+// `Rechtsanwält*innen aus Bremen und …`, `Fans von Weitwanderungen und …`.
+// `Rückmeldungen von Lehrpersonen und Schüler:innen` stays dative.
+const pluralBeforePreposition = /^\p{Lu}[\p{L}\p{M}*:_\/·•’'-]*(?:e|en|er|innen|Innen|s)$/u;
+// Person nouns without a gendered form (`von Opfern und Täter:innen`).
+const personNounsWithoutMarker =
+  /(?:[Oo]pfer|[Mm]enschen|[Kk]inder|[Ee]ltern|[Ll]eute|[Pp]ersonen|[Mm]itglieder|[Gg]äste|[Kk]räfte|[Hh]ebammen|[Ff]rauen|[Mm]änner|[Mm]ädchen|[Ff]amilien|[Pp]aare|[Jj]ugendliche|[Ää]rzte|[Tt]eams|[Hh]äftlinge|[Ff]ans|[Ff]lüchtlinge|[Aa]zubis)n?$/u;
+
+// Substantivized participles and adjectives for persons; a plain -ende(n)
+// ending is no evidence (`Energiewende`, `Dutzenden`).
+const personParticiples =
+  /(?:[Üü]berlebende|[Ss]tudierende|[Ll]ehrende|[Ff]orschende|[Rr]eisende|[Ss]uchende|[Tt]eilnehmende|[Mm]itarbeitende|[Mm]itwirkende|[Aa]uszubildende|[Bb]eschäftigte|[Aa]ngestellte|[Bb]eteiligte|[Bb]etroffene|[Gg]eflüchtete|[Vv]orgesetzte|[Aa]bgeordnete|[Ee]hrenamtliche|[Jj]ugendliche|[Aa]ngehörige|[Ss]chaffende|[Ii]nteressierte|[Ee]rwachsene|[Vv]erstorbene|[Ee]rkrankte|[Ee]ngagierte|[Gg]efangene|[Rr]echtsextreme|[Nn]ominierte|[Pp]reisgekrönte|[Ee]ingeladene)n?$/u;
+
+function namesPersons(plural: string): boolean {
+  const head = plural.replace(/^.*-/u, "");
+  if (/(?:innen|Innen)$/u.test(head) || personNounsWithoutMarker.test(head) || personParticiples.test(head)) return true;
+  // Stems by the plural endings only (`Lehrern` → `Lehrer`, `Kollegen` →
+  // `Kolleg`/`Kollege`, `Ärzte` → `Ärzt`); a blind cut finds bogus stems.
+  const stems = new Set<string>();
+  if (head.endsWith("en")) stems.add(head.slice(0, -2)).add(head.slice(0, -1));
+  else if (head.endsWith("n")) stems.add(head.slice(0, -1));
+  if (head.endsWith("e")) stems.add(head.slice(0, -1));
+  if (head.endsWith("er")) stems.add(head);
+  return [...stems].some((stem) =>
+    stem.length >= 3 && (isKnownStem(stem) || mapSingular(stem, "nominative") !== undefined));
+}
+// Years are no counts (`seit 2014 Nutzer:innen`).
+const yearGap = /(?:^|\s)(?:1[89]|20)\d\d\s+(?:\S+\s+)?$/u;
+
+// The rest of the clause after the noun ends in a verb: a relative clause
+// (`, den Bauernfamilien und Arbeiter*innen in Projekte investieren`).
+const relativeClauseTail = /^[^,.;:!?]*\s\p{Ll}[\p{L}\p{M}]*(?:en|t)\s*[,.;:!?]/u;
+
+function isCoordinatedDative(before: string, after: string): boolean {
+  const match = coordinatedDativeBefore.exec(before);
+  if (!match) return false;
+  const [, comma, previous, trigger, noun] = match;
+  // An enumeration of `den …` items (`den Katholik*innen, den orthodoxen
+  // Mitgliedern und …`) is no relative clause.
+  const enumeration = /(?:^|\s)den\s+[^,]{1,60},\s*den\s+[^,]*$/u.test(before);
+  if ((comma || previous?.endsWith(",")) && trigger === "den" && !enumeration && relativeClauseTail.test(after)) return false;
+  return !(previous && pluralBeforePreposition.test(previous) && namesPersons(previous) && !namesPersons(noun!));
+}
 const abbreviationPluralPattern =
   /(?<![\p{L}\p{M}])(\p{Lu}[\p{L}]{0,3}\p{Lu})(?:[:*_·•]|\/-?)innen(?![\p{L}\p{M}])/gu;
 
@@ -173,16 +227,25 @@ function repairUnlistedForms(input: string): TransformResult {
     // A line-break hyphen (`Tea-mer:innen`) is no compound.
     if (/^\p{Ll}/u.test(head) && head !== stem) return match;
     if (notPlainEr.test(head) || isDisabledLoanword(head.toLocaleLowerCase("de-DE"))) return match;
+    // A listed source alias (`Partern:innen`, `Systempartern*innen`) keeps
+    // its own repair.
+    if (dativeN && isKnownStem(head + dativeN)) return match;
     const plural = mapKnownPlural(head) ?? mapMappedPlural(head);
     if (plural !== undefined && plural.toLocaleLowerCase("de-DE") !== head.toLocaleLowerCase("de-DE")) return match;
     const before = source.slice(Math.max(0, offset - 80), offset);
-    const coordinatedDative = coordinatedDativeBefore.test(before);
+    // Both dative readings need a trigger word; most texts have none nearby.
+    const triggered = dativeTriggerNear.test(before);
+    const coordinatedDative = triggered && coordinatedEnding.test(before) &&
+      isCoordinatedDative(before, source.slice(offset + match.length, offset + match.length + 120));
+    const directDative = triggered && pluralDativeBefore.test(before) && !yearGap.test(before);
     // Listed -er nouns (also compounds the lexicon reads) keep the lexicon
     // rules and their dative and coordination handling; only a coordinated
-    // dative or a prefix they cannot read comes here.
+    // dative, a number or name part between, or a prefix they cannot read
+    // comes here.
     const listed = plural !== undefined || mapSingular(head, "nominative") !== undefined;
-    if (listed && !dativeN && !coordinatedDative && !/\d/u.test(stem)) return match;
-    const dative = dativeN || (coordinatedDative || pluralDativeBefore.test(before) ? "n" : "");
+    if (listed && !dativeN && !coordinatedDative && !/\d/u.test(stem) &&
+        !(directDative && nameOrNumberGap.test(before))) return match;
+    const dative = dativeN || (coordinatedDative || directDative ? "n" : "");
     replacements += 1;
     return stem + dative;
   });

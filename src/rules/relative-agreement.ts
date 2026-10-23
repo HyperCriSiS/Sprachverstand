@@ -1,6 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { acceptContextResult } from "../core/leading-context-edit";
 import { markedSingularLeadingCandidate } from "./context-candidates";
+import { withPossessiveAgreement } from "./possessive-agreement";
 
 /*
  * A relative pronoun after a converted marked singular keeps the feminine
@@ -18,15 +19,25 @@ import { markedSingularLeadingCandidate } from "./context-candidates";
  */
 const mark = "";
 const markedEnding = String.raw`(?:[:*_·•’‘]in|\/-?in|\(-?in\)|\p{Ll}In)`;
-const relativeAhead = String.raw`(?:\s+\p{Ll}[\p{L}\p{M}-]*){0,2},\s+(?:deren|die|der)\s`;
+// The words between noun and comma must not start a new conjunct: in
+// `Händler:in und alle, die …` the clause belongs to `alle`.
+const betweenWord = String.raw`\s+(?!(?:und|oder|sowie|bzw|alle|allen|andere|anderen|viele|vielen|weitere|weiteren|sonstige)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}-]*`;
+const relativeAhead = String.raw`(?:${betweenWord}){0,2},\s+(?:deren|die|der)\s`;
 const markBefore = new RegExp(String.raw`(?<=\p{L}${markedEnding})(?=${relativeAhead})`, "gu");
-const markedPronoun = new RegExp(String.raw`([^${mark}]{0,6})${mark}((?:\s+\p{Ll}[\p{L}\p{M}-]*){0,2},\s+)(deren|die|der)(\s+)([\p{L}\p{M}]*)`, "gu");
+const markedPronoun = new RegExp(String.raw`([^${mark}]{0,6})${mark}((?:${betweenWord}){0,2},\s+)(deren|die|der)(?:(\s+(?:oder|bzw\.|\/)\s+)(deren|dessen|die|der))?(\s+)([\p{L}\p{M}]*)`, "gu");
+// `, die … zu übernehmen`: a noun phrase in an infinitive clause, not a
+// relative pronoun (`verpflichtet sich, die … Kosten zu übernehmen`).
+// No finite verb may come before the infinitive; a relative clause has one
+// (`, die sowohl … tätig ist und zu …`).
+const infinitiveClauseAhead =
+  /^(?:(?!\s(?:ist|sind|war|hat|haben|hatte|wird|werden|kann|können|muss|müssen|soll|sollen|will|wollen|möchte|darf|\p{Ll}[\p{L}\p{M}]*(?:[^\s\P{L}s]t|te))(?=[\s,.;:!?]))[^,.;:!?])*?(?:\s+zu\s+\p{Ll}[\p{L}\p{M}]*en|\s+\p{Ll}+zu\p{Ll}+en)\s*(?:[,.;:!?]|$)/u;
 // `Die Ausbildung zum/zur Krankenpflegehelfer/in, die wir anbieten`: after
 // `zum`/`zur`/`als` the noun names a role; the clause belongs to the post.
 // `die Rückfrage de*r Kolleg*in, die war gut`: a genitive attribute after a
 // noun; the clause usually continues the head noun, not the person.
+// Pair forms count too (`Entscheidung der*des Therapeut*in, die …`).
 const genitiveAttributeBefore =
-  /\p{Lu}\p{Ll}[\p{L}\p{M}-]*\s+(?:der|de[:*_·•]r?|einer|eine?[:*_·•]e?r|ihrer|ihre[:*_·•]r|seiner|seine[:*_·•]r)\s+(?:\p{Ll}[\p{L}\p{M}*:_·•]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/u;
+  /\p{Lu}\p{Ll}[\p{L}\p{M}-]*\s+(?:der|des|einer|eines|ihrer|ihres|seiner|seines|(?:de|der|des|ein|eine|einer|eines|ihre|ihrer|seine|seiner)[:*_·•\/][\p{L}\p{M}*:_·•\/-]*[rs])\s+(?:\p{Ll}[\p{L}\p{M}*:_·•]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/u;
 const roleTitleBefore =/(?:^|\s)(?:zum|zur|als|zum\/zur|zur\/zum)\s+(?:\p{Ll}[\p{L}\p{M}*:_\/·-]*\s+)?[\p{L}\p{M}’'*:_\/·•()-]+$/iu;
 const stillMarked = new RegExp(String.raw`${markedEnding}$`, "u");
 // `es` is left out: in `die es sich leisten kann` the relative is the subject.
@@ -57,9 +68,22 @@ export function withRelativeAgreement(
   const result = transform(marked);
   let replacements = result.replacements;
   const text = result.text.replace(markedPronoun,
-    (match: string, before: string, between: string, pronoun: string, space: string, next: string) => {
-      const relative = stillMarked.test(before) ? undefined : masculineRelative(pronoun, next);
-      if (!relative) return before + between + pronoun + space + next;
+    (match: string, before: string, between: string, pronoun: string, pairSeparator: string | undefined,
+      pairPronoun: string | undefined, space: string, next: string, offset: number, source: string) => {
+      const unchanged = before + between + pronoun + (pairSeparator ?? "") + (pairPronoun ?? "") + space + next;
+      if (stillMarked.test(before)) return unchanged;
+      // `die oder der …`: the pair keeps its masculine member.
+      if (pairPronoun) {
+        const masculine = [pronoun, pairPronoun].find((word) => word === "der" || word === "dessen");
+        if (!masculine) return unchanged;
+        replacements += 1;
+        return before + between + masculine + space + next;
+      }
+      if (pronoun !== "deren" && infinitiveClauseAhead.test(source.slice(offset + match.length - next.length - space.length))) {
+        return unchanged;
+      }
+      const relative = masculineRelative(pronoun, next);
+      if (!relative) return unchanged;
       replacements += 1;
       return before + between + relative + space + next;
     });
@@ -68,7 +92,8 @@ export function withRelativeAgreement(
 
 export function withRelativeAgreementRule(rule: Rule): Rule {
   const apply = rule.apply.bind(rule);
-  return {...rule, apply: (input) => withRelativeAgreement(input, apply)};
+  return {...rule, apply: (input) => withPossessiveAgreement(input,
+    (marked) => withRelativeAgreement(marked, apply))};
 }
 
 // A marked singular at the start of an inline element (`mit der
