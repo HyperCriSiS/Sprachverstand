@@ -22,9 +22,11 @@ interface DeterminerForm {
 }
 
 const locale = "de-DE";
-// Every pattern below requires a singular in/In ending at a word boundary.
-// Plural markers and neutral texts need none of the twelve context scans.
-const singularEndingCandidate = /in(?![\p{L}\p{M}])/iu;
+// Every pattern below requires a marked singular ending at a word boundary:
+// a marker before `in` (`:in`, `*in`, `/-in`, `(in)`, `.in`) or the visible
+// Binnen-I (`LehrerIn`). Plain words on -in (`ein`, `Berlin`, `Lehrerin`)
+// and plural markers need none of the twelve context scans.
+const singularEndingCandidate = /(?:[:*_\/·•.’‘(-]-?[iI][nN]|In)(?![\p{L}\p{M}])/u;
 const separators = [":", "*", "_", "/", "/-", "·", "•", ".", "’", "‘"] as const;
 const determinerForms = new Map<string, DeterminerForm>();
 
