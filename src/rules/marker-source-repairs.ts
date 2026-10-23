@@ -132,7 +132,7 @@ const plainErPluralPattern =
 // -ier has the plural -iere (`Passagier`, `Pionier`); adjectives and
 // participles used as nouns end in -e/-en (`Sachverständige`).
 const notPlainEr = /(?:ier|(?:ig|lich|isch|end|bar|sam|haft|los|iert|ordnet|stellt|setzt|tragt|wandt|kannt|amt)er)$/u;
-const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren";
+const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|folgen|zuhören";
 // Directly after the trigger, only adjectives, numbers or name parts
 // between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`).
 const dativeGap = String.raw`(?:(?:\p{Ll}[\p{L}\p{M}]*en|\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+){0,2}`;
