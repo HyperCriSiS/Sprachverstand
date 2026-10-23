@@ -2,6 +2,14 @@ import type { TransformResult } from "../core/rule";
 import type { GrammaticalCase } from "./person-lexicon";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const inflectableAttributePattern = /(?<![\p{L}\p{M}.])\p{Ll}[\p{L}\p{M}]*(?:e|er|en|es|em)(?=\s)/gu;
+const uppercaseStartPattern = /^\p{Lu}/u;
+const copulaInfinitiveAhead = /^(?:\s+[^\s,.;:!?]+){0,5}?\s+(?:zu\s+)?(?:werden|sein|bleiben)(?![\p{L}\p{M}])/u;
+const attributeOnEPattern = /(?<![\p{L}\p{M}])\p{Ll}[\p{L}\p{M}]*e(?=\s)/gu;
+const finalInfinitivePattern = /^(?:\s+[^\s,.;:!?]+){0,4}?\s+(\p{Ll}[\p{L}\p{M}]*en)\s*(?:[.,;!?]|$)/u;
+
 /*
  * Ambiguous determiner + marked singular (`die/eine/Ihre/Jede … Lehrer*in`)
  * where the clause decides the case:
@@ -326,7 +334,7 @@ function phrase(
   const strong = grammaticalCase === "nominative" && strongNominative.has(masculine);
   // Source endings vary (`eine möglicher Überträger*in`); the stem takes the
   // ending the masculine determiner requires.
-  const inflected = attributeText.replace(/(?<![\p{L}\p{M}.])\p{Ll}[\p{L}\p{M}]*(?:e|er|en|es|em)(?=\s)/gu, (written) => {
+  const inflected = attributeText.replace(inflectableAttributePattern, (written) => {
     if (notAdjectiveSet.has(written)) return written;
     const word = written.replace(/(?:er|en|es|em)$/u, "e");
     return grammaticalCase === "accusative" ? `${word}n` : strong ? `${word}r` : word;
@@ -343,13 +351,13 @@ export function transformClauseCase(
   const standalone = standalonePattern.exec(text);
   // Only a capitalized determiner marks a heading; a lowercase phrase can be
   // an inline fragment of a longer sentence (`<em>eine Patient*in</em>`).
-  if (standalone && /^\p{Lu}/u.test(standalone[2]!)) {
+  if (standalone && uppercaseStartPattern.test(standalone[2]!)) {
     const [, lead, determinerWord, space, attributeText, base, tail] = standalone;
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "nominative", mapNoun);
     if (converted) return {text: lead + converted + tail, replacements: 1};
   }
   const heading = headingPattern.exec(text);
-  if (heading && /^\p{Lu}/u.test(heading[2]!)) {
+  if (heading && uppercaseStartPattern.test(heading[2]!)) {
     const [whole, lead, determinerWord, space, attributeText, base] = heading;
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "nominative", mapNoun);
     if (converted) {
@@ -372,13 +380,13 @@ export function transformClauseCase(
   };
   // `zu werden/sein` after the phrase makes it predicative.
   const predicative = (tail: string) =>
-    /^(?:\s+[^\s,.;:!?]+){0,5}?\s+(?:zu\s+)?(?:werden|sein|bleiben)(?![\p{L}\p{M}])/u.test(tail);
+    copulaInfinitiveAhead.test(tail);
   const competingSubject = (tail: string) => {
     const name = competingSubjectAfter.exec(tail)?.[1];
     return name !== undefined && mapNoun(name, "nominative") === name;
   };
   const label = labelPattern.exec(text);
-  if (label && /^\p{Lu}/u.test(label[2]!)) {
+  if (label && uppercaseStartPattern.test(label[2]!)) {
     const [, lead, determinerWord, space, attributeText, base, tail] = label;
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "accusative", mapNoun);
     if (converted) return {text: lead + converted + tail, replacements: 1};
@@ -416,7 +424,7 @@ export function transformClauseCase(
     const noun = mapNoun(base, grammaticalCase);
     if (!noun) return match;
     replacements += 1;
-    const inflected = attributeText.replace(/(?<![\p{L}\p{M}])\p{Ll}[\p{L}\p{M}]*e(?=\s)/gu, (word) => `${word}n`);
+    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
     return masculine + space + inflected + noun;
   });
   text = text.replace(frontedSubjectPattern, (match: string, prefix: string, determinerWord: string, space: string,
@@ -435,7 +443,7 @@ export function transformClauseCase(
     // `Werden Sie die Ärzt*in anrufen?`.
     const tail = source.slice(offset + match.length, offset + match.length + 80);
     // Any words before the infinitive (`Sie wird die Ärzt*in am Montag anrufen.`).
-    const finalInfinitive = /^(?:\s+[^\s,.;:!?]+){0,4}?\s+(\p{Ll}[\p{L}\p{M}]*en)\s*(?:[.,;!?]|$)/u.exec(tail)?.[1];
+    const finalInfinitive = finalInfinitivePattern.exec(tail)?.[1];
     let grammaticalCase: "nominative" | "accusative" = "accusative";
     if (/^(?:\s+[^\s,.;:!?]+){0,2}?\s+(?:sind|ist|bin|bist|seid|sei|seien|waren|war|wären|wäre|werden|wird|wurden|wurde|bleiben|bleibt)(?:\s*[.,;!?]|\s*$)/u.test(tail) ||
         (finalInfinitive !== undefined && /^(?:werden|sein|bleiben)$/u.test(finalInfinitive))) {
@@ -528,7 +536,7 @@ export function transformCoordinatedGenitives(
     const noun = mapNoun(base, "genitive");
     if (!noun) return match;
     replacements += 1;
-    const inflected = attributeText.replace(/(?<![\p{L}\p{M}])\p{Ll}[\p{L}\p{M}]*e(?=\s)/gu, (word) => `${word}n`);
+    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
     return head + conjunction + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "des" : "eines") +
       space + inflected + noun;
   });

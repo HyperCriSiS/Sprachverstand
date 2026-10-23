@@ -4,6 +4,11 @@ import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
 import { dativeVerbPattern, verbGovernsPlural } from "./dative-verbs";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const uppercaseStartPattern = /^\p{Lu}/u;
+const binnenIPluralPattern = /\p{Ll}Innen/u;
+
 // Nur lexikalisch bekannte, markierte Pluralformen werden in eindeutig
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
@@ -89,7 +94,7 @@ function transformDativeEnumeration(input: string): TransformResult {
       const flektiert = basen.map((match) => mapDativePlural(match[1] ?? ""));
       // The `i` flag of the pattern also lets lowercase words through.
       const items = list.split(/[ \t]*,[ \t]*|[ \t]+(?:und|oder|sowie)[ \t]+/u);
-      if (basen.length === 0 || items.length < 3 || items.some((item) => !/^\p{Lu}/u.test(item)) ||
+      if (basen.length === 0 || items.length < 3 || items.some((item) => !uppercaseStartPattern.test(item)) ||
           flektiert.some((wort) => wort === undefined)) {
         return original;
       }
@@ -164,7 +169,7 @@ function transformMarkedDativePlural(input: string): TransformResult {
       return prefix + mappedFirst + conjunction + mappedSecond;
     }
   );
-  const binnenI = /\p{Ll}Innen/u.test(text) ? text.replace(
+  const binnenI = binnenIPluralPattern.test(text) ? text.replace(
     binnenIDativePattern,
     (original: string, prefix: string, base: string, offset: number, source: string) => {
       if (!isDativeNounPhrase(prefix) || !isGoverned(prefix, offset, original.length, source)) return original;
