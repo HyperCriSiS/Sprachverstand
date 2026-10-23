@@ -70,18 +70,45 @@ function createLiteralPattern(
   return new RegExp(source, flags);
 }
 
+// The same list object arrives for every text of a page (and every segment
+// of one text): prepare it once. A list changed in place is detected by an
+// element-wise comparison with the prepared copy, which allocates nothing.
+// The content cache above still covers lists cloned across messages.
+// Patterns are only used through `matchAll`, which works on a copy, so
+// sharing one RegExp is safe.
+const protectedPatternByList = new WeakMap<readonly string[], {
+  readonly terms: readonly string[];
+  readonly pattern: RegExp | undefined;
+}>();
+const customPreparationByList = new WeakMap<readonly CustomReplacement[], {
+  readonly entries: readonly (readonly [string, string])[];
+  readonly pattern: RegExp | undefined;
+  readonly replacements: ReadonlyMap<string, string>;
+}>();
+
 function createProtectedPattern(terms: readonly string[]): RegExp | undefined {
-  return createLiteralPattern(terms, protectedPatternSourceCache, "giu");
+  const prepared = protectedPatternByList.get(terms);
+  if (prepared && prepared.terms.length === terms.length &&
+      prepared.terms.every((term, index) => term === terms[index])) return prepared.pattern;
+  const pattern = createLiteralPattern(terms, protectedPatternSourceCache, "giu");
+  protectedPatternByList.set(terms, {terms: [...terms], pattern});
+  return pattern;
 }
 
-function createCustomReplacementPattern(
-  replacements: readonly CustomReplacement[]
-): RegExp | undefined {
-  return createLiteralPattern(
-    replacements.map((entry) => entry.source),
-    customPatternSourceCache,
-    "gu"
-  );
+function prepareCustomReplacements(replacements: readonly CustomReplacement[]) {
+  const prepared = customPreparationByList.get(replacements);
+  if (prepared && prepared.entries.length === replacements.length &&
+      prepared.entries.every(([source, replacement], index) =>
+        source === replacements[index]!.source && replacement === replacements[index]!.replacement)) {
+    return prepared;
+  }
+  const next = {
+    entries: replacements.map((entry) => [entry.source, entry.replacement] as const),
+    pattern: createLiteralPattern(replacements.map((entry) => entry.source), customPatternSourceCache, "gu"),
+    replacements: new Map(replacements.map((entry) => [entry.source, entry.replacement]))
+  };
+  customPreparationByList.set(replacements, next);
+  return next;
 }
 
 function applyBuiltInRulesPlain(
@@ -204,15 +231,14 @@ function applyRulesAndCustomReplacements(
   options: TransformOptions,
   leadingContext?: string
 ): DetailedTransformResult {
-  const customReplacements = options.customReplacements ?? [];
-  const customPattern = createCustomReplacementPattern(customReplacements);
-  if (!customPattern) {
+  const customReplacements = options.customReplacements;
+  const prepared = customReplacements?.length ? prepareCustomReplacements(customReplacements) : undefined;
+  const customPattern = prepared?.pattern;
+  if (!prepared || !customPattern) {
     return applyBuiltInRules(input, rules, options, leadingContext);
   }
 
-  const replacementMap = new Map(
-    customReplacements.map((entry) => [entry.source, entry.replacement])
-  );
+  const replacementMap = prepared.replacements;
   let cursor = 0;
   let text = "";
   let replacements = 0;
