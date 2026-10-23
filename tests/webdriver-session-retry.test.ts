@@ -28,5 +28,21 @@ describe("Einmaliger Retry beim WebDriver-Sitzungsstart", () => {
     expect(isSessionTimeout(timeout())).toBe(true);
     expect(isSessionTimeout(new Error("session not created"))).toBe(false);
     expect(isSessionTimeout("timed out")).toBe(false);
+    // Gegenprüfung 24.10.2026 (N23): nur die vollständige Meldung.
+    expect(isSessionTimeout(new Error("Navigation failed: WebDriver response timed out after 60000 ms."))).toBe(false);
+  });
+
+  it("räumt vor dem zweiten Versuch alle und danach alle fremden Sitzungen ab", async () => {
+    const create = vi.fn().mockRejectedValueOnce(timeout()).mockResolvedValueOnce({value: {sessionId: "zwei"}});
+    const cleanup = vi.fn().mockResolvedValue(undefined);
+    await createSessionWithRetry(create, vi.fn(), cleanup);
+    expect(cleanup.mock.calls).toEqual([[undefined], ["zwei"]]);
+    expect(cleanup.mock.invocationCallOrder[0]).toBeLessThan(create.mock.invocationCallOrder[1]!);
+  });
+
+  it("räumt ohne Zeitlimit nichts ab", async () => {
+    const cleanup = vi.fn();
+    await createSessionWithRetry(vi.fn().mockResolvedValue({value: {sessionId: "eins"}}), vi.fn(), cleanup);
+    expect(cleanup).not.toHaveBeenCalled();
   });
 });

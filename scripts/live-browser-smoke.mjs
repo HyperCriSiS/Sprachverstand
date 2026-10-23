@@ -82,6 +82,23 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+let sessionRetried = false;
+
+// Deletes every driver session except `keep`; after a timed-out session
+// start the first browser may still be running.
+async function removeOtherSessions(keep) {
+  try {
+    const list = await webdriverRequest("GET", "/sessions");
+    for (const session of Array.isArray(list?.value) ? list.value : []) {
+      const id = session?.id ?? session?.sessionId;
+      if (typeof id !== "string" || id === keep) continue;
+      await webdriverRequest("DELETE", `/session/${id}`).catch((error) => console.error(String(error)));
+    }
+  } catch (error) {
+    console.error(`WebDriver-Sitzungen konnten nicht bereinigt werden: ${String(error)}`);
+  }
+}
+
 async function webdriverRequest(method, pathname, body) {
   const response = await fetchWebdriverResponse(`${driverBaseUrl}${pathname}`, {
     method,
@@ -612,7 +629,10 @@ try {
 
   await processIo.start(driverProcess.pid);
   const sessionResponse = await processIo.measure("session",
-    browser === "chromium" ? () => createSessionWithRetry(createSession) : createSession);
+    browser === "chromium" ? () => createSessionWithRetry(createSession, (message) => {
+      sessionRetried = true;
+      console.error(message);
+    }, removeOtherSessions) : createSession);
   sessionId = sessionIdFrom(sessionResponse);
 
   if (browser === "firefox") {
@@ -660,6 +680,8 @@ try {
       console.error(String(error));
     }
   }
+  // A session created by a timed-out first attempt may have appeared late.
+  if (sessionRetried) await removeOtherSessions(undefined);
 
   if (fixtureServer) {
     await closeServer(fixtureServer);

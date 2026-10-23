@@ -3,15 +3,22 @@
 // attempt is allowed for exactly that case; any other error, and a second
 // timeout, fail as before.
 export function isSessionTimeout(error) {
-  return error instanceof Error && /WebDriver response timed out after \d+ ms\./u.test(error.message);
+  return error instanceof Error && /^WebDriver response timed out after \d+ ms\.$/u.test(error.message);
 }
 
-export async function createSessionWithRetry(create, log = console.error) {
+// The timed-out request may still have created a session on the driver; its
+// browser would keep running. `cleanup(keepSessionId)` removes every other
+// session: before the second attempt (nothing to keep) and after it.
+export async function createSessionWithRetry(create, log = console.error, cleanup = async () => {},
+  sessionIdOf = (response) => response?.value?.sessionId ?? response?.sessionId) {
   try {
     return await create();
   } catch (error) {
     if (!isSessionTimeout(error)) throw error;
     log(`WebDriver-Sitzungsstart: ${error.message} Einmaliger neuer Versuch.`);
-    return create();
+    await cleanup(undefined);
+    const response = await create();
+    await cleanup(sessionIdOf(response));
+    return response;
   }
 }
