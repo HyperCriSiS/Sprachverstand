@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-23  
+Stand: 2026-10-24  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -37,20 +37,30 @@ Autorität: `main`
   - #509 Begleitwort nach Seitenänderung neu berechnet (N14), geschützter Artikel verhindert halbe Umwandlung (V03), Possessiv nach „jede X*in“ (N12).
   - #510 Restfälle: `jedem*r`, Kurzform-Adjektive mit `/` und Komma, Genitiv-Koordination.
   - #511 Dativ-n nach Dativverben (V01).
-  - **N15 Performance:** Mit Codex' Methode gegen den Stand vor den Merges ist neutraler Text 2,5–3× schneller. Markierte Sätze sind 1,4–2,1× langsamer, absolut etwa 10–20 µs mehr pro Satz. Das Profil ist flach (viele Satzbaumuster), ein größerer Umbau lohnt nicht.
+  - #514 einmaliger Retry beim Chromium-Sitzungsstart im Smoke-Test (Nutzerentscheidung 23.10.2026).
+  - #515 früher Ausstieg der Singularregel (Codex-Vorschlag): markierter Singular etwa ein Drittel schneller, Ergebnisse unverändert.
+- **Codex-Gegenprüfung 24.10.2026** (`artifacts/gegenpruefung-20261024`, Vier-Augen-Prüfung von #507–#515, alle Befunde nachgeprüft):
+  - #517 Dativ: „bis zu“ vor Zahlen (N19), Dativverben nur ohne nachgestelltes Subjekt (N18), „Vertrauen unseren …“ (N21), Koordinationen vollständig (N20, halbe Umwandlungen).
+  - #518 Possessiv nur ohne anderen möglichen Besitzer (N16), Genitiv-Koordination nur ohne andere Lesart (N17), Konjunktiv nach Subjektpronomen (N22).
+  - #519 Begleitwort beim Entfernen oder Ersetzen des Nomens zurückgesetzt (N14), Leerraum vor geschütztem Artikel (V03).
+  - #520 Retry räumt die erste Chromium-Sitzung ab (N23), nativ mit Codex' Fehler-Injektion bestätigt (0 Restprozesse).
+  - Codex' Sollfälle: 27 → 134 von 162; 356 von 358 als korrekt bewerteten Änderungen unverändert.
+- **N15 Performance:** Neutraler Text 2,5–3× schneller als vor den Sprach-PRs. Markierter Plural bleibt 1,2–1,8× langsamer, markierter Singular nach #515 noch 1,4–1,6×. In Pale Moon liegen kurze Fälle bei etwa 4× (Codex-Messung 24.10.); das ist offen.
 - **Bekannte offene Punkte:**
-  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04).
+  - Titel mit Begleitwortpaar oder Großadjektiv (N10): `zur/zum EnergieauditorIn`, `zur Manual Therapeut*in`, `Studentische/-r OP Assistent/-in` bleiben ganz oder teilweise markiert.
+  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04); mehrknotige Attribute (R02); Soft-Hyphen-Belege (R04).
   - Rückverweis „sie“ über Satzgrenzen nach generischem Singular (N12-Rest), weil „sie“ auch Plural sein kann.
-  - Restliste R05: 32 von 99 eindeutigen Fällen gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen (`eine Medizinpädagoge/-in`).
+  - „zwischen … und …“ bekommt kein Dativ-n („zwischen“ regiert Dativ oder Akkusativ); Alias „Systempartnern“ (N11).
+  - Restliste R05: nach Codex' strenger Zählung (exakte Zielspanne in Regel- und DOM-Pfad) 10 von 99 gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen.
 - **Bewusst unverändert:** echt mehrdeutige Fälle (`Das Kind mag die Lehrer*in`, `ihre Familie oder Partner*in`), Metasprache (`die Endsilbe -ant:in`), Ausgangsfehler der Seiten, unmarkierte Feminina.
 - **Nächste Schritte:**
-  - Offene Nutzerentscheidung: Soll der Chromium-Smoke-Test bei einem WebDriver-Timeout beim Sitzungsstart einmal wiederholen? Der Timeout tritt sporadisch auch auf `main` auf; bisher wird der Job manuell neu gestartet.
-  - Bei Bedarf eine neue Codex-Gegenprüfung gegen den aktuellen `main`.
+  - Bei Bedarf eine neue Codex-Gegenprüfung gegen den aktuellen `main`, besonders für die neuen Sperren aus #517/#518.
+  - Pale-Moon-Performance der kurzen Fälle eingrenzen (N15-Rest).
   - Changelog-Einträge nur als Fragment.
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505) und #512 (#507–#511). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515) und #521 (#517–#519). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -87,7 +97,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `132484d` (#511), davor #510, #509 `15de08b`, #508 `a162f37`, #507 `399b0f3`. `palemoon`: Sync #512. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `9a8b335` (#520), davor #519 `68530da`, #518 `a52c79d`, #517 `2410b55`, #515 `9171e6d`. `palemoon`: Sync #521. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
