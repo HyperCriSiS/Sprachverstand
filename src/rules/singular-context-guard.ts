@@ -1,5 +1,18 @@
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const adjectiveOnEPattern = /^[\p{L}\p{M}]{3,}e$/u;
+const markedSingularEndPattern = /[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u;
+const lastTokenPattern = /([\p{L}\p{M}-]+)([.!?:;,)"“»]?)$/u;
+const uppercaseStartPattern = /^\p{Lu}/u;
+const abbreviationTokenPattern = /^([\p{L}\p{M}-]+)\.$/u;
+const plainCapitalizedPattern = /^\p{Lu}[\p{Ll}\p{M}-]+$/u;
+const allCapsPattern = /^\p{Lu}{2,}$/u;
+const leadingNonLetterPattern = /^[^\p{L}]+/u;
+const binnenISingularStartPattern = /^[\p{L}\p{M}’'-]*\p{Ll}In(?![\p{L}\p{M}])/u;
+const wordOnEnPattern = /^[\p{L}\p{M}]+en$/u;
+
 const locale = "de-DE";
 const plainAmbiguousDeterminers = new Set([
   "die",
@@ -101,7 +114,7 @@ function isAmbiguousDeterminer(token: string): boolean {
   // (`mit engagierte*n Mitarbeiter*in`): changing only the noun would leave
   // a half-converted phrase.
   return markedDeterminerPrefixes.has(prefix) ||
-    (/^[\p{L}\p{M}]{3,}e$/u.test(prefix) &&
+    (adjectiveOnEPattern.test(prefix) &&
       /^[:*_\/·•.’‘]-?[rnms]$/u.test(normalized.slice(separatorIndex)));
 }
 
@@ -115,7 +128,7 @@ const markedSingularToken =/^[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\
 
 // Start index of a marked singular directly before `end` (`Hausärzt:in`).
 function markedNounBefore(input: string, end: number): number | undefined {
-  const match = /[\p{L}\p{M}’'-]+(?:(?:\/-?|[:*_·•.’‘])in|\(-?in\)|\p{Ll}In)$/u
+  const match = markedSingularEndPattern
     .exec(input.slice(Math.max(0, end - 64), end));
   if (!match) return undefined;
   const start = end - match[0].length;
@@ -135,12 +148,12 @@ const markedCompoundAt =
 
 function isNounOrDativePrepositionBefore(input: string, end: number): boolean {
   const previous = input.slice(0, end).trimEnd()
-    .match(/([\p{L}\p{M}-]+)([.!?:;,)"“»]?)$/u);
+    .match(lastTokenPattern);
   if (!previous || previous[2]) return false;
   const word = previous[1] ?? "";
   const lower = word.toLocaleLowerCase(locale);
   return dativePrepositionsBeforeDer.has(lower) ||
-    (/^\p{Lu}/u.test(word) && !finiteVerbsBeforeDer.has(lower));
+    (uppercaseStartPattern.test(word) && !finiteVerbsBeforeDer.has(lower));
 }
 
 // Abbreviations end in a dot without ending the sentence (`die ggf. neue
@@ -155,7 +168,7 @@ const abbreviations = new Set([
 ]);
 
 function isSentenceEnd(token: string): boolean {
-  const word = /^([\p{L}\p{M}-]+)\.$/u.exec(token)?.[1];
+  const word = abbreviationTokenPattern.exec(token)?.[1];
   return word !== undefined && !abbreviations.has(word.toLocaleLowerCase(locale));
 }
 
@@ -219,10 +232,10 @@ export function hasAmbiguousSingularDeterminer(
     // `Diese Doppelposition Studierende_r und Mitarbeiter_in`: the first
     // conjunct is already resolved („Student“). A capitalized word before it
     // is another noun, so a determiner further left belongs to that noun.
-    if (plainConjunct && /^\p{Lu}[\p{Ll}\p{M}-]+$/u.test(token) && !isAmbiguousDeterminer(token)) {
+    if (plainConjunct && plainCapitalizedPattern.test(token) && !isAmbiguousDeterminer(token)) {
       return false;
     }
-    plainConjunct = afterCoordinator && /^\p{Lu}[\p{Ll}\p{M}-]+$/u.test(token);
+    plainConjunct = afterCoordinator && plainCapitalizedPattern.test(token);
     afterCoordinator = false;
     if (coordinators.has(token.toLocaleLowerCase(locale))) {
       afterCoordinator = true;
@@ -243,8 +256,8 @@ export function hasAmbiguousSingularDeterminer(
     // Übungsleiter:in B-Lizenz`: a category noun or an abbreviation right
     // before the title, unless a marked word stands before it.
     if (tokenIndex === 0 && !isAmbiguousDeterminer(token) &&
-        (categoryNoun.test(token) || /^\p{Lu}{2,}$/u.test(token)) &&
-        !unresolvedMarkedToken((/(\S+)\s+$/u.exec(input.slice(0, cursor))?.[1] ?? "").replace(/^[^\p{L}]+/u, ""))) {
+        (categoryNoun.test(token) || allCapsPattern.test(token)) &&
+        !unresolvedMarkedToken((/(\S+)\s+$/u.exec(input.slice(0, cursor))?.[1] ?? "").replace(leadingNonLetterPattern, ""))) {
       return false;
     }
     // `zur Manual Therapeut*in`: the contracted preposition needs a case form
@@ -253,7 +266,7 @@ export function hasAmbiguousSingularDeterminer(
     // `zur/zum EnergieauditorIn`: the pair rules read no Binnen-I; the noun
     // alone would leave the pair.
     if (/^(?:zur|zum)[:*_·•\/]-?(?:zum|zur|r|m)$/iu.test(token) &&
-        /^[\p{L}\p{M}’'-]*\p{Ll}In(?![\p{L}\p{M}])/u.test(input.slice(nounIndex))) return true;
+        binnenISingularStartPattern.test(input.slice(nounIndex))) return true;
     if (isAmbiguousDeterminer(token)) {
       return true;
     }
@@ -267,7 +280,7 @@ export function hasAmbiguousSingularDeterminer(
         isNounOrDativePrepositionBefore(input, cursor)) {
       return true;
     }
-    if (!/^[\p{L}\p{M}]+en$/u.test(token)) onlyWeakAdjectives = false;
+    if (!wordOnEnPattern.test(token)) onlyWeakAdjectives = false;
     // `als` opens a new phrase: in `welche Benefits Sie als Mitarbeiter:in`
     // or `Ihre Angaben als Teilnehmer*in` the earlier determiner belongs to
     // another noun. A determiner after `als` was already read above.

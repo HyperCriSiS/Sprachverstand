@@ -16,6 +16,13 @@ import { normalizeCompactDeterminers, normalizeDeterminerPairs } from "./determi
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const nonLetterPattern = /[^\p{L}\p{M}]/gu;
+const abbreviationPattern = /^\p{Lu}{2,5}$/u;
+const markedTokenPattern = /[\p{L}\p{M}][:*_\/·•]/u;
+const uppercaseStartPattern = /^\p{Lu}/u;
+
 interface DeterminerForm {
   readonly masculine: string;
   readonly grammaticalCase: GrammaticalCase;
@@ -481,7 +488,7 @@ function hatSichtbaresBinnenI(text: string): boolean {
 function applyTokenCase(source: string, replacement: string): string {
   const inner = preserveInnerCase(source, replacement);
   if (inner !== undefined) return inner;
-  const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
+  const letters = source.replace(nonLetterPattern, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
   const upperLetters = letters.toLocaleUpperCase(locale);
 
@@ -710,7 +717,7 @@ function transformBareMarkedAdjectives(input: string): TransformResult {
         (adjective.length < 4 && ending.toLocaleLowerCase(locale) === "n")) return match;
       // The `i` flag lets any short word through; only an abbreviation counts.
       const abbreviation = between.trim();
-      if (abbreviation && !/^\p{Lu}{2,5}$/u.test(abbreviation)) return match;
+      if (abbreviation && !abbreviationPattern.test(abbreviation)) return match;
       const previous = /(\S+)\s+$/u.exec(source.slice(Math.max(0, offset - 32), offset))?.[1]
         ?.toLocaleLowerCase(locale);
       // After a determiner the determiner rules decide. After a preposition
@@ -721,7 +728,7 @@ function transformBareMarkedAdjectives(input: string): TransformResult {
         previous &&
         (determinerWords.has(previous) ||
           (isPreposition && (ending.toLocaleLowerCase(locale) === "r" || !accusativePrepositionWords.has(previous))) ||
-          /[\p{L}\p{M}][:*_\/·•]/u.test(previous))
+          markedTokenPattern.test(previous))
       ) {
         return match;
       }
@@ -851,7 +858,7 @@ function transformAttributivePhrases(
       // A capitalized unmarked word is inflected only with a German adjective
       // suffix (`Wissenschaftliche`); `eine:n Office Manager:in` has an English
       // noun there. Left unchanged (`der Performance Künstler*in`) it may stay.
-      if (!markerEnding && /^\p{Lu}/u.test(adjective) && mappedAdjective !== adjective &&
+      if (!markerEnding && uppercaseStartPattern.test(adjective) && mappedAdjective !== adjective &&
           !/(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)(?:e|en|er|es|em)?$/u.test(adjective)) {
         return match;
       }
