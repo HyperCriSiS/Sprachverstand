@@ -3,6 +3,7 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
+import { dativeVerbPattern, dativeVerbSource, verbGovernsPlural } from "./dative-verbs";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -132,21 +133,39 @@ const plainErPluralPattern =
 // -ier has the plural -iere (`Passagier`, `Pionier`); adjectives and
 // participles used as nouns end in -e/-en (`Sachverständige`).
 const notPlainEr = /(?:ier|(?:ig|lich|isch|end|bar|sam|haft|los|iert|ordnet|stellt|setzt|tragt|wandt|kannt|amt)er)$/u;
-const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|folgen|zuhören";
+const dativeTrigger = String.raw`[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|${dativeVerbSource}`;
+// A name part (`RosaLila`), not a heading run into the next sentence
+// (`PraxisbezugDie Besucher`) or a Binnen-I plural (`SchülerInnen`).
+const namePart = String.raw`\p{Lu}\p{Ll}+(?!(?:Die|Der|Das|Den|Dem|Des|Ein|Eine|Wir|Sie|Er|Es|Ich|Und|Im|In|Am|Mit|Bei|Für|Von|Zum|Zur)(?!\p{Ll}))\p{Lu}[\p{L}\p{M}]*(?<!Innen)`;
 // Directly after the trigger, only adjectives, numbers or name parts
-// between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`).
-const dativeGap = String.raw`(?:(?:\p{Ll}[\p{L}\p{M}]*en|\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+){0,2}`;
-const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+${dativeGap}$`, "u");
+// between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`); a
+// preposition or verb on -en ends the phrase (`von SchülerInnen gegen`).
+const gapAdjective = String.raw`(?!(?:gegen|nehmen|haben|werden|können|sollen|wollen|müssen|dürfen|geben|kommen|stehen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*en`;
+const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
+const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
-const coordinatedEnding = /\s(?:und|oder|sowie)\s+(?:\d+\s+)?$/u;
-const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+$`, "u");
+const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
+const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
+// `bis zu 20` only bounds a number; the case comes from before it
+// (`mit bis zu 20 Lehrern`, `für bis zu 20 Teilnehmer`).
+function withoutUpperBound(before: string): string {
+  return before.replace(/(?<![\p{L}\p{M}])[Bb]is\s+zu(?=\s+\d)/gu, "");
+}
 // A dative plural coordinated before it: `von Antifaschisten und …`. The
 // first conjunct must name persons: in `Überlebende von Genoziden und
 // Zeichner:innen` or `Rechtsanwält*innen aus Bremen und …` the
 // prepositional phrase is an attribute and the plural coordinates with its
 // head. A relative `den` (`, den Bauernfamilien und …`) is no trigger.
+// Conjuncts may still be marked (`mit 12 Hundeführer:innen und 17 …`), carry
+// a genitive or dative attribute (`12 Vertreter*innen der Gewerkschaften und
+// 12 …`) and form a comma list (`aus 38 Bäcker:innen, Konditor:innen, …`).
+const conjunct = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:n|(?:[:*_·•]|\/-?)innen|Innen)`;
+const conjunctAttribute = String.raw`(?:\s+(?:der|des|aus|von|bei|mit|nach|zu)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*)?`;
+const conjunctSeparator = String.raw`(?:,\s*|\s+(?:und|oder|sowie)\s+)(?:\d+\s+)?`;
 const coordinatedDativeBefore = new RegExp(
-  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(\p{Lu}[\p{L}\p{M}’'-]*n)\s+(?:und|oder|sowie)\s+(?:\d+\s+)?$`, "u");
+  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$`, "u");
+// A comma only continues the list when an `und` item follows.
+const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
 // A plural right before the preposition may own it as an attribute; when the
 // prepositional object names no persons, the coordinated noun belongs to
 // that plural: `Überlebende von Genoziden und Zeichner:innen`,
@@ -185,12 +204,22 @@ const relativeClauseTail = /^[^,.;:!?]*\s\p{Ll}[\p{L}\p{M}]*(?:en|t)\s*[,.;:!?]/
 function isCoordinatedDative(before: string, after: string): boolean {
   const match = coordinatedDativeBefore.exec(before);
   if (!match) return false;
-  const [, comma, previous, trigger, noun] = match;
-  // An enumeration of `den …` items (`den Katholik*innen, den orthodoxen
-  // Mitgliedern und …`) is no relative clause.
-  const enumeration = /(?:^|\s)den\s+[^,]{1,60},\s*den\s+[^,]*$/u.test(before);
+  const [, comma, previous, trigger, noun, ending] = match;
+  if (dativeVerbPattern.test(trigger!) &&
+      !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
+  if (ending === "," && !listContinues.test(after)) return false;
+  // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
+  if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(match[0].slice(match[0].indexOf(trigger!) + trigger!.length))) return false;
+  // An enumeration of article items (`den Katholik*innen, den orthodoxen
+  // Mitgliedern und …`, `aus dem Vorstand, den gewählten KA-Vertretern sowie
+  // …`) is no relative clause.
+  const enumeration = /(?:^|\s)(?:den|dem|der)\s+[^,]{1,60},\s*den\s+[^,]*$/u.test(before);
   if ((comma || previous?.endsWith(",")) && trigger === "den" && !enumeration && relativeClauseTail.test(after)) return false;
-  return !(previous && pluralBeforePreposition.test(previous) && namesPersons(previous) && !namesPersons(noun!));
+  if (!(previous && pluralBeforePreposition.test(previous) && namesPersons(previous) && !namesPersons(noun!))) return true;
+  // The plural before the preposition is itself a dative object (`mit
+  // Kollegen aus Kantonen und …`): either reading takes the dative.
+  const previousStart = match.index + match[0].indexOf(previous);
+  return pluralDativeBefore.test(before.slice(0, previousStart));
 }
 const abbreviationPluralPattern =
   /(?<![\p{L}\p{M}])(\p{Lu}[\p{L}]{0,3}\p{Lu})(?:[:*_·•]|\/-?)innen(?![\p{L}\p{M}])/gu;
@@ -232,12 +261,20 @@ function repairUnlistedForms(input: string): TransformResult {
     if (dativeN && isKnownStem(head + dativeN)) return match;
     const plural = mapKnownPlural(head) ?? mapMappedPlural(head);
     if (plural !== undefined && plural.toLocaleLowerCase("de-DE") !== head.toLocaleLowerCase("de-DE")) return match;
-    const before = source.slice(Math.max(0, offset - 80), offset);
+    const rawBefore = source.slice(Math.max(0, offset - 200), offset);
+    const before = withoutUpperBound(rawBefore.slice(-80));
     // Both dative readings need a trigger word; most texts have none nearby.
     const triggered = dativeTriggerNear.test(before);
-    const coordinatedDative = triggered && coordinatedEnding.test(before) &&
-      isCoordinatedDative(before, source.slice(offset + match.length, offset + match.length + 120));
-    const directDative = triggered && pluralDativeBefore.test(before) && !yearGap.test(before);
+    const after = source.slice(offset + match.length, offset + match.length + 120);
+    // A list can start further back (`aus Aussteigern, betroffenen
+    // Angehörigen, … sowie Religionswissenschaftler:innen`).
+    const listBefore = withoutUpperBound(rawBefore.slice(-160));
+    const coordinatedDative = coordinatedEnding.test(before) && dativeTriggerNear.test(listBefore) &&
+      isCoordinatedDative(listBefore, after);
+    const directTrigger = triggered ? pluralDativeBefore.exec(before)?.[1] : undefined;
+    const directDative = directTrigger !== undefined && !yearGap.test(before) &&
+      !(dativeVerbPattern.test(directTrigger) && !verbGovernsPlural(directTrigger,
+        rawBefore.slice(0, rawBefore.lastIndexOf(directTrigger)), after));
     // Listed -er nouns (also compounds the lexicon reads) keep the lexicon
     // rules and their dative and coordination handling; only a coordinated
     // dative, a number or name part between, or a prefix they cannot read
