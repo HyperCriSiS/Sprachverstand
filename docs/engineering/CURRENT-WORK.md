@@ -52,8 +52,8 @@ Autorität: `main`
 - **N15 Performance:** In Node, Chromium und Firefox ist neutraler Text 2,5–3× schneller als vor den Sprach-PRs. Markierter Plural bleibt 1,2–1,8× langsamer, markierter Singular nach #515 noch 1,4–1,6×. Pale Moon siehe #525.
 - **Regel für neuen Code:** Regex-Literale mit `\p{…}` nicht in Funktionen oder Callbacks schreiben, sondern als Konstante auf Modulebene (Pale Moon, siehe #525).
 - **Bekannte offene Punkte:**
-  - Etwa 34 weitere `\p{…}`-Literale in Callbacks (`clause-case.ts`, `singular-context-guard.ts`, `determiner-pairs.ts` u. a.). Sie laufen nur bei markiertem Text; ein Umzug ist optional.
-  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04); mehrknotige Attribute (R02).
+  - #528 hat 27 weitere `\p{…}`-Literale aus Callbacks der Dativ-, Singular-, Satzbau- und Begleitwortregeln gezogen (Pale Moon, markierter Plural 674 → 548 ms). Übrig sind solche Literale nur in selten durchlaufenen Pfaden (DOM-Hilfen, einzelne Sonderregeln).
+  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04). Bewusst offen: 0 Korpusfälle, die Lösung bräuchte einen nachfolgenden Kontext samt Rücknahme im DOM-Kern. Mehrknotige Attribute (R02) ebenso.
   - Rückverweis „sie“ über Satzgrenzen nach generischem Singular (N12-Rest), weil „sie“ auch Plural sein kann.
   - „zwischen … und …“ bekommt kein Dativ-n („zwischen“ regiert Dativ oder Akkusativ); Alias „Systempartnern“ (N11).
   - Restliste R05: nach Codex' strenger Zählung (exakte Zielspanne in Regel- und DOM-Pfad) 10 von 99 gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen.
@@ -64,7 +64,7 @@ Autorität: `main`
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519) und #526 (#523–#525). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525) und #529 (#528). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -101,7 +101,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `2df871b` (#525), davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #526. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #529. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
