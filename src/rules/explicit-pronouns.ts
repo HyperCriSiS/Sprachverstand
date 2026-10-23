@@ -53,6 +53,7 @@ addPair("seinem", "ihrem");
 addPair("seines", "ihres");
 addPair("seiner", "ihrer");
 addCompactForm("jede", "r", "jeder");
+addCompactForm("jedem", "r", "jedem");
 addCompactForm("ein", "e", "ein");
 // Marked demonstrative used as a pronoun (`da diese*r frisch entlassen wurde`).
 addCompactForm("diese", "r", "dieser");
