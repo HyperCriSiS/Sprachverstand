@@ -1,5 +1,6 @@
 import type { TransformResult } from "../core/rule";
 import type { GrammaticalCase } from "./person-lexicon";
+import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 
 /*
  * A determiner pair before a marked singular, written out or with
@@ -219,17 +220,47 @@ const compactPattern = new RegExp(
   "gu"
 );
 
+// Capitalized words that open a sentence without being a noun.
+const sentenceWords = new Set([
+  "wenn", "dass", "ob", "weil", "als", "wie", "und", "oder", "aber", "auch", "nur", "noch", "so", "da", "dann",
+  "hier", "dort", "heute", "jetzt", "nun", "denn", "doch", "also", "zudem", "außerdem", "bitte", "wer", "was"
+]);
+
+const enumerationItemPattern = /(?:[Ee]ine?[:*_·•][rn]?|[Ee]iner|[Ee]inem)\s+[^,]{1,50}$/u;
+
+// One item at a time and only a few, so a long run of commas stays cheap.
+function withoutEnumerationItems(before: string): string {
+  let head = before;
+  for (let items = 0; items < 8; items++) {
+    const trimmed = head.trimEnd();
+    if (!trimmed.endsWith(",")) return head;
+    const body = trimmed.slice(0, -1);
+    const item = enumerationItemPattern.exec(body.slice(-80))?.[0];
+    if (!item) return head;
+    head = body.slice(0, body.length - item.length);
+  }
+  return head;
+}
+
 function caseFromEnding(ending: string | undefined, before: string): GrammaticalCase {
   const lower = ending?.toLocaleLowerCase(locale);
   if (lower === "n" || lower === "en") return "accusative";
   if (lower === "m") return "dative";
   if (lower === "s") return "genitive";
-  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(before)?.[1] ?? "";
-  if (dativePrepositions.has(previous.toLocaleLowerCase(locale))) return "dative";
+  // Earlier items of an enumeration and a distributive `je` share the
+  // preposition before them (`aus je eine:r Hundeführer:in, eine:r SAR-Helfer:in`).
+  const head = withoutEnumerationItems(before).replace(/\s(?:je|jeweils)\s*$/u, " ");
+  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(head)?.[1] ?? "";
+  const lowerPrevious = previous.toLocaleLowerCase(locale);
+  if (dativePrepositions.has(lowerPrevious)) return "dative";
   if (/^(?:für|durch|gegen|ohne|um|wider)$/iu.test(previous)) return "accusative";
-  // A noun right before (not a sentence start): genitive attribute.
-  if (/^\p{Lu}\p{Ll}/u.test(previous) && !/[.!?:]\s*$/u.test(before.slice(0, -previous.length - 1)) &&
-      before.trim().length > previous.length) return "genitive";
+  // A noun right before: genitive attribute. Not the last word of the
+  // previous sentence or a sentence-initial word after it; the start of the
+  // text counts (`Wahl de:r Schatzmeister:in` as a heading).
+  const trimmed = head.trimEnd();
+  const beforePrevious = trimmed.slice(0, trimmed.length - previous.length);
+  if (/^\p{Lu}\p{Ll}[\p{L}\p{M}-]*$/u.test(previous) && !/[.!?:]\s*$/u.test(beforePrevious) &&
+      !finiteVerbsBeforeDer.has(lowerPrevious) && !sentenceWords.has(lowerPrevious)) return "genitive";
   return "nominative";
 }
 

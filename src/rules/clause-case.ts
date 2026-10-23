@@ -33,6 +33,7 @@ const determiner = `(?:${capitalizable(["welche", "die", "eine", "jede", "keine"
 // Adjectives in any ending (normalized by `phrase`), and indeclinable place
 // adjectives (`eine Leipziger Philosoph/-in`).
 const notAdjectives = "die|eine|keine|jede|diese|meine|deine|seine|ihre|unsere|eure|welche|beide|beiden|alle|allen|viele|vielen|einige|einigen|mehrere|mehreren|wenige|wenigen|sämtliche|sämtlichen|aber|oder|immer|wieder|hier|weiter|sehr|mehr|daher|bisher|früher|später|seither|außer|unter|über|hinter|wer|der|er|ihr|mir|dir|wir|unser|euer|jeder|jener|dieser|welcher|keiner|einer|deren|dessen|denen|einen|einem|eines";
+const notAdjectiveSet = new Set(notAdjectives.split("|"));
 // Place adjectives only from a list; a capitalized word on -er is
 // otherwise a noun (`die beiden Berufsbilder Notfallsanitäter*in`).
 const placeAdjectives = [
@@ -44,7 +45,14 @@ const placeAdjectives = [
   "Aachener", "Göttinger", "Braunschweiger", "Oldenburger", "Osnabrücker", "Paderborner", "Ulmer", "Tübinger",
   "Konstanzer", "Luzerner", "Klagenfurter", "Bregenzer", "Kasseler", "Hallenser", "Jenaer", "Weimarer"
 ].join("|");
-const attributes = String.raw`((?:(?:(?!(?:${notAdjectives})\s)\p{Ll}[\p{L}\p{M}]*(?:e|er|en|es|em)|(?:${placeAdjectives}))\s+){0,2})`;
+// Words between determiner and noun: adjectives and adverbs, also
+// coordinated (`die erste und bisher einzige deutsche Künstler:in`), and
+// abbreviations (`eine hauptamtl. Lehrer*in`, `die z. B. neue …`,
+// `eine Dipl.-Psych. Lehrer*in`). Determiners and pronouns end the phrase.
+// Only adjective endings are inflected (`phrase`).
+const attributeStop = "beide|beiden|alle|allen|viele|vielen|einige|einigen|mehrere|mehreren|wenige|wenigen|sämtliche|sämtlichen|die|der|den|dem|des|das|ein|eine|einen|einem|einer|eines|kein|keine|jede|jeder|diese|dieser|meine|deine|seine|ihre|unsere|eure|welche|er|sie|es|ihr|ihm|ihn|mir|dir|wir|uns|euch|ich|du|man|sich|zu|zum|zur|im|am|vom|beim|an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zwischen|dass|ob|wenn|weil|als|wie";
+const abbreviationToken = String.raw`(?:z\.\s*B\.|u\.\s*a\.|\p{Ll}{1,10}\.|\p{Lu}\p{Ll}{1,6}\.(?:-\p{Lu}\p{Ll}{1,6}\.)?)`;
+const attributes = String.raw`((?:(?:(?!(?:${attributeStop})\s)\p{Ll}[\p{L}\p{M}]*|(?:${placeAdjectives})|${abbreviationToken})\s+){0,6})`;
 const marked = String.raw`(\p{Lu}[\p{L}\p{M}’'-]*?)(?:(?:\/-?|[:*_·•])in|\(-?in\))`;
 const end = String.raw`(?![\p{L}\p{M}-])`;
 const copulas = "ist|sind|war|waren|wird|wurde|bleibt|blieb";
@@ -105,9 +113,10 @@ const frontAdverbs = "Dann|Danach|Anschließend|Zunächst|Zuerst|Heute|Hier|Dort
 const frontPlural = String.raw`(?:(?:Diese|Solche|Alle|Viele|Beide|Einige|Mehrere|Manche|Zahlreiche|Weitere|Andere|Die)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*(?:en|ern|nen)|(?:Solche|Alle|Viele|Beide|Einige|Mehrere|Manche|Zahlreiche)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*|(?!(?:Diese|Jene|Jede|Eine|Keine|Meine|Deine|Seine|Ihre|Unsere|Eure|Welche|Manche|Solche|Die|Alle)\s)\p{Lu}\p{Ll}+e\s+\p{Lu}[\p{L}\p{M}-]*e)`;
 // Words ending in -t that are no finite verbs (`Dann direkt die Ärzt*in
 // kontaktieren`).
-const nonVerbs = "nicht|jetzt|oft|erst|meist|zuletzt|selbst|sonst|fast|stets|bereits|längst|zumindest|zuerst|zunächst|weit|gut|leicht|recht|schlecht|direkt|exakt|komplett|korrekt|perfekt|bekannt|bereit|echt|laut|statt|anstatt|samt|nebst|seit|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut";
-// A singular finite verb: listed, or a third-person form on -t/-te.
-const finiteVerb = String.raw`(?:${singularVerbs}|(?!(?:${nonVerbs})(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]{2,}(?:[^\s\P{L}s]t|te))`;
+const nonVerbs = "nicht|jetzt|oft|erst|meist|zuletzt|selbst|sonst|fast|stets|bereits|längst|zumindest|zuerst|zunächst|weit|gut|leicht|recht|schlecht|direkt|exakt|komplett|korrekt|perfekt|bekannt|bereit|echt|laut|statt|anstatt|samt|nebst|seit|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut|bewusst|gewusst|zumeist|größt|meistgelesen";
+// A singular finite verb: listed, or a third-person form on -t/-te, also
+// after ss/ß (`veranlasst`, `lässt`, `heißt`).
+const finiteVerb = String.raw`(?:${singularVerbs}|(?!(?:${nonVerbs})(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]{2,}(?:[^\s\P{L}s]t|(?:ss|ß)t|te))`;
 // A relative pronoun after a comma (`Personen, die zwar nicht …`) is none.
 const determinerLeftBefore = new RegExp(String.raw`(?:^|(?<![,;])\s)(?:${capitalizable([
   "die", "der", "den", "dem", "des", "eine", "einer", "einen", "einem", "eines", "ein", "ihre", "seine",
@@ -159,7 +168,7 @@ const searchPattern = new RegExp(
 // object (`Ihre Stromanbieter:in können Sie … auswählen`); a singular verb
 // (`Ihre Ärzt*in kann Sie beraten`) leaves it the subject.
 const frontedObjectPattern = new RegExp(
-  String.raw`((?:^|[.!?]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:Sie|wir|ihr)(?![\p{L}\p{M}]))`,
+  String.raw`((?:^|[.!?]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+(?:Sie|wir|ihr)|\p{Ll}[\p{L}\p{M}]*\s+(?:ich|du|wir|man))(?![\p{L}\p{M}]))`,
   "gu"
 );
 // (u) `es gibt` takes the accusative: `gibt es eine Projektentwickler*in`.
@@ -208,9 +217,37 @@ const infinitiveBlockers = /(?:^|\s)(?:hat|hatte|haben|ist|war|sind|scheint|vers
 // die bessere Chemiker*in?`). Not after a preposition, and not with `wird`
 // (future: `wird er die Ärzt*in anrufen`).
 const wideCopulaPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:ist|sind|war|waren|bleibt|blieb|Ist|Sind|War|Waren)\s+(?:[^\s,.;:!?„“"]+\s+){1,6}?)(?<!(?<![\p{L}\p{M}])(?:an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen|hinter|neben)\s+)(${determiner})(\s+)((?:\p{Ll}[\p{L}\p{M}]*(?:e|er)\s+){0,2})${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:ist|sind|war|waren|bleibt|blieb|Ist|Sind|War|Waren)\s+(?:[^\s,.;:!?„“"]+\s+){1,6}?)(?<!(?<![\p{L}\p{M}])(?:an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen|hinter|neben)\s+)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
+// (w) a phrase directly before a clause-final copula or a subjunctive finite
+// verb is nominative: `…, der eine Ärzt*in ist.`, `Wir hoffen, eine Ärzt*in
+// werde eingeladen.`, `…, eine Ärzt*in sollte …`.
+const beforeFinalCopulaPattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:(?:ist|sind|war|waren|wird|wurde|bleibt|blieb)\s*[,.;:!?]|(?:werde|würde|sei|wäre|sollte|könnte|müsste|dürfte|möge)(?![\p{L}\p{M}])))`,
+  "gu"
+);
+// (x) a sentence-start subject with a relative clause before its verb:
+// `Die Künstler*in, die dort arbeitet, kommt.`
+const subjectBeforeRelativePattern = new RegExp(
+  // The relative-agreement rule may have set its private-use mark after the noun.
+  String.raw`((?:^|[.!?]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=[-]?,\s+(?:die|der|deren)\s[^,.;:!?]{1,80},\s+${finiteVerb}(?![\p{L}\p{M}]))`,
+  "gu"
+);
+// (y) a menu or button label: phrase plus infinitive (`Die Ärzt*in
+// kontaktieren`), the accusative object.
+const labelPattern = new RegExp(
+  String.raw`^(\s*)(${determiner})(\s+)${attributes}${marked}(\s+\p{Ll}[\p{L}\p{M}]*en\s*[.!]?\s*)$`,
+  "u"
+);
+// A known masculine person after the phrase can be the subject itself
+// (`Heute besucht die Ärzt*in der Patient.`): no case from position then.
+const competingSubjectAfter =
+  /^(?:\s+\p{Ll}[\p{L}\p{M}]*)?\s+(?:der|ein)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?(\p{Lu}[\p{L}\p{M}-]*)(?![\p{L}\p{M}*:_\/·•(])/u;
+// A copula closing the clause makes the phrase predicative (`dass er die
+// Ärzt*in ist`, `dass er eine Lehrer*in genannt wird`).
+const finalCopulaAfter =
+  /^(?:\s+[^\s,.;:!?]+){0,3}?\s+(?:ist|sind|war|waren|wird|werden|wurde|wurden|bleibt|bleiben|heißt|gilt|genannt\s+wird|genannt\s+werden)\s*(?:[,.;:!?]|$)/u;
 // (q) a bare singular as predicate: `Diakon*in werden`, `Pirat*in zu
 // werden`, `nicht Psychotherapeut*in im Sinne … sind`, `bleibt … Präsident*in`.
 const notBeforeBareNoun = String.raw`(?<![:*_·•\/()-]\p{Ll}{0,3}\s+)(?<!(?<![\p{L}\p{M}])(?:die|der|den|dem|des|das|eine|einer|einen|einem|eines|ein|kein|keine|keiner|keinem|keinen|ihre|ihrer|ihrem|ihren|seine|seiner|seinem|seinen|meine|meiner|meinem|meinen|deine|deiner|deinem|deinen|unsere|unserer|unserem|unseren|eure|jede|jeder|jedem|jeden|diese|dieser|diesem|diesen|${prepositionWords}|zum|zur|vom|beim|im|am|ins)\s+)`;
@@ -283,7 +320,8 @@ function phrase(
   const strong = grammaticalCase === "nominative" && strongNominative.has(masculine);
   // Source endings vary (`eine möglicher Überträger*in`); the stem takes the
   // ending the masculine determiner requires.
-  const inflected = attributeText.replace(/(?<![\p{L}\p{M}])\p{Ll}[\p{L}\p{M}]*(?:e|er|en|es|em)(?=\s)/gu, (written) => {
+  const inflected = attributeText.replace(/(?<![\p{L}\p{M}.])\p{Ll}[\p{L}\p{M}]*(?:e|er|en|es|em)(?=\s)/gu, (written) => {
+    if (notAdjectiveSet.has(written)) return written;
     const word = written.replace(/(?:er|en|es|em)$/u, "e");
     return grammaticalCase === "accusative" ? `${word}n` : strong ? `${word}r` : word;
   });
@@ -329,16 +367,27 @@ export function transformClauseCase(
   // `zu werden/sein` after the phrase makes it predicative.
   const predicative = (tail: string) =>
     /^(?:\s+[^\s,.;:!?]+){0,5}?\s+(?:zu\s+)?(?:werden|sein|bleiben)(?![\p{L}\p{M}])/u.test(tail);
+  const competingSubject = (tail: string) => {
+    const name = competingSubjectAfter.exec(tail)?.[1];
+    return name !== undefined && mapNoun(name, "nominative") === name;
+  };
+  const label = labelPattern.exec(text);
+  if (label && /^\p{Lu}/u.test(label[2]!)) {
+    const [, lead, determinerWord, space, attributeText, base, tail] = label;
+    const converted = phrase(determinerWord!, space!, attributeText!, base!, "accusative", mapNoun);
+    if (converted) return {text: lead + converted + tail, replacements: 1};
+  }
   for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
-    subordinateSubjectPattern, coordinatedClausePattern]) {
-    convert(pattern, () => "nominative");
+    subordinateSubjectPattern, coordinatedClausePattern, beforeFinalCopulaPattern, subjectBeforeRelativePattern]) {
+    convert(pattern, (_prefix, tail) => competingSubject(tail) ? undefined : "nominative");
   }
   for (const pattern of [frontedObjectPattern, existentialPattern]) {
     convert(pattern, () => "accusative");
   }
   convert(wideCopulaPattern, () => "nominative");
   for (const pattern of [subordinateObjectPattern, postverbalSubjectPattern, searchPattern]) {
-    convert(pattern, (prefix, tail) => nonObjectVerbs.test(prefix) ? undefined : predicative(tail) ? "nominative" : "accusative");
+    convert(pattern, (prefix, tail) => nonObjectVerbs.test(prefix) ? undefined
+      : predicative(tail) || finalCopulaAfter.test(tail) ? "nominative" : "accusative");
   }
   convert(accusativePrepositionPattern, (prefix, tail) =>
     /^um\s/iu.test(prefix) && predicative(tail) ? "nominative" : /^bis\s/iu.test(prefix) ? undefined : "accusative");
@@ -378,9 +427,10 @@ export function transformClauseCase(
     // future auxiliary with a full infinitive takes the object again:
     // `Werden Sie die Ärzt*in anrufen?`.
     const tail = source.slice(offset + match.length, offset + match.length + 80);
-    const finalInfinitive = /^(?:\s+\p{Ll}[\p{L}\p{M}]*){0,3}?\s+(\p{Ll}[\p{L}\p{M}]*en)\s*(?:[.,;!?]|$)/u.exec(tail)?.[1];
+    // Any words before the infinitive (`Sie wird die Ärzt*in am Montag anrufen.`).
+    const finalInfinitive = /^(?:\s+[^\s,.;:!?]+){0,4}?\s+(\p{Ll}[\p{L}\p{M}]*en)\s*(?:[.,;!?]|$)/u.exec(tail)?.[1];
     let grammaticalCase: "nominative" | "accusative" = "accusative";
-    if (/^(?:\s+\p{Ll}[\p{L}\p{M}]*){0,2}?\s+(?:sind|ist|bin|bist|seid|sei|seien|waren|war|wären|wäre|werden|wird|wurden|wurde|bleiben|bleibt)(?:\s*[.,;!?]|\s*$)/u.test(tail) ||
+    if (/^(?:\s+[^\s,.;:!?]+){0,2}?\s+(?:sind|ist|bin|bist|seid|sei|seien|waren|war|wären|wäre|werden|wird|wurden|wurde|bleiben|bleibt)(?:\s*[.,;!?]|\s*$)/u.test(tail) ||
         (finalInfinitive !== undefined && /^(?:werden|sein|bleiben)$/u.test(finalInfinitive))) {
       grammaticalCase = "nominative";
     } else if (nonObjectVerbs.test(prefix)) {
@@ -395,7 +445,8 @@ export function transformClauseCase(
   });
   text = text.replace(sentenceStartPattern,
     (match: string, prefix: string, determinerWord: string, space: string, attributeText: string,
-      base: string, next: string, afterVerb: string | undefined) => {
+      base: string, next: string, afterVerb: string | undefined, offset: number, source: string) => {
+      if (competingSubject(source.slice(offset + match.length, offset + match.length + 80).replace(/^\s+\S+/u, ""))) return match;
       // `Ihre Stromanbieter:in können Sie … auswählen`: a subject pronoun after
       // the verb makes the fronted phrase the object. After a singular verb
       // (`Ihre Ärzt*in kann Sie beraten`) `Sie` is the object instead.
