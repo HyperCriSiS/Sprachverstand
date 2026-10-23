@@ -1,6 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { acceptContextResult } from "../core/leading-context-edit";
 import { markedSingularLeadingCandidate } from "./context-candidates";
+import { withPossessiveAgreement } from "./possessive-agreement";
 
 /*
  * A relative pronoun after a converted marked singular keeps the feminine
@@ -91,7 +92,8 @@ export function withRelativeAgreement(
 
 export function withRelativeAgreementRule(rule: Rule): Rule {
   const apply = rule.apply.bind(rule);
-  return {...rule, apply: (input) => withRelativeAgreement(input, apply)};
+  return {...rule, apply: (input) => withPossessiveAgreement(input,
+    (marked) => withRelativeAgreement(marked, apply))};
 }
 
 // A marked singular at the start of an inline element (`mit der

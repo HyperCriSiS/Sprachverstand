@@ -137,6 +137,8 @@ const dativeTrigger = "[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]ege
 // between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`).
 const dativeGap = String.raw`(?:(?:\p{Ll}[\p{L}\p{M}]*en|\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+${dativeGap}$`, "u");
+const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
+const coordinatedEnding = /\s(?:und|oder|sowie)\s+(?:\d+\s+)?$/u;
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|\p{Lu}\p{Ll}+\p{Lu}[\p{L}\p{M}]*)\s+$`, "u");
 // A dative plural coordinated before it: `von Antifaschisten und …`. The
 // first conjunct must name persons: in `Überlebende von Genoziden und
@@ -231,8 +233,11 @@ function repairUnlistedForms(input: string): TransformResult {
     const plural = mapKnownPlural(head) ?? mapMappedPlural(head);
     if (plural !== undefined && plural.toLocaleLowerCase("de-DE") !== head.toLocaleLowerCase("de-DE")) return match;
     const before = source.slice(Math.max(0, offset - 80), offset);
-    const coordinatedDative = isCoordinatedDative(before, source.slice(offset + match.length, offset + match.length + 120));
-    const directDative = pluralDativeBefore.test(before) && !yearGap.test(before);
+    // Both dative readings need a trigger word; most texts have none nearby.
+    const triggered = dativeTriggerNear.test(before);
+    const coordinatedDative = triggered && coordinatedEnding.test(before) &&
+      isCoordinatedDative(before, source.slice(offset + match.length, offset + match.length + 120));
+    const directDative = triggered && pluralDativeBefore.test(before) && !yearGap.test(before);
     // Listed -er nouns (also compounds the lexicon reads) keep the lexicon
     // rules and their dative and coordination handling; only a coordinated
     // dative, a number or name part between, or a prefix they cannot read

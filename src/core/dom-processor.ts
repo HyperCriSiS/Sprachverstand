@@ -18,7 +18,7 @@ import {
   subtitleClassifierAttributeNames
 } from "./subtitles";
 import type { LeadingContextEdit } from "./leading-context-edit";
-import { startsWithSplitGenderMarker, startsWithSplitGenderSuffix, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
+import { protectedLeadingContextMark, startsWithSplitGenderMarker, startsWithSplitGenderSuffix, transformTextWithSummary, type TransformOptions, type DetailedTransformResult } from "./transform-text";
 import {
   collectInlineProtection,
   iterateInlineProtection,
@@ -57,6 +57,8 @@ export interface StopOptions {
 
 const leadingContextLimit = 120;
 const maximumSubtitleTransformCacheEntries = 256;
+// Protected elements whose text is not visible running text.
+const nonTextContextTags = new Set(["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT", "TEXTAREA", "SELECT", "OPTION"]);
 const blockBoundaryTags = new Set([
   "ADDRESS",
   "ARTICLE",
@@ -267,6 +269,10 @@ export class DomProcessor {
     deferredNodes: Set<Text>;
   }>();
   private leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
+  // Article changes made for a noun in the next text, by that noun and by
+  // the changed text, so a page change to either noun recomputes both.
+  private leadingContextEdits = new WeakMap<Text, {previous: Text; before: string; after: string}>();
+  private leadingContextEditSources = new WeakMap<Text, Text>();
   private customReplacementSources?: {
     readonly list: DomProcessorOptions["customReplacements"];
     readonly sources: readonly string[];
@@ -2693,6 +2699,7 @@ export class DomProcessor {
         this.removeTextChange(node, tracked);
       }
     }
+    this.revertLeadingContextEdit(node);
 
     if (!this.shouldProcessTextNode(node)) {
       return;
@@ -2824,8 +2831,32 @@ export class DomProcessor {
     this.textChanges.set(previous, recorded
       ? {...recorded, transformed: next}
       : {original: previous.data, transformed: next, replacements: 0, summaries: []});
+    this.leadingContextEdits.set(node, {previous, before: previous.data, after: next});
+    this.leadingContextEditSources.set(previous, node);
     this.replaceTextKeepingRanges(previous, next);
     return true;
+  }
+
+  // The page changed or replaced the noun: the article goes back to its
+  // value before the edit and is computed again with the new noun.
+  private revertLeadingContextEdit(node: Text): void {
+    let source: Text | undefined = node;
+    if (!this.leadingContextEdits.has(node)) {
+      const previous = this.previousInlineText(node);
+      source = previous && this.leadingContextEditSources.get(previous);
+      if (!source || source.isConnected) return;
+    }
+    const edit = this.leadingContextEdits.get(source);
+    if (!edit) return;
+    this.leadingContextEdits.delete(source);
+    const {previous, before, after} = edit;
+    if (this.leadingContextEditSources.get(previous) === source) this.leadingContextEditSources.delete(previous);
+    const recorded = this.textChanges.get(previous);
+    if (previous.data !== after || recorded?.transformed !== after ||
+        this.pendingTextTransforms.has(previous) || this.pendingTextEdits.has(previous)) return;
+    if (recorded.original === before && recorded.replacements === 0) this.removeTextChange(previous, recorded);
+    else this.textChanges.set(previous, {...recorded, transformed: before});
+    this.replaceTextKeepingRanges(previous, before);
   }
 
   // Removes the marker that ends the directly preceding, otherwise untouched
@@ -3449,24 +3480,31 @@ export class DomProcessor {
     const chunks: string[] = [];
     let collectedLength = 0;
     let current: Node | null = node;
+    let protectedEnd = false;
+    const finish = (): string | undefined => {
+      const context = chunks.join("").slice(-leadingContextLimit);
+      return context && protectedEnd ? protectedLeadingContextMark + context : context || undefined;
+    };
 
     while (current?.parentNode) {
       yield;
       let sibling = current.previousSibling;
       while (sibling) {
-        const text = yield* this.iterateSafeContextSibling(sibling, allowShortFragment);
-        if (text === undefined) {
-          const context = chunks.join("").slice(-leadingContextLimit);
-          return context || undefined;
+        let text = yield* this.iterateSafeContextSibling(sibling, allowShortFragment);
+        // `<code>der </code><em>Künstler*in</em>`: the protected article is
+        // never read for the grammar, but it still prevents converting the
+        // noun alone where that article would have to change.
+        if (text === undefined && collectedLength === 0) {
+          text = this.adjacentProtectedText(sibling);
+          protectedEnd = text !== undefined;
         }
+        if (text === undefined) return finish();
         if (text) {
           if (collectedLength === 0 && requiresTrailingWhitespace &&
               !/\s$/u.test(text)) return undefined;
           chunks.unshift(text);
           collectedLength += text.length;
-          if (collectedLength >= leadingContextLimit) {
-            return chunks.join("").slice(-leadingContextLimit);
-          }
+          if (collectedLength >= leadingContextLimit) return finish();
         }
         sibling = sibling.previousSibling;
       }
@@ -3478,8 +3516,19 @@ export class DomProcessor {
       current = parent;
     }
 
-    const context = chunks.join("").slice(-leadingContextLimit);
-    return context || undefined;
+    return finish();
+  }
+
+  private adjacentProtectedText(sibling: Node): string | undefined {
+    if (sibling instanceof Element && blockBoundaryTags.has(sibling.tagName)) return undefined;
+    let last: Node = sibling;
+    while (last.lastChild) last = last.lastChild;
+    if (last.nodeType !== Node.TEXT_NODE) return undefined;
+    const text = last as Text;
+    const parent = text.parentElement;
+    if (!parent || nonTextContextTags.has(parent.tagName) || !/\p{L}/u.test(text.data) ||
+        this.shouldProcessTextNode(text)) return undefined;
+    return text.data;
   }
 
   private leadingContextRequiresTrailingWhitespace(input: string): boolean {
