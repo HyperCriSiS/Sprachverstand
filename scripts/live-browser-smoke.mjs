@@ -10,6 +10,7 @@ import path from "node:path";
 import process from "node:process";
 import { spawn, spawnSync } from "node:child_process";
 import {fetchWebdriverResponse} from "./webdriver-response.mjs";
+import {createSessionWithRetry} from "./webdriver-session-retry.mjs";
 import {NavigationStartObserver} from "./navigation-start-observer.mjs";
 import {saveNavigationFailureDiagnostic} from "./navigation-failure-diagnostics.mjs";
 import {createSmokeProcessIo} from "./smoke-process-io.mjs";
@@ -610,7 +611,8 @@ try {
   fixtureServer = fixture.server;
 
   await processIo.start(driverProcess.pid);
-  const sessionResponse = await processIo.measure("session", createSession);
+  const sessionResponse = await processIo.measure("session",
+    browser === "chromium" ? () => createSessionWithRetry(createSession) : createSession);
   sessionId = sessionIdFrom(sessionResponse);
 
   if (browser === "firefox") {
