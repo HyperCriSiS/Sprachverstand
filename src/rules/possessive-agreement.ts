@@ -28,12 +28,24 @@ const masculine = new Map([
   ["ihrem", "seinem"], ["ihrer", "seiner"], ["ihres", "seines"]
 ]);
 
+// Another possible owner in this or the previous sentence keeps the
+// possessive (`Die Schulleiterin heißt Anna. Jede Lehrer*in kennt ihre
+// Telefonnummer`, `Maria bittet darum, dass jede Lehrer*in ihrer Tochter
+// hilft`, `Die Eltern wünschen, dass …`, `Sie sagt …`).
+const otherOwnerPronoun = /(?<![\p{L}\p{M}])(?:sie|Sie|ihr|ihre[nmrs]?|ihnen|Ihnen)(?![\p{L}\p{M}])/u;
+const otherOwnerNoun =
+  /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:erin|erinnen|innen|In|Innen|[:*_\/·•]in(?:nen)?)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen)(?![\p{L}\p{M}])/u;
+const otherOwnerName =
+  /(?:(?:^|[.!?:]\s+)\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])/u;
+
 function clauseAllowsGenericOwner(before: string): boolean {
   const clause = before.slice(Math.max(0, before.search(/[^,.!?;:]*$/u)));
   const sentenceStart = /(?:^|[.!?]\s*)$/u.test(before.slice(0, before.length - clause.length));
   const words = clause.trim().split(/\s+/u).filter(Boolean);
-  return words.every((word, index) =>
-    !ownerWord.test(word) && (/^\p{Ll}/u.test(word) || (index === 0 && sentenceStart)));
+  if (!words.every((word, index) =>
+    !ownerWord.test(word) && (/^\p{Ll}/u.test(word) || (index === 0 && sentenceStart)))) return false;
+  const sentences = before.match(/[^.!?]*[.!?]+\s*[^.!?]*$/u)?.[0] ?? before;
+  return !otherOwnerPronoun.test(sentences) && !otherOwnerNoun.test(sentences) && !otherOwnerName.test(sentences);
 }
 
 function lastConvertedOwner(before: string): boolean | undefined {

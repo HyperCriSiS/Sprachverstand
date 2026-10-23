@@ -77,3 +77,57 @@ describe("Geschütztes Begleitwort (V03)", () => {
     expect(paragraph.outerHTML).toBe(html);
   });
 });
+
+// Gegenprüfung 24.10.2026: N14-Rest und V03-Variante.
+describe("Begleitwort nach Entfernen des Nomens (N14)", () => {
+  it("nimmt das Begleitwort zurück, wenn das Inline-Element ersetzt wird", async () => {
+    const paragraph = start("<p>Das Projekt der <em>Künstler*in</em> ist neu.</p>");
+    const strong = document.createElement("strong");
+    strong.textContent = "Gemeinde";
+    paragraph.querySelector("em")!.replaceWith(strong);
+    await settle();
+    expect(paragraph.innerHTML).toBe("Das Projekt der <strong>Gemeinde</strong> ist neu.");
+  });
+
+  it("nimmt das Begleitwort zurück, wenn das Inline-Element entfernt wird", async () => {
+    const paragraph = start("<p>Das Projekt der <em>Künstler*in</em> ist neu.</p>");
+    paragraph.querySelector("em")!.remove();
+    await settle();
+    expect(paragraph.innerHTML).toBe("Das Projekt der  ist neu.");
+  });
+
+  it("nimmt das Begleitwort zurück, wenn nur der Nomentext entfernt wird", async () => {
+    const paragraph = start("<p>Das Projekt der <em>Künstler*in</em> ist neu.</p>");
+    paragraph.querySelector("em")!.firstChild!.remove();
+    await settle();
+    expect(paragraph.innerHTML).toBe("Das Projekt der <em></em> ist neu.");
+    processor!.stop({restore: true});
+    expect(paragraph.innerHTML).toBe("Das Projekt der <em></em> ist neu.");
+  });
+});
+
+describe("Geschützter Artikel mit eigenem Leerraumknoten (V03)", () => {
+  it("bleibt: <code>der</code> <em>Künstler*in</em>", () => {
+    const html = "<p>Das Projekt <code>der</code> <em>Künstler*in</em> ist neu.</p>";
+    expect(start(html).outerHTML).toBe(html);
+  });
+});
+
+describe("Begleitwort nach Austausch mit Umwandlung im Hintergrund (N14)", () => {
+  it("nimmt das Begleitwort zurück, wenn ein unmarkiertes Element das Nomen ersetzt", async () => {
+    document.body.innerHTML = "<p>Das Projekt der <em title=\"Die Künstler*in\">Künstler*in</em> ist neu.</p>";
+    processor = new DomProcessor(document, {rules: domRuleMetadata, profile: "aggressive",
+      processAccessibleAttributes: true,
+      transformText: async (input: string, options: TransformOptions) =>
+        transformTextWithSummary(input, defaultRules, options)});
+    processor.start(); processor.flush();
+    await settle();
+    const paragraph = document.querySelector("p")!;
+    expect(paragraph.textContent).toBe("Das Projekt des Künstlers ist neu.");
+    const strong = document.createElement("strong");
+    strong.textContent = "Gemeinde";
+    paragraph.querySelector("em")!.replaceWith(strong);
+    await settle();
+    expect(paragraph.innerHTML).toBe("Das Projekt der <strong>Gemeinde</strong> ist neu.");
+  });
+});
