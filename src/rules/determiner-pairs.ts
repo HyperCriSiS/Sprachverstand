@@ -2,6 +2,15 @@ import type { TransformResult } from "../core/rule";
 import type { GrammaticalCase } from "./person-lexicon";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const markedEndingPattern = /^(\p{L}[\p{L}\p{M}]*?)(?:\/-?|[:*_·•])(\p{Ll}{1,4})$/u;
+const lowercaseEnEndingPattern = /\p{Ll}en$/u;
+const binnenIStemPattern = /^(.*\p{Ll})In$/u;
+const lastWordPattern = /([\p{L}\p{M}.-]+)\s*$/u;
+const capitalizedWordPattern = /^\p{Lu}\p{Ll}[\p{L}\p{M}-]*$/u;
+const allCapsPattern = /^\p{Lu}{2,}$/u;
+
 /*
  * A determiner pair before a marked singular, written out or with
  * attributes between: `durch den oder die behandelnde Ärzt:in`, `der/ die
@@ -120,7 +129,7 @@ function applyCase(source: string, replacement: string): string {
 
 // `behandelnde` after `den` → `behandelnden`; `benannter/e` → `benannter`.
 function inflectAttribute(word: string, form: PairForm): string {
-  const marked = /^(\p{L}[\p{L}\p{M}]*?)(?:\/-?|[:*_·•])(\p{Ll}{1,4})$/u.exec(word);
+  const marked = markedEndingPattern.exec(word);
   if (marked) {
     const [, left] = marked;
     // `benannter/e`, `erster/erste`: the masculine half ends in -r/-n/-m/-s.
@@ -131,7 +140,7 @@ function inflectAttribute(word: string, form: PairForm): string {
   }
   // `Der/die ausländischen Partner/in`: a written -en in the nominative is
   // the source's slip for -e.
-  if (form.grammaticalCase === "nominative" && /\p{Ll}en$/u.test(word)) word = word.slice(0, -1);
+  if (form.grammaticalCase === "nominative" && lowercaseEnEndingPattern.test(word)) word = word.slice(0, -1);
   if (!/e$/u.test(word)) return word;
   if (form.grammaticalCase === "nominative") return form.strong ? `${word}r` : word;
   return `${word}n`;
@@ -144,7 +153,7 @@ export function normalizeDeterminerPairs(
   if (!/(?:[\/:*_·•]|oder|bzw\.|und|beziehungsweise)/u.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
   const baseOf = (noun: string) => /^(.*?)(?:(?:\/-?|[:*_·•])in|\(-?in\))$/u.exec(noun)?.[1] ??
-    /^(.*\p{Ll})In$/u.exec(noun)?.[1];
+    binnenIStemPattern.exec(noun)?.[1];
   const text = input.replace(pairPattern,
     (match: string, left: string, separator: string, right: string, space: string, attributes: string,
       noun: string, coordinator: string | undefined, secondNoun: string | undefined,
@@ -250,7 +259,7 @@ function caseFromEnding(ending: string | undefined, before: string): Grammatical
   // Earlier items of an enumeration and a distributive `je` share the
   // preposition before them (`aus je eine:r Hundeführer:in, eine:r SAR-Helfer:in`).
   const head = withoutEnumerationItems(before).replace(/\s(?:je|jeweils)\s*$/u, " ");
-  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(head)?.[1] ?? "";
+  const previous = lastWordPattern.exec(head)?.[1] ?? "";
   const lowerPrevious = previous.toLocaleLowerCase(locale);
   if (dativePrepositions.has(lowerPrevious)) return "dative";
   if (/^(?:für|durch|gegen|ohne|um|wider)$/iu.test(previous)) return "accusative";
@@ -259,13 +268,13 @@ function caseFromEnding(ending: string | undefined, before: string): Grammatical
   // text counts (`Wahl de:r Schatzmeister:in` as a heading).
   const trimmed = head.trimEnd();
   const beforePrevious = trimmed.slice(0, trimmed.length - previous.length);
-  if (/^\p{Lu}\p{Ll}[\p{L}\p{M}-]*$/u.test(previous) && !/[.!?:]\s*$/u.test(beforePrevious) &&
+  if (capitalizedWordPattern.test(previous) && !/[.!?:]\s*$/u.test(beforePrevious) &&
       !finiteVerbsBeforeDer.has(lowerPrevious) && !sentenceWords.has(lowerPrevious)) return "genitive";
   return "nominative";
 }
 
 function compactAttributeForm(word: string, grammaticalCase: GrammaticalCase, strong: boolean): string {
-  if (word === "und" || word === "oder" || /^\p{Lu}{2,}$/u.test(word)) return word;
+  if (word === "und" || word === "oder" || allCapsPattern.test(word)) return word;
   // `passende:n`, `feste*n`, and a participle with the ending after the
   // marker (`begünstigt*en`).
   const marked = /^(.*?)([:*_·•\/])(?:en|er|e|n|r)$/u.exec(word);
