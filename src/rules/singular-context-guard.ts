@@ -159,6 +159,16 @@ function isSentenceEnd(token: string): boolean {
   return word !== undefined && !abbreviations.has(word.toLocaleLowerCase(locale));
 }
 
+// A marked adjective (`Studentische/-r`, `Medizinische*r`, `engagierte/n`):
+// the noun alone would leave it unresolved. Determiner pairs (`jedem*r`,
+// `zum/zur`) are resolved by their own rules and do not count.
+const markedAdjectiveToken = /^\p{L}[\p{L}\p{M}-]*e[:*_·•\/]-?(?:r|n|s|m)$/u;
+const determinerLikeStems = /^(?:die|eine|keine|jede|diese|jene|meine|deine|seine|ihre|unsere|eure|welche|manche|solche)[:*_·•\/]/iu;
+
+function unresolvedMarkedToken(token: string): boolean {
+  return markedAdjectiveToken.test(token) && !determinerLikeStems.test(token);
+}
+
 export function hasAmbiguousSingularDeterminer(
   input: string,
   nounIndex: number
@@ -225,13 +235,25 @@ export function hasAmbiguousSingularDeterminer(
     if (headNounSuffix.test(token)) {
       return false;
     }
+    // An unresolved marked attribute or pair (`Studentische/-r OP
+    // Assistent/-in`, `zur/zum EnergieauditorIn`): the noun alone would leave
+    // the phrase half converted.
+    if (unresolvedMarkedToken(token)) return true;
     // `die Berufe Altenpfleger*in, …`, `die Ebene Leiter*in`, `ihrer DOSB
     // Übungsleiter:in B-Lizenz`: a category noun or an abbreviation right
-    // before the title.
+    // before the title, unless a marked word stands before it.
     if (tokenIndex === 0 && !isAmbiguousDeterminer(token) &&
-        (categoryNoun.test(token) || /^\p{Lu}{2,}$/u.test(token))) {
+        (categoryNoun.test(token) || /^\p{Lu}{2,}$/u.test(token)) &&
+        !unresolvedMarkedToken((/(\S+)\s+$/u.exec(input.slice(0, cursor))?.[1] ?? "").replace(/^[^\p{L}]+/u, ""))) {
       return false;
     }
+    // `zur Manual Therapeut*in`: the contracted preposition needs a case form
+    // the bare noun cannot give.
+    if (tokenIndex === 1 && /^zur$/iu.test(token)) return true;
+    // `zur/zum EnergieauditorIn`: the pair rules read no Binnen-I; the noun
+    // alone would leave the pair.
+    if (/^(?:zur|zum)[:*_·•\/]-?(?:zum|zur|r|m)$/iu.test(token) &&
+        /^[\p{L}\p{M}’'-]*\p{Ll}In(?![\p{L}\p{M}])/u.test(input.slice(nounIndex))) return true;
     if (isAmbiguousDeterminer(token)) {
       return true;
     }
