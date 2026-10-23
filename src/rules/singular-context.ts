@@ -536,6 +536,10 @@ function singularFromStrongPlural(
     return grammaticalCase === "genitive" ? `${singular}s` : singular;
   }
   if (lowerSingular.endsWith("e") && plural === `${lowerSingular}n`) return `${singular}n`;
+  // -or with plural -oren is always strong (`Auditor`, like `Professor`).
+  if (lowerSingular.endsWith("or") && plural === `${lowerSingular}en`) {
+    return grammaticalCase === "genitive" ? `${singular}s` : singular;
+  }
   return undefined;
 }
 
@@ -580,6 +584,47 @@ function transformContractedPairs(input: string): TransformResult {
   return {text, replacements};
 }
 
+// `zur/zum EnergieauditorIn und EnergieberaterIn` → „zum Energieauditor und
+// Energieberater“; `zur Manual Therapeut*in` → „zum Manual Therapeuten“
+// (a loan adjective before the noun). Before, the pair stayed or was kept
+// whole to avoid half a conversion.
+const titleMarker = String.raw`(?:(?:\/-?|[:*_·•])in|(?<=\p{Ll})In)`;
+const zurZumPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([Zz]ur|[Zz]um)[ \t]*[:*\/·][ \t]*(zur|zum)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2})([\p{L}\p{M}’'-]+?)${titleMarker}(?:(\s+(?:und|oder|bzw\.)\s+)([\p{L}\p{M}’'-]+?)${titleMarker})?(?![\p{L}\p{M}])`,
+  "gu"
+);
+// Only an uninflected loan adjective (`Manual`): an inflected German one
+// (`zum/zur Medizinischen Technologe*in`) and the second half of a pair
+// belong to the pair rules.
+const zurLoanAdjectivePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(?<![:*\/·][ \t]*|(?:bzw\.|oder|und)\s+)([Zz]ur)(\s+)(\p{Lu}\p{Ll}+(?<!ung|heit|keit|schaft|ion|tät|ik|e|en|er|es|em))(\s+)([\p{L}\p{M}’'-]+?)${titleMarker}(?![\p{L}\p{M}])`,
+  "gu"
+);
+
+function transformTitlePrepositions(input: string): TransformResult {
+  if (!/[Zz]ur/u.test(input)) return {text: input, replacements: 0};
+  let replacements = 0;
+  let text = input.replace(zurZumPattern, (match: string, left: string, right: string, space: string,
+    adjectives: string, base: string, conjunction: string | undefined, second: string | undefined) => {
+    if (left.toLocaleLowerCase(locale) === right) return match;
+    const noun = mapSingular(base, "dative");
+    const secondNoun = second === undefined ? "" : mapSingular(second, "dative");
+    if (!noun || secondNoun === undefined) return match;
+    replacements += 1 + (second === undefined ? 0 : 1);
+    return applyTokenCase(left, "zum") + space + adjectives + noun + (conjunction ?? "") + secondNoun;
+  });
+  text = text.replace(zurLoanAdjectivePattern, (match: string, zur: string, space: string, adjective: string,
+    between: string, base: string) => {
+    // A known person noun in the middle is no adjective (`zur Lehrer Ärzt*in`).
+    if (mapSingular(adjective, "nominative")) return match;
+    const noun = mapSingular(base, "dative");
+    if (!noun) return match;
+    replacements += 1;
+    return applyTokenCase(zur, "zum") + space + adjective + between + noun;
+  });
+  return {text, replacements};
+}
+
 function transformSpacedPairs(input: string): TransformResult {
   if (!/[   ][\/*:]|[\/*:][   ]|\soder\s/iu.test(input)) {
     return {text: input, replacements: 0};
@@ -601,11 +646,17 @@ function transformSpacedPairs(input: string): TransformResult {
 }
 
 // `Medizinische*r Technolog*in`, `engagierte/r Mitarbeiter:in` without a
-// determiner: the `e/r` adjective marks the strong nominative. Before, only
-// the noun changed (`Medizinische*r Technologe`).
+// determiner: the `e/r` adjective marks the strong nominative, `e*n` the
+// accusative (`als Medizinisch-technische*n Assistent*in`). An abbreviation
+// may stand before the noun (`Studentische/-r OP Assistent/-in`). Before,
+// only the noun changed (`Medizinische*r Technologe`).
 const bareMarkedAdjectivePattern = lazyPattern(
-  String.raw`(?<![\p{L}\p{M}:*_/·•.’‘-])(${nounBase}e)(?:[:*_·•]|\/-?)r(\s+)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
-  "giu"
+  // Earlier marked lowercase adjectives of a list come along (`aufgeschlossene*n,
+  // verantwortungsbewusste*n und engagierte*n Mitarbeiter*in`); a marked
+  // noun (`Fachangestellte:r oder …`) is no list item. No `i` flag: it
+  // would make `\p{Ll}` caseless.
+  String.raw`(?<![\p{L}\p{M}:*_/·•.’‘­-])((?:\p{Ll}[\p{L}\p{M}’'-]*e(?:[:*_·•]|\/-?)[rn](?:,\s*|\s+(?:und|oder|bzw\.)\s+))*)(${nounBase}e)(?:[:*_·•]|\/-?)([rn])(\s+(?:[\p{L}]{2,5}\s+)?)(${nounBase})(?:(?:\/-?)|[:*_·•.’‘])in(?![\p{L}\p{M}])`,
+  "gu"
 );
 // `eine*r`, `deine:r`, `jede/r` are determiners, not adjectives; their case
 // is not fixed by the ending (`je eine:r`, `mit deine*r`).
@@ -621,6 +672,9 @@ const nonNominativeBefore = new Set([
   "ohne", "um", "an", "auf", "in", "über", "unter", "vor", "hinter", "neben",
   "zwischen", "wegen", "trotz", "während", "statt"
 ]);
+const accusativePrepositionWords = new Set(["für", "durch", "gegen", "ohne", "um"]);
+const unresolvedPairToken =
+  /^(?:zum|zur|der|die|den|dem|des|ein|eine|einen|einem|einer|eines)[:*_\/·•]-?(?:zum|zur|der|die|den|dem|des|ein|eine|einen|einem|einer|eines|r|n|m|s)$/iu;
 const determinerWords = new Set([
   ...ordinaryMasculineDeterminers.keys(),
   ...nominativeFeminineDeterminers.keys(),
@@ -639,25 +693,45 @@ function mapNominativeSingular(base: string): string | undefined {
 }
 
 function transformBareMarkedAdjectives(input: string): TransformResult {
-  if (!/e(?:[:*_·•]|\/-?)r\s/iu.test(input)) return {text: input, replacements: 0};
+  if (!/e(?:[:*_·•]|\/-?)[rn]\s/iu.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
   const text = input.replace(
     bareMarkedAdjectivePattern(),
-    (match: string, adjective: string, whitespace: string, base: string, offset: number, source: string) => {
-      if (markedDeterminerStems.has(adjective.toLocaleLowerCase(locale))) return match;
+    (match: string, list: string, adjective: string, ending: string, between: string, base: string,
+      offset: number, source: string) => {
+      const listItems = [...list.matchAll(/(\S+?e)(?:[:*_·•]|\/-?)([rn])(?=,|\s)/giu)];
+      if (listItems.some((item) => item[2]!.toLocaleLowerCase(locale) !== ending.toLocaleLowerCase(locale))) return match;
+      // A still marked pair just before (`zum*zur "Staatlich geprüfte*n …`)
+      // belongs to the same phrase; it would stay half converted.
+      if (source.slice(Math.max(0, offset - 60), offset).trim().split(/\s+/u).slice(-3)
+        .some((token) => unresolvedPairToken.test(token.replace(/^[„"»«(]+/u, "")))) return match;
+      // A text fragment (`ine/n` of `e|ine/n`) is no adjective.
+      if (markedDeterminerStems.has(adjective.toLocaleLowerCase(locale)) ||
+        (adjective.length < 4 && ending.toLocaleLowerCase(locale) === "n")) return match;
+      // The `i` flag lets any short word through; only an abbreviation counts.
+      const abbreviation = between.trim();
+      if (abbreviation && !/^\p{Lu}{2,5}$/u.test(abbreviation)) return match;
       const previous = /(\S+)\s+$/u.exec(source.slice(Math.max(0, offset - 32), offset))?.[1]
         ?.toLocaleLowerCase(locale);
+      // After a determiner the determiner rules decide. After a preposition
+      // only an accusative one keeps `e*n` sure: after a dative one the
+      // masculine form would be `-em` (`mit engagierte*n Mitarbeiter*in`).
+      const isPreposition = previous !== undefined && nonNominativeBefore.has(previous);
       if (
         previous &&
-        (determinerWords.has(previous) || nonNominativeBefore.has(previous) ||
+        (determinerWords.has(previous) ||
+          (isPreposition && (ending.toLocaleLowerCase(locale) === "r" || !accusativePrepositionWords.has(previous))) ||
           /[\p{L}\p{M}][:*_\/·•]/u.test(previous))
       ) {
         return match;
       }
-      const noun = mapNominativeSingular(base);
+      const accusative = ending.toLocaleLowerCase(locale) === "n";
+      const noun = accusative ? mapSingular(base, "accusative") : mapNominativeSingular(base);
       if (!noun) return match;
       replacements += 1;
-      return `${adjective}r${whitespace}${noun}`;
+      const resolvedList = list.replace(/(\S+?e)(?:[:*_·•]|\/-?)([rn])(?=,|\s)/giu,
+        (_item: string, stem: string) => stem + (accusative ? "n" : "r"));
+      return `${resolvedList}${adjective}${accusative ? "n" : "r"}${between}${noun}`;
     }
   );
   return {text, replacements};
@@ -1137,6 +1211,7 @@ function transformVerbContext(
 // Each step works on the previous result. Once a step has converted the
 // last marked singular, the remaining steps cannot match anything.
 const singularSteps: readonly ((text: string) => TransformResult)[] = [
+  transformTitlePrepositions,
   (text) => normalizeDeterminerPairs(text, mapSingular),
   (text) => normalizeCompactDeterminers(text, mapSingular),
   (text) => transformClauseCase(text, mapSingular),
