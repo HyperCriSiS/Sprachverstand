@@ -222,9 +222,15 @@ const wideCopulaPattern = new RegExp(
 );
 // (w) a phrase directly before a clause-final copula or a subjunctive finite
 // verb is nominative: `…, der eine Ärzt*in ist.`, `Wir hoffen, eine Ärzt*in
-// werde eingeladen.`, `…, eine Ärzt*in sollte …`.
+// werde eingeladen.`, `…, eine Ärzt*in sollte …`. After a subject pronoun
+// a modal subjunctive has its own subject: `dass er die Ärzt*in möge` is an
+// object; the copula keeps the predicative (`dass er die Ärzt*in sei`).
 const beforeFinalCopulaPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:(?:ist|sind|war|waren|wird|wurde|bleibt|blieb)\s*[,.;:!?]|(?:werde|würde|sei|wäre|sollte|könnte|müsste|dürfte|möge)(?![\p{L}\p{M}])))`,
+  String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:(?:ist|sind|war|waren|wird|wurde|bleibt|blieb)\s*[,.;:!?]|(?:werde|sei|wäre)(?![\p{L}\p{M}])))`,
+  "gu"
+);
+const beforeModalSubjunctivePattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins|er|sie|es|ich|du|wir|ihr|man|Sie)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:würde|sollte|könnte|müsste|dürfte|möge)(?![\p{L}\p{M}]))`,
   "gu"
 );
 // (x) a sentence-start subject with a relative clause before its verb:
@@ -378,7 +384,8 @@ export function transformClauseCase(
     if (converted) return {text: lead + converted + tail, replacements: 1};
   }
   for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
-    subordinateSubjectPattern, coordinatedClausePattern, beforeFinalCopulaPattern, subjectBeforeRelativePattern]) {
+    subordinateSubjectPattern, coordinatedClausePattern, beforeFinalCopulaPattern, beforeModalSubjunctivePattern,
+    subjectBeforeRelativePattern]) {
     convert(pattern, (_prefix, tail) => competingSubject(tail) ? undefined : "nominative");
   }
   for (const pattern of [frontedObjectPattern, existentialPattern]) {
@@ -492,14 +499,20 @@ export function transformClauseCase(
 
 // A marked phrase coordinated after a converted genitive takes the
 // genitive too: `die Rolle eines Wählers der Grünen oder einer
-// Politiker*in`, `eines Trainers mit Migrationsgeschichte und einer
-// Trainer*in ohne`. `einer`/`der` cannot start a new nominative or
-// accusative here. A doubled form (`eines Lehrers und einer Lehrer*in`)
-// stays as written.
+// Politiker*in`. Only where no other reading exists:
+//   - a dative head (`Wir helfen dem Sohn eines Lehrers und einer Ärzt*in`)
+//     can be the coordination partner;
+//   - inside a prepositional attribute (`eines Lehrers mit Hut und einer
+//     Ärzt*in`) the phrase may belong to the preposition;
+//   - a plural verb after it makes a coordinated subject (`Name des Weines
+//     und der Pat:in werden`), a verb with a subject pronoun starts a new
+//     clause part (`und der Ärzt*in überreiche ich`).
+// A doubled form (`eines Lehrers und einer Lehrer*in`) stays as written.
 const coordinatedGenitivePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*|\s+(?:mit|ohne|aus|von)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?:\p{Ll}+en|sind)(?![\p{L}\p{M}]))(?!\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L}\p{M}]))`,
   "gu"
 );
+const dativeHeadBefore = /(?:^|\s)(?:dem|einem|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$/u;
 
 export function transformCoordinatedGenitives(
   input: string,
@@ -509,8 +522,9 @@ export function transformCoordinatedGenitives(
   let replacements = 0;
   const text = input.replace(coordinatedGenitivePattern, (match: string, head: string, first: string,
     attribute: string, conjunction: string, determinerWord: string, space: string, attributeText: string,
-    base: string) => {
+    base: string, offset: number, source: string) => {
     if (!attribute && first === base) return match;
+    if (dativeHeadBefore.test(source.slice(Math.max(0, offset - 60), offset))) return match;
     const noun = mapNoun(base, "genitive");
     if (!noun) return match;
     replacements += 1;
