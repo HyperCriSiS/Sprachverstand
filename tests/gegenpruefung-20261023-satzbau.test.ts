@@ -64,10 +64,11 @@ describe("Kurzformen mit Kontext (N08, N09)", () => {
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });
 
-describe("Titel nicht halb umwandeln (N10)", () => {
+describe("Titel ganz umwandeln (N10)", () => {
   it.each([
-    "das Zertifikat »Studentische/-r OP Assistent/-in« der Arbeitsgruppe",
-    "Für die Qualifikation zur/zum EnergieauditorIn (§ 44 EEffG)",
-    "Die Ausbildung zur Manual Therapeut*in nach dem Konzept"
-  ])("bleibt: %s", (input) => expect(t(input)).toBe(input));
+    ["das Zertifikat »Studentische/-r OP Assistent/-in« der Arbeitsgruppe",
+      "das Zertifikat »Studentischer OP Assistent« der Arbeitsgruppe"],
+    ["Für die Qualifikation zur/zum EnergieauditorIn (§ 44 EEffG)", "Für die Qualifikation zum Energieauditor (§ 44 EEffG)"],
+    ["Die Ausbildung zur Manual Therapeut*in nach dem Konzept", "Die Ausbildung zum Manual Therapeuten nach dem Konzept"]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });

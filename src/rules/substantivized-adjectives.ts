@@ -351,9 +351,17 @@ function transformAttributives(input: string): TransformResult {
   return {text, replacements};
 }
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const beamterPattern = /(?<![\p{L}\p{M}])(\p{Lu}?[\p{L}\p{M}-]*?[Bb]eamt)er([:*_·•]|\/-?)in(?![\p{L}\p{M}])/gu;
+const lastWordPattern = /([\p{L}\p{M}:*_\/·•.’‘-]+)\s+$/u;
+const pluralContextWordPattern = /[\p{L}\p{M}\d:*_\/·•’‘-]+[.!?]?|[,;()]/gu;
+const lowercaseEWordPattern = /^\p{Ll}+e$/u;
+const lowercaseEnWordPattern = /^\p{Ll}+en$/u;
+
 function hasMarkedDeterminer(input: string, index: number): boolean {
   const prefix = contextSuffix(input, index, 1);
-  const match = /([\p{L}\p{M}:*_\/·•.’‘-]+)\s+$/u.exec(prefix);
+  const match = lastWordPattern.exec(prefix);
   return Boolean(match?.[1] && determinerForms.has(match[1].toLocaleLowerCase(locale)));
 }
 
@@ -414,7 +422,7 @@ const coordinationWords = new Set(["und", "oder", "sowie"]);
 
 function pluralEnding(input: string, index: number): "en" | "e" | undefined {
   const words = (input.slice(Math.max(0, index - 120), index)
-    .match(/[\p{L}\p{M}\d:*_\/·•’‘-]+[.!?]?|[,;()]/gu) ?? []);
+    .match(pluralContextWordPattern) ?? []);
   let position = words.length - 1;
   if (position >= 0 && coordinationWords.has(words[position]!.toLocaleLowerCase(locale))) {
     // `die Kolleg:innen und Angestellt:innen`: follow the first conjunct.
@@ -422,7 +430,7 @@ function pluralEnding(input: string, index: number): "en" | "e" | undefined {
     if (position < -1) return undefined;
   }
   // Attributive -e adjectives (`viele neue …`) inherit the decision before them.
-  while (position >= 0 && /^\p{Ll}+e$/u.test(words[position]!) &&
+  while (position >= 0 && lowercaseEWordPattern.test(words[position]!) &&
       !weakPluralTriggers.has(words[position]!) && !strongPluralTriggers.has(words[position]!)) {
     position -= 1;
   }
@@ -433,10 +441,10 @@ function pluralEnding(input: string, index: number): "en" | "e" | undefined {
   if (/[.!?]$/u.test(previous)) return "e";
   if (weakPluralTriggers.has(lower)) return "en";
   if (strongPluralTriggers.has(lower) || /^\d+$/u.test(lower)) return "e";
-  if (/^\p{Ll}+en$/u.test(previous)) {
+  if (lowercaseEnWordPattern.test(previous)) {
     // Only an -en adjective after a weak determiner (`die neuen …`); a verb
     // such as `suchen` gives no declension information.
-    while (position >= 0 && /^\p{Ll}+en$/u.test(words[position]!) &&
+    while (position >= 0 && lowercaseEnWordPattern.test(words[position]!) &&
         !weakPluralTriggers.has(words[position]!)) position -= 1;
     return position >= 0 && weakPluralTriggers.has(words[position]!.toLocaleLowerCase(locale))
       ? "en" : undefined;
@@ -468,10 +476,9 @@ export const substantivizedAdjectivesRule: Rule = {
   apply(input) {
     // `Beamter/in`: the strong masculine form with the feminine suffix, as the
     // marked adjective form `Beamte/r`, so determiner and attributes follow.
-    const beamter = /(?<![\p{L}\p{M}])(\p{Lu}?[\p{L}\p{M}-]*?[Bb]eamt)er([:*_·•]|\/-?)in(?![\p{L}\p{M}])/gu;
-    if (beamter.test(input)) {
-      beamter.lastIndex = 0;
-      return substantivizedAdjectivesRule.apply(input.replace(beamter, "$1e$2r"));
+    if (input.includes("eamter") && beamterPattern.test(input)) {
+      beamterPattern.lastIndex = 0;
+      return substantivizedAdjectivesRule.apply(input.replace(beamterPattern, "$1e$2r"));
     }
     // All patterns require a marked adjective ending, never plain prose.
     const singular = /(?:[:*_·•.’‘]|\/-?)[rnms]/iu.test(input);

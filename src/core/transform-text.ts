@@ -161,6 +161,30 @@ function applyBuiltInRules(
   if (!input.includes("\u00ad")) {
     return applyBuiltInRulesPlain(input, rules, options, leadingContext);
   }
+  // `Mieter*in\u00ad nen`: a break inside the ending with a stray space. An
+  // unconverted word gets its space back.
+  const strayBreak = /([:*_\u00b7\u2022\/]in)\u00ad(\s+)(nen)(?![\p{L}\p{M}])/gu;
+  const spaces: string[] = [];
+  const joined = input.replace(strayBreak, (_match: string, marker: string, space: string, rest: string) => {
+    spaces.push(space);
+    return `${marker}\u00ad${rest}`;
+  });
+  const result = applyBuiltInRulesBroken(joined, rules, options, leadingContext);
+  if (spaces.length === 0) return result;
+  let index = 0;
+  return {...result, text: result.text.replace(/([:*_\u00b7\u2022\/]in)\u00ad(nen)(?![\p{L}\p{M}])/gu,
+    (match: string, marker: string, rest: string) =>
+      index < spaces.length ? `${marker}\u00ad${spaces[index++]}${rest}` : match)};
+}
+
+function applyBuiltInRulesBroken(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions,
+  leadingContext?: string
+): DetailedTransformResult {
+  const whole = applyWithoutSoftHyphens(input, rules, options, leadingContext);
+  if (whole) return whole;
 
   let cursor = 0;
   let text = "";
@@ -205,6 +229,34 @@ function applyBuiltInRules(
   replacements += after.replacements;
   summaries.push(...after.summaries);
   return { text, replacements, summaries };
+}
+
+// The rules see the text without soft hyphens, so a word with breaks can
+// change together with its determiner or adjective (`angehende*r
+// Theater­wissen­schaftler*in` → „angehender Theaterwissenschaftler“).
+// Unchanged words keep their breaks. When the rules change the word count,
+// the per-token path below decides instead.
+function applyWithoutSoftHyphens(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions,
+  leadingContext?: string
+): DetailedTransformResult | undefined {
+  const normalized = input.replaceAll("­", "");
+  const result = applyBuiltInRulesPlain(normalized, rules, options,
+    leadingContext?.replaceAll("­", ""));
+  if (result.replacements === 0) return {text: input, replacements: 0, summaries: []};
+  const original = input.split(/(\s+)/u);
+  const plain = normalized.split(/(\s+)/u);
+  const changed = result.text.split(/(\s+)/u);
+  if (changed.length !== plain.length || original.length !== plain.length) return undefined;
+  for (let index = 1; index < plain.length; index += 2) {
+    if (changed[index] !== plain[index]) return undefined;
+  }
+  return {
+    ...result,
+    text: changed.map((token, index) => token === plain[index] ? original[index] : token).join("")
+  };
 }
 
 function softHyphenContextSuffix(
