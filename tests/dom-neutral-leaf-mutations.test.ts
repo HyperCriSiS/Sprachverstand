@@ -64,6 +64,20 @@ it("respects custom replacements even when the built-in candidate prefilter is n
   await drain(); expect(span.textContent).toBe("anders");
 });
 
+it("keeps skipping neutral text when an own replacement does not occur in it", async () => {
+  const apply = vi.spyOn(rule, "apply");
+  const root = start({customReplacements: [{source: "Kundschaft", replacement: "Kunden"}]});
+  for (let index = 0; index < 50; index++) {
+    const span = document.createElement("span"); span.textContent = `neutraler Absatz ${index}`; root.append(span);
+  }
+  const own = document.createElement("span"); own.textContent = "Die Kundschaft kommt."; root.append(own);
+  await drain();
+  // Only the text with the own source reaches the rules (its parts around
+  // the replacement); no neutral paragraph does.
+  expect(apply.mock.calls.some(([input]) => input.includes("neutraler"))).toBe(false);
+  expect(own.textContent).toBe("Die Kunden kommt.");
+});
+
 it("drains deferred additions completely during explicit synchronous flush", async () => {
   const root = start(); markedBurst(root); await Promise.resolve();
   processor!.flush();
