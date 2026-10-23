@@ -45,22 +45,26 @@ Autorität: `main`
   - #519 Begleitwort beim Entfernen oder Ersetzen des Nomens zurückgesetzt (N14), Leerraum vor geschütztem Artikel (V03).
   - #520 Retry räumt die erste Chromium-Sitzung ab (N23), nativ mit Codex' Fehler-Injektion bestätigt (0 Restprozesse).
   - Codex' Sollfälle: 27 → 134 von 162; 356 von 358 als korrekt bewerteten Änderungen unverändert.
-- **N15 Performance:** Neutraler Text 2,5–3× schneller als vor den Sprach-PRs. Markierter Plural bleibt 1,2–1,8× langsamer, markierter Singular nach #515 noch 1,4–1,6×. In Pale Moon liegen kurze Fälle bei etwa 4× (Codex-Messung 24.10.); das ist offen.
+- **Danach (24.10.):**
+  - #523 Titel (N10): „zum Energieauditor und Energieberater“, „zum Manual Therapeuten“, „»Studentischer OP Assistent«“, Kurzform-Adjektive mit `-n` und Adjektivlisten. Sollfälle: 142 von 162.
+  - #524 weicher Trennstrich (R04): Wörter mit Trennstrich werden mit Begleitwort und Adjektiven umgewandelt.
+  - #525 Pale-Moon-Performance (N15): Pale Moon kompiliert Regex-Literale mit `\p{…}` bei jeder Auswertung neu. Die Literale der zwei teuersten Regeln liegen jetzt auf Modulebene. In Pale Moon 35.0.2 sind alle gemessenen Fälle schneller als vor den Sprach-PRs (neutral 2 414 → 212 ms je 2 000 Aufrufe).
+- **N15 Performance:** In Node, Chromium und Firefox ist neutraler Text 2,5–3× schneller als vor den Sprach-PRs. Markierter Plural bleibt 1,2–1,8× langsamer, markierter Singular nach #515 noch 1,4–1,6×. Pale Moon siehe #525.
+- **Regel für neuen Code:** Regex-Literale mit `\p{…}` nicht in Funktionen oder Callbacks schreiben, sondern als Konstante auf Modulebene (Pale Moon, siehe #525).
 - **Bekannte offene Punkte:**
-  - Titel mit Begleitwortpaar oder Großadjektiv (N10): `zur/zum EnergieauditorIn`, `zur Manual Therapeut*in`, `Studentische/-r OP Assistent/-in` bleiben ganz oder teilweise markiert.
-  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04); mehrknotige Attribute (R02); Soft-Hyphen-Belege (R04).
+  - Etwa 34 weitere `\p{…}`-Literale in Callbacks (`clause-case.ts`, `singular-context-guard.ts`, `determiner-pairs.ts` u. a.). Sie laufen nur bei markiertem Text; ein Umzug ist optional.
+  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04); mehrknotige Attribute (R02).
   - Rückverweis „sie“ über Satzgrenzen nach generischem Singular (N12-Rest), weil „sie“ auch Plural sein kann.
   - „zwischen … und …“ bekommt kein Dativ-n („zwischen“ regiert Dativ oder Akkusativ); Alias „Systempartnern“ (N11).
   - Restliste R05: nach Codex' strenger Zählung (exakte Zielspanne in Regel- und DOM-Pfad) 10 von 99 gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen.
 - **Bewusst unverändert:** echt mehrdeutige Fälle (`Das Kind mag die Lehrer*in`, `ihre Familie oder Partner*in`), Metasprache (`die Endsilbe -ant:in`), Ausgangsfehler der Seiten, unmarkierte Feminina.
 - **Nächste Schritte:**
-  - Bei Bedarf eine neue Codex-Gegenprüfung gegen den aktuellen `main`, besonders für die neuen Sperren aus #517/#518.
-  - Pale-Moon-Performance der kurzen Fälle eingrenzen (N15-Rest).
+  - Aion (Codex) prüft `main` @ 2104f83 (Auftrag 24.10.2026, Ablage `artifacts/gegenpruefung-20261025`). Danach die Befunde nachprüfen und abarbeiten; #523–#525 liegen nach dem Prüfstand.
   - Changelog-Einträge nur als Fragment.
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515) und #521 (#517–#519). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519) und #526 (#523–#525). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -97,7 +101,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `9a8b335` (#520), davor #519 `68530da`, #518 `a52c79d`, #517 `2410b55`, #515 `9171e6d`. `palemoon`: Sync #521. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `2df871b` (#525), davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #526. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
