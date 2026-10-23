@@ -1134,6 +1134,38 @@ function transformVerbContext(
   return { text, replacements };
 }
 
+// Each step works on the previous result. Once a step has converted the
+// last marked singular, the remaining steps cannot match anything.
+const singularSteps: readonly ((text: string) => TransformResult)[] = [
+  (text) => normalizeDeterminerPairs(text, mapSingular),
+  (text) => normalizeCompactDeterminers(text, mapSingular),
+  (text) => transformClauseCase(text, mapSingular),
+  transformContractedPairs,
+  transformSpacedPairs,
+  transformPrepositionalSeparatorSingulars,
+  transformFeminineDerSingulars,
+  (text) => transformAttributivePhrases(text, attributiveSeparatorSingularPattern()),
+  transformBareMarkedAdjectives,
+  (text) => transformAttributivePhrases(text, attributiveBinnenISingularPattern()),
+  (text) => transformPattern(text, separatorSingularPattern()),
+  (text) => transformPattern(text, binnenISingularPattern()),
+  (text) => transformPrepositionalFeminine(text, accusativeFemininePattern(),
+    accusativeFeminineDeterminers, "accusative"),
+  (text) => transformPrepositionalFeminine(text, dativeFemininePattern(),
+    dativeFeminineDeterminers, "dative"),
+  (text) => transformPrepositionalFeminine(text, genitiveFemininePattern(),
+    genitiveFeminineDeterminers, "genitive"),
+  (text) => transformVerbContext(text, accusativeVerbPattern(),
+    accusativeFeminineDeterminers, "accusative"),
+  (text) => transformVerbContext(text, predicateNominativePattern(),
+    nominativeFeminineDeterminers, "nominative"),
+  transformNominativeSentence,
+  transformStandaloneNominative,
+  transformOrdinaryMasculineDeterminers,
+  transformObliqueSeparatorSingulars,
+  (text) => transformCoordinatedGenitives(text, mapSingular)
+];
+
 export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgreementRule({
   id: "singular.explicit-context",
   risk: "safe",
@@ -1141,104 +1173,14 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    const pairResult0 = normalizeDeterminerPairs(input, mapSingular);
-    const compactResult = normalizeCompactDeterminers(pairResult0.text, mapSingular);
-    const clauseResult = transformClauseCase(compactResult.text, mapSingular);
-    const pairResult = {
-      text: clauseResult.text,
-      replacements: pairResult0.replacements + compactResult.replacements + clauseResult.replacements
-    };
-    const contractedPairResult = transformContractedPairs(pairResult.text);
-    const spacedPairResult0 = transformSpacedPairs(contractedPairResult.text);
-    const spacedPairResult = {
-      text: spacedPairResult0.text,
-      replacements: pairResult.replacements + contractedPairResult.replacements +
-        spacedPairResult0.replacements
-    };
-    const prepositionalSeparatorResult = transformPrepositionalSeparatorSingulars(
-      spacedPairResult.text
-    );
-    const feminineDerResult = transformFeminineDerSingulars(
-      prepositionalSeparatorResult.text
-    );
-    const attributiveSeparatorResult = transformAttributivePhrases(
-      feminineDerResult.text,
-      attributiveSeparatorSingularPattern()
-    );
-    const bareAdjectiveResult = transformBareMarkedAdjectives(
-      attributiveSeparatorResult.text
-    );
-    const attributiveBinnenIResult = transformAttributivePhrases(
-      bareAdjectiveResult.text,
-      attributiveBinnenISingularPattern()
-    );
-    const separatorResult = transformPattern(
-      attributiveBinnenIResult.text,
-      separatorSingularPattern()
-    );
-    const markedBinnenIResult = transformPattern(
-      separatorResult.text,
-      binnenISingularPattern()
-    );
-    const accusativeResult = transformPrepositionalFeminine(
-      markedBinnenIResult.text,
-      accusativeFemininePattern(),
-      accusativeFeminineDeterminers,
-      "accusative"
-    );
-    const dativeResult = transformPrepositionalFeminine(
-      accusativeResult.text,
-      dativeFemininePattern(),
-      dativeFeminineDeterminers,
-      "dative"
-    );
-    const genitiveResult = transformPrepositionalFeminine(
-      dativeResult.text,
-      genitiveFemininePattern(),
-      genitiveFeminineDeterminers,
-      "genitive"
-    );
-    const accusativeVerbResult = transformVerbContext(
-      genitiveResult.text,
-      accusativeVerbPattern(),
-      accusativeFeminineDeterminers,
-      "accusative"
-    );
-    const predicateResult = transformVerbContext(
-      accusativeVerbResult.text,
-      predicateNominativePattern(),
-      nominativeFeminineDeterminers,
-      "nominative"
-    );
-    const nominativeResult = transformNominativeSentence(predicateResult.text);
-    const standaloneResult = transformStandaloneNominative(nominativeResult.text);
-    const ordinaryResult = transformOrdinaryMasculineDeterminers(
-      standaloneResult.text
-    );
-    const obliqueResult = transformObliqueSeparatorSingulars(ordinaryResult.text);
-    const coordinatedResult = transformCoordinatedGenitives(obliqueResult.text, mapSingular);
-
-    return {
-      text: coordinatedResult.text,
-      replacements:
-        spacedPairResult.replacements +
-        prepositionalSeparatorResult.replacements +
-        feminineDerResult.replacements +
-        attributiveSeparatorResult.replacements +
-        bareAdjectiveResult.replacements +
-        attributiveBinnenIResult.replacements +
-        separatorResult.replacements +
-        markedBinnenIResult.replacements +
-        accusativeResult.replacements +
-        dativeResult.replacements +
-        genitiveResult.replacements +
-        accusativeVerbResult.replacements +
-        predicateResult.replacements +
-        nominativeResult.replacements +
-        standaloneResult.replacements +
-        ordinaryResult.replacements +
-        obliqueResult.replacements +
-        coordinatedResult.replacements
-    };
+    let text = input;
+    let replacements = 0;
+    for (const step of singularSteps) {
+      const result = step(text);
+      text = result.text;
+      replacements += result.replacements;
+      if (result.replacements > 0 && !singularEndingCandidate.test(text)) break;
+    }
+    return {text, replacements};
   }
 }));
