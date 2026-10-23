@@ -51,15 +51,20 @@ const determinerContextBefore = new RegExp(String.raw`(?:^|\s)(?:(?:${[
 const singularContextBefore =
   /(?:^|\s)(?:\S*[\/*:_·]\S*|zum|zur|vom|beim|im|am|als|dem|den|des|einem|einen|eines|ein|der|die|eine|einer|mit|von|bei|zu|für)\s+(?:[\p{L}\p{M}*:_\/·-]+\s+){0,2}$/iu;
 
-function stemForInflected(word: string): string | undefined {
+function stemForInflected(word: string): {stem: string; compound: boolean} | undefined {
   const lower = word.toLocaleLowerCase("de-DE");
   for (const cut of [2, 1]) {
     const stem = word.slice(0, -cut);
     if (stem.length < 3) continue;
     const plural = (mapMappedPlural(stem) ?? mapKnownPlural(stem))?.toLocaleLowerCase("de-DE");
-    if (!plural || plural === stem.toLocaleLowerCase("de-DE")) continue;
-    if (plural === lower || `${plural}n` === lower) return stem;
+    if (plural && plural !== stem.toLocaleLowerCase("de-DE") &&
+        (plural === lower || `${plural}n` === lower)) return {stem, compound: false};
   }
+  // A compound the plural lexicon does not list, written as its masculine
+  // nominative (`Medizinpädagoge/-in` from `Medizinpädagog`).
+  const stem = word.slice(0, -1);
+  if (stem.length >= 3 && word.endsWith("e") &&
+      mapSingular(stem, "nominative")?.toLocaleLowerCase("de-DE") === lower) return {stem, compound: true};
   return undefined;
 }
 
@@ -71,18 +76,24 @@ function repairInflectedMarkers(input: string): TransformResult {
       // Slash series (`Fotografen*in/Videografen*in`): both or none.
       if (source[offset + match.length] === "/" || source[offset - 1] === "/") return match;
       // A job title with `(m/w/d)` after it is singular, too.
+      const jobTitle = /^\s*\((?:[mwdfxi]\s*\/\s*){1,3}[mwdfxi]\)/iu.test(source.slice(offset + match.length));
       if (ending === "in" && !singularContextBefore.test(source.slice(Math.max(0, offset - 80), offset)) &&
-          !/^\s*\((?:[mwdfxi]\s*\/\s*){1,3}[mwdfxi]\)/iu.test(source.slice(offset + match.length))) return match;
-      const stem = stemForInflected(word);
-      if (!stem) return match;
+          !jobTitle) return match;
+      const found = stemForInflected(word);
+      if (!found) return match;
+      const {stem} = found;
+      const determinerBefore = determinerContextBefore.test(source.slice(Math.max(0, offset - 80), offset));
+      // The compound fallback only where nothing else resolves the phrase:
+      // after a determiner or as a job title; a marked attribute before it
+      // (`anerkannte/-r Heilpädagoge/-in`) is resolved by the attribute rules.
+      if (found.compound && !(ending === "in" && (determinerBefore || jobTitle))) return match;
       replacements += 1;
       // A determiner (pair) before a singular: the stem form lets the singular
       // rules convert the whole phrase (`zum/r … Assistent/in` → „zum …
       // Assistenten“). Otherwise the author's inflected masculine part stays
       // and only the marker goes (`Ärzten/innen` keeps its dative,
       // `anerkannte/n Heilpädagogen/in`).
-      if (ending === "in" &&
-          determinerContextBefore.test(source.slice(Math.max(0, offset - 80), offset))) {
+      if (ending === "in" && determinerBefore) {
         return stem + separator + ending;
       }
       return word;
@@ -130,9 +141,18 @@ const coordinatedDativeBefore = new RegExp(
 const abbreviationPluralPattern =
   /(?<![\p{L}\p{M}])(\p{Lu}[\p{L}]{0,3}\p{Lu})(?:[:*_·•]|\/-?)innen(?![\p{L}\p{M}])/gu;
 
+// A singular pair before a marked plural (`Über den/die Herausgeber:innen`):
+// the plural article; the plural rules then resolve the noun.
+const singularPairBeforePlural =
+  /(?<![\p{L}\p{M}])([Dd])(?:en|er)\s*\/\s*die(\s+[\p{L}\p{M}’'-]+(?:[:*_·•]|\/-?)innen)(?![\p{L}\p{M}])/gu;
+
 function repairUnlistedForms(input: string): TransformResult {
   let replacements = 0;
-  let text = input.replace(compoundMarkerPattern, (match: string, base: string) => {
+  let text = input.replace(singularPairBeforePlural, (_match: string, initial: string, noun: string) => {
+    replacements += 1;
+    return `${initial}ie${noun}`;
+  });
+  text = text.replace(compoundMarkerPattern, (match: string, base: string) => {
     const first = compoundFirstPart(base);
     if (!first) return match;
     replacements += 1;
@@ -176,7 +196,7 @@ function repairUnlistedForms(input: string): TransformResult {
 
 function transformMarkerSourceRepairs(input: string): TransformResult {
   let replacements = 0;
-  if (/(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen/u.test(input)) {
+  if (/(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s/u.test(input)) {
     const unlisted = repairUnlistedForms(input);
     input = unlisted.text;
     replacements += unlisted.replacements;

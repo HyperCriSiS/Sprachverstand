@@ -73,6 +73,12 @@ function hasUnresolvedPairBefore(input: string, offset: number): boolean {
     /[:*_\/·•’‘]/u.test(token) && !isExplicitPairToken(token));
 }
 
+// A feminine-looking determiner the singular rules left in place (`eine
+// Medizinpädagoge/-in` they could not read): converting only the noun would
+// leave „eine Medizinpädagoge“.
+const feminineDeterminerBefore =
+  /(?:^|\s)(?:[Dd]ie|[Ee]ine|[Kk]eine|[Ii]hre|[Mm]eine|[Dd]eine|[Ss]eine|[Uu]nsere|[Ee]ure|[Jj]ede|[Dd]iese)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}$/u;
+
 function transform(input: string, pattern: RegExp, wantedEnding: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
@@ -85,7 +91,8 @@ function transform(input: string, pattern: RegExp, wantedEnding: string): Transf
       if (
         ending !== wantedEnding ||
         !isInflectedMasculine(form, ending) ||
-        hasUnresolvedPairBefore(input, offset)
+        hasUnresolvedPairBefore(input, offset) ||
+        (wantedEnding === "in" && feminineDeterminerBefore.test(input.slice(Math.max(0, offset - 64), offset)))
       ) {
         return match;
       }

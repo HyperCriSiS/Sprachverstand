@@ -146,3 +146,35 @@ describe("Kurzformen von Begleitwörtern", () => {
     ["findet jeder Zehnte keine: passende:n Spender:in. Jede neue", "findet jeder Zehnte keinen passenden Spender. Jede neue"]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });
+
+describe("Restfälle 23.10.2026", () => {
+  it.each([
+    // Kompositum vor dem Marker, das nur der Singular kennt.
+    ["Wir suchen eine Medizinpädagoge/-in.", "Wir suchen einen Medizinpädagogen."],
+    ["Die Medizinpädagoge/-in kommt.", "Der Medizinpädagoge kommt."],
+    // Vorangestelltes Objekt vor Pluralverb und Subjektpronomen.
+    ["1. Ihre Stromanbieter:in können Sie leider nicht frei auswählen.", "1. Ihren Stromanbieter können Sie leider nicht frei auswählen."],
+    // Singularverb: `Sie` ist Objekt, die Phrase Subjekt.
+    ["Ihre Ärzt*in kann Sie beraten.", "Ihr Arzt kann Sie beraten."],
+    // `es gibt` regiert den Akkusativ.
+    ["Wie auf jedem Markt gibt es eine Projektentwickler*in.", "Wie auf jedem Markt gibt es einen Projektentwickler."],
+    ["Es gibt eine Ansprechpartner*in vor Ort.", "Es gibt einen Ansprechpartner vor Ort."],
+    // Subjekt eines mit `und` angeschlossenen Satzes.
+    ["Dann lässt man ihn locker und die Therapeut*in kann den Muskel dehnen.", "Dann lässt man ihn locker und der Therapeut kann den Muskel dehnen."],
+    // Singularpaar vor markiertem Plural.
+    ["Über den/die Herausgeber:innen", "Über die Herausgeber"],
+    // Großgeschriebenes Adjektiv als Selbstbezeichnung.
+    ["jeweils mit einer Schwarzen Künstler:in über Visionen", "jeweils mit einem Schwarzen Künstler über Visionen"],
+    // Kompositum mit bekanntem Kopf.
+    ["Wir suchen eine Xyzpädagoge/-in.", "Wir suchen einen Xyzpädagogen."],
+    // Objekt nach `und` ohne folgendes Verb: Subjekt ist „Wir“.
+    ["Wir laden den Arzt und die Lehrer*in ein.", "Wir laden den Arzt und den Lehrer ein."]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+
+  it.each([
+    // Unbekanntes Wort: kein halbes „eine … Qwrtze“.
+    "Wir suchen eine Qwrtze/-in.",
+    // Vorangestellte Nominalphrase im Singular: Subjekt oder Objekt offen.
+    "Das Kind mag die Lehrer*in sehr."
+  ])("bleibt: %s", (input) => expect(t(input)).toBe(input));
+});
