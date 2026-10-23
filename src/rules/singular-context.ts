@@ -854,8 +854,10 @@ const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "en
 
 // A verb or participle that takes the dative right after the phrase makes
 // `der` a dative object: `(dass die) Umsetzung der Antragsteller:in
-// obliegt` → „Umsetzung dem Antragsteller obliegt“, not the genitive.
-const dativeGoverningAfter = /^[ \t\u00a0]+(?:obliegt|obliegen|oblag|oblagen|zusteht|zustehen|zustand|zukommt|zukommen|zufällt|zufallen|untersteht|unterstehen|unterstellt|vorbehalten|überlassen|übertragen|zugeordnet|gehört|gehören|gebührt|gebühren)(?![p{L}p{M}])/u;
+// obliegt` → „Umsetzung dem Antragsteller obliegt“, not the genitive. When
+// the verb has its own dative object (`Das Haus der Lehrer*in gehört dem
+// Staat`), it belongs to the head noun and `der` stays genitive.
+const dativeGoverningAfter = /^[ \t\u00a0]+(?:obliegt|obliegen|oblag|oblagen|zusteht|zustehen|zustand|zukommt|zukommen|zufällt|zufallen|untersteht|unterstehen|unterstellt|vorbehalten|überlassen|übertragen|zugeordnet|gehört|gehören|gebührt|gebühren)(?![\p{L}\p{M}])(?![ \t ]+(?:dem|einem|der|einer|mir|dir|ihm|ihr|uns|euch|ihnen|Ihnen|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)(?![\p{L}\p{M}]))/u;
 
 function transformFeminineDerSingulars(input: string): TransformResult {
   let replacements = 0;
