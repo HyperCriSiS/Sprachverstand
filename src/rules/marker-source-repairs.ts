@@ -148,8 +148,17 @@ const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
 // `bis zu 20` only bounds a number; the case comes from before it
 // (`mit bis zu 20 Lehrern`, `für bis zu 20 Teilnehmer`).
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const upperBoundPattern = /(?<![\p{L}\p{M}])[Bb]is\s+zu(?=\s+\d)/gu;
+const lowercaseStartPattern = /^\p{Ll}/u;
+const uppercaseLetterPattern = /\p{Lu}/gu;
+const unlistedFormCandidate = /(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s/u;
+const inflectedMarkerCandidate = /\p{Ll}(?:[:*_·•]|\/-?)in/u;
+const brokenMarkerCandidate = /in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u;
+
 function withoutUpperBound(before: string): string {
-  return before.replace(/(?<![\p{L}\p{M}])[Bb]is\s+zu(?=\s+\d)/gu, "");
+  return before.replace(upperBoundPattern, "");
 }
 // A dative plural coordinated before it: `von Antifaschisten und …`. The
 // first conjunct must name persons: in `Überlebende von Genoziden und
@@ -254,7 +263,7 @@ function repairUnlistedForms(input: string): TransformResult {
     // lexicon rules; -er nouns have the plural of the singular.
     const head = stem.replace(/^.*-/u, "");
     // A line-break hyphen (`Tea-mer:innen`) is no compound.
-    if (/^\p{Ll}/u.test(head) && head !== stem) return match;
+    if (lowercaseStartPattern.test(head) && head !== stem) return match;
     if (notPlainEr.test(head) || isDisabledLoanword(head.toLocaleLowerCase("de-DE"))) return match;
     // A listed source alias (`Partern:innen`, `Systempartern*innen`) keeps
     // its own repair.
@@ -287,7 +296,7 @@ function repairUnlistedForms(input: string): TransformResult {
     return stem + dative;
   });
   text = text.replace(abbreviationPluralPattern, (match: string, abbreviation: string) => {
-    if ((abbreviation.match(/\p{Lu}/gu) ?? []).length < 2) return match;
+    if ((abbreviation.match(uppercaseLetterPattern) ?? []).length < 2) return match;
     replacements += 1;
     return abbreviation;
   });
@@ -296,7 +305,7 @@ function repairUnlistedForms(input: string): TransformResult {
 
 function transformMarkerSourceRepairs(input: string): TransformResult {
   let replacements = 0;
-  if (/(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s/u.test(input)) {
+  if (unlistedFormCandidate.test(input)) {
     const unlisted = repairUnlistedForms(input);
     input = unlisted.text;
     replacements += unlisted.replacements;
@@ -308,12 +317,12 @@ function transformMarkerSourceRepairs(input: string): TransformResult {
         return `${first}-${second}${separator}`;
       });
   }
-  if (/\p{Ll}(?:[:*_·•]|\/-?)in/u.test(input)) {
+  if (inflectedMarkerCandidate.test(input)) {
     const inflected = repairInflectedMarkers(input);
     input = inflected.text;
     replacements += inflected.replacements;
   }
-  if (!/in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u.test(input)) return {text: input, replacements};
+  if (!brokenMarkerCandidate.test(input)) return {text: input, replacements};
   const repair = (match: string, stem: string, separator: string, ending: string): string => {
     if (!isKnownStem(stem)) return match;
     replacements += 1;
