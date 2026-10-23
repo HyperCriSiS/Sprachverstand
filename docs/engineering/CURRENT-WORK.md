@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-22  
+Stand: 2026-10-23  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -30,19 +30,27 @@ Autorität: `main`
   - bewusst geschützt: 140 von 291 umgewandelt;
   - Regel/Grammatik: 206 von 244 umgewandelt;
   - der Rest sind überwiegend technische Bezeichner und Textfragmente sowie gut 70 Einzelfälle.
-- **Bekannte offene Punkte (vorbestehend):**
-  - `eine Medizinpädagoge/-in` → „eine Medizinpädagoge“: ausgeschriebene männliche Form plus Kompositum nach mehrdeutigem Begleitwort.
-  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`).
-  - Begleitwort in geschütztem `<code>` wird beim Kontext übersprungen.
+- **Performance (22.–23.10.):** #503 Kandidatenfilter bei eigenen Ersetzungen (2.000 Texte mit 100er-Liste 118 → 49 ms), #504 Singular-Vorfilter (neutraler Text etwa 4× schneller, Ausgaben identisch), #505 weitere Sprachrestfälle.
+- **Codex-Gegenprüfung 23.10.2026** (`artifacts/gegenpruefung-20261023`, alle Befunde gegen `main` nachgeprüft):
+  - #507 Relativpronomen und Dativ-n (N01–N03, N07, N11, N13).
+  - #508 Satzbau und Kasus (N04–N06, N08–N10, V02, R01, R03), inklusive ReDoS-Fix aus CodeQL.
+  - #509 Begleitwort nach Seitenänderung neu berechnet (N14), geschützter Artikel verhindert halbe Umwandlung (V03), Possessiv nach „jede X*in“ (N12).
+  - #510 Restfälle: `jedem*r`, Kurzform-Adjektive mit `/` und Komma, Genitiv-Koordination.
+  - #511 Dativ-n nach Dativverben (V01).
+  - **N15 Performance:** Mit Codex' Methode gegen den Stand vor den Merges ist neutraler Text 2,5–3× schneller. Markierte Sätze sind 1,4–2,1× langsamer, absolut etwa 10–20 µs mehr pro Satz. Das Profil ist flach (viele Satzbaumuster), ein größerer Umbau lohnt nicht.
+- **Bekannte offene Punkte:**
+  - Relativpronomen in einem eigenen Textknoten nach dem Inline-Element wird nicht angeglichen (`des <em>Künstlers</em>, die …`, V04).
+  - Rückverweis „sie“ über Satzgrenzen nach generischem Singular (N12-Rest), weil „sie“ auch Plural sein kann.
+  - Restliste R05: 32 von 99 eindeutigen Fällen gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen (`eine Medizinpädagoge/-in`).
 - **Bewusst unverändert:** echt mehrdeutige Fälle (`Das Kind mag die Lehrer*in`, `ihre Familie oder Partner*in`), Metasprache (`die Endsilbe -ant:in`), Ausgangsfehler der Seiten, unmarkierte Feminina.
 - **Nächste Schritte:**
-  - Performance-Bericht von Codex (`artifacts/performance-audit-20261022/BEFUNDE.md`) umsetzen: zuerst den Kandidatenfilter bei eigenen Ersetzungen (unabhängig, echter Mehraufwand), dann den Singular-Vorfilter (nur gegen den neuen `main`-Stand neu messen; positive Fälle dürfen nicht langsamer werden), danach vorbereitete persönliche Listen.
-  - Danach die Kampagne erneut gegen `main` laufen lassen.
+  - Offene Nutzerentscheidung: Soll der Chromium-Smoke-Test bei einem WebDriver-Timeout beim Sitzungsstart einmal wiederholen? Der Timeout tritt sporadisch auch auf `main` auf; bisher wird der Job manuell neu gestartet.
+  - Bei Bedarf eine neue Codex-Gegenprüfung gegen den aktuellen `main`.
   - Changelog-Einträge nur als Fragment.
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist mit #494 auf Main-Parität. Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505) und #512 (#507–#511). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -79,7 +87,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `28d9b86eef069511de14189a3d400374b5ea7049` (#501), davor #500 `d9034d2`, #499 `38d3ed9`, #496 `412986f` (DOM-Kern ohne Kinderlisten pro Knoten). `palemoon`: `6a1a531` (#494). Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `132484d` (#511), davor #510, #509 `15de08b`, #508 `a162f37`, #507 `399b0f3`. `palemoon`: Sync #512. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
