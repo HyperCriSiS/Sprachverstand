@@ -10,9 +10,8 @@ it.each([
   ["Wir danken Fantasiehelfer:innen.", "Wir danken Fantasiehelfern."],
   ["Lehrer:innen helfen Schüler:innen.", "Lehrer helfen Schülern."],
   ["Das Projekt hilft vielen Schüler*innen.", "Das Projekt hilft vielen Schülern."],
-  ["Im Museum begegnen Besucher*innen der Kunst.", "Im Museum begegnen Besuchern der Kunst."]
+  // Gegenprüfung 24.10.2026 (N18): die Besucher sind Subjekt, die Kunst ist das Dativobjekt.
+  ["Im Museum begegnen Besucher*innen der Kunst.", "Im Museum begegnen Besucher der Kunst."],
+  // „gegenüber“ regiert selbst den Dativ (N21).
+  ["Das Vertrauen Bürger:innen gegenüber wächst.", "Das Vertrauen Bürgern gegenüber wächst."]
 ])("%s", (input, expected) => expect(t(input)).toBe(expected));
-
-it("liest das Substantiv „Vertrauen“ nicht als Verb", () => {
-  expect(t("Das Vertrauen Bürger:innen gegenüber wächst.")).toBe("Das Vertrauen Bürger gegenüber wächst.");
-});
