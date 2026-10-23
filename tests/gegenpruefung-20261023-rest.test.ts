@@ -23,8 +23,9 @@ describe("Genitiv in Koordination", () => {
   it.each([
     ["die Rolle einer Wähler*in der Grünen oder einer Politiker*in der AfD",
       "die Rolle eines Wählers der Grünen oder eines Politikers der AfD"],
+    // Nach einem Präpositionalattribut mehrdeutig (Gegenprüfung 24.10.2026, N17).
     ["die Zusammenarbeit einer Trainer*in mit Migrationsgeschichte und einer Trainer*in ohne",
-      "die Zusammenarbeit eines Trainers mit Migrationsgeschichte und eines Trainers ohne"],
+      "die Zusammenarbeit eines Trainers mit Migrationsgeschichte und einer Trainer*in ohne"],
     ["Das Buch einer Lehrer*in und einer neuen Schüler*in.",
       "Das Buch eines Lehrers und eines neuen Schülers."]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
