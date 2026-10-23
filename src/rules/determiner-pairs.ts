@@ -1,5 +1,6 @@
 import type { TransformResult } from "../core/rule";
 import type { GrammaticalCase } from "./person-lexicon";
+import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 
 /*
  * A determiner pair before a marked singular, written out or with
@@ -212,32 +213,62 @@ const dativePrepositions = new Set(["mit", "von", "bei", "zu", "aus", "nach", "s
 // Lowercase attributes; capitalized ones only with a German adjective suffix
 // (`Wissenschaftliche`, `Psychologische`), so `Office Manager:in` keeps its
 // English noun; truncated compounds (`Bildungs-`) and brands (`BRITA`).
-const compactAttribute = String.raw`(?!(?:eine|einer|einen|einem|eines|ein|die|der|den|dem|des)\s)(?:\p{Ll}[\p{L}\p{M}-]*(?:[:*_·•](?:en|er|n|r))?|\p{Lu}[\p{L}\p{M}]*(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)e(?:[:*_·•](?:n|r))?|\p{L}[\p{L}\p{M}]*-|\p{Lu}{2,})`;
+const compactAttribute = String.raw`(?!(?:eine|einer|einen|einem|eines|ein|die|der|den|dem|des)\s)(?:\p{Ll}[\p{L}\p{M}-]*(?:[:*_·•\/](?:en|er|n|r))?|\p{Lu}[\p{L}\p{M}]*(?:isch|lich|ig|ell|al|iv|end|ert|iert|bar|sam|haft|los|ner|ter|sch)e(?:[:*_·•\/](?:n|r))?|\p{L}[\p{L}\p{M}]*-|\p{Lu}{2,})`;
 const compactPattern = new RegExp(
   // No `i` flag: it would make `\p{Lu}`/`\p{Ll}` caseless (`Office` as a brand).
-  String.raw`(?<![\p{L}\p{M}])([Ee]iner|[Ee]ine|[Ee]in|[Kk]eine|[Dd]e|[Mm]einer|[Mm]eine|[Dd]einer|[Dd]eine|[Ss]einer|[Ss]eine|[Ii]hrer|[Ii]hre|[Uu]nserer|[Uu]nsere)([:*_·•])(en|er|n|r|m|s)?(\s+)((?:${compactAttribute}(?:\s+und\s+${compactAttribute})?\s+){0,2})(\p{Lu}[\p{L}\p{M}’'-]*?)(?:[:*_·•]in)(?![\p{L}\p{M}])`,
+  String.raw`(?<![\p{L}\p{M}])([Ee]iner|[Ee]ine|[Ee]in|[Kk]eine|[Dd]e|[Mm]einer|[Mm]eine|[Dd]einer|[Dd]eine|[Ss]einer|[Ss]eine|[Ii]hrer|[Ii]hre|[Uu]nserer|[Uu]nsere)([:*_·•\/])(en|er|n|r|m|s)?(\s+)((?:${compactAttribute}(?:(?:\s+(?:und|oder)|,)\s+${compactAttribute})?\s+){0,2})(\p{Lu}[\p{L}\p{M}’'-]*?)(?:[:*_·•]in|\/-?in)(?![\p{L}\p{M}])`,
   "gu"
 );
+
+// Capitalized words that open a sentence without being a noun.
+const sentenceWords = new Set([
+  "wenn", "dass", "ob", "weil", "als", "wie", "und", "oder", "aber", "auch", "nur", "noch", "so", "da", "dann",
+  "hier", "dort", "heute", "jetzt", "nun", "denn", "doch", "also", "zudem", "außerdem", "bitte", "wer", "was"
+]);
+
+const enumerationItemPattern = /(?:[Ee]ine?[:*_·•][rn]?|[Ee]iner|[Ee]inem)\s+[^,]{1,50}$/u;
+
+// One item at a time and only a few, so a long run of commas stays cheap.
+function withoutEnumerationItems(before: string): string {
+  let head = before;
+  for (let items = 0; items < 8; items++) {
+    const trimmed = head.trimEnd();
+    if (!trimmed.endsWith(",")) return head;
+    const body = trimmed.slice(0, -1);
+    const item = enumerationItemPattern.exec(body.slice(-80))?.[0];
+    if (!item) return head;
+    head = body.slice(0, body.length - item.length);
+  }
+  return head;
+}
 
 function caseFromEnding(ending: string | undefined, before: string): GrammaticalCase {
   const lower = ending?.toLocaleLowerCase(locale);
   if (lower === "n" || lower === "en") return "accusative";
   if (lower === "m") return "dative";
   if (lower === "s") return "genitive";
-  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(before)?.[1] ?? "";
-  if (dativePrepositions.has(previous.toLocaleLowerCase(locale))) return "dative";
+  // Earlier items of an enumeration and a distributive `je` share the
+  // preposition before them (`aus je eine:r Hundeführer:in, eine:r SAR-Helfer:in`).
+  const head = withoutEnumerationItems(before).replace(/\s(?:je|jeweils)\s*$/u, " ");
+  const previous = /([\p{L}\p{M}.-]+)\s*$/u.exec(head)?.[1] ?? "";
+  const lowerPrevious = previous.toLocaleLowerCase(locale);
+  if (dativePrepositions.has(lowerPrevious)) return "dative";
   if (/^(?:für|durch|gegen|ohne|um|wider)$/iu.test(previous)) return "accusative";
-  // A noun right before (not a sentence start): genitive attribute.
-  if (/^\p{Lu}\p{Ll}/u.test(previous) && !/[.!?:]\s*$/u.test(before.slice(0, -previous.length - 1)) &&
-      before.trim().length > previous.length) return "genitive";
+  // A noun right before: genitive attribute. Not the last word of the
+  // previous sentence or a sentence-initial word after it; the start of the
+  // text counts (`Wahl de:r Schatzmeister:in` as a heading).
+  const trimmed = head.trimEnd();
+  const beforePrevious = trimmed.slice(0, trimmed.length - previous.length);
+  if (/^\p{Lu}\p{Ll}[\p{L}\p{M}-]*$/u.test(previous) && !/[.!?:]\s*$/u.test(beforePrevious) &&
+      !finiteVerbsBeforeDer.has(lowerPrevious) && !sentenceWords.has(lowerPrevious)) return "genitive";
   return "nominative";
 }
 
 function compactAttributeForm(word: string, grammaticalCase: GrammaticalCase, strong: boolean): string {
-  if (word === "und" || /^\p{Lu}{2,}$/u.test(word)) return word;
+  if (word === "und" || word === "oder" || /^\p{Lu}{2,}$/u.test(word)) return word;
   // `passende:n`, `feste*n`, and a participle with the ending after the
   // marker (`begünstigt*en`).
-  const marked = /^(.*?)([:*_·•])(?:en|er|e|n|r)$/u.exec(word);
+  const marked = /^(.*?)([:*_·•\/])(?:en|er|e|n|r)$/u.exec(word);
   const plain = marked ? (/e$/u.test(marked[1]!) ? marked[1]! : `${marked[1]!}e`) : word;
   if (!/e$/u.test(plain)) return word;
   if (grammaticalCase === "nominative") return strong ? `${plain}r` : plain;
@@ -248,7 +279,7 @@ export function normalizeCompactDeterminers(
   input: string,
   mapNoun: (base: string, grammaticalCase: GrammaticalCase) => string | undefined
 ): TransformResult {
-  if (!/(?:eine?r?|keine|de|meine?r?|deine?r?|seine?r?|ihre?r?|unsere?r?)[:*_·•]/iu.test(input)) return {text: input, replacements: 0};
+  if (!/(?:eine?r?|keine|de|meine?r?|deine?r?|seine?r?|ihre?r?|unsere?r?)[:*_·•\/]/iu.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
   const text = input.replace(compactPattern,
     (match: string, base: string, _marker: string, ending: string | undefined, space: string,
@@ -258,7 +289,7 @@ export function normalizeCompactDeterminers(
       // A bare `ein:` before a space is mostly a verb particle and a colon
       // (`führt … ein: Jeder …`); bare forms count only with `*`, `_`, `·`.
       // `keine: passende:n Spender:in`: the attribute carries the ending.
-      const attributeEnding = /[:*_·•](n|r)(?=\s)/u.exec(attributes)?.[1];
+      const attributeEnding = /[:*_·•\/](n|r)(?=[\s,])/u.exec(attributes)?.[1];
       if (!ending && _marker === ":" && !attributeEnding) return match;
       const grammaticalCase = caseFromEnding(ending ?? attributeEnding, source.slice(Math.max(0, offset - 60), offset));
       const masculine = noun && mapNoun(noun, grammaticalCase);
@@ -266,7 +297,7 @@ export function normalizeCompactDeterminers(
       const index = {nominative: 0, accusative: 1, dative: 2, genitive: 3}[grammaticalCase];
       const determiner = applyCase(base, String(forms[index]));
       const strong = forms[4] === true;
-      const inflected = attributes.replace(/\S+/gu, (word) => compactAttributeForm(word, grammaticalCase, strong));
+      const inflected = attributes.replace(/[^\s,]+/gu, (word) => compactAttributeForm(word, grammaticalCase, strong));
       replacements += 1;
       return determiner + space + inflected + masculine;
     });

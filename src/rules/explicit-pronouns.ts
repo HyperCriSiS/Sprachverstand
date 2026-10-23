@@ -53,7 +53,11 @@ addPair("seinem", "ihrem");
 addPair("seines", "ihres");
 addPair("seiner", "ihrer");
 addCompactForm("jede", "r", "jeder");
+addCompactForm("jedem", "r", "jedem");
 addCompactForm("ein", "e", "ein");
+// Marked demonstrative used as a pronoun (`da diese*r frisch entlassen wurde`).
+addCompactForm("diese", "r", "dieser");
+addCompactForm("jene", "r", "jener");
 
 const pairPattern =
   /(?<![\p{L}\p{M}])(?:([\p{L}\p{M}]+)([:*_/·•’‘])([\p{L}\p{M}]+)|(jede\/-r|ihm\/r|diese\(r\)|eine\(n\)))(?![\p{L}\p{M}])/giu;

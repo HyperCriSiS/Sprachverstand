@@ -11,7 +11,7 @@ import {
   type GrammaticalCase
 } from "./person-lexicon";
 import { mapSupplementalPlural, mapSupplementalSingular } from "./additional-person-forms";
-import { transformClauseCase } from "./clause-case";
+import { transformClauseCase, transformCoordinatedGenitives } from "./clause-case";
 import { normalizeCompactDeterminers, normalizeDeterminerPairs } from "./determiner-pairs";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
 import { preserveInnerCase } from "./inner-case";
@@ -133,6 +133,7 @@ addDeterminer("der", "s", "des", "genitive");
 addDeterminer("eines", "r", "eines", "genitive");
 addDeterminer("einer", "m", "einem", "dative");
 addDeterminer("jeder", "m", "jedem", "dative");
+addDeterminer("jedem", "r", "jedem", "dative");
 addDeterminer("einer", "s", "eines", "genitive");
 // `dem*er Gewinner*in`, `einem/-er Stellvertreter*in`, `Ihres:r Arbeitgeber:in`.
 addDeterminer("dem", "er", "dem", "dative");
@@ -854,8 +855,10 @@ const dativeWordsBeforeDer = new Set(["laut", "dank", "entgegen", "gemäß", "en
 
 // A verb or participle that takes the dative right after the phrase makes
 // `der` a dative object: `(dass die) Umsetzung der Antragsteller:in
-// obliegt` → „Umsetzung dem Antragsteller obliegt“, not the genitive.
-const dativeGoverningAfter = /^[ \t\u00a0]+(?:obliegt|obliegen|oblag|oblagen|zusteht|zustehen|zustand|zukommt|zukommen|zufällt|zufallen|untersteht|unterstehen|unterstellt|vorbehalten|überlassen|übertragen|zugeordnet|gehört|gehören|gebührt|gebühren)(?![p{L}p{M}])/u;
+// obliegt` → „Umsetzung dem Antragsteller obliegt“, not the genitive. When
+// the verb has its own dative object (`Das Haus der Lehrer*in gehört dem
+// Staat`), it belongs to the head noun and `der` stays genitive.
+const dativeGoverningAfter = /^[ \t\u00a0]+(?:obliegt|obliegen|oblag|oblagen|zusteht|zustehen|zustand|zukommt|zukommen|zufällt|zufallen|untersteht|unterstehen|unterstellt|vorbehalten|überlassen|übertragen|zugeordnet|gehört|gehören|gebührt|gebühren)(?![\p{L}\p{M}])(?![ \t ]+(?:dem|einem|der|einer|mir|dir|ihm|ihr|uns|euch|ihnen|Ihnen|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)(?![\p{L}\p{M}]))/u;
 
 function transformFeminineDerSingulars(input: string): TransformResult {
   let replacements = 0;
@@ -1213,9 +1216,10 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
       standaloneResult.text
     );
     const obliqueResult = transformObliqueSeparatorSingulars(ordinaryResult.text);
+    const coordinatedResult = transformCoordinatedGenitives(obliqueResult.text, mapSingular);
 
     return {
-      text: obliqueResult.text,
+      text: coordinatedResult.text,
       replacements:
         spacedPairResult.replacements +
         prepositionalSeparatorResult.replacements +
@@ -1233,7 +1237,8 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
         nominativeResult.replacements +
         standaloneResult.replacements +
         ordinaryResult.replacements +
-        obliqueResult.replacements
+        obliqueResult.replacements +
+        coordinatedResult.replacements
     };
   }
 }));

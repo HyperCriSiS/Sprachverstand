@@ -497,11 +497,24 @@ function transformTextCoreUnsplit(
       );
 }
 
+// Starts a leading context that ends in protected page text. It may only
+// prevent a conversion: one that needs its article changed keeps the input,
+// anything else is decided without the context.
+export const protectedLeadingContextMark = "\u0002";
+
 export function transformTextWithSummary(
   input: string,
   rules: readonly Rule[],
   options: TransformOptions
 ): DetailedTransformResult {
+  if (options.leadingContext?.startsWith(protectedLeadingContextMark)) {
+    const {leadingContext, ...withoutContext} = options;
+    const blocked = transformTextWithSummary(input, rules,
+      {...options, leadingContext: leadingContext.slice(protectedLeadingContextMark.length)});
+    return blocked.leadingContextEdit
+      ? {text: input, replacements: 0, summaries: []}
+      : transformTextWithSummary(input, rules, withoutContext);
+  }
   const {result, edit} = collectLeadingContextEdit(options.leadingContext,
     () => transformTextWithSummaryUnedited(input, rules, options));
   return edit ? {...result, leadingContextEdit: edit} : result;
