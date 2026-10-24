@@ -517,9 +517,17 @@ export function transformClauseCase(
 //     clause part (`und der Ärzt*in überreiche ich`).
 // A doubled form (`eines Lehrers und einer Lehrer*in`) stays as written.
 const coordinatedGenitivePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?:\p{Ll}+en|sind)(?![\p{L}\p{M}]))(?!\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
   "gu"
 );
+const pluralVerbAfter = /^\s+(?:\p{Ll}+en|sind)(?![\p{L}\p{M}])/u;
+const pronounVerbAfter = /^\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L}\p{M}])/u;
+// Unless the whole phrase opens the sentence: the verb then follows its head
+// (`Das Foto eines Lehrers und einer Ärzt*in sehen wir hier`); a plural verb
+// needs a plural head (`Die Bilder eines Lehrers und einer Ärzt*in hängen
+// hier`).
+const sentenceInitialHead = /(?:^|[.!?:]\s+)(?:Das|Die|Der|Ein|Eine|Dieses|Diese|Dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nrs]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+$/u;
+const sentenceInitialPluralHead = /(?:^|[.!?:]\s+)(?:Die|Diese)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*(?:er|en|e|s)\s+$/u;
 const dativeHeadBefore = /(?:^|\s)(?:dem|einem|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$/u;
 
 export function transformCoordinatedGenitives(
@@ -532,7 +540,11 @@ export function transformCoordinatedGenitives(
     attribute: string, conjunction: string, determinerWord: string, space: string, attributeText: string,
     base: string, offset: number, source: string) => {
     if (!attribute && first === base) return match;
-    if (dativeHeadBefore.test(source.slice(Math.max(0, offset - 60), offset))) return match;
+    const before = source.slice(Math.max(0, offset - 60), offset);
+    if (dativeHeadBefore.test(before)) return match;
+    const after = source.slice(offset + match.length, offset + match.length + 40);
+    if (pronounVerbAfter.test(after) ? !sentenceInitialHead.test(before)
+      : pluralVerbAfter.test(after) && !sentenceInitialPluralHead.test(before)) return match;
     const noun = mapNoun(base, "genitive");
     if (!noun) return match;
     replacements += 1;
