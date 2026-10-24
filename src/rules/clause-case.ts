@@ -156,7 +156,7 @@ const subordinateSubjectPattern = new RegExp(
   "gu"
 );
 const subordinateObjectPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:der|das|ein|eine|die|unser|unsere)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}|es|er|man|wir|ich|du|Sie)\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:der|das|ein|eine|die|unser|unsere|mein|meine|dein|deine|sein|seine|ihr|ihre|euer|eure|kein|keine|dieser|diese|dieses|jeder|jede|jedes)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}|es|er|sie|man|wir|ich|du|Sie|niemand|jemand|\p{Lu}\p{Ll}+(?<!(?:Die|Der|Das|Eine|Ein)))\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann|heute|morgen|gestern|hier|dort|bald|wirklich|wieder|sehr|bitte|vielleicht|endlich|doch|ja|bereits|später|zuerst|selbst|trotzdem)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
 const prepositionWords = "an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen|hinter|neben|als|wie|und|oder|dass|ob|wenn|weil";
@@ -177,6 +177,23 @@ const searchPattern = new RegExp(
 // (`Ihre Ärzt*in kann Sie beraten`) leaves it the subject.
 const frontedObjectPattern = new RegExp(
   String.raw`((?:^|[.!?]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+(?:Sie|wir|ihr)|\p{Ll}[\p{L}\p{M}]*\s+(?:ich|du|wir|man))(?![\p{L}\p{M}]))`,
+  "gu"
+);
+// (t2) after a colon or semicolon a new clause starts: `Heute gilt: jede
+// Lehrer*in hilft`.
+const colonSubjectPattern = new RegExp(
+  String.raw`((?:[:;]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+${finiteVerb}(?![\p{L}\p{M}])(?!\s+(?:ich|du|er|sie|es|wir|ihr|man|Sie)(?![\p{L}\p{M}])))`,
+  "gu"
+);
+// (t3) `jeder` after a subject pronoun and its verb is a dative: `Sie sagt
+// jeder Lehrer*in ihre Meinung`.
+const pronounVerbJederPattern = new RegExp(
+  String.raw`((?:^|[.!?:]\s+)(?:Sie|Er|Ich|Wir|Man|Es)\s+\p{Ll}[\p{L}\p{M}]*\s+(?:(?:auch|nun|heute|immer|oft|gern|gerne)\s+)?)([Jj]eder)(\s+)((?:\p{Ll}[\p{L}\p{M}]*e\s+){0,2})${marked}${end}`,
+  "gu"
+);
+// (t4) after a dative and a conjunction: `dem Lehrer und der Ärzt*in`.
+const dativeCoordinatedPattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}])(?:dem|einem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+)(der|einer)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
   "gu"
 );
 // (u) `es gibt` takes the accusative: `gibt es eine Projektentwickler*in`.
@@ -407,7 +424,7 @@ export function transformClauseCase(
     competingSubject(tail) ? undefined
       : werdeInfinitiveAhead.test(tail) && subordinateSubjectBefore.test(before) ? "accusative" : "nominative");
   for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
-    subordinateSubjectPattern, coordinatedClausePattern, subjectBeforeRelativePattern]) {
+    subordinateSubjectPattern, coordinatedClausePattern, subjectBeforeRelativePattern, colonSubjectPattern]) {
     convert(pattern, (_prefix, tail) => competingSubject(tail) ? undefined : "nominative");
   }
   for (const pattern of [frontedObjectPattern, existentialPattern]) {
@@ -440,6 +457,22 @@ export function transformClauseCase(
     replacements += 1;
     const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
     return masculine + space + inflected + noun;
+  });
+  text = text.replace(dativeCoordinatedPattern, (match: string, prefix: string, determinerWord: string,
+    space: string, attributeText: string, base: string) => {
+    const noun = mapNoun(base, "dative");
+    if (!noun) return match;
+    replacements += 1;
+    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
+    return prefix + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "dem" : "einem") + space + inflected + noun;
+  });
+  text = text.replace(pronounVerbJederPattern, (match: string, prefix: string, determinerWord: string,
+    space: string, attributeText: string, base: string) => {
+    const noun = mapNoun(base, "dative");
+    if (!noun) return match;
+    replacements += 1;
+    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
+    return prefix + applyCase(determinerWord, "jedem") + space + inflected + noun;
   });
   text = text.replace(frontedSubjectPattern, (match: string, prefix: string, determinerWord: string, space: string,
     attributeText: string, base: string) => {
@@ -558,12 +591,20 @@ export function transformCoordinatedGenitives(
     const before = source.slice(Math.max(0, offset - 60), offset);
     if (dativeHeadBefore.test(before)) return match;
     const after = source.slice(offset + match.length, offset + match.length + 40);
-    if (pronounVerbAfter.test(after) ? !sentenceInitialHead.test(before)
-      : pluralVerbAfter.test(after) && !sentenceInitialPluralHead.test(before)) return match;
+    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
+    if (pronounVerbAfter.test(after) && !sentenceInitialHead.test(before)) {
+      // A new clause part with its own subject pronoun: `der`/`einer` before
+      // it is a fronted dative (`und der Ärzt*in überreiche ich Blumen`).
+      const dative = mapNoun(base, "dative");
+      if (!dative) return match;
+      replacements += 1;
+      return head + conjunction + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "dem" : "einem") +
+        space + inflected + dative;
+    }
+    if (!pronounVerbAfter.test(after) && pluralVerbAfter.test(after) && !sentenceInitialPluralHead.test(before)) return match;
     const noun = mapNoun(base, "genitive");
     if (!noun) return match;
     replacements += 1;
-    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
     return head + conjunction + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "des" : "eines") +
       space + inflected + noun;
   });
