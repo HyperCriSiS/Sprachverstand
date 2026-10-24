@@ -242,7 +242,7 @@ const beforeModalSubjunctivePattern = new RegExp(
   "gu"
 );
 const subordinateSubjectBefore =
-  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
+  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
 // `werde` with an infinitive, not with a participle (`werde eingeladen`).
 const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:

@@ -32,14 +32,22 @@ const phraseBreakingWords = new Set([
 // lauten Gegner*innen`), and a coordination shares the article of its
 // first item (`für die Menschen und vielen MitarbeiterInnen`).
 const quantifierTriggers = new Set(["vielen", "einigen", "wenigen", "mehreren", "beiden"]);
-const weakQuantifierDeterminer = String.raw`die|der|des|diese|dieser|jene|jener|unsere|unserer|ihre|ihrer|eure|eurer|meine|meiner|deine|deiner|seine|seiner|keine|keiner|alle|aller|welche|welcher`;
+// The patterns run without the `i` flag, so `\p{Ll}` only takes lowercase
+// adverbs; determiners are written with both initial cases.
+const bothCases = (words: string) => words.split("|")
+  .map((word) => `[${word[0]}${word[0]!.toLocaleUpperCase("de-DE")}]${word.slice(1)}`).join("|");
 // `mit der Schule und vielen …` keeps the dative: only plural forms share it.
-const coordinatedQuantifierDeterminer = String.raw`die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|welche`;
-const degreeAdverbs = String.raw`(?:(?:sehr|so|ganz|wirklich|besonders|recht|ziemlich|allzu|zu|nur|noch|eher)\s+)*`;
+const weakQuantifierDeterminer = bothCases("die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|welche");
+// Genitive forms only right before the quantifier: `, der auch vielen
+// Einwohner*innen` is a relative pronoun.
+const genitiveQuantifierDeterminer = bothCases("der|des|dieser|jener|unserer|ihrer|eurer|meiner|deiner|seiner|keiner|aller|welcher");
+// Any uninflected lowercase word works as a degree adverb (`Die überaus
+// vielen …`, `Die inzwischen vielen …`), but no preposition or conjunction.
+const degreeAdverbs = String.raw`(?:(?!(?:unter|über|in|an|auf|aus|bei|mit|nach|von|zu|für|gegen|ohne|um|durch|vor|hinter|neben|zwischen|und|oder|sowie)\s)(?:\p{Ll}+(?<![en])|ausgesprochen|inzwischen|vollkommen|verschwindend)\s+)*`;
 const weakQuantifierBefore = new RegExp(
-  String.raw`(?:^|[^\p{L}\p{M}])(?:${weakQuantifierDeterminer})\s+${degreeAdverbs}$`, "iu");
+  String.raw`(?:^|[^\p{L}\p{M}])(?:(?:${weakQuantifierDeterminer})\s+${degreeAdverbs}|(?:${genitiveQuantifierDeterminer})\s+)$`, "u");
 const coordinatedQuantifierBefore = new RegExp(
-  String.raw`(?:^|[^\p{L}\p{M}])(?:${coordinatedQuantifierDeterminer})\s+(?:[\p{L}\p{M}-]+\s+){0,2}?[\p{L}\p{M}-]+\s+(?:und|oder|sowie)\s+${degreeAdverbs}$`, "iu");
+  String.raw`(?:^|[^\p{L}\p{M}])(?:${weakQuantifierDeterminer})\s+(?:[\p{L}\p{M}-]+\s+){0,2}?[\p{L}\p{M}-]+\s+(?:und|oder|sowie)\s+${degreeAdverbs}$`, "u");
 const datives = new Set(["den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
   "keinen", "diesen", "jenen", "allen"]);
 const uppercaseWordBeforeConjunction = /(?:^|\s)\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+(?:\p{Ll}+\s+)*$/u;
