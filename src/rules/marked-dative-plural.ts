@@ -2,7 +2,7 @@ import type { Rule, TransformResult } from "../core/rule";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
-import { dativeVerbPattern, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
 import { namesPersons } from "./marker-source-repairs";
 import { mapSupplementalPlural } from "./additional-person-forms";
 
@@ -73,6 +73,10 @@ const quantityNouns = new Set([
   "hunderttausenden", "millionen"
 ]);
 
+const triggerPrepositions = new Set(["mit", "bei", "von", "zu", "aus", "nach", "seit", "neben", "zwischen"]);
+const nameAdjectives = new Set(["neuen", "jungen", "alten", "grünen", "freien", "vereinten", "deutschen",
+  "europäischen", "roten", "weißen", "schwarzen"]);
+
 function isDativeNounPhrase(prefix: string): boolean {
   const words = prefix.trim().split(/\s+/u);
   // After a bare quantifier only adjectives may follow (`In einigen Fällen
@@ -87,6 +91,16 @@ function isDativeNounPhrase(prefix: string): boolean {
     // (`von Tausenden`) or an adjective in a name right after a
     // determiner (`den Jungen …`).
     const lower = word.toLocaleLowerCase("de-DE");
+    // A lowercase word after such a capitalized word is a verb (`Auf den
+    // Bühnen treffen Politiker:innen …`).
+    const previous = words[index - 1] ?? "";
+    const previousLower = previous.toLocaleLowerCase("de-DE");
+    // A new determiner or trigger, or an adjective in a name (`den Neuen
+    // deutschen Medienmachern`), continues it.
+    if (word === lower && index > 1 && previous !== previousLower &&
+        !determinerLikeWords.has(previousLower) && !quantityNouns.has(previousLower) &&
+        !determinerLikeWords.has(lower) && !triggerPrepositions.has(lower) &&
+        !nameAdjectives.has(previousLower)) return false;
     return word === lower ||
       determinerLikeWords.has(lower) ||
       quantityNouns.has(lower) ||
@@ -151,6 +165,7 @@ function transformDativeEnumeration(input: string): TransformResult {
       const items = list.split(/[ \t]*,[ \t]*|[ \t]+(?:und|oder|sowie)[ \t]+/u);
       if (basen.length === 0 || items.length < 3 || items.some((item) => !uppercaseStartPattern.test(item)) ||
           !firstItemBelongs(prefix, items[0]!, source.slice(0, offset)) ||
+          listStartsNewClause(source.slice(0, offset), source.slice(offset + original.length)) ||
           flektiert.some((wort) => wort === undefined)) {
         return original;
       }
@@ -237,7 +252,51 @@ function transformMarkedDativePlural(input: string): TransformResult {
       return prefix + mapped;
     }
   ) : text;
-  return { text: binnenI, replacements };
+  // Each pass takes one more list item (`bei Spielern, Helfern,
+  // FunktionärInnen und SponsorInnen`).
+  let listed = binnenI;
+  for (let pass = 0; pass < 4; pass++) {
+    const before = replacements;
+    listed = listed.replace(dativeNeighbourPattern, (original: string, prefix: string, neighbour: string,
+      base: string, offset: number, source: string) => {
+      const after = source.slice(offset + original.length);
+      if (!isUnambiguousDativePlural(neighbour) || listStartsNewClause(source.slice(0, offset), after) ||
+          // `der Beamten, Richter`: a weak plural after `der` is a genitive.
+          genitiveDeterminerBefore.test(source.slice(Math.max(0, offset - 12), offset)) ||
+          // `zu Schulbegleitern, IT-Techniker*innen absolvieren`: a last comma
+          // item with a verb right after it starts a new clause.
+          (commaBeforeItem.test(prefix) && verbAfterItem.test(after))) return original;
+      const mapped = mapDativePlural(base);
+      if (mapped === undefined) return original;
+      replacements += 1;
+      return prefix + mapped;
+    });
+    if (replacements === before) break;
+  }
+  return { text: listed, replacements };
+}
+
+// A marked item next to a plural that can only be a dative takes the dative
+// too: `mit Biologen, erfahrenen Physikern und Ingenieur:innen`, `mit Lehrern
+// der Schule, Schüler:innen der Klasse …`, `mit Lehrern und, bei Bedarf,
+// Schüler:innen`.
+const dativeNeighbourPattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}])(\p{Lu}[\p{L}\p{M}-]*n)(?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?[ \t]*(?:,|[ \t](?:und|oder|sowie)(?:,[^,.;:!?]{1,30},)?)[ \t]+(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2})([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?![\p{L}\p{M}-])`,
+  "gu"
+);
+
+const genitiveDeterminerBefore = /(?:^|\s)(?:der|des|deren|dessen)\s+$/u;
+const commaBeforeItem = /,[ \t]*(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}$/u;
+const verbAfterItem = /^\s+\p{Ll}[\p{L}\p{M}]*en\s/u;
+
+// `Spielern`, `Funktionären`: the dative differs from the plural. `Biologen`
+// or `Bauern` are plurals in every case; `Eltern` has no singular stem here.
+function isUnambiguousDativePlural(word: string): boolean {
+  return [1, 2, 3].some((cut) => {
+    const stem = word.slice(0, -cut);
+    const plural = mapMappedPlural(stem) ?? mapKnownPlural(stem) ?? mapSupplementalPlural(stem);
+    return plural !== undefined && plural !== word && mapDativePlural(stem) === word;
+  });
 }
 
 export const markedDativePluralRule: Rule = {

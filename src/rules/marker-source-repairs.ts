@@ -3,7 +3,7 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
-import { dativeVerbPattern, dativeVerbSource, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, dativeVerbSource, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -175,6 +175,12 @@ const coordinatedDativeBefore = new RegExp(
   String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$`, "u");
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
+// The text after the remaining list items.
+const remainingListItems = /^(?:\s*(?:,|\s(?:und|oder|sowie))\s*\p{Lu}[\p{L}\p{M}*:_·•\/’'-]*)*/u;
+
+function listRest(after: string): string {
+  return after.replace(remainingListItems, "");
+}
 // A plural right before the preposition may own it as an attribute; when the
 // prepositional object names no persons, the coordinated noun belongs to
 // that plural: `Überlebende von Genoziden und Zeichner:innen`,
@@ -224,6 +230,7 @@ function isCoordinatedDative(before: string, after: string): boolean {
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
+  if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!)), listRest(after))) return false;
   const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
   // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
   if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(list)) return false;
