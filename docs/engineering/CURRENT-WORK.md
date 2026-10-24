@@ -75,7 +75,7 @@ Autorität: `main`
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525) und #529 (#528). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525), #529 (#528) und #538 (#531–#537). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -112,7 +112,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #537 (Gegenprüfung 25.10., #531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #529. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #537 (Gegenprüfung 25.10., #531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #538. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
