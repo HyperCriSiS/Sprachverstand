@@ -1,5 +1,9 @@
 import type { TransformResult } from "../core/rule";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const ihrCandidate = /(?<![\p{L}\p{M}])ihr/u;
+
 /*
  * A possessive after a converted generic `jede X*in` keeps the feminine
  * form: `dass jede Kund*in auch in ihrer Sprache` became „dass jeder Kunde
@@ -36,8 +40,8 @@ const masculine = new Map([
 // Lehrerin wartet. Jede Lehrer*in kennt ihre eigene Telefonnummer`).
 const otherOwnerPronoun = /(?<![\p{L}\p{M}])(?:sie|Sie|ihr|ihre[nmrs]?|ihnen|Ihnen)(?![\p{L}\p{M}])/u;
 const otherOwnerNoun =
-  /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:innen|In|Innen|[:*_\/·•]in(?:nen)?)|\p{Lu}[\p{L}\p{M}-]*\p{Ll}in(?<!(?:Term|Mediz|Magaz|Benz|Berl|Kam|Vitam|Diszipl|Mart|Pingu|Rub|Delf|Cous|Bass|Kass|Ruß)in)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen|Frau|Mutter|Tochter|Schwester|Tante|Oma|Großmutter|Nichte|Cousine|Dame)(?![\p{L}\p{M}])/u;
-const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum)\s)`;
+  /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:innen|In|Innen|[:*_\/·•]in(?:nen)?)|\p{Lu}[\p{L}\p{M}-]*\p{Ll}in(?<!(?:Term|Mediz|Magaz|Benz|Berl|Kam|Vitam|Diszipl|Mart|Pingu|Rub|Delf|Cous|Bass|Kass|Ruß|Insul|Nikot|Glob|Lanol|Paraff|Vasel|Musl|Dent|Kreat|Kerat|Aspir|Lat|Sp|Rosmar)in|ein|ain)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen|Frau|Mutter|Tochter|Schwester|Tante|Oma|Großmutter|Nichte|Cousine|Dame)(?![\p{L}\p{M}])/u;
+const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s)`;
 const otherOwnerName = new RegExp(
   String.raw`(?:(?:^|[.!?:]\s+)${notName}\p{Lu}\p{Ll}+\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
 // A feminine or plural subject with its verb (`Die Schule ist neu.`).
@@ -46,8 +50,20 @@ const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 const lowercaseWord = /^\p{Ll}/u;
-const recentSentences = /(?:[^.!?]*[.!?]+\s*){0,2}[^.!?]*$/u;
 const markedOwner = /[:*_·•\/()’‘]|\p{Ll}In$/u;
+
+// The current sentence and the three before it. A loop instead of a
+// pattern: nested repetition over long texts backtracks polynomially.
+function recentSentences(before: string): string {
+  let ends = 0;
+  for (let index = before.length - 1; index >= 0; index--) {
+    const char = before[index]!;
+    if ((char === "." || char === "!" || char === "?") && !".!?".includes(before[index - 1] ?? "") && ++ends > 3) {
+      return before.slice(index + 1);
+    }
+  }
+  return before;
+}
 
 function clauseAllowsGenericOwner(before: string, ownPossessive: boolean): boolean {
   const clause = before.slice(Math.max(0, before.search(clauseStartPattern)));
@@ -56,7 +72,7 @@ function clauseAllowsGenericOwner(before: string, ownPossessive: boolean): boole
   if (!words.every((word, index) =>
     !ownerWord.test(word) && (lowercaseWord.test(word) || (index === 0 && sentenceStart)))) return false;
   if (ownPossessive) return true;
-  const sentences = recentSentences.exec(before)?.[0] ?? before;
+  const sentences = recentSentences(before);
   return !otherOwnerPronoun.test(sentences) && !otherOwnerNoun.test(sentences) &&
     !otherOwnerName.test(sentences) && !otherOwnerSubject.test(sentences);
 }
@@ -72,7 +88,7 @@ export function withPossessiveAgreement(
   input: string,
   transform: (input: string) => TransformResult
 ): TransformResult {
-  if (!/[Jj]ede/u.test(input) || !/(?<![\p{L}\p{M}])ihr/u.test(input)) return transform(input);
+  if (!/[Jj]ede/u.test(input) || !ihrCandidate.test(input)) return transform(input);
   const positions: number[] = [];
   for (const match of input.matchAll(genericPhrase)) {
     let offset = match.index + match[0].length;

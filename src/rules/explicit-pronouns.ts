@@ -3,6 +3,10 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural, mapMappedSingular } from "./person-lexicon";
 import { preserveInnerCase } from "./inner-case";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const nonLetterPattern = /[^\p{L}\p{M}]/gu;
+
 const locale = "de-DE";
 const separators = [":", "*", "_", "/", "·", "•", "’", "‘"] as const;
 const replacements = new Map<string, string>([
@@ -86,7 +90,7 @@ export function isExplicitPairToken(token: string): boolean {
 function applyTokenCase(source: string, replacement: string): string {
   const inner = preserveInnerCase(source, replacement);
   if (inner !== undefined) return inner;
-  const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
+  const letters = source.replace(nonLetterPattern, "");
   const lowerLetters = letters.toLocaleLowerCase(locale);
   const upperLetters = letters.toLocaleUpperCase(locale);
 

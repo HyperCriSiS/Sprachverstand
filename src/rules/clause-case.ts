@@ -242,7 +242,7 @@ const beforeModalSubjunctivePattern = new RegExp(
   "gu"
 );
 const subordinateSubjectBefore =
-  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
+  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
 // `werde` with an infinitive, not with a participle (`werde eingeladen`).
 const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:
@@ -539,9 +539,10 @@ const pronounVerbAfter = /^\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L
 // Unless the whole phrase opens the sentence: the verb then follows its head
 // (`Das Foto eines Lehrers und einer Ärzt*in sehen wir hier`); a plural verb
 // needs a plural head (`Die Bilder eines Lehrers und einer Ärzt*in hängen
-// hier`).
-const sentenceInitialHead = /(?:^|[.!?:]\s+)(?:Das|Die|Der|Ein|Eine|Dieses|Diese|Dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nrs]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+$/u;
-const sentenceInitialPluralHead = /(?:^|[.!?:]\s+)(?:Die|Diese)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*(?:er|en|e|s)\s+$/u;
+// hier`). Feminine singulars on -e or -er are no plural head (`Die Galerie
+// eines Lehrers und der Ärzt*in werden genannt`, `Die Schwester …`).
+const sentenceInitialHead = /(?:^|[.!?:]\s+)(?:(?:Auch|Nur|Sogar|Selbst|Gerade)\s+(?:das|die|der|ein|eine|dieses|diese|dieser)|Das|Die|Der|Ein|Eine|Dieses|Diese|Dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nrs]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+$/u;
+const sentenceInitialPluralHead = /(?:^|[.!?:]\s+)(?:Die|Diese)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*(?:er|en|s)(?<!(?:Schwester|Mutter|Tochter|Nummer|Kammer|Mauer|Feier|Steuer|Ader|Feder|Butter|Oper|Faser|Leber|Folter)\s*)\s+$/u;
 const dativeHeadBefore = /(?:^|\s)(?:dem|einem|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$/u;
 
 export function transformCoordinatedGenitives(
