@@ -133,7 +133,7 @@ const plainErPluralPattern =
 // -ier has the plural -iere (`Passagier`, `Pionier`); adjectives and
 // participles used as nouns end in -e/-en (`Sachverständige`).
 const notPlainEr = /(?:ier|(?:ig|lich|isch|end|bar|sam|haft|los|iert|ordnet|stellt|setzt|tragt|wandt|kannt|amt)er)$/u;
-const dativeTrigger = String.raw`[Vv]on|[Mm]it|[Bb]ei|[Nn]eben|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|${dativeVerbSource}`;
+const dativeTrigger = String.raw`[Vv]on|[Mm]it|[Bb]ei|[Nn]eben|[Zz]wischen|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|${dativeVerbSource}`;
 // A name part (`RosaLila`), not a heading run into the next sentence
 // (`PraxisbezugDie Besucher`) or a Binnen-I plural (`SchülerInnen`).
 const namePart = String.raw`\p{Lu}\p{Ll}+(?!(?:Die|Der|Das|Den|Dem|Des|Ein|Eine|Wir|Sie|Er|Es|Ich|Und|Im|In|Am|Mit|Bei|Für|Von|Zum|Zur)(?!\p{Ll}))\p{Lu}[\p{L}\p{M}]*(?<!Innen)`;

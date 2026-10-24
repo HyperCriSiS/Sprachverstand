@@ -25,7 +25,9 @@ export function verbObjectBlocked(after: string): boolean {
 // `, denen helfen …`).
 // After a preposition the pronoun belongs to it (`Einige von uns helfen …`).
 const dativeBeforeVerb = /(?:^|[\s,])(?<!(?:von|mit|bei|zu|aus|nach|für|gegen|ohne|um|unter|neben)\s)(?:wem|denen|dem|ihm|ihr|ihnen|uns|euch|mir|dir)\s*$/iu;
-const pronounBeforeVerb = /(?:^|\s)(?:wir|ihr|sie)\s*$/iu;
+const pronounBeforeVerb = /(?:^|\s)(?:(?:wir|ihr|sie)(?:\s+(?:alle|beide|gemeinsam|selbst))?|die\s+(?:einen|anderen|meisten))\s*$/iu;
+// Coordinated subjects (`Peter und Anna folgen …`, `Eltern und Kinder helfen …`).
+const coordinatedSubjectBeforeVerb = /(?:^|[.!?:;]\s+)\p{Lu}\p{Ll}+\s+und\s+\p{Lu}\p{Ll}+\s*$/u;
 const andBeforeVerb = /(?:^|\s)und\s*$/iu;
 const clauseStartPattern = /[^.!?;:()]*$/u;
 const prepositionSource = String.raw`in|im|an|am|auf|aus|bei|beim|mit|nach|seit|von|vom|zu|zum|zur|über|unter|vor|hinter|neben|zwischen|durch|für|gegen|ohne|um|während|wegen|trotz|laut|dank|innerhalb|außerhalb`;
@@ -35,7 +37,7 @@ const prepositionSource = String.raw`in|im|an|am|auf|aus|bei|beim|mit|nach|seit|
 // So does a clause opened by a dative or accusative (`Den Kindern helfen …`,
 // `Jeden Tag helfen …`, `Kleinen Kindern helfen …`).
 const invertedClauseStart = new RegExp(
-  String.raw`^(?:\d|(?:${prepositionSource}|heute|gestern|morgen|hier|dort|jetzt|nun|dann|danach|anschließend|später|zuerst|zunächst|bald|dabei|dazu|darum|deshalb|deswegen|daher|damit|dennoch|trotzdem|jedoch|allerdings|vielleicht|gemeinsam|oft|häufig|meist|immer|auch|so|gerade|zudem|außerdem|zusätzlich|ebenfalls|sogar|den|dem|jeden|jedem|diesen|diesem|einem|letzten|nächsten|wer|wem|wen|was|wie|wo|wann|warum|wobei|womit)(?![\p{L}\p{M}])|\p{L}+en\s+\p{Lu}[\p{L}\p{M}-]*n(?![\p{L}\p{M}])|\p{L}+(?:lich|weise|mals)(?![\p{L}\p{M}]))`,
+  String.raw`^(?:\d|(?:${prepositionSource}|heute|gestern|morgen|selten|manchmal|meistens|mitunter|stets|nie|niemals|ständig|zuweilen|bisweilen|wieder|erneut|hier|dort|jetzt|nun|dann|danach|anschließend|später|zuerst|zunächst|bald|dabei|dazu|darum|deshalb|deswegen|daher|damit|dennoch|trotzdem|jedoch|allerdings|vielleicht|gemeinsam|oft|häufig|meist|immer|auch|so|gerade|zudem|außerdem|zusätzlich|ebenfalls|sogar|den|dem|jeden|jedem|diesen|diesem|einem|letzten|nächsten|wer|wem|wen|was|wie|wo|wann|warum|wobei|womit)(?![\p{L}\p{M}])|\p{L}+en\s+\p{Lu}[\p{L}\p{M}-]*n(?![\p{L}\p{M}])|\p{L}+(?:lich|weise|mals)(?![\p{L}\p{M}]))`,
   "iu"
 );
 const prepositionWord = new RegExp(String.raw`^(?:${prepositionSource})$`, "iu");
@@ -105,7 +107,8 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
   const clause = textBeforeVerb.slice(Math.max(0, textBeforeVerb.search(clauseStartPattern))).trim();
   // With its own subject before the verb, a following `der Schule` is a
   // genitive attribute (`Wir helfen Lehrer:innen der Schule`).
-  if (pronounBeforeVerb.test(textBeforeVerb) || subjectBeforeVerb(clause)) return true;
+  if (pronounBeforeVerb.test(textBeforeVerb) || coordinatedSubjectBeforeVerb.test(textBeforeVerb) ||
+    subjectBeforeVerb(clause)) return true;
   if (subjectOnlyVerb.test(verb) || otherObjectAhead.test(after)) return false;
   if (andBeforeVerb.test(textBeforeVerb)) return true;
   return clause !== "" && !invertedClauseStart.test(clause);
