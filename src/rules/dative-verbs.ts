@@ -15,7 +15,7 @@ const otherObjectAhead =
 // A zu-infinitive makes the plural the infinitive's object (`Wir helfen
 // Lehrer:innen auszubilden`, `… gut auszubilden`).
 const infinitiveAhead =
-  /^\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}(?:zu\s+\p{Ll}|\p{Ll}+zu\p{Ll}+en(?![\p{L}\p{M}]))/u;
+  /^\s+(?:(?:in|mit|ohne|zur|zum)\s+\p{Lu}[\p{L}\p{M}]*\s+|\p{Ll}[\p{L}\p{M}]*\s+){0,4}(?:zu\s+\p{Ll}|\p{Ll}+zu\p{Ll}+en(?![\p{L}\p{M}]))/u;
 
 export function verbObjectBlocked(after: string): boolean {
   return infinitiveAhead.test(after) || otherObjectAhead.test(after);

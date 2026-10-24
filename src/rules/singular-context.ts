@@ -1215,9 +1215,22 @@ function transformVerbContext(
   return { text, replacements };
 }
 
+// After a verb with an accusative object the nominative pair `eine/r` is
+// written for the accusative (`Wir suchen eine/r Lehrer*in` → „einen
+// Lehrer“): it is read as `eine/n`. The pair steps then convert it.
+const accusativePairPattern = new RegExp(
+  String.raw`((?<![\p{L}\p{M}])(?:[Ii]ch|[Dd]u|[Ee]r|[Ss]ie|[Ee]s|[Mm]an|[Ww]ir|[Ii]hr)\s+(?:${accusativeVerbContext})\s+)([Ee]ine)([:*_·•\/]-?)r(?=\s+(?:\p{Ll}[\p{L}\p{M}]*[:*_·•\/]-?r\s+)?\p{Lu}[\p{L}\p{M}-]*(?:[:*_·•]|\/-?)in(?![\p{L}\p{M}]))`,
+  "gu"
+);
+
+function transformAccusativePairs(text: string): TransformResult {
+  return {text: text.replace(accusativePairPattern, "$1$2$3n"), replacements: 0};
+}
+
 // Each step works on the previous result. Once a step has converted the
 // last marked singular, the remaining steps cannot match anything.
 const singularSteps: readonly ((text: string) => TransformResult)[] = [
+  transformAccusativePairs,
   transformTitlePrepositions,
   (text) => normalizeDeterminerPairs(text, mapSingular),
   (text) => normalizeCompactDeterminers(text, mapSingular),
