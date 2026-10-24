@@ -4,6 +4,7 @@ import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
 import { dativeVerbPattern, verbGovernsPlural } from "./dative-verbs";
 import { namesPersons } from "./marker-source-repairs";
+import { mapSupplementalPlural } from "./additional-person-forms";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -23,7 +24,7 @@ const dativePhrasePattern =
 const phraseBreakingWords = new Set([
   "ihnen", "denen", "haben", "können", "müssen", "sollen", "wollen",
   "dürfen", "werden", "möchten", "helfen", "arbeiten", "erhalten",
-  "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen"
+  "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen", "nehmen"
 ]);
 // `die vielen Unterstützer` is no dative: after an article or possessive
 // the quantifier has its weak ending. Degree adverbs may stand between
@@ -86,7 +87,8 @@ function isDativeNounPhrase(prefix: string): boolean {
 }
 
 function mapDativePlural(base: string): string | undefined {
-  const plural = mapMappedPlural(base) ?? mapKnownPlural(base);
+  // Compounds the supplemental forms read (`mit Humanmediziner*innen`).
+  const plural = mapMappedPlural(base) ?? mapKnownPlural(base) ?? mapSupplementalPlural(base);
   if (plural === undefined) return undefined;
   // Reguläre Dativplurale enden auf -n; die vorhandenen -n/-s-Plurale
   // bekommen keine zusätzliche Endung.
