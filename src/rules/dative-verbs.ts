@@ -45,6 +45,19 @@ const subjectDeterminer = /^(?:die|diese|alle|viele|einige|manche|meine|deine|se
 const focusParticle = /^(?:auch|nur|sogar|selbst|gerade|besonders|insbesondere|allem)$/iu;
 const nounWord = /^\p{Lu}[\p{L}\p{M}-]*$/u;
 const attributiveAdjective = /^\p{Ll}[\p{L}\p{M}-]*(?:e|en)$/u;
+// Lowercase words and numbers may stand between a preposition and its noun
+// (`Für fast alle Kinder`, `In mehr als drei Schulen`); a pronoun or a noun
+// is the preposition's object (`Mit uns befreundete Eltern`, `In Berlin
+// tätige Eltern`).
+const prepositionObjectWord = /^(?:\p{Lu}|uns$|euch$|ihnen$|ihm$|ihr$|mir$|dir$|dem$|der$|den$)/u;
+
+function prepositionOpens(words: string[], index: number): boolean {
+  for (let i = index; i >= 0; i--) {
+    if (prepositionWord.test(words[i]!)) return true;
+    if (prepositionObjectWord.test(words[i]!)) return false;
+  }
+  return false;
+}
 
 function nounSubjectBeforeVerb(clause: string): boolean {
   const words = clause.split(/\s+/u).filter(Boolean);
@@ -59,7 +72,7 @@ function nounSubjectBeforeVerb(clause: string): boolean {
   const determiner = index >= 0 && subjectDeterminer.test(words[index]!);
   if (determiner) index--;
   const previous = index >= 0 ? words[index]! : undefined;
-  if (previous !== undefined && prepositionWord.test(previous)) return false;
+  if (prepositionOpens(words, index)) return false;
   if (determiner) return true;
   // Without a determiner a weak `-en` belongs to a dative (`Kleinen
   // Kindern helfen …`); a bare noun needs a focus particle before it.
