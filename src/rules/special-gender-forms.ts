@@ -1,6 +1,10 @@
 import type { Rule } from "../core/rule";
 import { preserveInnerCase } from "./inner-case";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const nonLetterPattern = /[^\p{L}\p{M}]/gu;
+
 const locale = "de-DE";
 const replacements = new Map<string, string>([
   ["rom*nja", "roma"],
@@ -41,7 +45,7 @@ const pattern = new RegExp(
 function applyTokenCase(source: string, replacement: string): string {
   const inner = preserveInnerCase(source, replacement);
   if (inner !== undefined) return inner;
-  const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
+  const letters = source.replace(nonLetterPattern, "");
   const lower = letters.toLocaleLowerCase(locale);
   const upper = letters.toLocaleUpperCase(locale);
   if (letters === upper && letters !== lower) {

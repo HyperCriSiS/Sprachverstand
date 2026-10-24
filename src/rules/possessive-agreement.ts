@@ -1,5 +1,9 @@
 import type { TransformResult } from "../core/rule";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const ihrCandidate = /(?<![\p{L}\p{M}])ihr/u;
+
 /*
  * A possessive after a converted generic `jede X*in` keeps the feminine
  * form: `dass jede Kund*in auch in ihrer Sprache` became „dass jeder Kunde
@@ -84,7 +88,7 @@ export function withPossessiveAgreement(
   input: string,
   transform: (input: string) => TransformResult
 ): TransformResult {
-  if (!/[Jj]ede/u.test(input) || !/(?<![\p{L}\p{M}])ihr/u.test(input)) return transform(input);
+  if (!/[Jj]ede/u.test(input) || !ihrCandidate.test(input)) return transform(input);
   const positions: number[] = [];
   for (const match of input.matchAll(genericPhrase)) {
     let offset = match.index + match[0].length;
