@@ -3,6 +3,10 @@ import { acceptContextResult } from "../core/leading-context-edit";
 import { markedSingularLeadingCandidate } from "./context-candidates";
 import { withPossessiveAgreement } from "./possessive-agreement";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const lowercaseStartPattern = /^\p{Ll}/u;
+
 /*
  * A relative pronoun after a converted marked singular keeps the feminine
  * form: `von einer Künstler:in begleitet, deren Praxis` became „von einem
@@ -53,7 +57,7 @@ function masculineRelative(pronoun: string, next: string): string | undefined {
   if (pronoun === "der") return subjectPronouns.has(next) ? "dem" : undefined;
   if (subjectPronouns.has(next)) return "den";
   if (objectPronouns.has(next)) return "der";
-  return /^\p{Ll}/u.test(next) && !notNominativeStarts.has(next) ? "der" : undefined;
+  return lowercaseStartPattern.test(next) && !notNominativeStarts.has(next) ? "der" : undefined;
 }
 
 export function withRelativeAgreement(

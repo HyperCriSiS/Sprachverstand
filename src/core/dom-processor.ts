@@ -31,6 +31,14 @@ import {
   type ReplacementSummaryEntry
 } from "./replacement-summary";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const letterEndPattern = /\p{L}$/u;
+const letterStartPattern = /^\p{L}/u;
+const combiningMarkPattern = /\p{M}/u;
+const singleLetterPattern = /^\p{L}$/u;
+const letterPattern = /\p{L}/u;
+
 export interface DomProcessorOptions {
   readonly isTransformCandidate?: (input: string) => boolean;
   readonly transformText?: (input: string, options: TransformOptions, subtitle?: boolean) => Promise<DetailedTransformResult>;
@@ -1968,7 +1976,7 @@ export class DomProcessor {
     // Ein links ohne Wortgrenze anliegender Text ist ein Teil desselben Wortes.
     if (
       leadingParticiplePattern.test(original) &&
-      /\p{L}$/u.test((yield* this.iterateLeadingContext(node, true)) ?? "")
+      letterEndPattern.test((yield* this.iterateLeadingContext(node, true)) ?? "")
     ) {
       return true;
     }
@@ -1990,7 +1998,7 @@ export class DomProcessor {
         following += context;
         // Bei direkt anhängenden Buchstaben die Teilwortkorrektur vermeiden.
         // Beispiel: "Mitarbeitende" + <em>n</em>.
-        if (/\p{L}$/u.test(original) && /^\p{L}/u.test(following)) {
+        if (letterEndPattern.test(original) && letterStartPattern.test(following)) {
           return true;
         }
         if (followingInlineNounPattern.test(following)) {
@@ -2906,7 +2914,7 @@ export class DomProcessor {
       };
     }
     return this.customReplacementSources.sources.some((source) => input.includes(source)) ||
-      /\p{M}/u.test(input);
+      combiningMarkPattern.test(input);
   }
 
   private deferTextTransform(node: Text, original: string, leadingContext: string | undefined,
@@ -3434,7 +3442,7 @@ export class DomProcessor {
           !text.isConnected ||
           !parent ||
           isProtectedTextSubtree(parent) ||
-          !/^\p{L}$/u.test(text.data.trim())
+          !singleLetterPattern.test(text.data.trim())
         ) {
           return false;
         }
@@ -3541,7 +3549,7 @@ export class DomProcessor {
     if (last.nodeType !== Node.TEXT_NODE) return undefined;
     const text = last as Text;
     const parent = text.parentElement;
-    if (!parent || nonTextContextTags.has(parent.tagName) || !/\p{L}/u.test(text.data) ||
+    if (!parent || nonTextContextTags.has(parent.tagName) || !letterPattern.test(text.data) ||
         this.shouldProcessTextNode(text)) return undefined;
     return text.data;
   }
