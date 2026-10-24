@@ -58,9 +58,20 @@ Autorität: `main`
   - „zwischen … und …“ bekommt kein Dativ-n („zwischen“ regiert Dativ oder Akkusativ); Alias „Systempartnern“ (N11).
   - Restliste R05: nach Codex' strenger Zählung (exakte Zielspanne in Regel- und DOM-Pfad) 10 von 99 gelöst. Der Rest sind überwiegend Tippfehler der Quelle (`Patent*innen`, `Ärzti:innen`) oder Einzelfälle, die Satzverständnis über Teilsätze brauchen.
 - **Bewusst unverändert:** echt mehrdeutige Fälle (`Das Kind mag die Lehrer*in`, `ihre Familie oder Partner*in`), Metasprache (`die Endsilbe -ant:in`), Ausgangsfehler der Seiten, unmarkierte Feminina.
+- **Gegenprüfung 25.10.2026** (`artifacts/gegenpruefung-20261025`, Prüfstand `2104f83`, alle Befunde gegen `main` nachgeprüft):
+  - #531 Dativverben: Subjekt vor dem Verb, Genitivattribut danach, `folgen` mit eigenem Subjekt, weitere Inversionsanfänge, zu-Infinitiv mit Abstand (N24, N18).
+  - #532 Mengenwort nach Artikel/Possessiv kein Dativauslöser, auch mit Gradadverb, Genitiv-Possessiv und Koordination (N25).
+  - #533 Koordination übernimmt den Dativ nicht über Satz- und Attributgrenzen (N26).
+  - #534 koordinierter Genitiv am Satzanfang (N27).
+  - #535 Possessiv-Besitzer: „Es regnet“, „ihre eigene“, weibliche Nomen, Namen mit Verb, zwei Sätze Kontext (N28, N16).
+  - #536 Konjunktiv im Nebensatz mit eigenem Subjekt (N22).
+  - #537 Dativ-n für zusammengesetzte Personennomen (`mit Humanmediziner*innen`); behebt einen Großteil der halben Dativlisten (N07).
+  - Sollfälle des Berichts: 171 → 315 von 489; die 980 als korrekt bewerteten Änderungen bleiben (4 weitere verbessert).
+  - Offen: N17 (Zielkasus Dativ in „und der Ärzt*in überreiche ich“, „dem Sohn eines Lehrers und einer Ärzt*in, also zwei Personen“), N19 (`mit teilweise bis zu`, Dativobjekt ohne Präposition), N20 (`zwischen`, Attribut zwischen Auslöser und Glied), restliche Listen mit Attributen, „Sie sagt jeder Lehrer*in …“ (Dativ `jedem`), „Heute gilt: jede Lehrer*in …“ (keine Umwandlung nach Doppelpunkt), „den Wagen, …“ (Singular auf -en), Paarformen `eine/r`, `ein/eine`.
 - **Nächste Schritte:**
-  - Aion (Codex) prüft `main` @ 2104f83 (Auftrag 24.10.2026, Ablage `artifacts/gegenpruefung-20261025`). Danach die Befunde nachprüfen und abarbeiten; #523–#525 liegen nach dem Prüfstand.
+  - Offene Punkte der Gegenprüfung 25.10. nach Bedarf.
   - Changelog-Einträge nur als Fragment.
+  - Keine KI-Namen in PRs, Commits, Tests oder Doku (Nutzerentscheidung 24.10.2026).
 
 ## Pale Moon (22.10.2026)
 
@@ -101,7 +112,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #529. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #537 (Gegenprüfung 25.10., #531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #529. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
