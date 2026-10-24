@@ -184,8 +184,50 @@ function applyBuiltInRulesBroken(
   leadingContext?: string
 ): DetailedTransformResult {
   const whole = applyWithoutSoftHyphens(input, rules, options, leadingContext);
-  if (whole) return whole;
+  const perToken = applySoftHyphenTokens(input, rules, options, leadingContext);
+  return whole ? mergeSoftHyphenResults(input, whole, perToken) : perToken;
+}
 
+const genderMarkerPattern = /[:*_·•\/()]|\p{Ll}­?I­?n/u;
+
+// A word the whole text leaves alone keeps its own per-token result: the
+// shared context must not undo a replacement that was right before (`Für
+// die Exkur­sionen haben wir gezielt Dozierende gefragt`).
+function mergeSoftHyphenResults(
+  input: string,
+  whole: DetailedTransformResult,
+  perToken: DetailedTransformResult
+): DetailedTransformResult {
+  if (perToken.replacements === 0 || perToken.text === whole.text) return whole;
+  const original = input.split(/(\s+)/u);
+  const fromWhole = whole.text.split(/(\s+)/u);
+  const fromToken = perToken.text.split(/(\s+)/u);
+  if (fromWhole.length !== original.length || fromToken.length !== original.length) return whole;
+  const taken: string[] = [];
+  const text = original.map((token, index) => {
+    // A marked word needs its determiner and adjectives; only the whole
+    // text can change them together (`eine spezia­li­sierte Anwält:in`).
+    if (fromWhole[index] !== token || fromToken[index] === token || genderMarkerPattern.test(token)) {
+      return fromWhole[index]!;
+    }
+    taken.push(token.replaceAll("­", ""));
+    return fromToken[index]!;
+  }).join("");
+  if (taken.length === 0) return whole;
+  const added = perToken.summaries.filter((entry) => taken.some((token) => token.includes(entry.original)));
+  return {
+    text,
+    replacements: whole.replacements + taken.length,
+    summaries: [...whole.summaries, ...added]
+  };
+}
+
+function applySoftHyphenTokens(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions,
+  leadingContext?: string
+): DetailedTransformResult {
   let cursor = 0;
   let text = "";
   let replacements = 0;
