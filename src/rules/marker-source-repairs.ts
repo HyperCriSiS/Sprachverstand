@@ -3,7 +3,7 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
-import { dativeVerbPattern, dativeVerbSource, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, dativeVerbSource, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -144,7 +144,9 @@ const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|
 const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
-const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
+// An adjective may stand before the coordinated noun (`mit Kollegen aus
+// Kantonen und erfahrenen Vertreter*innen`).
+const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$/u;
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
 // `bis zu 20` only bounds a number; the case comes from before it
 // (`mit bis zu 20 Lehrern`, `für bis zu 20 Teilnehmer`).
@@ -153,7 +155,7 @@ const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:
 const upperBoundPattern = /(?<![\p{L}\p{M}])[Bb]is\s+zu(?=\s+\d)/gu;
 const lowercaseStartPattern = /^\p{Ll}/u;
 const uppercaseLetterPattern = /\p{Lu}/gu;
-const unlistedFormCandidate = /(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s/u;
+const unlistedFormCandidate = /(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s|\p{Ll}(?:in\/en|en\/in)(?![\p{L}\p{M}])/u;
 const inflectedMarkerCandidate = /\p{Ll}(?:[:*_·•]|\/-?)in/u;
 const brokenMarkerCandidate = /in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u;
 
@@ -172,9 +174,15 @@ const conjunct = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:n|(?:[:*_·•]|\/-?)inn
 const conjunctAttribute = String.raw`(?:\s+(?:der|des|aus|von|bei|mit|nach|zu)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*)?`;
 const conjunctSeparator = String.raw`(?:,\s*|\s+(?:und|oder|sowie)\s+)(?:\d+\s+)?`;
 const coordinatedDativeBefore = new RegExp(
-  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$`, "u");
+  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$`, "u");
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
+// The text after the remaining list items.
+const remainingListItems = /^(?:\s*(?:,|\s(?:und|oder|sowie))\s*\p{Lu}[\p{L}\p{M}*:_·•\/’'-]*)*/u;
+
+function listRest(after: string): string {
+  return after.replace(remainingListItems, "");
+}
 // A plural right before the preposition may own it as an attribute; when the
 // prepositional object names no persons, the coordinated noun belongs to
 // that plural: `Überlebende von Genoziden und Zeichner:innen`,
@@ -224,6 +232,7 @@ function isCoordinatedDative(before: string, after: string): boolean {
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
+  if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!)), listRest(after))) return false;
   const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
   // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
   if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(list)) return false;
@@ -267,12 +276,27 @@ const abbreviationPluralPattern =
 const singularPairBeforePlural =
   /(?<![\p{L}\p{M}])([Dd])(?:en|er)\s*\/\s*die(\s+[\p{L}\p{M}’'-]+(?:[:*_·•]|\/-?)innen)(?![\p{L}\p{M}])/gu;
 
+// Pairs written with the inflected masculine or the feminine first after a
+// marked adjective in the accusative or dative (`anerkannte/n
+// Heilpädagogen/in`, `Sozialpädagogische/n Assistentin/en`): the ordinary
+// pair `Stamm/in`; the adjective gives the case. Alone, `Autorin/en` or
+// `Freundin/en` mostly mean the plural.
+const inflectedMasculinePair = /(?<=\p{Ll}e(?:[:*_·•]|\/-?)n\s+)(\p{Lu}[\p{L}\p{M}-]*?)en\/in(?![\p{L}\p{M}])/gu;
+const feminineFirstPair = /(?<=\p{Ll}e(?:[:*_·•]|\/-?)n\s+)(\p{Lu}[\p{L}\p{M}-]*?)in\/en(?![\p{L}\p{M}])/gu;
+
 function repairUnlistedForms(input: string): TransformResult {
   let replacements = 0;
   let text = input.replace(singularPairBeforePlural, (_match: string, initial: string, noun: string) => {
     replacements += 1;
     return `${initial}ie${noun}`;
   });
+  for (const pattern of [inflectedMasculinePair, feminineFirstPair]) {
+    text = text.replace(pattern, (match: string, stem: string) => {
+      if (mapSingular(`${stem}/in`, "nominative") === undefined && mapSingular(stem, "nominative") === undefined) return match;
+      replacements += 1;
+      return `${stem}/in`;
+    });
+  }
   text = text.replace(compoundMarkerPattern, (match: string, base: string) => {
     const first = compoundFirstPart(base);
     if (!first) return match;
