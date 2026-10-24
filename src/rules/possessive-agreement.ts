@@ -46,8 +46,20 @@ const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 const lowercaseWord = /^\p{Ll}/u;
-const recentSentences = /(?:[^.!?]*[.!?]+\s*){0,2}[^.!?]*$/u;
 const markedOwner = /[:*_·•\/()’‘]|\p{Ll}In$/u;
+
+// The current sentence and the three before it. A loop instead of a
+// pattern: nested repetition over long texts backtracks polynomially.
+function recentSentences(before: string): string {
+  let ends = 0;
+  for (let index = before.length - 1; index >= 0; index--) {
+    const char = before[index]!;
+    if ((char === "." || char === "!" || char === "?") && !".!?".includes(before[index - 1] ?? "") && ++ends > 3) {
+      return before.slice(index + 1);
+    }
+  }
+  return before;
+}
 
 function clauseAllowsGenericOwner(before: string, ownPossessive: boolean): boolean {
   const clause = before.slice(Math.max(0, before.search(clauseStartPattern)));
@@ -56,7 +68,7 @@ function clauseAllowsGenericOwner(before: string, ownPossessive: boolean): boole
   if (!words.every((word, index) =>
     !ownerWord.test(word) && (lowercaseWord.test(word) || (index === 0 && sentenceStart)))) return false;
   if (ownPossessive) return true;
-  const sentences = recentSentences.exec(before)?.[0] ?? before;
+  const sentences = recentSentences(before);
   return !otherOwnerPronoun.test(sentences) && !otherOwnerNoun.test(sentences) &&
     !otherOwnerName.test(sentences) && !otherOwnerSubject.test(sentences);
 }
