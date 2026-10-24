@@ -155,7 +155,7 @@ const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:
 const upperBoundPattern = /(?<![\p{L}\p{M}])[Bb]is\s+zu(?=\s+\d)/gu;
 const lowercaseStartPattern = /^\p{Ll}/u;
 const uppercaseLetterPattern = /\p{Lu}/gu;
-const unlistedFormCandidate = /(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s/u;
+const unlistedFormCandidate = /(?:[:*_·•]|\/-?)in-|[»“"]-\p{Lu}|\s-\p{Lu}|er(?:n?)(?:[:*_·•]|\/-?)innen|erInnen|\p{Lu}(?:[:*_·•]|\/-?)innen|[Dd](?:en|er)\s*\/\s*die\s|\p{Ll}(?:in\/en|en\/in)(?![\p{L}\p{M}])/u;
 const inflectedMarkerCandidate = /\p{Ll}(?:[:*_·•]|\/-?)in/u;
 const brokenMarkerCandidate = /in-nen|[:*_·•]in[:*_·•]in|\p{L}-\//u;
 
@@ -276,12 +276,27 @@ const abbreviationPluralPattern =
 const singularPairBeforePlural =
   /(?<![\p{L}\p{M}])([Dd])(?:en|er)\s*\/\s*die(\s+[\p{L}\p{M}’'-]+(?:[:*_·•]|\/-?)innen)(?![\p{L}\p{M}])/gu;
 
+// Pairs written with the inflected masculine or the feminine first after a
+// marked adjective in the accusative or dative (`anerkannte/n
+// Heilpädagogen/in`, `Sozialpädagogische/n Assistentin/en`): the ordinary
+// pair `Stamm/in`; the adjective gives the case. Alone, `Autorin/en` or
+// `Freundin/en` mostly mean the plural.
+const inflectedMasculinePair = /(?<=\p{Ll}e(?:[:*_·•]|\/-?)n\s+)(\p{Lu}[\p{L}\p{M}-]*?)en\/in(?![\p{L}\p{M}])/gu;
+const feminineFirstPair = /(?<=\p{Ll}e(?:[:*_·•]|\/-?)n\s+)(\p{Lu}[\p{L}\p{M}-]*?)in\/en(?![\p{L}\p{M}])/gu;
+
 function repairUnlistedForms(input: string): TransformResult {
   let replacements = 0;
   let text = input.replace(singularPairBeforePlural, (_match: string, initial: string, noun: string) => {
     replacements += 1;
     return `${initial}ie${noun}`;
   });
+  for (const pattern of [inflectedMasculinePair, feminineFirstPair]) {
+    text = text.replace(pattern, (match: string, stem: string) => {
+      if (mapSingular(`${stem}/in`, "nominative") === undefined && mapSingular(stem, "nominative") === undefined) return match;
+      replacements += 1;
+      return `${stem}/in`;
+    });
+  }
   text = text.replace(compoundMarkerPattern, (match: string, base: string) => {
     const first = compoundFirstPart(base);
     if (!first) return match;
