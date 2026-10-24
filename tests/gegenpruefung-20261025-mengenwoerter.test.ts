@@ -4,7 +4,7 @@ import { defaultRules } from "../src/rules";
 
 const t = (input: string) => transformText(input, defaultRules, { profile: "aggressive" }).text;
 
-// Unabhängige Gegenprüfung von Aion, 25.10.2026 (artifacts/gegenpruefung-20261025).
+// Gegenprüfung vom 25.10.2026.
 describe("Mengenwort nach Artikel oder Possessiv ist kein Dativauslöser (N25)", () => {
   it.each([
     ["Die vielen LehrerInnen kommen.", "Die vielen Lehrer kommen."],

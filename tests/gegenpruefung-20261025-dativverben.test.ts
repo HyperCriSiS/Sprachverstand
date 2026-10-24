@@ -4,7 +4,7 @@ import { defaultRules } from "../src/rules";
 
 const t = (input: string) => transformText(input, defaultRules, { profile: "aggressive" }).text;
 
-// Unabhängige Gegenprüfung von Aion, 25.10.2026 (artifacts/gegenpruefung-20261025).
+// Gegenprüfung vom 25.10.2026.
 describe("Dativverb mit eigenem Subjekt (N24)", () => {
   it.each([
     ["Auch die Eltern helfen Lehrer:innen.", "Auch die Eltern helfen Lehrern."],
