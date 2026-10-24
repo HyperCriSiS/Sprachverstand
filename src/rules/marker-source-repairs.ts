@@ -140,7 +140,7 @@ const namePart = String.raw`\p{Lu}\p{Ll}+(?!(?:Die|Der|Das|Den|Dem|Des|Ein|Eine|
 // Directly after the trigger, only adjectives, numbers or name parts
 // between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`); a
 // preposition or verb on -en ends the phrase (`von SchülerInnen gegen`).
-const gapAdjective = String.raw`(?!(?:gegen|nehmen|haben|werden|können|sollen|wollen|müssen|dürfen|geben|kommen|stehen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*en`;
+const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|treffen|brauchen|haben|werden|können|sollen|wollen|müssen|dürfen|geben|kommen|stehen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*en`;
 const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
@@ -190,7 +190,7 @@ const personNounsWithoutMarker =
 const personParticiples =
   /(?:[Üü]berlebende|[Ss]tudierende|[Ll]ehrende|[Ff]orschende|[Rr]eisende|[Ss]uchende|[Tt]eilnehmende|[Mm]itarbeitende|[Mm]itwirkende|[Aa]uszubildende|[Bb]eschäftigte|[Aa]ngestellte|[Bb]eteiligte|[Bb]etroffene|[Gg]eflüchtete|[Vv]orgesetzte|[Aa]bgeordnete|[Ee]hrenamtliche|[Jj]ugendliche|[Aa]ngehörige|[Ss]chaffende|[Ii]nteressierte|[Ee]rwachsene|[Vv]erstorbene|[Ee]rkrankte|[Ee]ngagierte|[Gg]efangene|[Rr]echtsextreme|[Nn]ominierte|[Pp]reisgekrönte|[Ee]ingeladene)n?$/u;
 
-function namesPersons(plural: string): boolean {
+export function namesPersons(plural: string): boolean {
   const head = plural.replace(/^.*-/u, "");
   if (/(?:innen|Innen)$/u.test(head) || personNounsWithoutMarker.test(head) || personParticiples.test(head)) return true;
   // Stems by the plural endings only (`Lehrern` → `Lehrer`, `Kollegen` →
@@ -209,6 +209,12 @@ const yearGap = /(?:^|\s)(?:1[89]|20)\d\d\s+(?:\S+\s+)?$/u;
 // The rest of the clause after the noun ends in a verb: a relative clause
 // (`, den Bauernfamilien und Arbeiter*innen in Projekte investieren`).
 const relativeClauseTail = /^[^,.;:!?]*\s\p{Ll}[\p{L}\p{M}]*(?:en|t)\s*[,.;:!?]/u;
+const genitiveAttributePattern =
+  /(\p{Lu}[\p{L}\p{M}’'-]*)\s+(?:der|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?(\p{Lu}[\p{L}\p{M}*:_·•\/’'-]*)/gu;
+const nominativeItemAhead = /^\s*,\s*\p{Lu}[\p{L}\p{M}-]*\p{Ll}e(?=\s*,|\s+(?:und|oder|sowie)\s)/u;
+const listEnding = /(?:,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
+const listSeparator = /,|\s(?:und|oder|sowie)\s/u;
+const verbWithPronounAhead = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 
 function isCoordinatedDative(before: string, after: string): boolean {
   const match = coordinatedDativeBefore.exec(before);
@@ -217,8 +223,26 @@ function isCoordinatedDative(before: string, after: string): boolean {
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
+  const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
   // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
-  if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(match[0].slice(match[0].indexOf(trigger!) + trigger!.length))) return false;
+  if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(list)) return false;
+  // `den Mann` is an accusative singular, no dative plural.
+  if (trigger === "den" && !/(?:en|rn|ln|innen|Innen)$/u.test(noun!)) return false;  // A genitive attribute naming persons on a conjunct without persons takes
+  // the following items (`den Werken der SchriftstellerInnen und
+  // Künstler*innen`, `Heimatsammlungen der Flüchtlinge, Vertriebenen und …`).
+  for (const [, head, attribute] of list.matchAll(genitiveAttributePattern)) {
+    if (!namesPersons(head!) && namesPersons(attribute!)) return false;
+  }
+  // A nominative item after it ends the dative (`aus allen Bereichen des
+  // zivilen Lebens, Akademiker:innen, Offiziere, …`).
+  if (nominativeItemAhead.test(after)) return false;
+  // A parenthesis (`durch Autor*innen und, bei Daten, Erheber*innen`).
+  if (/^(?:und|oder|sowie),$/u.test(previous ?? "") && ending === "," && !listSeparator.test(list.replace(listEnding, ""))) return false;
+  // A new clause with its own verb (`werden Teile von faschistischen
+  // Netzwerken, Journalist*innen oder Schriftsteller*innen verbinden sich`).
+  if (previous && pluralBeforePreposition.test(previous) && !namesPersons(noun!) &&
+      list.slice(list.indexOf(noun!) + noun!.length).trimStart().startsWith(",") &&
+      verbWithPronounAhead.test(after)) return false;
   // An enumeration of article items (`den Katholik*innen, den orthodoxen
   // Mitgliedern und …`, `aus dem Vorstand, den gewählten KA-Vertretern sowie
   // …`) is no relative clause.
