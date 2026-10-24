@@ -23,7 +23,8 @@ export function verbObjectBlocked(after: string): boolean {
 
 // A dative right before the verb is its object already (`Wem helfen …`,
 // `, denen helfen …`).
-const dativeBeforeVerb = /(?:^|[\s,])(?:wem|denen|dem|ihm|ihr|ihnen|uns|euch|mir|dir)\s*$/iu;
+// After a preposition the pronoun belongs to it (`Einige von uns helfen …`).
+const dativeBeforeVerb = /(?:^|[\s,])(?<!(?:von|mit|bei|zu|aus|nach|für|gegen|ohne|um|unter|neben)\s)(?:wem|denen|dem|ihm|ihr|ihnen|uns|euch|mir|dir)\s*$/iu;
 const pronounBeforeVerb = /(?:^|\s)(?:wir|ihr|sie)\s*$/iu;
 const andBeforeVerb = /(?:^|\s)und\s*$/iu;
 const clauseStartPattern = /[^.!?;:()]*$/u;
@@ -45,6 +46,8 @@ const subjectDeterminer = /^(?:die|diese|alle|viele|einige|manche|meine|deine|se
 const focusParticle = /^(?:auch|nur|sogar|selbst|gerade|besonders|insbesondere|allem)$/iu;
 const nounWord = /^\p{Lu}[\p{L}\p{M}-]*$/u;
 const attributiveAdjective = /^\p{Ll}[\p{L}\p{M}-]*(?:e|en)$/u;
+// At the clause start the adjective is capitalized (`Engagierte Eltern …`).
+const clauseStartAdjective = /^\p{Lu}\p{Ll}+e$/u;
 // Lowercase words and numbers may stand between a preposition and its noun
 // (`Für fast alle Kinder`, `In mehr als drei Schulen`); a pronoun or a noun
 // is the preposition's object (`Mit uns befreundete Eltern`, `In Berlin
@@ -65,7 +68,8 @@ function nounSubjectBeforeVerb(clause: string): boolean {
   if (index < 0 || !nounWord.test(words[index]!)) return false;
   index--;
   let adjectives = 0;
-  while (index >= 0 && attributiveAdjective.test(words[index]!) && !subjectDeterminer.test(words[index]!)) {
+  while (index >= 0 && !subjectDeterminer.test(words[index]!) &&
+    (attributiveAdjective.test(words[index]!) || (index === 0 && clauseStartAdjective.test(words[index]!)))) {
     adjectives++;
     index--;
   }
@@ -75,9 +79,22 @@ function nounSubjectBeforeVerb(clause: string): boolean {
   if (prepositionOpens(words, index)) return false;
   if (determiner) return true;
   // Without a determiner a weak `-en` belongs to a dative (`Kleinen
-  // Kindern helfen …`); a bare noun needs a focus particle before it.
-  if (adjectives > 0) return previous !== undefined && words[index + 1]!.endsWith("e");
-  return previous !== undefined && focusParticle.test(previous);
+  // Kindern helfen …`); a bare noun needs a focus particle before it or
+  // the clause start (`Eltern folgen …`, not `Es folgen …`).
+  if (adjectives > 0) return words[index + 1]!.endsWith("e");
+  if (previous === undefined) return !invertedClauseStart.test(clause) && !nonSubjectStart.test(clause);
+  return focusParticle.test(previous);
+}
+
+// An attribute after the subject (`Die Eltern der Kinder folgen …`, `Die
+// Eltern aus Berlin folgen …`, `Einige von uns helfen …`).
+const trailingAttribute = /\s+(?:(?:der|des)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*|(?:aus|von|in|bei|mit)\s+[\p{L}\p{M}-]+)$/u;
+const nonSubjectStart = /^(?:es|er|sie|das|dies|dieses|man|ich|du|wir|ihr)$/iu;
+
+function subjectBeforeVerb(clause: string): boolean {
+  if (nounSubjectBeforeVerb(clause)) return true;
+  const stripped = clause.replace(trailingAttribute, "");
+  return stripped !== clause && nounSubjectBeforeVerb(stripped);
 }
 
 // Whether the verb ending `textBeforeVerb` governs the plural after it.
@@ -88,7 +105,7 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
   const clause = textBeforeVerb.slice(Math.max(0, textBeforeVerb.search(clauseStartPattern))).trim();
   // With its own subject before the verb, a following `der Schule` is a
   // genitive attribute (`Wir helfen Lehrer:innen der Schule`).
-  if (pronounBeforeVerb.test(textBeforeVerb) || nounSubjectBeforeVerb(clause)) return true;
+  if (pronounBeforeVerb.test(textBeforeVerb) || subjectBeforeVerb(clause)) return true;
   if (subjectOnlyVerb.test(verb) || otherObjectAhead.test(after)) return false;
   if (andBeforeVerb.test(textBeforeVerb)) return true;
   return clause !== "" && !invertedClauseStart.test(clause);

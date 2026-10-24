@@ -37,7 +37,7 @@ const masculine = new Map([
 const otherOwnerPronoun = /(?<![\p{L}\p{M}])(?:sie|Sie|ihr|ihre[nmrs]?|ihnen|Ihnen)(?![\p{L}\p{M}])/u;
 const otherOwnerNoun =
   /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:innen|In|Innen|[:*_\/·•]in(?:nen)?)|\p{Lu}[\p{L}\p{M}-]*\p{Ll}in(?<!(?:Term|Mediz|Magaz|Benz|Berl|Kam|Vitam|Diszipl|Mart|Pingu|Rub|Delf|Cous|Bass|Kass|Ruß|Insul|Nikot|Glob|Lanol|Paraff|Vasel|Musl|Dent|Kreat|Kerat|Aspir|Lat|Sp|Rosmar)in|ein|ain)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen|Frau|Mutter|Tochter|Schwester|Tante|Oma|Großmutter|Nichte|Cousine|Dame)(?![\p{L}\p{M}])/u;
-const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum)\s)`;
+const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s)`;
 const otherOwnerName = new RegExp(
   String.raw`(?:(?:^|[.!?:]\s+)${notName}\p{Lu}\p{Ll}+\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
 // A feminine or plural subject with its verb (`Die Schule ist neu.`).
