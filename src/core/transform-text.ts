@@ -15,6 +15,13 @@ import {
 } from "./replacement-summary";
 import { collectLeadingContextEdit, type LeadingContextEdit } from "./leading-context-edit";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+// `Mieter*in­ nen`: a break inside the ending with a stray space.
+const strayBreakPattern = /([:*_·•\/]in)­(\s+)(nen)(?![\p{L}\p{M}])/gu;
+const joinedBreakPattern = /([:*_·•\/]in)­(nen)(?![\p{L}\p{M}])/gu;
+const combiningMarkPattern = /\p{M}/u;
+
 export interface DetailedTransformResult extends TransformResult {
   readonly summaries: readonly ReplacementSummaryEntry[];
   // The result assumes this edit of the end of `leadingContext`; a caller
@@ -161,18 +168,16 @@ function applyBuiltInRules(
   if (!input.includes("\u00ad")) {
     return applyBuiltInRulesPlain(input, rules, options, leadingContext);
   }
-  // `Mieter*in\u00ad nen`: a break inside the ending with a stray space. An
-  // unconverted word gets its space back.
-  const strayBreak = /([:*_\u00b7\u2022\/]in)\u00ad(\s+)(nen)(?![\p{L}\p{M}])/gu;
+  // A stray break space is joined; an unconverted word gets it back.
   const spaces: string[] = [];
-  const joined = input.replace(strayBreak, (_match: string, marker: string, space: string, rest: string) => {
+  const joined = input.replace(strayBreakPattern, (_match: string, marker: string, space: string, rest: string) => {
     spaces.push(space);
     return `${marker}\u00ad${rest}`;
   });
   const result = applyBuiltInRulesBroken(joined, rules, options, leadingContext);
   if (spaces.length === 0) return result;
   let index = 0;
-  return {...result, text: result.text.replace(/([:*_\u00b7\u2022\/]in)\u00ad(nen)(?![\p{L}\p{M}])/gu,
+  return {...result, text: result.text.replace(joinedBreakPattern,
     (match: string, marker: string, rest: string) =>
       index < spaces.length ? `${marker}\u00ad${spaces[index++]}${rest}` : match)};
 }
@@ -184,8 +189,50 @@ function applyBuiltInRulesBroken(
   leadingContext?: string
 ): DetailedTransformResult {
   const whole = applyWithoutSoftHyphens(input, rules, options, leadingContext);
-  if (whole) return whole;
+  const perToken = applySoftHyphenTokens(input, rules, options, leadingContext);
+  return whole ? mergeSoftHyphenResults(input, whole, perToken) : perToken;
+}
 
+const genderMarkerPattern = /[:*_·•\/()]|\p{Ll}­?I­?n/u;
+
+// A word the whole text leaves alone keeps its own per-token result: the
+// shared context must not undo a replacement that was right before (`Für
+// die Exkur­sionen haben wir gezielt Dozierende gefragt`).
+function mergeSoftHyphenResults(
+  input: string,
+  whole: DetailedTransformResult,
+  perToken: DetailedTransformResult
+): DetailedTransformResult {
+  if (perToken.replacements === 0 || perToken.text === whole.text) return whole;
+  const original = input.split(/(\s+)/u);
+  const fromWhole = whole.text.split(/(\s+)/u);
+  const fromToken = perToken.text.split(/(\s+)/u);
+  if (fromWhole.length !== original.length || fromToken.length !== original.length) return whole;
+  const taken: string[] = [];
+  const text = original.map((token, index) => {
+    // A marked word needs its determiner and adjectives; only the whole
+    // text can change them together (`eine spezia­li­sierte Anwält:in`).
+    if (fromWhole[index] !== token || fromToken[index] === token || genderMarkerPattern.test(token)) {
+      return fromWhole[index]!;
+    }
+    taken.push(token.replaceAll("­", ""));
+    return fromToken[index]!;
+  }).join("");
+  if (taken.length === 0) return whole;
+  const added = perToken.summaries.filter((entry) => taken.some((token) => token.includes(entry.original)));
+  return {
+    text,
+    replacements: whole.replacements + taken.length,
+    summaries: [...whole.summaries, ...added]
+  };
+}
+
+function applySoftHyphenTokens(
+  input: string,
+  rules: readonly Rule[],
+  options: TransformOptions,
+  leadingContext?: string
+): DetailedTransformResult {
   let cursor = 0;
   let text = "";
   let replacements = 0;
@@ -495,7 +542,7 @@ function transformTextCore(
   rules: readonly Rule[],
   options: TransformOptions
 ): DetailedTransformResult {
-  if (/\p{M}/u.test(input)) {
+  if (combiningMarkPattern.test(input)) {
     const originals = new Map<string, string>();
     const composed = input.replace(combiningMarkedWord, (word: string) => {
       if (!genderMarkerInWord.test(word)) return word;

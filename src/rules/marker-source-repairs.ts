@@ -133,7 +133,7 @@ const plainErPluralPattern =
 // -ier has the plural -iere (`Passagier`, `Pionier`); adjectives and
 // participles used as nouns end in -e/-en (`Sachverständige`).
 const notPlainEr = /(?:ier|(?:ig|lich|isch|end|bar|sam|haft|los|iert|ordnet|stellt|setzt|tragt|wandt|kannt|amt)er)$/u;
-const dativeTrigger = String.raw`[Vv]on|[Mm]it|[Bb]ei|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|${dativeVerbSource}`;
+const dativeTrigger = String.raw`[Vv]on|[Mm]it|[Bb]ei|[Nn]eben|[Zz]wischen|[Aa]us|[Zz]u|[Nn]ach|[Ss]eit|[Gg]egenüber|[Ss]amt|[Nn]ebst|den|allen|einigen|vielen|wenigen|mehreren|beiden|unseren|ihren|${dativeVerbSource}`;
 // A name part (`RosaLila`), not a heading run into the next sentence
 // (`PraxisbezugDie Besucher`) or a Binnen-I plural (`SchülerInnen`).
 const namePart = String.raw`\p{Lu}\p{Ll}+(?!(?:Die|Der|Das|Den|Dem|Des|Ein|Eine|Wir|Sie|Er|Es|Ich|Und|Im|In|Am|Mit|Bei|Für|Von|Zum|Zur)(?!\p{Ll}))\p{Lu}[\p{L}\p{M}]*(?<!Innen)`;
@@ -214,6 +214,7 @@ const genitiveAttributePattern =
 const nominativeItemAhead = /^\s*,\s*\p{Lu}[\p{L}\p{M}-]*\p{Ll}e(?=\s*,|\s+(?:und|oder|sowie)\s)/u;
 const listEnding = /(?:,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
 const listSeparator = /,|\s(?:und|oder|sowie)\s/u;
+const dativeBeforeParenthesis = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+){0,2}\S+\s*$`, "u");
 const verbWithPronounAhead = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 
 function isCoordinatedDative(before: string, after: string): boolean {
@@ -236,8 +237,12 @@ function isCoordinatedDative(before: string, after: string): boolean {
   // A nominative item after it ends the dative (`aus allen Bereichen des
   // zivilen Lebens, Akademiker:innen, Offiziere, …`).
   if (nominativeItemAhead.test(after)) return false;
-  // A parenthesis (`durch Autor*innen und, bei Daten, Erheber*innen`).
-  if (/^(?:und|oder|sowie),$/u.test(previous ?? "") && ending === "," && !listSeparator.test(list.replace(listEnding, ""))) return false;
+  // A parenthesis takes the case from before it: `durch Autor*innen und, bei
+  // Daten, Erheber*innen` stays, `mit Lehrern und, bei Bedarf, Schüler:innen`
+  // keeps the dative.
+  if (/^(?:und|oder|sowie),$/u.test(previous ?? "") && ending === "," && !listSeparator.test(list.replace(listEnding, ""))) {
+    return dativeBeforeParenthesis.test(before.slice(0, match.index + match[0].indexOf(previous!)));
+  }
   // A new clause with its own verb (`werden Teile von faschistischen
   // Netzwerken, Journalist*innen oder Schriftsteller*innen verbinden sich`).
   if (previous && pluralBeforePreposition.test(previous) && !namesPersons(noun!) &&

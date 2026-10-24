@@ -1,6 +1,10 @@
 import type { Rule, TransformResult } from "../core/rule";
 import {lazyPattern} from "../core/lazy-pattern";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const nonLetterPattern = /[^\p{L}\p{M}]/gu;
+
 const titleToken = String.raw`(?:Prof|Dr)(?:\.in|[:*_]in)`;
 const feminineDeterminer =
   String.raw`(?:die|eine|keine|jede|diese|jene|welche|meine|deine|seine|ihre|unsere|eure|der|einer|keiner|jeder|dieser|jener|welcher|meiner|deiner|seiner|ihrer|unserer|eurer|zur)`;
@@ -28,7 +32,7 @@ function matchedBase(token: string): "Prof" | "Dr" {
 }
 
 function preserveCase(source: string, normal: string): string {
-  const letters = source.replace(/[^\p{L}\p{M}]/gu, "");
+  const letters = source.replace(nonLetterPattern, "");
   if (letters === letters.toLocaleUpperCase("de-DE")) {
     return normal.toLocaleUpperCase("de-DE");
   }
