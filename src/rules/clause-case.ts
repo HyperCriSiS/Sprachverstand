@@ -241,6 +241,10 @@ const beforeModalSubjunctivePattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins|er|sie|es|ich|du|wir|ihr|man|Sie)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:würde|sollte|könnte|müsste|dürfte|möge)(?![\p{L}\p{M}]))`,
   "gu"
 );
+const subordinateSubjectBefore =
+  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
+// `werde` with an infinitive, not with a participle (`werde eingeladen`).
+const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:
 // `Die Künstler*in, die dort arbeitet, kommt.`
 const subjectBeforeRelativePattern = new RegExp(
@@ -365,12 +369,14 @@ export function transformClauseCase(
       replacements += 1;
     }
   }
-  const convert = (pattern: RegExp, caseOf: (prefix: string, tail: string) => "nominative" | "accusative" | undefined) => {
+  const convert = (pattern: RegExp,
+    caseOf: (prefix: string, tail: string, before: string) => "nominative" | "accusative" | undefined) => {
     text = text.replace(pattern, (match: string, prefix: string, determinerWord: string, space: string,
       attributeText: string, base: string, ...rest: unknown[]) => {
       const offset = rest.find((value) => typeof value === "number") as number;
       const source = rest[rest.indexOf(offset) + 1] as string;
-      const grammaticalCase = caseOf(prefix, source.slice(offset + match.length, offset + match.length + 80));
+      const grammaticalCase = caseOf(prefix, source.slice(offset + match.length, offset + match.length + 80),
+        source.slice(Math.max(0, offset - 80), offset));
       if (!grammaticalCase) return match;
       const converted = phrase(determinerWord, space, attributeText, base, grammaticalCase, mapNoun);
       if (!converted) return match;
@@ -391,9 +397,17 @@ export function transformClauseCase(
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "accusative", mapNoun);
     if (converted) return {text: lead + converted + tail, replacements: 1};
   }
+  // A subordinate clause with its own subject before the phrase makes it the
+  // object of a modal or a `werde` + infinitive (`dass er heute die Ärzt*in
+  // möge`, `dass Peter die Ärzt*in möge`, `dass er die Ärzt*in werde
+  // unterstützen`).
+  convert(beforeModalSubjunctivePattern, (_prefix, tail, before) =>
+    competingSubject(tail) ? undefined : subordinateSubjectBefore.test(before) ? "accusative" : "nominative");
+  convert(beforeFinalCopulaPattern, (_prefix, tail, before) =>
+    competingSubject(tail) ? undefined
+      : werdeInfinitiveAhead.test(tail) && subordinateSubjectBefore.test(before) ? "accusative" : "nominative");
   for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
-    subordinateSubjectPattern, coordinatedClausePattern, beforeFinalCopulaPattern, beforeModalSubjunctivePattern,
-    subjectBeforeRelativePattern]) {
+    subordinateSubjectPattern, coordinatedClausePattern, subjectBeforeRelativePattern]) {
     convert(pattern, (_prefix, tail) => competingSubject(tail) ? undefined : "nominative");
   }
   for (const pattern of [frontedObjectPattern, existentialPattern]) {
@@ -517,9 +531,17 @@ export function transformClauseCase(
 //     clause part (`und der Ärzt*in überreiche ich`).
 // A doubled form (`eines Lehrers und einer Lehrer*in`) stays as written.
 const coordinatedGenitivePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?:\p{Ll}+en|sind)(?![\p{L}\p{M}]))(?!\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L}\p{M}]))`,
+  String.raw`(?<![\p{L}\p{M}:*_\/·•-])((?:eines|des)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}(\p{Lu}[\p{L}\p{M}’'-]*?)(?:es|s)((?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?))(\s+(?:und|oder|sowie|bzw\.)\s+)(einer|der)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
   "gu"
 );
+const pluralVerbAfter = /^\s+(?:\p{Ll}+en|sind)(?![\p{L}\p{M}])/u;
+const pronounVerbAfter = /^\s+\p{Ll}+\s+(?:ich|du|er|sie|es|wir|ihr|man)(?![\p{L}\p{M}])/u;
+// Unless the whole phrase opens the sentence: the verb then follows its head
+// (`Das Foto eines Lehrers und einer Ärzt*in sehen wir hier`); a plural verb
+// needs a plural head (`Die Bilder eines Lehrers und einer Ärzt*in hängen
+// hier`).
+const sentenceInitialHead = /(?:^|[.!?:]\s+)(?:Das|Die|Der|Ein|Eine|Dieses|Diese|Dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nrs]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+$/u;
+const sentenceInitialPluralHead = /(?:^|[.!?:]\s+)(?:Die|Diese)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*(?:er|en|e|s)\s+$/u;
 const dativeHeadBefore = /(?:^|\s)(?:dem|einem|meinem|deinem|seinem|ihrem|unserem|eurem|diesem|jedem|keinem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$/u;
 
 export function transformCoordinatedGenitives(
@@ -532,7 +554,11 @@ export function transformCoordinatedGenitives(
     attribute: string, conjunction: string, determinerWord: string, space: string, attributeText: string,
     base: string, offset: number, source: string) => {
     if (!attribute && first === base) return match;
-    if (dativeHeadBefore.test(source.slice(Math.max(0, offset - 60), offset))) return match;
+    const before = source.slice(Math.max(0, offset - 60), offset);
+    if (dativeHeadBefore.test(before)) return match;
+    const after = source.slice(offset + match.length, offset + match.length + 40);
+    if (pronounVerbAfter.test(after) ? !sentenceInitialHead.test(before)
+      : pluralVerbAfter.test(after) && !sentenceInitialPluralHead.test(before)) return match;
     const noun = mapNoun(base, "genitive");
     if (!noun) return match;
     replacements += 1;
