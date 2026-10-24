@@ -2,6 +2,10 @@ import type { Rule, TransformResult } from "../core/rule";
 import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const nestedCompoundCandidate = /innen[\p{L}\p{M}]+?(?:[:*_·•]|\/-?)in/iu;
+
 /*
  * Verschachtelte Komposita mit zwei Markern: `Patient*innenvertreter*innen`.
  * Die Pluralregeln sehen das äußere Personenwort erst, nachdem der innere
@@ -19,7 +23,7 @@ function mapPlural(base: string): string | undefined {
 }
 
 function transformNestedCompounds(input: string): TransformResult {
-  if (!/innen[\p{L}\p{M}]+?(?:[:*_·•]|\/-?)in/iu.test(input)) {
+  if (!nestedCompoundCandidate.test(input)) {
     return {text: input, replacements: 0};
   }
   let replacements = 0;

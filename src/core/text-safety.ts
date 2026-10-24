@@ -1,3 +1,6 @@
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const wordOfTwoLettersPattern = /\p{L}{2,}/gu;
 export const accessibleAttributeNames = [
   "alt",
   "aria-label",
@@ -240,7 +243,7 @@ function hasNaturalTextOutside(text: string, spans: readonly {start: number; end
     cursor = span.end;
   }
   rest += text.slice(cursor);
-  return (rest.match(/\p{L}{2,}/gu)?.length ?? 0) >= 2 && !isProbablyTechnicalText(rest);
+  return (rest.match(wordOfTwoLettersPattern)?.length ?? 0) >= 2 && !isProbablyTechnicalText(rest);
 }
 
 // Text nodes: like isProbablyTechnicalText, but URL/e-mail spans inside

@@ -19,6 +19,10 @@ import { getReviewedPersonFormsWave68 } from "./reviewed-person-forms-wave-68";
 import { getReviewedPersonFormsWave69 } from "./reviewed-person-forms-wave-69";
 import { preserveInnerCase } from "./inner-case";
 
+// Regex literals with Unicode property escapes stay at module level: Pale
+// Moon compiles such a literal again each time a function evaluates it.
+const capitalizedHeadPattern = /^\p{Lu}\p{Ll}/u;
+
 export type GrammaticalCase =
   | "nominative"
   | "accusative"
@@ -900,7 +904,7 @@ function mapHyphenHead(
   const index = base.lastIndexOf("-");
   if (index <= 0) return undefined;
   const head = base.slice(index + 1);
-  if (head.length < 3 || !/^\p{Lu}\p{Ll}/u.test(head)) return undefined;
+  if (head.length < 3 || !capitalizedHeadPattern.test(head)) return undefined;
   const mapped = map(head);
   return mapped === undefined ? undefined : base.slice(0, index + 1) + mapped;
 }
