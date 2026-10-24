@@ -33,3 +33,17 @@ describe("Kein Dativ über Satz- und Genitivgrenzen (N26)", () => {
     ["Wir möchten bei allen Wahlen allen Bürger:innen das Wahlrecht geben.", "Wir möchten bei allen Wahlen allen Bürgern das Wahlrecht geben."]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });
+
+describe("Dativlisten: rechter Nachbar, lange Attribute, Herkunftsadjektiv", () => {
+  it.each([
+    ["Wir erwarten von Politik, Arbeitgeber:innen und allen Verantwortungsträger:innen Mut.",
+      "Wir erwarten von Politik, Arbeitgebern und allen Verantwortungsträgern Mut."],
+    ["Der Beirat besteht aus Praktiker:innen der öffentlichen und freien Jugendhilfe, Vertreter:innen der Spitzenverbände.",
+      "Der Beirat besteht aus Praktikern der öffentlichen und freien Jugendhilfe, Vertretern der Spitzenverbände."],
+    ["mit Künstler:innen, jüdischen Ostberliner Interviewpartner:innen und Lesungen",
+      "mit Künstlern, jüdischen Ostberliner Interviewpartnern und Lesungen"],
+    // Ohne Begleitwort oder Adjektiv vor dem rechten Nachbarn kein Dativ.
+    ["Süchtige, ihre Angehörigen, Freund*innen oder Arbeitgebern erfahren hier mehr.",
+      "Süchtige, ihre Angehörigen, Freunde oder Arbeitgebern erfahren hier mehr."]
+  ])("%s", (input, expected) => expect(t(input)).toBe(expected));
+});

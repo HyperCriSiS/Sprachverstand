@@ -271,6 +271,16 @@ function transformMarkedDativePlural(input: string): TransformResult {
       replacements += 1;
       return prefix + mapped;
     });
+    listed = listed.replace(dativeRightNeighbourPattern, (original: string, base: string, neighbour: string,
+      offset: number, source: string) => {
+      // Only inside a list (`von Politik, Arbeitgeber:innen und …`).
+      if (!listItemBefore.test(source.slice(Math.max(0, offset - 3), offset)) ||
+          !isUnambiguousDativePlural(neighbour)) return original;
+      const mapped = mapDativePlural(base);
+      if (mapped === undefined) return original;
+      replacements += 1;
+      return mapped;
+    });
     if (replacements === before) break;
   }
   return { text: listed, replacements };
@@ -281,13 +291,20 @@ function transformMarkedDativePlural(input: string): TransformResult {
 // der Schule, Schüler:innen der Klasse …`, `mit Lehrern und, bei Bedarf,
 // Schüler:innen`.
 const dativeNeighbourPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(\p{Lu}[\p{L}\p{M}-]*n)(?:\s+(?:der|des)\s+\p{Lu}[\p{L}\p{M}-]*)?[ \t]*(?:,|[ \t](?:und|oder|sowie)(?:,[^,.;:!?]{1,30},)?)[ \t]+(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2})([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?![\p{L}\p{M}-])`,
+  String.raw`((?<![\p{L}\p{M}])(\p{Lu}[\p{L}\p{M}-]*n)(?:\s+(?:der|des)\s+(?:\p{Ll}[\p{L}\p{M}-]*\s+(?:und\s+\p{Ll}[\p{L}\p{M}-]*\s+)?)?\p{Lu}[\p{L}\p{M}-]*)?[ \t]*(?:,|[ \t](?:und|oder|sowie)(?:,[^,.;:!?]{1,30},)?)[ \t]+(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}(?:\p{Lu}[\p{L}\p{M}-]*er[ \t]+)?)([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?![\p{L}\p{M}-])`,
+  "gu"
+);
+// The neighbour may also follow: `von Politik, Arbeitgeber:innen und allen
+// Verantwortungsträgern`.
+const dativeRightNeighbourPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?=[ \t]*(?:,|[ \t](?:und|oder|sowie))[ \t]+(?:(?:allen|den|unseren|ihren|vielen)[ \t]+(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}|(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){1,2})(\p{Lu}[\p{L}\p{M}-]*n)(?![\p{L}\p{M}-]))`,
   "gu"
 );
 
 const genitiveDeterminerBefore = /(?:^|\s)(?:der|des|deren|dessen)\s+$/u;
 const commaBeforeItem = /,[ \t]*(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}$/u;
 const verbAfterItem = /^\s+\p{Ll}[\p{L}\p{M}]*en\s/u;
+const listItemBefore = /,[ \t]*$/u;
 
 // `Spielern`, `Funktionären`: the dative differs from the plural. `Biologen`
 // or `Bauern` are plurals in every case; `Eltern` has no singular stem here.
