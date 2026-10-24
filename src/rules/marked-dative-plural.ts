@@ -3,6 +3,7 @@ import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
 import { dativeVerbPattern, verbGovernsPlural } from "./dative-verbs";
+import { namesPersons } from "./marker-source-repairs";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -109,16 +110,37 @@ const markedWordPattern = new RegExp(
 const dativeLeadingContextPattern =
   /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt))\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
 
+// After `den` an unmarked first item must name persons (`Wir sehen den Mann,
+// Lehrer:innen und …` is an accusative singular). After a person plural the
+// preposition with an item without persons is its attribute, and the list
+// coordinates with that plural (`Mitarbeitende von Stiftungen, Politiker:innen
+// sowie …`).
+const markedItemPattern = new RegExp(String.raw`^${markedWord}$`, "iu");
+const personPluralBefore = /(\p{Lu}[\p{L}\p{M}*:_\/·•’'-]*(?:e|en|er|innen|Innen|s))\s+$/u;
+const dativePluralEnding = /(?:en|rn|ln)$/u;
+const dativeBeforePlural = /(?:^|\s)(?:mit|bei|von|zu|aus|nach|seit|zwischen|unter|vor|neben|den|allen)\s+(?:\S+\s+){0,2}$/iu;
+
+function firstItemBelongs(prefix: string, first: string, textBefore: string): boolean {
+  if (markedItemPattern.test(first) || namesPersons(first)) return true;
+  if (prefix.trim().toLocaleLowerCase("de-DE") === "den") return dativePluralEnding.test(first);
+  const previous = personPluralBefore.exec(textBefore);
+  if (!previous || !namesPersons(previous[1]!)) return true;
+  // That plural is a dative object itself (`zwischen Spieler:innen mit
+  // Behinderungen, Vereinen und Trainer:innen`): either reading takes the dative.
+  return dativeBeforePlural.test(textBefore.slice(0, previous.index));
+}
+
 function transformDativeEnumeration(input: string): TransformResult {
   let replacements = 0;
   const text = input.replace(
     dativeEnumerationPattern,
-    (original: string, prefix: string, list: string) => {
+    (original: string, prefix: string, list: string, offset: number, source: string) => {
       const basen = [...list.matchAll(markedWordPattern)];
       const flektiert = basen.map((match) => mapDativePlural(match[1] ?? ""));
       // The `i` flag of the pattern also lets lowercase words through.
       const items = list.split(/[ \t]*,[ \t]*|[ \t]+(?:und|oder|sowie)[ \t]+/u);
       if (basen.length === 0 || items.length < 3 || items.some((item) => !uppercaseStartPattern.test(item)) ||
+          !firstItemBelongs(prefix, items[0]!, source.slice(0, offset)) ||
           flektiert.some((wort) => wort === undefined)) {
         return original;
       }
