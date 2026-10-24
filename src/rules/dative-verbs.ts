@@ -113,3 +113,17 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
   if (andBeforeVerb.test(textBeforeVerb)) return true;
   return clause !== "" && !invertedClauseStart.test(clause);
 }
+
+// A main clause with its verb already before the list and another finite
+// verb right after it: the list starts a new clause as its subject (`Wir
+// sehen den Wagen, Lehrer:innen und Schüler:innen kommen später`). With an
+// auxiliary or modal before, the final verb is its infinitive (`Wir wollen mit
+// Kindern, Lehrer:innen und Schüler:innen arbeiten`).
+const mainClauseBeforeList = /(?:^|[.!?]\s+)(?:Wir|Ich|Sie|Er|Es|Man|Ihr|Du)\s+\p{Ll}[\p{L}\p{M}]*\s+[^.!?;:]*$/u;
+const auxiliaryInClause = /(?:^|\s)(?:will|willst|wollt|wollen|kann|kannst|könnt|können|muss|musst|müsst|müssen|soll|sollst|sollt|sollen|darf|darfst|dürft|dürfen|möchte|möchtest|möchtet|möchten|werde|wirst|wird|werdet|werden|habe|hast|hat|habt|haben|bin|bist|ist|seid|sind|war|warst|wart|waren)(?=\s)/u;
+const finiteVerbAfterList = /^\s+\p{Ll}[\p{L}\p{M}]*en(?:\s+(?:später|heute|morgen|gleich|auch|dann|noch|bald|wieder|zurück))?\s*(?:[.!?,;]|$)/u;
+
+export function listStartsNewClause(before: string, after: string): boolean {
+  const clause = mainClauseBeforeList.exec(before)?.[0];
+  return clause !== undefined && !auxiliaryInClause.test(clause) && finiteVerbAfterList.test(after);
+}
