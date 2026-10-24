@@ -241,6 +241,10 @@ const beforeModalSubjunctivePattern = new RegExp(
   String.raw`((?<![\p{L}\p{M}:*_\/·•-])(?<!(?<![\p{L}\p{M}])(?:${prepositionWords}|zum|zur|vom|beim|im|am|ins|er|sie|es|ich|du|wir|ihr|man|Sie)\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+(?:würde|sollte|könnte|müsste|dürfte|möge)(?![\p{L}\p{M}]))`,
   "gu"
 );
+const subordinateSubjectBefore =
+  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
+// `werde` with an infinitive, not with a participle (`werde eingeladen`).
+const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:
 // `Die Künstler*in, die dort arbeitet, kommt.`
 const subjectBeforeRelativePattern = new RegExp(
@@ -365,12 +369,14 @@ export function transformClauseCase(
       replacements += 1;
     }
   }
-  const convert = (pattern: RegExp, caseOf: (prefix: string, tail: string) => "nominative" | "accusative" | undefined) => {
+  const convert = (pattern: RegExp,
+    caseOf: (prefix: string, tail: string, before: string) => "nominative" | "accusative" | undefined) => {
     text = text.replace(pattern, (match: string, prefix: string, determinerWord: string, space: string,
       attributeText: string, base: string, ...rest: unknown[]) => {
       const offset = rest.find((value) => typeof value === "number") as number;
       const source = rest[rest.indexOf(offset) + 1] as string;
-      const grammaticalCase = caseOf(prefix, source.slice(offset + match.length, offset + match.length + 80));
+      const grammaticalCase = caseOf(prefix, source.slice(offset + match.length, offset + match.length + 80),
+        source.slice(Math.max(0, offset - 80), offset));
       if (!grammaticalCase) return match;
       const converted = phrase(determinerWord, space, attributeText, base, grammaticalCase, mapNoun);
       if (!converted) return match;
@@ -391,9 +397,17 @@ export function transformClauseCase(
     const converted = phrase(determinerWord!, space!, attributeText!, base!, "accusative", mapNoun);
     if (converted) return {text: lead + converted + tail, replacements: 1};
   }
+  // A subordinate clause with its own subject before the phrase makes it the
+  // object of a modal or a `werde` + infinitive (`dass er heute die Ärzt*in
+  // möge`, `dass Peter die Ärzt*in möge`, `dass er die Ärzt*in werde
+  // unterstützen`).
+  convert(beforeModalSubjunctivePattern, (_prefix, tail, before) =>
+    competingSubject(tail) ? undefined : subordinateSubjectBefore.test(before) ? "accusative" : "nominative");
+  convert(beforeFinalCopulaPattern, (_prefix, tail, before) =>
+    competingSubject(tail) ? undefined
+      : werdeInfinitiveAhead.test(tail) && subordinateSubjectBefore.test(before) ? "accusative" : "nominative");
   for (const pattern of [verbSecondPattern, clauseFrontPattern, relativePattern, imperativePattern,
-    subordinateSubjectPattern, coordinatedClausePattern, beforeFinalCopulaPattern, beforeModalSubjunctivePattern,
-    subjectBeforeRelativePattern]) {
+    subordinateSubjectPattern, coordinatedClausePattern, subjectBeforeRelativePattern]) {
     convert(pattern, (_prefix, tail) => competingSubject(tail) ? undefined : "nominative");
   }
   for (const pattern of [frontedObjectPattern, existentialPattern]) {
