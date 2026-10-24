@@ -144,7 +144,9 @@ const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|
 const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
-const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
+// An adjective may stand before the coordinated noun (`mit Kollegen aus
+// Kantonen und erfahrenen Vertreter*innen`).
+const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$/u;
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
 // `bis zu 20` only bounds a number; the case comes from before it
 // (`mit bis zu 20 Lehrern`, `für bis zu 20 Teilnehmer`).
@@ -172,7 +174,7 @@ const conjunct = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:n|(?:[:*_·•]|\/-?)inn
 const conjunctAttribute = String.raw`(?:\s+(?:der|des|aus|von|bei|mit|nach|zu)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*)?`;
 const conjunctSeparator = String.raw`(?:,\s*|\s+(?:und|oder|sowie)\s+)(?:\d+\s+)?`;
 const coordinatedDativeBefore = new RegExp(
-  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$`, "u");
+  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$`, "u");
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
 // The text after the remaining list items.
