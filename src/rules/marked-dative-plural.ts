@@ -25,8 +25,32 @@ const phraseBreakingWords = new Set([
   "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen"
 ]);
 // `die vielen Unterstützer` is no dative: after an article or possessive
-// the quantifier has its weak ending.
+// the quantifier has its weak ending. Degree adverbs may stand between
+// (`Die sehr vielen …`), a genitive determiner counts too (`ihrer wenigen
+// lauten Gegner*innen`), and a coordination shares the article of its
+// first item (`für die Menschen und vielen MitarbeiterInnen`).
 const quantifierTriggers = new Set(["vielen", "einigen", "wenigen", "mehreren", "beiden"]);
+const weakQuantifierDeterminer = String.raw`die|der|des|diese|dieser|jene|jener|unsere|unserer|ihre|ihrer|eure|eurer|meine|meiner|deine|deiner|seine|seiner|keine|keiner|alle|aller|welche|welcher`;
+// `mit der Schule und vielen …` keeps the dative: only plural forms share it.
+const coordinatedQuantifierDeterminer = String.raw`die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|welche`;
+const degreeAdverbs = String.raw`(?:(?:sehr|so|ganz|wirklich|besonders|recht|ziemlich|allzu|zu|nur|noch|eher)\s+)*`;
+const weakQuantifierBefore = new RegExp(
+  String.raw`(?:^|[^\p{L}\p{M}])(?:${weakQuantifierDeterminer})\s+${degreeAdverbs}$`, "iu");
+const coordinatedQuantifierBefore = new RegExp(
+  String.raw`(?:^|[^\p{L}\p{M}])(?:${coordinatedQuantifierDeterminer})\s+(?:[\p{L}\p{M}-]+\s+){0,2}?[\p{L}\p{M}-]+\s+(?:und|oder|sowie)\s+${degreeAdverbs}$`, "iu");
+const datives = new Set(["den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
+  "keinen", "diesen", "jenen", "allen"]);
+const uppercaseWordBeforeConjunction = /(?:^|\s)\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+(?:\p{Ll}+\s+)*$/u;
+
+function weakQuantifier(prefix: string, textBefore: string): boolean {
+  const [first, ...rest] = prefix.trim().toLocaleLowerCase("de-DE").split(/\s+/u);
+  if (!quantifierTriggers.has(first!)) return false;
+  // A dative determiner of its own follows (`die beiden den topgesetzten …`).
+  if (rest.some((word) => datives.has(word))) return false;
+  if (weakQuantifierBefore.test(textBefore)) return true;
+  return uppercaseWordBeforeConjunction.test(textBefore) &&
+    coordinatedQuantifierBefore.test(textBefore);
+}
 const determinerLikeWords = new Set([
   "den", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
   "keinen", "diesen", "jenen", "allen", "vielen", "einigen", "mehreren",
@@ -154,7 +178,8 @@ function transformMarkedDativePlural(input: string): TransformResult {
       offset: number,
       source: string
     ) => {
-      if (!isDativeNounPhrase(prefix) || !isGoverned(prefix, offset, original.length, source)) return original;
+      if (!isDativeNounPhrase(prefix) || weakQuantifier(prefix, source.slice(0, offset)) ||
+          !isGoverned(prefix, offset, original.length, source)) return original;
       const mappedFirst = mapDativePlural(first);
       if (mappedFirst === undefined) return original;
       replacements += 1;
@@ -172,7 +197,8 @@ function transformMarkedDativePlural(input: string): TransformResult {
   const binnenI = binnenIPluralPattern.test(text) ? text.replace(
     binnenIDativePattern,
     (original: string, prefix: string, base: string, offset: number, source: string) => {
-      if (!isDativeNounPhrase(prefix) || !isGoverned(prefix, offset, original.length, source)) return original;
+      if (!isDativeNounPhrase(prefix) || weakQuantifier(prefix, source.slice(0, offset)) ||
+          !isGoverned(prefix, offset, original.length, source)) return original;
       const mapped = mapDativePlural(base);
       if (mapped === undefined) return original;
       replacements += 1;
