@@ -74,7 +74,14 @@ Autorität: `main`
   - #543 restliche Unicode-Literale aus Funktionen (N15). Pale Moon, je 2 000 Aufrufe: neutral 214 → 60 ms, markierter Plural 592 → 390 ms.
   - #544 `zwischen` als Dativauslöser (N20), weitere Subjekte vor `folgen`, Fokuspartikel am Satzanfang (N27), Besitzer drei Sätze zurück als Schleife (das verschachtelte Muster brachte V8 an die Speichergrenze).
   - Sollfälle des Berichts: 1 301 → 1 368 von 1 454.
-  - Offen: N17 (Zielkasus Dativ im neuen Teilsatz), N19 (`mit teilweise bis zu`), N18 (zu-Infinitiv mit längerem Abstand, `in Ruhe`; hängt von der Transitivität des Infinitivs ab), N22 (`… die Ärzt*in unterstützen könne`), N26 (`den Wagen, Lehrer:innen … kommen`; Einschub nach gelistetem Nomen), Listen mit Attributen (N07), „Sie sagt jeder Lehrer*in …“ (Dativ `jedem`), „Heute gilt: jede Lehrer*in …“, männliche Namen als Besitzer („Peter wartet.“), Paarformen `eine/r`, R04/R05-Reste.
+  - Restfälle danach:
+    - #547 Satzbau: Doppelpunkt als Satzanfang, „Sie sagt jeder Lehrer*in“ → „jedem“, vorangestellter Dativ („und der Ärzt*in überreiche ich“, „dem Lehrer und der Ärzt*in“), Nebensatzsubjekte mit Adverb/Name/Nominalgruppe.
+    - #548 Dativlisten: Nachbar mit eindeutigem Dativ (unterscheidet sich vom Nominativplural), neuer Satz nach der Liste, Verb in der Wortgruppe („Auf den Bühnen treffen …“).
+    - #549 „Wir suchen eine/r …“ → „einen“, männliche Vornamen/Städte keine Besitzer, Mengenangaben zwischen Auslöser und Nomen, zu-Infinitiv mit Abstand, Adjektiv nach „und“.
+    - #550 rechter Nachbar, lange Genitivattribute, Herkunftsadjektiv in Listen.
+    - #551 Paarschreibungen `Heilpädagogen/in`, `Assistentin/en` nach markiertem Adjektiv.
+  - Sollfälle des Berichts: 1 368 → 1 423 von 1 454 (8 der 31 übrigen sind Pale-Moon-Messungen ohne Sollausgabe).
+  - Bewusst offen: N17 „dem Sohn eines Lehrers und einer Ärzt*in, also zwei Personen“ (nur über den Nachsatz entscheidbar) und Korpus 20988 (mehrdeutig); Quellfehler (`einer_eines …`, „Freund*innen oder Arbeitgebern“); Erhalt weicher Trennstriche im umgewandelten Wort; Ellipse „geprüfte/r Gesundheits- und Krankenpfleger/in“; „mit Eltern und, bei Bedarf, Lehrer:innen“ („Eltern“ ist kein eindeutiger Dativ); einzelne lange Listen mit weit entferntem Auslöser.
 - **Nächste Schritte:**
   - Offene Punkte der Gegenprüfungen nach Bedarf.
   - Changelog-Einträge nur als Fragment.
@@ -82,7 +89,7 @@ Autorität: `main`
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525), #529 (#528), #538 (#531–#537) und #545 (#540–#544). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525), #529 (#528), #538 (#531–#537), #545 (#540–#544) und #552 (#547–#551). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -119,7 +126,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #544 (Gegenprüfung 26.10., #540–#544), davor #537 (#531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #545. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #551 (Restfälle #547–#551), davor #544 (Gegenprüfung 26.10., #540–#544), davor #537 (#531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #552. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
