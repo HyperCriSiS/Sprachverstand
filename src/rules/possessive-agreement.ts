@@ -51,7 +51,7 @@ const maleNamesAndPlaces = [
   "Lukas", "Felix", "Max", "Jonas", "Leon", "Ben", "Tim", "Tom", "Simon", "David", "Johannes", "Philipp",
   "Moritz", "Niklas", "Julian", "Robert", "Ralf", "Rainer", "Holger", "Sven", "Dirk", "Oliver", "Torsten",
   "Thorsten", "Kai", "Mario", "Marco", "Erik", "Christoph", "Georg", "Heinz", "Horst", "Manfred", "Josef",
-  "Kevin", "Marvin", "Dennis", "Patrick", "Fabian", "Jonathan", "Elias", "Noah", "Luca", "Finn",
+  "Kevin", "Marvin", "Dennis", "Patrick", "Fabian", "Jonathan", "Elias", "Noah", "Finn",
   "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
   "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
   "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
@@ -75,7 +75,7 @@ const otherOwnerName = new RegExp(
 // `Berliner Schulen sind bekannt.`).
 // Plurals also bare or with an adjective (`Schulen sind geschlossen.`,
 // `Unsere neuen Schulen sind bekannt.`).
-const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
+const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|\p{Ll}+en|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
 const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const lowercaseWord = /^\p{Ll}/u;

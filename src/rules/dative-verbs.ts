@@ -129,8 +129,8 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
 const twoWayPreposition = /^(?:zwischen|neben)$/iu;
 // Only inflected verb forms: `stellenweise` is no verb.
 const placingVerb = String.raw`(?:(?:stell|setz|leg|rück|dräng|schieb|platzier|reih)(?:e|st|t|en|et|te|test|ten|tet)?|tret(?:e|en|et)?|tritt|trittst|trat|traten|schob|schoben)(?![\p{L}\p{M}])`;
-// `Wir legen los zwischen …` places nothing.
-const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?!\s+los(?![\p{L}\p{M}]))(?:\s+[^\s.!?;:,]+){0,3}\s*$`, "iu");
+// `Wir legen los zwischen …`, `Wir treten auf neben …` place nothing.
+const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?!\s+(?:los|auf|ab|an)(?![\p{L}\p{M}]))(?:\s+[^\s.!?;:,]+){0,3}\s*$`, "iu");
 // The verb after the phrase belongs to it, not to a coordinated predicate
 // (`Wir stehen zwischen Lehrer:innen und stellen Fragen`).
 const placingVerbAfter = new RegExp(String.raw`^(?:\s+(?!(?:und|oder|sowie|aber)\s)[^\s.!?;:,]+){0,4}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "iu");

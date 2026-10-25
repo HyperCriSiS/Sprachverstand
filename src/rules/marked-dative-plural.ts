@@ -17,11 +17,14 @@ const binnenIPluralPattern = /\p{Ll}Innen/u;
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
 // An embedded participle attribute after the trigger (`den von den neuen
 // Schulen entsandten`, `den von der Schule entsandten`).
-const embeddedAttributeGap = String.raw`(?:(?:von|aus|mit|bei|zu|nach)\s+(?:den|dem|der)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nr]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+\p{Ll}[\p{L}\p{M}]*(?:ten|enen|nden)\s+)?`;
+const embeddedAttributeGap = String.raw`(?:(?:von|aus|mit|bei|zu|nach)\s+(?:den|dem|der|unseren|ihren|seinen|meinen|deinen|euren|diesen|unserer|ihrer|seiner|dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nr]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+\p{Ll}[\p{L}\p{M}]*(?:ten|enen|nden)\s+)?`;
+// Counts and quantities between trigger and noun (`mit rund zehn`, `mit bis zu
+// maximal 30`, `mit vielen Tausend`).
+const quantityGap = String.raw`(?:(?:teilweise|insgesamt|rund|etwa|circa|ca\.|knapp|fast|mindestens|maximal|höchstens|über|gut|nahezu|annähernd|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}`;
 // Adverbs before a count (`bis zu maximal drei`, `mit rund zehn`).
 const quantityAdverbs = "maximal|höchstens|mindestens|rund|etwa|circa|ca\\.|knapp|fast|gut|insgesamt|über";
 const dativePhrasePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:(?:${quantityAdverbs})\s+)?(?:\d|${numberWordSource})(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${embeddedAttributeGap}(?:(?:teilweise|insgesamt|rund|etwa|circa|knapp|fast|mindestens|maximal|höchstens|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}(?:(?!(?:neben|nehmen|zwischen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:(?:${quantityAdverbs})\s+)?(?:\d|${numberWordSource})(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${embeddedAttributeGap}${quantityGap}(?:(?!(?:neben|nehmen|zwischen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
 
 // Words between trigger and noun must form one noun phrase: lowercase
 // determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
@@ -86,7 +89,8 @@ const nameAdjectives = new Set(["neuen", "grünen", "freien", "vereinten", "deut
 // dative; after `ohne die von den …` it is not.
 const outerDativeBefore = /(?:^|\s)(?:den|allen|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen)\s+$/iu;
 const participlePattern = /^\p{Ll}[\p{L}\p{M}]*(?:ten|enen|nden)$/u;
-const embeddedDeterminers = new Set(["den", "dem", "der"]);
+const embeddedDeterminers = new Set(["den", "dem", "der", "unseren", "ihren", "seinen", "meinen", "deinen", "euren",
+  "diesen", "unserer", "ihrer", "seiner", "dieser"]);
 const lowercaseWordPattern = /^\p{Ll}/u;
 
 // Words of an embedded participle attribute: preposition, determiner,
@@ -202,7 +206,7 @@ const caseInsensitiveTriggers = ["mit", "bei", "von", "zu", "aus", "nach", "seit
   .join("|");
 const binnenIDativePattern = new RegExp(
   // A Binnen-I noun or `gegen` is no attribute (`von SchülerInnen gegen LehrerInnen`).
-  String.raw`(?<![\p{L}\p{M}])(?<![Bb]is\s+)((?:${caseInsensitiveTriggers})\s+(?:(?:${quantityAdverbs}|bis\s+zu)\s+)?(?:(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)(?:\d[\d.]*|${numberWordSource})\s+)?(?:(?![\p{L}\p{M}-]*Innen\s|gegen\s|neben\s|nehmen\s)[\p{L}\p{M}-]+en\s+){0,3})([\p{L}\p{M}’'-]*\p{Ll})Innen(?![\p{L}\p{M}-])`,
+  String.raw`(?<![\p{L}\p{M}])(?<![Bb]is\s+)((?:${caseInsensitiveTriggers})\s+${embeddedAttributeGap}${quantityGap}(?:(?![\p{L}\p{M}-]*Innen\s|gegen\s|neben\s|nehmen\s)[\p{L}\p{M}-]+en\s+){0,3})([\p{L}\p{M}’'-]*\p{Ll})Innen(?![\p{L}\p{M}-])`,
   "gu"
 );
 
