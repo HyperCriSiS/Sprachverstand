@@ -45,6 +45,14 @@ describe("Gegenprüfung 28.10.: Regressionen", () => {
     ["Wir danken den von den neuen Schulen entsandten Lehrer:innen.", "Wir danken den von den neuen Schulen entsandten Lehrern."],
     ["Wir danken den von der Schule entsandten Lehrer:innen.", "Wir danken den von der Schule entsandten Lehrern."],
     // Verben auf -ten sind keine Adjektive (N40)
-    ["Wir reden mit den Kindern und unterrichten Lehrer:innen.", "Wir reden mit den Kindern und unterrichten Lehrer."]
+    ["Wir reden mit den Kindern und unterrichten Lehrer:innen.", "Wir reden mit den Kindern und unterrichten Lehrer."],
+    // Neuer Satz nach der Liste, Hilfsverb davor, erweiterte Attribute, Nominativ-Nachbar (N35-Varianten)
+    ["Wir dankten Lehrern, Lehrer:innen und Schüler:innen kommen heute.", "Wir dankten Lehrern, Lehrer und Schüler kommen heute."],
+    ["Peter und Anna danken Lehrern, Lehrer:innen und Schüler:innen warten.", "Peter und Anna danken Lehrern, Lehrer und Schüler warten."],
+    ["Wir haben Lehrern, Lehrer:innen und Schüler:innen geholfen.", "Wir haben Lehrern, Lehrern und Schülern geholfen."],
+    ["Eltern, Künstler:innen und allen Lehrern seit Jahren bekannte Autoren kommen.",
+      "Eltern, Künstler und allen Lehrern seit Jahren bekannte Autoren kommen."],
+    ["Die Beamten, Lehrer:innen und Schüler:innen kommen.", "Die Beamten, Lehrer und Schüler kommen."],
+    ["Wir schieben den Wagen zwischen Lehrer:innen.", "Wir schieben den Wagen zwischen Lehrer."]
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 });

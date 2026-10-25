@@ -39,6 +39,7 @@ export interface ListGovernor {
 const tokenPattern = /(?:[^\s,;:!?()[\]„“”"»«–—]|:(?=\p{L})|\((?=-?innen\))|(?<=\(-?innen)\))+|[,;:!?()[\]„“”"»«–—]/gu;
 const abbreviations = new Set(["ca.", "bzw.", "z.b.", "u.a.", "dr.", "prof.", "inkl.", "ggf.", "evtl.", "sog.", "st."]);
 const nounToken = /^\p{Lu}/u;
+const letterPattern = /\p{L}/u;
 const compoundStub = /^\p{L}[\p{L}\p{M}-]*-$/u;
 const numberToken = new RegExp(String.raw`^(?:\d[\d.,]*|${numberWordSource})$`, "u");
 const yearToken = /^(?:1[89]|20)\d\d$/u;
@@ -70,6 +71,8 @@ const singularArticles = new Set(["der", "die", "das", "dem", "einer", "einem", 
 const contractedOpeners = new Set(["im", "am", "vom", "beim", "zum", "zur"]);
 const relativeWords = new Set(["deren", "denen", "dessen"]);
 const conjunctions = new Set(["und", "oder", "sowie"]);
+// After a subject pronoun a word on -en is the verb (`Wir dankten Lehrern, …`).
+const subjectPronouns = new Set(["wir", "ich", "sie", "er", "es", "man", "ihr", "du"]);
 // A separator right after the noun; without one no item follows.
 const listContinuesPattern = /^\s*(?:[,&]|(?:und|oder|sowie|bzw\.|wie\s+auch|als\s+auch)\s)/u;
 const markedToken = /[:*_·•\/()]|\p{Ll}Innen$/u;
@@ -142,7 +145,7 @@ function readPrefix(tokens: Token[], i: number): Prefix {
       isAdjective(tokens[i + 1]!.text, true) && isAdjective(tokens[i - 1]?.text ?? "", true)) {
       // coordinated with the adjective before
     } else if (!(number && quantityWords.has(token.lower)) && !(number && token.lower === "zu" && tokens[i - 1]?.lower === "bis") &&
-      !isAdjective(token.text, words === 0 || coordinated)) break;
+      (!isAdjective(token.text, words === 0 || coordinated) || subjectPronouns.has(tokens[i - 1]?.lower ?? ""))) break;
   }
   return {i, determiner};
 }
@@ -284,6 +287,18 @@ export function listGovernorBefore(text: string, offset = 0): ListGovernor | und
 // und allen Schülern bekannte Autoren`). `modified`: only items with a
 // determiner or adjective, which a bare source error lacks (`Freund*innen
 // oder Arbeitgebern erfahren …`).
+// An attribute after the noun up to an adjective before another noun
+// (`allen Lehrern bekannte Autoren`, `… seit Jahren bekannte …`, `… aus dem
+// Fernsehen bekannte …`).
+function attributeAfter(tokens: Token[], i: number): boolean {
+  for (let k = i; k < tokens.length && k < i + 5; k++) {
+    const token = tokens[k]!;
+    if (separators.has(token.lower) || (token.text.length === 1 && !letterPattern.test(token.text))) return false;
+    if (attributeWord.test(token.text) && !attributeArticles.has(token.lower) && nounToken.test(tokens[k + 1]?.text ?? "")) return true;
+  }
+  return false;
+}
+
 export function listHeadsAfter(text: string, modified = false): string[] {
   if (!listContinuesPattern.test(text)) return [];
   const tokens = tokenize(text, 0);
@@ -301,8 +316,7 @@ export function listHeadsAfter(text: string, modified = false): string[] {
     }
     const head = tokens[i];
     if (!head || !nounToken.test(head.text)) break;
-    const next = tokens[i + 1];
-    if (next && attributeWord.test(next.text) && !attributeArticles.has(next.lower) && nounToken.test(tokens[i + 2]?.text ?? "")) break;
+    if (attributeAfter(tokens, i + 1)) break;
     if (!modified || words > 0) heads.push(head.text);
     i++;
   }

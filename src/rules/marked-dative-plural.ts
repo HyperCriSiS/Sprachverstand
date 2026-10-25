@@ -208,7 +208,8 @@ const binnenIDativePattern = new RegExp(
 
 function transformMarkedDativePlural(input: string): TransformResult {
   if (!/inn/iu.test(input)) return {text: input, replacements: 0};
-  if (!/mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|vielen|einigen|wenigen|mehreren|beiden|dank|gratul|helf|hilft|vertrau|begegn|zuhör|folg|erzähl/iu.test(input)) return {text: input, replacements: 0};
+  if (!/mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|vielen|einigen|wenigen|mehreren|beiden|dank|gratul|helf|hilft|vertrau|begegn|zuhör|folg|erzähl/iu.test(input) &&
+      !neighbourCandidate.test(input)) return {text: input, replacements: 0};
   let replacements = 0;
   const text = input.replace(
     dativePhrasePattern,
@@ -302,7 +303,7 @@ function inDativeList(offset: number, length: number, source: string): boolean {
     // oder Arbeitgebern erfahren …` is a source error).
     const right = following.length >= 2 ? following : listHeadsAfter(after.slice(0, 300), true);
     if (![...list.heads, ...right].some((word) => dativeCandidate.test(word) && isUnambiguousDativePlural(word)) ||
-        genitiveDeterminerBefore.test(before.slice(-12))) return false;
+        genitiveDeterminerBefore.test(before.slice(-12)) || nonDativeDeterminerBefore.test(before.slice(-12))) return false;
     return !listStartsNewClause(before, rest);
   }
   const verb = dativeVerbPattern.test(governor);
@@ -318,11 +319,15 @@ function inDativeList(offset: number, length: number, source: string): boolean {
   return list.items === 0 || firstItemBelongs(governor, list.first, before);
 }
 
+// `die Beamten, Lehrer*innen …` is a nominative or accusative.
+const nonDativeDeterminerBefore = /(?:^|\s)(?:die|diese|jene|alle|keine|meine|deine|seine|ihre|unsere|eure|welche|manche|viele|einige|beide)\s+$/iu;
 const genitiveDeterminerBefore = /(?:^|\s)(?:der|des|deren|dessen)\s+$/u;
 const verbAfterItem = /^\s+\p{Ll}[\p{L}\p{M}]*en\s/u;
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
 const commaConjunctionBefore = /,\s*(?:und|oder|aber)\s+(?:\S+\s+){0,2}$/u;
+// A list item on -n next to a separator (`Wir haben Lehrern, Lehrer:innen …`).
+const neighbourCandidate = /\p{Ll}n(?:,|\s+(?:und|oder|sowie))\s/u;
 // Only an unmarked word on -n can be an unambiguous dative plural.
 const dativeCandidate = /^[^:*_·•\/()]*\p{Ll}n$/u;
 const verbWithPronounAfter = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
@@ -334,11 +339,14 @@ const remainingItems = /^(?:\s*(?:,|\s(?:und|oder|sowie))\s*[\p{L}\p{M}*:_·•\
 // Only persons count (`Fertigteilhäusern` is no list partner).
 function isUnambiguousDativePlural(word: string): boolean {
   if (!namesPersons(word)) return false;
-  return [1, 2, 3].some((cut) => {
+  const plurals = [1, 2, 3].map((cut) => {
     const stem = word.slice(0, -cut);
-    const plural = mapMappedPlural(stem) ?? mapKnownPlural(stem) ?? mapSupplementalPlural(stem);
-    return plural !== undefined && plural !== word && mapDativePlural(stem) === word;
+    return {stem, plural: mapMappedPlural(stem) ?? mapKnownPlural(stem) ?? mapSupplementalPlural(stem)};
   });
+  // A stem whose plural is the word itself makes it a nominative too
+  // (`Beamten` from `Beamte`, even though `Beamt` would give the dative).
+  if (plurals.some(({plural}) => plural === word)) return false;
+  return plurals.some(({stem, plural}) => plural !== undefined && mapDativePlural(stem) === word);
 }
 
 // Everything up to the last sentence end of the preceding text.
