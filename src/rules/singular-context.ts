@@ -1261,6 +1261,24 @@ const singularSteps: readonly ((text: string) => TransformResult)[] = [
   (text) => transformCoordinatedGenitives(text, mapSingular)
 ];
 
+const clauseColonPattern = /[:;][ \t]+\p{L}/u;
+// Not after a determiner (`keine: passende:n Spender:in` is a broken marker)
+// and not in a spaced pair (`der : die Nutzer*in`).
+const clauseColonSplit = /(?<![\s]|(?<![\p{L}\p{M}])(?:eine|keine|die|der|den|dem|des|jede|jeder|diese|meine|seine|ihre|unsere))([:;][ \t]+)(?=\p{L})/u;
+const lowercaseStart = /^\p{Ll}/u;
+
+function applySingularSteps(input: string): TransformResult {
+  let text = input;
+  let replacements = 0;
+  for (const step of singularSteps) {
+    const result = step(text);
+    text = result.text;
+    replacements += result.replacements;
+    if (result.replacements > 0 && !singularEndingCandidate.test(text)) break;
+  }
+  return {text, replacements};
+}
+
 export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgreementRule({
   id: "singular.explicit-context",
   risk: "safe",
@@ -1268,14 +1286,19 @@ export const singularContextRule: Rule = withLeadingContextRule(withRelativeAgre
   apply(input) {
     if (!/in(?![a-z])/iu.test(input)) return {text: input, replacements: 0};
     if (!singularEndingCandidate.test(input)) return {text: input, replacements: 0};
-    let text = input;
+    if (!clauseColonPattern.test(input)) return applySingularSteps(input);
+    // A colon or semicolon starts a new clause (`Hinweis: wir sehen die
+    // Lehrer*in`, `Heute gilt: mit jeder Lehrer*in …`): each part is read
+    // like a sentence of its own, its first letter capitalized for the
+    // sentence-start patterns and restored afterwards.
     let replacements = 0;
-    for (const step of singularSteps) {
-      const result = step(text);
-      text = result.text;
+    const text = input.split(clauseColonSplit).map((part, index) => {
+      if (index % 2 === 1 || part === "") return part;
+      const lowercase = index > 0 && lowercaseStart.test(part);
+      const result = applySingularSteps(lowercase ? part[0]!.toLocaleUpperCase("de-DE") + part.slice(1) : part);
       replacements += result.replacements;
-      if (result.replacements > 0 && !singularEndingCandidate.test(text)) break;
-    }
+      return lowercase ? result.text[0]!.toLocaleLowerCase("de-DE") + result.text.slice(1) : result.text;
+    }).join("");
     return {text, replacements};
   }
 }));

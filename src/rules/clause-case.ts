@@ -156,7 +156,7 @@ const subordinateSubjectPattern = new RegExp(
   "gu"
 );
 const subordinateObjectPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:der|das|ein|eine|die|unser|unsere|mein|meine|dein|deine|sein|seine|ihr|ihre|euer|eure|kein|keine|dieser|diese|dieses|jeder|jede|jedes)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}|es|er|sie|man|wir|ich|du|Sie|niemand|jemand|\p{Lu}\p{Ll}+(?<!(?:Die|Der|Das|Eine|Ein)))\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann|heute|morgen|gestern|hier|dort|bald|wirklich|wieder|sehr|bitte|vielleicht|endlich|doch|ja|bereits|später|zuerst|selbst|trotzdem)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:der|das|ein|eine|die|unser|unsere|mein|meine|dein|deine|sein|seine|ihr|ihre|euer|eure|kein|keine|dieser|diese|dieses|jeder|jede|jedes)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?|es|er|sie|man|wir|ich|du|Sie|niemand|jemand|\p{Lu}\p{Ll}+(?<!(?:Die|Der|Das|Eine|Ein)))\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann|heute|morgen|gestern|hier|dort|bald|wirklich|wieder|sehr|bitte|vielleicht|endlich|doch|ja|bereits|später|zuerst|selbst|trotzdem)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
 const prepositionWords = "an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen|hinter|neben|als|wie|und|oder|dass|ob|wenn|weil";
@@ -185,15 +185,25 @@ const colonSubjectPattern = new RegExp(
   String.raw`((?:[:;]\s+))(${determiner})(\s+)${attributes}${marked}${end}(?=\s+${finiteVerb}(?![\p{L}\p{M}])(?!\s+(?:ich|du|er|sie|es|wir|ihr|man|Sie)(?![\p{L}\p{M}])))`,
   "gu"
 );
-// (t3) `jeder` after a subject pronoun and its verb is a dative: `Sie sagt
-// jeder Lehrer*in ihre Meinung`.
+// (t3) `jeder` after a subject pronoun and a verb with a dative object is a
+// dative: `Sie sagt jeder Lehrer*in ihre Meinung`. After other verbs the
+// pronoun may be the fronted object (`Sie kennt jeder Lehrer*in`).
+const dativeObjectVerbs = String.raw`sagt|sage|sagen|gibt|gebe|geben|zeigt|zeige|zeigen|schenkt|schenke|schenken|schreibt|schreibe|schreiben|erklärt|erkläre|erklären|empfiehlt|empfehle|empfehlen|bietet|biete|bieten|bringt|bringe|bringen|schickt|schicke|schicken|antwortet|antworte|antworten|hilft|helfe|helfen|dankt|danke|danken|gratuliert|gratuliere|gratulieren|vertraut|vertraue|vertrauen|erzählt|erzähle|erzählen|überreicht|überreiche|überreichen|wünscht|wünsche|wünschen|rät|rate|raten|teilt|teile|teilen|bietet|leiht|leihe|leihen`;
 const pronounVerbJederPattern = new RegExp(
-  String.raw`((?:^|[.!?:]\s+)(?:Sie|Er|Ich|Wir|Man|Es)\s+\p{Ll}[\p{L}\p{M}]*\s+(?:(?:auch|nun|heute|immer|oft|gern|gerne)\s+)?)([Jj]eder)(\s+)((?:\p{Ll}[\p{L}\p{M}]*e\s+){0,2})${marked}${end}`,
+  String.raw`((?:^|[.!?:]\s+)(?:Sie|Er|Ich|Wir|Man|Es)\s+(?:${dativeObjectVerbs})\s+(?:(?:auch|nun|heute|immer|oft|gern|gerne)\s+)?)([Jj]eder)(\s+)((?:\p{Ll}[\p{L}\p{M}]*e\s+){0,2})${marked}${end}`,
   "gu"
 );
-// (t4) after a dative and a conjunction: `dem Lehrer und der Ärzt*in`.
+// A fronted `jeder` before such a verb and its subject pronoun: `Jeder
+// Lehrer*in geben wir ein Buch`.
+const frontedJederDativePattern = new RegExp(
+  String.raw`((?:^|[.!?:]\s+))([Jj]eder)(\s+)((?:\p{Ll}[\p{L}\p{M}]*e\s+){0,2})${marked}${end}(?=\s+(?:${dativeObjectVerbs})\s+(?:wir|ich|sie|er|man|ihr|du)(?![\p{L}\p{M}]))`,
+  "gu"
+);
+// (t4) after a dative and a conjunction: `dem Lehrer und der Ärzt*in`. Not
+// with a finite verb of its own (`Wir danken dem Lehrer und der Ärzt*in
+// hilft uns`): that starts a new clause with its subject.
 const dativeCoordinatedPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:dem|einem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+)(der|einer)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:dem|einem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+)(der|einer)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?!ge)\p{Ll}[\p{L}\p{M}]*t(?![\p{L}\p{M}]))`,
   "gu"
 );
 // (u) `es gibt` takes the accusative: `gibt es eine Projektentwickler*in`.
@@ -259,7 +269,7 @@ const beforeModalSubjunctivePattern = new RegExp(
   "gu"
 );
 const subordinateSubjectBefore =
-  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+)(?:\s+\p{Ll}+){0,2}\s+$/u;
+  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?)(?:\s+\p{Ll}+){0,2}\s+$/u;
 // `werde` with an infinitive, not with a participle (`werde eingeladen`).
 const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:
@@ -466,14 +476,16 @@ export function transformClauseCase(
     const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
     return prefix + applyCase(determinerWord, determinerWord.toLowerCase() === "der" ? "dem" : "einem") + space + inflected + noun;
   });
-  text = text.replace(pronounVerbJederPattern, (match: string, prefix: string, determinerWord: string,
-    space: string, attributeText: string, base: string) => {
-    const noun = mapNoun(base, "dative");
-    if (!noun) return match;
-    replacements += 1;
-    const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
-    return prefix + applyCase(determinerWord, "jedem") + space + inflected + noun;
-  });
+  for (const pattern of [pronounVerbJederPattern, frontedJederDativePattern]) {
+    text = text.replace(pattern, (match: string, prefix: string, determinerWord: string,
+      space: string, attributeText: string, base: string) => {
+      const noun = mapNoun(base, "dative");
+      if (!noun) return match;
+      replacements += 1;
+      const inflected = attributeText.replace(attributeOnEPattern, (word) => `${word}n`);
+      return prefix + applyCase(determinerWord, "jedem") + space + inflected + noun;
+    });
+  }
   text = text.replace(frontedSubjectPattern, (match: string, prefix: string, determinerWord: string, space: string,
     attributeText: string, base: string) => {
     const converted = phrase(determinerWord, space, attributeText, base, "accusative", mapNoun);
