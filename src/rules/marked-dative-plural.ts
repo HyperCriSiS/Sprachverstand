@@ -206,7 +206,7 @@ const caseInsensitiveTriggers = ["mit", "bei", "von", "zu", "aus", "nach", "seit
   .join("|");
 const binnenIDativePattern = new RegExp(
   // A Binnen-I noun or `gegen` is no attribute (`von SchülerInnen gegen LehrerInnen`).
-  String.raw`(?<![\p{L}\p{M}])(?<![Bb]is\s+)((?:${caseInsensitiveTriggers})\s+${embeddedAttributeGap}${quantityGap}(?:(?![\p{L}\p{M}-]*Innen\s|gegen\s|neben\s|nehmen\s)[\p{L}\p{M}-]+en\s+){0,3})([\p{L}\p{M}’'-]*\p{Ll})Innen(?![\p{L}\p{M}-])`,
+  String.raw`(?<![\p{L}\p{M}])(?<![Bb]is\s+)((?:${caseInsensitiveTriggers})\s+${embeddedAttributeGap}${quantityGap}(?:(?![\p{L}\p{M}-]*Innen\s|gegen\s|neben\s|nehmen\s|zwischen\s)[\p{L}\p{M}-]+en\s+){0,3})([\p{L}\p{M}’'-]*\p{Ll})Innen(?![\p{L}\p{M}-])`,
   "gu"
 );
 

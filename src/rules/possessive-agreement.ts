@@ -1,5 +1,7 @@
 import type { TransformResult } from "../core/rule";
 import { sentenceStartBefore } from "./clause-structure";
+import { mapKnownPlural } from "./known-plural-separators";
+import { mapMappedPlural } from "./mapped-plural-separators";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -75,7 +77,20 @@ const otherOwnerName = new RegExp(
 // `Berliner Schulen sind bekannt.`).
 // Plurals also bare or with an adjective (`Schulen sind geschlossen.`,
 // `Unsere neuen Schulen sind bekannt.`).
-const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|\p{Ll}+en|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
+const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
+// A plural verb on -en with persons as subject (`Die männlichen Kollegen
+// warten.`); things own no possessive here (`Die Pflanzen wachsen.`).
+const pluralSubjectPattern =
+  /(?:^|[.!?:]\s+)(?:Die|Diese|Unsere|Ihre|Alle|Viele)\s+(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)\s+\p{Ll}+en(?![\p{L}\p{M}])/gu;
+
+function personPluralSubject(text: string): boolean {
+  for (const match of text.matchAll(pluralSubjectPattern)) {
+    const noun = match[1]!;
+    if ([noun, noun.slice(0, -1), noun.slice(0, -2)].some((stem) =>
+      (mapKnownPlural(stem) ?? mapMappedPlural(stem)) !== undefined)) return true;
+  }
+  return false;
+}
 const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const lowercaseWord = /^\p{Ll}/u;
@@ -103,7 +118,7 @@ function clauseAllowsGenericOwner(before: string, ownPossessive: boolean): boole
   if (ownPossessive) return true;
   const sentences = recentSentences(before);
   return !otherOwnerPronoun.test(sentences) && !otherOwnerNoun.test(sentences) &&
-    !otherOwnerName.test(sentences) && !otherOwnerSubject.test(sentences);
+    !otherOwnerName.test(sentences) && !otherOwnerSubject.test(sentences) && !personPluralSubject(sentences);
 }
 
 function lastConvertedOwner(before: string): boolean | undefined {
