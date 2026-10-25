@@ -1,4 +1,5 @@
 import type { TransformResult } from "../core/rule";
+import { sentenceStartBefore } from "./clause-structure";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -64,7 +65,6 @@ const otherOwnerName = new RegExp(
 const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|\p{Lu}\p{Ll}+(?:s|er)\s+\p{Lu}\p{Ll}+\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
 const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
-const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 const lowercaseWord = /^\p{Ll}/u;
 const markedOwner = /[:*_·•\/()’‘]|\p{Ll}In$/u;
 

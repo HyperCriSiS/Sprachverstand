@@ -1,3 +1,5 @@
+import { prepositionSource, sentenceStartBefore } from "./clause-structure";
+
 // Verbs with a dative object (`Wir danken Lehrer:innen` → `Lehrern`). The
 // project name `Jugend hilft` is no verb phrase. `folgen` governs the plural
 // only after a subject of its own: `Es folgen Berichte` has the plural as its
@@ -30,7 +32,6 @@ const pronounBeforeVerb = /(?:^|\s)(?:(?:wir|ihr|sie)(?:\s+(?:alle|beide|gemeins
 const coordinatedSubjectBeforeVerb = /(?:^|[.!?:;]\s+)\p{Lu}\p{Ll}+\s+und\s+\p{Lu}\p{Ll}+\s*$/u;
 const andBeforeVerb = /(?:^|\s)und\s*$/iu;
 const clauseStartPattern = /[^.!?;:()]*$/u;
-const prepositionSource = String.raw`in|im|an|am|auf|aus|bei|beim|mit|nach|seit|von|vom|zu|zum|zur|über|unter|vor|hinter|neben|zwischen|durch|für|gegen|ohne|um|während|wegen|trotz|laut|dank|innerhalb|außerhalb`;
 // A clause opened by an adverbial or a question word has the subject after
 // the verb (`In der Schulbibliothek helfen Audible-Mitarbeiter*innen, …`,
 // `Seit 2014 helfen Samariter:innen …`, `Vielleicht helfen Lehrer:innen …`).
@@ -114,28 +115,6 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
   return clause !== "" && !invertedClauseStart.test(clause);
 }
 
-// A main clause with its verb already before the list and another finite
-// verb right after it: the list starts a new clause as its subject (`Wir
-// sehen den Wagen, Lehrer:innen und Schüler:innen kommen später`). With an
-// auxiliary or modal before, the final verb is its infinitive (`Wir wollen mit
-// Kindern, Lehrer:innen und Schüler:innen arbeiten`).
-// Words on -t/-en/-e that are no finite verb.
-const notFiniteVerb = String.raw`(?!(?:nicht|jetzt|zuletzt|oft|bereits|bereit|erst|meist|zumindest|selbst|gut|weit|seit|sonst|längst|zuerst|insgesamt|gemeinsam|stets|direkt|leicht|recht|sehr|zusammen|herzlichst?|dort|statt|samt|nebst|unten|oben|hinten|vorne|mitten|neben|zwischen|binnen|innen|außen|gegen|ohne|nach|unter|über|gestern|morgen|seiten|mit|bis|den|dem|der|die|das|des|ein|eine|einen|einem|einer|eines|keine|keinen|meine|seine|ihre|unsere|diese|diesen|jene|jede|jeden|alle|allen|viele|vielen|einige|einigen|wenige|wenigen|beide|beiden|weitere|weiteren|andere|anderen|eigene|eigenen|ganze|ganzen|heute|hier|gerne|gern|ebenfalls|also|ihnen|uns|euch|ihm|ihr)(?![\p{L}\p{M}]))`;
-const mainClauseBeforeList = new RegExp(String.raw`(?:^|[.!?]\s+)(?:(?:Die|Der|Das|Den|Ein|Eine|Diese|Dieser|Unsere|Ihre|Seine|Meine|Alle|Viele|Einige|Beide)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*|(?!(?:In|Im|Mit|Bei|Von|Vom|Aus|Nach|Seit|Zu|Zum|Zur|Auf|An|Am|Für|Über|Unter|Neben|Zwischen|Durch|Gegen|Ohne|Um|Vor|Hinter|Dank|Laut|Wegen|Trotz|Gemeinsam|Zusammen|Die|Der|Das|Den|Dem|Des|Ein|Eine|Einen|Einem|Einer|Eines|Diese|Dieser|Unsere|Ihre|Seine|Meine|Alle|Viele|Einige|Beide|Jede|Jeder|Keine)\s)\p{Lu}[\p{L}\p{M}-]*)\s+(?:(?:wir|ich|sie|er|es|man|ihr|du)\s+)?${notFiniteVerb}(?!\p{Ll}[\p{L}\p{M}]*(?:iv|isch|lich|ig|al|ell|ar|är|bar|sam|haft|los|ös)en?\s)\p{Ll}[\p{L}\p{M}]*(?:en|t|e)\s+[^.!?;:]*$`, "u");
-// A relative or subordinate clause inside puts its verb last.
-const subordinateInClause = /(?:,\s*(?:die|der|das|denen|deren|dessen|welche|welcher|wo)|(?:^|[\s,])(?:dass|weil|wenn|ob|als|damit|obwohl|um))\s/iu;
-const auxiliaryInClause = /(?:^|\s)(?:will|willst|wollt|wollen|kann|kannst|könnt|können|muss|musst|müsst|müssen|soll|sollst|sollt|sollen|darf|darfst|dürft|dürfen|möchte|möchtest|möchtet|möchten|werde|wirst|wird|werdet|werden|wurde|wurden|würde|würden|habe|hast|hat|habt|haben|hatte|hatten|bin|bist|ist|seid|sind|war|warst|wart|waren|sollten|könnten|müssten)(?=\s)/u;
-// A finite verb, not an adverb or function word, not an adjective before its
-// noun (`neuen Raum`), not an infinitive before a modal (`diskutieren
-// wollten`) or with `zu`.
-const finiteVerbAfterList = new RegExp(String.raw`^\s+${notFiniteVerb}(?!\p{Ll}+zu\p{Ll}+en(?![\p{L}\p{M}]))(?:\p{Ll}[\p{L}\p{M}]{2,}(?:en|t)|sind|ist)(?![\p{L}\p{M}])(?!\s+(?:will|wollen|wollten|kann|können|konnten|muss|müssen|mussten|soll|sollen|sollten|darf|dürfen|durften|möchte|möchten|werden|wurden|wurde|wird|haben|hatten|hat|sind|waren|worden|lassen|zu)(?![\p{L}\p{M}]))(?!\s+\p{Lu})`, "u");
-
-export function listStartsNewClause(before: string, after: string): boolean {
-  const clause = mainClauseBeforeList.exec(before)?.[0];
-  return clause !== undefined && !auxiliaryInClause.test(clause) && !subordinateInClause.test(clause) &&
-    finiteVerbAfterList.test(after);
-}
-
 // `zwischen` and `neben` take the accusative with a verb of placing (`Wir
 // stellen uns zwischen Lehrer:innen`, `… neben Schüler:innen zu setzen`).
 const twoWayPreposition = /^(?:zwischen|neben)$/iu;
@@ -146,7 +125,6 @@ const clauseBeforePattern = /[^.!?;:,]*$/u;
 // After a noun the preposition is its attribute (`Kooperation zwischen
 // Landwirt:innen …`), always a dative.
 const nounBeforePreposition = /(?:^|\s)\p{Lu}[\p{L}\p{M}-]*\s*$/u;
-const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 
 export function directionalTwoWayPreposition(preposition: string, before: string, after: string): boolean {
   if (!twoWayPreposition.test(preposition)) return false;

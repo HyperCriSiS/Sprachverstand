@@ -1,6 +1,7 @@
 import type { TransformResult } from "../core/rule";
 import type { GrammaticalCase } from "./person-lexicon";
 import { finiteVerbsBeforeDer } from "./finite-verbs-before-der";
+import { capitalizedPrepositionSource, nonVerbWordSource, prepositionSource, subordinatorSource } from "./clause-structure";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -110,8 +111,7 @@ const singularVerbs = [
   "begann", "berät", "beriet", "erklärt", "erklärte", "erzählt", "erzählte", "berichtet", "berichtete",
   "präsentiert", "präsentierte", "führt", "führte", "stellt", "stellte", "bietet", "bot"
 ].join("|");
-const frontPrepositions = "In|Im|Am|An|Auf|Bei|Beim|Nach|Seit|Mit|Vor|Für|Während|Zum|Zur|Durch|Über|Unter|Neben|Aus|Vom|Von|Ab|" +
-  "Trotz|Wegen|Laut|Dank|Statt|Ohne|Gegen|Bis|Innerhalb|Außerhalb|Gemäß|Hinter|Zwischen|Um|Entlang|Anlässlich|Aufgrund|Infolge|Mithilfe|Seitens";
+const frontPrepositions = capitalizedPrepositionSource;
 const frontAdverbs = "Dann|Danach|Anschließend|Zunächst|Zuerst|Heute|Hier|Dort|Nun|Jetzt|Zudem|Außerdem|Dabei|Hierbei|Daher|Deshalb|Oft|Meist|Meistens|Häufig|Manchmal|Gemeinsam|Später|Bald|Morgen|Gestern|Schließlich|Abschließend|Davor|Damals|Inzwischen|Mittlerweile|Seitdem|" +
   "Auch|Nahtlos|Gleichzeitig|Zugleich|Zusätzlich|Ebenso|Allerdings|Jedoch|Trotzdem|Dennoch|Natürlich|Leider|Gerne|Immer|Nie|Selten|Erst|Bereits|Schon|Noch|Nur|Insbesondere|Oftmals|Anfangs|Zuletzt|Erstmals|Künftig|Bisher|Bislang|Somit|Also|Ebenfalls|Weiterhin|Daraufhin|Hinterher|Vorher|Nachher|Plötzlich|Endlich|Wieder|Stets|Darüber hinaus|Vor allem|" +
   String.raw`\p{Lu}\p{Ll}+(?:weise|lich|mals|dings|falls|wärts|end)`;
@@ -121,10 +121,9 @@ const frontAdverbs = "Dann|Danach|Anschließend|Zunächst|Zuerst|Heute|Hier|Dort
 const frontPlural = String.raw`(?:(?:Diese|Solche|Alle|Viele|Beide|Einige|Mehrere|Manche|Zahlreiche|Weitere|Andere|Die)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*(?:en|ern|nen)|(?:Solche|Alle|Viele|Beide|Einige|Mehrere|Manche|Zahlreiche)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+){0,2}\p{Lu}[\p{L}\p{M}-]*|(?!(?:Diese|Jene|Jede|Eine|Keine|Meine|Deine|Seine|Ihre|Unsere|Eure|Welche|Manche|Solche|Die|Alle)\s)\p{Lu}\p{Ll}+e\s+\p{Lu}[\p{L}\p{M}-]*e)`;
 // Words ending in -t that are no finite verbs (`Dann direkt die Ärzt*in
 // kontaktieren`).
-const nonVerbs = "nicht|jetzt|oft|erst|meist|zuletzt|selbst|sonst|fast|stets|bereits|längst|zumindest|zuerst|zunächst|weit|gut|leicht|recht|schlecht|direkt|exakt|komplett|korrekt|perfekt|bekannt|bereit|echt|laut|statt|anstatt|samt|nebst|seit|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut|bewusst|gewusst|zumeist|größt|meistgelesen";
 // A singular finite verb: listed, or a third-person form on -t/-te, also
 // after ss/ß (`veranlasst`, `lässt`, `heißt`).
-const finiteVerb = String.raw`(?:${singularVerbs}|(?!(?:${nonVerbs})(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]{2,}(?:[^\s\P{L}s]t|(?:ss|ß)t|te))`;
+const finiteVerb = String.raw`(?:${singularVerbs}|(?!(?:${nonVerbWordSource})(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]{2,}(?:[^\s\P{L}s]t|(?:ss|ß)t|te))`;
 // A relative pronoun after a comma (`Personen, die zwar nicht …`) is none.
 const determinerLeftBefore = new RegExp(String.raw`(?:^|(?<![,;])\s)(?:${capitalizable([
   "die", "der", "den", "dem", "des", "eine", "einer", "einen", "einem", "eines", "ein", "ihre", "seine",
@@ -150,16 +149,15 @@ const clauseFrontPattern = new RegExp(
 // subject (`wenn eine Verkäufer:in … verweigert`, `weil eine Theaterleitung
 // oder eine Regisseur:in …`); after another subject it is the object (`dass
 // der Vertrag die Arbeitnehmer:in …`, `wenn es keine Vertreter*in …`).
-const conjunctions = "wenn|dass|ob|weil|falls|sobald|bevor|nachdem|während|obwohl|sofern|solange|damit|indem|sodass|wie|seit|seitdem";
 const subordinateSubjectPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:eine|ein|die|der|das)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*[\p{Ll}]\s+(?:oder|und|bzw\.)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:${subordinatorSource})\s+(?:(?:eine|ein|die|der|das)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*[\p{Ll}]\s+(?:oder|und|bzw\.)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
 const subordinateObjectPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:${conjunctions})\s+(?:(?:der|das|ein|eine|die|unser|unsere|mein|meine|dein|deine|sein|seine|ihr|ihre|euer|eure|kein|keine|dieser|diese|dieses|jeder|jede|jedes)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?|es|er|sie|man|wir|ich|du|Sie|niemand|jemand|\p{Lu}\p{Ll}+(?<!(?:Die|Der|Das|Eine|Ein)))\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann|heute|morgen|gestern|hier|dort|bald|wirklich|wieder|sehr|bitte|vielleicht|endlich|doch|ja|bereits|später|zuerst|selbst|trotzdem)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
+  String.raw`((?<![\p{L}\p{M}])(?:${subordinatorSource})\s+(?:(?:der|das|ein|eine|die|unser|unsere|mein|meine|dein|deine|sein|seine|ihr|ihre|euer|eure|kein|keine|dieser|diese|dieses|jeder|jede|jedes)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\p{Ll}(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?|es|er|sie|man|wir|ich|du|Sie|niemand|jemand|\p{Lu}\p{Ll}+(?<!(?:Die|Der|Das|Eine|Ein)))\s+(?:(?:auch|nun|jetzt|immer|noch|schon|nicht|nur|gern|gerne|oft|dann|heute|morgen|gestern|hier|dort|bald|wirklich|wieder|sehr|bitte|vielleicht|endlich|doch|ja|bereits|später|zuerst|selbst|trotzdem)\s+)?)(${determiner})(\s+)${attributes}${marked}${end}`,
   "gu"
 );
-const prepositionWords = "an|auf|aus|bei|durch|für|gegen|in|mit|nach|ohne|über|um|unter|von|vor|zu|zwischen|hinter|neben|als|wie|und|oder|dass|ob|wenn|weil";
+const prepositionWords = `${prepositionSource}|als|wie|und|oder|dass|ob|wenn|weil`;
 // (l) after verb and subject (`verpflichtet das Gesetz die Investor*in`,
 // `wählt eine Jury die Preisträger:in`, `sehe ich die Redner:in`): object.
 const postverbalSubjectPattern = new RegExp(
@@ -269,7 +267,7 @@ const beforeModalSubjunctivePattern = new RegExp(
   "gu"
 );
 const subordinateSubjectBefore =
-  /(?:^|[\s,])(?:dass|weil|ob|wenn|damit|obwohl|falls)\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?)(?:\s+\p{Ll}+){0,2}\s+$/u;
+  new RegExp(String.raw`(?:^|[\s,])(?:${subordinatorSource})\s+(?:er|sie|es|ich|du|wir|ihr|man|Sie|niemand|jemand|\p{Lu}\p{Ll}+|(?:die|der|das|meine|deine|seine|ihre|unsere|eure|eine|ein|mein|dein|sein|unser)\s+(?:\p{Ll}+\s+)?\p{Lu}\p{Ll}+(?:\s+(?:aus|von|in|bei|mit)\s+\p{Lu}\p{Ll}+)?)(?:\s+\p{Ll}+){0,2}\s+$`, "u");
 // `werde` with an infinitive, not with a participle (`werde eingeladen`).
 const werdeInfinitiveAhead = /^\s+werde\s+(?!\p{Ll}*ge\p{Ll}+(?:en|t)(?![\p{L}\p{M}]))\p{Ll}+en(?![\p{L}\p{M}])/u;
 // (x) a sentence-start subject with a relative clause before its verb:
