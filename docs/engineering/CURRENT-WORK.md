@@ -82,6 +82,9 @@ Autorität: `main`
     - #551 Paarschreibungen `Heilpädagogen/in`, `Assistentin/en` nach markiertem Adjektiv.
   - Sollfälle des Berichts: 1 368 → 1 423 von 1 454 (8 der 31 übrigen sind Pale-Moon-Messungen ohne Sollausgabe).
   - Bewusst offen: N17 „dem Sohn eines Lehrers und einer Ärzt*in, also zwei Personen“ (nur über den Nachsatz entscheidbar) und Korpus 20988 (mehrdeutig); Quellfehler (`einer_eines …`, „Freund*innen oder Arbeitgebern“); Erhalt weicher Trennstriche im umgewandelten Wort; Ellipse „geprüfte/r Gesundheits- und Krankenpfleger/in“; „mit Eltern und, bei Bedarf, Lehrer:innen“ („Eltern“ ist kein eindeutiger Dativ); einzelne lange Listen mit weit entferntem Auslöser.
+- **Gegenprüfung 27.10.2026** (`artifacts/gegenpruefung-20261027`, Prüfstand `087f109`):
+  - #554 Regressionen N34–N40: „zwischen/neben“ nach Richtungsverben Akkusativ, Listen-Nachbarn nur Personen und ohne Attribut-/Satzgrenze, neuer Satz nach Liste allgemein erkannt, „jeder“ nur nach Dativverben „jedem“, eingebettete Partizipialattribute, Datumsangaben, Adjektivlücke nur echte Adjektive; dazu Zahlwörter, Doppelpunkt als Satzanfang in der Singularregel, Namen als Besitzerin nur mit weiblicher Endung oder unisex, Pluralbesitzer.
+  - Sollfälle des Berichts: 171 → 335 von 439; die übrigen sind überwiegend teilweise bewertete Korpuskontexte und die bewusst offenen Punkte oben.
 - **Nächste Schritte:**
   - Offene Punkte der Gegenprüfungen nach Bedarf.
   - Changelog-Einträge nur als Fragment.
