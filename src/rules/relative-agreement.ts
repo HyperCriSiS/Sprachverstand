@@ -1,6 +1,7 @@
 import type { Rule, TransformResult } from "../core/rule";
 import { acceptContextResult } from "../core/leading-context-edit";
 import { markedSingularLeadingCandidate } from "./context-candidates";
+import { finiteAuxiliarySource } from "./clause-structure";
 import { withPossessiveAgreement } from "./possessive-agreement";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
@@ -33,8 +34,8 @@ const markedPronoun = new RegExp(String.raw`([^${mark}]{0,6})${mark}((?:${betwee
 // relative pronoun (`verpflichtet sich, die … Kosten zu übernehmen`).
 // No finite verb may come before the infinitive; a relative clause has one
 // (`, die sowohl … tätig ist und zu …`).
-const infinitiveClauseAhead =
-  /^(?:(?!\s(?:ist|sind|war|hat|haben|hatte|wird|werden|kann|können|muss|müssen|soll|sollen|will|wollen|möchte|darf|\p{Ll}[\p{L}\p{M}]*(?:[^\s\P{L}s]t|te))(?=[\s,.;:!?]))[^,.;:!?])*?(?:\s+zu\s+\p{Ll}[\p{L}\p{M}]*en|\s+\p{Ll}+zu\p{Ll}+en)\s*(?:[,.;:!?]|$)/u;
+const infinitiveClauseAhead = new RegExp(
+  String.raw`^(?:(?!\s(?:${finiteAuxiliarySource}|\p{Ll}[\p{L}\p{M}]*(?:[^\s\P{L}s]t|te))(?=[\s,.;:!?]))[^,.;:!?])*?(?:\s+zu\s+\p{Ll}[\p{L}\p{M}]*en|\s+\p{Ll}+zu\p{Ll}+en)\s*(?:[,.;:!?]|$)`, "u");
 // `Die Ausbildung zum/zur Krankenpflegehelfer/in, die wir anbieten`: after
 // `zum`/`zur`/`als` the noun names a role; the clause belongs to the post.
 // `die Rückfrage de*r Kolleg*in, die war gut`: a genitive attribute after a

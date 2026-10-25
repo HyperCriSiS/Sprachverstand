@@ -1261,10 +1261,12 @@ const singularSteps: readonly ((text: string) => TransformResult)[] = [
   (text) => transformCoordinatedGenitives(text, mapSingular)
 ];
 
-const clauseColonPattern = /[:;][ \t]+\p{L}/u;
-// Not after a determiner (`keine: passende:n Spender:in` is a broken marker)
+// Also before a line break (`Hinweis:` on a line of its own).
+const clauseColonPattern = /[:;](?:[ \t]+|[ \t]*\n[ \t]*)\p{L}/u;
+// Not after a determiner (`keine: passende:n Spender:in` is a broken marker,
+// `einer: eines Zollbeamt:in` a pair)
 // and not in a spaced pair (`der : die Nutzer*in`).
-const clauseColonSplit = /(?<![\s]|(?<![\p{L}\p{M}])(?:eine|keine|die|der|den|dem|des|jede|jeder|diese|meine|seine|ihre|unsere))([:;][ \t]+)(?=\p{L})/u;
+const clauseColonSplit = /(?<![\s]|(?<![\p{L}\p{M}])(?:d(?:er|ie|as|en|em|es)|(?:k?ein|mein|dein|sein|ihr|unser|eur|jed|dies|jen|welch)(?:e|er|en|em|es)?))([:;](?:[ \t]+|[ \t]*\n[ \t]*))(?=\p{L})/u;
 const lowercaseStart = /^\p{Ll}/u;
 
 function applySingularSteps(input: string): TransformResult {
