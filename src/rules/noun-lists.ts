@@ -70,6 +70,8 @@ const singularArticles = new Set(["der", "die", "das", "dem", "einer", "einem", 
 const contractedOpeners = new Set(["im", "am", "vom", "beim", "zum", "zur"]);
 const relativeWords = new Set(["deren", "denen", "dessen"]);
 const conjunctions = new Set(["und", "oder", "sowie"]);
+// A separator right after the noun; without one no item follows.
+const listContinuesPattern = /^\s*(?:[,&]|(?:und|oder|sowie|bzw\.|wie\s+auch|als\s+auch)\s)/u;
 const markedToken = /[:*_·•\/()]|\p{Ll}Innen$/u;
 const dativeEndingToken = /[ns]$/u;
 
@@ -283,6 +285,7 @@ export function listGovernorBefore(text: string, offset = 0): ListGovernor | und
 // determiner or adjective, which a bare source error lacks (`Freund*innen
 // oder Arbeitgebern erfahren …`).
 export function listHeadsAfter(text: string, modified = false): string[] {
+  if (!listContinuesPattern.test(text)) return [];
   const tokens = tokenize(text, 0);
   const heads: string[] = [];
   let i = 0;

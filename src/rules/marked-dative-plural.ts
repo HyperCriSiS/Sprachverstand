@@ -301,7 +301,7 @@ function inDativeList(offset: number, length: number, source: string): boolean {
     // A bare neighbour after it counts only inside a longer list (`Freund*innen
     // oder Arbeitgebern erfahren …` is a source error).
     const right = following.length >= 2 ? following : listHeadsAfter(after.slice(0, 300), true);
-    if (![...list.heads, ...right].some(isUnambiguousDativePlural) ||
+    if (![...list.heads, ...right].some((word) => dativeCandidate.test(word) && isUnambiguousDativePlural(word)) ||
         genitiveDeterminerBefore.test(before.slice(-12))) return false;
     return !listStartsNewClause(before, rest);
   }
@@ -323,6 +323,8 @@ const verbAfterItem = /^\s+\p{Ll}[\p{L}\p{M}]*en\s/u;
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
 const commaConjunctionBefore = /,\s*(?:und|oder|aber)\s+(?:\S+\s+){0,2}$/u;
+// Only an unmarked word on -n can be an unambiguous dative plural.
+const dativeCandidate = /^[^:*_·•\/()]*\p{Ll}n$/u;
 const verbWithPronounAfter = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 // The text after the remaining list items.
 const remainingItems = /^(?:\s*(?:,|\s(?:und|oder|sowie))\s*[\p{L}\p{M}*:_·•\/’'-]+)*/u;
