@@ -3,7 +3,8 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
-import { dativeVerbPattern, dativeVerbSource, directionalTwoWayPreposition, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, dativeVerbSource, directionalTwoWayPreposition, verbGovernsPlural } from "./dative-verbs";
+import { auxiliaryInfinitives, listStartsNewClause } from "./clause-structure";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -140,7 +141,7 @@ const namePart = String.raw`\p{Lu}\p{Ll}+(?!(?:Die|Der|Das|Den|Dem|Des|Ein|Eine|
 // Directly after the trigger, only adjectives, numbers or name parts
 // between (`von 8 InteGREATer:innen`, `den RosaLila PantherInnen`); a
 // preposition or verb on -en ends the phrase (`von SchülerInnen gegen`).
-const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|treffen|brauchen|haben|werden|können|sollen|wollen|müssen|dürfen|geben|kommen|stehen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*en`;
+const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|treffen|brauchen|${auxiliaryInfinitives.join("|")}|geben|kommen|stehen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*en`;
 const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");

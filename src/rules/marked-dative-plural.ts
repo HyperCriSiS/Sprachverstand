@@ -2,7 +2,8 @@ import type { Rule, TransformResult } from "../core/rule";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
-import { dativeVerbPattern, directionalTwoWayPreposition, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, directionalTwoWayPreposition, verbGovernsPlural } from "./dative-verbs";
+import { auxiliaryInfinitives, listStartsNewClause, numberWordSource } from "./clause-structure";
 import { coordinatedAdjective, namesPersons } from "./marker-source-repairs";
 import { mapSupplementalPlural } from "./additional-person-forms";
 
@@ -14,16 +15,15 @@ const binnenIPluralPattern = /\p{Ll}Innen/u;
 // Nur lexikalisch bekannte, markierte Pluralformen werden in eindeutig
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
-const dativePhrasePattern =
-  /(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:\d|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|zwanzig|dreißig|vierzig|fünfzig|hundert|tausend)(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:teilweise|insgesamt|rund|etwa|circa|knapp|fast|mindestens|maximal|höchstens|bis\s+zu|mehr\s+als|weniger\s+als|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|zwanzig|dreißig|vierzig|fünfzig|hundert|tausend|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}(?:(?!(?:neben|nehmen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?/giu;
+const dativePhrasePattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:\d|${numberWordSource})(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:teilweise|insgesamt|rund|etwa|circa|knapp|fast|mindestens|maximal|höchstens|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}(?:(?!(?:neben|nehmen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
 
 // Words between trigger and noun must form one noun phrase: lowercase
 // determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
 // a pronoun (`Mit ihnen`) or an auxiliary (`können`) ends the phrase
 // before the marked word, which is then no dative.
 const phraseBreakingWords = new Set([
-  "ihnen", "denen", "haben", "können", "müssen", "sollen", "wollen",
-  "dürfen", "werden", "möchten", "helfen", "arbeiten", "erhalten",
+  "ihnen", "denen", ...auxiliaryInfinitives, "helfen", "arbeiten", "erhalten",
   "bekommen", "finden", "lernen", "stehen", "gehen", "kommen", "sehen", "nehmen"
 ]);
 // `die vielen Unterstützer` is no dative: after an article or possessive
