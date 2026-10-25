@@ -17,7 +17,7 @@ describe("Bindestrich vor dem Schrägstrich-Marker", () => {
     // Unbekannter Stamm und Ellipse in Komposita bleiben.
     ["Wagen-/innen", "Wagen-/innen"],
     ["Gesundheits- und Krankenpfleger/in", "Gesundheits- und Krankenpfleger"]
-  ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
+  ])("kein Paar: %s", (input, expected) => expect(t(input)).toBe(expected));
 });
 
 describe("Paare aus Kurz- und Langform der Präposition", () => {
@@ -38,7 +38,7 @@ describe("Begleitwortpaare mit Leerraum um Stern oder Doppelpunkt", () => {
   ])("%s", (input, expected) => expect(t(input)).toBe(expected));
 
   it.each([
-    // Doppelpunkt nach einem Wort ist kein Begleitwortpaar.
-    ["Kontakt: die Lehrer*in", "Kontakt: die Lehrer*in"]
-  ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
+    // Doppelpunkt nach einem Wort ist kein Begleitwortpaar, sondern ein neuer Satzanfang.
+    ["Kontakt: die Lehrer*in", "Kontakt: der Lehrer"]
+  ])("kein Paar: %s", (input, expected) => expect(t(input)).toBe(expected));
 });
