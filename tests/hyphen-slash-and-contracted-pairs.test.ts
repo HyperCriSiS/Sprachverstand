@@ -17,7 +17,7 @@ describe("Bindestrich vor dem Schrägstrich-Marker", () => {
     // Unbekannter Stamm und Ellipse in Komposita bleiben.
     ["Wagen-/innen", "Wagen-/innen"],
     ["Gesundheits- und Krankenpfleger/in", "Gesundheits- und Krankenpfleger"]
-  ])("kein Paar: %s", (input, expected) => expect(t(input)).toBe(expected));
+  ])("bleibt: %s", (input, expected) => expect(t(input)).toBe(expected));
 });
 
 describe("Paare aus Kurz- und Langform der Präposition", () => {
