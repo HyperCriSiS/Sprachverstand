@@ -3,7 +3,7 @@ import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
-import { dativeVerbPattern, dativeVerbSource, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
+import { dativeVerbPattern, dativeVerbSource, directionalTwoWayPreposition, listStartsNewClause, verbGovernsPlural } from "./dative-verbs";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -145,8 +145,11 @@ const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
 // An adjective may stand before the coordinated noun (`mit Kollegen aus
-// Kantonen und erfahrenen Vertreter*innen`).
-const coordinatedEnding = /(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$/u;
+// Kantonen und erfahrenen Vertreter*innen`), but no finite verb (`mit den
+// Kindern und besuchen Lehrer:innen`): only adjective endings or common
+// short adjectives.
+export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein|aus|zu|an|fest|ab)?stellen|(?:ver|mit|ein|auf|zu|aus)?teilen|entmenschlichen|ermöglichen|veröffentlichen|verdeutlichen|verwirklichen|beschäftigen|berücksichtigen|bestätigen|ermutigen|befähigen|beseitigen|bewältigen|benötigen|kündigen|würdigen|entschuldigen|vereinigen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*(?:ig|lich|isch|sch|al|ell|iv|ar|är|er|ern|ent|ant|ert|t|st|nd|haft|los|sam|bar|ös|en|eur|stark|il)en|\p{Ll}{3,}reichen|jungen|neuen|großen|kleinen|freien|guten|hohen|vielen|wenigen|einigen|beiden|langen|ganzen|fremden|lieben|wilden|starken|frühen|späten|tollen|schönen|kranken|gesunden|treuen|klugen|engen|strengen|jüngeren|älteren)`;
+const coordinatedEnding = new RegExp(String.raw`(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?(?:${coordinatedAdjective}\s+){0,2}$`, "u");
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
 // `bis zu 20` only bounds a number; the case comes from before it
 // (`mit bis zu 20 Lehrern`, `für bis zu 20 Teilnehmer`).
@@ -174,7 +177,7 @@ const conjunct = String.raw`\p{Lu}[\p{L}\p{M}’'-]*?(?:n|(?:[:*_·•]|\/-?)inn
 const conjunctAttribute = String.raw`(?:\s+(?:der|des|aus|von|bei|mit|nach|zu)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*)?`;
 const conjunctSeparator = String.raw`(?:,\s*|\s+(?:und|oder|sowie)\s+)(?:\d+\s+)?`;
 const coordinatedDativeBefore = new RegExp(
-  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?(?:\p{Ll}[\p{L}\p{M}]*en\s+){0,2}$`, "u");
+  String.raw`(?:^|(,\s*)|(\S+)\s+|\s)(${dativeTrigger})\s+${dativeGap}(${conjunct})${conjunctAttribute}(?:${conjunctSeparator}${dativeGap}${conjunct}${conjunctAttribute})*(,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?(?:${coordinatedAdjective}\s+){0,2}$`, "u");
 // A comma only continues the list when an `und` item follows.
 const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
 // The text after the remaining list items.
@@ -229,10 +232,11 @@ function isCoordinatedDative(before: string, after: string): boolean {
   const match = coordinatedDativeBefore.exec(before);
   if (!match) return false;
   const [, comma, previous, trigger, noun, ending] = match;
+  if (directionalTwoWayPreposition(trigger!, before.slice(0, match.index + match[0].indexOf(trigger!)), after)) return false;
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
-  if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!)), listRest(after))) return false;
+  if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!) + (dativeVerbPattern.test(trigger!) ? trigger!.length + 1 : 0)), listRest(after))) return false;
   const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
   // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
   if (/^\s*(?:1[89]|20)\d\d(?!\d)/u.test(list)) return false;
@@ -335,6 +339,7 @@ function repairUnlistedForms(input: string): TransformResult {
       isCoordinatedDative(listBefore, after);
     const directTrigger = triggered ? pluralDativeBefore.exec(before)?.[1] : undefined;
     const directDative = directTrigger !== undefined && !yearGap.test(before) &&
+      !directionalTwoWayPreposition(directTrigger, rawBefore.slice(0, rawBefore.lastIndexOf(directTrigger)), after) &&
       !(dativeVerbPattern.test(directTrigger) && !verbGovernsPlural(directTrigger,
         rawBefore.slice(0, rawBefore.lastIndexOf(directTrigger)), after));
     // Listed -er nouns (also compounds the lexicon reads) keep the lexicon

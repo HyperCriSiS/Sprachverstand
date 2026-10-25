@@ -40,7 +40,7 @@ const masculine = new Map([
 // Lehrerin wartet. Jede Lehrer*in kennt ihre eigene Telefonnummer`).
 const otherOwnerPronoun = /(?<![\p{L}\p{M}])(?:sie|Sie|ihr|ihre[nmrs]?|ihnen|Ihnen)(?![\p{L}\p{M}])/u;
 const otherOwnerNoun =
-  /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:innen|In|Innen|[:*_\/·•]in(?:nen)?)|\p{Lu}[\p{L}\p{M}-]*\p{Ll}in(?<!(?:Term|Mediz|Magaz|Benz|Berl|Kam|Vitam|Diszipl|Mart|Pingu|Rub|Delf|Cous|Bass|Kass|Ruß|Insul|Nikot|Glob|Lanol|Paraff|Vasel|Musl|Dent|Kreat|Kerat|Aspir|Lat|Sp|Rosmar)in|ein|ain)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen|Frau|Mutter|Tochter|Schwester|Tante|Oma|Großmutter|Nichte|Cousine|Dame)(?![\p{L}\p{M}])/u;
+  /(?<![\p{L}\p{M}])(?:\p{Lu}[\p{L}\p{M}-]*(?:innen|In|Innen|[:*_\/·•]in(?:nen)?)|\p{Lu}[\p{L}\p{M}-]*\p{Ll}in(?<!(?:Term|Mediz|Magaz|Benz|Berl|Kam|Vitam|Diszipl|Mart|Pingu|Rub|Delf|Cous|Bass|Kass|Ruß|Insul|Nikot|Glob|Lanol|Paraff|Vasel|Musl|Dent|Kreat|Kerat|Aspir|Lat|Sp|Rosmar|Kev|Marv|Just|Erw|Edw|Benjam|Calv|Alv|Quent|Florent|Valent|Konstant|August)in|ein|ain)|Eltern|Kinder|Leute|Menschen|Frauen|Mütter|Töchter|Schwestern|Familien|Mädchen|Damen|Frau|Mutter|Tochter|Schwester|Tante|Oma|Großmutter|Nichte|Cousine|Dame)(?![\p{L}\p{M}])/u;
 // Common male first names and cities own no feminine `ihre` (`Peter wartet.`,
 // `Berlin ist groß.`).
 const maleNamesAndPlaces = [
@@ -54,10 +54,14 @@ const maleNamesAndPlaces = [
   "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
 ].join("|");
 const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
+// A name with a verb counts only with a feminine ending or as a unisex name
+// (`Anna kam`, `Marie wartet`, `Kim wartet`); `Kevin`, `Paris` or `Essen`
+// own no `ihre`.
 const otherOwnerName = new RegExp(
-  String.raw`(?:(?:^|[.!?:]\s+)${notName}\p{Lu}\p{Ll}+\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
-// A feminine or plural subject with its verb (`Die Schule ist neu.`).
-const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:Die|Diese|Unsere|Ihre|Eine)\s+\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)(?![\p{L}\p{M}])/u;
+  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?:\p{Lu}\p{Ll}*(?:a|e|y|ette|elle|ine|ina)|Kim|Robin|Alex|Chris|Charlie|Sam|Toni|Mika)\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
+// A feminine or plural subject with its verb (`Die Schule ist neu.`,
+// `Berliner Schulen sind bekannt.`).
+const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|\p{Lu}\p{Ll}+(?:s|er)\s+\p{Lu}\p{Ll}+\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
 const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
