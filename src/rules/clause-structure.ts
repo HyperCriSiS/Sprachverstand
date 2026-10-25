@@ -29,6 +29,12 @@ export const auxiliaryInfinitives = ["haben", "können", "müssen", "sollen", "w
 // Subordinating conjunctions; the clause they open puts its verb last.
 export const subordinatorSource = "wenn|dass|ob|weil|falls|sobald|bevor|nachdem|während|obwohl|sofern|solange|damit|indem|sodass|wie|seit|seitdem";
 
+// An adjective may stand before the coordinated noun (`mit Kollegen aus
+// Kantonen und erfahrenen Vertreter*innen`), but no finite verb (`mit den
+// Kindern und besuchen Lehrer:innen`): only adjective endings or common
+// short adjectives.
+export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein|aus|zu|an|fest|ab)?stellen|(?:ver|mit|ein|auf|zu|aus)?teilen|entmenschlichen|ermöglichen|veröffentlichen|verdeutlichen|verwirklichen|beschäftigen|berücksichtigen|bestätigen|ermutigen|befähigen|beseitigen|bewältigen|benötigen|kündigen|würdigen|entschuldigen|vereinigen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*(?:ig|lich|isch|sch|al|ell|iv|ar|är|er|ern|ent|ant|ert|t|st|nd|haft|los|sam|bar|ös|en|eur|stark|il)en|\p{Ll}{3,}reichen|jungen|neuen|großen|kleinen|freien|guten|hohen|vielen|wenigen|einigen|beiden|langen|ganzen|fremden|lieben|wilden|starken|frühen|späten|tollen|schönen|kranken|gesunden|treuen|klugen|engen|strengen|jüngeren|älteren)`;
+
 // Nothing but whitespace back to the start of the text or a sentence end.
 export const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 

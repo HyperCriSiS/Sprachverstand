@@ -4,19 +4,19 @@ import { mapKnownPlural } from "./known-plural-separators";
 import {markedPluralWordSource as markedWord, markedLeadingCandidate} from "./context-candidates";
 import { dativeVerbPattern, directionalTwoWayPreposition, verbGovernsPlural } from "./dative-verbs";
 import { auxiliaryInfinitives, listStartsNewClause, numberWordSource } from "./clause-structure";
-import { coordinatedAdjective, namesPersons } from "./marker-source-repairs";
+import { namesPersons } from "./marker-source-repairs";
 import { mapSupplementalPlural } from "./additional-person-forms";
+import { listGovernorBefore, listHeadsAfter, nonDativePersonPluralOnE } from "./noun-lists";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
-const uppercaseStartPattern = /^\p{Lu}/u;
 const binnenIPluralPattern = /\p{Ll}Innen/u;
 
 // Nur lexikalisch bekannte, markierte Pluralformen werden in eindeutig
 // dativischen Wortgruppen mit der passenden Dativendung versehen.
 // Die gewohnte allgemeine Pluralregel bleibt für alle anderen Kontexte zuständig.
 const dativePhrasePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:\d|${numberWordSource})(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:teilweise|insgesamt|rund|etwa|circa|knapp|fast|mindestens|maximal|höchstens|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}(?:(?!(?:neben|nehmen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:\d|${numberWordSource})(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:teilweise|insgesamt|rund|etwa|circa|knapp|fast|mindestens|maximal|höchstens|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}(?:(?!(?:neben|nehmen|zwischen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
 
 // Words between trigger and noun must form one noun phrase: lowercase
 // determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
@@ -132,18 +132,6 @@ function mapDativePlural(base: string): string | undefined {
   return plural + (uppercase ? "N" : "n");
 }
 
-// Aufzählungen werden nur bei eindeutigem Dativauslöser als Ganzes flexiert.
-// Glieder, die eine frühere Regel schon in den Dativ gesetzt hat
-// (`von Biologen, Physikern und Ingenieur*innen`), gehören weiter dazu.
-const enumerationItem = String.raw`(?:${markedWord}|\p{L}[\p{L}\p{M}’'-]*n(?![\p{L}\p{M}]))`;
-const dativeEnumerationPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen)\s+)((?:${enumerationItem}[ \t]*,[ \t]*)+${enumerationItem}[ \t]+(?:und|oder|sowie)[ \t]+${enumerationItem})(?![\p{L}\p{M}-])`,
-  "giu"
-);
-const markedWordPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+)((?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n)`,
-  "giu"
-);
 const dativeLeadingContextPattern =
   /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der)\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
 
@@ -165,31 +153,6 @@ function firstItemBelongs(prefix: string, first: string, textBefore: string): bo
   // That plural is a dative object itself (`zwischen Spieler:innen mit
   // Behinderungen, Vereinen und Trainer:innen`): either reading takes the dative.
   return dativeBeforePlural.test(textBefore.slice(0, previous.index));
-}
-
-function transformDativeEnumeration(input: string): TransformResult {
-  let replacements = 0;
-  const text = input.replace(
-    dativeEnumerationPattern,
-    (original: string, prefix: string, list: string, offset: number, source: string) => {
-      const basen = [...list.matchAll(markedWordPattern)];
-      const flektiert = basen.map((match) => mapDativePlural(match[1] ?? ""));
-      // The `i` flag of the pattern also lets lowercase words through.
-      const items = list.split(/[ \t]*,[ \t]*|[ \t]+(?:und|oder|sowie)[ \t]+/u);
-      if (basen.length === 0 || items.length < 3 || items.some((item) => !uppercaseStartPattern.test(item)) ||
-          !firstItemBelongs(prefix, items[0]!, source.slice(0, offset)) ||
-          listStartsNewClause(source.slice(0, offset), source.slice(offset + original.length)) ||
-          directionalTwoWayPreposition(prefix.trim(), source.slice(0, offset), source.slice(offset + original.length)) ||
-          flektiert.some((wort) => wort === undefined)) {
-        return original;
-      }
-      let index = 0;
-      const ausgabe = list.replace(markedWordPattern, () => flektiert[index++] ?? "");
-      replacements += basen.length;
-      return prefix + ausgabe;
-    }
-  );
-  return { text, replacements };
 }
 
 // A dative verb governs the plural only where it is not its subject; then a
@@ -226,9 +189,8 @@ const binnenIDativePattern = new RegExp(
 function transformMarkedDativePlural(input: string): TransformResult {
   if (!/inn/iu.test(input)) return {text: input, replacements: 0};
   if (!/mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|vielen|einigen|wenigen|mehreren|beiden|dank|gratul|helf|hilft|vertrau|begegn|zuhör|folg|erzähl/iu.test(input)) return {text: input, replacements: 0};
-  const aufzählung = transformDativeEnumeration(input);
-  let replacements = aufzählung.replacements;
-  const text = aufzählung.text.replace(
+  let replacements = 0;
+  const text = input.replace(
     dativePhrasePattern,
     (
       original: string,
@@ -270,65 +232,78 @@ function transformMarkedDativePlural(input: string): TransformResult {
       return prefix + mapped;
     }
   ) : text;
-  // Each pass takes one more list item (`bei Spielern, Helfern,
-  // FunktionärInnen und SponsorInnen`).
-  let listed = binnenI;
-  for (let pass = 0; pass < 4; pass++) {
-    const before = replacements;
-    listed = listed.replace(dativeNeighbourPattern, (original: string, prefix: string, neighbour: string,
-      base: string, offset: number, source: string) => {
-      const after = source.slice(offset + original.length);
-      const textBefore = source.slice(0, offset);
-      if (!isUnambiguousDativePlural(neighbour) || listStartsNewClause(textBefore, after.replace(remainingItems, "")) ||
-          // `der Beamten, Richter`: a weak plural after `der` is a genitive.
-          genitiveDeterminerBefore.test(source.slice(Math.max(0, offset - 12), offset)) ||
-          // `zu Schulbegleitern, IT-Techniker*innen absolvieren`: a last comma
-          // item with a verb right after it starts a new clause.
-          (commaBeforeItem.test(prefix) && verbAfterItem.test(after))) return original;
-      const mapped = mapDativePlural(base);
-      if (mapped === undefined) return original;
-      replacements += 1;
-      return prefix + mapped;
-    });
-    listed = listed.replace(dativeRightNeighbourPattern, (original: string, base: string, neighbour: string,
-      offset: number, source: string) => {
-      const neighbourEnd = source.indexOf(neighbour, offset + original.length) + neighbour.length;
-      // Only inside a list (`von Politik, Arbeitgeber:innen und …`), not when
-      // the neighbour belongs to an attribute (`Künstler:innen und allen
-      // Lehrern bekannte Autoren`).
-      if (!listItemBefore.test(source.slice(Math.max(0, offset - 3), offset)) ||
-          attributeAfterNeighbour.test(source.slice(neighbourEnd, neighbourEnd + 60)) ||
-          !isUnambiguousDativePlural(neighbour)) return original;
-      const mapped = mapDativePlural(base);
-      if (mapped === undefined) return original;
-      replacements += 1;
-      return mapped;
-    });
-    if (replacements === before) break;
-  }
-  return { text: listed, replacements };
+  const inList = binnenI.replace(markedPluralPattern, (original: string, base: string, offset: number, source: string) => {
+    if (!inDativeList(offset, original.length, source)) return original;
+    const mapped = mapDativePlural(base);
+    if (mapped === undefined) return original;
+    replacements += 1;
+    return mapped;
+  });
+  return { text: inList, replacements };
 }
 
-// A marked item next to a plural that can only be a dative takes the dative
-// too: `mit Biologen, erfahrenen Physikern und Ingenieur:innen`, `mit Lehrern
-// der Schule, Schüler:innen der Klasse …`, `mit Lehrern und, bei Bedarf,
-// Schüler:innen`.
-const dativeNeighbourPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(\p{Lu}[\p{L}\p{M}-]*n)(?:\s+(?:der|des)\s+(?:\p{Ll}[\p{L}\p{M}-]*\s+(?:und\s+\p{Ll}[\p{L}\p{M}-]*\s+)?)?\p{Lu}[\p{L}\p{M}-]*)?[ \t]*(?:,|[ \t](?:und|oder|sowie)(?:,[^,.;:!?]{1,30},)?)[ \t]+(?:\d+[ \t]+)?(?:${coordinatedAdjective}[ \t]+){0,2}(?:\p{Lu}[\p{L}\p{M}-]*er[ \t]+)?)([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?![\p{L}\p{M}-])`,
-  "gu"
-);
-// The neighbour may also follow: `von Politik, Arbeitgeber:innen und allen
-// Verantwortungsträgern`.
-const dativeRightNeighbourPattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])([\p{L}\p{M}’'-]+?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?=[ \t]*(?:,|[ \t](?:und|oder|sowie))[ \t]+(?:(?:allen|den|unseren|ihren|vielen)[ \t]+(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}|(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){1,2})(\p{Lu}[\p{L}\p{M}-]*n)(?![\p{L}\p{M}-]))`,
+// Items further down a dative list (`zwischen Berater*innen aus der Praxis
+// und Wissenschaftler*innen`, `mit Richter*innen, …, Vertreter*innen des
+// Zollkriminalamtes`): the list scanner finds the governing word.
+const markedPluralPattern = new RegExp(
+  String.raw`(?<![\p{L}\p{M}])(\p{Lu}[\p{L}\p{M}’'-]*?)(?:(?:[/∕⁄／]-?|[:*_·•’‘'])innen|\(-?innen\)|(?<=\p{Ll})Innen)(?![\p{L}\p{M}-])`,
   "gu"
 );
 
+// Only an item after a list separator can belong to a list; most marked
+// plurals stand alone, so this check spares the scanner.
+const separatorBefore = /(?:,|\s(?:und|oder|sowie|bzw\.|&))\s+(?:\S+\s+){0,6}$/u;
+
+function inDativeList(offset: number, length: number, source: string): boolean {
+  if (!separatorBefore.test(source.slice(Math.max(0, offset - 100), offset))) return false;
+  const start = Math.max(0, offset - 400);
+  const list = listGovernorBefore(source.slice(start, offset), start);
+  if (!list || (list.items === 0 && !(list.compound && list.word !== ""))) return false;
+  const governor = list.word;
+  const before = source.slice(0, list.index);
+  const after = source.slice(offset + length);
+  const rest = after.replace(remainingItems, "");
+  // A last comma item with a verb right after it starts a new clause
+  // (`Lehrer werden zu Schulbegleitern, IT-Techniker*innen absolvieren …`,
+  // `nach Pécs, und Pécser:innen kamen …`).
+  if ((list.separator === "," || commaConjunctionBefore.test(source.slice(Math.max(0, offset - 60), offset))) &&
+      verbAfterItem.test(after)) return false;
+  // A later item outside the dative ends it (`aus allen Bereichen des
+  // zivilen Lebens, Akademiker:innen, Offiziere, …`).
+  const following = listHeadsAfter(after.slice(0, 300));
+  if (following.some(nonDativePersonPluralOnE)) return false;
+  // A singular object before a comma continues only in a list with a
+  // conjunction (`mit dem Bildungsministerium, Regionalregierungen und …`).
+  if (list.singular && !list.conjunction && !listContinues.test(after)) return false;
+  if (governor === "") {
+    // Without a governing word only a neighbour that can only be a dative
+    // makes the list one; `der Beamten, Richter*innen` is a genitive.
+    // A bare neighbour after it counts only inside a longer list (`Freund*innen
+    // oder Arbeitgebern erfahren …` is a source error).
+    const right = following.length >= 2 ? following : listHeadsAfter(after.slice(0, 300), true);
+    if (![...list.heads, ...right].some(isUnambiguousDativePlural) ||
+        genitiveDeterminerBefore.test(before.slice(-12))) return false;
+    return !listStartsNewClause(before, rest);
+  }
+  const verb = dativeVerbPattern.test(governor);
+  if (directionalTwoWayPreposition(governor, before, after)) return false;
+  if (verb && !verbGovernsPlural(governor, before.slice(-200), after.slice(0, 80))) return false;
+  if (listStartsNewClause(verb ? `${before}${governor} ` : before, rest)) return false;
+  // Persons after a first item without persons, then a verb: a new clause
+  // (`werden Teile von faschistischen Netzwerken, Journalist*innen oder
+  // Schriftsteller*innen verbinden sich …`).
+  if (!namesPersons(list.first) && verbWithPronounAfter.test(rest)) return false;
+  // A repeated noun is a fixed phrase (`von Haus zu Haus, zwei Bewohner*innen`).
+  if (before.trimEnd().endsWith(` ${list.first}`)) return false;
+  return list.items === 0 || firstItemBelongs(governor, list.first, before);
+}
+
 const genitiveDeterminerBefore = /(?:^|\s)(?:der|des|deren|dessen)\s+$/u;
-const commaBeforeItem = /,[ \t]*(?:\d+[ \t]+)?(?:\p{Ll}[\p{L}\p{M}-]*en[ \t]+){0,2}$/u;
 const verbAfterItem = /^\s+\p{Ll}[\p{L}\p{M}]*en\s/u;
-const listItemBefore = /,[ \t]*$/u;
-const attributeAfterNeighbour = /^\s+\p{Ll}[\p{L}\p{M}]*e[nrs]?\s+\p{Lu}/u;
+// A comma only continues the list when an `und` item follows.
+const listContinues = /^(?:\s*,\s*[^\s,]+)*\s+(?:und|oder|sowie)\s/u;
+const commaConjunctionBefore = /,\s*(?:und|oder|aber)\s+(?:\S+\s+){0,2}$/u;
+const verbWithPronounAfter = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 // The text after the remaining list items.
 const remainingItems = /^(?:\s*(?:,|\s(?:und|oder|sowie))\s*[\p{L}\p{M}*:_·•\/’'-]+)*/u;
 

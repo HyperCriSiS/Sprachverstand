@@ -4,7 +4,7 @@ import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
 import { dativeVerbPattern, dativeVerbSource, directionalTwoWayPreposition, verbGovernsPlural } from "./dative-verbs";
-import { auxiliaryInfinitives, listStartsNewClause } from "./clause-structure";
+import { auxiliaryInfinitives, coordinatedAdjective, listStartsNewClause } from "./clause-structure";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -145,11 +145,6 @@ const gapAdjective = String.raw`(?!(?:gegen|nehmen|laden|einladen|bitten|suchen|
 const dativeGap = String.raw`(?:(?:${gapAdjective}|\d+|${namePart})\s+){0,2}`;
 const pluralDativeBefore = new RegExp(String.raw`(?:^|\s)(${dativeTrigger})\s+${dativeGap}$`, "u");
 const dativeTriggerNear = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s`, "u");
-// An adjective may stand before the coordinated noun (`mit Kollegen aus
-// Kantonen und erfahrenen Vertreter*innen`), but no finite verb (`mit den
-// Kindern und besuchen Lehrer:innen`): only adjective endings or common
-// short adjectives.
-export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein|aus|zu|an|fest|ab)?stellen|(?:ver|mit|ein|auf|zu|aus)?teilen|entmenschlichen|ermöglichen|veröffentlichen|verdeutlichen|verwirklichen|beschäftigen|berücksichtigen|bestätigen|ermutigen|befähigen|beseitigen|bewältigen|benötigen|kündigen|würdigen|entschuldigen|vereinigen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*(?:ig|lich|isch|sch|al|ell|iv|ar|är|er|ern|ent|ant|ert|t|st|nd|haft|los|sam|bar|ös|en|eur|stark|il)en|\p{Ll}{3,}reichen|jungen|neuen|großen|kleinen|freien|guten|hohen|vielen|wenigen|einigen|beiden|langen|ganzen|fremden|lieben|wilden|starken|frühen|späten|tollen|schönen|kranken|gesunden|treuen|klugen|engen|strengen|jüngeren|älteren)`;
 const coordinatedEnding = new RegExp(String.raw`(?:,|\s(?:und|oder|sowie))\s+(?:\d+\s+)?(?:${coordinatedAdjective}\s+){0,2}$`, "u");
 const nameOrNumberGap = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+)*?(?:\d+|${namePart})(?:\s+\p{Ll}[\p{L}\p{M}]*en){0,2}\s+$`, "u");
 // `bis zu 20` only bounds a number; the case comes from before it
@@ -200,11 +195,17 @@ const personNounsWithoutMarker =
 // Substantivized participles and adjectives for persons; a plain -ende(n)
 // ending is no evidence (`Energiewende`, `Dutzenden`).
 const personParticiples =
-  /(?:[Üü]berlebende|[Ss]tudierende|[Ll]ehrende|[Ff]orschende|[Rr]eisende|[Ss]uchende|[Tt]eilnehmende|[Mm]itarbeitende|[Mm]itwirkende|[Aa]uszubildende|[Bb]eschäftigte|[Aa]ngestellte|[Bb]eteiligte|[Bb]etroffene|[Gg]eflüchtete|[Vv]orgesetzte|[Aa]bgeordnete|[Ee]hrenamtliche|[Jj]ugendliche|[Aa]ngehörige|[Ss]chaffende|[Ii]nteressierte|[Ee]rwachsene|[Vv]erstorbene|[Ee]rkrankte|[Ee]ngagierte|[Gg]efangene|[Rr]echtsextreme|[Nn]ominierte|[Pp]reisgekrönte|[Ee]ingeladene)n?$/u;
+  /(?:[Üü]berlebende|[Ss]tudierende|[Ll]ehrende|[Ff]orschende|[Rr]eisende|[Ss]uchende|[Tt]eilnehmende|[Mm]itarbeitende|[Mm]itwirkende|[Aa]uszubildende|[Bb]eschäftigte|[Aa]ngestellte|[Bb]eteiligte|[Bb]etroffene|[Gg]eflüchtete|[Vv]orgesetzte|[Aa]bgeordnete|[Ee]hrenamtliche|[Jj]ugendliche|[Aa]ngehörige|[Ss]chaffende|[Ii]nteressierte|[Ee]rwachsene|[Vv]erstorbene|[Ee]rkrankte|[Ee]ngagierte|[Gg]efangene|[Rr]echtsextreme|[Nn]ominierte|[Pp]reisgekrönte|[Ee]ingeladene|[Ii]nhaftierte|[Ss]üchtige|[Uu]nbeteiligte|[Vv]ertriebene|[Bb]edienstete|[Pp]flegende|[Bb]eratende|[Ll]ernende)n?$/u;
+
+// Plurals of things the stem rules below would read as persons
+// (`Krankenhäusern`, `Bundesländern`, `Geräten`).
+const nonPersonPlurals =
+  /(?:[Hh]äus|[Ll]änd|[Bb]üch|[Dd]örf|[Ww]äld|[Gg]läs|[Rr]äd|[Bb]ild|[Ff]eld|[Ll]ied|[Kk]leid|[Ää]mt|[Gg]üt|[Vv]ölk|[Hh]ölz|[Bb]änd|[Ss]child|[Nn]est|[Gg]erät|[Gg]räb)(?:er|e)?n?$/u;
 
 export function namesPersons(plural: string): boolean {
   const head = plural.replace(/^.*-/u, "");
   if (/(?:innen|Innen)$/u.test(head) || personNounsWithoutMarker.test(head) || personParticiples.test(head)) return true;
+  if (nonPersonPlurals.test(head)) return false;
   // Stems by the plural endings only (`Lehrern` → `Lehrer`, `Kollegen` →
   // `Kolleg`/`Kollege`, `Ärzte` → `Ärzt`); a blind cut finds bogus stems.
   const stems = new Set<string>();
