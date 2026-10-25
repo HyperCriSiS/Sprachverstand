@@ -40,8 +40,11 @@ export const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 
 // Words on -t/-te/-en/-e that are no finite verb (`Dann direkt die Ärzt*in
 // kontaktieren`).
-export const nonVerbWordSource = "nicht|jetzt|zuletzt|oft|bereits|bereit|erst|meist|zumindest|selbst|gut|weit|seit|sonst|längst|zuerst|insgesamt|gemeinsam|stets|direkt|leicht|recht|sehr|zusammen|herzlichst?|dort|statt|samt|nebst|unten|oben|hinten|vorne|mitten|neben|zwischen|binnen|innen|außen|gegen|ohne|nach|unter|über|gestern|morgen|seiten|mit|bis|den|dem|der|die|das|des|ein|eine|einen|einem|einer|eines|keine|keinen|meine|seine|ihre|unsere|diese|diesen|jene|jede|jeden|alle|allen|viele|vielen|einige|einigen|wenige|wenigen|beide|beiden|weitere|weiteren|andere|anderen|eigene|eigenen|ganze|ganzen|heute|hier|gerne|gern|ebenfalls|also|ihnen|uns|euch|ihm|ihr|fast|zunächst|schlecht|exakt|komplett|korrekt|perfekt|bekannt|echt|laut|anstatt|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut|bewusst|gewusst|zumeist|größt|meistgelesen";
-export const notFiniteVerb = String.raw`(?!(?:${nonVerbWordSource})(?![\p{L}\p{M}]))`;
+export const nonVerbWordSource = "nicht|jetzt|zuletzt|oft|bereits|bereit|erst|meist|zumindest|selbst|gut|weit|seit|sonst|längst|zuerst|insgesamt|gemeinsam|stets|direkt|leicht|recht|sehr|zusammen|herzlichst?|dort|statt|samt|nebst|unten|oben|hinten|vorne|mitten|neben|zwischen|binnen|innen|außen|gegen|ohne|nach|unter|über|gestern|morgen|seiten|mit|bis|den|dem|der|die|das|des|ein|eine|einen|einem|einer|eines|keine|keinen|meine|seine|ihre|unsere|diese|diesen|jene|jede|jeden|alle|allen|viele|vielen|einige|einigen|wenige|wenigen|beide|beiden|weitere|weiteren|andere|anderen|eigene|eigenen|ganze|ganzen|heute|hier|gerne|gern|ebenfalls|also|ihnen|uns|euch|ihm|ihr|fast|zunächst|schlecht|exakt|komplett|korrekt|perfekt|bekannt|echt|laut|anstatt|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut|bewusst|gewusst|zumeist|größt|meistgelesen|erneut|sofort|zuweilen|bisweilen|eben|gleichzeitig|zugleich|bislang|hinterher|vorher|nachher|jeweils|zuvor";
+// Adverbs by their form (`stellenweise`, `mehrmals`, `europaweit`,
+// `unbedingt`, `unentwegt`).
+const adverbForm = String.raw`\p{Ll}*(?:weise|mals|wärts|seits|weit|zeit)|un(?!ter)\p{Ll}+t`;
+export const notFiniteVerb = String.raw`(?!(?:${nonVerbWordSource}|${adverbForm})(?![\p{L}\p{M}]))`;
 
 // A main clause with its verb already before the list and another finite
 // verb right after it: the list starts a new clause as its subject (`Wir
@@ -54,8 +57,9 @@ const subordinateInClause = new RegExp(String.raw`(?:,\s*(?:die|der|das|denen|de
 const auxiliaryInClause = new RegExp(String.raw`(?:^|\s)(?:${finiteAuxiliarySource})(?=\s)`, "u");
 // A finite verb, not an adverb or function word, not an adjective before its
 // noun (`neuen Raum`), not an infinitive before a modal (`diskutieren
-// wollten`) or with `zu`.
-const finiteVerbAfterList = new RegExp(String.raw`^\s+${notFiniteVerb}(?!\p{Ll}+zu\p{Ll}+en(?![\p{L}\p{M}]))(?:\p{Ll}[\p{L}\p{M}]{2,}(?:en|t)|sind|ist)(?![\p{L}\p{M}])(?!\s+(?:will|wollen|wollten|kann|können|konnten|muss|müssen|mussten|soll|sollen|sollten|darf|dürfen|durften|möchte|möchten|werden|wurden|wurde|wird|haben|hatten|hat|sind|waren|worden|lassen|zu)(?![\p{L}\p{M}]))(?!\s+\p{Lu})`, "u");
+// wollten`) or with `zu`. A verb may have its object right after it (`geben
+// Bücher ab`, `helfen Kindern`).
+const finiteVerbAfterList = new RegExp(String.raw`^\s+${notFiniteVerb}(?!\p{Ll}+zu\p{Ll}+en(?![\p{L}\p{M}]))(?!${coordinatedAdjective}\s+\p{Lu})(?:\p{Ll}[\p{L}\p{M}]{2,}(?:en|t)|sind|ist)(?![\p{L}\p{M}])(?!\s+(?:will|wollen|wollten|kann|können|konnten|muss|müssen|mussten|soll|sollen|sollten|darf|dürfen|durften|möchte|möchten|werden|wurden|wurde|wird|haben|hatten|hat|sind|waren|worden|lassen|zu)(?![\p{L}\p{M}]))`, "u");
 
 export function listStartsNewClause(before: string, after: string): boolean {
   const clause = mainClauseBeforeList.exec(before)?.[0];

@@ -214,7 +214,8 @@ export function namesPersons(plural: string): boolean {
   if (head.endsWith("e")) stems.add(head.slice(0, -1));
   if (head.endsWith("er")) stems.add(head);
   return [...stems].some((stem) =>
-    stem.length >= 3 && (isKnownStem(stem) || mapSingular(stem, "nominative") !== undefined));
+    stem.length >= 3 && (isKnownStem(stem) || mapSingular(stem, "nominative") !== undefined ||
+      mapMappedPlural(stem) !== undefined));
 }
 // Years are no counts (`seit 2014 Nutzer:innen`).
 const yearGap = /(?:^|\s)(?:1[89]|20)\d\d\s+(?:\S+\s+)?$/u;

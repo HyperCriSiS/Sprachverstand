@@ -86,6 +86,12 @@ function tokenize(text: string, offset: number): Token[] {
       tokens.push({text: ".", lower: ".", index: offset + match.index + word.length - 1});
       continue;
     }
+    // `wie auch` and `als auch` join items like `und`.
+    const previous = tokens.at(-1);
+    if (lower === "auch" && (previous?.lower === "wie" || previous?.lower === "als")) {
+      tokens[tokens.length - 1] = {text: `${previous.text} ${word}`, lower: "und", index: previous.index};
+      continue;
+    }
     tokens.push({text: word, lower, index: offset + match.index});
   }
   // A parenthesis after the conjunction takes no part (`mit Lehrern und, bei
@@ -160,7 +166,9 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
     for (let words = 0; words < 4 && k >= 0; words++) {
       const word = tokens[k]!;
       const coordination = (word.lower === "und" || word.lower === "oder") && attributeWord.test(tokens[k - 1]?.text ?? "");
-      if (!coordination && (!attributeWord.test(word.text) || attributeArticles.has(word.lower))) break;
+      // An article after another one is an adjective (`der einen Seite`).
+      const article = attributeArticles.has(word.lower) && !attributeArticles.has(tokens[k - 1]?.lower ?? "");
+      if (!coordination && (!attributeWord.test(word.text) || article)) break;
       k--;
     }
     let owner: number | undefined;
