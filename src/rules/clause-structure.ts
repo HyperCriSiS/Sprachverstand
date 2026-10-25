@@ -5,8 +5,9 @@
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
 
-// Number words counting a noun (`mit rund zehn Lehrern`).
-export const numberWordSource = "zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|zwanzig|dreißig|vierzig|fünfzig|hundert|tausend";
+// Number words counting a noun (`mit rund zehn Lehrern`, `mit siebzehn`,
+// `mit einundzwanzig Lehrern`).
+export const numberWordSource = "zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|neunzehn|(?:(?:ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun)und)?(?:zwanzig|dreißig|vierzig|fünfzig|sechzig|siebzig|achtzig|neunzig)|hundert|tausend";
 
 // Prepositions opening a phrase of their own.
 const prepositions = [
@@ -33,7 +34,7 @@ export const subordinatorSource = "wenn|dass|ob|weil|falls|sobald|bevor|nachdem|
 // Kantonen und erfahrenen Vertreter*innen`), but no finite verb (`mit den
 // Kindern und besuchen Lehrer:innen`): only adjective endings or common
 // short adjectives.
-export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein|aus|zu|an|fest|ab)?stellen|(?:ver|mit|ein|auf|zu|aus)?teilen|entmenschlichen|ermöglichen|veröffentlichen|verdeutlichen|verwirklichen|beschäftigen|berücksichtigen|bestätigen|ermutigen|befähigen|beseitigen|bewältigen|benötigen|kündigen|würdigen|entschuldigen|vereinigen)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*(?:ig|lich|isch|sch|al|ell|iv|ar|är|er|ern|ent|ant|ert|t|st|nd|haft|los|sam|bar|ös|en|eur|stark|il)en|\p{Ll}{3,}reichen|jungen|neuen|großen|kleinen|freien|guten|hohen|vielen|wenigen|einigen|beiden|langen|ganzen|fremden|lieben|wilden|starken|frühen|späten|tollen|schönen|kranken|gesunden|treuen|klugen|engen|strengen|jüngeren|älteren)`;
+export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein|aus|zu|an|fest|ab)?stellen|(?:ver|mit|ein|auf|zu|aus)?teilen|entmenschlichen|ermöglichen|veröffentlichen|verdeutlichen|verwirklichen|beschäftigen|berücksichtigen|bestätigen|ermutigen|befähigen|beseitigen|bewältigen|benötigen|kündigen|würdigen|entschuldigen|vereinigen|(?:unter|be|ver|aus|weiter|fort|an|ein)?(?:richten|bilden|leiten|reiten|bieten|arbeiten|achten|trachten|halten|walten|stalten|melden|senden|wenden|binden|finden|warten|starten|testen|leisten|rüsten|kosten|retten|bitten|treten|raten)|bereiten|begleiten|beobachten|betreten|vertreten|unterrichten)(?![\p{L}\p{M}]))\p{Ll}[\p{L}\p{M}]*(?:ig|lich|isch|sch|al|ell|iv|ar|är|er|ern|ent|ant|ert|t|st|nd|haft|los|sam|bar|ös|en|eur|stark|il)en|\p{Ll}{3,}reichen|jungen|neuen|großen|kleinen|freien|guten|hohen|vielen|wenigen|einigen|beiden|langen|ganzen|fremden|lieben|wilden|starken|frühen|späten|tollen|schönen|kranken|gesunden|treuen|klugen|engen|strengen|jüngeren|älteren)`;
 
 // Nothing but whitespace back to the start of the text or a sentence end.
 export const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;

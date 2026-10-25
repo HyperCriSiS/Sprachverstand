@@ -51,18 +51,31 @@ const maleNamesAndPlaces = [
   "Lukas", "Felix", "Max", "Jonas", "Leon", "Ben", "Tim", "Tom", "Simon", "David", "Johannes", "Philipp",
   "Moritz", "Niklas", "Julian", "Robert", "Ralf", "Rainer", "Holger", "Sven", "Dirk", "Oliver", "Torsten",
   "Thorsten", "Kai", "Mario", "Marco", "Erik", "Christoph", "Georg", "Heinz", "Horst", "Manfred", "Josef",
+  "Kevin", "Marvin", "Dennis", "Patrick", "Fabian", "Jonathan", "Elias", "Noah", "Luca", "Finn",
+  "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
   "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
   "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
 ].join("|");
 const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
-// A name with a verb counts only with a feminine ending or as a unisex name
-// (`Anna kam`, `Marie wartet`, `Kim wartet`); `Kevin`, `Paris` or `Essen`
-// own no `ihre`.
+// Frequent female first names without a feminine ending.
+const femaleNames = [
+  "Ingrid", "Judith", "Miriam", "Ruth", "Esther", "Edith", "Elisabeth", "Sarah", "Hannah", "Leah", "Rachel",
+  "Karin", "Kerstin", "Katrin", "Jasmin", "Carolin", "Doris", "Iris", "Agnes", "Gudrun", "Sigrid", "Astrid",
+  "Birgit", "Margit", "Gertrud", "Irmgard", "Waltraud", "Hildegard", "Ingeborg", "Mechthild", "Carmen",
+  "Ellen", "Helen", "Karen", "Kristin", "Christin", "Evelyn", "Marion", "Liv", "Elif", "Zeynep", "Dolores",
+  "Mercedes", "Isabel", "Annegret", "Rosemarie", "Brunhild", "Lilith"
+].join("|");
+// A name with a verb counts with a feminine ending (also `Edeltraud`,
+// `Gerlind`), as a listed female name
+// or as a unisex name (`Anna kam`, `Ingrid wartet`, `Kim wartet`); `Kevin`,
+// `Justin` or `Paris` own no `ihre`.
 const otherOwnerName = new RegExp(
-  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?:\p{Lu}\p{Ll}*(?:a|e|y|ette|elle|ine|ina)|Kim|Robin|Alex|Chris|Charlie|Sam|Toni|Mika)\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
+  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?:\p{Lu}\p{Ll}*(?:a|e|y|ette|elle|ine|ina|traud|trud|gard|hild|lind|run|rid|git|grit)|${femaleNames}|Kim|Robin|Alex|Chris|Charlie|Sam|Toni|Mika)\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
 // A feminine or plural subject with its verb (`Die Schule ist neu.`,
 // `Berliner Schulen sind bekannt.`).
-const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|\p{Lu}\p{Ll}+(?:s|er)\s+\p{Lu}\p{Ll}+\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
+// Plurals also bare or with an adjective (`Schulen sind geschlossen.`,
+// `Unsere neuen Schulen sind bekannt.`).
+const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
 const ownPossessiveAhead = /^\s*eigen(?:e|en|em|er|es)?(?![\p{L}\p{M}])/u;
 const clauseStartPattern = /[^,.!?;:]*$/u;
 const lowercaseWord = /^\p{Ll}/u;
