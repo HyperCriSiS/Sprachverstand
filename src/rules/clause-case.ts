@@ -201,7 +201,7 @@ const frontedJederDativePattern = new RegExp(
 // with a finite verb of its own (`Wir danken dem Lehrer und der Ärzt*in
 // hilft uns`): that starts a new clause with its subject.
 const dativeCoordinatedPattern = new RegExp(
-  String.raw`((?<![\p{L}\p{M}])(?:dem|einem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+)(der|einer)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?!ge)\p{Ll}[\p{L}\p{M}]*t(?![\p{L}\p{M}]))`,
+  String.raw`((?<![\p{L}\p{M}])(?:dem|einem)\s+(?:\p{Ll}[\p{L}\p{M}]*en\s+)?\p{Lu}[\p{L}\p{M}-]*\s+(?:und|oder|sowie)\s+)(der|einer)(\s+)((?:\p{Ll}[\p{L}\p{M}]*en?\s+){0,2})${marked}${end}(?!\s+(?:(?!ge)\p{Ll}[\p{L}\p{M}]*t|war|ist|kann|will|muss|soll|darf|mag|wird|hat|sagte|kam|ging|blieb|stand|sah|gab|nahm)(?![\p{L}\p{M}]))`,
   "gu"
 );
 // (u) `es gibt` takes the accusative: `gibt es eine Projektentwickler*in`.

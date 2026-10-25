@@ -31,7 +31,16 @@ const pronounBeforeVerb = /(?:^|\s)(?:(?:wir|ihr|sie)(?:\s+(?:alle|beide|gemeins
 // Coordinated subjects (`Peter und Anna folgen …`, `Eltern und Kinder helfen …`).
 const coordinatedSubjectBeforeVerb = /(?:^|[.!?:;]\s+)\p{Lu}\p{Ll}+\s+und\s+\p{Lu}\p{Ll}+\s*$/u;
 const andBeforeVerb = /(?:^|\s)und\s*$/iu;
-const clauseStartPattern = /[^.!?;:()]*$/u;
+// A sentence end is a dot, `!` or `?` before whitespace, not after an
+// abbreviation or initial (`In St. Gallen`, `Auf www.example.com`).
+const clauseBoundaryPattern =
+  /(?<!(?:^|[\s(])(?:St|Dr|Prof|Nr|Str|ca|bzw|vgl|etc|usw|evtl|ggf|inkl|zzgl|Abs|Art|Bd|Mio|Mrd|z\.\s?B|u\.\s?a|\p{Lu}))[.!?](?=\s|$)|[;:()]/gu;
+
+function clauseBefore(text: string): string {
+  let start = 0;
+  for (const match of text.matchAll(clauseBoundaryPattern)) start = match.index + match[0].length;
+  return text.slice(start);
+}
 // A clause opened by an adverbial or a question word has the subject after
 // the verb (`In der Schulbibliothek helfen Audible-Mitarbeiter*innen, …`,
 // `Seit 2014 helfen Samariter:innen …`, `Vielleicht helfen Lehrer:innen …`).
@@ -105,7 +114,7 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
   if (infinitiveAhead.test(after)) return false;
   if (singularVerb.test(verb)) return true;
   if (dativeBeforeVerb.test(textBeforeVerb)) return false;
-  const clause = textBeforeVerb.slice(Math.max(0, textBeforeVerb.search(clauseStartPattern))).trim();
+  const clause = clauseBefore(textBeforeVerb).trim();
   // With its own subject before the verb, a following `der Schule` is a
   // genitive attribute (`Wir helfen Lehrer:innen der Schule`).
   if (pronounBeforeVerb.test(textBeforeVerb) || coordinatedSubjectBeforeVerb.test(textBeforeVerb) ||
@@ -118,9 +127,16 @@ export function verbGovernsPlural(verb: string, textBeforeVerb: string, after: s
 // `zwischen` and `neben` take the accusative with a verb of placing (`Wir
 // stellen uns zwischen Lehrer:innen`, `… neben Schüler:innen zu setzen`).
 const twoWayPreposition = /^(?:zwischen|neben)$/iu;
-const placingVerb = String.raw`(?:stell|setz|leg|tret|tritt|trat|rück|dräng|schieb|schob|platzier|reih)\p{Ll}*`;
-const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?:\s+[^\s.!?;:,]+){0,3}\s*$`, "iu");
-const placingVerbAfter = new RegExp(String.raw`^(?:\s+[^\s.!?;:,]+){0,4}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}(?![\p{L}\p{M}])`, "iu");
+// Only inflected verb forms: `stellenweise` is no verb.
+const placingVerb = String.raw`(?:(?:stell|setz|leg|rück|dräng|schieb|platzier|reih)(?:e|st|t|en|et|te|test|ten|tet)?|tret(?:e|en|et)?|tritt|trittst|trat|traten|schob|schoben)(?![\p{L}\p{M}])`;
+// `Wir legen los zwischen …`, `Wir treten auf neben …` place nothing.
+const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?!\s+(?:los|auf|ab|an)(?![\p{L}\p{M}]))(?:\s+[^\s.!?;:,]+){0,3}\s*$`, "iu");
+// The verb after the phrase belongs to it, not to a coordinated predicate
+// (`Wir stehen zwischen Lehrer:innen und stellen Fragen`).
+const placingVerbAfter = new RegExp(String.raw`^(?:\s+(?!(?:und|oder|sowie|aber)\s)[^\s.!?;:,]+){0,4}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "iu");
+// The object of the placing verb right before the preposition (`Wir stellen
+// den Stuhl zwischen Lehrer:innen`).
+const placedObjectBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}\s+(?:den|das|die|einen|ein|eine|ihren|seinen|unseren|meinen|deinen|euren)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$`, "iu");
 const clauseBeforePattern = /[^.!?;:,]*$/u;
 // After a noun the preposition is its attribute (`Kooperation zwischen
 // Landwirt:innen …`), always a dative.
@@ -129,6 +145,8 @@ const nounBeforePreposition = /(?:^|\s)\p{Lu}[\p{L}\p{M}-]*\s*$/u;
 export function directionalTwoWayPreposition(preposition: string, before: string, after: string): boolean {
   if (!twoWayPreposition.test(preposition)) return false;
   const clause = clauseBeforePattern.exec(before)?.[0] ?? before;
-  if (nounBeforePreposition.test(clause) && !sentenceStartBefore.test(before.replace(/\S+\s*$/u, ""))) return false;
+  if (nounBeforePreposition.test(clause) && !sentenceStartBefore.test(before.replace(/\S+\s*$/u, ""))) {
+    return placedObjectBefore.test(clause);
+  }
   return placingVerbBefore.test(clause) || placingVerbAfter.test(after.slice(0, 80));
 }
