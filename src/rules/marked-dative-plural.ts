@@ -156,8 +156,8 @@ function mapDativePlural(base: string): string | undefined {
   return plural + (uppercase ? "N" : "n");
 }
 
-const dativeLeadingContextPattern =
-  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
+const dativeLeadingContextPattern = new RegExp(
+  String.raw`(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${quantityGap}(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$`, "iu");
 
 // After `den` an unmarked first item must name persons (`Wir sehen den Mann,
 // Lehrer:innen und …` is an accusative singular). After a person plural the
