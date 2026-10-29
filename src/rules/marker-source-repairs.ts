@@ -229,6 +229,7 @@ const nominativeItemAhead = /^\s*,\s*\p{Lu}[\p{L}\p{M}-]*\p{Ll}e(?=\s*,|\s+(?:un
 const listEnding = /(?:,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
 const listSeparator = /,|\s(?:und|oder|sowie)\s/u;
 const dativeBeforeParenthesis = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+){0,2}\S+\s*$`, "u");
+const copulaBeforeWord = /(?:^|\s)(?:sind|ist|waren|war|werden|wird|bleiben|bleibt)\s+$/u;
 const verbWithPronounAhead = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 
 function isCoordinatedDative(before: string, after: string): boolean {
@@ -239,6 +240,9 @@ function isCoordinatedDative(before: string, after: string): boolean {
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
+  // A predicate after a copula is a nominative (`Zielgruppen sind Firmen aus
+  // Berlin, Lehrer:innen und …`).
+  if (previous && copulaBeforeWord.test(before.slice(0, match.index + match[0].indexOf(previous)))) return false;
   if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!) + (dativeVerbPattern.test(trigger!) ? trigger!.length + 1 : 0)), listRest(after))) return false;
   const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
   // A year after the trigger is no count (`Seit 2015 nehmen Läufer:innen und …`).
