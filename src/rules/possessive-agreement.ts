@@ -53,7 +53,14 @@ const maleNamesAndPlaces = [
   "Lukas", "Felix", "Max", "Jonas", "Leon", "Ben", "Tim", "Tom", "Simon", "David", "Johannes", "Philipp",
   "Moritz", "Niklas", "Julian", "Robert", "Ralf", "Rainer", "Holger", "Sven", "Dirk", "Oliver", "Torsten",
   "Thorsten", "Kai", "Mario", "Marco", "Erik", "Christoph", "Georg", "Heinz", "Horst", "Manfred", "Josef",
-  "Kevin", "Marvin", "Dennis", "Patrick", "Fabian", "Jonathan", "Elias", "Noah", "Finn",
+  "Kevin", "Marvin", "Dennis", "Patrick", "Fabian", "Jonathan", "Elias", "Noah", "Finn", "Justin", "Erwin",
+  "Benjamin", "Edwin", "Calvin", "Valentin", "Quentin", "Konstantin", "Florentin", "Jakob", "Emil", "Anton",
+  "Konrad", "Ludwig", "Paul", "Karl", "Rolf", "Ulf", "Olaf", "Axel", "Achim", "Joachim", "Ingo", "Hugo", "Otto",
+  "Bruno", "Leo", "Theo", "Nico", "Luis", "Louis", "Jonas", "Lars", "Nils", "Mats", "Hannes", "Mats", "Jannik",
+  "Henrik", "Dominik", "Patrik", "Malik", "Ali", "Mehmet", "Ahmed", "Mohammed", "Omar", "Yusuf", "Ibrahim",
+  "Adam", "Samuel", "Daniel", "Gabriel", "Raphael", "Michel", "Pierre", "Jean", "Juan", "José", "Carlos",
+  "Helsinki", "Oslo", "Madrid", "Lissabon", "Prag", "Warschau", "Budapest", "Brüssel", "Amsterdam", "Kopenhagen",
+  "Stockholm", "Dublin", "Athen", "Istanbul", "Moskau", "Kiew", "Washington", "Tokio", "Peking", "Kairo",
   "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
   "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
   "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
@@ -65,14 +72,15 @@ const femaleNames = [
   "Karin", "Kerstin", "Katrin", "Jasmin", "Carolin", "Doris", "Iris", "Agnes", "Gudrun", "Sigrid", "Astrid",
   "Birgit", "Margit", "Gertrud", "Irmgard", "Waltraud", "Hildegard", "Ingeborg", "Mechthild", "Carmen",
   "Ellen", "Helen", "Karen", "Kristin", "Christin", "Evelyn", "Marion", "Liv", "Elif", "Zeynep", "Dolores",
-  "Mercedes", "Isabel", "Annegret", "Rosemarie", "Brunhild", "Lilith"
+  "Mercedes", "Isabel", "Annegret", "Rosemarie", "Brunhild", "Lilith", "Maren", "Ines", "Dagmar", "Mirjam", "Margret",
+  "Annett", "Babett", "Gwen", "Ann", "Jill", "Kathrin", "Gesine", "Swantje"
 ].join("|");
-// A name with a verb counts with a feminine ending (also `Edeltraud`,
-// `Gerlind`), as a listed female name
-// or as a unisex name (`Anna kam`, `Ingrid wartet`, `Kim wartet`); `Kevin`,
-// `Justin` or `Paris` own no `ihre`.
+// Any name with a verb may own the possessive (`Anna kam`, `Ingrid wartet`,
+// `Marlis kann helfen`, `Kim wartet`); an unknown name stays a possible owner.
+// The listed male names and places and typical male endings own no `ihre`
+// (`Kevin`, `Justin`, `Paris`, `Marco`, `Markus`, `Werner`).
 const otherOwnerName = new RegExp(
-  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?:\p{Lu}\p{Ll}*(?:a|e|y|ette|elle|ine|ina|traud|trud|gard|hild|lind|run|rid|git|grit)|${femaleNames}|Kim|Robin|Alex|Chris|Charlie|Sam|Toni|Mika)\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
+  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?!(?!(?:${femaleNames})\s)\p{Lu}\p{Ll}*(?:o|us|er|bert|fried|helm|hard|mund|rich|old|ald)\s)\p{Lu}\p{Ll}+\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge|kann|will|muss|soll|darf|mag|ist|hat|wird|möchte|wollte|konnte|musste|sollte|durfte|ruft)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
 // A feminine or plural subject with its verb (`Die Schule ist neu.`,
 // `Berliner Schulen sind bekannt.`).
 // Plurals also bare or with an adjective (`Schulen sind geschlossen.`,
@@ -81,7 +89,7 @@ const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?
 // A plural verb on -en with persons as subject (`Die männlichen Kollegen
 // warten.`); things own no possessive here (`Die Pflanzen wachsen.`).
 const pluralSubjectPattern =
-  /(?:^|[.!?:]\s+)(?:Die|Diese|Unsere|Ihre|Alle|Viele)\s+(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)\s+\p{Ll}+en(?![\p{L}\p{M}])/gu;
+  /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Alle|Viele|Meine|Deine|Seine|Eure|Keine|Einige|Manche|Mehrere|Zahlreiche|Wenige|Beide|Zwei|Drei|Vier|Fünf)\s+)?(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)\s+\p{Ll}+en(?![\p{L}\p{M}])/gu;
 
 function personPluralSubject(text: string): boolean {
   for (const match of text.matchAll(pluralSubjectPattern)) {
