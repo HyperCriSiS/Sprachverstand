@@ -1,5 +1,5 @@
 import type { TransformResult } from "../core/rule";
-import { sentenceStartBefore } from "./clause-structure";
+import { numberWordSource, sentenceStartBefore } from "./clause-structure";
 import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 
@@ -66,7 +66,7 @@ const maleNamesAndPlaces = [
   "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
   "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
 ].join("|");
-const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
+const notName = String.raw`(?!(?:Schnee|Käse|Gemüse|Getreide|Ende|Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
 // Frequent female first names without a feminine ending.
 const femaleNames = [
   "Ingrid", "Judith", "Miriam", "Ruth", "Esther", "Edith", "Elisabeth", "Sarah", "Hannah", "Leah", "Rachel",
@@ -94,8 +94,8 @@ const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?
 // A plural verb on -en with persons as subject (`Die männlichen Kollegen
 // warten.`, `Sechs Lehrer warten.`, `Lehrer und Schüler warten.`, `Meine
 // Lehrer sind bereit.`); things own no possessive here (`Die Pflanzen wachsen.`).
-const pluralSubjectPattern =
-  /(?:^|[.!?:]\s+)(?:(?:Sehr\s+|So\s+)?(?:Die|Diese|Unsere|Ihre|Alle|Viele|Meine|Deine|Seine|Eure|Keine|Einige|Manche|Mehrere|Zahlreiche|Wenige|Beide|Zwei|Drei|Vier|Fünf|Sechs|Sieben|Acht|Neun|Zehn|Elf|Zwölf|Zwanzig|Hundert|\d+)\s+)?(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)(?:\s+(?:und|oder|sowie)\s+\p{Lu}\p{Ll}+)?\s+(?:\p{Ll}+en|sind|waren)(?![\p{L}\p{M}])/gu;
+const pluralSubjectPattern = new RegExp(
+  String.raw`(?:^|[.!?:]\s+)(?:(?:[Ss]ehr\s+|[Ss]o\s+)?(?:[Dd]ie|[Dd]iese|[Uu]nsere|[Ii]hre|[Aa]lle|[Vv]iele|[Mm]eine|[Dd]eine|[Ss]eine|[Ee]ure|[Kk]eine|[Ee]inige|[Mm]anche|[Mm]ehrere|[Zz]ahlreiche|[Ww]enige|[Bb]eide|${numberWordSource.replace(/[a-zäöü]/gu, (letter) => `[${letter}${letter.toLocaleUpperCase("de-DE")}]`)}|\d+)\s+)?(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)(?:\s+(?:und|oder|sowie)\s+\p{Lu}\p{Ll}+)?\s+(?:\p{Ll}+en|sind|waren)(?![\p{L}\p{M}])`, "gu");
 
 function personPluralSubject(text: string): boolean {
   for (const match of text.matchAll(pluralSubjectPattern)) {
