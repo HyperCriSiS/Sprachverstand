@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-10-29  
+Stand: 2026-10-30  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -96,7 +96,12 @@ Autorität: `main`
   - #562 N48 Listen-Scanner: kein Dativ aus einem Attribut über Glieder, die kein Dativ sein können, nach Kopula („sind KMU aus …“), bei Zweierlisten nur mit Komma vor Adverb oder Einschub; N49 Genitivreihen (nach Singular ohne Personen immer, nach Plural nur ohne echtes Regens; „der Lehrern“ ist kein Genitiv); N50 Singularartikel im Glied nur mit Dativbeleg in anderem Glied; N51/N19 „bis zu“ vor Mengenwörtern; N52 Richtungsinfinitiv nach Liste; N35/N41/N42/N28-Varianten (Dativ-Nachbar am Satzanfang vor Dativverb, Attribut mit Adverb/Zahl, weitere Nichtverben, Pluralbesitzer).
   - **Besitzerregel umgestellt:** Ein unbekannter Name mit Verb gilt als mögliche Besitzerin („ihre“ bleibt); ausgenommen eine Liste männlicher Namen und Orte sowie typisch männliche Endungen (-o, -us, -er …). Grund: Listen weiblicher Namen sind nie vollständig.
   - Sollfälle des Berichts: Befundbeispiele 0 → 33 von 36, Proben 695 → 903 von 907, bewertete Korpusänderungen 1 299 → 1 312 von 1 354 ohne neue Fehler; Korpus gegenüber main 20 Texte an 12 Stellen. Laufzeit gleichauf mit main.
-  - Bewusst offen: Apposition „Spezialistin aus Portugal, Luis und Lafika, zwei Künstler“, „mit Ausbildungsabschluss im Herbst sowie Quereinsteiger“, Dativ über ein weit entferntes Verb („ermöglicht … bis zu 260 Zuschauern“), Komma statt Konjunktion am Satzende („zusammen mit Gewerkschaften, Textilarbeiter“).
+  - Bewusst offen: „mit Ausbildungsabschluss im Herbst sowie Quereinsteiger“, Dativ über ein weit entferntes Verb („ermöglicht … bis zu 260 Zuschauern“), Komma statt Konjunktion am Satzende („zusammen mit Gewerkschaften, Textilarbeiter“). Die Besitzerregel dieser Runde ist mit #565 wieder eng gefasst.
+- **Gegenprüfung 30.10.2026** (`artifacts/gegenpruefung-20261030`, Prüfstand `c67bfee`):
+  - #565 N53/N54 Besitzerregel wieder eng: Als mögliche Besitzerin gelten nur Namen mit weiblichem Beleg (Endung, Namensliste, Unisex), nicht jedes großgeschriebene Wort am Satzanfang („Boris wartet“, „Benzin brennt“, „Augsburg ist schön“); N42 weitere weibliche Namen; N28 Pluralbesitzer mit Zahlwort, Koordination und „sind“.
+  - #565 Listen: N55 echte Komma-Dativliste nach eindeutigem Dativ („danken Lehrern, Schüler:innen besonders“); N56/N48 gezähltes Glied nach Attribut („Tausende von Nominierten, beinahe 200 Künstler“, „2 Gruppen aus Münster und Bremen und 17 Schüler“), Kopula mit Adjektiv oder Konjunktion, „zu Wort“, kein Kommasprung beim Dativ vor dem Plural; N49 Genitiv nach Singular auf -n/-s („Mit Wissen der Schulen“); N50 Dativbeleg ohne Artikel; N51 „bis zu sehr vielen“; N52 Richtungsinfinitiv nach Adjektiv; N35 vorangestellter Dativ nach Fokuspartikel, Doppelpunkt oder Adverb.
+  - Sollfälle des Berichts: Befundbeispiele 0 → 36 von 41, Proben 244 → 369 von 399, Änderungen 20 von 20; ältere Prüfsätze ohne Rückschritt. Korpus gegenüber main 11 Texte an 10 Stellen, alle Verbesserungen. Laufzeit gleichauf.
+  - Bewusst offen: Dreierliste vor Richtungsinfinitiv („zwischen Lehrer:innen, Schüler:innen und Musiker:innen zu setzen“), Sachplural ohne Artikel in der Liste („Firmen aus Berlin, Betriebe, Lehrer:innen“), „Quereinsteiger“ (siehe oben).
 - **Nächste Schritte:**
   - Offene Punkte der Gegenprüfungen nach Bedarf.
   - Changelog-Einträge nur als Fragment.
@@ -104,7 +109,7 @@ Autorität: `main`
 
 ## Pale Moon (22.10.2026)
 
-- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525), #529 (#528), #538 (#531–#537), #545 (#540–#544), #552 (#547–#551), #556 (#554), #560 (#557–#559) und #563 (#562). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
+- `palemoon` ist auf Main-Parität: #494, #506 (#503–#505), #512 (#507–#511), #516 (#515), #521 (#517–#519), #526 (#523–#525), #529 (#528), #538 (#531–#537), #545 (#540–#544), #552 (#547–#551), #556 (#554), #560 (#557–#559), #563 (#562) und #566 (#565). Der CI-Schritt „Gemeinsame Produktfunktionen … mit main abgleichen“ verlangt identische Pfade `src/core`, `src/rules`, `src/settings` usw. Nach jedem `main`-Merge, der diese Pfade ändert, den Sync nachziehen.
 - Der Sync enthält:
   - `maxVersion 35.*` (CI erlaubt nur `<major>.*`);
   - Pale Moon 35.0.2;
@@ -141,7 +146,7 @@ Autorität: `main`
 ## Zuletzt verifizierte Produktbaseline
 
 - Repository `HyperCriSiS/Sprachverstand`. Für jede neue Arbeit den **aktuellen `main`-HEAD live** bestimmen; kein hier genannter Commit ersetzt diese Abfrage.
-- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #562 (Gegenprüfung 29.10.), davor #559 (Gegenprüfung 28.10.), davor #558/#557 (gemeinsame Satzglied- und Listenerkennung), davor #554 (Gegenprüfung 27.10.), davor #551 (Restfälle #547–#551), davor #544 (Gegenprüfung 26.10., #540–#544), davor #537 (#531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #563. Vor Wiederaufnahme HEAD live prüfen.
+- Letzter integrierter `main`-HEAD vor diesem Checkpoint: #565 (Gegenprüfung 30.10.), davor #562 (Gegenprüfung 29.10.), davor #559 (Gegenprüfung 28.10.), davor #558/#557 (gemeinsame Satzglied- und Listenerkennung), davor #554 (Gegenprüfung 27.10.), davor #551 (Restfälle #547–#551), davor #544 (Gegenprüfung 26.10., #540–#544), davor #537 (#531–#537), davor `75cce7a` (#528), davor #527 `8629def`, #525 `2df871b`, davor #524 `9ccb3fb`, #523 `4965fc4`, #522 `2104f83`, #520 `9a8b335`. `palemoon`: Sync #566. Vor Wiederaufnahme HEAD live prüfen.
 - Produktversion `0.7.2`, 93 integrierte Lexikonwellen (zuletzt PR **#374**); zuletzt dokumentierte öffentliche moderne Prerelease `v0.7.2-rc.12`. **Kein neuer Release-Tag oder Store-Submit** durch die Vorbereitung.
 - PR-CI für #372–#374 grün: Kernprüfungen, Performance, Chromium/Video, Gecko/Firefox, CodeQL und Sammelcheck.
 - **Nicht veröffentlichender** Gesamt-Preflight [Run #37975520305](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/37975520305) auf Produktstand `b26f837` vollständig erfolgreich: fünf moderne Releasepakete und SHA-Prüfungen. Artefakt `11638965688` läuft am **23.10.2026, 18:48 UTC** ab. „Technisch grün“ bedeutet nicht „veröffentlicht“ oder „Store-freigegeben“.
