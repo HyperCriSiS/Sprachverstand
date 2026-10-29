@@ -1,3 +1,4 @@
+import { listGovernorBefore } from "./noun-lists";
 import type { Rule, TransformResult } from "../core/rule";
 import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
@@ -233,6 +234,10 @@ const copulaBeforeWord = /(?:^|\s)(?:sind|ist|waren|war|werden|wird|bleiben|blei
 const verbWithPronounAhead = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 
 function isCoordinatedDative(before: string, after: string): boolean {
+  // Respect the structural scanner before the fallback repairs an -er form.
+  // Otherwise it can reintroduce a dative rejected at a predicate boundary.
+  const scanned = listGovernorBefore(before);
+  if (scanned?.rejected) return false;
   const match = coordinatedDativeBefore.exec(before);
   if (!match) return false;
   const [, comma, previous, trigger, noun, ending] = match;
