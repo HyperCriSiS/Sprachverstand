@@ -1,4 +1,4 @@
-import { coordinatedAdjective, numberWordSource } from "./clause-structure";
+import { coordinatedAdjective, numberWordSource, singularOnNs } from "./clause-structure";
 import { dativeVerbPattern } from "./dative-verbs";
 import { namesPersons } from "./marker-source-repairs";
 
@@ -86,6 +86,10 @@ const nonDativeEnding = /(?:er|el)$/u;
 // `der Lehrern` is no genitive: the form is a dative only.
 const dativeOnlyForm = /(?<!Elt)(?:er|el)n$/u;
 const timeAdverbs = new Set(["heute", "gestern", "morgen", "damals", "früher", "jetzt", "dort", "hier", "nebenan"]);
+// A plural owner before a copula (`Firmen`, not `Schutz von …`).
+// `ist eine enge Kooperation von …` has its own determiner: no predicate list.
+const determiners = new Set(["eine", "keine", "meine", "deine", "seine", "ihre", "unsere", "eure", "diese", "jene", "jede", "welche", "die"]);
+const pluralOwner = /(?:en|e|er|s)$/u;
 const copulas = new Set(["sind", "ist", "waren", "war", "werden", "wird", "bleiben", "bleibt"]);
 
 interface Token { text: string; lower: string; index: number }
@@ -228,7 +232,7 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
       // Decided once the attribute chain ends: `Arbeitsmigranten in der Zeit der
       // Industrialisierung, Zwangsarbeiter*innen …` is a dative list.
       if (!namesPersons(ownerText)) {
-        if (dativeEndingToken.test(ownerText)) genitive = true;
+        if (dativeEndingToken.test(ownerText) && !singularOnNs.test(ownerText)) genitive = true;
         // A conjunction right after it joins the genitive (`nach Maßgabe der
         // Ausbildungskapazitäten und geeigneten Bewerber*innen`).
         else if (attributes === 0 && conjunction) return {head, rejected: true};
@@ -244,8 +248,14 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
       // neighbour may still show the case (`Mangel an Lehrlingen und …`).
       // A predicate after a copula is a nominative (`Zielgruppen sind KMU aus
       // den Alpenregionen, Tourismusbetriebe, Dienstleister*innen …`).
-      const copula = copulas.has(tokens[owner - 1]?.lower ?? "");
-      if (copula && !conjunction) return {head, rejected: true};
+      // Also with adjectives (`sind große Firmen aus Berlin, …`); with a
+      // conjunction when the attribute names no persons (`Das sind Firmen aus
+      // Berlin und Lehrer*innen`, not `Anfragen von Eltern und …`).
+      let verbAt = owner - 1;
+      while (verbAt > 0 && attributeWord.test(tokens[verbAt]!.text) && !attributeArticles.has(tokens[verbAt]!.lower) &&
+        !determiners.has(tokens[verbAt]!.lower)) verbAt--;
+      const copula = copulas.has(tokens[verbAt]?.lower ?? "");
+      if (copula && (!conjunction || (!namesPersons(attribute) && pluralOwner.test(ownerText)))) return {head, rejected: true};
       if (isGovernor(tokens, opener)) return {head, governor: opener, singular, redirected: true, genitive, copula};
       return accusativePrepositions.has(tokens[opener]!.lower) ? {head, rejected: true} : {head, start: true, singular, genitive};
     }
@@ -321,6 +331,9 @@ export function listGovernorBefore(text: string, offset = 0): ListGovernor | und
     if (phrase.rejected || nonDativePersonPlural(tokens[phrase.head]!.text)) return undefined;
     first = tokens[phrase.head]!.text;
     heads.push(first);
+    // A bare neighbour that can only be a dative (`mit der Schule und
+    // Lehrern sowie …`).
+    if (dativeOnlyForm.test(first) && namesPersons(first)) dativeEvidence = true;
     if (phrase.governor !== undefined) {
       // A list continuing a prepositional attribute has only items that can
       // be datives (`KMU aus den Alpenregionen, Tourismusbetriebe,

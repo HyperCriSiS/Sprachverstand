@@ -39,6 +39,10 @@ export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein
 // Nothing but whitespace back to the start of the text or a sentence end.
 export const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
 
+// Singular nouns on -n/-s that look like plurals (`Mit Wissen der Schulen`,
+// `Einverständnis`, `Konsens`).
+export const singularOnNs = /(?:nis|us|ens|ss|ion)$|^(?:Wissen|Leben|Verfahren|Vorhaben|Handeln|Denken|Engagement|Interesse)$/u;
+
 // Words on -t/-te/-en/-e that are no finite verb (`Dann direkt die Ärzt*in
 // kontaktieren`).
 export const nonVerbWordSource = "nicht|jetzt|zuletzt|oft|bereits|bereit|erst|meist|zumindest|selbst|gut|weit|seit|sonst|längst|zuerst|insgesamt|gemeinsam|stets|direkt|leicht|recht|sehr|zusammen|herzlichst?|dort|statt|samt|nebst|unten|oben|hinten|vorne|mitten|neben|zwischen|binnen|innen|außen|gegen|ohne|nach|unter|über|gestern|morgen|seiten|mit|bis|den|dem|der|die|das|des|ein|eine|einen|einem|einer|eines|keine|keinen|meine|seine|ihre|unsere|diese|diesen|jene|jede|jeden|alle|allen|viele|vielen|einige|einigen|wenige|wenigen|beide|beiden|weitere|weiteren|andere|anderen|eigene|eigenen|ganze|ganzen|heute|hier|gerne|gern|ebenfalls|also|ihnen|uns|euch|ihm|ihr|fast|zunächst|schlecht|exakt|komplett|korrekt|perfekt|bekannt|echt|laut|anstatt|derzeit|jederzeit|zurzeit|weltweit|bundesweit|konkret|explizit|strikt|bunt|halt|sanft|zart|geht's|heut|bewusst|gewusst|zumeist|größt|meistgelesen|erneut|sofort|zuweilen|bisweilen|eben|gleichzeitig|zugleich|bislang|hinterher|vorher|nachher|jeweils|zuvor|wiederholt|gezielt|verstärkt|vermehrt|bestimmt|konsequent|vereinzelt|gesondert|konzentriert|ausgezeichnet|begeistert|engagiert|entschieden|ausdrücklich";
