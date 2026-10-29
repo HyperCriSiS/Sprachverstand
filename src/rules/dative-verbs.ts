@@ -133,7 +133,9 @@ const placingVerb = String.raw`(?:(?:stell|setz|leg|rück|dräng|schieb|platzier
 const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?!\s+(?:los|auf|ab|an)(?![\p{L}\p{M}]))(?:\s+[^\s.!?;:,]+){0,3}\s*$`, "iu");
 // The verb after the phrase belongs to it, not to a coordinated predicate
 // (`Wir stehen zwischen Lehrer:innen und stellen Fragen`).
-const placingVerbAfter = new RegExp(String.raw`^(?:\s+(?!(?:und|oder|sowie|aber)\s)[^\s.!?;:,]+){0,4}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "iu");
+// A further list item may stand between (`zwischen Lehrer:innen und
+// Schüler:innen zu setzen`).
+const placingVerbAfter = new RegExp(String.raw`^(?:\s+(?!(?:und|oder|sowie|aber)\s+\p{Ll})[^\s.!?;:,]+){0,6}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "u");
 // The object of the placing verb right before the preposition (`Wir stellen
 // den Stuhl zwischen Lehrer:innen`).
 const placedObjectBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}\s+(?:den|das|die|einen|ein|eine|ihren|seinen|unseren|meinen|deinen|euren)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$`, "iu");
