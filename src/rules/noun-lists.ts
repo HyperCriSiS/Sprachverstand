@@ -51,7 +51,8 @@ const attributeWord = /^\p{Ll}[\p{L}\p{M}]*e[nrsm]?$/u;
 
 const separators = new Set([",", "und", "oder", "sowie", "bzw.", "&"]);
 const quantityWords = new Set(["ca.", "circa", "zirka", "rund", "etwa", "über", "mehr", "weniger", "als",
-  "insgesamt", "fast", "knapp", "mindestens", "maximal", "höchstens", "gut", "bis"]);
+  "insgesamt", "fast", "knapp", "mindestens", "maximal", "höchstens", "gut", "bis", "genau", "annähernd", "nahezu",
+  "beinahe", "exakt", "zusammen"]);
 // Determiners of a dative plural; one of them alone governs the list when no
 // other word does (`den Katholik*innen, den orthodoxen Mitgliedern und …`).
 const dativeDeterminers = new Set(["den", "allen", "unseren", "ihren", "euren", "meinen", "deinen", "seinen",
@@ -66,6 +67,8 @@ const attributeOpeners = new Set(["der", "des", "aus", "von", "vom", "in", "im",
 const attributeArticles = new Set(["der", "die", "das", "dem", "den", "des", "einer", "einem", "eines", "einen"]);
 const genitiveArticles = new Set(["der", "des"]);
 const accusativePrepositions = new Set(["für", "durch", "gegen", "ohne", "um"]);
+const singularDativeArticles = new Set(["der", "dem", "einer", "einem", "unserer", "unserem", "ihrer", "ihrem",
+  "seiner", "seinem", "meiner", "meinem", "dieser", "diesem"]);
 const singularArticles = new Set(["der", "die", "das", "dem", "einer", "einem", "eines", "einen"]);
 // Contracted articles open fixed attributes (`im Jahr`, `am Vormittag`).
 const contractedOpeners = new Set(["im", "am", "vom", "beim", "zum", "zur"]);
@@ -77,6 +80,13 @@ const subjectPronouns = new Set(["wir", "ich", "sie", "er", "es", "man", "ihr", 
 const listContinuesPattern = /^\s*(?:[,&]|(?:und|oder|sowie|bzw\.|wie\s+auch|als\s+auch)\s)/u;
 const markedToken = /[:*_·•\/()]|\p{Ll}Innen$/u;
 const dativeEndingToken = /[ns]$/u;
+// Plural endings outside the dative (`Tourismusmanager`); -e also ends
+// feminine singulars (`Industrie`, `Familie`).
+const nonDativeEnding = /(?:er|el)$/u;
+// `der Lehrern` is no genitive: the form is a dative only.
+const dativeOnlyForm = /(?<!Elt)(?:er|el)n$/u;
+const timeAdverbs = new Set(["heute", "gestern", "morgen", "damals", "früher", "jetzt", "dort", "hier", "nebenan"]);
+const copulas = new Set(["sind", "ist", "waren", "war", "werden", "wird", "bleiben", "bleibt"]);
 
 interface Token { text: string; lower: string; index: number }
 
@@ -129,7 +139,7 @@ interface Prefix { i: number; governor?: number; determiner?: number | undefined
 // The words of an item before its head noun, read backwards from `i`.
 // Coordinated adjectives belong to it (`von Schweizer und Liechtensteiner
 // Spieler:innen`).
-function readPrefix(tokens: Token[], i: number): Prefix {
+function readPrefix(tokens: Token[], i: number, singularArticle = false): Prefix {
   let number = false;
   let determiner: number | undefined;
   for (let words = 0; i >= 0 && words < 6; words++, i--) {
@@ -138,6 +148,10 @@ function readPrefix(tokens: Token[], i: number): Prefix {
     const coordinated = tokens[i + 1]?.lower === "und" || tokens[i + 1]?.lower === "oder";
     if (numberToken.test(token.lower) && !yearToken.test(token.text)) number = true;
     else if (dativeDeterminers.has(token.lower) || quantifiers.has(token.lower)) determiner = i;
+    else if (singularArticle && singularDativeArticles.has(token.lower) && i > 0 && isGovernor(tokens, i - 1)) {
+      // `gegenüber der Öffentlichkeit und den Partner:innen …`: allowed only
+      // when another item shows the dative.
+    }
     else if (relativeWords.has(token.lower) && conjunctions.has(tokens[i - 1]?.lower ?? "")) {
       // a possessive after the conjunction (`sowie deren Gesellschafter*innen`)
     }
@@ -156,11 +170,17 @@ function isAdjective(word: string, place: boolean): boolean {
 
 // `start`: the list begins with this phrase, without a governing word;
 // `singular`: it ends in a singular prepositional object before a comma.
-interface Phrase { head: number; governor?: number; rejected?: boolean; start?: boolean; singular?: boolean }
+// `genitive`: the list continues a genitive after a plural without persons.
+interface Phrase {
+  head: number; governor?: number; rejected?: boolean; start?: boolean; singular?: boolean; redirected?: boolean;
+  genitive?: boolean; copula?: boolean;
+}
 
 // A noun with its attributes, read backwards from its last noun at `i`.
 function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
   let head = i;
+  let genitive = false;
+  let singularGenitive = false;
   for (let attributes = 0; attributes < 3; attributes++) {
     let k = head - 1;
     // `Software- und Systementwickler*innen`
@@ -179,7 +199,8 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
     let owner: number | undefined;
     let opener: number | undefined;
     const token = tokens[k];
-    if (token && genitiveArticles.has(token.lower) && nounToken.test(tokens[k - 1]?.text ?? "")) {
+    if (token && genitiveArticles.has(token.lower) && nounToken.test(tokens[k - 1]?.text ?? "") &&
+      !dativeOnlyForm.test(tokens[head]!.text)) {
       owner = k - 1;
     } else if (token && attributeArticles.has(token.lower) && attributeOpeners.has(tokens[k - 1]?.lower ?? "") &&
       nounToken.test(tokens[k - 2]?.text ?? "")) {
@@ -199,12 +220,19 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
       // A genitive naming persons after a noun without persons takes the
       // list (`den Werken der Schriftsteller*innen und …`).
       if (namesPersons(attribute) && !namesPersons(ownerText)) return {head, rejected: true};
-      // So does a genitive before the conjunction after a singular noun
-      // without persons (`nach Maßgabe der Ausbildungskapazitäten und
-      // geeigneten Bewerber*innen`); a plural takes the list itself (`mit den
-      // Gemeinden der Region und weiteren Akteur*innen`).
-      if (attributes === 0 && conjunction && !namesPersons(ownerText) && !dativeEndingToken.test(ownerText)) {
-        return {head, rejected: true};
+      // So does a genitive after a singular without persons (`nach Maßgabe der
+      // Ausbildungskapazitäten und geeigneten Bewerber*innen`, `mit
+      // Unterstützung der beteiligten Schulen, Studierenden und …`); after a
+      // plural only a governing word makes it a dative list (`mit den
+      // Gemeinden der Region und …`, not `in den Inhalten der Arenen und …`).
+      // Decided once the attribute chain ends: `Arbeitsmigranten in der Zeit der
+      // Industrialisierung, Zwangsarbeiter*innen …` is a dative list.
+      if (!namesPersons(ownerText)) {
+        if (dativeEndingToken.test(ownerText)) genitive = true;
+        // A conjunction right after it joins the genitive (`nach Maßgabe der
+        // Ausbildungskapazitäten und geeigneten Bewerber*innen`).
+        else if (attributes === 0 && conjunction) return {head, rejected: true};
+        else singularGenitive = true;
       }
     } else if (!ownerAttribute) {
       const singular = !conjunction && singularArticles.has(tokens[k]!.lower);
@@ -214,16 +242,27 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean): Phrase {
       // `Vorteile für Unternehmen, Verbraucher*innen …`).
       // An accusative preposition governs no dative; after another one a
       // neighbour may still show the case (`Mangel an Lehrlingen und …`).
-      if (isGovernor(tokens, opener)) return {head, governor: opener, singular};
-      return accusativePrepositions.has(tokens[opener]!.lower) ? {head, rejected: true} : {head, start: true, singular};
+      // A predicate after a copula is a nominative (`Zielgruppen sind KMU aus
+      // den Alpenregionen, Tourismusbetriebe, Dienstleister*innen …`).
+      const copula = copulas.has(tokens[owner - 1]?.lower ?? "");
+      if (copula && !conjunction) return {head, rejected: true};
+      if (isGovernor(tokens, opener)) return {head, governor: opener, singular, redirected: true, genitive, copula};
+      return accusativePrepositions.has(tokens[opener]!.lower) ? {head, rejected: true} : {head, start: true, singular, genitive};
     }
     head = owner;
   }
-  return {head};
+  if (namesPersons(tokens[head]!.text)) return {head};
+  if (singularGenitive) return {head, rejected: true};
+  return {head, genitive};
 }
 
 // An unmarked item naming persons outside the dative shows the list is no
 // dative (`Vertreter von Tourismusverbänden, Vertreter*innen aus …`).
+// A marked form, a plural on -n/-s or a singular without plural ending.
+function dativeCompatible(word: string): boolean {
+  return markedToken.test(word) || dativeEndingToken.test(word) || !nonDativeEnding.test(word);
+}
+
 export function nonDativePersonPlural(word: string): boolean {
   return !markedToken.test(word) && !dativeEndingToken.test(word) && namesPersons(word);
 }
@@ -252,6 +291,8 @@ export function listGovernorBefore(text: string, offset = 0): ListGovernor | und
   let first = "";
   let conjunction = separator !== ",";
   let singular = false;
+  let genitive = false;
+  let dativeEvidence = prefix.determiner !== undefined && dativeDeterminers.has(tokens[prefix.determiner]!.lower);
   const result = (word: string, index: number): ListGovernor =>
     ({word, index, first, items: heads.length, separator, heads, conjunction, singular, compound});
   const found = (index: number): ListGovernor => result(tokens[index]!.text, tokens[index]!.index);
@@ -262,20 +303,40 @@ export function listGovernorBefore(text: string, offset = 0): ListGovernor | und
     const joined = tokens[i]!.text !== ",";
     conjunction ||= joined;
     while (i >= 0 && separators.has(tokens[i]!.lower)) i--;
+    // An attribute may end in an adverb or a number (`Lehrern von heute und
+    // …`, `Lehrern aus dem Jahr 2020 und …`).
+    if (i >= 0 && !nounToken.test(tokens[i]!.text) && (timeAdverbs.has(tokens[i]!.lower) || numberToken.test(tokens[i]!.lower))) {
+      for (let k = i - 1; k >= Math.max(1, i - 4); k--) {
+        if (attributeOpeners.has(tokens[k]!.lower) && nounToken.test(tokens[k - 1]!.text)) {
+          i = k - 1;
+          break;
+        }
+      }
+    }
     // Anything else before the separator ends the list.
     if (i < 0 || !nounToken.test(tokens[i]!.text)) break;
     const phrase = readPhrase(tokens, i, joined);
     singular ||= phrase.singular === true;
+    genitive ||= phrase.genitive === true;
     if (phrase.rejected || nonDativePersonPlural(tokens[phrase.head]!.text)) return undefined;
     first = tokens[phrase.head]!.text;
     heads.push(first);
-    if (phrase.governor !== undefined) return found(phrase.governor);
+    if (phrase.governor !== undefined) {
+      // A list continuing a prepositional attribute has only items that can
+      // be datives (`KMU aus den Alpenregionen, Tourismusbetriebe,
+      // Dienstleister*innen …` is no dative list).
+      if (phrase.redirected && (!heads.slice(0, -1).every(dativeCompatible) || (phrase.copula && heads.length > 1))) {
+        return undefined;
+      }
+      return found(phrase.governor);
+    }
     if (phrase.start) return result("", tokens[phrase.head]!.index);
-    prefix = readPrefix(tokens, phrase.head - 1);
+    prefix = readPrefix(tokens, phrase.head - 1, dativeEvidence);
+    if (prefix.determiner !== undefined && dativeDeterminers.has(tokens[prefix.determiner]!.lower)) dativeEvidence = true;
   }
   // Without a governing word the dative determiner of the first item governs.
   const determiner = prefix.determiner;
-  if ((heads.length > 0 || compound) && determiner !== undefined && dativeDeterminers.has(tokens[determiner]!.lower)) {
+  if ((heads.length > 0 || compound) && !genitive && determiner !== undefined && dativeDeterminers.has(tokens[determiner]!.lower)) {
     return found(determiner);
   }
   if (heads.length === 0) return undefined;
