@@ -1,5 +1,5 @@
 import type { TransformResult } from "../core/rule";
-import { numberWordSource, sentenceStartBefore } from "./clause-structure";
+import { numberWordSource, placeNames, sentenceStartBefore } from "./clause-structure";
 import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 
@@ -59,12 +59,8 @@ const maleNamesAndPlaces = [
   "Bruno", "Leo", "Theo", "Nico", "Luis", "Louis", "Jonas", "Lars", "Nils", "Mats", "Hannes", "Mats", "Jannik",
   "Henrik", "Dominik", "Patrik", "Malik", "Ali", "Mehmet", "Ahmed", "Mohammed", "Omar", "Yusuf", "Ibrahim",
   "Adam", "Samuel", "Daniel", "Gabriel", "Raphael", "Michel", "Pierre", "Jean", "Juan", "José", "Carlos",
-  "Helsinki", "Oslo", "Madrid", "Lissabon", "Prag", "Warschau", "Budapest", "Brüssel", "Amsterdam", "Kopenhagen",
-  "Stockholm", "Dublin", "Athen", "Istanbul", "Moskau", "Kiew", "Washington", "Tokio", "Peking", "Kairo",
   "Boris", "Kurt", "Knut", "Gerd", "Björn", "Bernhard", "Gerhard", "Helmut", "Herbert", "Norbert", "Lutz",
-  "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
-  "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
-  "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
+  ...placeNames
 ].join("|");
 const notName = String.raw`(?!(?:Schnee|Käse|Gemüse|Getreide|Ende|Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
 // Frequent female first names without a feminine ending.

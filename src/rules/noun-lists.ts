@@ -1,4 +1,4 @@
-import { coordinatedAdjective, numberWordSource, prepositionSource, singularOnNs } from "./clause-structure";
+import { coordinatedAdjective, numberWordSource, placeNames, prepositionSource, singularOnNs } from "./clause-structure";
 import { dativeVerbPattern } from "./dative-verbs";
 import { namesPersons } from "./marker-source-repairs";
 
@@ -95,6 +95,7 @@ const pluralOwner = /(?:en|e|er|s)$|^KMU$/u;
 const singularPredicateDeterminers = new Set(["ein", "eine", "kein"]);
 const accusativeListVerbs = new Set(["besuchen", "besucht", "sehen", "sieht", "suchen", "sucht", "brauchen", "braucht", "unterstützen", "unterstützt"]);
 const predicatePrepositions = new Set(prepositionSource.split("|"));
+const places = new Set(placeNames);
 const copulas = new Set(["sind", "ist", "waren", "war", "werden", "wird", "bleiben", "bleibt"]);
 const singularCopulas = new Set(["ist", "war", "wird", "bleibt"]);
 
@@ -227,9 +228,11 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean, counted: b
     const ownerPrefix = readPrefix(tokens, owner - 1);
     const explicitOuterCase = counted && (ownerPrefix.governor !== undefined ||
       (ownerPrefix.determiner !== undefined && dativeEndingToken.test(ownerText)));
-    // A von-attribute with a plural continues with the list (`Projekte von
-    // Schulen, Lehrern und Eltern`); a place does not (`Teams von Berlin und …`).
-    const pluralVon = opener !== undefined && tokens[opener]!.lower === "von" && pluralOwner.test(attribute);
+    // A von-attribute with a dative plural continues with the list (`Projekte
+    // von Schulen, Lehrern und Eltern`, `von Ämtern und …`); a place does not
+    // (`Teams von Berlin und …`, `Firmen von München, …`).
+    const pluralVon = opener !== undefined && tokens[opener]!.lower === "von" &&
+      dativeEndingToken.test(attribute) && !places.has(attribute);
     // An explicit accusative object keeps its list outside the attribute.
     if (!pluralVon && !namesPersons(attribute) && pluralOwner.test(ownerText) && !singularOnNs.test(ownerText) &&
       accusativeListVerbs.has(tokens[ownerPrefix.i]?.lower ?? "") && subjectPronouns.has(tokens[ownerPrefix.i - 1]?.lower ?? "")) {

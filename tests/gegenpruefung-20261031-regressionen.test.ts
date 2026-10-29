@@ -123,7 +123,23 @@ describe("Gegenprüfung 31.10.: Listenkasus und Besitzer", () => {
     ["Wir brauchen Rückmeldungen von Schulen, Lehrer:innen und Eltern.","Wir brauchen Rückmeldungen von Schulen, Lehrern und Eltern."],
     ["Partner sind Firmen aus Berlin, Lehrer:innen und Eltern.","Partner sind Firmen aus Berlin, Lehrer und Eltern."],
     ["Wir besuchen Schulen aus Berlin, Lehrer:innen und Schüler:innen.","Wir besuchen Schulen aus Berlin, Lehrer und Schüler."],
-    ["Wir unterstützen Kinder aus Berlin, Lehrer:innen und Eltern.","Wir unterstützen Kinder aus Berlin, Lehrer und Eltern."]
+    ["Wir unterstützen Kinder aus Berlin, Lehrer:innen und Eltern.","Wir unterstützen Kinder aus Berlin, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von München, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von München, Lehrer und Eltern."],
+    ["Partner sind Firmen von München, Lehrer:innen und Eltern.","Partner sind Firmen von München, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von Bremen, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von Bremen, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von Halle, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von Halle, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von Paris, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von Paris, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von Hannover, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von Hannover, Lehrer und Eltern."],
+    ["Zielgruppen sind Firmen von Berlin, Lehrer:innen und Eltern.","Zielgruppen sind Firmen von Berlin, Lehrer und Eltern."],
+    ["Wir besuchen Teams von Berlin und zwei Lehrer:innen.","Wir besuchen Teams von Berlin und zwei Lehrer."],
+    ["Wir besuchen Teams von München und zwei Lehrer:innen.","Wir besuchen Teams von München und zwei Lehrer."],
+    ["Das waren Stimmen von Ämtern und Lehrer:innen.","Das waren Stimmen von Ämtern und Lehrern."],
+    ["Wir brauchen Rückmeldungen von Ämtern und Lehrer:innen.","Wir brauchen Rückmeldungen von Ämtern und Lehrern."],
+    ["Wir unterstützen Projekte von Ämtern, Lehrer:innen und Eltern.","Wir unterstützen Projekte von Ämtern, Lehrern und Eltern."],
+    ["Das sind Beiträge von Kitas, Lehrer:innen und Eltern.","Das sind Beiträge von Kitas, Lehrern und Eltern."],
+    ["Das waren Stimmen von Verbänden und Lehrer:innen.","Das waren Stimmen von Verbänden und Lehrern."],
+    ["Wir brauchen Rückmeldungen von Vereinen und Lehrer:innen.","Wir brauchen Rückmeldungen von Vereinen und Lehrern."],
+    ["Das sind Ideen von Kindern und Lehrer:innen.","Das sind Ideen von Kindern und Lehrern."]
   ])("%s", (input, expected) => {
     expect(transformText(input, defaultRules, { profile: "aggressive" }).text).toBe(expected);
   });
