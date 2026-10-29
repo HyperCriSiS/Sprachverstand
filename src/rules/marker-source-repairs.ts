@@ -4,7 +4,7 @@ import { mapMappedPlural } from "./mapped-plural-separators";
 import { mapSingular } from "./singular-context";
 import { isDisabledLoanword } from "./loanword-person-forms";
 import { dativeVerbPattern, dativeVerbSource, directionalTwoWayPreposition, verbGovernsPlural } from "./dative-verbs";
-import { auxiliaryInfinitives, coordinatedAdjective, listStartsNewClause } from "./clause-structure";
+import { auxiliaryInfinitives, coordinatedAdjective, listStartsNewClause, singularOnNs } from "./clause-structure";
 
 /*
  * Drei Ausgangsfehler, die sonst halb, falsch oder gar nicht umgewandelt wurden:
@@ -229,7 +229,7 @@ const nominativeItemAhead = /^\s*,\s*\p{Lu}[\p{L}\p{M}-]*\p{Ll}e(?=\s*,|\s+(?:un
 const listEnding = /(?:,|\s+(?:und|oder|sowie))\s+(?:\d+\s+)?$/u;
 const listSeparator = /,|\s(?:und|oder|sowie)\s/u;
 const dativeBeforeParenthesis = new RegExp(String.raw`(?:^|\s)(?:${dativeTrigger})\s+(?:\S+\s+){0,2}\S+\s*$`, "u");
-const copulaBeforeWord = /(?:^|\s)(?:sind|ist|waren|war|werden|wird|bleiben|bleibt)\s+$/u;
+const copulaBeforeWord = /(?:^|\s)(?:sind|ist|waren|war|werden|wird|bleiben|bleibt)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nrsm]?\s+){0,2}$/u;
 const verbWithPronounAhead = /^\s+\p{Ll}[\p{L}\p{M}]*en\s+(?:sich|wir|sie|uns|euch|es|man)(?![\p{L}\p{M}])/u;
 
 function isCoordinatedDative(before: string, after: string): boolean {
@@ -240,8 +240,8 @@ function isCoordinatedDative(before: string, after: string): boolean {
   if (dativeVerbPattern.test(trigger!) &&
       !verbGovernsPlural(trigger!, before.slice(0, before.lastIndexOf(trigger!)), after)) return false;
   if (ending === "," && !listContinues.test(after)) return false;
-  // A predicate after a copula is a nominative (`Zielgruppen sind Firmen aus
-  // Berlin, Lehrer:innen und …`).
+  // A predicate after a copula is a nominative (`Zielgruppen sind (große)
+  // Firmen aus Berlin, Lehrer:innen und …`).
   if (previous && copulaBeforeWord.test(before.slice(0, match.index + match[0].indexOf(previous)))) return false;
   if (listStartsNewClause(before.slice(0, match.index + match[0].indexOf(trigger!) + (dativeVerbPattern.test(trigger!) ? trigger!.length + 1 : 0)), listRest(after))) return false;
   const list = match[0].slice(match[0].indexOf(trigger!) + trigger!.length);
@@ -253,6 +253,8 @@ function isCoordinatedDative(before: string, after: string): boolean {
   // Künstler*innen`, `Heimatsammlungen der Flüchtlinge, Vertriebenen und …`).
   for (const [, head, attribute] of list.matchAll(genitiveAttributePattern)) {
     if (!namesPersons(head!) && namesPersons(attribute!)) return false;
+    // So does any genitive after a singular (`Mit Wissen der Schulen, …`).
+    if (singularOnNs.test(head!) && !namesPersons(head!)) return false;
   }
   // A nominative item after it ends the dative (`aus allen Bereichen des
   // zivilen Lebens, Akademiker:innen, Offiziere, …`).
