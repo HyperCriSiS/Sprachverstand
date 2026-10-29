@@ -106,7 +106,24 @@ describe("Gegenprüfung 31.10.: Listenkasus und Besitzer", () => {
     ["Dreizehn Lehrer warten. Jede Lehrer*in kennt ihre Telefonnummer.","Dreizehn Lehrer warten. Jeder Lehrer kennt ihre Telefonnummer."],
     ["Sechs Lehrer warten. Jede Lehrer*in kennt ihre Telefonnummer.","Sechs Lehrer warten. Jeder Lehrer kennt ihre Telefonnummer."],
     ["Lehrer und Schüler warten. Jede Lehrer*in kennt ihre Telefonnummer.","Lehrer und Schüler warten. Jeder Lehrer kennt ihre Telefonnummer."],
-    ["Meine Lehrer sind bereit. Jede Lehrer*in kennt ihre Telefonnummer.","Meine Lehrer sind bereit. Jeder Lehrer kennt ihre Telefonnummer."]
+    // Singularkopula und von-Plural behalten die Dativliste; Herkunftsattribute nicht
+    ["Meine Lehrer sind bereit. Jede Lehrer*in kennt ihre Telefonnummer.","Meine Lehrer sind bereit. Jeder Lehrer kennt ihre Telefonnummer."],
+    ["Thema ist die Rolle von Schulen, Lehrer:innen und Eltern.","Thema ist die Rolle von Schulen, Lehrern und Eltern."],
+    ["Das ist die Initiative von Schulen, Lehrer:innen und Eltern.","Das ist die Initiative von Schulen, Lehrern und Eltern."],
+    ["Das ist die Gruppe aus Schulen, Lehrer:innen und Eltern.","Das ist die Gruppe aus Schulen, Lehrern und Eltern."],
+    ["Das bleibt die Aufgabe von Schulen, Lehrer:innen und Eltern.","Das bleibt die Aufgabe von Schulen, Lehrern und Eltern."],
+    ["Das ist die Stimme von Schulen und Lehrer:innen.","Das ist die Stimme von Schulen und Lehrern."],
+    ["Das waren Stimmen von Schulen und Lehrer:innen.","Das waren Stimmen von Schulen und Lehrern."],
+    ["Es sind die Stimmen von Schulen und Lehrer:innen.","Es sind die Stimmen von Schulen und Lehrern."],
+    ["Das sind die Ideen von Schulen und Lehrer:innen.","Das sind die Ideen von Schulen und Lehrern."],
+    ["Thema sind die Interessen von Firmen, Lehrer:innen und Eltern.","Thema sind die Interessen von Firmen, Lehrern und Eltern."],
+    ["Das sind Anliegen von Schulen, Lehrer:innen und Eltern.","Das sind Anliegen von Schulen, Lehrern und Eltern."],
+    ["Wir unterstützen Projekte von Schulen, Lehrer:innen und Eltern.","Wir unterstützen Projekte von Schulen, Lehrern und Eltern."],
+    ["Wir sehen Bilder von Schulen, Lehrer:innen und Eltern.","Wir sehen Bilder von Schulen, Lehrern und Eltern."],
+    ["Wir brauchen Rückmeldungen von Schulen, Lehrer:innen und Eltern.","Wir brauchen Rückmeldungen von Schulen, Lehrern und Eltern."],
+    ["Partner sind Firmen aus Berlin, Lehrer:innen und Eltern.","Partner sind Firmen aus Berlin, Lehrer und Eltern."],
+    ["Wir besuchen Schulen aus Berlin, Lehrer:innen und Schüler:innen.","Wir besuchen Schulen aus Berlin, Lehrer und Schüler."],
+    ["Wir unterstützen Kinder aus Berlin, Lehrer:innen und Eltern.","Wir unterstützen Kinder aus Berlin, Lehrer und Eltern."]
   ])("%s", (input, expected) => {
     expect(transformText(input, defaultRules, { profile: "aggressive" }).text).toBe(expected);
   });

@@ -96,6 +96,7 @@ const singularPredicateDeterminers = new Set(["ein", "eine", "kein"]);
 const accusativeListVerbs = new Set(["besuchen", "besucht", "sehen", "sieht", "suchen", "sucht", "brauchen", "braucht", "unterstützen", "unterstützt"]);
 const predicatePrepositions = new Set(prepositionSource.split("|"));
 const copulas = new Set(["sind", "ist", "waren", "war", "werden", "wird", "bleiben", "bleibt"]);
+const singularCopulas = new Set(["ist", "war", "wird", "bleibt"]);
 
 interface Token { text: string; lower: string; index: number }
 
@@ -226,8 +227,11 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean, counted: b
     const ownerPrefix = readPrefix(tokens, owner - 1);
     const explicitOuterCase = counted && (ownerPrefix.governor !== undefined ||
       (ownerPrefix.determiner !== undefined && dativeEndingToken.test(ownerText)));
+    // A von-attribute with a plural continues with the list (`Projekte von
+    // Schulen, Lehrern und Eltern`); a place does not (`Teams von Berlin und …`).
+    const pluralVon = opener !== undefined && tokens[opener]!.lower === "von" && pluralOwner.test(attribute);
     // An explicit accusative object keeps its list outside the attribute.
-    if (!namesPersons(attribute) && pluralOwner.test(ownerText) && !singularOnNs.test(ownerText) &&
+    if (!pluralVon && !namesPersons(attribute) && pluralOwner.test(ownerText) && !singularOnNs.test(ownerText) &&
       accusativeListVerbs.has(tokens[ownerPrefix.i]?.lower ?? "") && subjectPronouns.has(tokens[ownerPrefix.i - 1]?.lower ?? "")) {
       return {head, rejected: true, nonDativeBoundary: true};
     }
@@ -274,9 +278,11 @@ function readPhrase(tokens: Token[], i: number, conjunction: boolean, counted: b
         if (!attributeWord.test(word.text) && !determiners.has(word.lower) && !numberToken.test(word.lower) && word.lower !== "ein") break;
       }
       const copula = copulas.has(tokens[verbAt]?.lower ?? "");
-      // A singular relation (Kooperation/Zusammenschluss) owns the following
-      // von-list. A plural predicate shares its nominative with later items.
-      if (copula && !singularPredicate && pluralOwner.test(ownerText) && !singularOnNs.test(ownerText) &&
+      // A singular predicate owns the following list (`ist eine Kooperation
+      // von …`, `ist die Rolle von …`). A plural predicate shares its
+      // nominative with later items unless a von-plural continues.
+      if (singularCopulas.has(tokens[verbAt]?.lower ?? "")) singularPredicate = true;
+      if (copula && !singularPredicate && !pluralVon && pluralOwner.test(ownerText) && !singularOnNs.test(ownerText) &&
         !namesPersons(attribute)) return {head, rejected: true, nonDativeBoundary: true};
       if (isGovernor(tokens, opener)) return {head, governor: opener, singular, redirected: true, genitive, copula};
       return accusativePrepositions.has(tokens[opener]!.lower) ? {head, rejected: true} : {head, start: true, singular, genitive};
