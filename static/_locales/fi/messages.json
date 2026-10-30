@@ -17,6 +17,9 @@
   "save": {
     "message": "Tallenna"
   },
+  "unsavedChanges": {
+    "message": "Tallentamattomia muutoksia"
+  },
   "expandAll": {
     "message": "Avaa kaikki"
   },

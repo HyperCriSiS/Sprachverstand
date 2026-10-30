@@ -17,6 +17,9 @@
   "save": {
     "message": "Speichern"
   },
+  "unsavedChanges": {
+    "message": "Ungespeicherte Änderungen"
+  },
   "expandAll": {
     "message": "Alle öffnen"
   },

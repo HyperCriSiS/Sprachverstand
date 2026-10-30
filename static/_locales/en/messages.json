@@ -17,6 +17,9 @@
   "save": {
     "message": "Save"
   },
+  "unsavedChanges": {
+    "message": "Unsaved changes"
+  },
   "expandAll": {
     "message": "Expand all"
   },

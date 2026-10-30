@@ -17,6 +17,9 @@
   "save": {
     "message": "Guardar"
   },
+  "unsavedChanges": {
+    "message": "Cambios sin guardar"
+  },
   "expandAll": {
     "message": "Abrir todo"
   },

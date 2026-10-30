@@ -95,6 +95,7 @@ const domainListLabel = requiredElement<HTMLElement>("#domain-list-label");
 const domainListModeButton =
   requiredElement<HTMLButtonElement>("#domain-list-mode");
 const saveButton = requiredElement<HTMLButtonElement>("#save-settings");
+const unsavedHint = requiredElement<HTMLElement>("#save-settings .unsaved-hint");
 const expandAllSectionsButton =
   requiredElement<HTMLButtonElement>("#expand-all-sections");
 const collapseAllSectionsButton =
@@ -541,6 +542,32 @@ function renderCustomReplacementPreview(): void {
   }
 }
 
+// Form state at the last load or save; differences warn before leaving.
+let savedSnapshot = "";
+
+function formSnapshot(): string {
+  try {
+    return JSON.stringify(readForm());
+  } catch {
+    return " invalid";
+  }
+}
+
+function hasUnsavedChanges(): boolean {
+  return formSnapshot() !== savedSnapshot;
+}
+
+function refreshUnsavedState(): void {
+  const unsaved = hasUnsavedChanges();
+  saveButton.classList.toggle("has-unsaved", unsaved);
+  unsavedHint.hidden = !unsaved;
+}
+
+function markSaved(): void {
+  savedSnapshot = formSnapshot();
+  refreshUnsavedState();
+}
+
 function scheduleInteractiveUpdate(): void {
   if (interactiveUpdateTimer !== undefined) {
     window.clearTimeout(interactiveUpdateTimer);
@@ -549,6 +576,7 @@ function scheduleInteractiveUpdate(): void {
   interactiveUpdateTimer = window.setTimeout(() => {
     renderCustomReplacementFeedback();
     renderCustomReplacementPreview();
+    refreshUnsavedState();
     interactiveUpdateTimer = undefined;
   }, 120);
 }
@@ -587,6 +615,7 @@ function refreshCountAfterChange(): void {
 async function persist(): Promise<void> {
   try {
     await saveSettings(readForm());
+    markSaved();
     importSummary.replaceChildren();
     showStatus(
       t(
@@ -777,6 +806,12 @@ async function start(): Promise<void> {
   render(await loadSettings());
   renderCustomReplacementFeedback();
   renderCustomReplacementPreview();
+  markSaved();
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
 
   const api = getExtensionApi();
   api.runtime.onMessage.addListener(handleRuntimeMessage);
