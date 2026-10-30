@@ -4,19 +4,130 @@
 
 <h1 align="center">Sprachverstand</h1>
 
-<p align="center"><strong>Macht Webseiten leichter lesbar.</strong></p>
+<p align="center"><strong>Webseiten entgendern. Lokal in deinem Browser.</strong></p>
 
 <p align="center">
-  Eine datenschutzfreundliche Browser-Erweiterung, die gegenderte Schreibweisen
-  auf dem eigenen Gerät in herkömmliche deutsche Personenbezeichnungen umwandelt.
+  Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche
+  Personenbezeichnungen umwandeln. Du bestimmst, wie du liest.
 </p>
 
-<div align="center">
+<p align="center">
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/">Für Firefox installieren</a>
+  · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
+  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Browser und Downloads</a>
+</p>
 
-<p>
+<p align="center">
   <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest"><img src="https://img.shields.io/github/v/release/HyperCriSiS/Sprachverstand?label=Release" alt="GitHub Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="Lizenz"></a>
 </p>
+
+Sprachverstand entgendert deutschsprachige Webseitentexte direkt auf deinem Gerät.
+Die Erweiterung erkennt unterstützte Schreibweisen und wandelt sie nach deinen
+Einstellungen um. Auch dynamisch nachgeladene Texte werden verarbeitet.
+Die Regelgruppen lassen sich einzeln ein- und ausschalten; dazu gehören auch
+Doppelnennungen und ausgewählte Partizipformen wie „Studierende“.
+
+
+## So liest sich das mit Sprachverstand
+
+| Auf der Webseite | Mit Sprachverstand |
+|---|---|
+| `Nutzer:innen` | `Nutzer` |
+| `Mitarbeiter*innen` | `Mitarbeiter` |
+| `NutzerInnen` | `Nutzer` |
+| `jede:r Nutzer:in` | `jeder Nutzer` |
+| `Nutzerinnen und Nutzer` | `Nutzer` |
+| `Student*innen` | `Studenten` |
+| `Studierende` | `Studenten` |
+
+
+## Dein Browser. Deine Sprache.
+
+- **Lokal und privat:** Die Sprachverarbeitung braucht keine externen Dienste.
+  Webseitentexte werden nicht übertragen. Kein Tracking, keine Telemetrie und
+  keine Werbung.
+- **Sofort rückgängig:** Beim Ausschalten stellt Sprachverstand den ursprünglichen
+  Text auf offenen Seiten ohne Neuladen wieder her.
+- **Nach deinen Vorstellungen:** Wähle Regelgruppen, schließe einzelne Webseiten
+  aus und ergänze persönliche Ausnahmen oder eigene Ersetzungen.
+- **Vorher ausprobieren:** Prüfe eigene Regeln in der Live-Vorschau. Hinweise auf
+  Konflikte helfen dir vor dem Speichern.
+- **Optional auch Untertitel:** Verarbeite erkannte Untertitel, wenn die Webseite
+  sie als Text bereitstellt. Die Funktion ist standardmäßig ausgeschaltet;
+  fest ins Video eingebrannte Untertitel können nicht verändert werden.
+
+## Installieren und loslesen
+
+1. Installiere Sprachverstand aus dem
+   [Firefox-Add-on-Store](https://addons.mozilla.org/firefox/addon/sprachverstand/)
+   oder dem
+   [Chrome Web Store](https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii).
+2. Öffne eine deutschsprachige Webseite. Unterstützte Schreibweisen werden
+   automatisch angepasst.
+3. Über das Erweiterungssymbol kannst du Sprachverstand ausschalten, Regelgruppen
+   wählen und die Einstellungen öffnen.
+
+Firefox für Android wird ebenfalls unterstützt. Downloads für weitere Browser
+findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
+Diese README beschreibt den aktuellen Entwicklungsstand. Welche Funktionen die
+veröffentlichte Version enthält, erfährst du in den Versionshinweisen des
+jeweiligen Stores.
+
+## Was wird verändert – und was bleibt stehen?
+
+Sprachverstand verarbeitet Genderzeichen wie Sternchen, Doppelpunkt und
+Unterstrich, Binnen-I, Doppelnennungen sowie weitere unterstützte Formen.
+Du kannst die Regelgruppen einzeln steuern.
+
+Weibliche Bezeichnungen ohne Genderzeichen wie `Professorin` oder `Politikerinnen`
+bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten
+sind von der regulären Verarbeitung ausgeschlossen. Für Texte in Anführungszeichen
+kannst du zusätzlich einen Schutz aktivieren.
+
+Die deutsche Sprache hat viele Mehrdeutigkeiten. Wenn eine ausreichend sichere
+Ersetzung nicht möglich ist, bleibt die betreffende Form stehen. Auch seltene
+Wörter und besondere Webseiten können noch zu fehlenden oder falschen
+Ersetzungen führen.
+
+Du hast einen solchen Fall gefunden? Melde ihn gern als
+[GitHub-Issue](https://github.com/HyperCriSiS/Sprachverstand/issues).
+Ein kurzer Beispielsatz mit gewünschtem Ergebnis und, sofern öffentlich, ein
+Link zur betroffenen Seite helfen bei der Prüfung. Bitte veröffentliche dabei
+keine privaten Texte oder persönlichen Daten.
+
+## Persönliche Einstellungen
+
+In den erweiterten Einstellungen kannst du Wort- und Phrasenausnahmen sowie
+eigene Ersetzungen anlegen. Ausnahmen haben Vorrang. Eigene Ersetzungen
+unterscheiden Groß- und Kleinschreibung und werden genau einmal ausgeführt.
+Eine Live-Vorschau und Konflikthinweise helfen beim Prüfen.
+
+Du kannst einzelne Domains ausschließen und optional zugängliche Beschriftungen
+wie `alt`, `aria-label`, `aria-description` und `title` verarbeiten lassen.
+Die Untertitelkorrektur ist ebenfalls optional und standardmäßig deaktiviert.
+
+Deinen vollständigen Einstellungsstand kannst du lokal als JSON-Datei sichern
+und wieder einlesen. Ein Import wird erst nach dem Speichern aktiv.
+
+## Datenschutz
+
+Webseitentexte werden ausschließlich lokal im Browser verarbeitet. Sprachverstand
+betreibt keinen eigenen Cloud-Dienst und verwendet keine externe Sprach-API.
+Es gibt kein Tracking, keine Telemetrie, keine Werbung und keine Nutzerprofile.
+Die Änderungen betreffen die Darstellung auf deinem Gerät; Serverdaten der
+besuchten Webseite werden nicht verändert.
+
+Deine Einstellungen bleiben standardmäßig lokal. Wenn du möchtest, kannst du
+bestimmte Einstellungskategorien über den Synchronisierungsdienst deines Browsers
+auf weitere Geräte übertragen. Diese Funktion ist standardmäßig vollständig
+ausgeschaltet. Webseitentexte und Browserverläufe werden dabei nicht übertragen.
+Details stehen in der [Datenschutzerklärung](PRIVACY.md).
+
+## Unterstützte Browser
+
+Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
+<div align="center">
 
 <h3>Gecko</h3>
 
@@ -60,179 +171,9 @@
 
 </div>
 
-## Was ist Sprachverstand?
-
-Sprachverstand verarbeitet den Text einer Webseite direkt im Browser. Formen wie
-`Nutzer:innen`, `Mitarbeiter*innen`, `NutzerInnen`, Doppelnennungen und ausgewählte
-Partizipformen werden nach kontrollierten Regeln normalisiert.
-
-Die Webseite und ihre Serverdaten bleiben unverändert. Sprachverstand passt nur
-die lokale Darstellung im Browser an. Die Verarbeitung lässt sich jederzeit
-abschalten und wird ohne Neuladen rückgängig gemacht.
-
-Sprachverstand gibt
-Menschen die Kontrolle darüber zurück, wie Texte auf ihrem eigenen Gerät
-angezeigt und vorgelesen werden.
-
-## Warum kann das hilfreich sein?
-
-Genderzeichen, ungewohnte Wortformen und häufige Doppelnennungen können den
-visuellen oder gesprochenen Lesefluss unterbrechen. Bei längeren Texten kann das
-die konzentrierte Aufnahme unnötig anstrengend machen, besonders dann, wenn
-eine Sprachausgabe Satzzeichen vorliest, verschluckt oder als zusätzliche Pause
-wiedergibt.
-
-Für blinde und sehbehinderte Menschen ist das nicht nur eine Geschmacksfrage.
-Der Deutsche Blinden- und Sehbehindertenverband weist darauf hin, dass
-Kurzformen mit Sternchen, Unterstrich und Doppelpunkt für viele Nutzer
-problematisch sind. Je nach Screenreader und persönlicher Konfiguration werden
-die Zeichen unterschiedlich behandelt. Auch in Braille können zusätzliche
-Ankündigungszeichen den Lesefluss behindern.
-
-Die Forschung zur allgemeinen Lesbarkeit ist nicht einheitlich: Eine Studie von
-2025 fand bei Studenten keine langsamere Worterkennung, bei älteren
-Nichtstudenten jedoch anfängliche Verzögerungen, die mit zunehmender Gewöhnung
-rasch zurückgingen. Sprachverstand behauptet deshalb nicht, dass gegenderte
-Sprache grundsätzlich unverständlich sei. Die Erweiterung bietet eine
-individuelle Lösung für Menschen, die Texte in einer anderen Form leichter
-lesen oder hören können.
-
-Quellen:
-
-- [Deutscher Blinden- und Sehbehindertenverband: Gendern](https://www.dbsv.org/gendern.html)
-- [Zacharski, Kruppa & Ferstl (2025): The Readability of the Non-Binary Gender Star in German](https://doi.org/10.32872/spb.13719)
-
-## Beispiele
-
-| Original | Darstellung mit Sprachverstand |
-|---|---|
-| `Nutzer:innen` | `Nutzer` |
-| `Mitarbeiter*innen` | `Mitarbeiter` |
-| `NutzerInnen` | `Nutzer` |
-| `NutzerIn` | `Nutzer` |
-| `eine NutzerIn` | `ein Nutzer` |
-| `Nutzerinnen und Nutzer` | `Nutzer` |
-| `jede:r Nutzer:in` | `jeder Nutzer` |
-| `Student*innen` | `Studenten` |
-| `Studierende` | `Studenten` |
-| `Arbeitnehmende` | `Arbeitnehmer` |
-| `Gegner*innenschaft` | `Gegnerschaft` |
-| `Erwachsene:r` | `Erwachsener` |
-| `Rom*nja` | `Roma` |
-| `Studentys` | `Studenten` |
-
-### Direkt ausprobieren
-
-Die Vergleichstabelle bleibt absichtlich unverändert, weil ihre Beispiele als
-Quellcode formatiert sind. Der folgende Text ist normaler Seiteninhalt und wird
-bei aktiviertem Sprachverstand direkt auf dieser GitHub-Seite angepasst:
-
-> Unsere Mitarbeiter\*innen begrüßen neue Nutzer:innen und Student\*innen.
-> Jede:r Nutzer:in erhält ein eigenes Nutzer:innenkonto. Studierende und
-> Arbeitnehmende finden dort weitere Informationen.
-
-### Grenzen und Sicherheit
-
-Sprachverstand berücksichtigt bekannte Flexionen, zusammengesetzte Wörter,
-markierte Binnen-I-Singularformen und ausgewählte substantivierte Adjektive.
-Bei Formen wie `eine NutzerIn` wird der Kasus aus sicheren Satz-, Verb- oder
-Präpositionskontexten bestimmt. Reicht der Kontext nicht aus, bleibt die Phrase
-unangetastet statt einen grammatisch falschen Artikel zu erzeugen.
-
-Ausdrücklich weibliche Formen wie `Politikerinnen` oder `Professorin` bleiben
-unverändert. Terminologische Schreibweisen wie `trans* Personen`,
-`inter* Personen`, `Inter*feindlichkeit` und `Inter*diskriminierung` werden
-nicht als Genderendung behandelt.
-
-Eine ausgelassene Ersetzung ist besser als eine falsche. Unbekannte oder
-mehrdeutige Formen bleiben deshalb unangetastet.
-
-## Funktionen
-
-- Verarbeitung direkt beim Laden der Webseite
-- dynamisch nachgeladene Inhalte werden unmittelbar korrigiert
-- vollständige Wiederherstellung beim Ausschalten, ohne Aktualisierung der Seite
-- einzeln aktivierbare Regelgruppen
-- Korrekturzähler für den aktuellen Tab
-- persönliche Ausnahmen für Wörter und vollständige Phrasen
-- eigene literale Ersetzungen, getrennt von Ausnahmen und ohne Regex
-- Live-Vorschau für noch nicht gespeicherte persönliche Regeln
-- Konflikthinweise für Dubletten, Überschneidungen, Ersetzungsketten und blockierende Ausnahmen
-- versionierter JSON-Import und -Export des vollständigen Einstellungsstands
-- optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig vollständig deaktiviert
-- Ausschluss einzelner Domains
-- optionaler Schutz von Texten in Anführungszeichen
-- optionale Untertitelkorrektur; standardmäßig werden erkannte
-  Untertitel-Overlays vollständig übersprungen
-- optionale Verarbeitung zugänglicher Attribute wie `alt`, `aria-label`,
-  `aria-description` und `title`
-- Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
-
-## Einstellungen
-
-Im Popup kann Sprachverstand global ein- und ausgeschaltet werden. Außerdem
-lassen sich die Regelgruppen einzeln steuern, beispielsweise:
-
-- Genderzeichen und Binnen-I
-- Doppelnennungen
-- Singularformen mit oder ohne Artikel
-- substantivierte Adjektive
-- weitere sichtbare Sonderformen
-- Pronomen- und Possessivpaare
-- Titelabkürzungen
-- ausgewählte neutrale Partizipformen
-- optionale Umschreibungen
-- optionale Geschlechtszusätze in Stellenanzeigen wie `(m/w/d)`
-- Untertitel verarbeiten
-
-In den erweiterten Einstellungen stehen persönliche Ausnahmen, eigene
-literale Ersetzungen, Domain-Ausschlüsse, der Schutz zitierter Schreibweisen,
-die optionale Untertitelkorrektur und die Verarbeitung zugänglicher Attribute
-zur Verfügung. Die Untertitelkorrektur ist standardmäßig deaktiviert. Eigene
-Ersetzungen sind case-sensitive, werden genau einmal ausgeführt und
-standardmäßig ausschließlich lokal gespeichert. Ausnahmen haben Vorrang. In
-einem eigenen Bereich kann für Aktivierungsstatus, Regelgruppen,
-Domain-Ausschlüsse, Textoptionen, Ausnahmen und eigene Ersetzungen jeweils
-getrennt gewählt werden, ob die Kategorie zusätzlich über den
-Synchronisierungsdienst des Browsers übertragen wird. Die Auswahl ist
-standardmäßig vollständig deaktiviert. Sobald mindestens eine Kategorie
-aktiviert wird, synchronisiert der Browser auch diese Auswahl, damit dieselben
-Kategorien auf weiteren angemeldeten Geräten geladen werden können.
-
-**Speichern** und **Zurücksetzen** befinden sich oben in derselben Werkzeugleiste
-wie **Alle öffnen** und **Alle schließen**. Alle Einstellungsbereiche lassen sich
-einzeln oder gemeinsam öffnen und schließen.
-
-Vor dem Speichern können persönliche Regeln an einem frei eingegebenen Testtext
-geprüft werden. Die Einstellungsseite weist auf wirkungslose Einträge,
-widersprüchliche Ziele, blockierende Ausnahmen, Groß-/Kleinschreibungsvarianten,
-Überschneidungen und nicht ausgeführte Ersetzungsketten hin.
-
-Der vollständige Einstellungsstand einschließlich Aktivierung, Regelgruppen, Domain-Ausschlüssen, Zitat- und Attributoptionen, Ausnahmen, eigenen Ersetzungen und Synchronisierungsauswahl lässt sich als versionierte JSON-Datei sichern und wieder einlesen.
-Ein Import wird zunächst nur in das Formular übernommen und erst nach dem
-Speichern aktiv.
-
-## Datenschutz
-
-Sprachverstand verarbeitet Webseiten ausschließlich lokal im Browser.
-
-- keine Übertragung von Seitentexten
-- kein eigener Cloud-Dienst und keine externe Sprach-API
-- keine Analyse des Browserverlaufs
-- kein Tracking und keine Telemetrie
-- keine Veränderung der aufgerufenen Webseite oder ihrer Serverdaten
-
-Alle Einstellungen werden standardmäßig lokal im Browser gespeichert. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über `storage.sync` an den Synchronisierungsdienst des verwendeten Browsers übergeben. Sprachverstand betreibt keinen eigenen Synchronisierungsserver und überträgt keine Webseitentexte oder Browserverläufe. Import- und Exportdateien werden ausschließlich nach einer bewussten Nutzeraktion lokal gelesen oder erzeugt. Die vollständigen Angaben
-stehen in der [Datenschutzerklärung](PRIVACY.md).
-
-## Unterstützte Browser
-
-Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
-
-- **Gecko:** Firefox für Desktop und Android. Derselbe geprüfte Firefox-Build ist die Basis für Waterfox, LibreWolf, Zen Browser, Floorp, FireDragon und Midori.
-- **Blink / Chromium:** Google Chrome, Chromium, Microsoft Edge und Opera. Brave, Vivaldi, Arc, Thorium und Ungoogled Chromium nutzen den geprüften Chromium-Build.
-- **Goanna:** Pale Moon wird als separat gepflegter Port auf dem Branch `palemoon` gebaut und geprüft.
-- **WebExtension-Sonderfall:** Orion bleibt experimentell und nutzt den Chromium-Build mit dokumentierten API-Einschränkungen.
+Firefox und Chromium bilden die Basis für die jeweiligen Browserfamilien. Die
+aufgeführten Browser verwenden den entsprechenden Erweiterungs-Build; nicht jeder
+Browser wird separat getestet. Pale Moon erhält einen eigenständig gepflegten Port.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen
