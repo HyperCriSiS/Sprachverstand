@@ -171,12 +171,22 @@ for (const sourceLocale of amoSourceLocales) {
     fail(`${sourceLocale}: AMO-Vollbeschreibung fehlt.`);
   }
   if (listing.description.includes("Tags:")) {
-    fail(`${sourceLocale}: AMO-Beschreibung darf keinen SEO-Tagblock enthalten.`);
+    fail(`${sourceLocale}: AMO-Suchbegriffe separat in keywords pflegen.`);
   }
+
+  // Die bestehende deutsche Firefox-Suchwortliste bleibt ausschließlich im
+  // AMO-Export. Chrome verwendet seine separat lokalisierten Fließtexte.
+  const keywords = listing.keywords ?? [];
+  if (!Array.isArray(keywords) || keywords.some(
+    (keyword) => typeof keyword !== "string" || !keyword.trim() || /[\r\n]/u.test(keyword)
+  )) {
+    fail(`${sourceLocale}: keywords muss eine Liste nichtleerer Suchbegriffe sein.`);
+  }
+  const keywordBlock = keywords.length ? `\n\nTags:\n${keywords.join(", ")}` : "";
 
   amoSources.set(sourceLocale, {
     summary: listing.summary.trim(),
-    description: listing.description.trim()
+    description: listing.description.trim() + keywordBlock
   });
 }
 
