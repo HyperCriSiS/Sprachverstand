@@ -218,6 +218,9 @@
   "licenseSource": {
     "message": "Lizenz und Quelltext"
   },
+  "supportProject": {
+    "message": "Unterstützen"
+  },
   "extensionActive": {
     "message": "Erweiterung aktiv"
   },

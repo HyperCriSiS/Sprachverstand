@@ -218,6 +218,9 @@
   "licenseSource": {
     "message": "Lisenssi ja lähdekoodi"
   },
+  "supportProject": {
+    "message": "Tue"
+  },
   "extensionActive": {
     "message": "Laajennus käytössä"
   },

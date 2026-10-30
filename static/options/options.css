@@ -45,6 +45,10 @@ p {
   opacity: 0.78;
 }
 
+.support-link::before {
+  content: "☕ ";
+}
+
 form {
   display: grid;
   gap: 18px;
