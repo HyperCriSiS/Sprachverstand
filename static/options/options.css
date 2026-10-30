@@ -140,8 +140,8 @@ textarea[readonly] {
 }
 
 button {
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 42px;
+  padding: 7px 14px;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -172,7 +172,7 @@ button {
 }
 
 .compact-actions button {
-  min-height: 38px;
+  min-height: 36px;
 }
 
 .rule-groups {
@@ -547,7 +547,7 @@ small {
 }
 
 .popup-rule-actions button {
-  min-height: 32px;
+  min-height: 30px;
   padding: 4px 10px;
 }
 
@@ -563,7 +563,7 @@ small {
 
 .domain-mode-button {
   flex: 0 1 auto;
-  min-height: 34px;
+  min-height: 32px;
   margin-left: auto;
   padding: 5px 10px;
   font: inherit;
