@@ -162,7 +162,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     descriptionKey: "rule_neutral_person_terms_description",
     example: "Benutzungshandbuch → Benutzerhandbuch",
     ruleIds: ["neutral.person-terms"],
-    defaultEnabled: false
+    defaultEnabled: true
   },
   {
     id: "job-ad-suffixes",
@@ -173,7 +173,7 @@ export const ruleGroupDefinitions: readonly RuleGroupDefinition[] = [
     descriptionKey: "rule_job_ad_suffixes_description",
     example: "Erzieher (m/w/d) → Erzieher",
     ruleIds: ["job-ad.gender-suffixes"],
-    defaultEnabled: false
+    defaultEnabled: true
   },
   {
     id: "loanword-person-terms",
