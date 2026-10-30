@@ -17,6 +17,9 @@
   "save": {
     "message": "I-save"
   },
+  "unsavedChanges": {
+    "message": "Mga hindi naka-save na pagbabago"
+  },
   "expandAll": {
     "message": "Palawakin lahat"
   },
