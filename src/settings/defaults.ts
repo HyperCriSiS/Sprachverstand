@@ -31,8 +31,8 @@ export type DomainListMode = (typeof domainListModes)[number];
 const basePopupSectionIds = [
   "count",
   "activation",
-  "rule-groups",
   "text-options",
+  "rule-groups",
   "domain-action",
   "open-options"
 ] as const;
