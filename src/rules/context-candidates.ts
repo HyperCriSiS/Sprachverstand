@@ -5,7 +5,7 @@ export const participleSource = [
   "Dozierende", "Fördergebende", "Theatermachende"
 ].join("|");
 export const markedPluralWordSource = String.raw`[\p{L}\p{M}’'-]+(?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n)`;
-export const markedLeadingCandidate = new RegExp(String.raw`^\s*${markedPluralWordSource}`, "iu");
+export const markedLeadingCandidate = new RegExp(String.raw`^\s*(?:${markedPluralWordSource}|[\p{L}\p{M}’'-]*\p{Ll}Innen(?![\p{L}\p{M}]))`, "iu");
 export const participleLeadingCandidate = new RegExp(
   String.raw`^\s*(?:${participleSource})(?:\s+Personen)?(?![\p{L}\p{M}])`, "iu"
 );

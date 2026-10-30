@@ -1,5 +1,5 @@
 import type { TransformResult } from "../core/rule";
-import { sentenceStartBefore } from "./clause-structure";
+import { numberWordSource, placeNames, sentenceStartBefore } from "./clause-structure";
 import { mapKnownPlural } from "./known-plural-separators";
 import { mapMappedPlural } from "./mapped-plural-separators";
 
@@ -59,13 +59,10 @@ const maleNamesAndPlaces = [
   "Bruno", "Leo", "Theo", "Nico", "Luis", "Louis", "Jonas", "Lars", "Nils", "Mats", "Hannes", "Mats", "Jannik",
   "Henrik", "Dominik", "Patrik", "Malik", "Ali", "Mehmet", "Ahmed", "Mohammed", "Omar", "Yusuf", "Ibrahim",
   "Adam", "Samuel", "Daniel", "Gabriel", "Raphael", "Michel", "Pierre", "Jean", "Juan", "José", "Carlos",
-  "Helsinki", "Oslo", "Madrid", "Lissabon", "Prag", "Warschau", "Budapest", "Brüssel", "Amsterdam", "Kopenhagen",
-  "Stockholm", "Dublin", "Athen", "Istanbul", "Moskau", "Kiew", "Washington", "Tokio", "Peking", "Kairo",
-  "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
-  "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
-  "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
+  "Boris", "Kurt", "Knut", "Gerd", "Björn", "Bernhard", "Gerhard", "Helmut", "Herbert", "Norbert", "Lutz",
+  ...placeNames
 ].join("|");
-const notName = String.raw`(?!(?:Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
+const notName = String.raw`(?!(?:Schnee|Käse|Gemüse|Getreide|Ende|Es|Er|Das|Dies|Dieses|Der|Die|Den|Dem|Ein|Eine|Hier|Heute|Jetzt|Nun|Man|Wir|Ich|Du|Dann|So|Da|Dort|Alles|Nichts|Auch|Aber|Doch|Noch|Immer|Oft|Bald|Morgen|Gestern|Danach|Damit|Dabei|Deshalb|Leider|Zudem|Jeder|Jede|Jedes|Wer|Was|Wie|Wo|Wann|Warum|Draußen|Drinnen|Niemand|Jemand|Keiner|Keine|Alle|Viele|Manche|Einige|Vielleicht|Trotzdem|Dennoch|Zuerst|Später|Inzwischen)\s|\p{Lu}\p{Ll}+(?:lich|weise|mals|ens)\s|(?:${maleNamesAndPlaces})\s)`;
 // Frequent female first names without a feminine ending.
 const femaleNames = [
   "Ingrid", "Judith", "Miriam", "Ruth", "Esther", "Edith", "Elisabeth", "Sarah", "Hannah", "Leah", "Rachel",
@@ -73,23 +70,28 @@ const femaleNames = [
   "Birgit", "Margit", "Gertrud", "Irmgard", "Waltraud", "Hildegard", "Ingeborg", "Mechthild", "Carmen",
   "Ellen", "Helen", "Karen", "Kristin", "Christin", "Evelyn", "Marion", "Liv", "Elif", "Zeynep", "Dolores",
   "Mercedes", "Isabel", "Annegret", "Rosemarie", "Brunhild", "Lilith", "Maren", "Ines", "Dagmar", "Mirjam", "Margret",
-  "Annett", "Babett", "Gwen", "Ann", "Jill", "Kathrin", "Gesine", "Swantje"
+  "Annett", "Babett", "Gwen", "Ann", "Jill", "Kathrin", "Gesine", "Swantje", "Marlis", "Amber", "Jennifer",
+  "Heather", "Esther", "Ester", "Silvia", "Beatrix", "Alice", "Ilse", "Gisela", "Lis", "Elis", "Inés", "Joan",
+  "Kathleen", "Megan", "Susan", "Lillian", "Vivien", "Jacqueline", "Madeleine", "Nicole", "Christel", "Bärbel",
+  "Gretel", "Hannelore", "Ulrike", "Inge", "Ursel", "Ann-Kathrin", "Gül", "Ayşe", "Nur", "Aylin", "Ece", "Rahel", "Yael", "Noemi", "Eleanor", "Nour", "Leonor", "Eleonor", "Carol", "Rachel", "Mabel", "Isabel", "Ingeborg", "Gwendolyn", "Kathryn", "Shirin", "Parisa", "Mariam", "Maryam", "Meryem", "Nesrin", "Gülsüm", "Hatice"
 ].join("|");
-// Any name with a verb may own the possessive (`Anna kam`, `Ingrid wartet`,
-// `Marlis kann helfen`, `Kim wartet`); an unknown name stays a possible owner.
-// The listed male names and places and typical male endings own no `ihre`
-// (`Kevin`, `Justin`, `Paris`, `Marco`, `Markus`, `Werner`).
+// A name with a verb owns the possessive with a feminine ending (also
+// `Edeltraud`, `Gerlind`), as a listed female name or as a unisex name (`Anna
+// kam`, `Ingrid wartet`, `Marlis kann helfen`, `Kim wartet`). Any other
+// capitalized word at a sentence start is no evidence (`Boris wartet`,
+// `Benzin brennt`, `Links steht ein Tisch`, `Augsburg ist schön`).
 const otherOwnerName = new RegExp(
-  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?!(?!(?:${femaleNames})\s)\p{Lu}\p{Ll}*(?:o|us|er|bert|fried|helm|hard|mund|rich|old|ald)\s)\p{Lu}\p{Ll}+\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge|kann|will|muss|soll|darf|mag|ist|hat|wird|möchte|wollte|konnte|musste|sollte|durfte|ruft)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
+  String.raw`(?:(?:^|[.!?:]\s+)${notName}(?:\p{Lu}\p{Ll}*(?:a|e|y|ette|elle|ine|ina|traud|trud|gard|hild|lind|run|rid|git|grit)|${femaleNames}|Kim|Robin|Alex|Chris|Charlie|Sam|Toni|Mika)\s+(?:\p{Ll}+te?|kam|war|ging|sah|rief|schrieb|blieb|lief|fuhr|las|saß|stand|fand|gab|nahm|sprach|zufolge|kann|will|muss|soll|darf|mag|ist|hat|wird|möchte|wollte|konnte|musste|sollte|durfte|ruft)|(?:heißt|namens|Frau|Herrn?)\s+\p{Lu}\p{Ll}+)(?![\p{L}\p{M}])`, "u");
 // A feminine or plural subject with its verb (`Die Schule ist neu.`,
 // `Berliner Schulen sind bekannt.`).
 // Plurals also bare or with an adjective (`Schulen sind geschlossen.`,
 // `Unsere neuen Schulen sind bekannt.`).
 const otherOwnerSubject = /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Eine)\s+(?:\p{Ll}+e[nr]?\s+)?\p{Lu}\p{Ll}+\s+(?:\p{Ll}+t|ist|war|sind|waren)|(?:\p{Lu}\p{Ll}+(?:s|er)\s+)?\p{Lu}\p{Ll}+(?:en|n|e|er|s)\s+(?:sind|waren|haben|hatten))(?![\p{L}\p{M}])/u;
 // A plural verb on -en with persons as subject (`Die männlichen Kollegen
-// warten.`); things own no possessive here (`Die Pflanzen wachsen.`).
-const pluralSubjectPattern =
-  /(?:^|[.!?:]\s+)(?:(?:Die|Diese|Unsere|Ihre|Alle|Viele|Meine|Deine|Seine|Eure|Keine|Einige|Manche|Mehrere|Zahlreiche|Wenige|Beide|Zwei|Drei|Vier|Fünf)\s+)?(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)\s+\p{Ll}+en(?![\p{L}\p{M}])/gu;
+// warten.`, `Sechs Lehrer warten.`, `Lehrer und Schüler warten.`, `Meine
+// Lehrer sind bereit.`); things own no possessive here (`Die Pflanzen wachsen.`).
+const pluralSubjectPattern = new RegExp(
+  String.raw`(?:^|[.!?:]\s+)(?:(?:[Ss]ehr\s+|[Ss]o\s+)?(?:[Dd]ie|[Dd]iese|[Uu]nsere|[Ii]hre|[Aa]lle|[Vv]iele|[Mm]eine|[Dd]eine|[Ss]eine|[Ee]ure|[Kk]eine|[Ee]inige|[Mm]anche|[Mm]ehrere|[Zz]ahlreiche|[Ww]enige|[Bb]eide|${numberWordSource.replace(/[a-zäöü]/gu, (letter) => `[${letter}${letter.toLocaleUpperCase("de-DE")}]`)}|\d+)\s+)?(?:\p{Ll}+e[nr]?\s+)?(\p{Lu}\p{Ll}+)(?:\s+(?:und|oder|sowie)\s+\p{Lu}\p{Ll}+)?\s+(?:\p{Ll}+en|sind|waren)(?![\p{L}\p{M}])`, "gu");
 
 function personPluralSubject(text: string): boolean {
   for (const match of text.matchAll(pluralSubjectPattern)) {

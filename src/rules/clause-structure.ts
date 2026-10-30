@@ -7,6 +7,15 @@
 
 // Number words counting a noun (`mit rund zehn Lehrern`, `mit siebzehn`,
 // `mit einundzwanzig Lehrern`).
+// Frequent place names; plural endings in them are no plural (`von München`).
+export const placeNames = [
+  "Helsinki", "Oslo", "Madrid", "Lissabon", "Prag", "Warschau", "Budapest", "Brüssel", "Amsterdam", "Kopenhagen",
+  "Stockholm", "Dublin", "Athen", "Istanbul", "Moskau", "Kiew", "Washington", "Tokio", "Peking", "Kairo",
+  "Paris", "London", "Rom", "Essen", "Bonn", "Mainz", "Kiel", "Ulm", "Trier", "Potsdam", "Erfurt",
+  "Berlin", "Hamburg", "München", "Köln", "Frankfurt", "Stuttgart", "Wien", "Zürich", "Bern", "Leipzig",
+  "Dresden", "Bremen", "Hannover", "Düsseldorf", "Graz", "Linz", "Basel", "Salzburg", "Nürnberg"
+];
+
 export const numberWordSource = "zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|dreizehn|vierzehn|fünfzehn|sechzehn|siebzehn|achtzehn|neunzehn|(?:(?:ein|zwei|drei|vier|fünf|sechs|sieben|acht|neun)und)?(?:zwanzig|dreißig|vierzig|fünfzig|sechzig|siebzig|achtzig|neunzig)|hundert|tausend";
 
 // Prepositions opening a phrase of their own.
@@ -38,6 +47,10 @@ export const coordinatedAdjective = String.raw`(?:(?!(?:(?:be|er|dar|her|vor|ein
 
 // Nothing but whitespace back to the start of the text or a sentence end.
 export const sentenceStartBefore = /(?:^|[.!?]\s*)$/u;
+
+// Singular nouns on -n/-s that look like plurals (`Mit Wissen der Schulen`,
+// `Einverständnis`, `Konsens`).
+export const singularOnNs = /(?:nis|us|ens|ss|ion)$|^(?:Wissen|Leben|Verfahren|Vorhaben|Handeln|Denken|Engagement|Interesse)$/u;
 
 // Words on -t/-te/-en/-e that are no finite verb (`Dann direkt die Ärzt*in
 // kontaktieren`).

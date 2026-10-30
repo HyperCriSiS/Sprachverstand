@@ -135,7 +135,9 @@ const placingVerbBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}(?!\s+(?:l
 // (`Wir stehen zwischen Lehrer:innen und stellen Fragen`).
 // A further list item may stand between (`zwischen Lehrer:innen und
 // Schüler:innen zu setzen`).
-const placingVerbAfter = new RegExp(String.raw`^(?:\s+(?!(?:und|oder|sowie|aber)\s+\p{Ll})[^\s.!?;:,]+){0,6}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "u");
+// List items in between may carry markers, commas and adjectives (`zwischen
+// Lehrer:innen, Schüler:innen und erfahrene Musiker:innen zu setzen`).
+const placingVerbAfter = new RegExp(String.raw`^(?:,(?=\s+\p{Lu}))?(?:\s+(?!(?:und|oder|sowie|aber)\s+(?!(?:(?:sehr|besonders|äußerst|recht|ziemlich)\s+)?(?!${placingVerb})\p{Ll}[\p{L}\p{M}]*e[nrsm]?\s+\p{Lu})\p{Ll})(?:[^\s.!?;:,]|:(?=\S))+(?:,(?=\s+\p{Lu}))?){0,8}?\s+(?:zu\s+)?(?:hin|hinein|dazu|zurück)?${placingVerb}`, "u");
 // The object of the placing verb right before the preposition (`Wir stellen
 // den Stuhl zwischen Lehrer:innen`).
 const placedObjectBefore = new RegExp(String.raw`(?:^|\s)${placingVerb}\s+(?:den|das|die|einen|ein|eine|ihren|seinen|unseren|meinen|deinen|euren)\s+(?:\p{Ll}[\p{L}\p{M}]*\s+)?\p{Lu}[\p{L}\p{M}-]*\s*$`, "iu");
