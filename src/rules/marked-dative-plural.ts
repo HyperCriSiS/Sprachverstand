@@ -20,11 +20,11 @@ const binnenIPluralPattern = /\p{Ll}Innen/u;
 const embeddedAttributeGap = String.raw`(?:(?:von|aus|mit|bei|zu|nach)\s+(?:den|dem|der|unseren|ihren|seinen|meinen|deinen|euren|diesen|unserer|ihrer|seiner|dieser)\s+(?:\p{Ll}[\p{L}\p{M}]*e[nr]?\s+)?\p{Lu}[\p{L}\p{M}-]*\s+\p{Ll}[\p{L}\p{M}]*(?:ten|enen|nden)\s+)?`;
 // Counts and quantities between trigger and noun (`mit rund zehn`, `mit bis zu
 // maximal 30`, `mit vielen Tausend`).
-const quantityGap = String.raw`(?:(?:teilweise|insgesamt|rund|etwa|circa|ca\.|knapp|fast|mindestens|maximal|höchstens|über|gut|nahezu|annähernd|beinahe|genau|exakt|sehr|vielen|einigen|mehreren|wenigen|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}`;
+const quantityGap = String.raw`(?:(?:teilweise|insgesamt|rund|etwa|circa|ca\.|knapp|fast|mindestens|maximal|höchstens|über|gut|nahezu|annähernd|beinahe|genau|exakt|sehr|ganz|so|recht|ziemlich|vielen|einigen|mehreren|wenigen|bis\s+zu|mehr\s+als|weniger\s+als|${numberWordSource}|Hundert|Tausend|Dutzend|(?!(?:1[89]|20)\d\d\s|\d{1,2}\.\d{1,2}\.)\d[\d.]*)\s+){0,4}`;
 // Adverbs before a count (`bis zu maximal drei`, `mit rund zehn`).
 const quantityAdverbs = "maximal|höchstens|mindestens|rund|etwa|circa|ca\\.|knapp|fast|gut|insgesamt|über|annähernd|nahezu|beinahe|genau|exakt";
 const dativePhrasePattern = new RegExp(
-  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:(?:${quantityAdverbs}|vielen|einigen|mehreren|wenigen|sehr)\s+){0,2}(?:\d|${numberWordSource}|Hundert|Tausend|Dutzend)(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${embeddedAttributeGap}${quantityGap}(?:(?!(?:neben|nehmen|zwischen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
+  String.raw`(?<![\p{L}\p{M}])((?:mit|bei|von|(?<!bis\s)zu|zu(?!\s+(?:(?:${quantityAdverbs}|sehr|ganz|so|recht|ziemlich)\s+){0,2}(?:\d|${numberWordSource}|Hundert|Tausend|Dutzend|vielen|einigen|mehreren|wenigen)(?![\p{L}\p{M}]))|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${embeddedAttributeGap}${quantityGap}(?:(?!(?:neben|nehmen|zwischen)\s)(?:[\p{L}\p{M}-]+en)\s+){0,3})([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-])(?:([ \t]+und[ \t]+)([\p{L}\p{M}’'-]+)((?:(?:[/∕⁄／]-?|[:*_·•.’‘'])innen|\(-?innen\)|[/∕⁄／]inne[/∕⁄／]n))(?![\p{L}\p{M}-]))?`, "giu");
 
 // Words between trigger and noun must form one noun phrase: lowercase
 // determiners and adjectives on -en. A capitalized noun (`Seit Wochen`),
@@ -156,8 +156,8 @@ function mapDativePlural(base: string): string | undefined {
   return plural + (uppercase ? "N" : "n");
 }
 
-const dativeLeadingContextPattern =
-  /(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$/iu;
+const dativeLeadingContextPattern = new RegExp(
+  String.raw`(?:^|[\s(])((?:mit|bei|von|zu|aus|nach|seit|neben|zwischen|den|unseren|ihren|euren|meinen|deinen|seinen|keinen|diesen|jenen|allen|(?<!(?:die|diese|jene|unsere|ihre|eure|meine|deine|seine|keine|alle|der|bis\s+zu|bis\s+zu\s+(?:sehr|ganz|so|recht|ziemlich))\s)(?:vielen|einigen|wenigen|mehreren|beiden)|(?<!Jugend\s)(?:danken|dankt|gratulieren|gratuliert|helfen|hilft|vertrauen|vertraut|begegnen|begegnet|zuhören|folgen|folgt|erzählen|erzählt))\s+${quantityGap}(?:(?:[\p{L}\p{M}-]+en)\s+){0,3})$`, "iu");
 
 // After `den` an unmarked first item must name persons (`Wir sehen den Mann,
 // Lehrer:innen und …` is an accusative singular). After a person plural the
@@ -284,7 +284,7 @@ function inDativeList(offset: number, length: number, source: string): boolean {
   if (!separatorBefore.test(source.slice(Math.max(0, offset - 100), offset))) return frontedDativeList(offset, length, source);
   const start = Math.max(0, offset - 400);
   const list = listGovernorBefore(source.slice(start, offset), start);
-  if (!list || (list.items === 0 && !(list.compound && list.word !== ""))) return false;
+  if (!list || list.rejected || (list.items === 0 && !(list.compound && list.word !== ""))) return false;
   const governor = list.word;
   const before = source.slice(0, list.index);
   const after = source.slice(offset + length);
@@ -310,6 +310,7 @@ function inDativeList(offset: number, length: number, source: string): boolean {
   // besonders`).
   if (list.items === 1 && !list.conjunction && following.length === 0 && !listContinues.test(after) &&
       !isUnambiguousDativePlural(list.first) &&
+      !(dativeVerbPattern.test(governor) && verbGovernsPlural(governor, before, after)) &&
       (nonVerbAfterItem.test(after) || insertionAfterItem.test(after))) return false;
   if (governor === "") {
     // Without a governing word only a neighbour that can only be a dative
@@ -397,7 +398,7 @@ function frontedDativeList(offset: number, length: number, source: string): bool
 }
 const frontedVerbPattern = /^\s+(?:(?:heute|jetzt|gerne|gern|immer|oft|besonders|gemeinsam)\s+)?(\p{Ll}+)\s/u;
 const focusParticleAtEnd = /(?:^|\s)(?:Auch|Gerade|Selbst|Sogar|Nur|Besonders)\s+$/u;
-const colonStartBefore = /(?:^|[.!?]\s*)\p{Lu}[\p{L}\p{M}-]*:\s*$/u;
+const colonStartBefore = /:\s*$/u;
 
 // Everything up to the last sentence end of the preceding text.
 const leadingSentencePattern = /^[^]*[.!?]\s+/u;
