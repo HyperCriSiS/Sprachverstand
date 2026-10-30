@@ -218,6 +218,9 @@
   "licenseSource": {
     "message": "License and source code"
   },
+  "supportProject": {
+    "message": "Support"
+  },
   "extensionActive": {
     "message": "Extension enabled"
   },
