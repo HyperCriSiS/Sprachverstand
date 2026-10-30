@@ -83,7 +83,7 @@ Weibliche Bezeichnungen ohne Genderzeichen wie „Professorin“ oder „Politik
 Sprachverstand entgendert deutschsprachige Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
 
 Tags:
-Barrierefreies Lesen, Genderfilter, Gender, kein Gendern, No-Gender, No Gender, Gendern, Gendern ausschalten, Gendern deaktivieren, Gendern entfernen, Gendersprache entfernen, Gendersprache korrigieren, Gendersprache ausschalten, Texte entgendern, Webseiten entgendern, Entgendern, Genderismus, Anti-Gender, Anti-Gender-Addon, Firefox Genderfilter, Genderfilter, Genderstern, Gendersternchen entfernen, Gender-Doppelpunkt entfernen, Binnen-I entfernen, Gendergap, Gender-Gap entfernen, Genderzeichen entfernen, Doppelnennungen vereinfachen, gegenderte Sprache umwandeln, geschlechtergerechte Sprache entfernen, generisches Maskulinum
+Barrierefreies Lesen, Gender, kein Gendern, No-Gender, No Gender, Gendern, Gendern ausschalten, Gendern deaktivieren, Gendern entfernen, Gendersprache entfernen, Gendersprache korrigieren, Gendersprache ausschalten, Texte entgendern, Webseiten entgendern, Entgendern, Genderismus, Anti-Gender, Anti-Gender-Addon, Genderstern, Gendersternchen entfernen, Gender-Doppelpunkt entfernen, Binnen-I entfernen, Gendergap, Gender-Gap entfernen, Genderzeichen entfernen, Doppelnennungen vereinfachen, gegenderte Sprache umwandeln, geschlechtergerechte Sprache entfernen, generisches Maskulinum
 
 ### Firefox-Datenerfassung
 
@@ -105,7 +105,7 @@ Begründung: Sprachverstand sammelt keine Daten für den Entwickler oder einen v
 
 Webseiten entgendern. Lokal in deinem Browser. Du bestimmst, wie du liest.
 
-Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Auch Gendergap und Unterstrich, Doppelnennungen sowie ausgewählte Partizipformen lassen sich nach einzeln wählbaren Regeln anpassen. Die Erweiterung übersetzt keine Webseiten und verändert keine Serverdaten. Unterstützt werden unter anderem Gendersternchen, Gender-Doppelpunkt, Binnen-I und Gender Gap, Singularformen mit und ohne Artikel, substantivierte Adjektive, Pronomen- und Possessivpaare, Titelabkürzungen und optionale Geschlechtszusätze in Stellenanzeigen wie (m/w/d).
+Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Auch Gendergap und Unterstrich, Doppelnennungen sowie ausgewählte Partizipformen lassen sich nach einzeln wählbaren Regeln anpassen. Die Erweiterung übersetzt keine Webseiten und verändert keine Serverdaten. Unterstützt werden unter anderem Gendersternchen, Gender-Doppelpunkt, Binnen-I und Gender Gap, Singularformen mit und ohne Artikel, substantivierte Adjektive, Pronomen- und Possessivpaare, Titelabkürzungen und einzeln abschaltbare Geschlechtszusätze in Stellenanzeigen wie (m/w/d).
 
 Beispiele:
 - Nutzer:innen → Nutzer

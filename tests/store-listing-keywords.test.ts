@@ -12,7 +12,7 @@ describe("getrennte Firefox- und Chrome-Storetexte", () => {
   it("erhält die deutsche Firefox-Suchwortliste vollständig im AMO-Export", () => {
     const source = readJson("store/amo-listings/de.json");
     const exported = readJson("store/generated/amo-metadata.json");
-    expect(source.keywords).toContain("Genderfilter");
+    expect(source.keywords).not.toContain("Genderfilter");
     expect(source.keywords).toContain("Gendersternchen entfernen");
     expect(source.keywords).toContain("generisches Maskulinum");
     expect(exported.description.de).toBe(
