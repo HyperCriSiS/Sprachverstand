@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Webseiten entgendern: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Einstellbar, ohne Tracking."
+    "message": "Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking."
   },
   "active": {
     "message": "Aktiv"

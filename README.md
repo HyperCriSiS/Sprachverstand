@@ -4,7 +4,7 @@
 
 <h1 align="center">Sprachverstand</h1>
 
-<p align="center"><strong>Webseiten entgendern. Lokal in deinem Browser.</strong></p>
+<p align="center"><strong>Gendern von Webseiten entfernen. Lokal in deinem Browser.</strong></p>
 
 <p align="center">
   Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche
@@ -22,7 +22,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/HyperCriSiS/Sprachverstand" alt="Lizenz"></a>
 </p>
 
-Sprachverstand entgendert deutschsprachige Webseitentexte direkt auf deinem Gerät.
+Sprachverstand entfernt Gendern aus deutschsprachigen Webseitentexten direkt auf deinem Gerät.
 Die Erweiterung erkennt unterstützte Schreibweisen und wandelt sie nach deinen
 Einstellungen um. Auch dynamisch nachgeladene Texte werden verarbeitet.
 Die Regelgruppen lassen sich einzeln ein- und ausschalten; dazu gehören auch
