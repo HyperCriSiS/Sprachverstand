@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Macht Webseiten leichter lesbar."
+    "message": "Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking."
   },
   "active": {
     "message": "Aktiv"
@@ -16,6 +16,9 @@
   },
   "save": {
     "message": "Speichern"
+  },
+  "unsavedChanges": {
+    "message": "Ungespeicherte Änderungen"
   },
   "expandAll": {
     "message": "Alle öffnen"
@@ -215,6 +218,9 @@
   "licenseSource": {
     "message": "Lizenz und Quelltext"
   },
+  "supportProject": {
+    "message": "Unterstützen"
+  },
   "extensionActive": {
     "message": "Erweiterung aktiv"
   },
@@ -395,7 +401,7 @@
     "message": "Alle Kategorien sind standardmäßig deaktiviert. Sobald mindestens eine Kategorie aktiviert wird, speichert der Browser auch diese Auswahl als Synchronisierungsinformation, damit weitere angemeldete Geräte dieselben Kategorien laden können. Nicht ausgewählte Kategorien werden aus dem Synchronisierungsspeicher entfernt."
   },
   "copyright": {
-    "message": "Copyright © 2026 HyperCriSiS und Mitwirkende"
+    "message": "Copyright © 2026 HyperCriSiS und weitere Entwickler"
   },
   "legalTitle": {
     "message": "Sprachverstand – Lizenz und Quelltext"
@@ -404,7 +410,7 @@
     "message": "Lizenz"
   },
   "licenseIntroPrefix": {
-    "message": "Copyright © 2026 HyperCriSiS und Mitwirkende. Der Quelltext von Sprachverstand steht ausschließlich unter der GNU Affero General Public License Version 3"
+    "message": "Copyright © 2026 HyperCriSiS und weitere Entwickler. Der Quelltext von Sprachverstand steht ausschließlich unter der GNU Affero General Public License Version 3"
   },
   "licenseTerms": {
     "message": "Das Programm darf unter den Bedingungen dieser Lizenz verwendet, untersucht, verändert und weitergegeben werden. Bei einer veränderten und weitergegebenen Fassung gelten insbesondere die Pflichten zur Bereitstellung des entsprechenden Quelltexts und zur Beibehaltung der Lizenzbedingungen."

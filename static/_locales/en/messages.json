@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Makes German websites easier to read by normalizing selected gendered forms."
+    "message": "Removes gender notation from German websites: asterisks, colons and Binnen-I are converted locally. Customizable, no tracking."
   },
   "active": {
     "message": "Active"
@@ -16,6 +16,9 @@
   },
   "save": {
     "message": "Save"
+  },
+  "unsavedChanges": {
+    "message": "Unsaved changes"
   },
   "expandAll": {
     "message": "Expand all"
@@ -214,6 +217,9 @@
   },
   "licenseSource": {
     "message": "License and source code"
+  },
+  "supportProject": {
+    "message": "Support"
   },
   "extensionActive": {
     "message": "Extension enabled"

@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Tekee saksankielisistä verkkosivuista helpommin luettavia normalisoimalla valittuja sukupuolittuneita muotoja."
+    "message": "Poistaa sukupuolimerkinnät saksankielisiltä sivuilta: tähdet ja kaksoispisteet muunnetaan paikallisesti. Säädettävä, ei seurantaa."
   },
   "active": {
     "message": "Käytössä"
@@ -16,6 +16,9 @@
   },
   "save": {
     "message": "Tallenna"
+  },
+  "unsavedChanges": {
+    "message": "Tallentamattomia muutoksia"
   },
   "expandAll": {
     "message": "Avaa kaikki"
@@ -214,6 +217,9 @@
   },
   "licenseSource": {
     "message": "Lisenssi ja lähdekoodi"
+  },
+  "supportProject": {
+    "message": "Tue"
   },
   "extensionActive": {
     "message": "Laajennus käytössä"

@@ -1,9 +1,11 @@
 # Storetexte für Sprachverstand
 
-**Stand: 28. Juli 2026**
+**Stand: 30. Oktober 2026**
 
-Diese Datei ist die versionierte deutschsprachige Quelle für die Einträge bei
-Firefox Add-ons und im Chrome Web Store. Storetexte, Berechtigungsbegründungen
+Diese Datei dokumentiert die deutschen Storetexte. Maßgebliche Quellen sind
+`store/listings/de.json` für Chrome und `store/amo-listings/de.json` für Firefox.
+Die Exporte werden mit `npm run store:generate` erzeugt. Die Einträge bei
+Firefox Add-ons und im Chrome Web Store bleiben getrennt. Storetexte, Berechtigungsbegründungen
 und Datenschutzangaben müssen bei jeder Änderung an Funktionen, Berechtigungen
 oder Datenverarbeitung gemeinsam geprüft werden.
 
@@ -13,11 +15,23 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 
 **Name:** Sprachverstand
 
-**Leitsatz:** Macht Webseiten leichter lesbar.
+**Leitsatz:** Gendern von Webseiten entfernen. Lokal in deinem Browser.
 
-**Kurzbeschreibung:**
+**Firefox-Kurzbeschreibung:**
 
-> Passt gegenderte Schreibweisen lokal im Browser an persönliche Lesegewohnheiten an – ohne Tracking, Telemetrie oder eigene Cloud.
+> Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking.
+
+Chrome verwendet weiterhin die lokalisierte `extensionDescription` aus
+`static/_locales/*/messages.json`. Produktname und GUI-Texte werden mit dieser
+redaktionellen Überarbeitung nicht geändert.
+
+Die vollständigen Chrome-Beschreibungen liegen bereits für alle 51 konfigurierten
+Locales unter `store/listings/` vor. Der neue Einstieg ist in allen 51 Fassungen
+übersetzt; die übrigen bestehenden Übersetzungen bleiben erhalten. Das belegt die
+Repository-Abdeckung, nicht den Stand im öffentlichen Store. Die deutsche
+Chrome-Fassung bettet Suchbegriffe in den Fließtext ein. Die bestehende deutsche
+Firefox-Suchwortliste wird separat als `keywords` gepflegt und vom Generator nur
+an die deutsche AMO-Beschreibung angehängt.
 
 **Einzelzweck:**
 
@@ -31,63 +45,45 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 
 ### Ausführliche Beschreibung
 
-Sprachverstand passt die Darstellung deutschsprachiger Webseitentexte an Deine
-persönlichen Lesegewohnheiten an.
+Gendern von Webseiten entfernen. Lokal in deinem Browser.
 
-Gegenderte Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“,
-Doppelnennungen, substantivierte Adjektive und ausgewählte Partizipformen werden
-direkt im Browser nach kontrollierten Regeln angepasst.
+Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Du bestimmst, wie du liest. Die Verarbeitung läuft lokal auf deinem Gerät, und die Regelgruppen lassen sich einzeln ein- und ausschalten.
 
-Beispiele:
+So liest sich das mit Sprachverstand:
+• Nutzer:innen → Nutzer
+• Mitarbeiter*innen → Mitarbeiter
+• NutzerInnen → Nutzer
+• jede:r Nutzer:in → jeder Nutzer
+• Nutzerinnen und Nutzer → Nutzer
+• Student*innen → Studenten
+• Studierende → Studenten (über eine eigene Regelgruppe steuerbar)
 
-- Nutzer:innen → Nutzer
-- Mitarbeiter*innen → Mitarbeiter
-- NutzerInnen → Nutzer
-- NutzerIn → Nutzer
-- eine NutzerIn → ein Nutzer
-- Nutzerinnen und Nutzer → Nutzer
-- Student*innen → Studenten
-- Studierende → Studenten
-- Erwachsene:r → Erwachsener
-- Studentys → Studenten
+Dein Browser. Deine Sprache.
 
-Die Webseite selbst und ihre Serverdaten bleiben unverändert. Sprachverstand
-verändert ausschließlich die lokale Darstellung im Browser. Beim Ausschalten
-werden die vorgenommenen Änderungen ohne Neuladen rückgängig gemacht.
+• Sofort rückgängig: Beim Ausschalten den ursprünglichen Text ohne Neuladen wiederherstellen.
+• Nach deinen Vorstellungen: Regelgruppen einzeln wählen, Webseiten ausschließen und persönliche Ausnahmen oder eigene wörtliche Ersetzungen anlegen.
+• Vorher ausprobieren: Eigene Regeln vor dem Speichern mit Live-Vorschau und Konflikthinweisen prüfen.
+• Auch dynamische Inhalte: Unterstützte Schreibweisen in nachgeladenen Texten umwandeln.
+• Einstellungen sichern: Den vollständigen Einstellungsstand lokal als JSON exportieren und wieder einlesen.
 
-Funktionen:
+Optional auch Untertitel und Beschriftungen
 
-- Verarbeitung normaler und dynamisch nachgeladener Webseiteninhalte
-- vollständige Wiederherstellung beim Ausschalten
-- einzeln aktivierbare Regelgruppen
-- Korrekturzähler für den aktuellen Tab
-- persönliche Ausnahmen für Wörter und vollständige Formulierungen
-- eigene wörtliche Ersetzungen, getrennt von Ausnahmen und ohne Regex
-- Live-Vorschau und Konflikthinweise vor dem Speichern eigener Regeln
-- lokaler JSON-Import und -Export des vollständigen Einstellungsstands
-- optionale Browser-Synchronisierung, für jede Datenkategorie einzeln wählbar und standardmäßig deaktiviert
-- drei wählbare Strategien für persönliche Listen beim Import
-- Ausschluss einzelner Domains
-- optionaler Schutz von Texten in Anführungszeichen
-- optionale Korrektur erkannter Untertitel-Overlays; standardmäßig deaktiviert
-- optionale Verarbeitung von `alt`, `aria-label`, `aria-description` und `title`
-- Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
+Auf Wunsch verarbeitet Sprachverstand erkannte Untertitel, wenn die Webseite sie als Text bereitstellt. Die Untertitelkorrektur ist standardmäßig ausgeschaltet. Fest ins Video eingebrannte Untertitel können nicht verändert werden. Auch zugängliche Beschriftungen wie alt, aria-label, aria-description und title lassen sich optional verarbeiten.
 
-Sprachverstand arbeitet bewusst konservativ. Unbekannte oder mehrdeutige Schreibweisen bleiben unverändert, wenn keine ausreichend sichere Ersetzung möglich ist. Eigene Ersetzungen werden genau einmal ausgeführt; persönliche Ausnahmen haben Vorrang. Alle Einstellungen bleiben standardmäßig lokal. Nur ausdrücklich ausgewählte Kategorien werden zusätzlich über den Synchronisierungsdienst des Browsers übertragen.
+Lokal und datenschutzfreundlich
 
-Datenschutz:
+Webseitentexte werden ausschließlich lokal verarbeitet. Sprachverstand überträgt sie weder an den Entwickler noch an externe Sprachdienste. Keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung.
 
-- Textverarbeitung ausschließlich lokal im Browser
-- keine Übertragung von Webseitentexten oder aufgerufenen Adressen
-- keine eigene Cloud und keine externe Sprach-API
-- kein Tracking und keine Telemetrie
-- keine Werbung und keine Nutzerprofile
-- Einstellungen, Ausnahmen und eigene Ersetzungen bleiben standardmäßig lokal im Browser
-- optionale Synchronisierung nur für ausdrücklich ausgewählte Kategorien über den Browseranbieter
-- Importdateien werden nur nach bewusster Auswahl lokal gelesen
-- Exportdateien werden lokal erzeugt und nicht hochgeladen
+Deine Einstellungen bleiben standardmäßig auf deinem Gerät. Optional kannst du ausdrücklich ausgewählte Einstellungskategorien über Firefox Sync synchronisieren. Diese Funktion ist standardmäßig deaktiviert; Webseitentexte und Browserverläufe werden dabei nicht übertragen.
 
-Unterstützt werden Firefox für Desktop und Firefox für Android.
+Bewusst vorsichtig
+
+Weibliche Bezeichnungen ohne Genderzeichen wie „Professorin“ oder „Politikerinnen“ bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten sind von der regulären Verarbeitung ausgeschlossen. Ist eine Ersetzung nicht ausreichend sicher, bleibt die betreffende Schreibweise stehen. Fehlende oder falsche Ersetzungen kannst du über die verlinkte GitHub-Hilfeseite melden.
+
+Sprachverstand entfernt Gendern aus deutschsprachigen Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
+
+Tags:
+Barrierefreies Lesen, Gender, kein Gendern, No-Gender, No Gender, Gendern, Gendern ausschalten, Gendern deaktivieren, Gendern entfernen, Gendersprache entfernen, Gendersprache korrigieren, Gendersprache ausschalten, Texte entgendern, Webseiten entgendern, Entgendern, Genderismus, Anti-Gender, Anti-Gender-Addon, Genderstern, Gendersternchen entfernen, Gender-Doppelpunkt entfernen, Binnen-I entfernen, Gendergap, Gender-Gap entfernen, Genderzeichen entfernen, Doppelnennungen vereinfachen, gegenderte Sprache umwandeln, geschlechtergerechte Sprache entfernen, generisches Maskulinum
 
 ### Firefox-Datenerfassung
 
@@ -107,55 +103,47 @@ Begründung: Sprachverstand sammelt keine Daten für den Entwickler oder einen v
 
 ### Ausführliche Beschreibung
 
-Sprachverstand passt gegenderte deutsche Webseitentexte lokal an Deine
-persönlichen Lesegewohnheiten an.
+Gendern von Webseiten entfernen. Lokal in deinem Browser. Du bestimmst, wie du liest.
 
-Schreibweisen wie „Nutzer:innen“, „Mitarbeiter*innen“, „NutzerInnen“, sichtbare
-Binnen-I-Singularformen, Doppelnennungen, substantivierte Adjektive und
-ausgewählte Partizipformen werden direkt im Browser nach kontrollierten Regeln
-angepasst.
+Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Auch Gendergap und Unterstrich, Doppelnennungen sowie ausgewählte Partizipformen lassen sich nach einzeln wählbaren Regeln anpassen. Die Erweiterung übersetzt keine Webseiten und verändert keine Serverdaten. Unterstützt werden unter anderem Gendersternchen, Gender-Doppelpunkt, Binnen-I und Gender Gap, Singularformen mit und ohne Artikel, substantivierte Adjektive, Pronomen- und Possessivpaare, Titelabkürzungen und einzeln abschaltbare Geschlechtszusätze in Stellenanzeigen wie (m/w/d).
 
 Beispiele:
-
 - Nutzer:innen → Nutzer
 - Mitarbeiter*innen → Mitarbeiter
 - NutzerInnen → Nutzer
 - NutzerIn → Nutzer
-- eine NutzerIn → ein Nutzer
 - Nutzerinnen und Nutzer → Nutzer
-- jede:r Nutzer:in → jeder Nutzer
 - Student*innen → Studenten
 - Studierende → Studenten
 - Erwachsene:r → Erwachsener
-- Studentys → Studenten
-
-Die aufgerufene Webseite und ihre Serverdaten werden nicht verändert.
-Sprachverstand passt ausschließlich die Darstellung auf Deinem Gerät an. Beim
-Ausschalten werden die vorgenommenen Änderungen ohne Neuladen vollständig
-rückgängig gemacht.
 
 Wichtige Funktionen:
-
-- automatische Verarbeitung beim Laden einer Webseite
-- Unterstützung dynamisch nachgeladener Inhalte
 - einzeln aktivierbare Regelgruppen
+- Verarbeitung normaler und dynamisch nachgeladener Webseiteninhalte
 - Korrekturzähler für den aktuellen Tab
-- persönliche Wort- und Phrasenausnahmen
-- eigene wörtliche Ersetzungen ohne Regex
+- persönliche Ausnahmen für Wörter und vollständige Formulierungen
+- eigene wörtliche Ersetzungen ohne reguläre Ausdrücke
 - Live-Vorschau und Konflikthinweise für eigene Regeln
-- lokaler JSON-Import und -Export aller Einstellungen
+- lokaler JSON-Import und -Export des vollständigen Einstellungsstands
 - optionale Browser-Synchronisierung pro Datenkategorie, standardmäßig deaktiviert
-- ausdrücklich wählbare Strategie für persönliche Listen beim Import
 - Ausschluss bestimmter Domains
-- optionaler Schutz zitierter Schreibweisen
+- optionaler Schutz von Texten in Anführungszeichen
 - optionale Korrektur erkannter Untertitel-Overlays
-- optionale Verarbeitung zugänglicher Textattribute
-- Schutz von Eingabefeldern, Editoren, URLs und Quellcode
+- optionale Verarbeitung von alt, aria-label, aria-description und title
+- Schutz von Eingabefeldern, Editoren, Quellcode, URLs und technischen Daten
 
-Sprachverstand arbeitet bewusst vorsichtig: Unbekannte oder mehrdeutige Formen
-werden lieber unverändert gelassen als möglicherweise falsch ersetzt.
+Sprachverstand arbeitet bewusst vorsichtig. Unbekannte oder mehrdeutige Formen bleiben unverändert, wenn keine ausreichend sichere Ersetzung möglich ist. Beim Ausschalten werden Änderungen auf offenen Seiten ohne Neuladen rückgängig gemacht.
 
-Die gesamte Textverarbeitung erfolgt lokal im Browser. Webseitentexte, Browserverläufe und Nutzungsdaten werden nicht an den Entwickler übertragen. Sprachverstand verwendet keine eigene Cloud, keine externe Sprach-API, kein Tracking, keine Telemetrie und keine Werbung. Alle Einstellungen werden standardmäßig lokal gespeichert. Nur ausdrücklich ausgewählte Kategorien können zusätzlich über den Synchronisierungsdienst des Browseranbieters auf weitere angemeldete Geräte übertragen werden. Importdateien werden nur nach einer bewussten Dateiauswahl lokal gelesen; Exportdateien werden lokal erzeugt.
+Datenschutz:
+- Webseitentexte werden ausschließlich lokal im Browser verarbeitet
+- keine Übertragung von Webseitentexten oder aufgerufenen Adressen an den Entwickler
+- keine eigene Cloud und keine externe Sprach-API
+- kein Tracking, keine Telemetrie, keine Werbung und keine Nutzerprofile
+- Einstellungen bleiben standardmäßig lokal
+- optionale Synchronisierung verwendet nur den Synchronisierungsdienst des Browsers und nur ausdrücklich ausgewählte Kategorien
+- Importdateien werden nur nach bewusster Auswahl lokal gelesen; Exportdateien werden lokal erzeugt
+
+Sprachverstand ist für Menschen gedacht, die deutschsprachige Webseiten lesen und bestimmte gegenderte Schreibweisen lokal nach ihren persönlichen Lesegewohnheiten anpassen möchten.
 
 ## Chrome Web Store – Datenschutzformular
 
