@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Facilita la lectura de sitios web en alemán normalizando determinadas formas marcadas por género."
+    "message": "Elimina las marcas de género de webs en alemán: asteriscos y dos puntos se convierten localmente. Configurable, sin rastreo."
   },
   "active": {
     "message": "Activo"

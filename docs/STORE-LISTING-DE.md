@@ -80,7 +80,7 @@ Bewusst vorsichtig
 
 Weibliche Bezeichnungen ohne Genderzeichen wie „Professorin“ oder „Politikerinnen“ bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten sind von der regulären Verarbeitung ausgeschlossen. Ist eine Ersetzung nicht ausreichend sicher, bleibt die betreffende Schreibweise stehen. Fehlende oder falsche Ersetzungen kannst du über die verlinkte GitHub-Hilfeseite melden.
 
-Sprachverstand entgendert deutschsprachige Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
+Sprachverstand entfernt Gendern aus deutschsprachigen Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
 
 Tags:
 Barrierefreies Lesen, Gender, kein Gendern, No-Gender, No Gender, Gendern, Gendern ausschalten, Gendern deaktivieren, Gendern entfernen, Gendersprache entfernen, Gendersprache korrigieren, Gendersprache ausschalten, Texte entgendern, Webseiten entgendern, Entgendern, Genderismus, Anti-Gender, Anti-Gender-Addon, Genderstern, Gendersternchen entfernen, Gender-Doppelpunkt entfernen, Binnen-I entfernen, Gendergap, Gender-Gap entfernen, Genderzeichen entfernen, Doppelnennungen vereinfachen, gegenderte Sprache umwandeln, geschlechtergerechte Sprache entfernen, generisches Maskulinum
