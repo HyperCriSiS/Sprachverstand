@@ -17,15 +17,13 @@ import {
 } from "../src/settings/defaults";
 
 describe("Einstellungen", () => {
-  it("aktiviert standardmäßig alle aktuellen sicheren Regelgruppen", () => {
+  it("aktiviert standardmäßig alle Regelgruppen", () => {
     expect(defaultSettings.enabledRuleGroupIds).toEqual(
       defaultEnabledRuleGroupIds
     );
-    expect(defaultSettings.enabledRuleGroupIds).not.toContain("neutral-person-terms");
-    expect(defaultSettings.enabledRuleGroupIds).not.toContain("job-ad-suffixes");
-    expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds)).toEqual(
-      new Set(["neutral.person-terms", "job-ad.gender-suffixes"])
-    );
+    expect(defaultSettings.enabledRuleGroupIds).toContain("neutral-person-terms");
+    expect(defaultSettings.enabledRuleGroupIds).toContain("job-ad-suffixes");
+    expect(disabledRuleIdsForGroups(defaultEnabledRuleGroupIds)).toEqual(new Set());
     expect(defaultSettings.enabledRuleGroupIds).toContain(
       "substantivized-adjectives"
     );
@@ -45,8 +43,8 @@ describe("Einstellungen", () => {
 
     expect(settings.enabledRuleGroupIds).not.toContain("plural-binnen-i");
     expect(settings.enabledRuleGroupIds).toContain("plural-separators");
-    expect(settings.enabledRuleGroupIds).not.toContain("neutral-person-terms");
-    expect(settings.enabledRuleGroupIds).not.toContain("job-ad-suffixes");
+    expect(settings.enabledRuleGroupIds).toContain("neutral-person-terms");
+    expect(settings.enabledRuleGroupIds).toContain("job-ad-suffixes");
     expect(settings.excludedDomains).toEqual(["example.org"]);
   });
 
