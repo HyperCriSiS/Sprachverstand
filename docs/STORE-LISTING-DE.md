@@ -19,7 +19,7 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 
 **Firefox-Kurzbeschreibung:**
 
-> Gendersternchen, Doppelpunkt und Binnen-I auf Webseiten umwandeln. Lokal, individuell einstellbar und ohne Tracking.
+> Webseiten entgendern: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Einstellbar, ohne Tracking.
 
 Chrome verwendet weiterhin die lokalisierte `extensionDescription` aus
 `static/_locales/*/messages.json`. Produktname und GUI-Texte werden mit dieser
