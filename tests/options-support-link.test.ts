@@ -11,7 +11,9 @@ describe("Unterstützen-Link im Footer der Einstellungen", () => {
     expect(html).not.toContain("kofiwidget");
   });
 
-  it("steht nach Lizenz und Quelltext", () => {
-    expect(footer.indexOf('data-i18n="supportProject"')).toBeGreaterThan(footer.indexOf('data-i18n="licenseSource"'));
+  it("steht mittig zwischen Copyright und den übrigen Links", () => {
+    const support = footer.indexOf('data-i18n="supportProject"');
+    expect(support).toBeGreaterThan(footer.indexOf('data-i18n="copyright"'));
+    expect(support).toBeLessThan(footer.indexOf('data-i18n="reportProblems"'));
   });
 });
