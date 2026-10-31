@@ -94,6 +94,7 @@
     var style = global.document.createElement("style");
     style.id = styleId;
     style.textContent = [
+      'html, body { width: 100%; min-width: 0; }',
       ':root[data-palemoon-theme="light"] { color-scheme: light; background: #ffffff; color: #202124; }',
       ':root[data-palemoon-theme="light"] body { background: #ffffff; color: #202124; }',
       ':root[data-palemoon-theme="light"] button, :root[data-palemoon-theme="light"] select, :root[data-palemoon-theme="light"] textarea, :root[data-palemoon-theme="light"] input[type="text"], :root[data-palemoon-theme="light"] input[type="url"] { border: 1px solid #c9c9cf; background: #ffffff; color: #202124; }',

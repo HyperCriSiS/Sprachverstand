@@ -21,7 +21,7 @@
   <popupset id="mainPopupSet">
     <panel
       id="sprachverstand-popup-panel"
-      type="arrow"
+      level="top"
       noautofocus="true"
       consumeoutsideclicks="false"
       onpopuphidden="SprachverstandPaleMoonUI.resetPopup();">
