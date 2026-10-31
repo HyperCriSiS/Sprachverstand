@@ -107,7 +107,9 @@
       ':root[data-palemoon-theme="dark"] section, :root[data-palemoon-theme="dark"] .settings-section, :root[data-palemoon-theme="dark"] .settings-toolbar, :root[data-palemoon-theme="dark"] .diagnostics, :root[data-palemoon-theme="dark"] .import-summary { border-color: #55535f; }',
       ':root[data-palemoon-theme="dark"] section, :root[data-palemoon-theme="dark"] .settings-section, :root[data-palemoon-theme="dark"] .settings-toolbar, :root[data-palemoon-theme="dark"] .diagnostics, :root[data-palemoon-theme="dark"] .import-summary, :root[data-palemoon-theme="dark"] textarea[readonly] { background: #27262d; }',
       ':root[data-palemoon-theme="dark"] .settings-section > summary:hover { background: #3b3943; }',
-      ':root[data-palemoon-theme="dark"] .actions { background: #1c1b22; }'
+      ':root[data-palemoon-theme="dark"] .actions { background: #1c1b22; }',
+      ':root[data-palemoon-theme="dark"] section.popup-view, :root[data-palemoon-theme="dark"] section.popup-section { background: transparent; border: 0; }',
+      '.popup-view input[type="checkbox"] { width: 18px; height: 18px; }'
     ].join("\n");
 
     global.document.documentElement.appendChild(style);
