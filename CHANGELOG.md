@@ -20,7 +20,7 @@ dokumentiert.
   Erweiterungshintergrund (ohne externe API oder neue Berechtigung). Das
   Content-Script schrumpft von rund 340 auf rund 97 KB. Schnelle
   Kandidatenprüfungen überspringen neutrale Texte; die Regelverarbeitung ist
-  auf neutralem Text rund zehnmal, auf gegendertem Text rund doppelt so schnell
+  auf neutralem Text rund viermal, auf gegendertem Text rund doppelt so schnell
   bei identischen Ergebnissen.
 - DOM-Arbeit läuft in kurzen, zeitbegrenzten Scheiben mit Hintergrundpriorität.
   Große Einfüge-, Entfernungs- und Wiederherstellungsvorgänge sowie lange
