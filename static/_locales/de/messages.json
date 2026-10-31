@@ -3,7 +3,7 @@
     "message": "Sprachverstand"
   },
   "extensionDescription": {
-    "message": "Macht Webseiten leichter lesbar."
+    "message": "Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking."
   },
   "active": {
     "message": "Aktiv"

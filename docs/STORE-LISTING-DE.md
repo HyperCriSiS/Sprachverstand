@@ -15,11 +15,11 @@ Die öffentliche Datenschutzerklärung steht in [`PRIVACY.md`](../PRIVACY.md).
 
 **Name:** Sprachverstand
 
-**Leitsatz:** Webseiten entgendern. Lokal in deinem Browser.
+**Leitsatz:** Gendern von Webseiten entfernen. Lokal in deinem Browser.
 
 **Firefox-Kurzbeschreibung:**
 
-> Gendersternchen, Doppelpunkt und Binnen-I auf Webseiten umwandeln. Lokal, individuell einstellbar und ohne Tracking.
+> Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking.
 
 Chrome verwendet weiterhin die lokalisierte `extensionDescription` aus
 `static/_locales/*/messages.json`. Produktname und GUI-Texte werden mit dieser
@@ -45,7 +45,7 @@ an die deutsche AMO-Beschreibung angehängt.
 
 ### Ausführliche Beschreibung
 
-Webseiten entgendern. Lokal in deinem Browser.
+Gendern von Webseiten entfernen. Lokal in deinem Browser.
 
 Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Du bestimmst, wie du liest. Die Verarbeitung läuft lokal auf deinem Gerät, und die Regelgruppen lassen sich einzeln ein- und ausschalten.
 
@@ -80,7 +80,7 @@ Bewusst vorsichtig
 
 Weibliche Bezeichnungen ohne Genderzeichen wie „Professorin“ oder „Politikerinnen“ bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten sind von der regulären Verarbeitung ausgeschlossen. Ist eine Ersetzung nicht ausreichend sicher, bleibt die betreffende Schreibweise stehen. Fehlende oder falsche Ersetzungen kannst du über die verlinkte GitHub-Hilfeseite melden.
 
-Sprachverstand entgendert deutschsprachige Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
+Sprachverstand entfernt Gendern aus deutschsprachigen Webseiten. Unterstützt werden Firefox für Desktop und Firefox für Android.
 
 Tags:
 Barrierefreies Lesen, Gender, kein Gendern, No-Gender, No Gender, Gendern, Gendern ausschalten, Gendern deaktivieren, Gendern entfernen, Gendersprache entfernen, Gendersprache korrigieren, Gendersprache ausschalten, Texte entgendern, Webseiten entgendern, Entgendern, Genderismus, Anti-Gender, Anti-Gender-Addon, Genderstern, Gendersternchen entfernen, Gender-Doppelpunkt entfernen, Binnen-I entfernen, Gendergap, Gender-Gap entfernen, Genderzeichen entfernen, Doppelnennungen vereinfachen, gegenderte Sprache umwandeln, geschlechtergerechte Sprache entfernen, generisches Maskulinum
@@ -103,7 +103,7 @@ Begründung: Sprachverstand sammelt keine Daten für den Entwickler oder einen v
 
 ### Ausführliche Beschreibung
 
-Webseiten entgendern. Lokal in deinem Browser. Du bestimmst, wie du liest.
+Gendern von Webseiten entfernen. Lokal in deinem Browser. Du bestimmst, wie du liest.
 
 Sprachverstand wandelt Gendersternchen, Gender-Doppelpunkte und Binnen-I in herkömmliche deutsche Personenbezeichnungen um. Auch Gendergap und Unterstrich, Doppelnennungen sowie ausgewählte Partizipformen lassen sich nach einzeln wählbaren Regeln anpassen. Die Erweiterung übersetzt keine Webseiten und verändert keine Serverdaten. Unterstützt werden unter anderem Gendersternchen, Gender-Doppelpunkt, Binnen-I und Gender Gap, Singularformen mit und ohne Artikel, substantivierte Adjektive, Pronomen- und Possessivpaare, Titelabkürzungen und einzeln abschaltbare Geschlechtszusätze in Stellenanzeigen wie (m/w/d).
 

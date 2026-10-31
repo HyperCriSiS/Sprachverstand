@@ -2,7 +2,7 @@
   "name": "sprachverstand",
   "version": "0.7.2",
   "private": true,
-  "description": "Macht Webseiten leichter lesbar.",
+  "description": "Gendern von Webseiten entfernen: Gendersternchen, Doppelpunkt und Binnen-I werden lokal umgewandelt. Ohne Tracking.",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
