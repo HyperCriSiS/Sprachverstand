@@ -14,7 +14,9 @@
 <p align="center">
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/">Für Firefox installieren</a>
   · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
-  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Browser und Downloads</a>
+  · <a href="#microsoft-edge">Edge</a>
+  · <a href="#opera">Opera</a>
+  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Downloads</a>
 </p>
 
 <p align="center">
@@ -68,11 +70,46 @@ Doppelnennungen und ausgewählte Partizipformen wie „Studierende“.
 3. Über das Erweiterungssymbol kannst du Sprachverstand ausschalten, Regelgruppen
    wählen und die Einstellungen öffnen.
 
-Firefox für Android wird ebenfalls unterstützt. Downloads für weitere Browser
-findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
+Firefox für Android wird ebenfalls unterstützt. Für [Microsoft Edge](#microsoft-edge)
+und [Opera](#opera) gibt es eigene Hinweise weiter unten. Downloads für weitere
+Browser findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
 Diese README beschreibt den aktuellen Entwicklungsstand. Welche Funktionen die
 veröffentlichte Version enthält, erfährst du in den Versionshinweisen des
 jeweiligen Stores.
+
+### Microsoft Edge
+
+Sprachverstand ist nicht in den Microsoft Edge Add-ons. Du installierst es in Edge
+aus dem Chrome Web Store:
+
+1. Öffne [Sprachverstand im Chrome Web Store](https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii).
+2. Falls Edge danach fragt, erlaube Erweiterungen aus anderen Stores. In älteren
+   Versionen steht dieser Schalter unter `edge://extensions`.
+3. Klicke auf **Abrufen** oder **Hinzufügen** und bestätige.
+
+Updates kommen danach automatisch über den Chrome Web Store.
+
+### Opera
+
+Sprachverstand ist aktuell nicht in den Opera-Add-ons. Du installierst es in Opera
+aus dem Chrome Web Store:
+
+1. Öffne [Sprachverstand im Chrome Web Store](https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii).
+2. Klicke auf **Zu Opera hinzufügen**. Fehlt die Schaltfläche oder bittet Opera
+   darum, installiere zuerst die von Opera angebotene Erweiterung
+   „Install Chrome Extensions“.
+3. Bestätige die Installation unter `opera://extensions`, falls Opera danach fragt.
+
+Klappt das nicht, kannst du das Paket von Hand laden:
+
+1. Lade `sprachverstand-<version>-opera.zip` aus dem
+   [aktuellen Release](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
+   und entpacke es in einen Ordner, den du behältst.
+2. Schalte unter `opera://extensions` den **Entwicklermodus** ein.
+3. Klicke auf **Entpackte Erweiterung laden** und wähle den Ordner aus.
+
+So installiert gibt es keine automatischen Updates. Für eine neue Version
+wiederholst du diese Schritte.
 
 ## Was wird verändert – und was bleibt stehen?
 
@@ -148,8 +185,8 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 <p>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Google%20Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Google Chrome"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Chromium-4285F4?logo=chromium&logoColor=white" alt="Chromium"></a>
-  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
-  <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
+  <a href="#microsoft-edge"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
+  <a href="#opera"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Brave-FB542B?logo=brave&logoColor=white" alt="Brave"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Vivaldi-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Arc-FCBFBD?logo=arc&logoColor=black" alt="Arc"></a>
