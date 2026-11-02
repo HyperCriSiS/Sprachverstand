@@ -203,12 +203,17 @@ function createHtml(rows) {
       setTimeout(() => { button.textContent = previous; }, 1400);
     }
 
+    const germanLocaleNames = new Intl.DisplayNames(["de"], {type: "language"});
+    function germanLocaleName(row) {
+      return germanLocaleNames.of(row.locale.replace("_", "-")) ?? row.locale;
+    }
+
     function render() {
       const query = search.value.trim().toLocaleLowerCase("de");
       cards.replaceChildren();
 
       for (const row of rows) {
-        const haystack = (row.locale + " " + row.localeName + " " + row.summary + " " + row.description).toLocaleLowerCase("de");
+        const haystack = (row.locale + " " + row.localeName + " " + germanLocaleName(row) + " " + row.summary + " " + row.description).toLocaleLowerCase("de");
         if (query && !haystack.includes(query)) continue;
 
         const article = document.createElement("article");
@@ -219,7 +224,7 @@ function createHtml(rows) {
         head.className = "card-head";
 
         const heading = document.createElement("h2");
-        heading.textContent = row.localeName;
+        heading.textContent = germanLocaleName(row) + " – " + row.localeName;
         const code = document.createElement("span");
         code.className = "code";
         code.textContent = " (" + row.locale + ")";

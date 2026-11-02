@@ -13,7 +13,7 @@ Jede Release-Datei enthält exakt die 51 Store-Locales. Aus dieser Quelle erzeug
 
 - 29 lokalisierte AMO-Release-Notes (`store/generated/amo-release-notes.json`),
 - AMO-Metadaten,
-- Chrome-Dashboard-Texte für 51 Locales mit einem Abschnitt „Neu in …“ vor der normalen Beschreibung,
+- Chrome-Dashboard-Texte für 51 Locales ohne Abschnitt „Neu in …“,
 - Edge-/Opera-Arbeitslisten.
 
 Der Release-Workflow erzeugt diese Dateien für die Version des Tags, veröffentlicht sie aber nicht als normale GitHub-Release-Downloads. Öffentliche Releases enthalten nur die eigentlichen Distributionspakete, Source-ZIP, Prüfsummen und Provenienz. Store-Arbeitsdateien, Dashboard-Texte und Submission-Hilfen werden getrennt als kurzlebiges GitHub-Actions-Artefakt abgelegt. Fehlen Release-Notes für eine stabile moderne Version, darf der Release nicht erfolgreich durchlaufen.
@@ -143,7 +143,7 @@ Zusätzlich sind Statusabfrage, Abbruch einer aktiven Einreichung und ein prozen
 
 ### Was Google derzeit nicht über unseren API-Pfad pflegt
 
-Die Chrome Web Store API v2 bietet die Paket-/Status-/Publish-Endpunkte, aber keinen von uns verwendbaren versionsbezogenen `release_notes`-Endpunkt wie AMO und keinen Listing-Metadaten-Pfad in diesem Publishing-Workflow. Deshalb werden die lokalisierten „Neu in …“-Texte automatisch in die 51 fertigen Langbeschreibungen eingebaut und als `chrome-dashboard.html`/CSV erzeugt. Diese Listing-Texte werden anschließend im Developer Dashboard übernommen; kein Browser-Scraping und keine undokumentierte API wird verwendet.
+Die Chrome Web Store API v2 bietet die Paket-/Status-/Publish-Endpunkte, aber keinen von uns verwendbaren versionsbezogenen `release_notes`-Endpunkt wie AMO und keinen Listing-Metadaten-Pfad in diesem Publishing-Workflow. Deshalb bleiben die 51 Langbeschreibungen ohne Versionshinweise und werden als `chrome-dashboard.html`/CSV erzeugt. Diese Listing-Texte werden anschließend im Developer Dashboard übernommen; kein Browser-Scraping und keine undokumentierte API wird verwendet.
 
 ## Workflow verwenden
 

@@ -102,8 +102,5 @@ export function createChromeDescription(baseDescription, localeCode, releaseNote
   if (!entry) {
     fail(`Release-Notes fehlen für Chrome-Locale ${localeCode}.`);
   }
-  return `${baseDescription.trim()}
-
-${entry.heading.trim()}
-${entry.notes.trim()}`;
+  return baseDescription.trim();
 }
