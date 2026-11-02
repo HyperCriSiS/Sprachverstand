@@ -32,7 +32,7 @@ describe("Pale-Moon-i18n-Parität", () => {
 
     const reference = await readMessages("de");
     const referenceKeys = Object.keys(reference).sort();
-    expect(referenceKeys).toHaveLength(174);
+    expect(referenceKeys).toHaveLength(175);
 
     for (const locale of locales) {
       const messages = await readMessages(locale);

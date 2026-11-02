@@ -22,6 +22,8 @@ export function compareReplacementSummaries(
 const wordLikeCharacter = /[\p{L}\p{M}\p{N}’'_-]/u;
 const nonWhitespaceTokenPattern = /\S+/gu;
 const maximumTokenDiffCells = 160_000;
+const pairConnectorPattern = /^(?:[/|&+]|oder|und|bzw\.?|sowie)$/iu;
+const leadingPunctuationPattern = /^[^\p{L}\p{N}]+/u;
 
 function trimSharedContext(
   original: string,
@@ -154,9 +156,27 @@ function sequenceAlignedChanges(
   let transformedIndex = 0;
   let originalChange: string[] = [];
   let transformedChange: string[] = [];
+  let precedingToken: string | undefined;
 
   const flushChange = (followingToken?: string): void => {
     if (originalChange.length === 0 && transformedChange.length === 0) {
+      return;
+    }
+
+    // Beginnt die Änderung mit einem Verbinder, gehört das behaltene Wort davor
+    // zur Paarform (z. B. „der / die Nutzer*in“ → „der Nutzer“).
+    const pairStart = precedingToken?.replace(leadingPunctuationPattern, "");
+    if (pairStart && pairConnectorPattern.test(originalChange[0] ?? "")) {
+      const pair = trimSharedContext(
+        originalChange.join(" "),
+        transformedChange.join(" ")
+      );
+      changes.push({
+        original: `${pairStart} ${pair.original}`,
+        replacement: pair.replacement ? `${pairStart} ${pair.replacement}` : pairStart
+      });
+      originalChange = [];
+      transformedChange = [];
       return;
     }
 
@@ -188,6 +208,7 @@ function sequenceAlignedChanges(
 
     if (originalToken === transformedToken) {
       flushChange(originalToken);
+      precedingToken = originalToken;
       originalIndex += 1;
       transformedIndex += 1;
       continue;

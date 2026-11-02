@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Wala pang pagpapalit sa page na ito."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "Ang overview ay pinananatili lamang sa memory para sa kasalukuyang tab at muling binubuo kapag isinara o ni-reload ang page."
-  },
   "includedDomains": {
     "message": "Mga kasamang domain"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Ipakita sa pagbukas"
+  },
+  "popupStartOptions": {
+    "message": "Mga opsyon"
   }
 }
