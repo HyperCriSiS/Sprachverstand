@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { DomProcessor } from "../src/core/dom-processor";
+import { summarizeReplacements } from "../src/core/replacement-summary";
 import { createRegexRule } from "../src/core/rule";
 
 const userRule = createRegexRule({
@@ -134,5 +135,25 @@ describe("Ersetzungsübersicht", () => {
         .getReplacementSummary()
         .some((entry) => entry.original.includes("Mittelteil"))
     ).toBe(false);
+  });
+});
+
+describe("Paarformen in der Ersetzungsübersicht", () => {
+  it.each([
+    ["der / die Nutzer*in", "der Nutzer", 1, "der / die Nutzer*in", "der Nutzer"],
+    ["„der oder die Nutzer*in“ liest", "„der Nutzer“ liest", 1, "der oder die Nutzer*in", "der Nutzer"],
+    ["des / der Nutzer*in", "des Nutzers", 1, "des / der Nutzer*in", "des Nutzers"],
+    ["Nutzer und Nutzerinnen", "Nutzer", 1, "Nutzer und Nutzerinnen", "Nutzer"]
+  ])("zeigt %s vollständig", (input, output, count, original, replacement) => {
+    expect(summarizeReplacements(input, output, count)).toEqual([
+      { original, replacement, count: 1 }
+    ]);
+  });
+
+  it("erweitert gewöhnliche Änderungen nicht", () => {
+    expect(summarizeReplacements("Nutzer*innen und Kund*innen", "Nutzer und Kunden", 2)).toEqual([
+      { original: "Nutzer*innen", replacement: "Nutzer", count: 1 },
+      { original: "Kund*innen", replacement: "Kunden", count: 1 }
+    ]);
   });
 });

@@ -5,6 +5,16 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.9.1 (2026-11-02)
+
+### Hinzugefügt
+
+- Das Popup kann auf Wunsch direkt mit der Liste der Korrekturen starten (Einstellung „Beim Öffnen anzeigen“).
+
+### Behoben
+
+- Die Ersetzungsübersicht zeigt Paarformen wie „der / die Nutzer*in“ vollständig.
+
 ### Hinzugefügt
 
 - Untertitel-Overlays werden zentral erkannt und standardmäßig von der

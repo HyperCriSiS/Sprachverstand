@@ -644,3 +644,10 @@ small {
     margin-left: 0;
   }
 }
+
+.popup-start-view {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
