@@ -1,0 +1,31 @@
+name: AMO Listing Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: "Exakt AMO-LISTING-UPDATE:<AMO_ADDON_ID>"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment: store-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: package.json
+      - run: npm ci
+      - run: npm run store:generate
+      - name: AMO-Eintrag aktualisieren
+        env:
+          AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+          AMO_ADDON_ID: ${{ vars.AMO_ADDON_ID }}
+          AMO_LISTING_APPROVAL: ${{ inputs.approval }}
+        run: node scripts/amo-api-v5.mjs listing-update
