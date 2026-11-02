@@ -58,6 +58,7 @@ const openReplacementsButton =
   requiredElement<HTMLButtonElement>("#open-replacements");
 const closeReplacementsButton =
   requiredElement<HTMLButtonElement>("#close-replacements");
+const pageSummaryLabel = requiredElement<HTMLElement>("#page-summary-label");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
 const processAccessibleAttributesInput =
   requiredElement<HTMLInputElement>("#process-accessible-attributes");
@@ -77,6 +78,7 @@ const popupSections = [
 let settings: Settings;
 let activeTabId: number | undefined;
 let currentCount = 0;
+let inlineCorrectionsActive = false;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
 let currentHostname = "";
 let runtimeStateRevision = 0;
@@ -256,6 +258,26 @@ function render(): void {
   renderDomainAction();
 }
 
+// Bleibt absichtlich auf dieses Öffnen beschränkt: Der Standard ändert sich nur
+// in den Einstellungen.
+function setInlineCorrections(active: boolean): void {
+  inlineCorrectionsActive = active;
+  document.body.classList.toggle("corrections-inline", active);
+  detailsView.hidden = !active;
+  pageSummaryLabel.textContent = active
+    ? t("popupStartOptions", undefined, "Optionen")
+    : t("show", undefined, "Anzeigen");
+}
+
+function usesInlineCorrections(): boolean {
+  return (
+    settings.popupStartView === "corrections" &&
+    (settings.visiblePopupSectionIds ?? defaultVisiblePopupSectionIds).includes(
+      "count"
+    )
+  );
+}
+
 async function resolveActiveTabId(): Promise<number | undefined> {
   const api = getExtensionApi();
   const [tab] = await api.tabs.query({ active: true, currentWindow: true });
@@ -359,6 +381,7 @@ async function start(): Promise<void> {
   settings = await loadSettings();
   await resolveActiveTabId();
   render();
+  setInlineCorrections(usesInlineCorrections());
 
   const api = getExtensionApi();
   // Vor der ersten asynchronen Zustandsabfrage registrieren, damit ein
@@ -423,6 +446,10 @@ async function start(): Promise<void> {
   });
 
   openReplacementsButton.addEventListener("click", () => {
+    if (usesInlineCorrections()) {
+      setInlineCorrections(!inlineCorrectionsActive);
+      return;
+    }
     mainView.hidden = true;
     detailsView.hidden = false;
     // Beim Öffnen nochmals direkt vom aktiven Tab lesen.

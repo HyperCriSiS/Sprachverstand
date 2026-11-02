@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Todavía no hay sustituciones en esta página."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "La vista general se mantiene únicamente en memoria para la pestaña actual y se reconstruye al cerrar o recargar la página."
-  },
   "includedDomains": {
     "message": "Dominios incluidos"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Mostrar al abrir"
+  },
+  "popupStartOptions": {
+    "message": "Opciones"
   }
 }
