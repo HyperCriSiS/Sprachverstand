@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Noch keine Ersetzungen auf dieser Seite."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "Die Übersicht wird nur für den aktuellen Tab im Arbeitsspeicher gehalten und beim Schließen oder Neuladen der Seite neu aufgebaut."
-  },
   "includedDomains": {
     "message": "Eingeschlossene Domains"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Beim Öffnen anzeigen"
+  },
+  "popupStartOptions": {
+    "message": "Optionen"
   }
 }

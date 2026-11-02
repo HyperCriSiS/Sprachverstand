@@ -14,7 +14,8 @@ const kinds: Record<keyof Settings, "scalar" | "list" | "custom" | "ignored"> = 
   processQuotedText: "scalar",
   processSubtitles: "scalar",
   syncCategoryIds: "ignored",
-  visiblePopupSectionIds: "ignored"
+  visiblePopupSectionIds: "ignored",
+  popupStartView: "ignored"
 };
 
 export function sameDomSettings(previous: Settings | undefined, next: Settings): boolean {

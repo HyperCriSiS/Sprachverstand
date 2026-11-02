@@ -131,13 +131,8 @@ h2 {
 
 .page-summary-action,
 .popup-rule code,
-.details-summary,
-.details-note {
+.details-summary {
   font-size: 12px;
-}
-
-.details-note {
-  opacity: 0.72;
 }
 
 .page-summary-copy strong {
@@ -277,6 +272,7 @@ button {
 .details-summary {
   justify-content: center;
   gap: 6px;
+  padding-top: 10px;
   padding-bottom: 2px;
 }
 
@@ -325,10 +321,6 @@ button {
   opacity: 0.72;
 }
 
-.details-note {
-  line-height: 1.35;
-}
-
 /* Die Aktivierungs-Checkbox bleibt links auf derselben Achse wie die Regelgruppen; die Domain-Aktion sitzt rechts.
    Lange Beschriftungen (Sprachen mit langen Wörtern) brechen auf höchstens zwei Zeilen um, statt abgeschnitten zu werden. */
 .domain-action-button {
@@ -361,4 +353,43 @@ button {
 
 .domain-action-status:empty {
   display: none;
+}
+/* Korrekturen als Startansicht: Optionen weichen der Liste im selben Popup. */
+.corrections-inline .where-panel,
+.corrections-inline .rules-panel,
+.corrections-inline #open-options,
+.corrections-inline .details-header {
+  display: none;
+}
+
+.corrections-inline .replacement-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.replacement-list:empty {
+  border-top: 0;
+}
+
+.replacement-item:last-child {
+  border-bottom: 0;
+}
+
+.corrections-inline .details-summary > strong,
+.corrections-inline .details-summary > [aria-hidden="true"] {
+  display: none;
+}
+
+/* Platz fuer den Scrollbalken, damit er die Anzahl nicht verdeckt. */
+.replacement-list,
+.corrections-inline .replacement-list {
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+}
+
+/* Scrollbalken an den Popup-Rand, auch beim Aufklappen unter dem Mauszeiger. */
+.corrections-inline .replacement-list {
+  margin-right: -14px;
+  padding-right: 14px;
+  scrollbar-width: thin;
 }

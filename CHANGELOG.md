@@ -5,6 +5,14 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Hinzugefügt
+
+- Das Popup kann auf Wunsch direkt mit der Liste der Korrekturen starten (Einstellung „Beim Öffnen anzeigen“).
+
+### Behoben
+
+- Die Ersetzungsübersicht zeigt Paarformen wie „der / die Nutzer*in“ vollständig.
+
 ## 0.9.0 (2026-10-31)
 
 ### Hinzugefügt
