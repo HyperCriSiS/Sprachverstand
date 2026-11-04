@@ -17,6 +17,7 @@ const watch = argumentsSet.has("--watch");
 const cleanOnly = argumentsSet.has("--clean");
 
 const supportedTargets = ["chromium", "firefox"];
+const experimentalTargets = ["thunderbird"];
 
 if (requestedTarget && requestedTargets) {
   throw new Error("--target und --targets dürfen nicht gleichzeitig verwendet werden.");
@@ -29,7 +30,7 @@ const targets = requestedTarget
     : supportedTargets;
 
 for (const target of targets) {
-  if (!supportedTargets.includes(target)) {
+  if (![...supportedTargets, ...experimentalTargets].includes(target)) {
     throw new Error(`Unbekanntes Build-Ziel: ${target}`);
   }
 }
@@ -46,10 +47,10 @@ async function injectLocalizationBootstrap(outputDirectory) {
   ]) {
     const htmlPath = path.join(outputDirectory, relativePath);
     let html = await readFile(htmlPath, "utf8");
-    const marker = '<meta name="color-scheme" content="dark light">';
+    const marker = /<meta\b(?=[^>]*\bname=["']color-scheme["'])[^>]*>/i;
     html = html.replace(
       marker,
-      `${marker}\n    <script src="../i18n-bootstrap.js" defer></script>`
+      (tag) => `${tag}\n    <script src="../i18n-bootstrap.js" defer></script>`
     );
     await writeFile(htmlPath, html, "utf8");
   }
@@ -66,6 +67,16 @@ async function prepareStaticFiles(target) {
   );
 
   await injectLocalizationBootstrap(outputDirectory);
+  if (target === "thunderbird") {
+    for (const page of ["popup/popup.html", "options/options.html"]) {
+      const pagePath = path.join(outputDirectory, page);
+      const pageHtml = await readFile(pagePath, "utf8");
+      await writeFile(pagePath, pageHtml.replace("</head>", '<script src="../thunderbird-platform-ui.js" defer></script>\n</head>'), "utf8");
+    }
+    const optionsPath = path.join(outputDirectory, "options/options.html");
+    const html = await readFile(optionsPath, "utf8");
+    await writeFile(optionsPath, html.replace("</head>", '<script src="thunderbird-compose-options.js" defer></script>\n</head>'), "utf8");
+  }
 
   const legalDirectory = path.join(outputDirectory, "legal");
   await mkdir(legalDirectory, { recursive: true });
@@ -107,8 +118,13 @@ for (const target of targets) {
 
   const buildContext = await context({
     entryPoints: {
-      background: path.join(projectRoot, "src", "background.ts"),
-      content: path.join(projectRoot, "src", "content.ts"),
+      ...(target === "thunderbird" ? {
+        "thunderbird-platform-ui": path.join(projectRoot, "src/thunderbird/platform-ui.ts"),
+        "compose-ready": path.join(projectRoot, "src/thunderbird/compose-ready.ts"),
+        "options/thunderbird-compose-options": path.join(projectRoot, "src/thunderbird/compose-options.ts")
+      } : {}),
+      background: path.join(projectRoot, "src", target === "thunderbird" ? "thunderbird/background.ts" : "background.ts"),
+      content: path.join(projectRoot, "src", target === "thunderbird" ? "thunderbird/content.ts" : "content.ts"),
       "popup/popup": path.join(projectRoot, "src", "popup.ts"),
       "options/options": path.join(projectRoot, "src", "options.ts")
     },

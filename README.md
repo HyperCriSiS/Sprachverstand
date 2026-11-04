@@ -74,6 +74,39 @@ Diese README beschreibt den aktuellen Entwicklungsstand. Welche Funktionen die
 veröffentlichte Version enthält, erfährst du in den Versionshinweisen des
 jeweiligen Stores.
 
+## Thunderbird
+
+Sprachverstand ist auch als Erweiterung für Thunderbird verfügbar. Die erste
+Thunderbird-Version ist **0.9.0** und wird getrennt von den Browser-Versionen
+im Branch [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
+
+1. Lade die Datei `sprachverstand-thunderbird-0.9.0.xpi` aus dem
+   [Thunderbird-Release 0.9.0](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.0).
+2. Öffne in Thunderbird **Add-ons und Themes**, dann das Zahnradmenü und
+   **Add-on aus Datei installieren**. Wähle die heruntergeladene XPI-Datei.
+3. Öffne eine Nachricht neu. Über das Sprachverstand-Symbol erreichst du
+   Regelgruppen, Korrekturübersicht und die erweiterten Einstellungen.
+
+Beim Lesen wird die Darstellung lokal korrigiert; die gespeicherte Originalmail
+bleibt unverändert. Optional kannst du in den Textoptionen **„Antworten und
+Weiterleitungen beim Öffnen korrigieren“** einschalten. Nach Zustimmung zur
+zusätzlichen Verfassen-Berechtigung wird der tatsächliche Entwurfstext einmalig
+bearbeitet. Danach schreibst du normal weiter. Die Option ist standardmäßig aus,
+wird sofort nur lokal gespeichert und ist nicht Teil der Einstellungssicherung.
+Weitergeleitete Originalmails als Anhang werden nicht verändert.
+
+Website-Domainfilter und Videountertitelkorrektur gelten nicht für Mailtexte;
+die Untertiteloption wird in Thunderbird ausgeblendet. Der gemeinsame Regelsatz,
+persönliche Ausnahmen und eigene Ersetzungen bleiben verfügbar.
+
+Technische Mindestversion ist Thunderbird 128. Die erste Version wurde vom
+Nutzer praktisch erprobt und automatisiert geprüft; eine vollständige
+Versionsmatrix sowie ein Versandtest der optionalen Entwurfskorrektur bis zum
+Empfänger stehen noch aus. Die Veröffentlichung erfolgt zunächst auf GitHub,
+nicht im Thunderbird-Add-on-Store.
+Details: [Thunderbird-Datenschutz](docs/THUNDERBIRD-PRIVACY.md) und
+[Entwicklungs- und Prüfstand](docs/engineering/THUNDERBIRD-DRAFT.md).
+
 ## Was wird verändert – und was bleibt stehen?
 
 Sprachverstand verarbeitet Genderzeichen wie Sternchen, Doppelpunkt und

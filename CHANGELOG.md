@@ -5,6 +5,14 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## Thunderbird 0.9.0 (2026-11-04)
+
+- Erste Thunderbird-Ausgabe mit lokaler Korrektur angezeigter Mails, vollständiger
+  Browser-Oberfläche und optionaler tatsächlicher Korrektur neu geöffneter
+  Antworten/Weiterleitungen. Untertiteloption in Thunderbird ausgeblendet.
+- Eigene geschützte Branch-/CI-/Release-Linie und reproduzierbare XPI-/Quellpakete.
+- Details und verbleibende Prüfgrenzen: [Thunderbird-Releasehinweise](docs/releases/thunderbird-0.9.0.md).
+
 ## 0.9.0 (2026-10-31)
 
 ### Hinzugefügt

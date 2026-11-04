@@ -2,6 +2,19 @@
 
 > Strategische Projektplanung. Der aktuelle operative Übergabestand mit aktiven PRs, Blockern und unmittelbaren nächsten Schritten liegt in `docs/engineering/CURRENT-WORK.md`.
 
+## Thunderbird (experimenteller Entwurf)
+
+- [x] Separates, ausdrücklich anwählbares Build-Ziel mit eigener Add-on-ID und
+  Nachrichtenanzeige-Anbindung erstellen; Registrierung, DOM-Korrektur und Rücknahme automatisiert prüfen.
+- [x] Standardmäßig ausgeschaltete Option für einmalige Korrektur des Antwort-/Weiterleitungsentwurfs
+  beim Öffnen mit optionaler Verfassen-Berechtigung implementieren und automatisiert prüfen.
+- [ ] Entwurf direkt in Thunderbird prüfen (Installation, HTML/Reintext, Nachrichtenwechsel,
+  mehrere Ansichten, Rücknahme sowie unveränderte Originale und Antworten/Weiterleitungen).
+- [x] Thunderbird-spezifische UI, Datenschutz, CI und getrennte
+  Paket-/Release-Pipeline für den ersten GitHub-Release vorbereiten.
+- [ ] Vollständige Versionsmatrix und echten Versand der optionalen Entwurfskorrektur prüfen;
+  anschließend Thunderbird-Storeeinreichung vorbereiten. Details: [Prüfstand](docs/engineering/THUNDERBIRD-DRAFT.md).
+
 ## Regel- und Lexikonausbau
 
 Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regressionsgesichert und quellenneutral. Recherche-, Rohquellen- und Herkunftsdaten, die nicht für das öffentliche Produkt bestimmt sind, bleiben in einem getrennten autorisierten Arbeitsbereich; in dieses Repository gelangen nur eigenständig entwickelte Regeln, quellenneutrale Produktdaten und Tests.
