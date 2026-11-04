@@ -40,6 +40,8 @@ const singleLetterPattern = /^\p{L}$/u;
 const letterPattern = /\p{L}/u;
 
 export interface DomProcessorOptions {
+  /** Message views may keep more short transforms in flight; batches stay bounded. */
+  readonly textTransformConcurrency?: 32 | 128;
   readonly isTransformCandidate?: (input: string) => boolean;
   readonly transformText?: (input: string, options: TransformOptions, subtitle?: boolean) => Promise<DetailedTransformResult>;
   readonly transformLargeText?: (input: string, options: TransformOptions) => Promise<DetailedTransformResult>;
@@ -336,6 +338,7 @@ export class DomProcessor {
     partitions: Map<Element, Text>;
     protection: WeakMap<Element, boolean>;
     subtitles: WeakMap<Element, boolean>;
+    roots: WeakMap<Node, boolean>;
   } | undefined;
   private observedDesignModeOn = false;
   private replacementCount = 0;
@@ -360,7 +363,7 @@ export class DomProcessor {
   private withTextSafetyScope(work: () => void): void {
     const nested = Boolean(this.textSafetyScope);
     const scope = this.textSafetyScope ??= {
-      partitions: new Map(), protection: new WeakMap(), subtitles: new WeakMap()
+      partitions: new Map(), protection: new WeakMap(), subtitles: new WeakMap(), roots: new WeakMap()
     };
     try {work();} finally {
       if (!nested) {
@@ -390,8 +393,22 @@ export class DomProcessor {
     if (this.textSafetyScope) {
       this.textSafetyScope.protection = new WeakMap();
       this.textSafetyScope.subtitles = new WeakMap();
+      this.textSafetyScope.roots = new WeakMap();
     }
     element.setAttribute(name, value);
+  }
+
+  // Innerhalb eines Arbeitsschritts löst nur `setAttributeValue` fremden
+  // Code aus; sonst kann sich die Zugehörigkeit einer Wurzel zum Dokument
+  // nicht ändern. Die Durchlaufschritte fragten sie bisher je Knoten über
+  // zwei DOM-Aufrufe ab.
+  private isProcessableRootInScope(root: Node): boolean {
+    const cache = this.textSafetyScope?.roots;
+    const cached = cache?.get(root);
+    if (cached !== undefined) return cached;
+    const processable = this.isProcessableRoot(root);
+    cache?.set(root, processable);
+    return processable;
   }
 
   private cancelAsyncWork(): void {
@@ -1305,7 +1322,7 @@ export class DomProcessor {
   }
 
   private processTraversalStep(state: TraversalState): boolean {
-    if (!this.isProcessableRoot(state.root)) {
+    if (!this.isProcessableRootInScope(state.root)) {
       return true;
     }
 
@@ -2667,8 +2684,8 @@ export class DomProcessor {
   private processTextNode(node: Text, subtitleOverride?: boolean, budgeted = false): void {
     // Preserve dirty flags and tracked originals until the complete context
     // is ready. Partially populated caches must never authorize a correction.
-    if (budgeted && this.requiresInlineProtection() && this.shouldProcessTextNode(node) &&
-        !this.isSubtitleContent(node) && this.isTransformCandidate(this.originalTextValue(node)) &&
+    if (budgeted && this.requiresInlineProtection() && this.isTransformCandidate(this.originalTextValue(node)) &&
+        this.shouldProcessTextNode(node) && !this.isSubtitleContent(node) &&
         this.deferInlineProtection(node)) return;
     const contextDirty = this.contextDirtyNodes.delete(node);
     const pendingTransform = this.pendingTextTransforms.get(node);
@@ -2713,6 +2730,15 @@ export class DomProcessor {
     }
     this.revertLeadingContextEdit(node);
 
+    const original = originalFromContext ?? node.data;
+    const candidate = this.isTransformCandidate(original);
+    // Most text of a page or mail is no candidate. Without a tracked original
+    // to restore, the string test alone decides; the ancestor protection and
+    // caption walks below only matter for text that may change.
+    if (!candidate && originalFromContext === undefined) {
+      return;
+    }
+
     if (!this.shouldProcessTextNode(node)) {
       return;
     }
@@ -2722,8 +2748,7 @@ export class DomProcessor {
       return;
     }
 
-    const original = originalFromContext ?? node.data;
-    if (!this.isTransformCandidate(original)) {
+    if (!candidate) {
       if (originalFromContext !== undefined) this.restoreText(node, original, budgeted);
       return;
     }
@@ -2852,6 +2877,8 @@ export class DomProcessor {
   // The page changed or replaced the noun: the article goes back to its
   // value before the edit and is computed again with the new noun.
   private revertLeadingContextEdit(node: Text): void {
+    // Avoid the inline sibling walk when no context edit exists at all.
+    if (this.leadingContextEdits.size === 0) return;
     let source: Text | undefined = node;
     if (!this.leadingContextEdits.has(node)) {
       const previous = this.previousInlineText(node);
@@ -3002,12 +3029,13 @@ export class DomProcessor {
   }
 
   private dispatchSmallTransforms(): void {
-    while (this.running && this.activeSmallTransforms < 32) {
+    const limit = this.options.textTransformConcurrency === 128 ? 128 : 32;
+    while (this.running && this.activeSmallTransforms < limit) {
       const hasSubtitle = this.queuedSubtitleTransforms.size > 0;
       // Priority cannot help a new cue when ordinary requests occupy every
       // slot. Keep one slot available while subtitle processing is enabled;
-      // captions still share the existing total limit of 32 requests.
-      if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= 31) return;
+      // captions still share the selected total request limit.
+      if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= limit - 1) return;
       const queue = hasSubtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
       if (queue.size === 0) return;
       const first = queue.peek();
@@ -3234,6 +3262,9 @@ export class DomProcessor {
   }
 
   private processAccessibleAttributes(element: Element): void {
+    // Most elements carry no attribute at all: every lookup below would read
+    // null, and without an own tracked change there is nothing to release.
+    if (!element.hasAttributes() && !this.attributeChanges.has(element)) return;
     for (const attributeName of accessibleAttributeNames) {
       this.processAccessibleAttribute(element, attributeName);
     }

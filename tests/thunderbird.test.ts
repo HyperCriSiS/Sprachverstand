@@ -3,22 +3,29 @@ import {describe, expect, it, vi} from "vitest";
 import {registerMessageScript} from "../src/thunderbird/registration";
 
 describe("Thunderbird message display registration", () => {
+  it("migrates the old idle registration to document_end", async () => {
+    const api = {getRegisteredScripts: vi.fn().mockResolvedValue([{id: "sprachverstand-message-display", runAt: "document_idle"}]),
+      unregisterScripts: vi.fn().mockResolvedValue(undefined), registerScripts: vi.fn().mockResolvedValue(undefined)};
+    await registerMessageScript(api);
+    expect(api.unregisterScripts).toHaveBeenCalledWith({ids: ["sprachverstand-message-display"]});
+    expect(api.registerScripts).toHaveBeenCalledWith([{id: "sprachverstand-message-display", js: ["content.js"], runAt: "document_end"}]);
+  });
   it("registers only the message display script", async () => {
-    const api = {getRegisteredScripts: vi.fn().mockResolvedValue([]), registerScripts: vi.fn().mockResolvedValue(undefined)};
+    const api = {unregisterScripts: vi.fn().mockResolvedValue(undefined), getRegisteredScripts: vi.fn().mockResolvedValue([]), registerScripts: vi.fn().mockResolvedValue(undefined)};
     await registerMessageScript(api);
     expect(api.registerScripts).toHaveBeenCalledWith([{
-      id: "sprachverstand-message-display", js: ["content.js"], runAt: "document_idle"
+      id: "sprachverstand-message-display", js: ["content.js"], runAt: "document_end"
     }]);
   });
 
   it("keeps an existing registration after background restart", async () => {
-    const api = {getRegisteredScripts: vi.fn().mockResolvedValue([{id: "sprachverstand-message-display"}]), registerScripts: vi.fn()};
+    const api = {unregisterScripts: vi.fn().mockResolvedValue(undefined), getRegisteredScripts: vi.fn().mockResolvedValue([{id: "sprachverstand-message-display", runAt: "document_end"}]), registerScripts: vi.fn()};
     await registerMessageScript(api);
     expect(api.registerScripts).not.toHaveBeenCalled();
   });
 
   it("propagates registration failure", async () => {
-    const api = {getRegisteredScripts: vi.fn().mockRejectedValue(new Error("denied")), registerScripts: vi.fn()};
+    const api = {unregisterScripts: vi.fn().mockResolvedValue(undefined), getRegisteredScripts: vi.fn().mockRejectedValue(new Error("denied")), registerScripts: vi.fn()};
     await expect(registerMessageScript(api)).rejects.toThrow("denied");
     expect(api.registerScripts).not.toHaveBeenCalled();
   });

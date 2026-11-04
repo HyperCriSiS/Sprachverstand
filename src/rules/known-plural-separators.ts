@@ -205,9 +205,21 @@ const safePluralSuffixes = [
   "kürschner"
 ] as const;
 
+// Nach Länge gruppiert: ein Set-Zugriff je Endungslänge statt einer Suche
+// über alle Einträge bei jedem der vielen Aufrufe je Wort.
+const safePluralSuffixesByLength = new Map<number, Set<string>>();
+for (const suffix of safePluralSuffixes) {
+  let group = safePluralSuffixesByLength.get(suffix.length);
+  if (!group) safePluralSuffixesByLength.set(suffix.length, group = new Set());
+  group.add(suffix);
+}
+
 function isKnownBase(base: string): boolean {
   const normalizedBase = base.toLocaleLowerCase("de-DE");
-  return safePluralSuffixes.some((suffix) => normalizedBase.endsWith(suffix));
+  for (const [length, suffixes] of safePluralSuffixesByLength) {
+    if (normalizedBase.length >= length && suffixes.has(normalizedBase.slice(-length))) return true;
+  }
+  return false;
 }
 
 export function mapKnownPlural(base: string): string | undefined {

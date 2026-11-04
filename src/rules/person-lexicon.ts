@@ -17,7 +17,7 @@ import { getReviewedPersonFormsWave66 } from "./reviewed-person-forms-wave-66";
 import { getReviewedPersonFormsWave67 } from "./reviewed-person-forms-wave-67";
 import { getReviewedPersonFormsWave68 } from "./reviewed-person-forms-wave-68";
 import { getReviewedPersonFormsWave69 } from "./reviewed-person-forms-wave-69";
-import { preserveInnerCase } from "./inner-case";
+import { firstCodePointLength, preserveInnerCase } from "./inner-case";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -748,21 +748,19 @@ function applyCase(source: string, replacement: string): string {
     return replacement.toLocaleUpperCase(locale);
   }
 
-  const sourceCharacters = [...source];
-  const firstSourceCharacter = sourceCharacters[0];
-  const remainingSource = sourceCharacters.slice(1).join("");
+  const firstSourceCharacter = source.slice(0, firstCodePointLength(source));
+  const remainingSource = source.slice(firstSourceCharacter.length);
 
   if (
     firstSourceCharacter &&
     firstSourceCharacter === firstSourceCharacter.toLocaleUpperCase(locale) &&
     remainingSource === remainingSource.toLocaleLowerCase(locale)
   ) {
-    const replacementCharacters = [...replacement];
-    const firstReplacementCharacter = replacementCharacters.shift();
+    const firstReplacementCharacter = replacement.slice(0, firstCodePointLength(replacement));
 
     return firstReplacementCharacter
       ? firstReplacementCharacter.toLocaleUpperCase(locale) +
-          replacementCharacters.join("")
+          replacement.slice(firstReplacementCharacter.length)
       : replacement;
   }
 

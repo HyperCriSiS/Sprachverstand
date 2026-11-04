@@ -14,6 +14,8 @@ Verarbeitungsskript in angezeigte Nachrichten einzubinden. Es verändert nur
 deren Darstellung. Die gespeicherte Originalnachricht wird nicht geändert.
 Korrekturzähler und begrenzte Ersetzungsübersichten werden innerhalb der
 Erweiterung an die Oberfläche übergeben, ohne sie dauerhaft zu speichern.
+Zu korrigierende Textabschnitte werden innerhalb von Thunderbird an den lokalen
+Hintergrundprozess der Erweiterung übergeben und dort verarbeitet, ohne sie dauerhaft zu speichern.
 Der Hintergrund liest den aktuellen Zustand aus der geöffneten Nachricht.
 
 ## Optionale Antworten und Weiterleitungen

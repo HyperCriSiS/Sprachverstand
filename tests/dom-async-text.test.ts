@@ -14,6 +14,27 @@ function start(transform: (input: string, options: TransformOptions) => Promise<
   processor.start(); processor.flush();
 }
 const actual = async (input: string, options: TransformOptions) => transformTextWithSummary(input, defaultRules, options);
+it.each([32, 128] as const)("bounds pending work to %i and ignores its replies after stopping", async concurrency => {
+  document.body.innerHTML = '<p>Nutzer:innen</p>'.repeat(160);
+  const pending: (() => void)[] = [];
+  const transform = vi.fn((input: string, options: TransformOptions) => new Promise<DetailedTransformResult>(resolve => {
+    pending.push(() => resolve(transformTextWithSummary(input, defaultRules, options)));
+  }));
+  processor = new DomProcessor(document, {rules: domRuleMetadata, profile: "aggressive",
+    transformText: transform, textTransformConcurrency: concurrency});
+  processor.start(); processor.flush(); await settle();
+  expect(transform).toHaveBeenCalledTimes(concurrency);
+  processor.stop(); pending.forEach(resolve => resolve()); await settle();
+  expect(transform).toHaveBeenCalledTimes(concurrency);
+  expect([...document.querySelectorAll("p")].every(node => node.textContent === "Nutzer:innen")).toBe(true);
+  processor.updateOptions({rules: domRuleMetadata, profile: "aggressive",
+    transformText: actual, textTransformConcurrency: concurrency});
+  processor.start();
+  for (let index = 0; index < 20; index++) {processor.flush(); await settle();}
+  expect(processor.getReplacementCount()).toBe(160);
+  processor.stop({restore: true});
+  expect([...document.querySelectorAll("p")].every(node => node.textContent === "Nutzer:innen")).toBe(true);
+});
 it("applies small text and accessible attributes only during a DOM slice and restores live ranges", async () => {
   document.body.innerHTML = '<p aria-label="Nutzer:innen">Nutzer:innen</p>';
   const paragraph = document.querySelector("p")!; const text = paragraph.firstChild as Text;
