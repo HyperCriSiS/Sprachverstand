@@ -48,13 +48,15 @@ mit `storage`, `scripting`, `messagesRead`; zusätzlich ausschließlich optional
 Webseiten-, Sende- oder Berechtigung zur dauerhaften Änderung empfangener Nachrichten.
 Quelle: https://webextension-api.thunderbird.net/en/mv3/scripting.messageDisplay.html
 
-Verarbeitet wird nur das angezeigte Dokument. Die Korrektur läuft im Dokument;
+Verarbeitet wird nur das angezeigte Dokument. Die DOM-Verarbeitung läuft im Dokument;
+die Regelverarbeitung wird gebündelt im lokalen Erweiterungshintergrund ausgeführt.
 Zähler und begrenzte Ersetzungsübersicht gelangen per lokalen Runtime-Nachrichten
 in die gemeinsame Oberfläche. Der Thunderbird-Hintergrund persistiert keine
 Mailfragmente, Zähler oder Ersetzungslisten und hält keinen Zustandscache vor.
 Beim Öffnen fragt das Popup die aktuelle Nachrichtenansicht ab. Kein Netzwerk.
-Die Regel-Engine wird dafür im Nachrichtenskript mitgebündelt; Speicher und
-Reaktionszeit bei vielen geöffneten Nachrichten sind noch zu messen.
+Die Regel-Engine wird zwischen Nachrichten geteilt und nicht in jeder Nachrichtenansicht
+erneut initialisiert. Registrierung bei `document_end`; alte Idle-Registrierungen
+werden beim Hintergrundstart migriert. Messwerkzeug: `scripts/thunderbird-perf/`.
 Die gespeicherte Originalmail wird nicht verändert. Ein selbst eingetragener
 Ersatz oder eine Ausnahme ist eine Einstellung, kein automatisch gespeicherter Mailtext.
 Thunderbird-Einstellungen sind durch die separate ID von Firefox getrennt.

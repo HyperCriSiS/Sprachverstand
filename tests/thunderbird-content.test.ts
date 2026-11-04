@@ -1,5 +1,7 @@
 import {afterEach, beforeEach, expect, it, vi} from "vitest";
 import {defaultSettings, type Settings} from "../src/settings/defaults";
+import {connectBackgroundTransform} from "../src/thunderbird/background-transform";
+import type {ExtensionApi, MessageListener} from "../src/browser/api";
 
 const subscription = vi.hoisted(() => ({listener: undefined as ((settings: Settings) => void | Promise<void>) | undefined, unsubscribe: vi.fn()}));
 vi.mock("../src/settings/storage", () => ({
@@ -20,7 +22,9 @@ afterEach(() => {
 });
 
 async function mount() {
-  const runtime = {sendMessage: vi.fn().mockResolvedValue(undefined), onMessage: {addListener: vi.fn(), removeListener: vi.fn()}};
+  let backgroundListener: MessageListener;
+  connectBackgroundTransform({runtime: {onMessage: {addListener: (listener: MessageListener) => {backgroundListener = listener;}}}} as unknown as ExtensionApi);
+  const runtime = {sendMessage: vi.fn((message: unknown) => Promise.resolve(backgroundListener!(message, {tab: {id: 7}}))), onMessage: {addListener: vi.fn(), removeListener: vi.fn()}};
   vi.stubGlobal("browser", {runtime});
   await import("../src/thunderbird/content");
   return runtime;
@@ -28,9 +32,7 @@ async function mount() {
 
 it("transforms a displayed message locally, protects inputs and restores on disable", async () => {
   document.body.innerHTML = '<p>Die Nutzer:innen lesen.</p><textarea>Nutzer:innen</textarea><div contenteditable="true">Nutzer:innen</div>';
-  const runtime = {sendMessage: vi.fn().mockResolvedValue(undefined), onMessage: {addListener: vi.fn(), removeListener: vi.fn()}};
-  vi.stubGlobal("browser", {runtime});
-  await import("../src/thunderbird/content");
+  const runtime = await mount();
   try {
     await subscription.listener!({...defaultSettings, enabled: true});
     await expect.poll(() => document.querySelector("p")!.textContent).toBe("Die Nutzer lesen.");

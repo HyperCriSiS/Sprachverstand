@@ -1,6 +1,5 @@
 import {DomProcessor} from "../core/dom-processor";
-import {transformTextWithSummary} from "../core/transform-text";
-import {defaultRules} from "../rules";
+import {transformTextLocally} from "../browser/local-transform";
 import {domRuleMetadata} from "../rules/dom-metadata";
 import {isBuiltInTransformCandidate} from "../rules/transform-candidate";
 import {disabledRuleIdsForGroups} from "../rules/catalog";
@@ -43,8 +42,8 @@ function applySettings(settings: Settings): Promise<void> {
     reportState(0);
     if (!settings.enabled) return;
     processor = new DomProcessor(document, {
-      // Transform locally; summaries reach the shared UI only in memory.
-      transformText: async (input, options) => transformTextWithSummary(input, defaultRules, options),
+      // Share the already initialized local background engine between mails.
+      transformText: transformTextLocally,
       isTransformCandidate: isBuiltInTransformCandidate,
       rules: domRuleMetadata,
       profile: "aggressive",
