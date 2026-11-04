@@ -63,7 +63,7 @@ describe("Audit: Editor- und Shadow-Schutz", () => {
   for (const [name, attribute, value] of [
     ["Ignore", "data-sprachverstand-ignore", ""],
     ["Editor", "contenteditable", "true"],
-    ["Rolle", "role", "textbox"]
+    ["ARIA", "aria-hidden", "true"]
   ] as const) {
     it(`schützt direkte Shadow-Textknoten bei ${name}-Host`, () => {
       const host = document.createElement("div");

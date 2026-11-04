@@ -21,7 +21,7 @@ describe("Inline-Schutzbereiche bei vielen und überlappenden Treffern", () => {
   });
 
   it.each(['<code>', '<span contenteditable="true">', '<span data-sprachverstand-ignore>',
-    '<span contenteditable="plaintext-only">', '<span role="textbox">'])
+    '<span aria-hidden="true">', '<span role="textbox">'])
     ("trennt Zitate an geschützten Teilbäumen: %s", opening => {
       const paragraph = document.createElement("p");
       paragraph.innerHTML = `„Nutzer:innen ${opening}<b>Expert:innen</b></${opening.startsWith('<code') ? 'code' : 'span'}>“ freie Nutzer:innen`;

@@ -36,7 +36,7 @@ describe("Audit DOM-01: Partizip mit Inline-Markup", () => {
 
   it("behält bei geschütztem rechten Nachbarn die isolierte Entscheidung", () => {
     expect(transformieren(
-      '<p>Mitarbeitende <span data-sprachverstand-ignore>Eltern</span> helfen.</p>'
+      '<p>Mitarbeitende <span aria-hidden="true">Eltern</span> helfen.</p>'
     )).toBe("Mitarbeiter Eltern helfen.");
   });
 
@@ -94,12 +94,12 @@ describe("Audit DOM-01: Partizip mit Inline-Markup", () => {
     processor.flush();
     expect(paragraph.textContent).toBe("Mitarbeitende Eltern");
 
-    noun.setAttribute("data-sprachverstand-ignore", "");
+    noun.setAttribute("aria-hidden", "true");
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     processor.flush();
     expect(paragraph.textContent).toBe("Mitarbeiter Eltern");
 
-    noun.removeAttribute("data-sprachverstand-ignore");
+    noun.removeAttribute("aria-hidden");
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     processor.flush();
     expect(paragraph.textContent).toBe("Mitarbeitende Eltern");

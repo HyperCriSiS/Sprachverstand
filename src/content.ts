@@ -152,11 +152,16 @@ getExtensionApi().runtime.onMessage.addListener((message) => {
 
 // Restored from the back/forward cache: the background reset this tab while
 // another page was shown, and the processor still holds its changes. Report
-// them again so badge and popup match the page.
+// them again so badge and popup match the page. The restore also raises a
+// `loading` update in the background whose order against this event is not
+// guaranteed, so report once more shortly after.
+const pageshowRepeatDelayMs = 750;
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) {
+  if (!event.persisted) return;
+  const report = (): void =>
     reportReplacementState(processor?.getReplacementCount() ?? 0, currentReplacementSummary());
-  }
+  report();
+  window.setTimeout(report, pageshowRepeatDelayMs);
 });
 
 void start().catch((error: unknown) => {

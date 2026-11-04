@@ -2,8 +2,9 @@ kategorie: Behoben
 
 - Chromium-Pakete verlangen jetzt Chrome 148: ältere Versionen erhielten vom
   Hintergrund keine Antworten und fragten jeden Text sekündlich neu an. Ein
-  fehlschlagender lokaler Transformer wird nur noch dreimal mit wachsendem
-  Abstand wiederholt.
+  fehlschlagender lokaler Transformer wird je Text oder Attribut nur noch
+  dreimal mit wachsendem Abstand wiederholt; aufgegebene Einträge kommen an die
+  Reihe, sobald der Hintergrund wieder antwortet.
 - Das Content-Script beantwortet die Zustandsabfrage des Hintergrunds als
   Promise; vorher kam die Antwort weder in Firefox noch in Chromium an. Nach
   einer Rückkehr aus dem Seitencache meldet es Zähler und Ersetzungen erneut.

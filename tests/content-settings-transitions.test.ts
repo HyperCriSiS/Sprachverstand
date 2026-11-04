@@ -118,6 +118,33 @@ describe("Einstellungswechsel während kooperativer Originalrückgabe", () => {
       .toEqual(expect.objectContaining({replacements: state.summaries.slice(0, 250)}));
     expect(state.summaries).toHaveLength(500);
   });
+  it("meldet den Zustand nach Rückkehr aus dem Seitencache zweimal", async () => {
+    vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+    try {
+      await import("../src/content"); await settle();
+      state.summaries.push({original: "Quelle", replacement: "Ziel", count: 1});
+      state.sendMessage.mockClear();
+      const event = new Event("pageshow");
+      Object.defineProperty(event, "persisted", {value: true});
+      window.dispatchEvent(event);
+      // Earlier imports of the module in this file registered listeners of
+      // their own; the ratio is what matters here.
+      const immediate = state.sendMessage.mock.calls.length;
+      expect(immediate).toBeGreaterThanOrEqual(1);
+      expect(state.sendMessage).toHaveBeenLastCalledWith(expect.objectContaining({
+        type: "sprachverstand.replacement-state", replacements: state.summaries
+      }));
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(state.sendMessage).toHaveBeenCalledTimes(immediate * 2);
+      const plain = new Event("pageshow");
+      Object.defineProperty(plain, "persisted", {value: false});
+      window.dispatchEvent(plain);
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(state.sendMessage).toHaveBeenCalledTimes(immediate * 2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("wartet auf die Rückgabe und startet ausschließlich die neuesten Einstellungen", async () => {
     await import("../src/content"); await settle();
     expect(state.instances).toHaveLength(1);

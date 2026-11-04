@@ -28,11 +28,11 @@ describe("Audit DOM-04: ausgeschlossene Inlinebereiche nie als grammatischen Kon
   });
 
   it.each([
-    '<span contenteditable="true">mit </span>',
+    '<span aria-hidden="true">mit </span>',
     '<span data-sprachverstand-ignore>mit </span>',
     '<code>mit </code>',
     '<span role="textbox">mit </span>',
-    '<span><span role="searchbox">mit </span></span>',
+    '<span><span aria-hidden="true">mit </span></span>',
     '<span><code>mit </code></span>'
   ])("lässt %s nicht in die Dativentscheidung einfließen", (protectedPrefix) => {
     expect(pruefen(`<p>${protectedPrefix}<b>Lehrer:innen</b></p>`))
@@ -41,7 +41,7 @@ describe("Audit DOM-04: ausgeschlossene Inlinebereiche nie als grammatischen Kon
 
   it("überspringt beim Kontextsammeln keine verbotene Zwischenregion", () => {
     expect(pruefen(
-      '<p><span>Wir sprechen mit </span><span data-sprachverstand-ignore>Hinweis</span><b>Lehrer:innen</b></p>'
+      '<p><span>Wir sprechen mit </span><span aria-hidden="true">Hinweis</span><b>Lehrer:innen</b></p>'
     )).toBe("Lehrer");
   });
 

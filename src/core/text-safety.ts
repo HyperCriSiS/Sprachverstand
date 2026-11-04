@@ -111,6 +111,10 @@ function hasCommonExcludedAncestor(
       return true;
     }
 
+    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
+      return true;
+    }
+
     // Same editor roles as for text: an image inside a role="textbox"
     // widget used to get its alt text converted while the text stayed.
     const role = current.getAttribute("role")?.toLowerCase();
@@ -147,13 +151,16 @@ function isOptionWithoutValue(element: Element): boolean {
 }
 
 // For a traversal that has already established the ancestor protection.
-// `aria-hidden="true"` is deliberately not a protection: it only hides text
-// from assistive technology, and pages use it on visible text such as
-// carousel slides or icon labels.
+// `aria-hidden="true"` stays a protection although pages also use it on
+// visible text (carousel slides, icon labels): editors such as Monaco and
+// search fields with a styled overlay render the visible mirror of a hidden
+// input this way. Converting the mirror desynchronises it from the real
+// input (verified on the TypeScript playground, 04.11.2026).
 export function hasOwnTextProtection(element: Element): boolean {
   if (excludedTags.has(element.tagName) || isOptionWithoutValue(element) ||
       isContentEditable(element) ||
-      element.hasAttribute("data-sprachverstand-ignore")) return true;
+      element.hasAttribute("data-sprachverstand-ignore") ||
+      element.getAttribute("aria-hidden")?.toLowerCase() === "true") return true;
   const role = element.getAttribute("role")?.toLowerCase();
   return Boolean(role && excludedRoles.has(role));
 }

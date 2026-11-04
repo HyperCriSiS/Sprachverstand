@@ -33,6 +33,7 @@ afterEach(() => {
 
 describe("Audit DOM-09: dynamischer Schutzstatus", () => {
   it.each([
+    ["aria-hidden", "true"],
     ["data-sprachverstand-ignore", ""],
     ["contenteditable", "true"],
     ["role", "textbox"]
@@ -50,6 +51,7 @@ describe("Audit DOM-09: dynamischer Schutzstatus", () => {
   });
 
   it.each([
+    ["aria-hidden", "true"],
     ["contenteditable", "true"],
     ["data-sprachverstand-ignore", ""],
     ["role", "textbox"]

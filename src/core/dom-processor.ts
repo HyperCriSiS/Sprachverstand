@@ -233,15 +233,18 @@ const frameworkRewriteWindowMs = 1_000;
 const frameworkRewriteThreshold = 5;
 const frameworkRewriteCooldownMs = 250;
 // A failing local transformer (missing background, invalid reply) is retried
-// with growing delays and then given up per node, instead of once a second
-// for the lifetime of the page.
+// with growing delays and then given up per text or attribute, instead of
+// once a second for the lifetime of the page. Given-up entries are queued
+// again as soon as any other request succeeds.
 const maximumTransformRetries = 3;
+const textTransformFailureKey = "#text";
 const transformRetryBaseDelayMs = 1_000;
 
 // Änderungen an diesen Attributen betreffen die Schutzentscheidung für
 // sämtliche untergeordneten Texte, auch bei deaktivierter Attributkorrektur.
 const protectionAttributeNames = new Set([
   "contenteditable",
+  "aria-hidden",
   "role",
   "data-sprachverstand-ignore",
   // Removing an option's value makes its text the submitted value again.
@@ -312,7 +315,8 @@ export class DomProcessor {
   private readonly pendingSubtitleTransformResults = new PendingMap<object, () => void>();
   private readonly pendingAttributeTransforms = new Map<Element, Map<string, {value: string}>>();
   private readonly transformRetryHandles = new Set<number>();
-  private transformFailures = new WeakMap<Node, number>();
+  private transformFailures = new WeakMap<Node, Map<string, number>>();
+  private readonly givenUpTransforms = new Set<Node>();
   private activeTextEditSlice: ReadonlySet<Text> | undefined;
   private pendingTextEdits = new PendingMap<Text, TextEditPlan>();
   private readonly summaryCounts = new Map<string, ReplacementSummaryEntry>();
@@ -419,6 +423,7 @@ export class DomProcessor {
       if (view) view.clearTimeout(handle); else window.clearTimeout(handle);
     }
     this.transformRetryHandles.clear();
+    this.givenUpTransforms.clear();
     this.queuedSmallTransforms.clear();
     this.queuedSubtitleTransforms.clear();
     this.pendingTransformResults.clear();
@@ -426,13 +431,19 @@ export class DomProcessor {
     this.pendingAttributeTransforms.clear();
   }
 
-  // Schedules one more attempt for a failed node, or none once the node has
-  // used up its retries. Each attempt waits twice as long as the previous.
-  private retryTransform(node: Node, work: () => void): void {
-    const failures = (this.transformFailures.get(node) ?? 0) + 1;
+  // Schedules one more attempt for a failed text or attribute, or none once
+  // it has used up its retries. Each attempt waits twice as long as the
+  // previous; a given-up entry waits for the next successful reply.
+  private retryTransform(node: Node, key: string, work: () => void): void {
+    const failures = this.transformFailures.get(node) ?? new Map<string, number>();
+    const count = (failures.get(key) ?? 0) + 1;
+    failures.set(key, count);
     this.transformFailures.set(node, failures);
-    if (failures > maximumTransformRetries) return;
-    const delayMs = transformRetryBaseDelayMs * 2 ** (failures - 1);
+    if (count > maximumTransformRetries) {
+      this.givenUpTransforms.add(node);
+      return;
+    }
+    const delayMs = transformRetryBaseDelayMs * 2 ** (count - 1);
     const view = this.document.defaultView;
     let handle = 0;
     const callback = (): void => {
@@ -441,6 +452,23 @@ export class DomProcessor {
     };
     handle = view ? view.setTimeout(callback, delayMs) : window.setTimeout(callback, delayMs);
     this.transformRetryHandles.add(handle);
+  }
+
+  // A successful reply: the entry starts over with fresh retries, and nodes
+  // that were given up while the background did not answer get their turn.
+  private noteTransformSuccess(node: Node, key: string): void {
+    const failures = this.transformFailures.get(node);
+    if (failures) {
+      failures.delete(key);
+      if (failures.size === 0) this.transformFailures.delete(node);
+    }
+    if (this.givenUpTransforms.size === 0) return;
+    const givenUp = [...this.givenUpTransforms];
+    this.givenUpTransforms.clear();
+    for (const entry of givenUp) {
+      this.transformFailures.delete(entry);
+      if (this.isProcessableRoot(entry)) this.queue(entry);
+    }
   }
 
   private queueTransformResult(token: object, work: () => void, subtitle = false): void {
@@ -509,7 +537,8 @@ export class DomProcessor {
     this.shadowDiscoveryParents.length = 0;
     this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
-    this.transformFailures = new WeakMap<Node, number>();
+    this.transformFailures = new WeakMap<Node, Map<string, number>>();
+    this.givenUpTransforms.clear();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
     this.leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
     this.leadingContextEdits.clear();
@@ -2962,7 +2991,7 @@ export class DomProcessor {
         return;
       }
       const result = resultOf();
-      this.transformFailures.delete(node);
+      this.noteTransformSuccess(node, textTransformFailureKey);
       // Only a still-valid response from this processor/options generation may
       // populate the caption cache. Bound async entries by input and output size.
       if (subtitle && original.length < largeTextTransformThreshold && result.text.length < largeTextTransformThreshold) {
@@ -3009,7 +3038,8 @@ export class DomProcessor {
               if (this.pendingTextTransforms.get(node) !== pending) return;
               this.pendingTextTransforms.delete(node);
               if (node.data === pending.expected) this.restoreText(node, original, true);
-              this.retryTransform(node, () => {if (this.isProcessableRoot(node)) this.queue(node);});
+              this.retryTransform(node, textTransformFailureKey,
+                () => {if (this.isProcessableRoot(node)) this.queue(node);});
             }, subtitle);
           }
         }
@@ -3313,7 +3343,7 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
-          this.transformFailures.delete(element);
+          this.noteTransformSuccess(element, attributeName);
           if (this.isProcessableRoot(element) && element.getAttribute(attributeName) === value &&
               !this.isSubtitleContent(element) && shouldProcessAccessibleAttribute(element, attributeName, value)) {
             this.finishAttributeTransform(element, attributeName, value, result);
@@ -3323,7 +3353,8 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
-          this.retryTransform(element, () => {if (this.isProcessableRoot(element)) this.processAccessibleAttribute(element, attributeName);});
+          this.retryTransform(element, attributeName,
+            () => {if (this.isProcessableRoot(element)) this.processAccessibleAttribute(element, attributeName);});
         })
       );
       return;

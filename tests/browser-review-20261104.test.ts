@@ -46,13 +46,18 @@ describe("Browser-Überprüfung 04.11.2026", () => {
     expect(processor?.getReplacementCount()).toBe(1);
   });
 
-  it("verarbeitet sichtbaren Text trotz aria-hidden", async () => {
+  it("lässt den sichtbaren Spiegel eines Editors unter aria-hidden unverändert", async () => {
+    // Monaco: the visible lines are aria-hidden, the real input is a textarea.
     document.body.innerHTML =
-      '<div aria-hidden="true"><p>Alle Mitarbeiter:innen</p><img alt="Lehrer:innen"></div>';
+      '<div class="monaco-editor"><textarea class="inputarea">Alle Mitarbeiter:innen</textarea>' +
+      '<div class="view-lines" aria-hidden="true" role="presentation"><div class="view-line">' +
+      "<span>Alle Mitarbeiter:innen</span></div></div></div>" +
+      "<p>Alle Lehrer:innen</p>";
     starten();
     await aktualisieren();
-    expect(document.querySelector("p")?.textContent).toBe("Alle Mitarbeiter");
-    expect(document.querySelector("img")?.getAttribute("alt")).toBe("Lehrer");
+    expect(document.querySelector(".view-line")?.textContent).toBe("Alle Mitarbeiter:innen");
+    expect(document.querySelector("textarea")?.value).toBe("Alle Mitarbeiter:innen");
+    expect(document.querySelector("p")?.textContent).toBe("Alle Lehrer");
   });
 
   it("schützt zugängliche Attribute unter einer Editor-Rolle wie den Text", async () => {
@@ -147,5 +152,62 @@ describe("Browser-Überprüfung 04.11.2026", () => {
     for (let tick = 0; tick < 25; tick += 1) await vi.advanceTimersByTimeAsync(100);
     expect(calls).toBe(3);
     expect(document.querySelector("p")?.textContent).toBe("Alle Mitarbeiter");
+
+    // After the success the same node has three fresh retries again.
+    failing = true;
+    document.querySelector("p")!.firstChild!.textContent = "Neue Mitarbeiter:innen";
+    for (let tick = 0; tick < 300; tick += 1) await vi.advanceTimersByTimeAsync(100);
+    expect(calls).toBe(3 + 4);
+  });
+
+  it("reiht aufgegebene Texte wieder ein, sobald eine andere Antwort gelingt", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+    let failing = true;
+    const transformText = (input: string) => failing
+      ? Promise.reject(new Error("Hintergrund antwortet nicht"))
+      : Promise.resolve({ text: input.replace("Mitarbeiter:innen", "Mitarbeiter"), replacements: 1,
+        summaries: [{ original: "Mitarbeiter:innen", replacement: "Mitarbeiter", count: 1 }] });
+    document.body.innerHTML = "<p id='a'>Erste Mitarbeiter:innen</p>";
+    processor = new DomProcessor(document, {
+      rules: domRuleMetadata,
+      profile: "aggressive",
+      isTransformCandidate: isBuiltInTransformCandidate,
+      transformText,
+      processAccessibleAttributes: false,
+      processSubtitles: false
+    });
+    processor.start();
+    for (let tick = 0; tick < 100; tick += 1) await vi.advanceTimersByTimeAsync(100);
+    expect(document.getElementById("a")?.textContent).toBe("Erste Mitarbeiter:innen");
+
+    failing = false;
+    const late = document.createElement("p");
+    late.textContent = "Späte Mitarbeiter:innen";
+    document.body.append(late);
+    for (let tick = 0; tick < 30; tick += 1) await vi.advanceTimersByTimeAsync(100);
+    expect(late.textContent).toBe("Späte Mitarbeiter");
+    expect(document.getElementById("a")?.textContent).toBe("Erste Mitarbeiter");
+  });
+
+  it("zählt Fehlversuche je Attribut, nicht je Element", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+    const calls = new Map<string, number>();
+    const transformText = (input: string) => {
+      calls.set(input, (calls.get(input) ?? 0) + 1);
+      return Promise.reject(new Error("vorübergehend"));
+    };
+    document.body.innerHTML = '<img alt="Alt Mitarbeiter:innen" title="Titel Mitarbeiter:innen">';
+    processor = new DomProcessor(document, {
+      rules: domRuleMetadata,
+      profile: "aggressive",
+      isTransformCandidate: isBuiltInTransformCandidate,
+      transformText,
+      processAccessibleAttributes: true,
+      processSubtitles: false
+    });
+    processor.start();
+    for (let tick = 0; tick < 300; tick += 1) await vi.advanceTimersByTimeAsync(100);
+    expect(calls.get("Alt Mitarbeiter:innen")).toBe(4);
+    expect(calls.get("Titel Mitarbeiter:innen")).toBe(4);
   });
 });

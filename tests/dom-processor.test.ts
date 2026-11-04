@@ -105,7 +105,7 @@ describe("DomProcessor", () => {
   it("schützt ignorierte, versteckte, editierbare und technische Attribute", () => {
     document.body.innerHTML = `
       <div data-sprachverstand-ignore aria-label="Nutzer:innen"></div>
-      <div role="searchbox"><span title="Nutzer:innen"></span></div>
+      <div aria-hidden="true" title="Nutzer:innen"></div>
       <div contenteditable="true" aria-description="Nutzer:innen"></div>
       <code title="Nutzer:innen"></code>
       <img alt="https://example.test/Nutzer:innen">
@@ -122,7 +122,7 @@ describe("DomProcessor", () => {
         "aria-label"
       )
     ).toBe("Nutzer:innen");
-    expect(document.querySelector("[role='searchbox'] span")?.getAttribute("title")).toBe(
+    expect(document.querySelector("[aria-hidden]")?.getAttribute("title")).toBe(
       "Nutzer:innen"
     );
     expect(
