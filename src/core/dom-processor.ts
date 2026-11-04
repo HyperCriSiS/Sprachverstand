@@ -317,6 +317,9 @@ export class DomProcessor {
   private readonly transformRetryHandles = new Set<number>();
   private transformFailures = new WeakMap<Node, Map<string, number>>();
   private readonly givenUpTransforms = new Set<Node>();
+  // `innen` texts whose preceding text (`Lehrer*`) still awaits its own
+  // result, by that preceding text; they are queued again once it is in.
+  private readonly splitMarkerWaiters = new Map<Text, Set<Text>>();
   private activeTextEditSlice: ReadonlySet<Text> | undefined;
   private pendingTextEdits = new PendingMap<Text, TextEditPlan>();
   private readonly summaryCounts = new Map<string, ReplacementSummaryEntry>();
@@ -424,6 +427,7 @@ export class DomProcessor {
     }
     this.transformRetryHandles.clear();
     this.givenUpTransforms.clear();
+    this.splitMarkerWaiters.clear();
     this.queuedSmallTransforms.clear();
     this.queuedSubtitleTransforms.clear();
     this.pendingTransformResults.clear();
@@ -539,6 +543,7 @@ export class DomProcessor {
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
     this.transformFailures = new WeakMap<Node, Map<string, number>>();
     this.givenUpTransforms.clear();
+    this.splitMarkerWaiters.clear();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
     this.leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
     this.leadingContextEdits.clear();
@@ -2832,6 +2837,7 @@ export class DomProcessor {
 
   private finishTextTransform(node: Text, original: string, restoreUnchanged: boolean,
     result: DetailedTransformResult, budgeted: boolean): void {
+    this.releaseSplitMarkerWaiters(node);
     if (result.replacements === 0 || result.text === original ||
         (result.leadingContextEdit && !this.applyLeadingContextEdit(node, result.leadingContextEdit))) {
       if (restoreUnchanged) this.restoreText(node, original, budgeted);
@@ -2927,19 +2933,44 @@ export class DomProcessor {
     }
   }
 
-  // Removes the marker that ends the directly preceding, otherwise untouched
-  // text. The change is tracked like any own edit and restored with it.
+  // Removes the marker that ends the directly preceding text. The change is
+  // tracked like any own edit and restored with it; a preceding text that
+  // already carries its own change (`Liebe Kolleg*innen und Lehrer*`) keeps
+  // its original and counters and loses only the marker in its result.
   private removeSplitMarkerBefore(node: Text): boolean {
     const previous = this.previousInlineText(node);
-    if (!previous || this.textChanges.has(previous) || this.pendingTextTransforms.has(previous) ||
-        this.pendingTextEdits.has(previous) || this.hasTextNodeProtection(previous) ||
+    if (!previous || this.hasTextNodeProtection(previous) ||
         (!markerOnlyPattern.test(previous.data) && !this.shouldProcessTextNode(previous))) return false;
+    if (this.pendingTextTransforms.has(previous) || this.pendingTextEdits.has(previous)) {
+      // The preceding text is still being transformed: this text is
+      // processed again as soon as that result is in, instead of staying
+      // half converted when the answers arrive out of order.
+      let waiters = this.splitMarkerWaiters.get(previous);
+      if (!waiters) this.splitMarkerWaiters.set(previous, waiters = new Set());
+      waiters.add(node);
+      return false;
+    }
     const marker = splitMarkerEndPattern.exec(previous.data)?.[0];
     if (!marker) return false;
     const next = previous.data.slice(0, -marker.length);
-    this.recordTextResult(previous, previous.data, {text: next, replacements: 0, summaries: []});
+    const tracked = this.textChanges.get(previous);
+    if (tracked) {
+      if (previous.data !== tracked.transformed) return false;
+      this.textChanges.set(previous, {...tracked, transformed: next});
+    } else {
+      this.recordTextResult(previous, previous.data, {text: next, replacements: 0, summaries: []});
+    }
     this.replaceTextKeepingRanges(previous, next);
     return true;
+  }
+
+  private releaseSplitMarkerWaiters(previous: Text): void {
+    const waiters = this.splitMarkerWaiters.get(previous);
+    if (!waiters) return;
+    this.splitMarkerWaiters.delete(previous);
+    for (const waiter of waiters) {
+      if (this.isProcessableRoot(waiter)) this.queue(waiter);
+    }
   }
 
   private isTransformCandidate(input: string): boolean {
@@ -2988,6 +3019,7 @@ export class DomProcessor {
           (this.options.processSubtitles !== true && this.isSubtitleContent(node))) {
         if (node.data === pending.expected) this.restoreText(node, original, true);
         if (this.isProcessableRoot(node)) this.queue(node);
+        this.releaseSplitMarkerWaiters(node);
         return;
       }
       const result = resultOf();
@@ -3242,6 +3274,7 @@ export class DomProcessor {
     }
     if (pending.index < 0) {
       this.pendingTextEdits.delete(node);
+      this.releaseSplitMarkerWaiters(node);
       if (pending.restoring) {
         if (node.isConnected) this.queue(node);
       } else this.recordTextResult(node, pending.original, pending.result);
@@ -3626,6 +3659,7 @@ export class DomProcessor {
   // zurücknehmen. So erhalten Frameworks auch beim asynchronen Recyceln
   // derselben Node den ursprünglichen Wert zurück.
   private forgetTrackedText(node: Text): void {
+    this.releaseSplitMarkerWaiters(node);
     const pendingTransform = this.pendingTextTransforms.get(node);
     if (pendingTransform) {
       this.pendingTextTransforms.delete(node);

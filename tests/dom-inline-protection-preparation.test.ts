@@ -81,13 +81,13 @@ describe("Cooperative preparation of large inline protection contexts", () => {
     expect(document.querySelector("#outside")!.textContent).toBe("Nutzer");
     expect(processor!.getReplacementCount()).toBe(1);
   });
-  it("rechecks oversized protection after a length-changing text replacement", async () => {
+  it("keeps processing a run that grows beyond the former size limit", async () => {
     const {tasks, target} = setup(); await drain(tasks);
     document.querySelector("#root span")!.textContent = "neutral ".repeat(2_000);
     await settle(); await drain(tasks);
-    expect(target.textContent).toBe("Nutzer:innen");
+    expect(target.textContent).toBe("Nutzer");
     expect(document.querySelector("#outside")!.textContent).toBe("Nutzer");
-    expect(processor!.getReplacementCount()).toBe(1);
+    expect(processor!.getReplacementCount()).toBe(2);
   });
   it("rechecks a completed context after detached mutation and reattachment", async () => {
     const {tasks, target} = setup(); await drain(tasks);
