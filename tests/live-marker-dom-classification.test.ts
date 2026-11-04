@@ -20,9 +20,9 @@ describe("Live-Diagnose: tatsächliche DOM-Textknoten", () => {
       .toMatchObject({ reason: "code" });
   });
 
-  it("berücksichtigt aria-hidden und geschützte Rollen über Vorfahren", () => {
+  it("berücksichtigt Ignore-Markierungen und geschützte Rollen über Vorfahren", () => {
     document.body.innerHTML = [
-      '<section aria-hidden="true"><span>Leser:innen</span></section>',
+      '<section data-sprachverstand-ignore><span>Leser:innen</span></section>',
       '<div role="textbox"><span>SchülerInnen</span></div>',
       "<p>Die LehrerInnen diskutieren.</p>"
     ].join("");
@@ -31,7 +31,7 @@ describe("Live-Diagnose: tatsächliche DOM-Textknoten", () => {
     expect(result.samples.map((sample) => sample.word)).toEqual([
       "Leser:innen", "SchülerInnen", "LehrerInnen"
     ]);
-    expect(result.reasons).toEqual({ "aria-hidden": 1, "excluded-role": 1, other: 1 });
+    expect(result.reasons).toEqual({ ignore: 1, "excluded-role": 1, other: 1 });
   });
 
   it("ändert keine DOM-Textknoten und gibt nur kurze Wortproben aus", () => {

@@ -102,7 +102,7 @@ describe("shouldProcessAccessibleAttribute", () => {
   it("ignoriert technische und bewusst ausgeschlossene Attribute", () => {
     document.body.innerHTML = `
       <div data-sprachverstand-ignore aria-label="Nutzer:innen"></div>
-      <div aria-hidden="true" title="Nutzer:innen"></div>
+      <div role="textbox"><img title="Nutzer:innen"></div>
       <code title="Nutzer:innen"></code>
       <img alt="https://example.org/Nutzer:innen">
     `;
@@ -110,7 +110,7 @@ describe("shouldProcessAccessibleAttribute", () => {
     const ignored = document.querySelector(
       "[data-sprachverstand-ignore]"
     ) as Element;
-    const hidden = document.querySelector("[aria-hidden]") as Element;
+    const hidden = document.querySelector("[role='textbox'] img") as Element;
     const code = document.querySelector("code") as Element;
     const image = document.querySelector("img") as HTMLImageElement;
 

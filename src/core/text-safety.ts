@@ -14,6 +14,8 @@ export type AccessibleAttributeName =
 const accessibleAttributeNameSet = new Set<string>(accessibleAttributeNames);
 
 const excludedTags = new Set([
+  // The document title is browser chrome and ends up in history entries.
+  "HEAD",
   "SCRIPT",
   "STYLE",
   "NOSCRIPT",
@@ -34,6 +36,7 @@ const excludedTags = new Set([
 ]);
 
 const excludedAttributeTags = new Set([
+  "HEAD",
   "SCRIPT",
   "STYLE",
   "NOSCRIPT",
@@ -108,7 +111,10 @@ function hasCommonExcludedAncestor(
       return true;
     }
 
-    if (current.getAttribute("aria-hidden")?.toLowerCase() === "true") {
+    // Same editor roles as for text: an image inside a role="textbox"
+    // widget used to get its alt text converted while the text stayed.
+    const role = current.getAttribute("role")?.toLowerCase();
+    if (role && excludedRoles.has(role)) {
       return true;
     }
 
@@ -141,11 +147,13 @@ function isOptionWithoutValue(element: Element): boolean {
 }
 
 // For a traversal that has already established the ancestor protection.
+// `aria-hidden="true"` is deliberately not a protection: it only hides text
+// from assistive technology, and pages use it on visible text such as
+// carousel slides or icon labels.
 export function hasOwnTextProtection(element: Element): boolean {
   if (excludedTags.has(element.tagName) || isOptionWithoutValue(element) ||
       isContentEditable(element) ||
-      element.hasAttribute("data-sprachverstand-ignore") ||
-      element.getAttribute("aria-hidden")?.toLowerCase() === "true") return true;
+      element.hasAttribute("data-sprachverstand-ignore")) return true;
   const role = element.getAttribute("role")?.toLowerCase();
   return Boolean(role && excludedRoles.has(role));
 }

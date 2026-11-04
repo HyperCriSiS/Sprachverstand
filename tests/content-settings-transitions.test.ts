@@ -110,7 +110,11 @@ describe("Einstellungswechsel während kooperativer Originalrückgabe", () => {
     expect(state.sendMessage).toHaveBeenLastCalledWith(expect.objectContaining({
       count: 500, replacements: state.summaries.slice(0, 250)
     }));
-    expect(state.messageListener!({type: "sprachverstand.get-current-replacement-state"}))
+    // The reply must be a Promise: a plain object returned synchronously
+    // never reaches the sender in Firefox or Chromium.
+    const reply = state.messageListener!({type: "sprachverstand.get-current-replacement-state"});
+    expect(reply).toBeInstanceOf(Promise);
+    expect(await reply)
       .toEqual(expect.objectContaining({replacements: state.summaries.slice(0, 250)}));
     expect(state.summaries).toHaveLength(500);
   });

@@ -82,11 +82,11 @@ describe("Audit DOM-06: Schutz über Inline-Elementgrenzen", () => {
 
   it("überschreitet keine technischen oder geschützten Elemente", () => {
     const paragraph = starten(
-      '<p>„<code>Zitat</code><b>Lehrer:innen</b>“ <span aria-hidden="true">Lehrer:innen</span> und Lehrer:innen.</p>',
+      '<p>„<code>Zitat</code><b>Lehrer:innen</b>“ <span data-sprachverstand-ignore>Lehrer:innen</span> und Lehrer:innen.</p>',
       { processQuotedText: false }
     );
     expect(paragraph.querySelector("code")?.textContent).toBe("Zitat");
-    expect(paragraph.querySelector('[aria-hidden="true"]')?.textContent).toBe("Lehrer:innen");
+    expect(paragraph.querySelector('[data-sprachverstand-ignore]')?.textContent).toBe("Lehrer:innen");
     expect(paragraph.querySelector("b")?.textContent).toBe("Lehrer");
   });
 

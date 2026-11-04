@@ -137,7 +137,9 @@ Du kannst die Regelgruppen einzeln steuern.
 Weibliche Bezeichnungen ohne Genderzeichen wie `Professorin` oder `Politikerinnen`
 bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten
 sind von der regulären Verarbeitung ausgeschlossen. Für Texte in Anführungszeichen
-kannst du zusätzlich einen Schutz aktivieren.
+kannst du zusätzlich einen Schutz aktivieren. Eingebettete Frames, etwa
+Kommentarbereiche oder Videoplayer in iframes, und der Titel des Browser-Tabs
+werden nicht verarbeitet.
 
 Die deutsche Sprache hat viele Mehrdeutigkeiten. Wenn eine ausreichend sichere
 Ersetzung nicht möglich ist, bleibt die betreffende Form stehen. Auch seltene
@@ -228,6 +230,9 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 Firefox und Chromium bilden die Basis für die jeweiligen Browserfamilien. Die
 aufgeführten Browser verwenden den entsprechenden Erweiterungs-Build; nicht jeder
 Browser wird separat getestet. Pale Moon erhält einen eigenständig gepflegten Port.
+Vorausgesetzt werden Firefox ab Version 140 und Chrome beziehungsweise Chromium ab
+Version 148; ältere Chromium-Versionen erhalten vom Hintergrund der Erweiterung
+keine Antworten und werden deshalb nicht unterstützt.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen

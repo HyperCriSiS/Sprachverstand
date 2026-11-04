@@ -7,6 +7,7 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
     { id: "binnen-i", expression: /(?<![\p{L}\p{N}])[\p{L}]+Innen(?![\p{L}\p{N}])/gu }
   ];
   const excludedTags = new Set([
+    "HEAD",
     "SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "TEXTAREA",
     "INPUT", "SELECT", "OPTION", "CODE", "PRE", "KBD", "SAMP",
     "VAR", "SVG", "MATH", "CANVAS", "IFRAME", "OBJECT", "EMBED"
@@ -29,7 +30,6 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
     for (let element = parent; element; element = element.parentElement) {
       if (excludedTags.has(element.tagName) ||
           element.hasAttribute("data-sprachverstand-ignore") ||
-          element.getAttribute("aria-hidden") === "true" ||
           excludedRoles.has(element.getAttribute("role")?.toLowerCase())) return true;
       const editable = element.getAttribute("contenteditable");
       if (editable === "" || editable === "true" || editable === "plaintext-only") return true;
@@ -81,10 +81,6 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
       }
       if (element.hasAttribute("data-sprachverstand-ignore")) {
         reason = "ignore";
-        break;
-      }
-      if (element.getAttribute("aria-hidden") === "true") {
-        reason = "aria-hidden";
         break;
       }
       if (excludedRoles.has(element.getAttribute("role")?.toLowerCase())) {

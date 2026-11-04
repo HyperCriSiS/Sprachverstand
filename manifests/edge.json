@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "minimum_chrome_version": "148",
   "name": "__MSG_extensionName__",
   "version": "0.9.1",
   "homepage_url": "https://github.com/HyperCriSiS/Sprachverstand",
