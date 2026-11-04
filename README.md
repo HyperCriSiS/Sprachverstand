@@ -76,12 +76,12 @@ jeweiligen Stores.
 
 ## Thunderbird
 
-Sprachverstand ist auch als Erweiterung für Thunderbird verfügbar. Die erste
-Thunderbird-Version ist **0.9.0** und wird getrennt von den Browser-Versionen
+Sprachverstand ist auch als Erweiterung für Thunderbird verfügbar. Die
+Thunderbird-Version **0.9.1** wird getrennt von den Browser-Versionen
 im Branch [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
 
-1. Lade die Datei `sprachverstand-thunderbird-0.9.0.xpi` aus dem
-   [Thunderbird-Release 0.9.0](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.0).
+1. Lade die Datei `sprachverstand-thunderbird-0.9.1.xpi` aus dem
+   [Thunderbird-Release 0.9.1](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.1).
 2. Öffne in Thunderbird **Add-ons und Themes**, dann das Zahnradmenü und
    **Add-on aus Datei installieren**. Wähle die heruntergeladene XPI-Datei.
 3. Öffne eine Nachricht neu. Über das Sprachverstand-Symbol erreichst du
@@ -99,13 +99,8 @@ Website-Domainfilter und Videountertitelkorrektur gelten nicht für Mailtexte;
 die Untertiteloption wird in Thunderbird ausgeblendet. Der gemeinsame Regelsatz,
 persönliche Ausnahmen und eigene Ersetzungen bleiben verfügbar.
 
-Technische Mindestversion ist Thunderbird 128. Die erste Version wurde vom
-Nutzer praktisch erprobt und automatisiert geprüft; eine vollständige
-Versionsmatrix sowie ein Versandtest der optionalen Entwurfskorrektur bis zum
-Empfänger stehen noch aus. Die Veröffentlichung erfolgt zunächst auf GitHub,
-nicht im Thunderbird-Add-on-Store.
-Details: [Thunderbird-Datenschutz](docs/THUNDERBIRD-PRIVACY.md) und
-[Entwicklungs- und Prüfstand](docs/engineering/THUNDERBIRD-DRAFT.md).
+Thunderbird ab Version 128.
+Details: [Thunderbird-Datenschutz](docs/THUNDERBIRD-PRIVACY.md).
 
 ## Was wird verändert – und was bleibt stehen?
 
