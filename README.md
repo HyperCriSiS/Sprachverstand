@@ -16,6 +16,7 @@
   · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
   · <a href="#microsoft-edge">Edge</a>
   · <a href="#opera">Opera</a>
+  · <a href="#thunderbird">Thunderbird</a>
   · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Downloads</a>
 </p>
 

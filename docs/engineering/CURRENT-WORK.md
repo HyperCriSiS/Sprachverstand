@@ -1,9 +1,16 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-11-02  
+Stand: 2026-11-04  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
+
+## Thunderbird 0.9.0
+
+- Eigene Thunderbird-Linie auf Nutzerwunsch in `thunderbird`, Basis Browser 0.9.0; [PR #596](https://github.com/HyperCriSiS/Sprachverstand/pull/596) integriert (`d70aba4`). `main` bleibt Browser 0.9.1.
+- [GitHub-Release `thunderbird-v0.9.0`](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.0) veröffentlicht: XPI, minimales Quellpaket, Provenienz und SHA256-Prüfsummen.
+- [Thunderbird-CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/41746915193) erfolgreich; Quellarchiv unabhängig nachgebaut und Ausgabe verglichen. Branchschutz aktiv: PR, verpflichtende Thunderbird-Prüfung, kein Löschen/Force-Push.
+- Noch offen: vollständige echte Versionsmatrix und Empfänger-End-to-End-Prüfung der optionalen Entwurfskorrektur. Storeeinreichung nicht erfolgt. Branchspezifische Details und Datenschutz liegen in `thunderbird`; dieser Checkpoint auf `main` bleibt die projektweite Autorität.
 
 ## DOM-/Videoperformance (#419)
 
