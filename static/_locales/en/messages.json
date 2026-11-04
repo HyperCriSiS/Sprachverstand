@@ -54,7 +54,7 @@
     "message": "Shows the switch for enabling or disabling the extension."
   },
   "whereCorrect": {
-    "message": "Where should additional corrections apply?"
+    "message": "Where else should corrections apply?"
   },
   "whereCorrectPopupDescription": {
     "message": "Shows options for accessible labels, quoted text, and subtitles directly in the popup."

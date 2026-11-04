@@ -35,7 +35,7 @@ import {
   type SettingsBackupImportMode,
   type SettingsImportResult
 } from "./settings/settings-backup";
-import { loadSettings, saveSettings } from "./settings/storage";
+import { loadSettings, saveSettings, SettingsSyncError } from "./settings/storage";
 
 interface CountUpdatedMessage {
   readonly type: "sprachverstand.count-updated";
@@ -632,6 +632,13 @@ async function persist(): Promise<void> {
     );
     refreshCountAfterChange();
   } catch (error) {
+    if (error instanceof SettingsSyncError) {
+      // Saved on this device; only the browser synchronization is incomplete.
+      markSaved();
+      refreshCountAfterChange();
+      showStatus(error.message, true, 12000);
+      return;
+    }
     showStatus(
       visibleErrorMessage(
         error,

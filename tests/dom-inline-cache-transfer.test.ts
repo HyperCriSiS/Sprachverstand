@@ -70,11 +70,11 @@ describe("Inline-Schutzcache bei einfachen Textknotenwechseln", () => {
     expect(collect).toHaveBeenCalled();
   });
 
-  it("berechnet nach Unterschreiten der Oversize-Grenze den Schutz neu", async () => {
+  it("verarbeitet einen sehr langen Lauf und berechnet den Schutz nach dem Textwechsel neu", async () => {
     const paragraph = document.createElement("p"); const target = document.createElement("span");
     target.textContent = "Nutzer:innen " + "neutral ".repeat(2200);
     paragraph.append(target); document.body.append(paragraph); start();
-    expect(target.textContent).toContain("Nutzer:innen");
+    expect(target.textContent!.startsWith("Nutzer neutral")).toBe(true);
     target.textContent = "Nutzer:innen 0";
     await flush();
     expect(target.textContent).toBe("Nutzer 0");

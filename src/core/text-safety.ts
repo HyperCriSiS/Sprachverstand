@@ -14,6 +14,8 @@ export type AccessibleAttributeName =
 const accessibleAttributeNameSet = new Set<string>(accessibleAttributeNames);
 
 const excludedTags = new Set([
+  // The document title is browser chrome and ends up in history entries.
+  "HEAD",
   "SCRIPT",
   "STYLE",
   "NOSCRIPT",
@@ -34,6 +36,7 @@ const excludedTags = new Set([
 ]);
 
 const excludedAttributeTags = new Set([
+  "HEAD",
   "SCRIPT",
   "STYLE",
   "NOSCRIPT",
@@ -112,6 +115,13 @@ function hasCommonExcludedAncestor(
       return true;
     }
 
+    // Same editor roles as for text: an image inside a role="textbox"
+    // widget used to get its alt text converted while the text stayed.
+    const role = current.getAttribute("role")?.toLowerCase();
+    if (role && excludedRoles.has(role)) {
+      return true;
+    }
+
     current = parentElementOrShadowHost(current);
   }
 
@@ -141,6 +151,11 @@ function isOptionWithoutValue(element: Element): boolean {
 }
 
 // For a traversal that has already established the ancestor protection.
+// `aria-hidden="true"` stays a protection although pages also use it on
+// visible text (carousel slides, icon labels): editors such as Monaco and
+// search fields with a styled overlay render the visible mirror of a hidden
+// input this way. Converting the mirror desynchronises it from the real
+// input (verified on the TypeScript playground, 04.11.2026).
 export function hasOwnTextProtection(element: Element): boolean {
   if (excludedTags.has(element.tagName) || isOptionWithoutValue(element) ||
       isContentEditable(element) ||

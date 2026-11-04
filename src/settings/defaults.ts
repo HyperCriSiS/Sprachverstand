@@ -306,6 +306,18 @@ function migrateEnabledRuleGroups(
   return normalizeEnabledRuleGroupIds([...migrated]);
 }
 
+// A rule group list written by a device at `revision` (synchronized or
+// imported): groups introduced since then are enabled, as for local storage.
+export function enabledRuleGroupIdsFromRevision(
+  value: unknown,
+  revision: unknown
+): string[] {
+  return migrateEnabledRuleGroups(
+    normalizeEnabledRuleGroupIds(value),
+    storedRevision(revision)
+  );
+}
+
 export function normalizeSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") {
     return defaultSettings;

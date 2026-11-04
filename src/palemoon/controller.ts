@@ -474,10 +474,27 @@ function handleDocumentLoaded(event: Event): void {
   }
 }
 
+function isPersistedPageTransition(event: Event): boolean {
+  return (event as Event & { readonly persisted?: boolean }).persisted === true;
+}
+
+// Eine Seite im Back/Forward-Cache kehrt ohne DOMContentLoaded zurück. Sie
+// wird deshalb beim Verlassen wiederhergestellt und bei der Rückkehr neu
+// verarbeitet; vorher blieb korrigierter Text ohne Prozessor, Zähler und
+// Rücknahme beim Ausschalten stehen.
 function handlePageHide(event: Event): void {
   const hiddenDocument = eventDocument(event);
   if (hiddenDocument) {
-    destroySandbox(hiddenDocument, false);
+    destroySandbox(hiddenDocument, isPersistedPageTransition(event));
+  }
+}
+
+function handlePageShow(event: Event): void {
+  const shownDocument = isPersistedPageTransition(event)
+    ? eventDocument(event)
+    : undefined;
+  if (shownDocument) {
+    applySettingsToDocument(shownDocument);
   }
 }
 
@@ -738,6 +755,7 @@ function shutdown(): void {
     true
   );
   windowObject.gBrowser?.removeEventListener("pagehide", handlePageHide, true);
+  windowObject.gBrowser?.removeEventListener("pageshow", handlePageShow, true);
   windowObject.gBrowser?.tabContainer?.removeEventListener(
     "TabSelect",
     handleTabSelect as EventListener
@@ -769,6 +787,7 @@ function start(): void {
     true
   );
   windowObject.gBrowser.addEventListener("pagehide", handlePageHide, true);
+  windowObject.gBrowser.addEventListener("pageshow", handlePageShow, true);
   windowObject.gBrowser.tabContainer?.addEventListener(
     "TabSelect",
     handleTabSelect as EventListener

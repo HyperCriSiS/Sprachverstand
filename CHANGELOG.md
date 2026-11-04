@@ -5,6 +5,50 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+### Behoben
+
+- Nach der Rückkehr zu einer Seite aus dem Seitencache (Zurück/Vor) wird die
+  Seite wieder vollständig verarbeitet: Zähler, Korrektur nachgeladener Inhalte
+  und das Zurücknehmen beim Ausschalten funktionieren wieder. Bisher blieb der
+  korrigierte Text ohne zugehörige Verarbeitung stehen.
+- Schlägt das Regelmodul für einen Text fehl, wird er nur noch dreimal mit
+  wachsendem Abstand wiederholt; aufgegebene Einträge kommen an die Reihe,
+  sobald eine andere Anfrage wieder gelingt.
+- Der Titel des Browser-Tabs bleibt immer unverändert; bisher wurde er nur bei
+  einer späteren Änderung durch die Seite umgewandelt.
+- Bildbeschreibungen innerhalb von Eingabe-Widgets mit `role="textbox"`,
+  `searchbox`, `combobox` oder `spinbutton` bleiben wie deren Text unverändert.
+- Sehr lange Inline-Abschnitte (über 16 000 Zeichen ohne Blockelement) werden
+  auch dann korrigiert, wenn Zitatschutz oder persönliche Ausnahmen aktiv sind.
+- Ein über ein Inline-Element getrennter Marker (`Lehrer*<b>innen</b>`) wird
+  auch dann umgewandelt, wenn der Text davor bereits eine eigene Korrektur
+  trägt oder später beantwortet wird.
+- Zitate bleiben über geschützte Inline-Elemente (`<code>`, `aria-hidden`) und
+  technische Textknoten hinweg zusammen.
+- Persönliche Ausnahmen aus mehreren Wörtern greifen auch mit geschütztem
+  Leerzeichen oder Zeilenumbruch zwischen den Wörtern.
+- Zollzeichen (`24"`) öffnen oder schließen kein Zitat mehr, ein einzelnes
+  „““ nach einem Wort gilt als schließendes Zeichen, und ein geöffnetes „„“
+  ohne schließendes Zeichen schützt bis zum Ende des Textabschnitts.
+- Eine synchronisierte Regelgruppenliste eines Geräts mit älterer Version
+  schaltet neue Standardgruppen nicht mehr überall ab; synchronisierte
+  Textoptionen ohne neueres Feld behalten den lokalen Wert.
+- Einstellungen werden immer lokal gespeichert, auch wenn eine Kategorie für
+  die Synchronisierung zu groß ist; die Einstellungsseite nennt Kategorie und
+  Größe. Nach einer fehlgeschlagenen Synchronisierung wird der lokale Stand
+  beim nächsten Laden erneut angeboten, und es werden nur geänderte Schlüssel
+  geschrieben.
+- Ein mit zerlegten Umlauten (NFD) geschriebenes Wort erhält nur noch seine
+  eigenen Codeeinheiten zurück.
+
+### Geändert
+
+- Klassen- oder ID-Wechsel in Untertitelcontainern lösen nur noch dann eine
+  Neubewertung aus, wenn sich die Untertitelmarkierung des Elements selbst
+  ändert.
+- Die Überschrift für weitere Korrekturbereiche lautet „Wo soll außerdem
+  korrigiert werden?“.
+
 ## 0.9.1 (2026-11-02)
 
 ### Hinzugefügt

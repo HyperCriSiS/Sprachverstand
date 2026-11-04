@@ -41,10 +41,16 @@ describe("Begrenzte Kontextscans erhalten Sprach- und Schutzgrenzen", () => {
   });
 
   it("erhält gültige Zitatpaare hinter vielen ungepaarten Öffnungszeichen", () => {
-    const prefix = "„neutral ".repeat(1000);
+    // `“` opens only in English usage and is left unpaired here; a German
+    // `„` without closing mark protects the rest of the text instead.
+    const prefix = "“neutral ".repeat(1000);
     const input = prefix + '"Nutzer:innen" und Nutzer:innen';
     expect(transformText(input, [knownPluralSeparatorsRule], {
       profile: "aggressive", processQuotedText: false
     })).toEqual({text: prefix + '"Nutzer:innen" und Nutzer', replacements: 1});
+    const german = "„neutral ".repeat(1000) + "Nutzer:innen";
+    expect(transformText(german, [knownPluralSeparatorsRule], {
+      profile: "aggressive", processQuotedText: false
+    })).toEqual({text: german, replacements: 0});
   });
 });

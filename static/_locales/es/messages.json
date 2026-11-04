@@ -54,7 +54,7 @@
     "message": "Muestra el interruptor para activar o desactivar la extensión."
   },
   "whereCorrect": {
-    "message": "¿Dónde deben aplicarse las correcciones adicionales?"
+    "message": "¿Dónde más debe corregirse?"
   },
   "whereCorrectPopupDescription": {
     "message": "Muestra directamente en el menú emergente las opciones para etiquetas accesibles, texto citado y subtítulos."
