@@ -90,5 +90,6 @@ jobs:
           VERSION="$(node -p 'require("./package.json").version')"
           gh release create "$GITHUB_REF_NAME" artifacts/release/* \
             --repo "$GITHUB_REPOSITORY" --verify-tag --latest=false \
+            --target thunderbird \
             --title "Sprachverstand $VERSION – Thunderbird" \
             --notes-file "docs/releases/thunderbird-$VERSION.md"

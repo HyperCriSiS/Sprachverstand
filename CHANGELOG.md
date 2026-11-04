@@ -5,6 +5,10 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## Thunderbird 0.9.1 (2026-11-04)
+
+- Beschreibungen und Installationshinweise für Thunderbird überarbeitet.
+
 ## Thunderbird 0.9.0 (2026-11-04)
 
 - Erste Thunderbird-Ausgabe mit lokaler Korrektur angezeigter Mails, vollständiger
