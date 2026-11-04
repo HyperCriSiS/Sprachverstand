@@ -213,14 +213,24 @@ const bareHostPathSpanPattern =
   /(?<![\p{L}\p{N}@.\/-])(?:[a-z0-9-]+\.)+(?:de|at|ch|li|lu|eu|com|org|net|info|edu|gov|int|io)\/[^\s"'„“”«»()<>]*/giu;
 const fileNameSpanPattern =
   /(?<![^\s"'„“”«»(\[<>])[^\s"'„“”«»()<>]*[\p{L}\p{N}_-]\.(?:pdf|docx?|xlsx?|pptx?|odt|ods|odp|rtf|txt|csv|zip|jpe?g|png|gif|svg|webp|mp3|mp4|mov|html?|php|aspx?)(?![\p{L}\p{N}])/giu;
+// Jedes Muster oben braucht sein Literal: `://` oder `www.`, `@`, `/` vor
+// dem Pfad, ein Buchstabe nach dem Punkt. Gewöhnlicher Text endet mit einem
+// Punkt und ließ sonst alle vier Muster laufen (und je Dokument übersetzen).
+const urlSpanCandidate = /:\/\/|www\./iu;
+const fileNameSpanCandidate = /\.[a-z]/iu;
 
 // URL and e-mail spans in a text node. Within otherwise natural text only
 // these spans are protected (`Nutzer*innen lesen auf https://…`); before,
 // the whole node stayed unchanged.
 export function technicalSpanRanges(text: string): readonly {start: number; end: number}[] {
   if (!text.includes("/") && !text.includes(".") && !text.includes("@")) return [];
+  const patterns: RegExp[] = [];
+  if (urlSpanCandidate.test(text)) patterns.push(urlSpanPattern);
+  if (text.includes("@")) patterns.push(emailSpanPattern);
+  if (text.includes("/")) patterns.push(bareHostPathSpanPattern);
+  if (fileNameSpanCandidate.test(text)) patterns.push(fileNameSpanPattern);
   const ranges: {start: number; end: number}[] = [];
-  for (const pattern of [urlSpanPattern, emailSpanPattern, bareHostPathSpanPattern, fileNameSpanPattern]) {
+  for (const pattern of patterns) {
     for (const match of text.matchAll(pattern)) {
       ranges.push({start: match.index, end: match.index + match[0].length});
     }

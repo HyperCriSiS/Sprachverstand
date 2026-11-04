@@ -48,4 +48,20 @@ describe("Dateinamen und URLs ohne Schema im Textknoten", () => {
     expect(technicalSpanRanges(text).map(({start, end}) => text.slice(start, end)))
       .toEqual(["a_b.pdf", "uni.de/x"]);
   });
+
+  // Vierte Thunderbird-Leistungsrunde: Jedes Muster läuft nur, wenn sein
+  // Literal vorkommt. Satzpunkte allein lösen keines mehr aus; die
+  // Treffer selbst bleiben gleich, auch bei Großschreibung und Unicode-Folding.
+  it.each([
+    ["Die Lehrer:innen. Danach die Schüler*innen.", []],
+    ["Zahl 3.5 bei den Nutzer:innen.", []],
+    ["Siehe WWW.Example.DE heute", ["WWW.Example.DE"]],
+    ["Lies HTTPS://example.org/Lehrer_innen jetzt", ["HTTPS://example.org/Lehrer_innen"]],
+    ["Datei Plan.PDF liegt bei", ["Plan.PDF"]],
+    ["Datei Plan.ſvg liegt bei", ["Plan.ſvg"]],
+    ["Post an lehrer_innen@example.org bitte", ["lehrer_innen@example.org"]],
+    ["Pfad uni.de/Mitarbeiter_innen/ oben", ["uni.de/Mitarbeiter_innen/"]]
+  ])("%s", (text, expected) => {
+    expect(technicalSpanRanges(text).map(({start, end}) => text.slice(start, end))).toEqual(expected);
+  });
 });

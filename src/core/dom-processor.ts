@@ -338,6 +338,7 @@ export class DomProcessor {
     partitions: Map<Element, Text>;
     protection: WeakMap<Element, boolean>;
     subtitles: WeakMap<Element, boolean>;
+    roots: WeakMap<Node, boolean>;
   } | undefined;
   private observedDesignModeOn = false;
   private replacementCount = 0;
@@ -362,7 +363,7 @@ export class DomProcessor {
   private withTextSafetyScope(work: () => void): void {
     const nested = Boolean(this.textSafetyScope);
     const scope = this.textSafetyScope ??= {
-      partitions: new Map(), protection: new WeakMap(), subtitles: new WeakMap()
+      partitions: new Map(), protection: new WeakMap(), subtitles: new WeakMap(), roots: new WeakMap()
     };
     try {work();} finally {
       if (!nested) {
@@ -392,8 +393,22 @@ export class DomProcessor {
     if (this.textSafetyScope) {
       this.textSafetyScope.protection = new WeakMap();
       this.textSafetyScope.subtitles = new WeakMap();
+      this.textSafetyScope.roots = new WeakMap();
     }
     element.setAttribute(name, value);
+  }
+
+  // Innerhalb eines Arbeitsschritts löst nur `setAttributeValue` fremden
+  // Code aus; sonst kann sich die Zugehörigkeit einer Wurzel zum Dokument
+  // nicht ändern. Die Durchlaufschritte fragten sie bisher je Knoten über
+  // zwei DOM-Aufrufe ab.
+  private isProcessableRootInScope(root: Node): boolean {
+    const cache = this.textSafetyScope?.roots;
+    const cached = cache?.get(root);
+    if (cached !== undefined) return cached;
+    const processable = this.isProcessableRoot(root);
+    cache?.set(root, processable);
+    return processable;
   }
 
   private cancelAsyncWork(): void {
@@ -1307,7 +1322,7 @@ export class DomProcessor {
   }
 
   private processTraversalStep(state: TraversalState): boolean {
-    if (!this.isProcessableRoot(state.root)) {
+    if (!this.isProcessableRootInScope(state.root)) {
       return true;
     }
 

@@ -1,7 +1,7 @@
 import type { Rule } from "../core/rule";
 import { transformGenderedPlural } from "./gendered-plural";
 import { mapMappedPlural as mapLexiconPlural } from "./person-lexicon";
-import { preserveInnerCase } from "./inner-case";
+import { firstCodePointLength, preserveInnerCase } from "./inner-case";
 
 const locale = "de-DE";
 const additionalPluralForms = new Map<string, string>([
@@ -52,12 +52,11 @@ function applyTokenCase(source: string, replacement: string): string {
       .join("-");
   }
 
-  const first = [...source][0];
+  const first = source.slice(0, firstCodePointLength(source));
   if (first && first === first.toLocaleUpperCase(locale)) {
-    const characters = [...replacement];
-    const firstReplacementCharacter = characters.shift();
+    const firstReplacementCharacter = replacement.slice(0, firstCodePointLength(replacement));
     return firstReplacementCharacter
-      ? firstReplacementCharacter.toLocaleUpperCase(locale) + characters.join("")
+      ? firstReplacementCharacter.toLocaleUpperCase(locale) + replacement.slice(firstReplacementCharacter.length)
       : replacement;
   }
 

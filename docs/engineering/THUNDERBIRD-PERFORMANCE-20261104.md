@@ -131,3 +131,81 @@ mails and all-marked mails show no difference beyond run-to-run noise, as
 expected: the shortcuts only skip work for non-candidate text. These runs used
 an additional diagnostic trace (message timing and task counts); it adds equal
 overhead to both builds and is not part of the repository harness.
+
+## Vierte Runde: Zeitverlauf einer Nachricht und exakte Abkürzungen
+
+Ausgangsstand `740891d`. Zusätzliche Diagnoseschicht nur in den Testkopien
+(Zeitstempel je Transform-Anfrage und -Antwort, Dauer der Hintergrundaufrufe,
+Dauer jedes Arbeitsschritts im Dokument); sie liegt nicht im Repository und
+belastet beide Stände gleich. Warme Öffnung einer 500-Absatz-Mail, jeder zehnte
+Absatz mit Genderzeichen, Zeiten in ms seit Dokumentstart:
+
+| Phase | Zeitpunkt |
+| --- | ---: |
+| Content-Script läuft | ~28 |
+| Einstellungen geladen (`storage.local` und `storage.sync` parallel, je ~16 ms) | ~48 |
+| erster Arbeitsschritt des DomProcessors | ~51 |
+| erste Transform-Anfrage | ~69 |
+| letzte Antwort | ~115 |
+| alle Absätze korrigiert | ~120 |
+
+Die Lücke zwischen geladenen Einstellungen und erster Anfrage (18–20 ms)
+besteht aus den ersten, kalten Arbeitsschritten (Interpreter und erstmalige
+Übersetzung der regulären Ausdrücke je Dokument, rund 12 ms bis zum ersten
+Kandidaten) und dem bestehenden 8-ms-Sammelfenster. Beides wurde in früheren
+Runden bewusst nicht verändert (größere Slices, sofortiges Senden); hier gab
+es dafür keinen neuen Ansatzpunkt. Bemerkenswert bleibt, dass die beiden
+Storage-Lesevorgänge je ~16 ms dauern, während eine Hintergrundnachricht in
+2–3 ms antwortet; ein Bezug der Einstellungen über den Hintergrund wäre ein
+eigener Architekturentscheid und ist nicht umgesetzt.
+
+Doppelte Prüfungen beim Anwenden der Ergebnisse (`hasTextNodeProtection`,
+`isSubtitleContent`): laut Gecko-Profil der dritten Runde zusammen etwa
+15 ms je Öffnung bei 500 markierten Absätzen (rund 10 % der Dokument-CPU), bei
+der gemischten Mail etwa 1,5 ms (gut 1 %). Ein Überspringen bräuchte eine
+Mutationsversion über Slice-Grenzen hinweg; bei diesem Verhältnis von Risiko
+zu Gewinn nicht umgesetzt. Umgesetzt ist stattdessen die Wurzelprüfung des
+Durchlaufs (`isProcessableRoot`, zwei DOM-Aufrufe je Knoten, etwa 5 ms je
+Öffnung): innerhalb eines Arbeitsschritts löst nur `setAttributeValue`
+fremden Code aus, deshalb gilt die Antwort je Schritt und wird dort
+zurückgesetzt. Ebenfalls im Dokument: `technicalSpanRanges` lässt die vier
+Spannenmuster nur noch laufen, wenn ihr jeweiliges Literal vorkommt
+(`://`/`www.`, `@`, `/`, Punkt plus Buchstabe); gewöhnlicher Text endet mit
+einem Punkt und übersetzte sonst je Dokument alle vier Lookbehind-Muster.
+
+Regel-Engine (SpiderMonkey, Hintergrund): Die teuren Stellen waren nicht die
+Regeln selbst, sondern ihre Lexikonzugriffe. `isKnownBase` prüfte 195
+Endungen einzeln je Aufruf und arbeitet jetzt mit je einem Set je
+Endungslänge; `preserveInnerCase`, `applyCase` und `applyTokenCase` zerlegten
+jedes Wort per Spread in Codepunkte (im Thunderbird-Benchmark der dritten
+Runde 3,8 µs je Wort gegen 0,3 µs für eine Groß-/Kleinschreibung) und
+arbeiten im Normalfall jetzt mit `codePointAt`/`slice`. Alle Änderungen
+liefern byteidentische Ergebnisse: Differenztest alter gegen neuer Engine
+über 40.700 Texte (jeder sechste Eintrag des Kontextkorpus, Flexions- und
+Neutralkataloge, Testmails, Sonderfälle mit Surrogaten) in vier
+Optionsvarianten plus Kontext, 284.900 Vergleiche, dazu 6,7 Mio. Prüfungen
+der Lexikon- und Schreibungshelfer über 39.718 Wörter in 13 Schreibweisen:
+0 Abweichungen.
+
+Abwechselnde Läufe, je ein kalter und fünf warme, alle Absätze korrigiert:
+
+| Testmail | `740891d` warm (ms) | Kandidat warm (ms) |
+| --- | --- | --- |
+| 500 nummerierte Absätze, alle markiert | 256, 263, 234, 275, 220 · 260, 311, 272, 294, 256 · 261, 229, 218, 239, 245 | 232, 222, 227, 234, 224 · 242, 235, 225, 239, 223 |
+| 500 Absätze, jeder zehnte markiert | 123, 109, 120, 120, 139 · 131, 109, 118, 155, 131 · 121, 153, 152, 169, 116 | 107, 112, 111, 108, 104 · 114, 121, 101, 112, 125 |
+
+Mediane der Läufe: alle markiert 256/272/239 → 227/235; gemischt
+120/131/152 → 108/114. Der dritte Lauf des Ausgangsstands der gemischten
+Mail war durch Systemlast gestört (spätere Skriptinjektion in allen Proben)
+und ist trotzdem aufgeführt. Robuster als die Endzeiten sind die
+CPU-Summen je Öffnung: Dokumentseite gemischt 38–59 → 32–40 ms (Mediane
+46/45/49 → 35/33), alle markiert 104–167 → 110–128 ms; Hintergrund-Engine
+alle markiert 130–166 → 110–144 ms (Mediane 147/142/135 → 114/118).
+
+Worker-Parallelisierung der Engine, nur bewertet: Bei der gemischten Mail
+braucht die Engine 12–17 ms je Öffnung und ist nicht der Engpass. Bei
+durchgehend markierten Mails laufen Dokumentseite (~120 ms) und Engine
+(~115 ms) bereits parallel und sind beide ausgelastet; eine zweite
+Engine-Instanz könnte die Endzeit höchstens um den Engine-Anteil über der
+Dokument-CPU senken, kostet aber ein zweites Laden von Regeln und Lexikon
+(rund 1 MB Skript) und einen weiteren Nachrichtenhop. Nicht empfohlen.

@@ -7,11 +7,19 @@ const locale = "de-DE";
 // own letters where the replacement starts with the same word; before,
 // they became `Afdler` or `tiktoker`. Ordinary capitalization and all-caps
 // words stay with the callers' own rules.
+// Länge des ersten Codepunkts in UTF-16-Einheiten; ersetzt `[...value][0]`
+// ohne das Zerlegen des ganzen Wortes. Ein einzelnes Surrogat zählt wie
+// beim Spread als ein Zeichen.
+export function firstCodePointLength(value: string): number {
+  return (value.codePointAt(0) ?? 0) > 0xffff ? 2 : 1;
+}
+
 export function preserveInnerCase(source: string, replacement: string): string | undefined {
-  const letters = [...source.replace(nonLetterPattern, "")];
-  if (letters.length < 2) return undefined;
-  const rest = letters.slice(1).join("");
-  const word = letters.join("");
+  const word = source.replace(nonLetterPattern, "");
+  // Gewöhnliche Wörter enden hier: alles nach dem ersten Codepunkt ist
+  // klein. Erst der seltene Rest zerlegt die Zeichen einzeln.
+  if (word.length < 2 || (word.length === 2 && firstCodePointLength(word) === 2)) return undefined;
+  const rest = word.slice(firstCodePointLength(word));
   if (rest === rest.toLocaleLowerCase(locale) || word === word.toLocaleUpperCase(locale)) {
     return undefined;
   }
