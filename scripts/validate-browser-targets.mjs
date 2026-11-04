@@ -104,6 +104,12 @@ function validateChromiumManifest(target, manifest) {
     !("browser_specific_settings" in manifest),
     `${target}: Firefox-spezifische Einstellungen dürfen nicht enthalten sein.`
   );
+  // Der Hintergrund antwortet über den Promise-Rückgabewert des
+  // onMessage-Listeners; Chrome unterstützt das erst ab Version 148.
+  assert(
+    manifest.minimum_chrome_version === "148",
+    `${target}: minimum_chrome_version 148 erwartet.`
+  );
 }
 
 function validateGeckoManifest(target, manifest) {

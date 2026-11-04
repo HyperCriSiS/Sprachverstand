@@ -232,6 +232,13 @@ const shadowDiscoveryYieldMs = 64;
 const frameworkRewriteWindowMs = 1_000;
 const frameworkRewriteThreshold = 5;
 const frameworkRewriteCooldownMs = 250;
+// A failing local transformer (missing background, invalid reply) is retried
+// with growing delays and then given up per text or attribute, instead of
+// once a second for the lifetime of the page. Given-up entries are queued
+// again as soon as any other request succeeds.
+const maximumTransformRetries = 3;
+const textTransformFailureKey = "#text";
+const transformRetryBaseDelayMs = 1_000;
 
 // Änderungen an diesen Attributen betreffen die Schutzentscheidung für
 // sämtliche untergeordneten Texte, auch bei deaktivierter Attributkorrektur.
@@ -308,6 +315,11 @@ export class DomProcessor {
   private readonly pendingSubtitleTransformResults = new PendingMap<object, () => void>();
   private readonly pendingAttributeTransforms = new Map<Element, Map<string, {value: string}>>();
   private readonly transformRetryHandles = new Set<number>();
+  private transformFailures = new WeakMap<Node, Map<string, number>>();
+  private readonly givenUpTransforms = new Set<Node>();
+  // `innen` texts whose preceding text (`Lehrer*`) still awaits its own
+  // result, by that preceding text; they are queued again once it is in.
+  private readonly splitMarkerWaiters = new Map<Text, Set<Text>>();
   private activeTextEditSlice: ReadonlySet<Text> | undefined;
   private pendingTextEdits = new PendingMap<Text, TextEditPlan>();
   private readonly summaryCounts = new Map<string, ReplacementSummaryEntry>();
@@ -414,6 +426,8 @@ export class DomProcessor {
       if (view) view.clearTimeout(handle); else window.clearTimeout(handle);
     }
     this.transformRetryHandles.clear();
+    this.givenUpTransforms.clear();
+    this.splitMarkerWaiters.clear();
     this.queuedSmallTransforms.clear();
     this.queuedSubtitleTransforms.clear();
     this.pendingTransformResults.clear();
@@ -421,15 +435,44 @@ export class DomProcessor {
     this.pendingAttributeTransforms.clear();
   }
 
-  private retryTransform(work: () => void): void {
+  // Schedules one more attempt for a failed text or attribute, or none once
+  // it has used up its retries. Each attempt waits twice as long as the
+  // previous; a given-up entry waits for the next successful reply.
+  private retryTransform(node: Node, key: string, work: () => void): void {
+    const failures = this.transformFailures.get(node) ?? new Map<string, number>();
+    const count = (failures.get(key) ?? 0) + 1;
+    failures.set(key, count);
+    this.transformFailures.set(node, failures);
+    if (count > maximumTransformRetries) {
+      this.givenUpTransforms.add(node);
+      return;
+    }
+    const delayMs = transformRetryBaseDelayMs * 2 ** (count - 1);
     const view = this.document.defaultView;
     let handle = 0;
     const callback = (): void => {
       this.transformRetryHandles.delete(handle);
       if (this.running) work();
     };
-    handle = view ? view.setTimeout(callback, 1_000) : window.setTimeout(callback, 1_000);
+    handle = view ? view.setTimeout(callback, delayMs) : window.setTimeout(callback, delayMs);
     this.transformRetryHandles.add(handle);
+  }
+
+  // A successful reply: the entry starts over with fresh retries, and nodes
+  // that were given up while the background did not answer get their turn.
+  private noteTransformSuccess(node: Node, key: string): void {
+    const failures = this.transformFailures.get(node);
+    if (failures) {
+      failures.delete(key);
+      if (failures.size === 0) this.transformFailures.delete(node);
+    }
+    if (this.givenUpTransforms.size === 0) return;
+    const givenUp = [...this.givenUpTransforms];
+    this.givenUpTransforms.clear();
+    for (const entry of givenUp) {
+      this.transformFailures.delete(entry);
+      if (this.isProcessableRoot(entry)) this.queue(entry);
+    }
   }
 
   private queueTransformResult(token: object, work: () => void, subtitle = false): void {
@@ -498,6 +541,9 @@ export class DomProcessor {
     this.shadowDiscoveryParents.length = 0;
     this.shadowDiscoveryDocumentRoot = undefined;
     this.textRewriteStates = new WeakMap<Text, RewriteState>();
+    this.transformFailures = new WeakMap<Node, Map<string, number>>();
+    this.givenUpTransforms.clear();
+    this.splitMarkerWaiters.clear();
     this.inlineProtectionCache = new WeakMap<Text, readonly InlineProtectionRange[]>();
     this.leadingContextCache = new WeakMap<Text, {value: string | undefined}>();
     this.leadingContextEdits.clear();
@@ -1601,8 +1647,13 @@ export class DomProcessor {
             ) {
               continue;
             }
-            const relevant = this.isSubtitleContent(record.target) ||
-              matchesSubtitleMarker(record.attributeName, record.oldValue);
+            // Only a change of the element's own marker can change the
+            // caption status of its subtree. Any other class/id change, such
+            // as a player toggling visibility classes on cue segments, used
+            // to requeue the subtree or sweep the whole tracked state, and
+            // cost an ancestor walk for every class change on the page.
+            const relevant = matchesSubtitleMarker(record.attributeName, record.oldValue) !==
+              matchesSubtitleMarker(record.attributeName, record.target.getAttribute(record.attributeName));
             if (relevant) {
               if (
                 this.options.processSubtitles !== true &&
@@ -2786,6 +2837,7 @@ export class DomProcessor {
 
   private finishTextTransform(node: Text, original: string, restoreUnchanged: boolean,
     result: DetailedTransformResult, budgeted: boolean): void {
+    this.releaseSplitMarkerWaiters(node);
     if (result.replacements === 0 || result.text === original ||
         (result.leadingContextEdit && !this.applyLeadingContextEdit(node, result.leadingContextEdit))) {
       if (restoreUnchanged) this.restoreText(node, original, budgeted);
@@ -2881,19 +2933,44 @@ export class DomProcessor {
     }
   }
 
-  // Removes the marker that ends the directly preceding, otherwise untouched
-  // text. The change is tracked like any own edit and restored with it.
+  // Removes the marker that ends the directly preceding text. The change is
+  // tracked like any own edit and restored with it; a preceding text that
+  // already carries its own change (`Liebe Kolleg*innen und Lehrer*`) keeps
+  // its original and counters and loses only the marker in its result.
   private removeSplitMarkerBefore(node: Text): boolean {
     const previous = this.previousInlineText(node);
-    if (!previous || this.textChanges.has(previous) || this.pendingTextTransforms.has(previous) ||
-        this.pendingTextEdits.has(previous) || this.hasTextNodeProtection(previous) ||
+    if (!previous || this.hasTextNodeProtection(previous) ||
         (!markerOnlyPattern.test(previous.data) && !this.shouldProcessTextNode(previous))) return false;
+    if (this.pendingTextTransforms.has(previous) || this.pendingTextEdits.has(previous)) {
+      // The preceding text is still being transformed: this text is
+      // processed again as soon as that result is in, instead of staying
+      // half converted when the answers arrive out of order.
+      let waiters = this.splitMarkerWaiters.get(previous);
+      if (!waiters) this.splitMarkerWaiters.set(previous, waiters = new Set());
+      waiters.add(node);
+      return false;
+    }
     const marker = splitMarkerEndPattern.exec(previous.data)?.[0];
     if (!marker) return false;
     const next = previous.data.slice(0, -marker.length);
-    this.recordTextResult(previous, previous.data, {text: next, replacements: 0, summaries: []});
+    const tracked = this.textChanges.get(previous);
+    if (tracked) {
+      if (previous.data !== tracked.transformed) return false;
+      this.textChanges.set(previous, {...tracked, transformed: next});
+    } else {
+      this.recordTextResult(previous, previous.data, {text: next, replacements: 0, summaries: []});
+    }
     this.replaceTextKeepingRanges(previous, next);
     return true;
+  }
+
+  private releaseSplitMarkerWaiters(previous: Text): void {
+    const waiters = this.splitMarkerWaiters.get(previous);
+    if (!waiters) return;
+    this.splitMarkerWaiters.delete(previous);
+    for (const waiter of waiters) {
+      if (this.isProcessableRoot(waiter)) this.queue(waiter);
+    }
   }
 
   private isTransformCandidate(input: string): boolean {
@@ -2942,9 +3019,11 @@ export class DomProcessor {
           (this.options.processSubtitles !== true && this.isSubtitleContent(node))) {
         if (node.data === pending.expected) this.restoreText(node, original, true);
         if (this.isProcessableRoot(node)) this.queue(node);
+        this.releaseSplitMarkerWaiters(node);
         return;
       }
       const result = resultOf();
+      this.noteTransformSuccess(node, textTransformFailureKey);
       // Only a still-valid response from this processor/options generation may
       // populate the caption cache. Bound async entries by input and output size.
       if (subtitle && original.length < largeTextTransformThreshold && result.text.length < largeTextTransformThreshold) {
@@ -2991,7 +3070,8 @@ export class DomProcessor {
               if (this.pendingTextTransforms.get(node) !== pending) return;
               this.pendingTextTransforms.delete(node);
               if (node.data === pending.expected) this.restoreText(node, original, true);
-              this.retryTransform(() => {if (this.isProcessableRoot(node)) this.queue(node);});
+              this.retryTransform(node, textTransformFailureKey,
+                () => {if (this.isProcessableRoot(node)) this.queue(node);});
             }, subtitle);
           }
         }
@@ -3194,6 +3274,7 @@ export class DomProcessor {
     }
     if (pending.index < 0) {
       this.pendingTextEdits.delete(node);
+      this.releaseSplitMarkerWaiters(node);
       if (pending.restoring) {
         if (node.isConnected) this.queue(node);
       } else this.recordTextResult(node, pending.original, pending.result);
@@ -3234,6 +3315,8 @@ export class DomProcessor {
   }
 
   private processAccessibleAttributes(element: Element): void {
+    // Most traversed elements carry no attributes at all.
+    if (!element.hasAttributes()) return;
     for (const attributeName of accessibleAttributeNames) {
       this.processAccessibleAttribute(element, attributeName);
     }
@@ -3293,6 +3376,7 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
+          this.noteTransformSuccess(element, attributeName);
           if (this.isProcessableRoot(element) && element.getAttribute(attributeName) === value &&
               !this.isSubtitleContent(element) && shouldProcessAccessibleAttribute(element, attributeName, value)) {
             this.finishAttributeTransform(element, attributeName, value, result);
@@ -3302,7 +3386,8 @@ export class DomProcessor {
           if (this.pendingAttributeTransforms.get(element)?.get(attributeName) !== token) return;
           requests.delete(attributeName);
           if (!requests.size) this.pendingAttributeTransforms.delete(element);
-          this.retryTransform(() => {if (this.isProcessableRoot(element)) this.processAccessibleAttribute(element, attributeName);});
+          this.retryTransform(element, attributeName,
+            () => {if (this.isProcessableRoot(element)) this.processAccessibleAttribute(element, attributeName);});
         })
       );
       return;
@@ -3574,6 +3659,7 @@ export class DomProcessor {
   // zurücknehmen. So erhalten Frameworks auch beim asynchronen Recyceln
   // derselben Node den ursprünglichen Wert zurück.
   private forgetTrackedText(node: Text): void {
+    this.releaseSplitMarkerWaiters(node);
     const pendingTransform = this.pendingTextTransforms.get(node);
     if (pendingTransform) {
       this.pendingTextTransforms.delete(node);

@@ -7,6 +7,7 @@ export function classifyVisibleMarkerNodes(documentRef, options = {}) {
     { id: "binnen-i", expression: /(?<![\p{L}\p{N}])[\p{L}]+Innen(?![\p{L}\p{N}])/gu }
   ];
   const excludedTags = new Set([
+    "HEAD",
     "SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "TEXTAREA",
     "INPUT", "SELECT", "OPTION", "CODE", "PRE", "KBD", "SAMP",
     "VAR", "SVG", "MATH", "CANVAS", "IFRAME", "OBJECT", "EMBED"

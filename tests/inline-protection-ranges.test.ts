@@ -22,15 +22,15 @@ describe("Inline-Schutzbereiche bei vielen und überlappenden Treffern", () => {
 
   it.each(['<code>', '<span contenteditable="true">', '<span data-sprachverstand-ignore>',
     '<span aria-hidden="true">', '<span role="textbox">'])
-    ("trennt Zitate an geschützten Teilbäumen: %s", opening => {
+    ("paart Zitate über geschützte Teilbäume hinweg, ohne deren Text zu lesen: %s", opening => {
       const paragraph = document.createElement("p");
       paragraph.innerHTML = `„Nutzer:innen ${opening}<b>Expert:innen</b></${opening.startsWith('<code') ? 'code' : 'span'}>“ freie Nutzer:innen`;
       document.body.append(paragraph);
       const ranges = collectInlineProtection(paragraph, new Set(["P"]),
         node => node.data, [], true);
       expect(ranges.has(paragraph.querySelector('b')!.firstChild as Text)).toBe(false);
-      expect(ranges.get(paragraph.firstChild as Text)).toEqual([]);
-      expect(ranges.get(paragraph.lastChild as Text)).toEqual([]);
+      expect(ranges.get(paragraph.firstChild as Text)).toEqual([{start: 0, end: "„Nutzer:innen ".length}]);
+      expect(ranges.get(paragraph.lastChild as Text)).toEqual([{start: 0, end: 1}]);
     });
 
   it("berücksichtigt geschützte Shadow-Hosts bei der Prüfung ihrer Nachfahren", () => {

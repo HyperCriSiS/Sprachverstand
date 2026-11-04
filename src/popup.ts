@@ -77,6 +77,14 @@ const popupSections = [
 
 let settings: Settings;
 let activeTabId: number | undefined;
+
+// The local save is what the popup needs; an incomplete browser
+// synchronization is reported by the options page on its next save.
+function persistSettings(): void {
+  saveSettings(settings).catch((error: unknown) => {
+    console.error("Einstellungen wurden nicht vollständig gespeichert.", error);
+  });
+}
 let currentCount = 0;
 let inlineCorrectionsActive = false;
 let currentReplacements: readonly ReplacementSummaryEntry[] = [];
@@ -395,7 +403,7 @@ async function start(): Promise<void> {
 
   enabledInput.addEventListener("change", () => {
     settings = { ...settings, enabled: enabledInput.checked };
-    void saveSettings(settings);
+    persistSettings();
     render();
   });
 
@@ -417,7 +425,7 @@ async function start(): Promise<void> {
           .map((group) => group.id)
           .filter((id) => enabledGroups.has(id))
       };
-      void saveSettings(settings);
+      persistSettings();
     });
   }
 
@@ -426,7 +434,7 @@ async function start(): Promise<void> {
       ...settings,
       processAccessibleAttributes: processAccessibleAttributesInput.checked
     };
-    void saveSettings(settings);
+    persistSettings();
   });
 
   processQuotedTextInput.addEventListener("change", () => {
@@ -434,7 +442,7 @@ async function start(): Promise<void> {
       ...settings,
       processQuotedText: processQuotedTextInput.checked
     };
-    void saveSettings(settings);
+    persistSettings();
   });
 
   processSubtitlesInput.addEventListener("change", () => {
@@ -442,7 +450,7 @@ async function start(): Promise<void> {
       ...settings,
       processSubtitles: processSubtitlesInput.checked
     };
-    void saveSettings(settings);
+    persistSettings();
   });
 
   openReplacementsButton.addEventListener("click", () => {
@@ -475,7 +483,7 @@ async function start(): Promise<void> {
         settings.excludedDomains
       )
     };
-    void saveSettings(settings);
+    persistSettings();
     render();
 
     if (listed) {
