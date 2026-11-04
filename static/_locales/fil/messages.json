@@ -54,7 +54,7 @@
     "message": "Ipinapakita ang switch para i-enable o i-disable ang extension."
   },
   "whereCorrect": {
-    "message": "Saan ilalapat ang mga karagdagang pagwawasto?"
+    "message": "Saan pa dapat magwasto?"
   },
   "whereCorrectPopupDescription": {
     "message": "Ipinapakita nang direkta sa popup ang mga opsyon para sa accessible na label, siniping teksto, at subtitle."
