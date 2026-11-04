@@ -114,17 +114,16 @@ wiederholst du diese Schritte.
 
 ## Thunderbird
 
-Die separate Thunderbird-Ausgabe **0.9.0** gibt es zunächst als
-[GitHub-Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.0).
-Lade `sprachverstand-thunderbird-0.9.0.xpi` und installiere sie in Thunderbird
+Die separate Thunderbird-Ausgabe **0.9.1** gibt es als
+[Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.1).
+Lade `sprachverstand-thunderbird-0.9.1.xpi` und installiere sie in Thunderbird
 unter **Add-ons und Themes → Zahnrad → Add-on aus Datei installieren**.
 Öffne danach Nachrichten neu. Technische Mindestversion ist Thunderbird 128.
 
 Beim Lesen wird nur die Darstellung verändert. Optional lässt sich der
 tatsächliche Text neu geöffneter Antworten und Weiterleitungen einmalig korrigieren;
 die dafür nötige Verfassen-Berechtigung wird erst beim Einschalten angefordert.
-Die Originalmail bleibt erhalten. Eine vollständige reale Versionsmatrix und
-ein Versandtest bis zum Empfänger sind noch offen; Details stehen in den Releasehinweisen.
+Die Originalmail bleibt erhalten.
 Die Thunderbird-Linie wird im geschützten Branch
 [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
 [Datenschutz und Hinweise](https://github.com/HyperCriSiS/Sprachverstand/blob/thunderbird/docs/THUNDERBIRD-PRIVACY.md).
