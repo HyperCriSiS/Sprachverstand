@@ -6,6 +6,8 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--source',default='dist/thunderbird')
 parser.add_argument('--output',default='artifacts/thunderbird-perf-run')
 parser.add_argument('--paragraphs',type=int,default=100)
+parser.add_argument('--format',choices=['html','plain'],default='html')
+parser.add_argument('--unique',action='store_true',help='Prefix each paragraph with a distinct number.')
 args=parser.parse_args()
 root=Path.cwd()
 output=(root/args.output).resolve()
@@ -30,5 +32,7 @@ browser.runtime.onMessage.addListener(m=>{
  }).then(()=>undefined);
 });
 ''',encoding='utf-8')
-(output/'test.eml').write_text('From: qa@example.invalid\nTo: qa@example.invalid\nSubject: Performance fixture\nMIME-Version: 1.0\nContent-Type: text/html; charset=UTF-8\n\n<html><body>'+''.join('<p>Die Nutzer:innen und Mitarbeiter*innen lesen.</p>' for _ in range(args.paragraphs))+'</body></html>',encoding='utf-8')
+paragraphs=[(f'{index+1}. ' if args.unique else '')+'Die Nutzer:innen und Mitarbeiter*innen lesen.' for index in range(args.paragraphs)]
+body='<html><body>'+''.join('<p>'+text+'</p>' for text in paragraphs)+'</body></html>' if args.format=='html' else '\n\n'.join(paragraphs)
+(output/'test.eml').write_text('From: qa@example.invalid\nTo: qa@example.invalid\nSubject: Performance fixture\nMIME-Version: 1.0\nContent-Type: text/'+args.format+'; charset=UTF-8\n\n'+body,encoding='utf-8')
 print('Diagnostic copy prepared:',output)

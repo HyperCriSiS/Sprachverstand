@@ -4,6 +4,7 @@ reports=[]
 class Handler(BaseHTTPRequestHandler):
  def do_POST(self):
   reports.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+  Path('/qa/results-'+os.environ.get('VARIANT','baseline')+'.json').write_text(json.dumps(reports,indent=2))
   self.send_response(200);self.end_headers()
  def log_message(self,*args):pass
 server=HTTPServer(("127.0.0.1",8765),Handler)
@@ -32,7 +33,8 @@ try:
   deadline=time.monotonic()+10
   while len(reports)<=index and time.monotonic()<deadline:time.sleep(.05)
   if len(reports)<=index:raise RuntimeError('No diagnostic report: '+Path('/qa/tb.log').read_text()[-1500:])
-  assert reports[index]['done'] is not None and reports[index]['corrected']==reports[index]['paragraphs'], reports[index]
+  expected=fixture.count(b'Die Nutzer:innen und Mitarbeiter*innen lesen.')
+  assert expected>0 and reports[index]['done'] is not None and reports[index]['corrected']==reports[index]['paragraphs']==expected, reports[index]
   print('REPORT',json.dumps(reports[index]),flush=True)
  Path('/qa/results-'+os.environ.get('VARIANT','baseline')+'.json').write_text(json.dumps(reports,indent=2))
 finally:

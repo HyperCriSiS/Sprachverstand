@@ -20,8 +20,9 @@
   setTimeout(() => {
     check();observer.disconnect();
     browser.runtime.sendMessage({type:'sv-qa-report',injected,done,rawFrames,reads,
+      ...(done === null ? {diagnosticBody:document.body?.outerHTML.slice(0,2000)} : {}),
       paints:performance.getEntriesByType('paint').map(p=>({name:p.name,start:p.startTime})),
-      paragraphs:document.querySelectorAll('p').length,
+      paragraphs:(document.body?.textContent.match(/Die Nutzer(?::innen)? und Mitarbeiter(?:\*innen)? lesen\./g)||[]).length,
       corrected:(document.body?.textContent.match(/Die Nutzer und Mitarbeiter lesen\./g)||[]).length});
   }, 4000);
 })();

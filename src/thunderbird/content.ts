@@ -42,6 +42,7 @@ function applySettings(settings: Settings): Promise<void> {
     reportState(0);
     if (!settings.enabled) return;
     processor = new DomProcessor(document, {
+      textTransformConcurrency: 128,
       // Share the already initialized local background engine between mails.
       transformText: transformTextLocally,
       isTransformCandidate: isBuiltInTransformCandidate,

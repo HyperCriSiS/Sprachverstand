@@ -40,6 +40,8 @@ const singleLetterPattern = /^\p{L}$/u;
 const letterPattern = /\p{L}/u;
 
 export interface DomProcessorOptions {
+  /** Message views may keep more short transforms in flight; batches stay bounded. */
+  readonly textTransformConcurrency?: 32 | 128;
   readonly isTransformCandidate?: (input: string) => boolean;
   readonly transformText?: (input: string, options: TransformOptions, subtitle?: boolean) => Promise<DetailedTransformResult>;
   readonly transformLargeText?: (input: string, options: TransformOptions) => Promise<DetailedTransformResult>;
@@ -3002,12 +3004,13 @@ export class DomProcessor {
   }
 
   private dispatchSmallTransforms(): void {
-    while (this.running && this.activeSmallTransforms < 32) {
+    const limit = this.options.textTransformConcurrency === 128 ? 128 : 32;
+    while (this.running && this.activeSmallTransforms < limit) {
       const hasSubtitle = this.queuedSubtitleTransforms.size > 0;
       // Priority cannot help a new cue when ordinary requests occupy every
       // slot. Keep one slot available while subtitle processing is enabled;
-      // captions still share the existing total limit of 32 requests.
-      if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= 31) return;
+      // captions still share the selected total request limit.
+      if (!hasSubtitle && this.options.processSubtitles === true && this.activeSmallTransforms >= limit - 1) return;
       const queue = hasSubtitle ? this.queuedSubtitleTransforms : this.queuedSmallTransforms;
       if (queue.size === 0) return;
       const first = queue.peek();

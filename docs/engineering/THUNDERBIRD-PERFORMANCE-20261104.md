@@ -51,3 +51,47 @@ mailbox switching and multiple Thunderbird versions need separate native coverag
 Shared-core regression tests cover protection, custom replacements, restoration
 and settings changes through the real transform bridge. No UI hiding is used to
 mask uncorrected content. No product release or tag is created by this work.
+
+## Second optimization round
+
+Compared against the first candidate, commit `0a9cd2f`, in fresh sequential
+Docker runs on the same Thunderbird 153.6.0 image, with networking disabled.
+Each series again contains one cold and five warm message opens. The first
+round's wall-clock numbers are not reused as this round's baseline.
+
+| HTML fixture | Previous cold | New cold | Previous warm median | New warm median | Warm after-paint, previous → new |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 100 repeated paragraphs | 242 | 228 | 130 | 125 | 92 → 80 |
+| 500 repeated paragraphs | 448 | 414 | 331 | 269 | 277 → 224 |
+| 500 individually numbered paragraphs | 395 | 367 | 303 | 270 | 258 → 228 |
+
+The additional reduction is approximately 11–19% on the two long HTML fixtures.
+The 4% change on the shorter fixture is too small to treat as a reliable benefit
+from these samples. Every HTML sample corrected every expected paragraph.
+Raw reports: `artifacts/tb-round2-{before100,pipeline100,before500,pipeline500,before-unique,after-unique}/results-baseline.json`.
+
+Only the Thunderbird message view opts into 128 outstanding short transforms
+instead of 32. This keeps the existing two background batch slots supplied;
+each batch remains limited to 32 entries / 65,536 input characters. Browser
+defaults, one-millisecond DOM slices and the maximum work steps are unchanged.
+Text is neither persisted nor cached between messages. Regression tests cover
+both concurrency limits, late responses after stopping, restart and restoration.
+
+Rejected experiments: a MessageChannel DOM task queue, larger DOM slices and
+immediate dispatch of partial batches. They did not show a consistent additional
+benefit and are absent from the final implementation.
+
+### Existing plaintext display defect discovered by the probe
+
+The new `--format plain --unique` native probe fails on both `0a9cd2f` and the
+second candidate: zero of 100 paragraphs are corrected. Thunderbird renders
+this fixture as `div.moz-text-plain > pre.moz-quote-pre`. The shared text-safety
+policy excludes `PRE` as code. These failed samples are not timing results.
+The harness now checks the expected count against the source fixture and saves
+failed reports with a bounded synthetic DOM excerpt for diagnosis.
+
+Follow-up: handle Thunderbird's native plaintext wrapper without weakening code,
+editable-content or technical-text protection in HTML messages or browsers.
+This existing functional defect is separate from the concurrency optimization;
+it is not repaired or hidden by it. Compose plaintext processing is a separate
+path and is not implicated by this display test.
