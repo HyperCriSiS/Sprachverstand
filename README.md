@@ -16,6 +16,7 @@
   · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
   · <a href="#microsoft-edge">Edge</a>
   · <a href="#opera">Opera</a>
+  · <a href="#thunderbird">Thunderbird</a>
   · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Downloads</a>
 </p>
 
@@ -110,6 +111,23 @@ Klappt das nicht, kannst du das Paket von Hand laden:
 
 So installiert gibt es keine automatischen Updates. Für eine neue Version
 wiederholst du diese Schritte.
+
+## Thunderbird
+
+Die separate Thunderbird-Ausgabe **0.9.0** gibt es zunächst als
+[GitHub-Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.0).
+Lade `sprachverstand-thunderbird-0.9.0.xpi` und installiere sie in Thunderbird
+unter **Add-ons und Themes → Zahnrad → Add-on aus Datei installieren**.
+Öffne danach Nachrichten neu. Technische Mindestversion ist Thunderbird 128.
+
+Beim Lesen wird nur die Darstellung verändert. Optional lässt sich der
+tatsächliche Text neu geöffneter Antworten und Weiterleitungen einmalig korrigieren;
+die dafür nötige Verfassen-Berechtigung wird erst beim Einschalten angefordert.
+Die Originalmail bleibt erhalten. Eine vollständige reale Versionsmatrix und
+ein Versandtest bis zum Empfänger sind noch offen; Details stehen in den Releasehinweisen.
+Die Thunderbird-Linie wird im geschützten Branch
+[`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
+[Datenschutz und Hinweise](https://github.com/HyperCriSiS/Sprachverstand/blob/thunderbird/docs/THUNDERBIRD-PRIVACY.md).
 
 ## Was wird verändert – und was bleibt stehen?
 

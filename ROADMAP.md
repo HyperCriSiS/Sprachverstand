@@ -2,6 +2,12 @@
 
 > Strategische Projektplanung. Der aktuelle operative Übergabestand mit aktiven PRs, Blockern und unmittelbaren nächsten Schritten liegt in `docs/engineering/CURRENT-WORK.md`.
 
+## Thunderbird
+
+- [x] Separate geschützte Thunderbird-Linie und erste GitHub-Ausgabe 0.9.0 mit eigener CI, XPI, Quellpaket und Prüfsummen veröffentlichen.
+- [ ] Echte Thunderbird-Versionsmatrix und Versand der optionalen Entwurfskorrektur bis zum Empfänger prüfen; anschließend Storeeinreichung vorbereiten.
+- Implementierung und branchspezifischer Prüfstand: [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird). Projektweite Planung bleibt auf `main`.
+
 ## Regel- und Lexikonausbau
 
 Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regressionsgesichert und quellenneutral. Recherche-, Rohquellen- und Herkunftsdaten, die nicht für das öffentliche Produkt bestimmt sind, bleiben in einem getrennten autorisierten Arbeitsbereich; in dieses Repository gelangen nur eigenständig entwickelte Regeln, quellenneutrale Produktdaten und Tests.
