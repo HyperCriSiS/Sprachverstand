@@ -2669,8 +2669,8 @@ export class DomProcessor {
   private processTextNode(node: Text, subtitleOverride?: boolean, budgeted = false): void {
     // Preserve dirty flags and tracked originals until the complete context
     // is ready. Partially populated caches must never authorize a correction.
-    if (budgeted && this.requiresInlineProtection() && this.shouldProcessTextNode(node) &&
-        !this.isSubtitleContent(node) && this.isTransformCandidate(this.originalTextValue(node)) &&
+    if (budgeted && this.requiresInlineProtection() && this.isTransformCandidate(this.originalTextValue(node)) &&
+        this.shouldProcessTextNode(node) && !this.isSubtitleContent(node) &&
         this.deferInlineProtection(node)) return;
     const contextDirty = this.contextDirtyNodes.delete(node);
     const pendingTransform = this.pendingTextTransforms.get(node);
@@ -2715,6 +2715,15 @@ export class DomProcessor {
     }
     this.revertLeadingContextEdit(node);
 
+    const original = originalFromContext ?? node.data;
+    const candidate = this.isTransformCandidate(original);
+    // Most text of a page or mail is no candidate. Without a tracked original
+    // to restore, the string test alone decides; the ancestor protection and
+    // caption walks below only matter for text that may change.
+    if (!candidate && originalFromContext === undefined) {
+      return;
+    }
+
     if (!this.shouldProcessTextNode(node)) {
       return;
     }
@@ -2724,8 +2733,7 @@ export class DomProcessor {
       return;
     }
 
-    const original = originalFromContext ?? node.data;
-    if (!this.isTransformCandidate(original)) {
+    if (!candidate) {
       if (originalFromContext !== undefined) this.restoreText(node, original, budgeted);
       return;
     }
@@ -2854,6 +2862,8 @@ export class DomProcessor {
   // The page changed or replaced the noun: the article goes back to its
   // value before the edit and is computed again with the new noun.
   private revertLeadingContextEdit(node: Text): void {
+    // Avoid the inline sibling walk when no context edit exists at all.
+    if (this.leadingContextEdits.size === 0) return;
     let source: Text | undefined = node;
     if (!this.leadingContextEdits.has(node)) {
       const previous = this.previousInlineText(node);
@@ -3237,6 +3247,9 @@ export class DomProcessor {
   }
 
   private processAccessibleAttributes(element: Element): void {
+    // Most elements carry no attribute at all: every lookup below would read
+    // null, and without an own tracked change there is nothing to release.
+    if (!element.hasAttributes() && !this.attributeChanges.has(element)) return;
     for (const attributeName of accessibleAttributeNames) {
       this.processAccessibleAttribute(element, attributeName);
     }

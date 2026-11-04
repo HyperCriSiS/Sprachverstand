@@ -19,7 +19,8 @@ unless `-e VARIANT=name` is provided. Use separate prepared output directories f
 each build. `--source` selects a previously built baseline; it must be an ordinary,
 uninstrumented build directory. `--paragraphs` supports 1–500. Use `--unique`
 for individually numbered paragraphs and `--format plain` for a MIME plaintext
-fixture. Failed samples are also saved; they are not valid timing results.
+fixture. `--marked-every N` keeps markers in every Nth paragraph only
+and fills the rest with ordinary prose, closer to real mail. Failed samples are also saved; they are not valid timing results.
 
 The diagnostic copy adds a localhost-only test permission and instrumentation.
 It must never be uploaded as a product package. `dist/thunderbird` is not modified.

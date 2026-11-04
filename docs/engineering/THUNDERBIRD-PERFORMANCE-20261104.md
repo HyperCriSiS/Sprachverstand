@@ -95,3 +95,39 @@ editable-content or technical-text protection in HTML messages or browsers.
 This existing functional defect is separate from the concurrency optimization;
 it is not repaired or hidden by it. Compose plaintext processing is a separate
 path and is not implicated by this display test.
+
+## Third optimization round: ordinary text first
+
+Profiling: the Gecko profiler (`MOZ_PROFILER_STARTUP`, dumped through
+Marionette) in the same Docker image. On the all-marked 500-paragraph fixture
+the background rule engine needs roughly 0.25 ms and the message document
+roughly 0.3 ms of CPU per paragraph; both run in parallel. Neither side has a
+single dominant hotspot: the engine cost is spread over several rules and
+lexicon lookups, the document cost over traversal checks and `replaceData`.
+
+Real mails consist mostly of ordinary prose that the candidate filter rejects.
+Before this round, each such text node still walked its ancestors twice
+(protection and caption checks) before the cheap string test ran. The
+DomProcessor now applies the string test first when no tracked original must be
+restored, skips the inline sibling walk when no leading-context edit exists, and
+skips the accessible-attribute lookups for elements without any attribute and
+without an own tracked change. All three shortcuts return exactly where the
+previous order returned; they are shared with the browser builds.
+
+New fixture option: `--marked-every 10` (every tenth paragraph has markers, the
+others are ordinary prose). Commit `b9f187f` against the candidate, alternating
+runs, one cold and five warm opens each:
+
+| Fixture | `b9f187f` warm medians | Candidate warm medians |
+| --- | --- | --- |
+| 500 paragraphs, every 10th marked | 165, 165, 150, 159, 148 | 137, 123, 134, 129, 123 |
+| 100 paragraphs, every 10th marked | 92, 107, 87 | 84, 103, 97 |
+| 500 numbered paragraphs, all marked | 286, 270 | 268, 287, 275 |
+| 100 repeated paragraphs, all marked | 127 | 131 |
+
+On the long mixed mail the median of medians drops from 159 to 129 ms (about
+19%); content-script CPU per open drops from roughly 75 to 55 ms. Short mixed
+mails and all-marked mails show no difference beyond run-to-run noise, as
+expected: the shortcuts only skip work for non-candidate text. These runs used
+an additional diagnostic trace (message timing and task counts); it adds equal
+overhead to both builds and is not part of the repository harness.
