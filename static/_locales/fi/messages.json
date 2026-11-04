@@ -54,7 +54,7 @@
     "message": "Näyttää kytkimen, jolla laajennus otetaan käyttöön tai poistetaan käytöstä."
   },
   "whereCorrect": {
-    "message": "Missä lisäkorjauksia tehdään?"
+    "message": "Missä muualla korjataan?"
   },
   "whereCorrectPopupDescription": {
     "message": "Näyttää esteettömien nimikkeiden, lainatun tekstin ja tekstitysten asetukset suoraan ponnahdusvalikossa."

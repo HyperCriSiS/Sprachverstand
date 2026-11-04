@@ -54,7 +54,7 @@
     "message": "Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein."
   },
   "whereCorrect": {
-    "message": "Wo sollen zusätzliche Korrekturen gelten?"
+    "message": "Wo soll außerdem korrigiert werden?"
   },
   "whereCorrectPopupDescription": {
     "message": "Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup."
