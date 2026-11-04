@@ -56,7 +56,8 @@
     "lexicon:compile": "node scripts/compile-person-lexicon.mjs",
     "benchmark:lexicon": "node scripts/benchmark-lexicon.mjs",
     "benchmark:dom": "vitest run --config vitest.performance.config.ts",
-    "lexicon:approve": "node scripts/lexicon-approve.mjs"
+    "lexicon:approve": "node scripts/lexicon-approve.mjs",
+    "build:thunderbird": "node scripts/build.mjs --target thunderbird"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

@@ -1,0 +1,94 @@
+name: Thunderbird
+
+on:
+  push:
+    branches: [thunderbird, feature/thunderbird-draft]
+    tags: ['thunderbird-v*']
+  pull_request:
+    branches: [thunderbird]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thunderbird-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Thunderbird-Prüfung
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Quellstand und Tag prüfen
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            EXPECTED="thunderbird-v$(node -p 'require("./package.json").version')"
+            test "$GITHUB_REF_NAME" = "$EXPECTED"
+            git merge-base --is-ancestor HEAD origin/thunderbird
+          fi
+      - run: npm run audit:public
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run validate:locales
+      - run: npm run changelog:check
+      - run: npm run build:thunderbird
+      - name: XPI und Quellpaket erzeugen und prüfen
+        run: python3 scripts/package-thunderbird.py
+      - name: Quellpaket unabhängig nachbauen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/thunderbird-rebuild
+          unzip -q artifacts/thunderbird-release/*-source.zip -d artifacts/thunderbird-rebuild
+          cd artifacts/thunderbird-rebuild
+          npm ci --no-audit --no-fund
+          npm run build:thunderbird
+          cd ../..
+          diff -qr dist/thunderbird artifacts/thunderbird-rebuild/dist/thunderbird
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: thunderbird-packages
+          path: artifacts/thunderbird-release/*
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Thunderbird-Release
+    if: startsWith(github.ref, 'refs/tags/thunderbird-v')
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Geprüfte Pakete herunterladen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name thunderbird-packages --dir artifacts/release
+      - name: Prüfsummen prüfen
+        working-directory: artifacts/release
+        run: sha256sum --check SHA256SUMS
+      - name: GitHub-Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p 'require("./package.json").version')"
+          gh release create "$GITHUB_REF_NAME" artifacts/release/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --latest=false \
+            --title "Sprachverstand $VERSION – Thunderbird" \
+            --notes-file "docs/releases/thunderbird-$VERSION.md"
