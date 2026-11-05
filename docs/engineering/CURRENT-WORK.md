@@ -1,12 +1,14 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-11-04  
+Stand: 2026-11-05  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
 
-## Thunderbird 0.9.1
+## Thunderbird 0.9.3
 
+- Version 0.9.3: [PR #606](https://github.com/HyperCriSiS/Sprachverstand/pull/606) integriert (`f8c1600`), übernimmt den Stand von `main` bis #601 (Überschrift „Wo soll außerdem korrigiert werden?“, Popup-Startansicht „Beim Öffnen anzeigen“, vollständige Paarformen, Schutzregeln der Browser-Überprüfung). [Release `thunderbird-v0.9.3`](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.3); XPI-Inhalt gegen den Tag geprüft (Provenienz `f8c1600`, Optionsseite und `de`-Locale enthalten beide Texte).
+- Version 0.9.2: [PR #604](https://github.com/HyperCriSiS/Sprachverstand/pull/604) integriert (`3a7a731`), nur die Startbeschleunigung aus #600, **ohne** den Stand von `main`. Wer 0.9.2 installiert hat, sieht die neue Überschrift und die Startansicht nicht; aus Datei installierte XPIs aktualisieren sich nicht selbst. Abhilfe: 0.9.3 installieren.
 - Version 0.9.1: [PR #598](https://github.com/HyperCriSiS/Sprachverstand/pull/598) integriert (`28b0471`), Versionsangaben und öffentliche Beschreibungen angepasst, keine funktionalen Änderungen. Release Notes vorab vom Nutzer freigegeben. [Release `thunderbird-v0.9.1`](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.1).
 
 - Eigene Thunderbird-Linie auf Nutzerwunsch in `thunderbird`, Basis Browser 0.9.0; [PR #596](https://github.com/HyperCriSiS/Sprachverstand/pull/596) integriert (`d70aba4`). `main` bleibt Browser 0.9.1.
