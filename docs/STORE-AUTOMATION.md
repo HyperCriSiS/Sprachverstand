@@ -13,8 +13,7 @@ Jede Release-Datei enthält exakt die 51 Store-Locales. Aus dieser Quelle erzeug
 
 - 29 lokalisierte AMO-Release-Notes (`store/generated/amo-release-notes.json`),
 - AMO-Metadaten,
-- Chrome-Dashboard-Texte für 51 Locales ohne Abschnitt „Neu in …“,
-- Edge-/Opera-Arbeitslisten.
+- Chrome-Dashboard-Texte für 51 Locales ohne Abschnitt „Neu in …“.
 
 Der Release-Workflow erzeugt diese Dateien für die Version des Tags, veröffentlicht sie aber nicht als normale GitHub-Release-Downloads. Öffentliche Releases enthalten nur die eigentlichen Distributionspakete, Source-ZIP, Prüfsummen und Provenienz. Store-Arbeitsdateien, Dashboard-Texte und Submission-Hilfen werden getrennt als kurzlebiges GitHub-Actions-Artefakt abgelegt. Fehlen Release-Notes für eine stabile moderne Version, darf der Release nicht erfolgreich durchlaufen.
 

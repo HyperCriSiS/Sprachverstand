@@ -38,9 +38,7 @@ Nach Abschluss der Übersetzungsphase verlangt der Validator exakt 51 Vollbeschr
 `npm run store:generate` erzeugt reproduzierbare Arbeitsdateien unter `store/generated/`:
 
 - AMO-Metadaten für die aktuell von AMO unterstützte Schnittmenge der Sprachverstand-Locales,
-- eine Chrome-Dashboard-Arbeitsdatei für alle 51 Locales,
-- eine Edge-Arbeitsdatei für alle 51 Locales,
-- eine Opera-Arbeitsdatei für alle 51 Locales.
+- eine Chrome-Dashboard-Arbeitsdatei für alle 51 Locales.
 
 Die erzeugten Dateien sind keine zusätzlichen Quellen. Änderungen werden ausschließlich in `_locales` und `store/listings` gepflegt und danach neu erzeugt.
 

@@ -7,16 +7,12 @@ aus dem die beigefügten Pakete gebaut wurden.
 ## Enthaltene Pakete
 
 - `sprachverstand-<release>-chromium.zip`
-- `sprachverstand-<release>-edge.zip`
-- `sprachverstand-<release>-opera.zip`
 - `sprachverstand-<release>-firefox.xpi`
 - `sprachverstand-<release>-source.zip`
 - `SHA256SUMS.txt`
 - `SOURCE_COMMIT.txt`
 - `BETA-TEST.md`
 - `AMO-SOURCE-INSTRUCTIONS.md`
-- `EDGE-SUBMISSION.md`
-- `OPERA-SUBMISSION.md`
 
 ## Prüfsummen und Commit kontrollieren
 
@@ -28,7 +24,7 @@ Unter Windows können die Werte mit
 `Get-FileHash -Algorithm SHA256 DATEINAME` verglichen werden.
 
 Der Inhalt von `SOURCE_COMMIT.txt` muss mit dem Commit des getesteten Tags
-übereinstimmen. Chromium-, Edge-, Opera-, Firefox- und Quellpaket müssen aus
+übereinstimmen. Chromium-, Firefox- und Quellpaket müssen aus
 diesem Commit stammen.
 
 ## Desktop installieren
@@ -41,25 +37,9 @@ diesem Commit stammen.
 4. **Entpackte Erweiterung laden** wählen.
 5. Den entpackten Ordner auswählen.
 
-### Microsoft Edge
-
-1. Edge-ZIP entpacken.
-2. `edge://extensions` öffnen.
-3. Entwicklermodus aktivieren.
-4. **Entpackt laden** wählen.
-5. Den entpackten Edge-Ordner auswählen.
-
-### Opera
-
-1. Opera-ZIP entpacken.
-2. `opera:extensions` öffnen.
-3. Entwicklermodus aktivieren.
-4. **Load unpacked extension** wählen.
-5. Den entpackten Opera-Ordner auswählen.
-
-Für Opera zusätzlich mindestens einen Test mit gedrosselter Verbindung
-durchführen. Vor der Store-Einreichung gelten außerdem die Prüfungen aus
-[`OPERA-SUBMISSION.md`](OPERA-SUBMISSION.md).
+Microsoft Edge, Opera und andere Chromium-Browser laden dasselbe Chromium-ZIP
+auf die gleiche Weise über `edge://extensions` beziehungsweise
+`opera://extensions`.
 
 ### Firefox und Waterfox
 

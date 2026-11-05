@@ -14,8 +14,6 @@ assert(tag === "preflight" || /^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/u.test(tag),
 const prefix = path.join(dir, "sprachverstand-" + label);
 const files = {
   chromium: prefix + "-chromium.zip",
-  edge: prefix + "-edge.zip",
-  opera: prefix + "-opera.zip",
   firefox: prefix + "-firefox.xpi",
   source: prefix + "-source.zip"
 };
@@ -32,7 +30,7 @@ function json(file, entry) {
 }
 const required = ["manifest.json", "content.js", "background.js",
   "popup/popup.html", "options/options.html", "_locales/de/messages.json"];
-for (const target of ["chromium", "edge", "opera", "firefox"]) {
+for (const target of ["chromium", "firefox"]) {
   const entries = list(files[target]);
   for (const name of required) {
     assert(entries.includes(name), target + ": Datei fehlt: " + name);
@@ -50,16 +48,6 @@ for (const target of ["chromium", "edge", "opera", "firefox"]) {
     assert(manifest.background?.service_worker, target + ": Service Worker fehlt");
   }
 }
-const chromiumEntries = list(files.chromium).filter((entry) => entry !== "manifest.json");
-for (const target of ["edge", "opera"]) {
-  const candidates = list(files[target]).filter((entry) => entry !== "manifest.json");
-  assert.deepEqual(candidates, chromiumEntries,
-    target + ": Dateiliste unterscheidet sich vom Chromium-Build");
-  for (const entry of chromiumEntries) {
-    assert.deepEqual(read(files[target], entry), read(files.chromium, entry),
-      target + ": Dateiinhalt weicht von Chromium ab: " + entry);
-  }
-}
 const sourceEntries = list(files.source);
 for (const name of ["package.json", "package-lock.json", "SOURCE_COMMIT.txt",
   "RELEASE_PROVENANCE.txt", "store/release-notes/" + version + ".json"]) {
@@ -72,7 +60,7 @@ for (const [name, value] of [["Paket", pkg.version], ["Lock", lock.version],
   ["Lock-Wurzel", lock.packages?.[""]?.version], ["Release-Notes", notes.version]]) {
   assert.equal(value, version, name + ": Versionsabweichung");
 }
-for (const target of ["chromium", "edge", "opera", "firefox"]) {
+for (const target of ["chromium", "firefox"]) {
   const sourceManifest = json(files.source, "manifests/" + target + ".json");
   assert.equal(sourceManifest.version, version, target + ": Quellversion weicht ab");
   assert.deepEqual(sourceManifest, json(files[target], "manifest.json"),
@@ -83,7 +71,7 @@ assert.equal(read(files.source, "SOURCE_COMMIT.txt").toString("utf8").trim(), co
 const provenance = read(files.source, "RELEASE_PROVENANCE.txt").toString("utf8");
 for (const value of ["Produktlinie: modern", "Tag: " + tag, "Commit: " + commit,
   "Version: " + version, "git archive", "package.json", "package-lock.json",
-  "manifests/edge.json", "manifests/opera.json"]) {
+  "manifests/chromium.json", "manifests/firefox.json"]) {
   assert(provenance.includes(value), "Provenienz fehlt: " + value);
 }
-console.log("Alle fünf modernen Archive validiert: " + version + ", " + tag);
+console.log("Alle drei modernen Archive validiert: " + version + ", " + tag);

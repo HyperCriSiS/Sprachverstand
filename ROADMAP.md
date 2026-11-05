@@ -44,7 +44,7 @@ Ziel: Sprachverstand erweitert seine Regeln und Personenformen konservativ, regr
 
 **Phase 2 – Moderne Browser-Releases**:
 
-- [ ] Chromium/Chrome, Firefox und die weiteren vorgesehenen modernen Browserziele (Edge, Opera, soweit Releasekanäle vorbereitet sind) mit finalem Quellenschluss, CI, Browser-, Video- und Untertitelregression prüfen.
+- [ ] Chromium/Chrome und Firefox mit finalem Quellenschluss, CI, Browser-, Video- und Untertitelregression prüfen.
 - [ ] Versions-/Paket-/Store-Metadaten sowie die geplanten Store-Freigaben und Veröffentlichungen abschließen bzw. deren externe Freigabe dokumentieren.
 
 **Phase 3 – Pale Moon ausdrücklich zuletzt**:
@@ -133,8 +133,7 @@ Ziel: Sprachverstand wird technisch und inhaltlich für 51 WebExtension-Locales 
 - [x] Chrome Web Store: globale Screenshots weiterverwenden; lokalisierte Screenshots nur bei messbarem Bedarf.
 - [ ] Chrome Web Store: lokale Langbeschreibungen für alle unterstützten Locales im Developer Dashboard hinterlegen.
 - [x] Chrome Web Store API V2 für Paket-Upload, Status und Veröffentlichung vorbereiten; Listing-Metadaten bleiben Dashboard-Aufgabe.
-- [x] Microsoft Edge Add-ons: lokalisierte Store-Texte und wiederverwendete Bildassets vorbereiten.
-- [x] Opera Add-ons: lokalisierte Store-Texte soweit vom Store unterstützt vorbereiten.
+- Microsoft Edge Add-ons und Opera Add-ons: kein eigener Store-Eintrag (Entscheidung 04.11.2026). Edge, Opera und andere Chromium-Browser installieren aus dem Chrome Web Store; Releases enthalten ein gemeinsames Chromium-ZIP.
 - [x] Firefox AMO: eigene, geprüfte Store-Texte für 29 Quellsprachen bereitstellen und auf 34 produktive Listing-Locales abbilden.
 - [x] Firefox AMO: bestehende v5-API-Helfer um Listing-Status und explizit freigegebenes Listing-Update erweitern.
 - [ ] Firefox AMO: 34 lokalisierte Kurz- und Langbeschreibungen nach expliziter Store-Freigabe in das bestehende Live-Listing einspielen.

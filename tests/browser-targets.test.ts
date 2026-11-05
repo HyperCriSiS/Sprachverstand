@@ -9,8 +9,6 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
 const chromiumManifest = JSON.parse(
   readFileSync("manifests/chromium.json", "utf8")
 );
-const edgeManifest = JSON.parse(readFileSync("manifests/edge.json", "utf8"));
-const operaManifest = JSON.parse(readFileSync("manifests/opera.json", "utf8"));
 const firefoxManifest = JSON.parse(
   readFileSync("manifests/firefox.json", "utf8")
 );
@@ -47,20 +45,15 @@ describe("Browser-Ziele", () => {
     );
   });
 
-  it("hält Edge und Opera auf derselben minimalen Chromium-Berechtigungsbasis", () => {
-    for (const manifest of [chromiumManifest, edgeManifest, operaManifest]) {
-      expect(manifest.manifest_version).toBe(3);
-      expect(manifest.version).toBe(packageJson.version);
-      expect(manifest.permissions).toEqual(["storage"]);
-      expect(manifest.content_scripts).toHaveLength(1);
-      expect(manifest.content_scripts[0].matches).toEqual(["<all_urls>"]);
-      expect(manifest.background).toEqual({ service_worker: "background.js" });
-      expect(manifest.minimum_chrome_version).toBe("148");
-      expect(manifest.browser_specific_settings).toBeUndefined();
-    }
-
-    expect(edgeManifest).toEqual(chromiumManifest);
-    expect(operaManifest).toEqual(chromiumManifest);
+  it("hält die Chromium-Familie auf einer minimalen Berechtigungsbasis", () => {
+    expect(chromiumManifest.manifest_version).toBe(3);
+    expect(chromiumManifest.version).toBe(packageJson.version);
+    expect(chromiumManifest.permissions).toEqual(["storage"]);
+    expect(chromiumManifest.content_scripts).toHaveLength(1);
+    expect(chromiumManifest.content_scripts[0].matches).toEqual(["<all_urls>"]);
+    expect(chromiumManifest.background).toEqual({ service_worker: "background.js" });
+    expect(chromiumManifest.minimum_chrome_version).toBe("148");
+    expect(chromiumManifest.browser_specific_settings).toBeUndefined();
   });
 
   it("behält Firefox als bewusst getrennten WebExtension-Build", () => {
@@ -102,14 +95,13 @@ describe("Browser-Ziele", () => {
     expect(releaseWorkflow.toLowerCase()).not.toContain("orion");
   });
 
-  it("baut Edge- und Opera-ZIPs aus der gemeinsamen Chromium-Basis", () => {
+  it("veröffentlicht ein Chromium-ZIP für die ganze Chromium-Familie", () => {
     expect(releaseWorkflow).toContain("dist/chromium");
     expect(releaseWorkflow).toContain("-chromium.zip");
     expect(releaseWorkflow).not.toContain("dist/edge");
     expect(releaseWorkflow).not.toContain("dist/opera");
-    expect(releaseWorkflow).toContain("-edge.zip");
-    expect(releaseWorkflow).toContain("-opera.zip");
-    expect(releaseWorkflow).toContain('cp -a dist/chromium/. "$TARGET_DIR/"');
+    expect(releaseWorkflow).not.toContain("-edge.zip");
+    expect(releaseWorkflow).not.toContain("-opera.zip");
   });
 
   it("prüft standardmäßig nur die tatsächlich erzeugten Icon-Verzeichnisse", () => {
@@ -165,7 +157,6 @@ describe("Browser-Ziele", () => {
       "Firefox",
       "Waterfox",
       "LibreWolf",
-      "Zen Browser",
       "Floorp",
       "Google Chrome",
       "Chromium",

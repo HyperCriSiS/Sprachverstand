@@ -190,7 +190,7 @@ jobs:
 
           const manifestPaths = process.env.PRODUCT_LINE === "palemoon"
             ? ["manifests/chromium.json", "manifests/firefox.json"]
-            : ["manifests/chromium.json", "manifests/edge.json", "manifests/opera.json", "manifests/firefox.json"];
+            : ["manifests/chromium.json", "manifests/firefox.json"];
 
           for (const path of manifestPaths) {
             const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
@@ -205,7 +205,7 @@ jobs:
           const expected = process.env.VERSION;
           const manifestNames = process.env.PRODUCT_LINE === "palemoon"
             ? ["chromium", "firefox"]
-            : ["chromium", "edge", "opera", "firefox"];
+            : ["chromium", "firefox"];
           const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
           const packageLock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
           const manifests = manifestNames.map((name) =>
@@ -266,35 +266,19 @@ jobs:
               cd dist/firefox
               zip -qr "../../artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" .
             )
-            for target in edge opera; do
-              TARGET_DIR=$(mktemp -d)
-              cp -a dist/chromium/. "$TARGET_DIR/"
-              cp "manifests/${target}.json" "$TARGET_DIR/manifest.json"
-              (
-                cd "$TARGET_DIR"
-                zip -qr "$GITHUB_WORKSPACE/artifacts/public/sprachverstand-${ASSET_LABEL}-${target}.zip" .
-              )
-              rm -rf "$TARGET_DIR"
-            done
             VERSION_FILES=(
               package.json
               package-lock.json
               manifests/chromium.json
-              manifests/edge.json
-              manifests/opera.json
               manifests/firefox.json
             )
 
             cp docs/BETA-TEST.md artifacts/internal/
             cp docs/AMO-SOURCE-INSTRUCTIONS.md artifacts/internal/
-            cp docs/EDGE-SUBMISSION.md artifacts/internal/
-            cp docs/OPERA-SUBMISSION.md artifacts/internal/
             cp store/generated/amo-metadata.json artifacts/internal/
             cp store/generated/amo-release-notes.json artifacts/internal/
             cp store/generated/chrome-dashboard.csv artifacts/internal/
             cp store/generated/chrome-dashboard.html artifacts/internal/
-            cp store/generated/edge-worklist.csv artifacts/internal/
-            cp store/generated/opera-worklist.csv artifacts/internal/
           else
             (
               cd dist/palemoon
@@ -326,8 +310,8 @@ jobs:
           Commit: ${RELEASE_SHA}
           Version: ${VERSION}
           Ausgangsbasis: git archive des angegebenen Commits.
-          Vorbereitung: Ausschließlich Versionsfelder der folgenden sechs Dateien angepasst.
-          Versionsdateien: package.json, package-lock.json, manifests/chromium.json, manifests/edge.json, manifests/opera.json, manifests/firefox.json
+          Vorbereitung: Ausschließlich Versionsfelder der folgenden vier Dateien angepasst.
+          Versionsdateien: package.json, package-lock.json, manifests/chromium.json, manifests/firefox.json
           EOF
           fi
           (
@@ -347,8 +331,6 @@ jobs:
           if [[ "$PRODUCT_LINE" == "modern" ]]; then
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-chromium.zip"
             unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-edge.zip"
-            unzip -t "artifacts/public/sprachverstand-${ASSET_LABEL}-opera.zip"
             if unzip -l "artifacts/public/sprachverstand-${ASSET_LABEL}-firefox.xpi" | grep -q 'META-INF/'; then
               echo "Das AMO-Einreichungspaket darf vor der Mozilla-Signierung kein META-INF-Signaturverzeichnis enthalten."
               exit 1
