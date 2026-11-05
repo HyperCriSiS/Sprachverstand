@@ -22,8 +22,6 @@ Erzeugt werden:
 - `amo-worklist.csv`
 - `chrome-dashboard.csv`
 - `chrome-dashboard.html`
-- `edge-worklist.csv`
-- `opera-worklist.csv`
 
 Die CI prüft mit `npm run validate:store-exports`, dass sämtliche Quelldaten und Zuordnungen vollständig generierbar sind.
 
@@ -42,7 +40,7 @@ Regionale AMO-Varianten verwenden passende gemeinsame Quelltexte:
 - `zh_CN` → `zh-CN`
 - `zh_TW` → `zh-TW`
 
-Die AMO-spezifischen Beschreibungen sind kompakter als die gemeinsamen Chrome-/Edge-/Opera-Texte. Technische Aussagen und Funktionsumfang bleiben konsistent; eingebettete SEO-Tagblöcke sind nicht erlaubt.
+Die AMO-spezifischen Beschreibungen sind kompakter als die gemeinsamen Chrome-Texte. Technische Aussagen und Funktionsumfang bleiben konsistent; eingebettete SEO-Tagblöcke sind nicht erlaubt.
 
 `amo-metadata.json` enthält:
 
@@ -64,20 +62,6 @@ AMO_ADDON_ID='…' npm run amo:listing-status
 Ein Live-Update des Listings ist vorbereitet, wird aber niemals automatisch durch den Store-Publishing-Workflow ausgelöst. Der schreibende Befehl verlangt API-Zugangsdaten und zusätzlich `AMO_LISTING_APPROVAL=AMO-LISTING-UPDATE:<AMO_ADDON_ID>`.
 
 Die AMO-Locale-Liste ist eine Store-Eigenschaft und kann sich unabhängig von den unterstützten Firefox-Sprachen ändern. Deshalb validiert der Generator die 29 Quelltexte und die 34 Ziel-Locales ausdrücklich.
-
-## Microsoft Edge Add-ons
-
-Edge erkennt die im Paket enthaltenen Sprachen aus Manifest und `_locales`. Für jede angelegte Store-Sprache ist eine Vollbeschreibung erforderlich.
-
-`edge-worklist.csv` enthält alle 51 vorhandenen Kurz- und Vollbeschreibungen als Übertragungshilfe. Die Datei ist **kein offiziell zugesichertes Edge-Importformat**.
-
-Bildassets werden nicht pro Sprache dupliziert. Im Partner Center wird das vorhandene Logo bzw. der vorhandene Screenshot über die Funktion **Duplizieren** auf die anderen Sprachen übernommen.
-
-## Opera Add-ons
-
-`opera-worklist.csv` enthält dieselben 51 geprüften Texte als Arbeitsgrundlage für die von Opera angebotenen lokalen Store-Felder.
-
-Da für Opera kein verlässliches offizielles Massenimportformat vorausgesetzt wird, ist die CSV ausdrücklich nur eine Übertragungs- und Kontrollhilfe.
 
 ## Chrome Web Store
 

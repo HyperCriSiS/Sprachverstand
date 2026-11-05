@@ -103,7 +103,7 @@ aus dem Chrome Web Store:
 
 Klappt das nicht, kannst du das Paket von Hand laden:
 
-1. Lade `sprachverstand-<version>-opera.zip` aus dem
+1. Lade `sprachverstand-<version>-chromium.zip` aus dem
    [aktuellen Release](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
    und entpacke es in einen Ordner, den du behältst.
 2. Schalte unter `opera://extensions` den **Entwicklermodus** ein.
@@ -187,11 +187,12 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 
 <h3>Gecko</h3>
 
+<p><strong>Getestet</strong></p>
+
 <p>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Firefox-FF7139?logo=firefoxbrowser&logoColor=white" alt="Firefox"></a>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Waterfox-5D5FEF?logo=firefoxbrowser&logoColor=white" alt="Waterfox"></a>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/LibreWolf-00ACFF?logo=librewolf&logoColor=white" alt="LibreWolf"></a>
-  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Zen%20Browser-111111?logo=zenbrowser&logoColor=white" alt="Zen Browser"></a>
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/"><img src="https://img.shields.io/badge/Floorp-58A6FF?logo=floorp&logoColor=white" alt="Floorp"></a>
 </p>
 
@@ -201,13 +202,20 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 
 <h3>Blink / Chromium</h3>
 
+<p><strong>Getestet</strong></p>
+
 <p>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Google%20Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Google Chrome"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Chromium-4285F4?logo=chromium&logoColor=white" alt="Chromium"></a>
-  <a href="#microsoft-edge"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
   <a href="#opera"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Brave-FB542B?logo=brave&logoColor=white" alt="Brave"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Vivaldi-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi"></a>
+</p>
+
+<p><strong>Sollte laufen, nicht eigens getestet</strong></p>
+
+<p>
+  <a href="#microsoft-edge"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Arc-FCBFBD?logo=arc&logoColor=black" alt="Arc"></a>
 </p>
 
@@ -227,16 +235,21 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 
 </div>
 
-Firefox und Chromium bilden die Basis für die jeweiligen Browserfamilien. Die
-aufgeführten Browser verwenden den entsprechenden Erweiterungs-Build; nicht jeder
-Browser wird separat getestet. Pale Moon erhält einen eigenständig gepflegten Port.
+Firefox und Chromium werden bei jeder Änderung automatisch in echten Browsern
+getestet. Waterfox, LibreWolf, Floorp, Opera, Brave und Vivaldi wurden im
+November 2026 unter Windows mit demselben Browsertest geprüft. Microsoft Edge
+und Arc verwenden denselben Chromium-Build und sollten ebenso funktionieren; wir
+testen sie aber nicht selbst. In Zen Browser 1.24b wird Sprachverstand derzeit
+geladen, verändert aber keine Texte; das untersuchen wir noch. Falls etwas nicht
+klappt, freuen wir uns über ein
+[Issue](https://github.com/HyperCriSiS/Sprachverstand/issues). Pale Moon erhält
+einen eigenständig gepflegten Port mit eigener Prüfung.
 Vorausgesetzt werden Firefox ab Version 140 und Chrome beziehungsweise Chromium ab
 Version 148; ältere Chromium-Versionen erhalten vom Hintergrund der Erweiterung
 keine Antworten und werden deshalb nicht unterstützt.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
-ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen
-den geprüften Basis-Build ihrer jeweiligen Engine.
+ist deshalb kein Veröffentlichungsziel.
 
 ## Projektstatus
 
@@ -260,10 +273,8 @@ npm install
 npm run check
 ```
 
-Browser-Builds werden anschließend unter `dist/chromium/`, `dist/edge/`,
-`dist/opera/` und `dist/firefox/` erstellt. Edge und Opera verwenden bewusst
-dieselbe geprüfte Chromium-Payload; die CI kontrolliert deren Bytegleichheit
-außerhalb des Manifests.
+Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
+erstellt. Alle Chromium-Browser verwenden dasselbe Chromium-Paket.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das

@@ -230,9 +230,7 @@ const universalCsv = createCsv(rows);
 const outputs = new Map([
   ["amo-metadata.json", `${JSON.stringify(amoMetadata, null, 2)}\n`],
   ["amo-worklist.csv", createCsv(amoRows, "description")],
-  ["chrome-dashboard.csv", universalCsv],
-  ["edge-worklist.csv", universalCsv],
-  ["opera-worklist.csv", universalCsv]
+  ["chrome-dashboard.csv", universalCsv]
 ]);
 
 if (!checkOnly) {

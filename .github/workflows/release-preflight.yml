@@ -70,7 +70,7 @@ jobs:
           node scripts/generate-store-metadata.mjs --release-version "$VERSION"
           node scripts/generate-chrome-dashboard.mjs --release-version "$VERSION"
 
-      - name: Chromium-, Edge-, Opera-, Firefox- und Quellpaket lokal erstellen
+      - name: Chromium-, Firefox- und Quellpaket lokal erstellen
         shell: bash
         run: |
           set -euo pipefail
@@ -83,16 +83,6 @@ jobs:
             cd dist/firefox
             zip -qr "../../artifacts/preflight/sprachverstand-$ASSET_LABEL-firefox.xpi" .
           )
-          for target in edge opera; do
-            TARGET_DIR=$(mktemp -d)
-            cp -a dist/chromium/. "$TARGET_DIR/"
-            cp "manifests/${target}.json" "$TARGET_DIR/manifest.json"
-            (
-              cd "$TARGET_DIR"
-              zip -qr "$GITHUB_WORKSPACE/artifacts/preflight/sprachverstand-$ASSET_LABEL-${target}.zip" .
-            )
-            rm -rf "$TARGET_DIR"
-          done
           SOURCE_DIR=$(mktemp -d)
           trap 'rm -rf "$SOURCE_DIR"' EXIT
           git archive HEAD | tar -x -C "$SOURCE_DIR"
@@ -104,7 +94,7 @@ jobs:
           Version: ${RELEASE_VERSION}
           Ausgangsbasis: git archive des angegebenen Commits.
           Vorbereitung: Keine Versionsfelder verändert; Vorabpaket ohne Release-Tag.
-          Versionsdateien: package.json, package-lock.json, manifests/chromium.json, manifests/edge.json, manifests/opera.json, manifests/firefox.json
+          Versionsdateien: package.json, package-lock.json, manifests/chromium.json, manifests/firefox.json
           EOF
           (
             cd "$SOURCE_DIR"
@@ -113,8 +103,6 @@ jobs:
           cp store/generated/amo-metadata.json artifacts/preflight/internal/
           cp store/generated/amo-release-notes.json artifacts/preflight/internal/
           cp store/generated/chrome-dashboard.csv artifacts/preflight/internal/
-          cp store/generated/edge-worklist.csv artifacts/preflight/internal/
-          cp store/generated/opera-worklist.csv artifacts/preflight/internal/
           printf '%s\n' "$GITHUB_SHA" > artifacts/preflight/internal/SOURCE_COMMIT.txt
           (
             cd artifacts/preflight
@@ -131,8 +119,6 @@ jobs:
           SOURCE="artifacts/preflight/sprachverstand-$ASSET_LABEL-source.zip"
           unzip -t "$CHROMIUM" >/dev/null
           unzip -t "$FIREFOX" >/dev/null
-          unzip -t "artifacts/preflight/sprachverstand-$ASSET_LABEL-edge.zip" >/dev/null
-          unzip -t "artifacts/preflight/sprachverstand-$ASSET_LABEL-opera.zip" >/dev/null
           unzip -t "$SOURCE" >/dev/null
           node <<'NODE'
           const assert = require("node:assert/strict");
@@ -179,7 +165,7 @@ jobs:
           assert.equal(sourcePackage.version, version, "Quellpaket-Version abweichend");
           assert.equal(sourceLock.version, version, "Quellpaket-Lock-Version abweichend");
           assert.equal(sourceNotes.version, version, "Store-Notes-Version abweichend");
-          for (const name of ["chromium", "edge", "opera", "firefox"]) {
+          for (const name of ["chromium", "firefox"]) {
             const manifest = JSON.parse(readArchive(source, "manifests/" + name + ".json"));
             assert.equal(manifest.version, version, name + ": Quellmanifest-Version abweichend");
           }
@@ -195,7 +181,7 @@ jobs:
             echo ""
             echo "- Commit: \`$GITHUB_SHA\`"
             echo "- Paketversion: \`$RELEASE_VERSION\`"
-            echo "- Chromium, Edge, Opera, Firefox und Quellpaket: Archive, Bytegleichheit, Provenienz, Manifeste und Versionen geprüft"
+            echo "- Chromium, Firefox und Quellpaket: Archive, Provenienz, Manifeste und Versionen geprüft"
             echo "- Browser-, Video-, Untertitel-, Store- und Kernprüfungen: erfolgreich"
             echo "- **Keine Tags, GitHub-Releases oder Store-Einreichungen angelegt**"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -6,19 +6,19 @@ const preflight = readFileSync(".github/workflows/release-preflight.yml", "utf8"
 const validator = readFileSync("scripts/verify-release-packages.mjs", "utf8");
 
 describe("Paketprüfung moderner Browser", () => {
-  it("leitet Edge und Opera aus Chromium ab und prüft die Inhalte", () => {
+  it("veröffentlicht für die Chromium-Familie nur ein gemeinsames Paket", () => {
+    for (const content of [release, preflight, validator]) {
+      expect(content).toContain("-chromium.zip");
+      expect(content).not.toContain("-edge.zip");
+      expect(content).not.toContain("-opera.zip");
+    }
     for (const content of [release, preflight]) {
-      expect(content).toContain("for target in edge opera; do");
-      expect(content).toContain('cp -a dist/chromium/. "$TARGET_DIR/"');
-      expect(content).toContain('cp "manifests/' + "$" + '{target}.json"');
       expect(content).toContain("verify-release-packages.mjs");
       expect(content).toContain("sha256sum -c SHA256SUMS.txt");
     }
-    expect(validator).toContain("assert.deepEqual(candidates, chromiumEntries");
-    expect(validator).toContain("assert.deepEqual(read(files[target], entry)");
   });
 
-  it("verlangt die Quellprovenienz und alle vier Manifestvarianten", () => {
+  it("verlangt die Quellprovenienz und beide Manifestvarianten", () => {
     for (const content of [release, preflight]) {
       expect(content).toContain('"$SOURCE_DIR/SOURCE_COMMIT.txt"');
       expect(content).toContain('"$SOURCE_DIR/RELEASE_PROVENANCE.txt"');
@@ -28,7 +28,7 @@ describe("Paketprüfung moderner Browser", () => {
     }
     expect(validator).toContain("SOURCE_COMMIT.txt");
     expect(validator).toContain("RELEASE_PROVENANCE.txt");
-    expect(validator).toContain('["chromium", "edge", "opera", "firefox"]');
+    expect(validator).toContain('["chromium", "firefox"]');
     expect(validator).toContain("assert.deepEqual(sourceManifest");
   });
 

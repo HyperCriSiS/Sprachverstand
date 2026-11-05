@@ -76,14 +76,12 @@ Das Release-Quellarchiv beginnt mit `git archive` des in `SOURCE_COMMIT.txt`
 genannten Commits. Die eigentlichen Quelldateien stammen damit aus genau diesem
 Git-Baum. Damit die aus dem Release-Tag abgeleitete Versionsnummer ohne einen
 zusätzlichen Vorbereitungsschritt reproduziert werden kann, ersetzt der
-Release-Workflow anschließend ausschließlich die Versionsfelder in diesen sechs
+Release-Workflow anschließend ausschließlich die Versionsfelder in diesen vier
 bereits vorhandenen Dateien durch die Release-Version:
 
 - `package.json`
 - `package-lock.json`
 - `manifests/chromium.json`
-- `manifests/edge.json`
-- `manifests/opera.json`
 - `manifests/firefox.json`
 
 Zusätzlich werden zwei reine Provenienzdateien in das Quellarchiv aufgenommen:
