@@ -5,6 +5,10 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## Thunderbird 0.9.2 (2026-11-05)
+
+- Geöffnete Nachrichten werden schneller korrigiert. Die Korrekturergebnisse bleiben gleich.
+
 ## Thunderbird 0.9.1 (2026-11-04)
 
 - Beschreibungen und Installationshinweise für Thunderbird überarbeitet.
