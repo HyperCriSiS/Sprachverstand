@@ -54,7 +54,7 @@
     "message": "Ipinapakita ang switch para i-enable o i-disable ang extension."
   },
   "whereCorrect": {
-    "message": "Saan ilalapat ang mga karagdagang pagwawasto?"
+    "message": "Saan pa dapat magwasto?"
   },
   "whereCorrectPopupDescription": {
     "message": "Ipinapakita nang direkta sa popup ang mga opsyon para sa accessible na label, siniping teksto, at subtitle."
@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Wala pang pagpapalit sa page na ito."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "Ang overview ay pinananatili lamang sa memory para sa kasalukuyang tab at muling binubuo kapag isinara o ni-reload ang page."
-  },
   "includedDomains": {
     "message": "Mga kasamang domain"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Ipakita sa pagbukas"
+  },
+  "popupStartOptions": {
+    "message": "Mga opsyon"
   }
 }

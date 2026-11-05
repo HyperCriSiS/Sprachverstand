@@ -14,7 +14,10 @@
 <p align="center">
   <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/">Für Firefox installieren</a>
   · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
-  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Browser und Downloads</a>
+  · <a href="#microsoft-edge">Edge</a>
+  · <a href="#opera">Opera</a>
+  · <a href="#thunderbird">Thunderbird</a>
+  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Downloads</a>
 </p>
 
 <p align="center">
@@ -68,20 +71,55 @@ Doppelnennungen und ausgewählte Partizipformen wie „Studierende“.
 3. Über das Erweiterungssymbol kannst du Sprachverstand ausschalten, Regelgruppen
    wählen und die Einstellungen öffnen.
 
-Firefox für Android wird ebenfalls unterstützt. Downloads für weitere Browser
-findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
+Firefox für Android wird ebenfalls unterstützt. Für [Microsoft Edge](#microsoft-edge)
+und [Opera](#opera) gibt es eigene Hinweise weiter unten. Downloads für weitere
+Browser findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
 Diese README beschreibt den aktuellen Entwicklungsstand. Welche Funktionen die
 veröffentlichte Version enthält, erfährst du in den Versionshinweisen des
 jeweiligen Stores.
 
+### Microsoft Edge
+
+Sprachverstand ist nicht in den Microsoft Edge Add-ons. Du installierst es in Edge
+aus dem Chrome Web Store:
+
+1. Öffne [Sprachverstand im Chrome Web Store](https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii).
+2. Falls Edge danach fragt, erlaube Erweiterungen aus anderen Stores. In älteren
+   Versionen steht dieser Schalter unter `edge://extensions`.
+3. Klicke auf **Abrufen** oder **Hinzufügen** und bestätige.
+
+Updates kommen danach automatisch über den Chrome Web Store.
+
+### Opera
+
+Sprachverstand ist aktuell nicht in den Opera-Add-ons. Du installierst es in Opera
+aus dem Chrome Web Store:
+
+1. Öffne [Sprachverstand im Chrome Web Store](https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii).
+2. Klicke auf **Zu Opera hinzufügen**. Fehlt die Schaltfläche oder bittet Opera
+   darum, installiere zuerst die von Opera angebotene Erweiterung
+   „Install Chrome Extensions“.
+3. Bestätige die Installation unter `opera://extensions`, falls Opera danach fragt.
+
+Klappt das nicht, kannst du das Paket von Hand laden:
+
+1. Lade `sprachverstand-<version>-opera.zip` aus dem
+   [aktuellen Release](https://github.com/HyperCriSiS/Sprachverstand/releases/latest)
+   und entpacke es in einen Ordner, den du behältst.
+2. Schalte unter `opera://extensions` den **Entwicklermodus** ein.
+3. Klicke auf **Entpackte Erweiterung laden** und wähle den Ordner aus.
+
+So installiert gibt es keine automatischen Updates. Für eine neue Version
+wiederholst du diese Schritte.
+
 ## Thunderbird
 
 Sprachverstand ist auch als Erweiterung für Thunderbird verfügbar. Die
-Thunderbird-Version **0.9.2** wird getrennt von den Browser-Versionen
+Thunderbird-Version **0.9.3** wird getrennt von den Browser-Versionen
 im Branch [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
 
-1. Lade die Datei `sprachverstand-thunderbird-0.9.2.xpi` aus dem
-   [Thunderbird-Release 0.9.2](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.2).
+1. Lade die Datei `sprachverstand-thunderbird-0.9.3.xpi` aus dem
+   [Thunderbird-Release 0.9.3](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.3).
 2. Öffne in Thunderbird **Add-ons und Themes**, dann das Zahnradmenü und
    **Add-on aus Datei installieren**. Wähle die heruntergeladene XPI-Datei.
 3. Öffne eine Nachricht neu. Über das Sprachverstand-Symbol erreichst du
@@ -111,7 +149,9 @@ Du kannst die Regelgruppen einzeln steuern.
 Weibliche Bezeichnungen ohne Genderzeichen wie `Professorin` oder `Politikerinnen`
 bleiben erhalten. Eingabefelder, Editoren, Quellcode, URLs und technische Daten
 sind von der regulären Verarbeitung ausgeschlossen. Für Texte in Anführungszeichen
-kannst du zusätzlich einen Schutz aktivieren.
+kannst du zusätzlich einen Schutz aktivieren. Eingebettete Frames, etwa
+Kommentarbereiche oder Videoplayer in iframes, und der Titel des Browser-Tabs
+werden nicht verarbeitet.
 
 Die deutsche Sprache hat viele Mehrdeutigkeiten. Wenn eine ausreichend sichere
 Ersetzung nicht möglich ist, bleibt die betreffende Form stehen. Auch seltene
@@ -176,8 +216,8 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 <p>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Google%20Chrome-4285F4?logo=googlechrome&logoColor=white" alt="Google Chrome"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Chromium-4285F4?logo=chromium&logoColor=white" alt="Chromium"></a>
-  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
-  <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
+  <a href="#microsoft-edge"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
+  <a href="#opera"><img src="https://img.shields.io/badge/Opera-FF1B2D?logo=opera&logoColor=white" alt="Opera"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Brave-FB542B?logo=brave&logoColor=white" alt="Brave"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Vivaldi-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi"></a>
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Arc-FCBFBD?logo=arc&logoColor=black" alt="Arc"></a>
@@ -202,6 +242,9 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 Firefox und Chromium bilden die Basis für die jeweiligen Browserfamilien. Die
 aufgeführten Browser verwenden den entsprechenden Erweiterungs-Build; nicht jeder
 Browser wird separat getestet. Pale Moon erhält einen eigenständig gepflegten Port.
+Vorausgesetzt werden Firefox ab Version 140 und Chrome beziehungsweise Chromium ab
+Version 148; ältere Chromium-Versionen erhalten vom Hintergrund der Erweiterung
+keine Antworten und werden deshalb nicht unterstützt.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel. Browser ohne eigenes Store-Paket nutzen

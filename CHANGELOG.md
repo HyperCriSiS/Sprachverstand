@@ -5,6 +5,10 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## Thunderbird 0.9.3 (2026-11-05)
+
+- Stand der Browser-Ausgabe übernommen: verständlichere Überschrift „Wo soll außerdem korrigiert werden?“, Popup-Startansicht mit Korrekturliste, vollständige Paarformen in der Übersicht sowie die Schutzregeln und Antwortpfade der Browser-Überprüfung vom 04.11.2026.
+
 ## Thunderbird 0.9.2 (2026-11-05)
 
 - Geöffnete Nachrichten werden schneller korrigiert. Die Korrekturergebnisse bleiben gleich.
@@ -20,6 +24,16 @@ dokumentiert.
   Antworten/Weiterleitungen. Untertiteloption in Thunderbird ausgeblendet.
 - Eigene geschützte Branch-/CI-/Release-Linie und reproduzierbare XPI-/Quellpakete.
 - Details und verbleibende Prüfgrenzen: [Thunderbird-Releasehinweise](docs/releases/thunderbird-0.9.0.md).
+
+## 0.9.1 (2026-11-02)
+
+### Hinzugefügt
+
+- Das Popup kann auf Wunsch direkt mit der Liste der Korrekturen starten (Einstellung „Beim Öffnen anzeigen“).
+
+### Behoben
+
+- Die Ersetzungsübersicht zeigt Paarformen wie „der / die Nutzer*in“ vollständig.
 
 ## 0.9.0 (2026-10-31)
 

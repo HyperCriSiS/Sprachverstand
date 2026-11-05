@@ -54,7 +54,7 @@
     "message": "Shows the switch for enabling or disabling the extension."
   },
   "whereCorrect": {
-    "message": "Where should additional corrections apply?"
+    "message": "Where else should corrections apply?"
   },
   "whereCorrectPopupDescription": {
     "message": "Shows options for accessible labels, quoted text, and subtitles directly in the popup."
@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "No replacements on this page yet."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "The overview is kept only in memory for the current tab and is rebuilt when the page is closed or reloaded."
-  },
   "includedDomains": {
     "message": "Included domains"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Show on opening"
+  },
+  "popupStartOptions": {
+    "message": "Options"
   }
 }

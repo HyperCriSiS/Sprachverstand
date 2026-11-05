@@ -54,7 +54,7 @@
     "message": "Blendet den Schalter zum Ein- und Ausschalten der Erweiterung ein."
   },
   "whereCorrect": {
-    "message": "Wo sollen zusätzliche Korrekturen gelten?"
+    "message": "Wo soll außerdem korrigiert werden?"
   },
   "whereCorrectPopupDescription": {
     "message": "Zeigt die Optionen für zugängliche Beschriftungen, Zitate und Untertitel direkt im Popup."
@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Noch keine Ersetzungen auf dieser Seite."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "Die Übersicht wird nur für den aktuellen Tab im Arbeitsspeicher gehalten und beim Schließen oder Neuladen der Seite neu aufgebaut."
-  },
   "includedDomains": {
     "message": "Eingeschlossene Domains"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Beim Öffnen anzeigen"
+  },
+  "popupStartOptions": {
+    "message": "Optionen"
   }
 }

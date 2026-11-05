@@ -80,14 +80,15 @@ describe("Audit DOM-06: Schutz über Inline-Elementgrenzen", () => {
     );
   });
 
-  it("überschreitet keine technischen oder geschützten Elemente", () => {
+  it("liest geschützte Elemente nicht und paart Zitate über sie hinweg", () => {
     const paragraph = starten(
       '<p>„<code>Zitat</code><b>Lehrer:innen</b>“ <span aria-hidden="true">Lehrer:innen</span> und Lehrer:innen.</p>',
       { processQuotedText: false }
     );
     expect(paragraph.querySelector("code")?.textContent).toBe("Zitat");
     expect(paragraph.querySelector('[aria-hidden="true"]')?.textContent).toBe("Lehrer:innen");
-    expect(paragraph.querySelector("b")?.textContent).toBe("Lehrer");
+    expect(paragraph.querySelector("b")?.textContent).toBe("Lehrer:innen");
+    expect(paragraph.textContent).toBe("„ZitatLehrer:innen“ Lehrer:innen und Lehrer.");
   });
 
   it("wertet nach externem Entfernen eines Zitatöffners erneut aus", async () => {
@@ -117,7 +118,7 @@ describe("Audit DOM-06: Schutz über Inline-Elementgrenzen", () => {
     expect(processor?.getReplacementCount()).toBe(2);
   });
 
-  it("schützt nicht über zwei Blockgrenzen hinweg", () => {
+  it("paart nicht über zwei Blockgrenzen hinweg; ein offenes „ schützt bis zum Blockende", () => {
     document.body.innerHTML =
       "<div><p>„<span>Lehrer:innen</span></p><p><b>Expert:innen</b>“</p></div>";
     processor = new DomProcessor(document, {
@@ -127,7 +128,7 @@ describe("Audit DOM-06: Schutz über Inline-Elementgrenzen", () => {
       processQuotedText: false
     });
     processor.start();
-    expect(document.querySelector("span")?.textContent).toBe("Lehrer");
+    expect(document.querySelector("span")?.textContent).toBe("Lehrer:innen");
     expect(document.querySelector("b")?.textContent).toBe("Experten");
   });
 
