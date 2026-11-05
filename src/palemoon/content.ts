@@ -1,10 +1,13 @@
-import { PaleMoonDomProcessor } from "./dom-processor";
+import { DomProcessor } from "../core/dom-processor";
 import type { DetailedTransformResult, TransformOptions } from "../core/transform-text";
 import { disabledRuleIdsForGroups } from "../rules/catalog";
 import { domRuleMetadata } from "../rules/dom-metadata";
 import { isBuiltInTransformCandidate } from "../rules/transform-candidate";
 import type { Settings } from "../settings/defaults";
-import type { ReplacementSummaryEntry } from "../core/replacement-summary";
+import {
+  maximumReportedReplacementSummaries,
+  type ReplacementSummaryEntry
+} from "../core/replacement-summary";
 
 interface PaleMoonContentRuntime {
   apply(settings: Settings): void;
@@ -18,17 +21,16 @@ type PaleMoonContentGlobal = typeof globalThis & {
   // Exported by the controller once per window: rules and lexicon are built
   // there a single time instead of being loaded into every page sandbox.
   __sprachverstandTransform?: (input: string, options: string) => string;
-  __sprachverstandReplacementCount?: number;
+  // Exported per page sandbox: the controller updates badge and popup as
+  // soon as the count changes, not only on the next tab switch.
+  __sprachverstandReportCount?: (count: number) => void;
 };
 
 const runtimeGlobal = globalThis as PaleMoonContentGlobal;
-let processor: PaleMoonDomProcessor | undefined;
+let processor: DomProcessor | undefined;
 
 function reportReplacementCount(count: number): void {
-  runtimeGlobal.__sprachverstandReplacementCount = Math.max(
-    0,
-    Math.trunc(count)
-  );
+  runtimeGlobal.__sprachverstandReportCount?.(Math.max(0, Math.trunc(count)));
 }
 
 function transformViaController(
@@ -62,6 +64,10 @@ function optionsFor(settings: Settings) {
     processAccessibleAttributes: settings.processAccessibleAttributes,
     processQuotedText: settings.processQuotedText,
     processSubtitles: settings.processSubtitles,
+    // Wie in src/content.ts: gebündelt, damit nicht jede Zeitscheibe des
+    // Erstscans einen Rundlauf über die Sandbox-Grenze auslöst.
+    replacementNotificationIntervalMs: 100,
+    replacementSummaryLimit: maximumReportedReplacementSummaries,
     onReplacementCountChange: reportReplacementCount
   };
 }
@@ -76,7 +82,7 @@ const runtime: PaleMoonContentRuntime = {
       return;
     }
 
-    processor = new PaleMoonDomProcessor(document, options);
+    processor = new DomProcessor(document, options);
     processor.start();
     reportReplacementCount(processor.getReplacementCount());
   },
@@ -97,4 +103,3 @@ const runtime: PaleMoonContentRuntime = {
 };
 
 runtimeGlobal.SprachverstandPaleMoonContent = runtime;
-runtimeGlobal.__sprachverstandReplacementCount = 0;

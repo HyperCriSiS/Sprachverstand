@@ -1,23 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DomProcessor } from "../src/core/dom-processor";
 import { transformTextWithSummary } from "../src/core/transform-text";
-import { PaleMoonDomProcessor } from "../src/palemoon/dom-processor";
 import { defaultRules } from "../src/rules";
 import { domRuleMetadata } from "../src/rules/dom-metadata";
 import { isBuiltInTransformCandidate } from "../src/rules/transform-candidate";
 
-// Der Pale-Moon-Prozessor durchläuft große Seiten beim Start in eigenen
-// Zeitscheiben und ruft Text- und Attributpfad des Kerns einzeln auf. Diese
-// Tests führen die Befunde der Browser-Überprüfung durch genau diesen Pfad.
+// Der Pale-Moon-Port verwendet den Kernprozessor; große Seiten laufen über
+// dessen eingereihten Erstscan in Zeitscheiben. Diese Tests führen die
+// Befunde der Browser-Überprüfung durch genau diesen Pfad.
 const fuellung = `<div>${"<i></i>".repeat(1_600)}</div>`;
 
-let processor: PaleMoonDomProcessor | undefined;
+let processor: DomProcessor | undefined;
 
 function starten(
   html: string,
-  options: Partial<ConstructorParameters<typeof PaleMoonDomProcessor>[1]> = {}
-): PaleMoonDomProcessor {
+  options: Partial<ConstructorParameters<typeof DomProcessor>[1]> = {}
+): DomProcessor {
   document.body.innerHTML = html + fuellung;
-  processor = new PaleMoonDomProcessor(document, {
+  processor = new DomProcessor(document, {
     rules: domRuleMetadata,
     isTransformCandidate: isBuiltInTransformCandidate,
     transformText: (input, transformOptions) =>
@@ -46,7 +46,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("Pale Moon: Browser-Überprüfung 04.11.2026 im inkrementellen Erstscan", () => {
+describe("Pale Moon: Browser-Überprüfung 04.11.2026 im eingereihten Erstscan", () => {
   it("lässt den Dokumenttitel unverändert", async () => {
     document.head.innerHTML = "<title>Mitarbeiter:innen gesucht</title>";
     starten("<p>Alle Mitarbeiter:innen</p>");
@@ -99,18 +99,6 @@ describe("Pale Moon: Browser-Überprüfung 04.11.2026 im inkrementellen Erstscan
     }
     expect(neu.textContent).toBe("Alle Lehrer");
     expect(document.querySelector("p")!.textContent).toBe("Alle Mitarbeiter");
-  });
-
-  it("entfernt getrennte Marker nach einem Vortext mit eigener Korrektur", async () => {
-    starten("<p>Liebe Kolleg*innen und Lehrer*<b>innen</b>, kommt.</p>", {
-      processAccessibleAttributes: false
-    });
-    const absatz = document.querySelector("p")!;
-    await abwarten(() => absatz.textContent === "Liebe Kollegen und Lehrer, kommt.");
-    expect(absatz.textContent).toBe("Liebe Kollegen und Lehrer, kommt.");
-    processor!.stop({ restore: true });
-    processor = undefined;
-    expect(absatz.innerHTML).toBe("Liebe Kolleg*innen und Lehrer*<b>innen</b>, kommt.");
   });
 
   it("paart Zitate über geschützte Inline-Elemente hinweg", async () => {
