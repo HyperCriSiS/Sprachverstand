@@ -114,11 +114,14 @@ wiederholst du diese Schritte.
 
 ## Thunderbird
 
-Die separate Thunderbird-Ausgabe **0.9.1** gibt es als
-[Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.1).
-Lade `sprachverstand-thunderbird-0.9.1.xpi` und installiere sie in Thunderbird
+Die separate Thunderbird-Ausgabe **0.9.3** gibt es als
+[Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.3).
+Lade `sprachverstand-thunderbird-0.9.3.xpi` und installiere sie in Thunderbird
 unter **Add-ons und Themes → Zahnrad → Add-on aus Datei installieren**.
 Öffne danach Nachrichten neu. Technische Mindestversion ist Thunderbird 128.
+Aus Datei installierte Add-ons aktualisieren sich nicht selbst: Für eine neue
+Version wiederholst du diese Schritte; die installierte Version steht unter
+**Add-ons und Themes**.
 
 Beim Lesen wird nur die Darstellung verändert. Optional lässt sich der
 tatsächliche Text neu geöffneter Antworten und Weiterleitungen einmalig korrigieren;
