@@ -107,10 +107,15 @@ async function preparePaleMoonFiles(outputDirectory) {
       path.join(legacyDirectory, `icon${size}.png.base64`),
       "utf8"
     );
-    await writeFile(
-      path.join(paleMoonIconDirectory, `icon${size}.png`),
-      Buffer.from(iconBase64.trim(), "base64")
-    );
+    const icon = Buffer.from(iconBase64.trim(), "base64");
+    await writeFile(path.join(paleMoonIconDirectory, `icon${size}.png`), icon);
+    if (size === 64) {
+      // Der Add-on-Manager liest diese Dateien direkt aus dem XPI. Die
+      // chrome://-Adresse aus em:iconURL löst er erst nach Registrierung
+      // auf und zeigt sonst das Puzzle-Symbol.
+      await writeFile(path.join(outputDirectory, "icon.png"), icon);
+      await writeFile(path.join(outputDirectory, "icon64.png"), icon);
+    }
   }
 
   await Promise.all([

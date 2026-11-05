@@ -82,6 +82,19 @@ describe("Pale-Moon-Port Regressionen", () => {
     expect(controller).not.toContain("!isDomainExcluded(");
   });
 
+  it("legt das Symbol für den Add-on-Manager in die Paketwurzel", () => {
+    const build = readFileSync("scripts/build.mjs", "utf8");
+    expect(build).toContain('path.join(outputDirectory, "icon.png")');
+    expect(build).toContain('path.join(outputDirectory, "icon64.png")');
+  });
+
+  it("stellt Seiten für den Back/Forward-Cache wieder her und verarbeitet sie bei Rückkehr neu", () => {
+    expect(controller).toContain("destroySandbox(hiddenDocument, isPersistedPageTransition(event))");
+    expect(controller).toContain('addEventListener("pageshow", handlePageShow, true)');
+    expect(controller).toContain('removeEventListener("pageshow", handlePageShow, true)');
+    expect(controller).toMatch(/function handlePageShow[\s\S]*?applySettingsToDocument\(shownDocument\)/u);
+  });
+
   it("enthält nicht wieder den entfernten Einstellungszähler", () => {
     expect(options).not.toContain("Korrekturen im aktuell aktiven Tab");
     expect(options).toMatch(

@@ -300,21 +300,98 @@ describe("Einstellungsspeicher", () => {
     expect(loaded.protectedTerms).toEqual(["Von anderem Gerät"]);
   });
 
-  it("weist zu große Synchronisierungskategorien vor dem Speichern zurück", async () => {
+  it("speichert eine zu große Synchronisierungskategorie lokal und lässt ihren Sync-Stand unverändert", async () => {
     const replacements = Array.from({ length: 100 }, (_, index) => ({
       source: `Quelle ${index} ${"x".repeat(90)}`,
       replacement: `Ziel ${index} ${"y".repeat(180)}`
     }));
+    await sync.set({
+      "sync.selection": ["custom-replacements"],
+      "sync.custom-replacements": [{ source: "Alt", replacement: "Neu" }]
+    });
+    const value = settings({
+      customReplacements: replacements,
+      syncCategoryIds: ["custom-replacements"]
+    });
 
-    await expect(
-      saveSettings(
-        settings({
-          customReplacements: replacements,
-          syncCategoryIds: ["custom-replacements"]
-        })
-      )
-    ).rejects.toThrow(/sichere Limit/u);
-    expect(local.values.size).toBe(0);
+    await expect(saveSettings(value)).rejects.toThrow(/lokal gespeichert.*sichere Limit/u);
+    expect(local.values.get("settings")).toEqual(value);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+    expect(sync.values.get("sync.custom-replacements")).toEqual([{ source: "Alt", replacement: "Neu" }]);
+    expect(await loadSettings()).toEqual(value);
+  });
+
+  it("wendet die Migration auf die Regelgruppenliste eines älteren Geräts an", async () => {
+    const olderGroups = defaultSettings.enabledRuleGroupIds.filter((id) => id !== "loanword-person-terms");
+    await local.set({ settings: settings({ syncCategoryIds: ["rule-groups"] }) });
+    await sync.set({
+      "sync.selection": ["rule-groups"],
+      // Pre-revision format: a plain array without the writing revision.
+      "sync.rule-groups": olderGroups
+    });
+
+    const loaded = await loadSettings();
+    expect(loaded.enabledRuleGroupIds).toContain("loanword-person-terms");
+
+    await sync.set({ "sync.rule-groups.revision": 10 });
+    expect((await loadSettings()).enabledRuleGroupIds).toContain("loanword-person-terms");
+
+    // A current device that deliberately disabled the group is respected.
+    await sync.set({ "sync.rule-groups.revision": 11 });
+    expect((await loadSettings()).enabledRuleGroupIds).not.toContain("loanword-person-terms");
+
+    await saveSettings({ ...loaded, enabled: false });
+    expect(sync.values.get("sync.rule-groups")).toEqual(loaded.enabledRuleGroupIds);
+    expect(sync.values.get("sync.rule-groups.revision")).toBe(11);
+
+    await saveSettings({ ...loaded, syncCategoryIds: ["activation"] });
+    expect(sync.values.has("sync.rule-groups.revision")).toBe(false);
+  });
+
+  it("behält lokale Textoptionen, die ein älteres Gerät nicht kennt", async () => {
+    await local.set({ settings: settings({ processSubtitles: true, syncCategoryIds: ["text-options"] }) });
+    await sync.set({
+      "sync.selection": ["text-options"],
+      "sync.text-options": { processAccessibleAttributes: false, processQuotedText: true }
+    });
+
+    const loaded = await loadSettings();
+    expect(loaded.processSubtitles).toBe(true);
+    expect(loaded.processAccessibleAttributes).toBe(false);
+  });
+
+  it("schreibt nur geänderte Synchronisierungsschlüssel", async () => {
+    const value = settings({
+      enabled: false,
+      protectedTerms: ["Privat"],
+      syncCategoryIds: ["activation", "protected-terms", "rule-groups"]
+    });
+    await saveSettings(value);
+    const setSpy = vi.spyOn(sync, "set");
+    const removeSpy = vi.spyOn(sync, "remove");
+
+    await saveSettings({ ...value, enabled: true });
+    expect(setSpy).toHaveBeenCalledTimes(1);
+    expect(setSpy.mock.calls[0]?.[0]).toEqual({ "sync.activation": true });
+    expect(removeSpy).not.toHaveBeenCalled();
+
+    await saveSettings({ ...value, enabled: true });
+    expect(setSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("bietet den lokalen Stand nach einer fehlgeschlagenen Synchronisierung beim Laden erneut an", async () => {
+    const value = settings({ protectedTerms: ["Lokal"], syncCategoryIds: ["protected-terms"] });
+    sync.failWrites = true;
+    await expect(saveSettings(value)).rejects.toThrow(/lokal gespeichert/u);
+    expect(local.values.get("settings.sync-local-override")).toBe(true);
+
+    sync.failWrites = false;
+    expect(await loadSettings()).toEqual(value);
+    for (let index = 0; index < 20 && local.values.has("settings.sync-local-override"); index++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(sync.values.get("sync.protected-terms")).toEqual(["Lokal"]);
+    expect(local.values.has("settings.sync-local-override")).toBe(false);
   });
 
   it("erholt sich beim Laden von transienten lokalen Speicherfehlern", async () => {

@@ -14,6 +14,8 @@ import {
   type ReplacementSummaryEntry
 } from "./replacement-summary";
 import { collectLeadingContextEdit, type LeadingContextEdit } from "./leading-context-edit";
+import { collectQuoteRanges } from "./quote-ranges";
+import { normalizeProtectedTerms, protectedTermSource } from "./protected-terms";
 
 // Regex literals with Unicode property escapes stay at module level: Pale
 // Moon compiles such a literal again each time a function evaluates it.
@@ -50,11 +52,10 @@ function escapeRegularExpression(value: string): string {
 function createLiteralPattern(
   values: readonly string[],
   cache: Map<string, string>,
-  flags: string
+  flags: string,
+  flexibleWhitespace = false
 ): RegExp | undefined {
-  const normalizedValues = [
-    ...new Set(values.map((value) => value.trim()).filter(Boolean))
-  ].sort((left, right) => right.length - left.length);
+  const normalizedValues = normalizeProtectedTerms(values);
 
   if (normalizedValues.length === 0) {
     return undefined;
@@ -64,9 +65,13 @@ function createLiteralPattern(
   let source = cache.get(cacheKey);
 
   if (!source) {
-    source = String.raw`(?<![\p{L}\p{M}\p{N}])(?:${normalizedValues
-      .map(escapeRegularExpression)
-      .join("|")})(?![\p{L}\p{M}\p{N}])`;
+    // Own replacements are looked up by the matched text, so they keep the
+    // exact whitespace; personal exceptions match any whitespace.
+    source = flexibleWhitespace
+      ? protectedTermSource(normalizedValues)
+      : String.raw`(?<![\p{L}\p{M}\p{N}])(?:${normalizedValues
+        .map(escapeRegularExpression)
+        .join("|")})(?![\p{L}\p{M}\p{N}])`;
     if (cache.size >= maximumPatternSourceCacheEntries) {
       const oldestKey = cache.keys().next().value;
       if (oldestKey !== undefined) cache.delete(oldestKey);
@@ -97,7 +102,7 @@ function createProtectedPattern(terms: readonly string[]): RegExp | undefined {
   const prepared = protectedPatternByList.get(terms);
   if (prepared && prepared.terms.length === terms.length &&
       prepared.terms.every((term, index) => term === terms[index])) return prepared.pattern;
-  const pattern = createLiteralPattern(terms, protectedPatternSourceCache, "giu");
+  const pattern = createLiteralPattern(terms, protectedPatternSourceCache, "giu", true);
   protectedPatternByList.set(terms, {terms: [...terms], pattern});
   return pattern;
 }
@@ -421,15 +426,6 @@ function applyRulesWithProtectedTerms(
   return { text, replacements, summaries };
 }
 
-const pairedQuotes = new Map<string, string>([
-  ["„", "“"],
-  ["“", "”"],
-  ["‚", "‘"],
-  ["«", "»"],
-  ["‹", "›"],
-  ['"', '"']
-]);
-
 function applyRulesOutsideQuotes(
   input: string,
   rules: readonly Rule[],
@@ -441,33 +437,19 @@ function applyRulesOutsideQuotes(
   let text = "";
   let replacements = 0;
   const summaries: ReplacementSummaryEntry[] = [];
-  const missingClosings = new Set<string>();
 
-  for (let index = 0; index < input.length; index += 1) {
-    const opening = input[index];
-    const closing = opening ? pairedQuotes.get(opening) : undefined;
-    if (!closing || missingClosings.has(closing)) {
-      continue;
-    }
-
-    const closingIndex = input.indexOf(closing, index + 1);
-    if (closingIndex < 0) {
-      missingClosings.add(closing);
-      continue;
-    }
-
+  for (const range of collectQuoteRanges(input)) {
     const before = applyRulesWithProtectedTerms(
-      input.slice(cursor, index),
+      input.slice(cursor, range.start),
       rules,
       options,
       protectedPattern,
       cursor === 0 ? leadingContext : undefined
     );
-    text += before.text + input.slice(index, closingIndex + 1);
+    text += before.text + input.slice(range.start, range.end);
     replacements += before.replacements;
     summaries.push(...before.summaries);
-    cursor = closingIndex + 1;
-    index = closingIndex;
+    cursor = range.end;
   }
 
   const after = applyRulesWithProtectedTerms(
@@ -543,22 +525,66 @@ function transformTextCore(
   options: TransformOptions
 ): DetailedTransformResult {
   if (combiningMarkPattern.test(input)) {
-    const originals = new Map<string, string>();
-    const composed = input.replace(combiningMarkedWord, (word: string) => {
-      if (!genderMarkerInWord.test(word)) return word;
-      const nfc = word.normalize("NFC");
-      if (nfc !== word) originals.set(nfc, word);
-      return nfc;
-    });
-    if (originals.size > 0) {
+    const decomposed: {nfc: string; original: string; offset: number}[] = [];
+    let composed = "";
+    let cursor = 0;
+    for (const match of input.matchAll(combiningMarkedWord)) {
+      const word = match[0];
+      composed += input.slice(cursor, match.index);
+      cursor = match.index + word.length;
+      const nfc = genderMarkerInWord.test(word) ? word.normalize("NFC") : word;
+      if (nfc !== word) decomposed.push({nfc, original: word, offset: composed.length});
+      composed += nfc;
+    }
+    composed += input.slice(cursor);
+    if (decomposed.length > 0) {
       const result = transformTextCoreSplit(composed, rules, options);
       if (result.replacements === 0) return transformTextCoreSplit(input, rules, options);
-      let text = result.text;
-      for (const [nfc, original] of originals) text = text.replaceAll(nfc, original);
-      return {...result, text};
+      return {...result, text: restoreDecomposedWords(result.text, composed, decomposed)};
     }
   }
   return transformTextCoreSplit(input, rules, options);
+}
+
+function occurrencesOf(text: string, word: string): number[] {
+  const offsets: number[] = [];
+  for (let index = text.indexOf(word); index >= 0; index = text.indexOf(word, index + word.length)) {
+    offsets.push(index);
+  }
+  return offsets;
+}
+
+// Unconverted words get their decomposed code units back. A word that also
+// occurs composed in the same text is matched by position, so the composed
+// occurrence keeps its own code units; only when the rules changed the
+// number of occurrences does every remaining one revert.
+function restoreDecomposedWords(
+  text: string,
+  composed: string,
+  decomposed: readonly {nfc: string; original: string; offset: number}[]
+): string {
+  const edits: {offset: number; nfc: string; original: string}[] = [];
+  const seen = new Set<string>();
+  for (const {nfc, original} of decomposed) {
+    if (seen.has(nfc)) continue;
+    seen.add(nfc);
+    const before = occurrencesOf(composed, nfc);
+    const after = occurrencesOf(text, nfc);
+    if (after.length === 0) continue;
+    const ordinals = new Set(decomposed
+      .filter((entry) => entry.nfc === nfc)
+      .map((entry) => before.indexOf(entry.offset)));
+    const positional = before.length === after.length && !ordinals.has(-1);
+    after.forEach((offset, ordinal) => {
+      if (!positional || ordinals.has(ordinal)) edits.push({offset, nfc, original});
+    });
+  }
+  edits.sort((left, right) => right.offset - left.offset);
+  let restored = text;
+  for (const edit of edits) {
+    restored = restored.slice(0, edit.offset) + edit.original + restored.slice(edit.offset + edit.nfc.length);
+  }
+  return restored;
 }
 
 function transformTextCoreSplit(
