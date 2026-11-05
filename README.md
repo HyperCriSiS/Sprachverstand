@@ -115,11 +115,11 @@ wiederholst du diese Schritte.
 ## Thunderbird
 
 Sprachverstand ist auch als Erweiterung für Thunderbird verfügbar. Die
-Thunderbird-Version **0.9.2** wird getrennt von den Browser-Versionen
+Thunderbird-Version **0.9.3** wird getrennt von den Browser-Versionen
 im Branch [`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
 
-1. Lade die Datei `sprachverstand-thunderbird-0.9.2.xpi` aus dem
-   [Thunderbird-Release 0.9.2](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.2).
+1. Lade die Datei `sprachverstand-thunderbird-0.9.3.xpi` aus dem
+   [Thunderbird-Release 0.9.3](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.3).
 2. Öffne in Thunderbird **Add-ons und Themes**, dann das Zahnradmenü und
    **Add-on aus Datei installieren**. Wähle die heruntergeladene XPI-Datei.
 3. Öffne eine Nachricht neu. Über das Sprachverstand-Symbol erreichst du

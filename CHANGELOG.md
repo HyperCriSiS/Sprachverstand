@@ -5,6 +5,10 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## Thunderbird 0.9.3 (2026-11-05)
+
+- Stand der Browser-Ausgabe übernommen: verständlichere Überschrift „Wo soll außerdem korrigiert werden?“, Popup-Startansicht mit Korrekturliste, vollständige Paarformen in der Übersicht sowie die Schutzregeln und Antwortpfade der Browser-Überprüfung vom 04.11.2026.
+
 ## Thunderbird 0.9.2 (2026-11-05)
 
 - Geöffnete Nachrichten werden schneller korrigiert. Die Korrekturergebnisse bleiben gleich.
