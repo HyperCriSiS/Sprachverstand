@@ -28,6 +28,9 @@ export type SyncCategoryId = (typeof syncCategoryIds)[number];
 export const domainListModes = ["exclude", "include"] as const;
 export type DomainListMode = (typeof domainListModes)[number];
 
+export const popupStartViews = ["options", "corrections"] as const;
+export type PopupStartView = (typeof popupStartViews)[number];
+
 const basePopupSectionIds = [
   "count",
   "activation",
@@ -92,6 +95,7 @@ export interface Settings {
   readonly processSubtitles: boolean;
   readonly syncCategoryIds: readonly SyncCategoryId[];
   readonly visiblePopupSectionIds: readonly PopupSectionId[];
+  readonly popupStartView: PopupStartView;
 }
 
 export const defaultSettings: Settings = {
@@ -106,7 +110,8 @@ export const defaultSettings: Settings = {
   processQuotedText: true,
   processSubtitles: false,
   syncCategoryIds: [],
-  visiblePopupSectionIds: defaultVisiblePopupSectionIds
+  visiblePopupSectionIds: defaultVisiblePopupSectionIds,
+  popupStartView: "options"
 };
 
 function stringArray(value: unknown): string[] {
@@ -248,6 +253,10 @@ function normalizeDomainListMode(value: unknown): DomainListMode {
   return value === "include" ? "include" : "exclude";
 }
 
+function normalizePopupStartView(value: unknown): PopupStartView {
+  return value === "corrections" ? "corrections" : "options";
+}
+
 function popupSectionArray(
   value: unknown,
   fromRevision: number
@@ -297,6 +306,18 @@ function migrateEnabledRuleGroups(
   return normalizeEnabledRuleGroupIds([...migrated]);
 }
 
+// A rule group list written by a device at `revision` (synchronized or
+// imported): groups introduced since then are enabled, as for local storage.
+export function enabledRuleGroupIdsFromRevision(
+  value: unknown,
+  revision: unknown
+): string[] {
+  return migrateEnabledRuleGroups(
+    normalizeEnabledRuleGroupIds(value),
+    storedRevision(revision)
+  );
+}
+
 export function normalizeSettings(value: unknown): Settings {
   if (!value || typeof value !== "object") {
     return defaultSettings;
@@ -321,6 +342,7 @@ export function normalizeSettings(value: unknown): Settings {
         : defaultSettings.enabled,
     excludedDomains: excludedDomainArray(input.excludedDomains),
     domainListMode: normalizeDomainListMode(input.domainListMode),
+    popupStartView: normalizePopupStartView(input.popupStartView),
     enabledRuleGroupIds,
     protectedTerms: protectedTermArray(input.protectedTerms),
     customReplacements: customReplacementArray(input.customReplacements),

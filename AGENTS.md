@@ -8,3 +8,5 @@
 - Bei „fortfahren“, Wiederaufnahme nach Abbruch oder unklarem Anschluss zuerst `docs/engineering/CURRENT-WORK.md` aus `main` lesen und die dort genannten Live-Refs verifizieren; nicht aus Chatverlauf, Branch-Aktualität oder dem zuletzt geänderten PR auf die aktive Arbeit schließen.
 - Nicht öffentliche/externe Projektzustände nur laden, wenn `CURRENT-WORK.md` sie für die konkrete Aufgabenklasse ausdrücklich als relevant markiert; bei normaler Feature-, UI-, Bugfix- oder Wartungsarbeit nicht danach suchen.
 - `ROADMAP.md` bleibt strategisch. Kurzfristige aktive PRs, Blocker und unmittelbare nächste Schritte gehören in `docs/engineering/CURRENT-WORK.md`.
+- Projektsprache ist Deutsch: Commits, PR-Texte, Issues, Docs, Code-Kommentare und UI-Texte auf Deutsch. Das überschreibt die globale English-Regel.
+- "Real geprüft" vor einem PR heißt hier: Erweiterung in Firefox, Pale Moon bzw. Thunderbird geladen, die betroffenen Seiten und Dialoge manuell durchgespielt, Konsole ohne Fehler.

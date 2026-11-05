@@ -54,7 +54,7 @@
     "message": "Näyttää kytkimen, jolla laajennus otetaan käyttöön tai poistetaan käytöstä."
   },
   "whereCorrect": {
-    "message": "Missä lisäkorjauksia tehdään?"
+    "message": "Missä muualla korjataan?"
   },
   "whereCorrectPopupDescription": {
     "message": "Näyttää esteettömien nimikkeiden, lainatun tekstin ja tekstitysten asetukset suoraan ponnahdusvalikossa."
@@ -506,9 +506,6 @@
   "noReplacementsOnPage": {
     "message": "Tällä sivulla ei ole vielä korvauksia."
   },
-  "replacementOverviewMemoryNotice": {
-    "message": "Yhteenveto säilytetään vain nykyisen välilehden muistissa ja rakennetaan uudelleen, kun sivu suljetaan tai ladataan uudelleen."
-  },
   "includedDomains": {
     "message": "Sisällytetyt verkkotunnukset"
   },
@@ -575,5 +572,11 @@
         "content": "$1"
       }
     }
+  },
+  "popupStartView": {
+    "message": "Näytä avattaessa"
+  },
+  "popupStartOptions": {
+    "message": "Asetukset"
   }
 }

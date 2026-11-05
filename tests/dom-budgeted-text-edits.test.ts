@@ -64,20 +64,22 @@ describe("Budgetierte Rückschreibung großer Textknoten", () => {
     await vi.runAllTimersAsync();
     expect(text.data).toBe("Nutzer:innen bleiben nach dem Stop");
   });
+  // An English opening mark without its closing mark protects nothing; the
+  // closing mark appended later completes the quotation.
   it("verwirft laufende Änderungen, wenn ein neues Anführungszeichen den Text schützt", async () => {
-    const initial = "„" + original;
+    const initial = "“" + original;
     const {text, paragraph} = setup(initial, false);
-    paragraph.append(document.createTextNode("“"));
+    paragraph.append(document.createTextNode("”"));
     await Promise.resolve(); processor!.flush();
     expect(text.data).toBe(initial);
     expect(processor!.getReplacementCount()).toBe(0);
   });
   it("restauriert bei spätem Zitatschutz viele Teiländerungen in kurzen Schritten", async () => {
-    const initial = "„" + original;
+    const initial = "“" + original;
     const {text, paragraph, slice} = setup(initial, false);
     for (let index = 0; index < 90; index += 1) slice();
     expect(text.data).toContain("Nutzer:innen");
-    paragraph.append(document.createTextNode("“"));
+    paragraph.append(document.createTextNode("”"));
     await Promise.resolve(); slice();
     expect(text.data).not.toBe(initial);
     processor!.flush();

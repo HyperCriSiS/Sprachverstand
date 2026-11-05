@@ -320,7 +320,8 @@ function validateSettingsObject(value: unknown): Settings {
       "processQuotedText",
       "processSubtitles",
       "syncCategoryIds",
-      "visiblePopupSectionIds"
+      "visiblePopupSectionIds",
+      "popupStartView"
     ],
     "Die Einstellungssicherung"
   );
@@ -359,6 +360,7 @@ function validateSettingsObject(value: unknown): Settings {
     enabled: input.enabled,
     excludedDomains: validateDomains(input.excludedDomains),
     domainListMode: validateDomainListMode(input.domainListMode),
+    popupStartView: input.popupStartView,
     enabledRuleGroupIds: validateRuleGroupIds(input.enabledRuleGroupIds),
     protectedTerms: validateProtectedTerms(input.protectedTerms),
     customReplacements: validateCustomReplacements(input.customReplacements),

@@ -55,6 +55,7 @@ describe("Browser-Ziele", () => {
       expect(manifest.content_scripts).toHaveLength(1);
       expect(manifest.content_scripts[0].matches).toEqual(["<all_urls>"]);
       expect(manifest.background).toEqual({ service_worker: "background.js" });
+      expect(manifest.minimum_chrome_version).toBe("148");
       expect(manifest.browser_specific_settings).toBeUndefined();
     }
 

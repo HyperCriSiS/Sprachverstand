@@ -35,7 +35,7 @@ import {
   type SettingsBackupImportMode,
   type SettingsImportResult
 } from "./settings/settings-backup";
-import { loadSettings, saveSettings } from "./settings/storage";
+import { loadSettings, saveSettings, SettingsSyncError } from "./settings/storage";
 
 interface CountUpdatedMessage {
   readonly type: "sprachverstand.count-updated";
@@ -62,6 +62,8 @@ const processQuotedTextInput =
   requiredElement<HTMLInputElement>("#process-quoted-text");
 const processSubtitlesInput =
   requiredElement<HTMLInputElement>("#process-subtitles");
+const popupStartViewSelect =
+  requiredElement<HTMLSelectElement>("#popup-start-view");
 const popupSectionsContainer =
   requiredElement<HTMLElement>("#popup-sections");
 const ruleGroupsContainer = requiredElement<HTMLElement>("#rule-groups");
@@ -294,6 +296,8 @@ function render(settings: Settings): void {
     input.checked = enabledGroups.has(input.dataset.ruleGroupId ?? "");
   }
 
+  popupStartViewSelect.value = settings.popupStartView;
+
   const visiblePopupSections = new Set(settings.visiblePopupSectionIds);
   for (const input of popupSectionInputs()) {
     const sectionId = input.dataset.popupSection as PopupSectionId | undefined;
@@ -355,7 +359,9 @@ function readForm(): Settings {
     processQuotedText: processQuotedTextInput.checked,
     processSubtitles: processSubtitlesInput.checked,
     syncCategoryIds: syncCategoryIdsFromForm(),
-    visiblePopupSectionIds: popupSectionIdsFromForm()
+    visiblePopupSectionIds: popupSectionIdsFromForm(),
+    popupStartView:
+      popupStartViewSelect.value === "corrections" ? "corrections" : "options"
   };
 }
 
@@ -626,6 +632,13 @@ async function persist(): Promise<void> {
     );
     refreshCountAfterChange();
   } catch (error) {
+    if (error instanceof SettingsSyncError) {
+      // Saved on this device; only the browser synchronization is incomplete.
+      markSaved();
+      refreshCountAfterChange();
+      showStatus(error.message, true, 12000);
+      return;
+    }
     showStatus(
       visibleErrorMessage(
         error,

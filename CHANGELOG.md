@@ -21,6 +21,16 @@ dokumentiert.
 - Eigene geschützte Branch-/CI-/Release-Linie und reproduzierbare XPI-/Quellpakete.
 - Details und verbleibende Prüfgrenzen: [Thunderbird-Releasehinweise](docs/releases/thunderbird-0.9.0.md).
 
+## 0.9.1 (2026-11-02)
+
+### Hinzugefügt
+
+- Das Popup kann auf Wunsch direkt mit der Liste der Korrekturen starten (Einstellung „Beim Öffnen anzeigen“).
+
+### Behoben
+
+- Die Ersetzungsübersicht zeigt Paarformen wie „der / die Nutzer*in“ vollständig.
+
 ## 0.9.0 (2026-10-31)
 
 ### Hinzugefügt
