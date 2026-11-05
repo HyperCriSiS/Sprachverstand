@@ -317,3 +317,13 @@ nicht durch die Softwarelizenz freigegeben. Regeln für offizielle Pakete,
 Namensnennung und Forks stehen in [`TRADEMARKS.md`](TRADEMARKS.md). Das Programm
 wird ohne Gewährleistung bereitgestellt; Einzelheiten stehen in
 [`NOTICE`](NOTICE) und `LICENSE`.
+
+## Rat für deutsche Rechtschreibung
+
+| Zeitpunkt | Entwicklung |
+|---|---|
+| März&nbsp;2021 | Der Rechtschreibrat empfiehlt die Aufnahme von Gender-Sonderzeichen nicht. |
+| Juli&nbsp;2023 | Er bestätigt seine Haltung: Genderzeichen gehören nicht zum Kernbestand der deutschen Orthografie. |
+| Dezember&nbsp;2023 | Er empfiehlt erneut ausdrücklich, Sternchen, Unterstrich und Doppelpunkt im Wortinneren nicht in das Regelwerk aufzunehmen. |
+| Juli&nbsp;2024 | Das überarbeitete amtliche Regelwerk wird offiziell. Genderzeichen werden darin thematisiert, aber nicht als reguläre Schreibweisen anerkannt. |
+| März&nbsp;2026 | Die Bundesregierung bestätigt, dass in den Bundesbehörden weiterhin die Rechtschreibregeln des Rechtschreibrats gelten. |
