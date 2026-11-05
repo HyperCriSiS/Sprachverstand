@@ -4,7 +4,10 @@ import { disabledRuleIdsForGroups } from "../rules/catalog";
 import { domRuleMetadata } from "../rules/dom-metadata";
 import { isBuiltInTransformCandidate } from "../rules/transform-candidate";
 import type { Settings } from "../settings/defaults";
-import type { ReplacementSummaryEntry } from "../core/replacement-summary";
+import {
+  maximumReportedReplacementSummaries,
+  type ReplacementSummaryEntry
+} from "../core/replacement-summary";
 
 interface PaleMoonContentRuntime {
   apply(settings: Settings): void;
@@ -61,6 +64,10 @@ function optionsFor(settings: Settings) {
     processAccessibleAttributes: settings.processAccessibleAttributes,
     processQuotedText: settings.processQuotedText,
     processSubtitles: settings.processSubtitles,
+    // Wie in src/content.ts: gebündelt, damit nicht jede Zeitscheibe des
+    // Erstscans einen Rundlauf über die Sandbox-Grenze auslöst.
+    replacementNotificationIntervalMs: 100,
+    replacementSummaryLimit: maximumReportedReplacementSummaries,
     onReplacementCountChange: reportReplacementCount
   };
 }

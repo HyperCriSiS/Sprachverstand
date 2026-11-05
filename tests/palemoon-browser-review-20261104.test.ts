@@ -58,6 +58,26 @@ describe("Pale Moon: Browser-Überprüfung 04.11.2026 im eingereihten Erstscan",
     expect(document.title).toBe("Neue Mitarbeiter:innen gesucht");
   });
 
+  it("reiht nach einer Titeländerung nur den Dokumentkopf neu ein", async () => {
+    // Ohne HEAD als Blockgrenze reichte die Inline-Grenze eines neu angelegten
+    // Titels bis zur Dokumentwurzel: die ganze Seite wurde neu eingereiht, alle
+    // korrigierten Texte galten als kontextschmutzig und liefen erneut durch
+    // den Erstscan.
+    expect(document.head.querySelector("title")).toBeNull();
+    starten("<p>Alle Mitarbeiter:innen</p>", {
+      processAccessibleAttributes: false,
+      processQuotedText: false
+    });
+    await abwarten(() => document.querySelector("p")!.textContent === "Alle Mitarbeiter");
+    const eingereiht = vi.spyOn(processor as unknown as { queue(root: Node): void }, "queue");
+    document.title = "Neue Mitarbeiter:innen gesucht";
+    await abwarten(() => false, 4);
+    expect(eingereiht).toHaveBeenCalled();
+    for (const [wurzel] of eingereiht.mock.calls) {
+      expect(document.head.contains(wurzel)).toBe(true);
+    }
+  });
+
   it("schützt Attribute unter einer Editor-Rolle", async () => {
     starten(
       '<div role="textbox"><img alt="Mitarbeiter:innen"></div>' +
@@ -174,6 +194,11 @@ describe("Pale Moon: Zeitscheiben des Erstscans", () => {
       kanal.port1.onmessage?.({});
       // Die erste Scheibe lief und hat die nächste über denselben Kanal angefordert.
       expect(gesendet.length).toBe(2);
+      // Nach stop() darf die noch ausstehende Nachricht keinen Handler mehr
+      // treffen: in Pale Moon wäre die Sandbox dann schon abgeräumt.
+      processor!.stop({ restore: true });
+      processor = undefined;
+      expect(kanal.port1.onmessage).toBeNull();
     } finally {
       timer.mockRestore();
       view.MessageChannel = vorher;

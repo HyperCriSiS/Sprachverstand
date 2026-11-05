@@ -1211,6 +1211,11 @@ export class DomProcessor {
 
   private cancelRegularFlush(): void {
     this.flushTaskSequence += 1;
+    // A queued port message would still reach the handler after stop(); in
+    // Pale Moon the sandbox may be gone by then and the call would throw.
+    if (this.flushChannel) {
+      this.flushChannel.port1.onmessage = null;
+    }
     if (this.flushHandle === undefined) {
       return;
     }
