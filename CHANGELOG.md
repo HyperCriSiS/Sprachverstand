@@ -5,6 +5,8 @@ dokumentiert.
 
 ## Unveröffentlicht
 
+## 0.9.3 (2026-11-06)
+
 ### Leistung
 
 - Dynamisch eingefügter Text wird verarbeitet, bevor der Erstscan einer großen
