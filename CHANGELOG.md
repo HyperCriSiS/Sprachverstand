@@ -7,6 +7,8 @@ dokumentiert.
 
 ### Behoben
 
+- Der Add-on-Manager zeigt das Sprachverstand-Symbol auch direkt nach der
+  Installation und bei deaktivierter Erweiterung statt des Puzzle-Symbols.
 - Nach der Rückkehr zu einer Seite aus dem Seitencache (Zurück/Vor) wird die
   Seite wieder vollständig verarbeitet: Zähler, Korrektur nachgeladener Inhalte
   und das Zurücknehmen beim Ausschalten funktionieren wieder. Bisher blieb der
