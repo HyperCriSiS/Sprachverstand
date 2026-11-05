@@ -12,3 +12,9 @@
   padding: 0;
   border: 0;
 }
+
+/* Das Toolkit-Badge kürzt „999+“ auf „999“; der Zähler soll vollständig lesbar sein. */
+#sprachverstand-toolbar-button .toolbarbutton-badge {
+  max-width: none;
+  width: auto;
+}

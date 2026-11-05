@@ -1,23 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DomProcessor } from "../src/core/dom-processor";
 import { transformTextWithSummary } from "../src/core/transform-text";
-import { PaleMoonDomProcessor } from "../src/palemoon/dom-processor";
 import { defaultRules } from "../src/rules";
 import { domRuleMetadata } from "../src/rules/dom-metadata";
 import { isBuiltInTransformCandidate } from "../src/rules/transform-candidate";
 
-// Der Pale-Moon-Prozessor durchläuft große Seiten beim Start in eigenen
-// Zeitscheiben und ruft Text- und Attributpfad des Kerns einzeln auf. Diese
-// Tests führen die Befunde der Browser-Überprüfung durch genau diesen Pfad.
+// Der Pale-Moon-Port verwendet den Kernprozessor; große Seiten laufen über
+// dessen eingereihten Erstscan in Zeitscheiben. Diese Tests führen die
+// Befunde der Browser-Überprüfung durch genau diesen Pfad.
 const fuellung = `<div>${"<i></i>".repeat(1_600)}</div>`;
 
-let processor: PaleMoonDomProcessor | undefined;
+let processor: DomProcessor | undefined;
 
 function starten(
   html: string,
-  options: Partial<ConstructorParameters<typeof PaleMoonDomProcessor>[1]> = {}
-): PaleMoonDomProcessor {
+  options: Partial<ConstructorParameters<typeof DomProcessor>[1]> = {}
+): DomProcessor {
   document.body.innerHTML = html + fuellung;
-  processor = new PaleMoonDomProcessor(document, {
+  processor = new DomProcessor(document, {
     rules: domRuleMetadata,
     isTransformCandidate: isBuiltInTransformCandidate,
     transformText: (input, transformOptions) =>
@@ -46,7 +46,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("Pale Moon: Browser-Überprüfung 04.11.2026 im inkrementellen Erstscan", () => {
+describe("Pale Moon: Browser-Überprüfung 04.11.2026 im eingereihten Erstscan", () => {
   it("lässt den Dokumenttitel unverändert", async () => {
     document.head.innerHTML = "<title>Mitarbeiter:innen gesucht</title>";
     starten("<p>Alle Mitarbeiter:innen</p>");
@@ -122,5 +122,61 @@ describe("Pale Moon: Browser-Überprüfung 04.11.2026 im inkrementellen Erstscan
     await abwarten(() => frei!.textContent === "Alle Schüler lesen.");
     expect(frei!.textContent).toBe("Alle Schüler lesen.");
     expect(zitat!.textContent).toBe("„Alle git Nutzer*innen“ kamen.");
+  });
+});
+
+describe("Pale Moon: Zeitscheiben des Erstscans", () => {
+  it("verarbeitet eingefügten Text, bevor der Erstscan einer großen Seite endet", async () => {
+    // Ohne Nachrichtenkanal laufen die Scheiben über Timer: zwischen zwei
+    // Warteschritten unten genau eine mit höchstens 128 Schritten, während
+    // der Erstscan über zehn davon braucht.
+    const view = document.defaultView as Window & { MessageChannel?: unknown };
+    const kanal = view.MessageChannel;
+    view.MessageChannel = undefined;
+    try {
+      const absaetze = Array.from({ length: 600 }, () => "<p>Alle Lehrer:innen</p>").join("");
+      starten(absaetze, { processAccessibleAttributes: false });
+      const letzter = document.body.querySelector("p:nth-of-type(600)")!;
+      const neu = document.createElement("p");
+      neu.textContent = "Alle Kolleg*innen";
+      document.body.append(neu);
+
+      let scheiben = 0;
+      while (neu.textContent !== "Alle Kollegen" && scheiben < 50) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        scheiben++;
+      }
+      expect(neu.textContent).toBe("Alle Kollegen");
+      expect(letzter.textContent).toBe("Alle Lehrer:innen");
+
+      await abwarten(() => letzter.textContent === "Alle Lehrer");
+      expect(letzter.textContent).toBe("Alle Lehrer");
+      expect(processor!.getReplacementCount()).toBe(601);
+    } finally {
+      view.MessageChannel = kanal;
+    }
+  });
+
+  it("plant Zeitscheiben ohne Aufgabenplaner über einen Nachrichtenkanal statt über Timer", () => {
+    const view = document.defaultView as Window & { MessageChannel?: unknown };
+    const gesendet: unknown[] = [];
+    const kanal = {
+      port1: { onmessage: undefined as ((event: unknown) => void) | undefined },
+      port2: { postMessage: (value: unknown) => gesendet.push(value) }
+    };
+    const vorher = view.MessageChannel;
+    view.MessageChannel = function () { return kanal; };
+    const timer = vi.spyOn(view, "setTimeout");
+    try {
+      starten("<p>Alle Lehrer:innen</p>", { processAccessibleAttributes: false });
+      expect(gesendet.length).toBe(1);
+      expect(timer).not.toHaveBeenCalledWith(expect.any(Function), 0);
+      kanal.port1.onmessage?.({});
+      // Die erste Scheibe lief und hat die nächste über denselben Kanal angefordert.
+      expect(gesendet.length).toBe(2);
+    } finally {
+      timer.mockRestore();
+      view.MessageChannel = vorher;
+    }
   });
 });

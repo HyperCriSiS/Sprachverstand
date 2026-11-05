@@ -67,6 +67,10 @@ const leadingContextLimit = 120;
 const maximumSubtitleTransformCacheEntries = 256;
 // Protected elements whose text is not visible running text.
 const nonTextContextTags = new Set(["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT", "TEXTAREA", "SELECT", "OPTION"]);
+// HEAD gehört dazu: eine Titeländerung lief sonst bis zur Dokumentwurzel,
+// invalidierte jeden Inline-Schutz der Seite und reihte das ganze Dokument
+// neu ein, womit bereits korrigierter Text bis zum Ende des Erstscans
+// zurücksprang.
 const blockBoundaryTags = new Set([
   "ADDRESS",
   "ARTICLE",
@@ -85,6 +89,7 @@ const blockBoundaryTags = new Set([
   "H4",
   "H5",
   "H6",
+  "HEAD",
   "HEADER",
   "HR",
   "LI",
@@ -330,7 +335,11 @@ export class DomProcessor {
   private flushHandle: number | undefined;
   private flushTaskSequence = 0;
   private flushDueAt: number | undefined;
+  private flushChannel: MessageChannel | undefined;
   private activeTraversal: TraversalState | undefined;
+  // Ein langer Erstscan wird für neu eingereihte Knoten unterbrochen und
+  // danach fortgesetzt; vorher wartete eingefügter Text bis zu seinem Ende.
+  private suspendedTraversal: TraversalState | undefined;
   private textRewriteStates = new WeakMap<Text, RewriteState>();
   private subtitleFlushHandle: number | undefined;
   private subtitleFlushUsesAnimationFrame = false;
@@ -604,6 +613,7 @@ export class DomProcessor {
     this.cancelShadowDiscovery();
     this.cancelRegularFlush();
     this.activeTraversal = undefined;
+    this.suspendedTraversal = undefined;
     this.pendingNodes.clear();
     this.contextDirtyNodes.clear();
     this.pendingSubtitleTextNodes.clear();
@@ -867,10 +877,12 @@ export class DomProcessor {
     const roots = [
       ...awaiting.map(([node]) => node),
       ...(this.activeTraversal ? [this.activeTraversal.root] : []),
+      ...(this.suspendedTraversal ? [this.suspendedTraversal.root] : []),
       ...this.pendingNodes
     ];
     const attributes = [...this.pendingAttributes.entries()];
     this.activeTraversal = undefined;
+    this.suspendedTraversal = undefined;
     this.pendingNodes.clear();
     this.pendingAttributes.clear();
     this.resetPendingNodeScan();
@@ -1168,16 +1180,29 @@ export class DomProcessor {
     const scheduler = (view as (Window & {scheduler?: {
       postTask: (work: () => void, options: {priority: "background"}) => Promise<unknown>;
     }}) | null)?.scheduler;
-    if (this.options.transformText && delayMs <= 0 && scheduler?.postTask) {
+    if (this.options.transformText && delayMs <= 0) {
       // Background-priority tasks let rendering/input run first, without the
-      // minimum delay imposed on repeatedly nested timers. Delayed backoff
-      // and browsers without the API keep the timer path below.
+      // minimum delay imposed on repeatedly nested timers. Without the API a
+      // message port yields the same way; in Pale Moon a nested timer waits
+      // about 13 ms, which throttled each 1 ms slice to a single step.
+      // Delayed backoff keeps the timer path below.
       const sequence = ++this.flushTaskSequence;
-      this.flushHandle = -1;
-      void scheduler.postTask(() => {
+      const run = () => {
         if (this.flushHandle === -1 && this.flushTaskSequence === sequence) callback();
-      }, {priority: "background"});
-      return;
+      };
+      if (scheduler?.postTask) {
+        this.flushHandle = -1;
+        void scheduler.postTask(run, {priority: "background"});
+        return;
+      }
+      const ChannelConstructor = (view as (Window & {MessageChannel?: typeof MessageChannel}) | null)?.MessageChannel;
+      if (ChannelConstructor) {
+        this.flushChannel ??= new ChannelConstructor();
+        this.flushHandle = -1;
+        this.flushChannel.port1.onmessage = run;
+        this.flushChannel.port2.postMessage(0);
+        return;
+      }
     }
     this.flushHandle = view
       ? view.setTimeout(callback, Math.max(0, delayMs))
@@ -1212,6 +1237,7 @@ export class DomProcessor {
     const deadline = this.now() + (this.options.transformText ? 1 : regularWorkBudgetMs);
     let nextDelay: number | undefined;
     let editTurn = true;
+    let preemptTurn = true;
     let addedTurn = this.addedNodeTurn;
     let detachedTurn = this.detachedCleanupTurn;
     let nodeWorkDeferred = false;
@@ -1248,8 +1274,20 @@ export class DomProcessor {
       }
       addedTurn = true;
       if (this.activeTraversal) {
+        if (preemptTurn && !this.suspendedTraversal && this.pendingNodes.size > 0) {
+          preemptTurn = false;
+          const ready = this.takeNextReadyNode().node;
+          const traversal = ready ? this.createTraversal(ready) : undefined;
+          if (traversal) {
+            this.suspendedTraversal = this.activeTraversal;
+            this.activeTraversal = traversal;
+          }
+          continue;
+        }
+        preemptTurn = true;
         if (this.processTraversalStep(this.activeTraversal)) {
-          this.activeTraversal = undefined;
+          this.activeTraversal = this.suspendedTraversal;
+          this.suspendedTraversal = undefined;
         }
         continue;
       }
