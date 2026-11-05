@@ -399,6 +399,15 @@ function createSandbox(documentToProcess: Document): ContentSandbox | undefined 
   Components.utils.exportFunction(transformForContent, sandbox, {
     defineAs: "__sprachverstandTransform"
   });
+  Components.utils.exportFunction(
+    (count: unknown) => {
+      if (typeof count === "number" && sandboxesByDocument.get(documentToProcess) === sandbox) {
+        reportCount(documentToProcess, count);
+      }
+    },
+    sandbox,
+    { defineAs: "__sprachverstandReportCount" }
+  );
   Services.scriptloader.loadSubScript(contentRuntimeUrl, sandbox, "UTF-8");
   if (!sandboxHasRuntime(sandbox)) {
     Components.utils.nukeSandbox?.(sandbox);
@@ -437,17 +446,31 @@ function applySettingsToDocument(
   } finally {
     delete sandbox.__sprachverstandCommandPayload;
   }
+}
 
-  reportCount(documentToProcess, replacementCountFromSandbox(sandbox));
+// Frames get their own sandbox via DOMContentLoaded. A settings change must
+// reach them as well, otherwise a disabled add-on left frame text corrected.
+function* documentsInWindow(view: Window): Generator<Document> {
+  if (view.document) {
+    yield view.document;
+  }
+  for (let index = 0; index < view.frames.length; index++) {
+    const frame = view.frames[index];
+    if (frame) {
+      yield* documentsInWindow(frame);
+    }
+  }
 }
 
 function refreshOpenDocuments(): void {
   const settings = loadSettings();
 
   for (const browser of windowObject.gBrowser?.browsers ?? []) {
-    const contentDocument = browser.contentDocument;
-    if (contentDocument) {
-      applySettingsToDocument(contentDocument, settings);
+    const view = browser.contentDocument?.defaultView;
+    if (view) {
+      for (const contentDocument of documentsInWindow(view)) {
+        applySettingsToDocument(contentDocument, settings);
+      }
     }
   }
 
