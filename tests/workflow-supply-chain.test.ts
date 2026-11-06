@@ -13,6 +13,9 @@ const workflows = workflowPaths.map((workflowPath) => ({
 }));
 const expectedActionRefs = new Set([
   "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  "actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d",
+  "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
+  "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9",
   "actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1",
   "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
   "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093"
@@ -20,6 +23,9 @@ const expectedActionRefs = new Set([
 
 const expectedMajorComments = new Map([
   ["actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1", "v7"],
+  ["actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d", "v6"],
+  ["actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346", "v5"],
+  ["actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9", "v5"],
   ["actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1", "v7"],
   ["actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9", "v7"],
   ["google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093", "v3"]
