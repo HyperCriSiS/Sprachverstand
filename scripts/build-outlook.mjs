@@ -3,18 +3,20 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-// Baut das Outlook-Add-in nach dist/outlook. Die Dateien müssen unter
+// Baut das Outlook-Add-in nach dist/outlook (oder --out). Die Dateien müssen unter
 // --base-url per HTTPS erreichbar sein (Standard: lokaler Entwicklungsserver).
 const projectRoot = process.cwd();
 const baseIndex = process.argv.indexOf("--base-url");
 const baseUrl = new URL(baseIndex >= 0 ? process.argv[baseIndex + 1] : "https://localhost:3000/").toString();
-const outputDirectory = path.join(projectRoot, "dist", "outlook");
+const outIndex = process.argv.indexOf("--out");
+const outputDirectory = outIndex >= 0 ? path.resolve(process.argv[outIndex + 1]) : path.join(projectRoot, "dist", "outlook");
 const officeScript = '<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>';
-// Der Seitenbereich braucht die Beta-Fassung: Nur sie reicht die Vorschau-API
+// Der Seitenbereich (Popup) braucht die Beta-Fassung: Nur sie reicht die Vorschau-API
 // item.display.body an Outlook weiter, die stabile wirft „only enabled on the
-// beta api endpoint“. Die Ereignisdatei nutzt nur stabile APIs.
+// beta api endpoint“. Einstellungen und Ereignisdatei nutzen nur stabile APIs.
 const betaOfficeScript = officeScript.replace("/lib/1/", "/lib/beta/");
 const { version } = JSON.parse(await readFile(path.join(projectRoot, "package.json"), "utf8"));
+if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`Outlook braucht eine Version aus drei Zahlen, nicht ${version}.`);
 
 await rm(outputDirectory, { recursive: true, force: true });
 await mkdir(outputDirectory, { recursive: true });
@@ -27,7 +29,7 @@ for (const [page, entry] of [["popup/popup.html", "taskpane"], ["options/options
   const file = path.join(outputDirectory, page);
   const html = (await readFile(file, "utf8")).replace(
     /<script defer="" src="(popup|options)\.js"><\/script>/,
-    `${betaOfficeScript}\n<link href="../outlook.css" rel="stylesheet"/>\n<script type="module" src="../${entry}.js"></script>`
+    `${entry === "taskpane" ? betaOfficeScript : officeScript}\n<link href="../outlook.css" rel="stylesheet"/>\n<script type="module" src="../${entry}.js"></script>`
   );
   if (!html.includes(`../${entry}.js`)) throw new Error(`Startskript in ${page} nicht gefunden.`);
   await writeFile(file, html, "utf8");

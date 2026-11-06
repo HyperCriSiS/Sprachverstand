@@ -77,7 +77,7 @@
     compose(composeType, type, dom = true) {
       mailbox.item = composeItem(composeType, type);
       // Ohne DOM setzt die Ereignisdatei linkedom ein; danach gilt wieder der Browser.
-      const names = ["DOMParser", "Node", "Element", "Text", "ShadowRoot", "NodeFilter", "setTimeout", "clearTimeout"];
+      const names = ["DOMParser", "Node", "Element", "Text", "ShadowRoot", "NodeFilter"];
       const saved = names.map(name => window[name]);
       if (!dom) window.DOMParser = undefined;
       return new Promise(resolve => handlers.onNewMessageComposeHandler({completed: resolve}))

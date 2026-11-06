@@ -23,12 +23,15 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 - `src/outlook/launchevent.ts` entspricht `compose-background.ts` der
   Thunderbird-Ausgabe. Ohne DOM (klassisches Outlook) setzt
   `src/outlook/dom-without-browser.ts` linkedom ein, damit derselbe DOM-Kern wie
-  in Thunderbird läuft; `src/outlook/runtime-globals.ts` ergänzt fehlende
-  Browser-Funktionen (atob, performance, Timer, Intl).
-- Seitenbereich und Einstellungen laden die Beta-Fassung von Office.js: Nur sie
-  reicht `item.display.body` an Outlook weiter, die stabile wirft „The feature
-  setUIAsync, is only enabled on the beta api endpoint“. Die Ereignisdatei nutzt
-  die stabile Fassung.
+  in Thunderbird läuft. Wie ein Browser liest es Word-Bedingungen
+  (`<![if !vml]>`) als Kommentare, fügt Textknoten zusammen und maskiert
+  Attributwerte. `src/outlook/runtime-globals.ts` ergänzt atob, performance und
+  queueMicrotask; Intl nur beim Laden, Timer nur im Dokument.
+- Der Seitenbereich lädt die Beta-Fassung von Office.js: Nur sie reicht
+  `item.display.body` an Outlook weiter, die stabile wirft „The feature
+  setUIAsync, is only enabled on the beta api endpoint“. Microsoft rät von Beta
+  in der Produktion ab; vor einer Store-Einreichung neu bewerten. Einstellungen
+  und Ereignisdatei nutzen die stabile Fassung.
 - Die Manifestversion ist `1.` plus Paketversion (0.9.3 wird 1.0.9.3), weil
   Microsoft Versionen unter 1.0 ablehnt.
 
@@ -56,7 +59,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | --- | --- | --- |
 | Seitenbereich, Popup, Einstellungen | ja | ja, mit WebView2 |
 | Leseansicht ersetzen | sobald Outlook `item.display.body` umsetzt (ein Bericht von 2025 nennt es für das neue Outlook als fehlend), sonst Fassung im Seitenbereich | laut einem Bericht von 2025 verfügbar, sonst Fassung im Seitenbereich |
-| Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, über denselben DOM-Kern mit linkedom, also auch über Tags hinweg (`Lehrer*<b>innen</b>`). Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Version 2403 oder neuer (ältere Builds kennen in Ereignissen nur ES2016), Windows 10 1903 oder neuer. Outlook LTSC 2021 (Version 2108) reicht daher nicht. |
+| Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, über denselben DOM-Kern mit linkedom, also auch über Tags hinweg (`Lehrer*<b>innen</b>`). Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Version 2403 oder neuer (ältere Builds kennen in Ereignissen nur ES2016), Windows 10 1903 oder neuer. Outlook LTSC 2021 (Version 2108) reicht daher nicht. Kern und linkedom nutzen APIs bis ES2023 (`Object.hasOwn`, `findLast`); dass die Laufzeit sie hat, ist nur für V8 belegt. |
 
 Ältere Clients mit Internet-Explorer-Webview werden nicht unterstützt: Der
 Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
@@ -98,7 +101,8 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
 - `npx office-addin-manifest validate dist/outlook/manifest.xml`: offizielle
   Prüfung über den Onlinedienst von Microsoft, auch in der Outlook-Prüfung. Mit
   `-p` (Store-Regeln) und einer öffentlichen `--base-url` bleiben nur die
-  Erreichbarkeit der Symbole und damit die echte Bereitstellung offen.
+  Erreichbarkeit der Symbole und damit die echte Bereitstellung offen. Fällt der
+  Dienst aus, schlägt die Outlook-Prüfung fehl.
 - `npm run outlook:harness`: baut das Add-in und startet es unter
   `http://localhost:8765/` mit einer Office.js-Attrappe
   (`scripts/outlook-harness/mock-office.js`).

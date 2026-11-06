@@ -1,5 +1,7 @@
 import {execFileSync} from "node:child_process";
-import {readFileSync} from "node:fs";
+import {mkdtempSync, readFileSync, rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import path from "node:path";
 import vm from "node:vm";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {createOutlookApi, deviceStore, formatMessage, localeCandidates} from "../src/outlook/extension-shim";
@@ -105,8 +107,10 @@ describe("Outlook: Nachrichtentext", () => {
     // Die gebaute Ereignisdatei in einem leeren JavaScript-Kontext: nur Office
     // und console, kein DOM, kein Timer, kein URL, kein Intl (Ereignislaufzeit
     // des klassischen Outlook).
-    execFileSync(process.execPath, ["scripts/build-outlook.mjs"], {stdio: "ignore"});
-    const code = readFileSync("dist/outlook/launchevent.js", "utf8");
+    const out = mkdtempSync(path.join(tmpdir(), "sprachverstand-outlook-"));
+    execFileSync(process.execPath, ["scripts/build-outlook.mjs", "--out", out], {stdio: "ignore"});
+    const code = readFileSync(path.join(out, "launchevent.js"), "utf8");
+    rmSync(out, {recursive: true, force: true});
     const samples = [
       "<html><body><p>Liebe Lehrer*<b>innen</b>, das Projekt der <em>Künstler*in</em>.</p></body></html>",
       "<html><head><style>.Lehrer\:innen{}</style><!--[if gte mso 9]><xml>Kolleg*innen</xml><![endif]--></head>" +
@@ -115,7 +119,14 @@ describe("Outlook: Nachrichtentext", () => {
         "<script>Kolleg*innen</script></body></html>",
       "<html><body><div>Danke!</div><blockquote><p>Die Kolleg<span style=\"color:red\">*</span>innen und " +
         "<a href=\"https://example.org/Lehrer*innen\">Lehrer*innen</a></p><table><tr><td>Mitarbeiter:in</td></tr></table>" +
-        "</blockquote></body></html>"
+        "</blockquote></body></html>",
+      // Entitäten zwischen Wörtern, maskierte Attributwerte.
+      "<html><body><p>jede*r&nbsp;Teilnehmer*in und Lehrer&shy;*innen</p>" +
+        "<a href=\"https://shop.example/?id=1&amp;region=de\">Kolleg*innen</a></body></html>",
+      // Word-Bedingungen außerhalb von Kommentaren.
+      "<html><body><p>Kolleg*innen</p><!--[if gte vml 1]><v:shape>Bild</v:shape><![endif]-->" +
+        "<![if !vml]><img src=\"cid:image002.png@01DB\"><![endif]></body></html>",
+      "<div>Liebe Kolleg*innen</div>"
     ];
     // Ohne Timer und mit eingebauten Timern, die globalThis als this verlangen.
     const strictTimers = "globalThis.setTimeout = globalThis.clearTimeout = function () {" +
@@ -129,6 +140,9 @@ describe("Outlook: Nachrichtentext", () => {
         .toBe("undefined,undefined,undefined,undefined");
       if (timers) vm.runInContext(strictTimers, context);
       vm.runInContext(code, context);
+      // Der Intl-Ersatz gilt nur beim Laden, Timer bleiben unberührt.
+      expect(vm.runInContext("[typeof setTimeout, typeof Intl].join()", context))
+        .toBe(timers ? "function,undefined" : "undefined,undefined");
       return office;
     }));
     return Promise.all(outputs.map(office => office.done)).then(results => {
@@ -140,6 +154,10 @@ describe("Outlook: Nachrichtentext", () => {
       });
       expect(body(results[0]!)).toBe("<p>Liebe Lehrer<b></b>, das Projekt des <em>Künstlers</em>.</p>");
       expect(results[1]).toContain("cid:image001.png@01DB");
+      expect(results[3]).toContain('href="https://shop.example/?id=1&amp;region=de"');
+      expect(body(results[3]!)).toContain("jeder&nbsp;Teilnehmer und Lehrer</p>");
+      expect(results[4]).toContain("<!--[if !vml]--><img src=\"cid:image002.png@01DB\"><!--[endif]-->");
+      expect(body(results[5]!)).toBe("<div>Liebe Kollegen</div>");
     });
   });
 });
@@ -280,6 +298,12 @@ describe("Outlook: Leseansicht", () => {
     expect(await inlineImages(item, html)).toBe('<img src="data:image/png;base64,QUJD"><img src="data:image/png;base64,QUJD">' +
       '<img src="cid:fehlt@01"><img src="cid:anhang@01">');
     expect(getAttachmentContentAsync.mock.calls.map(([id]) => id)).toEqual(["a", "b"]);
+
+    // Präfixe (img1, img10), Großschreibung und %-Kodierung.
+    const prefixed: OutlookItem = {...item, attachments: [{id: "b", isInline: true, contentId: "img1"},
+      {id: "a", isInline: true, contentId: "img10@01"}]};
+    expect(await inlineImages(prefixed, '<img src="CID:img10%4001"><img src="cid:img1">'))
+      .toBe('<img src="data:image/png;base64,QUJD"><img src="cid:img1">');
   });
 
   it("verarbeitet im Verfassen nichts (keine itemId)", async () => {

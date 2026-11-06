@@ -21,16 +21,28 @@ export function offlinePreview(html: string): string {
 // Seitenbereich nicht kennt. Sie werden als data:-URL eingesetzt (Mailbox 1.8
 // und 1.16); fehlt etwas davon, bleibt der Verweis.
 export async function inlineImages(item: OutlookItem, html: string): Promise<string> {
-  let result = html;
-  for (const {id, isInline, contentId, contentType} of item.attachments ?? []) {
-    const reference = `cid:${contentId?.replace(/^<|>$/g, "")}`;
-    if (!isInline || !contentId || !item.getAttachmentContentAsync || !result.includes(reference)) continue;
-    const attachment = await call<{content: string; format: string}>(callback =>
-      item.getAttachmentContentAsync!(id, {}, callback)).catch(() => undefined);
-    if (attachment?.format !== "base64") continue;
-    result = result.split(reference).join(`data:${contentType ?? "image/png"};base64,${attachment.content}`);
+  // Verweise sind unabhängig von Groß- und Kleinschreibung und dürfen
+  // %-kodiert sein (RFC 2392).
+  const key = (id: string) => {
+    try {
+      return decodeURIComponent(id).replace(/^<|>$/g, "").toLowerCase();
+    } catch {
+      return id.toLowerCase();
+    }
+  };
+  const reference = /cid:([^"'\s)>]+)/gi;
+  const inline = new Map((item.attachments ?? []).filter(attachment => attachment.isInline && attachment.contentId)
+    .map(attachment => [key(attachment.contentId!), attachment] as const));
+  const images = new Map<string, string | undefined>();
+  for (const [, id] of html.matchAll(reference)) {
+    const attachment = inline.get(key(id!));
+    if (!attachment || !item.getAttachmentContentAsync || images.has(key(id!))) continue;
+    const content = await call<{content: string; format: string}>(callback =>
+      item.getAttachmentContentAsync!(attachment.id, {}, callback)).catch(() => undefined);
+    images.set(key(id!), content?.format === "base64"
+      ? `data:${attachment.contentType ?? "image/png"};base64,${content.content}` : undefined);
   }
-  return result;
+  return html.replace(reference, (match, id: string) => images.get(key(id)) ?? match);
 }
 
 // Entspricht dem Thunderbird-Nachrichtenskript: Die ausgewählte Nachricht wird
