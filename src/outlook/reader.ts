@@ -11,6 +11,12 @@ export interface ReaderView {
   showPreview(html: string | undefined): void;
 }
 
+// Die Fassung im Seitenbereich lädt nichts nach: externe Bilder, Schriften
+// und Stile könnten sonst dem Absender das Öffnen verraten.
+export function offlinePreview(html: string): string {
+  return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">${html}`;
+}
+
 // Entspricht dem Thunderbird-Nachrichtenskript: Die ausgewählte Nachricht wird
 // beim Öffnen umgewandelt, gespeichert wird nichts. Outlook ersetzt dazu nur
 // die Anzeige (item.display.body); die Nachricht im Postfach bleibt unverändert.
@@ -34,9 +40,10 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
   async function process(): Promise<void> {
     const current = ++generation;
     const item = Office.context.mailbox?.item;
-    // Im Verfassen hat body.setAsync; dort gilt die Korrektur beim Öffnen.
+    // Nur gelesene Nachrichten haben eine itemId; im Verfassen gilt die
+    // Korrektur beim Öffnen.
     if (displayed && displayed.item !== item) displayed = undefined;
-    if (!item || !settings || typeof item.body.setAsync === "function") {
+    if (!item?.itemId || !settings) {
       view.showPreview(undefined);
       publish(0, []);
       return;
@@ -52,13 +59,14 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
     }
     const result = transformBody(original, true, settings);
     if (current !== generation) return;
-    if (item.display?.body) {
-      if (result.count || displayed) await display(item, result.body);
-      displayed = result.count ? {item, original} : undefined;
-      view.showPreview(undefined);
-    } else {
-      view.showPreview(result.count ? result.body : undefined);
+    let replaced = false;
+    if (item.display?.body && (result.count || displayed)) {
+      // Vorschau-API: Lehnt Outlook sie ab, bleibt die Fassung im Seitenbereich.
+      replaced = await display(item, result.body).then(() => true, () => false);
+      if (current !== generation) return;
+      displayed = replaced && result.count ? {item, original} : undefined;
     }
+    view.showPreview(result.count && !replaced ? result.body : undefined);
     publish(result.count, result.replacements);
   }
 

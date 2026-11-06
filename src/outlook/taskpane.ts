@@ -1,5 +1,5 @@
 import {installOutlookApi} from "./extension-shim";
-import {connectReader} from "./reader";
+import {connectReader, offlinePreview} from "./reader";
 import {hideSubtitleOption} from "./platform-ui";
 import {office} from "./office";
 
@@ -26,6 +26,6 @@ document.querySelector("#open-replacements")?.after(preview);
 
 connectReader(api, office(), {showPreview(html) {
   preview.hidden = html === undefined;
-  frame.srcdoc = html ?? "";
+  frame.srcdoc = html === undefined ? "" : offlinePreview(html);
 }});
 await import("../popup");

@@ -24,18 +24,57 @@ export function formatMessage(entry: Messages[string] | undefined, substitutions
     .replace(/\$(\$|\d)/g, (_, token: string) => token === "$" ? "$" : values[Number(token) - 1] ?? "");
 }
 
-// Bildet storage.sync und storage.local auf die Roaming-Einstellungen des
-// Postfachs ab. Beide Bereiche liegen getrennt unter eigenem Präfix.
-function roamingArea(settings: RoamingSettings, area: string, notify: ChangeListener): StorageArea {
-  const key = (name: string) => `${area}:${name}`;
-  const read = (name: string) => {
-    const value = settings.get(key(name));
-    return value === undefined || value === null ? undefined : JSON.parse(String(value)) as unknown;
+export interface RawStore {
+  get(key: string): string | undefined;
+  set(key: string, value: string): void;
+  remove(key: string): void;
+  save(): Promise<void>;
+}
+
+// storage.sync: Roaming-Einstellungen des Postfachs (gemeinsam rund 32 KB).
+export function roamingStore(settings: RoamingSettings): RawStore {
+  return {
+    get: key => {
+      const value = settings.get(`sync:${key}`);
+      return value === undefined || value === null ? undefined : String(value);
+    },
+    set: (key, value) => settings.set(`sync:${key}`, value),
+    remove: key => settings.remove(`sync:${key}`),
+    save: () => call<void>(callback => settings.saveAsync(callback))
   };
+}
+
+export const localPrefix = "sprachverstand:";
+
+// storage.local bleibt auf dem Gerät. Ohne localStorage (Ereignislaufzeit des
+// klassischen Outlook) gibt es nur einen leeren Speicher für diesen Lauf.
+export function deviceStore(storage: Storage | null = globalThis.localStorage ?? null): RawStore {
+  const memory = new Map<string, string>();
+  return {
+    get: key => (storage ? storage.getItem(localPrefix + key) : memory.get(key)) ?? undefined,
+    set: (key, value) => storage ? storage.setItem(localPrefix + key, value) : memory.set(key, value),
+    remove: key => storage ? storage.removeItem(localPrefix + key) : memory.delete(key),
+    save: async () => undefined
+  };
+}
+
+const parse = (value: string | undefined) => value === undefined ? undefined : JSON.parse(value) as unknown;
+
+function storageArea(store: RawStore, area: string, notify: ChangeListener): StorageArea {
+  const read = (name: string) => parse(store.get(name));
+  // Schlägt das Speichern fehl (etwa über 32 KB), gilt wieder der alte Stand.
   async function write(update: (changes: Record<string, StorageChange>) => void): Promise<void> {
     const changes: Record<string, StorageChange> = {};
     update(changes);
-    await call<void>(callback => settings.saveAsync(callback));
+    try {
+      await store.save();
+    } catch (error) {
+      for (const [name, change] of Object.entries(changes)) {
+        if (change.oldValue === undefined) store.remove(name);
+        else store.set(name, JSON.stringify(change.oldValue));
+      }
+      throw error;
+    }
     if (Object.keys(changes).length) notify(changes, area);
   }
   return {
@@ -53,8 +92,8 @@ function roamingArea(settings: RoamingSettings, area: string, notify: ChangeList
     },
     set: items => write(changes => {
       for (const [name, newValue] of Object.entries(items)) {
-        changes[name] = {oldValue: read(name), newValue};
-        settings.set(key(name), JSON.stringify(newValue));
+        changes[name] = {oldValue: changes[name]?.oldValue ?? read(name), newValue};
+        store.set(name, JSON.stringify(newValue));
       }
     }),
     remove: keys => write(changes => {
@@ -62,7 +101,7 @@ function roamingArea(settings: RoamingSettings, area: string, notify: ChangeList
         const oldValue = read(name);
         if (oldValue === undefined) continue;
         changes[name] = {oldValue};
-        settings.remove(key(name));
+        store.remove(name);
       }
     })
   };
@@ -81,13 +120,21 @@ export interface OutlookApi extends ExtensionApi {
 // WebExtension-API im Seitenbereich bereit. Nachrichten bleiben in der Seite:
 // der Seitenbereich ist zugleich Hintergrund, Popup und Nachrichtenansicht.
 export function createOutlookApi(roaming: RoamingSettings, language: string, catalogs: readonly Messages[],
-  navigate: (url: string) => void): OutlookApi {
+  navigate: (url: string) => void, local: RawStore = deviceStore()): OutlookApi {
   const storageListeners = new Set<ChangeListener>();
   const messageListeners = new Set<MessageListener>();
   const notify: ChangeListener = (changes, area) => {
     for (const listener of [...storageListeners]) listener(changes, area);
   };
-  const root = new URL("../", globalThis.location?.href ?? "https://localhost/x/");
+  // Änderungen aus einem anderen Outlook-Fenster derselben Herkunft.
+  globalThis.addEventListener?.("storage", event => {
+    const {key, oldValue, newValue} = event as StorageEvent;
+    if (!key?.startsWith(localPrefix)) return;
+    notify({[key.slice(localPrefix.length)]: {oldValue: parse(oldValue ?? undefined), newValue: parse(newValue ?? undefined)}},
+      "local");
+  });
+  // Die Ereignislaufzeit des klassischen Outlook kennt location und URL nicht.
+  const root = () => new URL("../", globalThis.location.href);
   async function dispatch(message: unknown): Promise<unknown> {
     let response: unknown;
     for (const listener of [...messageListeners]) {
@@ -105,15 +152,15 @@ export function createOutlookApi(roaming: RoamingSettings, language: string, cat
       getUILanguage: () => language
     },
     storage: {
-      sync: roamingArea(roaming, "sync", notify),
-      local: roamingArea(roaming, "local", notify),
+      sync: storageArea(roamingStore(roaming), "sync", notify),
+      local: storageArea(local, "local", notify),
       onChanged: {addListener: listener => storageListeners.add(listener),
         removeListener: listener => storageListeners.delete(listener)}
     },
     runtime: {
       id: "outlook",
-      openOptionsPage: () => navigate(new URL("options/options.html", root).toString()),
-      getURL: path => new URL(path.replace(/^\//, ""), root).toString(),
+      openOptionsPage: () => navigate(new URL("options/options.html", root()).toString()),
+      getURL: path => new URL(path.replace(/^\//, ""), root()).toString(),
       sendMessage: message => Promise.resolve().then(() => dispatch(message)),
       onMessage: {addListener: listener => messageListeners.add(listener),
         removeListener: listener => messageListeners.delete(listener)}

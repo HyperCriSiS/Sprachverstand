@@ -45,4 +45,4 @@ await build({ ...common, entryPoints: {
 }, format: "esm", splitting: true, chunkNames: "chunks/[name]-[hash]" });
 // Klassisches Outlook lädt die Ereignisdatei ohne Module als einzelnes Skript.
 await build({ ...common, entryPoints: { launchevent: path.join(projectRoot, "src", "outlook", "launchevent.ts") },
-  format: "iife" });
+  format: "iife", target: ["es2018"] });

@@ -1,0 +1,78 @@
+// Office.js-Attrappe für scripts/outlook-harness.mjs. Bildet die vom Add-in
+// genutzten Teile nach; Zustand liegt in sessionStorage, damit Navigationen im
+// Seitenbereich ihn behalten. Steuerung über window.harness.
+(() => {
+  const params = new URLSearchParams(location.search);
+  const roamingKey = "harness.roaming";
+  const roaming = JSON.parse(sessionStorage.getItem(roamingKey) || "{}");
+  const mails = [
+    "<html><head><style>p{margin:0 0 8px}</style></head><body><p>Liebe Kolleg*innen,</p><p>die Lehrer:innen und alle Mitarbeiter*innen sind eingeladen. Jede*r Teilnehmer*in bringt etwas mit.</p></body></html>",
+    "<html><body><p>Newsletter f&uuml;r B&uuml;rger*innen</p><img src=\"https://tracker.invalid/pixel.gif\" alt=\"\"></body></html>",
+    "<html><body><p>Ohne Genderzeichen.</p></body></html>"
+  ];
+  const ok = value => ({status: "succeeded", value});
+  const later = (callback, result) => setTimeout(() => callback && callback(result));
+  const state = {mail: Number(params.get("mail") || 0), displayed: [], composeBody: undefined, displayFails: params.has("displayfails")};
+  let itemChanged;
+
+  function readItem() {
+    return {
+      itemType: "message", itemId: `mail-${state.mail}`,
+      body: {getAsync: (type, options, callback) => later(callback, ok(mails[state.mail]))},
+      display: params.has("nodisplay") ? undefined : {body: {setAsync(html, options, callback) {
+        if (state.displayFails) return later(callback, {status: "failed", error: {message: "Vorschau-API abgelehnt"}});
+        state.displayed.push(html);
+        later(callback, ok());
+      }}}
+    };
+  }
+
+  function composeItem(composeType, type) {
+    state.composeBody = type === "html" ? mails[0] : "Antwort an die Lehrer:innen";
+    return {
+      itemType: "message",
+      body: {
+        getTypeAsync: callback => later(callback, ok(type)),
+        getAsync: (coercion, options, callback) => later(callback, ok(state.composeBody)),
+        setAsync: (data, options, callback) => {state.composeBody = data; later(callback, ok());}
+      },
+      getComposeTypeAsync: callback => later(callback, ok({composeType, coercionType: type}))
+    };
+  }
+
+  const handlers = {};
+  const mailbox = {item: readItem(), addHandlerAsync(type, handler, callback) {itemChanged = handler; later(callback, ok());}};
+  window.Office = {
+    onReady: () => Promise.resolve({host: "Outlook"}),
+    context: {
+      displayLanguage: params.get("lang") || "de-DE",
+      roamingSettings: {
+        get: name => roaming[name], set: (name, value) => {roaming[name] = value;}, remove: name => {delete roaming[name];},
+        saveAsync(callback) {
+          const size = JSON.stringify(roaming).length;
+          if (size > 32 * 1024) return later(callback, {status: "failed", error: {message: "Roaming-Einstellungen über 32 KB"}});
+          sessionStorage.setItem(roamingKey, JSON.stringify(roaming));
+          later(callback, ok());
+        }
+      },
+      mailbox
+    },
+    MailboxEnums: {BodyMode: {FullBody: "fullBody"}},
+    actions: {associate: (name, handler) => {handlers[name] = handler;}}
+  };
+
+  window.harness = {
+    state,
+    roaming,
+    select(index) {state.mail = index; mailbox.item = readItem(); itemChanged && itemChanged();},
+    // Simuliert OnNewMessageCompose; mit dom=false wie im klassischen Outlook.
+    compose(composeType, type, dom = true) {
+      mailbox.item = composeItem(composeType, type);
+      const parser = window.DOMParser;
+      if (!dom) window.DOMParser = undefined;
+      return new Promise(resolve => handlers.onNewMessageComposeHandler({completed: resolve}))
+        .then(() => state.composeBody)
+        .finally(() => {window.DOMParser = parser;});
+    }
+  };
+})();

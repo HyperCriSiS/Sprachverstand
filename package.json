@@ -15,6 +15,7 @@
     "build:chromium-family": "npm run build:chromium",
     "build:firefox": "node scripts/build.mjs --target firefox",
     "build:outlook": "node scripts/build-outlook.mjs",
+    "outlook:harness": "npm run build:outlook && node scripts/outlook-harness.mjs",
     "dev": "node scripts/build.mjs --target chromium --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
