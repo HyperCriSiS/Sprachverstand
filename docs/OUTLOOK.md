@@ -119,10 +119,22 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
 
 ## In Outlook testen
 
-1. `npm run build:outlook`
-2. `dist/outlook/` per HTTPS unter `https://localhost:3000/` bereitstellen.
-3. Neues Outlook oder Outlook im Web: „Add-Ins abrufen“ → „Meine Add-Ins“ →
-   „Benutzerdefiniertes Add-In hinzufügen“ → `dist/outlook/manifest.xml`.
-   Klassisches Outlook: „Datei“ → „Add-Ins verwalten“ öffnet dieselbe Seite.
-4. Eine Nachricht mit Genderzeichen öffnen, „Sprachverstand“ wählen, Seitenbereich
+Jeder Push auf `outlook` stellt den Build nach bestandener Prüfung unter GitHub
+Pages bereit (Job „Outlook-Bereitstellung“). Ein eigener Server oder ein
+Zertifikat ist nicht nötig.
+
+1. Das Manifest herunterladen:
+   <https://hypercrisis.github.io/Sprachverstand/manifest.xml>
+2. Neues Outlook oder Outlook im Web: „Add-Ins abrufen“ → „Meine Add-Ins“ →
+   „Benutzerdefiniertes Add-In hinzufügen“ → „Aus Datei hinzufügen“ → die Datei
+   wählen. Klassisches Outlook: „Datei“ → „Add-Ins verwalten“ öffnet dieselbe
+   Seite. Das Add-in gilt danach für alle Outlook-Fassungen desselben Kontos.
+3. Eine Nachricht mit Genderzeichen öffnen, „Sprachverstand“ wählen, Seitenbereich
    anheften und weitere Nachrichten auswählen.
+4. Beim Antworten: Option in den Einstellungen einschalten und auf eine Nachricht
+   mit Genderzeichen antworten.
+
+Zu prüfen sind das klassische Outlook (ab 2403, z. B. Office LTSC 2024), die
+neue Outlook-App und Outlook im Web. Für eine lokale Entwicklungsfassung
+`npm run build:outlook -- --base-url <HTTPS-Adresse>` bauen und `dist/outlook/`
+unter dieser Adresse bereitstellen.
