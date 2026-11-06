@@ -10,6 +10,10 @@ const baseIndex = process.argv.indexOf("--base-url");
 const baseUrl = new URL(baseIndex >= 0 ? process.argv[baseIndex + 1] : "https://localhost:3000/").toString();
 const outputDirectory = path.join(projectRoot, "dist", "outlook");
 const officeScript = '<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>';
+// Der Seitenbereich braucht die Beta-Fassung: Nur sie reicht die Vorschau-API
+// item.display.body an Outlook weiter, die stabile wirft „only enabled on the
+// beta api endpoint“. Die Ereignisdatei nutzt nur stabile APIs.
+const betaOfficeScript = officeScript.replace("/lib/1/", "/lib/beta/");
 const { version } = JSON.parse(await readFile(path.join(projectRoot, "package.json"), "utf8"));
 
 await rm(outputDirectory, { recursive: true, force: true });
@@ -23,7 +27,7 @@ for (const [page, entry] of [["popup/popup.html", "taskpane"], ["options/options
   const file = path.join(outputDirectory, page);
   const html = (await readFile(file, "utf8")).replace(
     /<script defer="" src="(popup|options)\.js"><\/script>/,
-    `${officeScript}\n<link href="../outlook.css" rel="stylesheet"/>\n<script type="module" src="../${entry}.js"></script>`
+    `${betaOfficeScript}\n<link href="../outlook.css" rel="stylesheet"/>\n<script type="module" src="../${entry}.js"></script>`
   );
   if (!html.includes(`../${entry}.js`)) throw new Error(`Startskript in ${page} nicht gefunden.`);
   await writeFile(file, html, "utf8");
@@ -32,8 +36,10 @@ await cp(path.join(projectRoot, "src", "outlook", "outlook.css"), path.join(outp
 await writeFile(path.join(outputDirectory, "launchevent.html"),
   `<!DOCTYPE html>\n<html><head><meta charset="utf-8"/>${officeScript}<script src="launchevent.js"></script></head><body></body></html>\n`);
 
+// Microsoft lehnt Manifestversionen unter 1.0 ab: 0.9.3 wird zu 1.0.9.3,
+// 1.0.0 zu 1.1.0.0. So bleibt die Folge aufsteigend.
 const manifest = (await readFile(path.join(projectRoot, "manifests", "outlook.xml"), "utf8"))
-  .replaceAll("{{VERSION}}", `${version}.0`)
+  .replaceAll("{{VERSION}}", `1.${version}`)
   .replaceAll("{{BASE_URL}}", baseUrl);
 await writeFile(path.join(outputDirectory, "manifest.xml"), manifest, "utf8");
 
@@ -44,5 +50,7 @@ await build({ ...common, entryPoints: {
   options: path.join(projectRoot, "src", "outlook", "options-entry.ts")
 }, format: "esm", splitting: true, chunkNames: "chunks/[name]-[hash]" });
 // Klassisches Outlook lädt die Ereignisdatei ohne Module als einzelnes Skript.
+// linkedom greift optional auf das Node-Paket canvas zu und nutzt sonst einen
+// eingebauten Ersatz.
 await build({ ...common, entryPoints: { launchevent: path.join(projectRoot, "src", "outlook", "launchevent.ts") },
-  format: "iife", target: ["es2018"] });
+  format: "iife", target: ["es2018"], external: ["canvas"] });

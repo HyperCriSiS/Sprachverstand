@@ -8,8 +8,11 @@
   const mails = [
     "<html><head><style>p{margin:0 0 8px}</style></head><body><p>Liebe Kolleg*innen,</p><p>die Lehrer:innen und alle Mitarbeiter*innen sind eingeladen. Jede*r Teilnehmer*in bringt etwas mit.</p></body></html>",
     "<html><body><p>Newsletter f&uuml;r B&uuml;rger*innen</p><img src=\"https://tracker.invalid/pixel.gif\" alt=\"\"></body></html>",
-    "<html><body><p>Ohne Genderzeichen.</p></body></html>"
+    "<html><body><p>Ohne Genderzeichen.</p></body></html>",
+    "<html><body><p>Gruß an alle Kolleg*innen</p><img src=\"cid:logo.png@01DB0001\" alt=\"Logo\" width=\"48\" height=\"48\"></body></html>"
   ];
+  // Eingebettetes Bild zu Nachricht 3 (PNG, 1 x 1 Pixel).
+  const logo = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
   const ok = value => ({status: "succeeded", value});
   const later = (callback, result) => setTimeout(() => callback && callback(result));
   const state = {mail: Number(params.get("mail") || 0), displayed: [], composeBody: undefined, displayFails: params.has("displayfails")};
@@ -19,7 +22,12 @@
     return {
       itemType: "message", itemId: `mail-${state.mail}`,
       body: {getAsync: (type, options, callback) => later(callback, ok(mails[state.mail]))},
+      attachments: state.mail === 3 ? [{id: "att-1", isInline: true, contentId: "logo.png@01DB0001", contentType: "image/png"}] : [],
+      getAttachmentContentAsync: (id, options, callback) =>
+        later(callback, id === "att-1" ? ok({content: logo, format: "base64"}) : {status: "failed", error: {message: "InvalidAttachmentId"}}),
       display: params.has("nodisplay") ? undefined : {body: {setAsync(html, options, callback) {
+        // Wie die stabile office.js (lib/1): Die Vorschau-API wirft synchron.
+        if (params.has("stableoffice")) throw new Error("The feature setUIAsync, is only enabled on the beta api endpoint");
         if (state.displayFails) return later(callback, {status: "failed", error: {message: "Vorschau-API abgelehnt"}});
         state.displayed.push(html);
         later(callback, ok());
@@ -68,11 +76,13 @@
     // Simuliert OnNewMessageCompose; mit dom=false wie im klassischen Outlook.
     compose(composeType, type, dom = true) {
       mailbox.item = composeItem(composeType, type);
-      const parser = window.DOMParser;
+      // Ohne DOM setzt die Ereignisdatei linkedom ein; danach gilt wieder der Browser.
+      const names = ["DOMParser", "Node", "Element", "Text", "ShadowRoot", "NodeFilter", "setTimeout", "clearTimeout"];
+      const saved = names.map(name => window[name]);
       if (!dom) window.DOMParser = undefined;
       return new Promise(resolve => handlers.onNewMessageComposeHandler({completed: resolve}))
         .then(() => state.composeBody)
-        .finally(() => {window.DOMParser = parser;});
+        .finally(() => names.forEach((name, index) => {window[name] = saved[index];}));
     }
   };
 })();

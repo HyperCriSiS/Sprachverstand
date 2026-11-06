@@ -17,6 +17,22 @@ export function offlinePreview(html: string): string {
   return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">${html}`;
 }
 
+// Eingebettete Bilder verweisen per cid: auf Anhänge, die die Fassung im
+// Seitenbereich nicht kennt. Sie werden als data:-URL eingesetzt (Mailbox 1.8
+// und 1.16); fehlt etwas davon, bleibt der Verweis.
+export async function inlineImages(item: OutlookItem, html: string): Promise<string> {
+  let result = html;
+  for (const {id, isInline, contentId, contentType} of item.attachments ?? []) {
+    const reference = `cid:${contentId?.replace(/^<|>$/g, "")}`;
+    if (!isInline || !contentId || !item.getAttachmentContentAsync || !result.includes(reference)) continue;
+    const attachment = await call<{content: string; format: string}>(callback =>
+      item.getAttachmentContentAsync!(id, {}, callback)).catch(() => undefined);
+    if (attachment?.format !== "base64") continue;
+    result = result.split(reference).join(`data:${contentType ?? "image/png"};base64,${attachment.content}`);
+  }
+  return result;
+}
+
 // Entspricht dem Thunderbird-Nachrichtenskript: Die ausgewählte Nachricht wird
 // beim Öffnen umgewandelt, gespeichert wird nichts. Outlook ersetzt dazu nur
 // die Anzeige (item.display.body); die Nachricht im Postfach bleibt unverändert.
@@ -66,7 +82,9 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
       if (current !== generation) return;
       displayed = replaced && result.count ? {item, original} : undefined;
     }
-    view.showPreview(result.count && !replaced ? result.body : undefined);
+    const preview = result.count && !replaced ? await inlineImages(item, result.body) : undefined;
+    if (current !== generation) return;
+    view.showPreview(preview);
     publish(result.count, result.replacements);
   }
 

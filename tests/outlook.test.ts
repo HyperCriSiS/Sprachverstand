@@ -1,9 +1,11 @@
+import {execFileSync} from "node:child_process";
 import {readFileSync} from "node:fs";
+import vm from "node:vm";
 import {afterEach, describe, expect, it, vi} from "vitest";
 import {createOutlookApi, deviceStore, formatMessage, localeCandidates} from "../src/outlook/extension-shim";
 import {transformBody} from "../src/outlook/body-transform";
 import {correctComposeOnOpen} from "../src/outlook/launchevent";
-import {connectReader, offlinePreview} from "../src/outlook/reader";
+import {connectReader, inlineImages, offlinePreview} from "../src/outlook/reader";
 import {composeSettingKey} from "../src/outlook/compose-option";
 import {defaultSettings} from "../src/settings/defaults";
 import type {OfficeGlobal, OutlookItem} from "../src/outlook/office";
@@ -99,24 +101,67 @@ describe("Outlook: Nachrichtentext", () => {
     expect(transformBody("<p>Ohne</p>", true, defaultSettings)).toMatchObject({body: "<p>Ohne</p>", count: 0});
   });
 
-  it("wandelt HTML ohne DOM abschnittsweise um (klassisches Outlook)", () => {
-    vi.stubGlobal("DOMParser", undefined);
-    try {
-      const source = "<html><head><style>.Lehrer\\:innen{}</style></head><body><p>Liebe B&uuml;rger*innen &amp; Lehrer:innen</p>" +
-        "<!-- Kolleg*innen --><p>&unbekannt; Kolleg*innen</p><script>Kolleg*innen</script></body></html>";
-      const result = transformBody(source, true, defaultSettings);
-      expect(result.body).toContain("<p>Liebe Bürger &amp; Lehrer</p>");
-      expect(result.body).toContain("<style>.Lehrer\\:innen{}</style>");
-      expect(result.body).toContain("<!-- Kolleg*innen -->");
-      expect(result.body).toContain("<p>&unbekannt; Kolleg*innen</p>");
-      expect(result.body).toContain("<script>Kolleg*innen</script>");
-      expect(result.count).toBe(2);
-      expect(transformBody("<p>a &lt; b</p>", true, defaultSettings).body).toBe("<p>a &lt; b</p>");
-    } finally {
-      vi.unstubAllGlobals();
-    }
+  it("wandelt im klassischen Outlook ohne DOM wie mit DOM um, auch über Tags hinweg", () => {
+    // Die gebaute Ereignisdatei in einem leeren JavaScript-Kontext: nur Office
+    // und console, kein DOM, kein Timer, kein URL, kein Intl (Ereignislaufzeit
+    // des klassischen Outlook).
+    execFileSync(process.execPath, ["scripts/build-outlook.mjs"], {stdio: "ignore"});
+    const code = readFileSync("dist/outlook/launchevent.js", "utf8");
+    const samples = [
+      "<html><body><p>Liebe Lehrer*<b>innen</b>, das Projekt der <em>Künstler*in</em>.</p></body></html>",
+      "<html><head><style>.Lehrer\:innen{}</style><!--[if gte mso 9]><xml>Kolleg*innen</xml><![endif]--></head>" +
+        "<body><p class=MsoNormal>B&uuml;rger*innen &amp; Lehrer:innen&nbsp;<o:p></o:p></p><!-- Kolleg*innen -->" +
+        "<code>Kolleg*innen</code><pre>Lehrer:innen</pre><img alt=\"Schüler*innen\" src=\"cid:image001.png@01DB\">" +
+        "<script>Kolleg*innen</script></body></html>",
+      "<html><body><div>Danke!</div><blockquote><p>Die Kolleg<span style=\"color:red\">*</span>innen und " +
+        "<a href=\"https://example.org/Lehrer*innen\">Lehrer*innen</a></p><table><tr><td>Mitarbeiter:in</td></tr></table>" +
+        "</blockquote></body></html>"
+    ];
+    // Ohne Timer und mit eingebauten Timern, die globalThis als this verlangen.
+    const strictTimers = "globalThis.setTimeout = globalThis.clearTimeout = function () {" +
+      "if (this !== globalThis) throw new TypeError(\"Illegal invocation\"); return 0; };";
+    const outputs = [false, true].flatMap(timers => samples.map(sample => {
+      const office = composeOffice(sample);
+      const context = vm.createContext({Office: office.Office, console});
+      // Ein Bericht zu Build 2406 nennt Intl als fehlend.
+      vm.runInContext("delete globalThis.Intl", context);
+      expect(vm.runInContext("[typeof setTimeout, typeof URL, typeof location, typeof Intl].join()", context))
+        .toBe("undefined,undefined,undefined,undefined");
+      if (timers) vm.runInContext(strictTimers, context);
+      vm.runInContext(code, context);
+      return office;
+    }));
+    return Promise.all(outputs.map(office => office.done)).then(results => {
+      const body = (html: string) => new DOMParser().parseFromString(html, "text/html").body.innerHTML;
+      results.forEach((result, index) => {
+        const expected = transformBody(samples[index % samples.length]!, true, defaultSettings);
+        expect(expected.count).toBeGreaterThan(0);
+        expect(body(result!)).toBe(body(expected.body));
+      });
+      expect(body(results[0]!)).toBe("<p>Liebe Lehrer<b></b>, das Projekt des <em>Künstlers</em>.</p>");
+      expect(results[1]).toContain("cid:image001.png@01DB");
+    });
   });
 });
+
+// Office-Attrappe für die gebaute Ereignisdatei: Antwort mit eingeschalteter
+// Option, done liefert den gesetzten Text.
+function composeOffice(body: string) {
+  let handler: ((event: {completed(): void}) => void) | undefined;
+  let written: string | undefined;
+  const item = {
+    body: {getTypeAsync: (callback: (result: unknown) => void) => callback(ok("html")),
+      getAsync: (_type: string, _options: unknown, callback: (result: unknown) => void) => callback(ok(body)),
+      setAsync: (data: string, _options: unknown, callback: (result: unknown) => void) => {written = data; callback(ok());}},
+    getComposeTypeAsync: (callback: (result: unknown) => void) => callback(ok({composeType: "reply"}))
+  };
+  const Office = {context: {roamingSettings: roaming({[`sync:${composeSettingKey}`]: "true"}), mailbox: {item}},
+    MailboxEnums: {BodyMode: {FullBody: "fullBody"}},
+    actions: {associate: (_name: string, callback: typeof handler) => {handler = callback;}}};
+  return {Office, get done() {
+    return new Promise<string | undefined>(resolve => handler!({completed: () => resolve(written)}));
+  }};
+}
 
 function composeItem(composeType: string, type = "html", body = mail) {
   const setAsync = vi.fn((_data: string, _options: Record<string, unknown>, callback: (result: never) => void) => callback(ok() as never));
@@ -164,12 +209,14 @@ describe("Outlook: Antworten und Weiterleitungen beim Öffnen", () => {
 });
 
 describe("Outlook: Leseansicht", () => {
-  function readItem(withDisplay: boolean, fails = false) {
+  function readItem(withDisplay: boolean, fails: false | "callback" | "throw" = false) {
     const shown: string[] = [];
     const item: OutlookItem = {
       itemId: "1",
       body: {getTypeAsync: () => undefined, getAsync: (_type, _options, callback) => callback(ok(mail))},
       ...(withDisplay ? {display: {body: {setAsync: (html: string, _options: Record<string, unknown>, callback: (result: never) => void) => {
+        // Die stabile office.js wirft synchron („only enabled on the beta api endpoint“).
+        if (fails === "throw") throw new Error("The feature setUIAsync, is only enabled on the beta api endpoint");
         if (fails) return callback({status: "failed", error: {message: "Vorschau"}} as never);
         shown.push(html);
         callback(ok() as never);
@@ -211,10 +258,28 @@ describe("Outlook: Leseansicht", () => {
   });
 
   it("fällt auf die Fassung im Seitenbereich zurück, wenn Outlook die Anzeige ablehnt", async () => {
-    const {item, shown} = readItem(true, true);
-    const {preview} = start(item);
-    await vi.waitFor(() => expect(preview).toHaveBeenCalledWith(expect.stringContaining("Liebe Kollegen")));
-    expect(shown).toHaveLength(0);
+    for (const fails of ["callback", "throw"] as const) {
+      const {item, shown} = readItem(true, fails);
+      const {preview} = start(item);
+      await vi.waitFor(() => expect(preview).toHaveBeenCalledWith(expect.stringContaining("Liebe Kollegen")));
+      expect(shown).toHaveLength(0);
+    }
+  });
+
+  it("setzt eingebettete Bilder in die Fassung im Seitenbereich ein", async () => {
+    const getAttachmentContentAsync = vi.fn((id: string, _options: Record<string, unknown>,
+      callback: (result: never) => void) => callback((id === "a" ? ok({content: "QUJD", format: "base64"})
+      : {status: "failed", error: {message: "InvalidAttachmentId"}}) as never));
+    const item: OutlookItem = {
+      ...readItem(false).item,
+      attachments: [{id: "a", isInline: true, contentId: "<logo@01>", contentType: "image/png"},
+        {id: "b", isInline: true, contentId: "fehlt@01"}, {id: "c", isInline: false, contentId: "anhang@01"}],
+      getAttachmentContentAsync
+    };
+    const html = '<img src="cid:logo@01"><img src="cid:logo@01"><img src="cid:fehlt@01"><img src="cid:anhang@01">';
+    expect(await inlineImages(item, html)).toBe('<img src="data:image/png;base64,QUJD"><img src="data:image/png;base64,QUJD">' +
+      '<img src="cid:fehlt@01"><img src="cid:anhang@01">');
+    expect(getAttachmentContentAsync.mock.calls.map(([id]) => id)).toEqual(["a", "b"]);
   });
 
   it("verarbeitet im Verfassen nichts (keine itemId)", async () => {

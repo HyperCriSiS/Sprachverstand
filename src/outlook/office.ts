@@ -23,6 +23,10 @@ export interface OutlookItem {
   readonly itemType?: string;
   readonly itemId?: string;
   readonly body: OutlookBody;
+  readonly attachments?: readonly {readonly id: string; readonly isInline: boolean; readonly contentId?: string;
+    readonly contentType?: string}[];
+  getAttachmentContentAsync?(id: string, options: Record<string, unknown>,
+    callback: AsyncCallback<{content: string; format: string}>): void;
   readonly display?: {readonly body?: {setAsync(data: string, options: Record<string, unknown>, callback: AsyncCallback<void>): void}};
   getComposeTypeAsync?(callback: AsyncCallback<{composeType: string; coercionType: string}>): void;
 }

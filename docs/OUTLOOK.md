@@ -2,8 +2,12 @@
 
 Portierung der Thunderbird-Ausgabe auf das Office-Add-in-Modell, für das neue
 Outlook (Windows), Outlook im Web und das klassische Outlook für Windows. Stand:
-Entwicklung, nicht veröffentlicht, nur mit der Office-Attrappe geprüft, noch nicht
-in einem echten Outlook.
+Entwicklung, nicht veröffentlicht, nur mit der Office-Attrappe und dem
+Manifest-Validator von Microsoft geprüft, noch nicht in einem echten Outlook.
+
+Die Outlook-Ausgabe lebt wie `thunderbird` und `palemoon` auf dem geschützten
+Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
+„Outlook-Prüfung“ aus `.github/workflows/outlook.yml`).
 
 ## Aufbau
 
@@ -17,7 +21,16 @@ in einem echten Outlook.
   unverändert.
 - `src/outlook/reader.ts` entspricht dem Nachrichtenskript der Thunderbird-Ausgabe.
 - `src/outlook/launchevent.ts` entspricht `compose-background.ts` der
-  Thunderbird-Ausgabe.
+  Thunderbird-Ausgabe. Ohne DOM (klassisches Outlook) setzt
+  `src/outlook/dom-without-browser.ts` linkedom ein, damit derselbe DOM-Kern wie
+  in Thunderbird läuft; `src/outlook/runtime-globals.ts` ergänzt fehlende
+  Browser-Funktionen (atob, performance, Timer, Intl).
+- Seitenbereich und Einstellungen laden die Beta-Fassung von Office.js: Nur sie
+  reicht `item.display.body` an Outlook weiter, die stabile wirft „The feature
+  setUIAsync, is only enabled on the beta api endpoint“. Die Ereignisdatei nutzt
+  die stabile Fassung.
+- Die Manifestversion ist `1.` plus Paketversion (0.9.3 wird 1.0.9.3), weil
+  Microsoft Versionen unter 1.0 ablehnt.
 
 ## Verhalten
 
@@ -41,9 +54,9 @@ in einem echten Outlook.
 
 | | Neues Outlook, Outlook im Web | Klassisches Outlook für Windows |
 | --- | --- | --- |
-| Seitenbereich, Popup, Einstellungen | ja | ja, mit WebView2 (Microsoft 365, Outlook 2021 und neuer) |
-| Leseansicht ersetzen | sobald `item.display.body` verfügbar ist, sonst Fassung im Seitenbereich | laut Berichten verfügbar, sonst Fassung im Seitenbereich |
-| Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, ohne DOM: Text zwischen den Tags wird abschnittsweise umgewandelt; Formen über Tags hinweg (`Lehrer*<b>innen</b>`) bleiben. Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Windows 10 1903 oder neuer. |
+| Seitenbereich, Popup, Einstellungen | ja | ja, mit WebView2 |
+| Leseansicht ersetzen | sobald Outlook `item.display.body` umsetzt (ein Bericht von 2025 nennt es für das neue Outlook als fehlend), sonst Fassung im Seitenbereich | laut einem Bericht von 2025 verfügbar, sonst Fassung im Seitenbereich |
+| Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, über denselben DOM-Kern mit linkedom, also auch über Tags hinweg (`Lehrer*<b>innen</b>`). Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Version 2403 oder neuer (ältere Builds kennen in Ereignissen nur ES2016), Windows 10 1903 oder neuer. Outlook LTSC 2021 (Version 2108) reicht daher nicht. |
 
 Ältere Clients mit Internet-Explorer-Webview werden nicht unterstützt: Der
 Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
@@ -62,22 +75,42 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
 - Einstellungen, die in einem zweiten Outlook-Fenster geändert werden, übernimmt
   ein offener Seitenbereich sofort (gleiches `localStorage`). Synchronisierte
   Kategorien von anderen Geräten erst nach dem nächsten Öffnen.
-- Eingebettete Bilder (`cid:`) in der ersetzten Anzeige sind ungeprüft.
+- Eingebettete Bilder: Outlook liefert sie im HTML als `cid:`-Verweis (klassisch
+  schon immer, neu und Web seit Ende 2025). In der ersetzten Anzeige bleiben die
+  Verweise stehen; ob Outlook sie dort auflöst, ist nicht dokumentiert und
+  ungeprüft. Die Fassung im Seitenbereich setzt die Bilder aus den Anhängen als
+  `data:`-URL ein (`contentId`, Mailbox 1.16, und `getAttachmentContentAsync`,
+  Mailbox 1.8). Ältere Abruf-URLs von Outlook im Web blockiert sie wie alle
+  externen Inhalte.
+- Die ersetzte Anzeige ist auf 1 000 000 Zeichen begrenzt; längere Nachrichten
+  zeigt der Seitenbereich.
 - Die Domain-Schaltfläche im Popup bleibt wie in Thunderbird deaktiviert sichtbar.
 
 ## Testen
 
-- `npx vitest run tests/outlook.test.ts`: Brücke, Speicher, Umwandlung mit und
-  ohne DOM, Leseansicht, Korrektur beim Öffnen, Manifest.
+- `npx vitest run tests/outlook.test.ts`: Brücke, Speicher, Umwandlung,
+  Leseansicht samt Sperre der stabilen Office.js und eingebetteter Bilder,
+  Korrektur beim Öffnen, Manifest. Ein Test baut die Ereignisdatei und führt sie
+  in einem leeren JavaScript-Kontext aus (nur `Office` und `console`, ohne DOM,
+  Timer, URL und Intl, einmal mit Timern, die `globalThis` als `this`
+  verlangen), wie die Ereignislaufzeit des klassischen Outlook. Das Ergebnis muss
+  dem des Browser-DOM entsprechen.
+- `npx office-addin-manifest validate dist/outlook/manifest.xml`: offizielle
+  Prüfung über den Onlinedienst von Microsoft, auch in der Outlook-Prüfung. Mit
+  `-p` (Store-Regeln) und einer öffentlichen `--base-url` bleiben nur die
+  Erreichbarkeit der Symbole und damit die echte Bereitstellung offen.
 - `npm run outlook:harness`: baut das Add-in und startet es unter
   `http://localhost:8765/` mit einer Office.js-Attrappe
   (`scripts/outlook-harness/mock-office.js`).
-  - `popup/popup.html`, Parameter `mail=0|1|2`, `nodisplay` (ohne Anzeige-API),
-    `displayfails` (Outlook lehnt die Anzeige ab), `lang=en-US`. In der Konsole
+  - `popup/popup.html`, Parameter `mail=0|1|2|3` (3 mit eingebettetem Bild),
+    `nodisplay` (ohne Anzeige-API), `displayfails` (Outlook lehnt die Anzeige
+    ab), `stableoffice` (Anzeige-API wirft wie in der stabilen Office.js),
+    `lang=en-US`. In der Konsole
     wechselt `harness.select(1)` die Nachricht, `harness.state.displayed` zeigt die
     ersetzten Anzeigen.
   - `launchevent.html`: `await harness.compose("reply", "html", false)` simuliert
-    `OnNewMessageCompose`; `false` entfernt den DOM wie im klassischen Outlook.
+    `OnNewMessageCompose`; `false` entfernt den DOMParser, die Ereignisdatei
+    setzt dann linkedom ein.
     Vorher die Option in den Einstellungen einschalten.
 
 ## In Outlook testen

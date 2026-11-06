@@ -2,6 +2,7 @@ import type {ExtensionApi} from "../browser/api";
 import {loadSettings} from "../settings/storage";
 import {transformBody} from "./body-transform";
 import {composeSettingKey} from "./compose-option";
+import {installDomWithoutBrowser} from "./dom-without-browser";
 import {createOutlookApi} from "./extension-shim";
 import {call, office, type OfficeGlobal} from "./office";
 
@@ -22,6 +23,7 @@ export async function correctComposeOnOpen(Office: OfficeGlobal): Promise<void> 
   const bodyMode = Office.MailboxEnums?.BodyMode?.FullBody;
   const read = () => call<string>(callback => item.body.getAsync(type, bodyMode === undefined ? {} : {bodyMode}, callback));
   const body = await read();
+  installDomWithoutBrowser();
   const result = transformBody(body, type === "html", settings);
   if (!result.count) return;
   // Wie in Thunderbird: Hat Outlook (Signatur) oder der Nutzer den Text
@@ -32,7 +34,7 @@ export async function correctComposeOnOpen(Office: OfficeGlobal): Promise<void> 
 
 function onNewMessageComposeHandler(event: {completed(options?: unknown): void}): void {
   void correctComposeOnOpen(office())
-    .catch(() => {console.error("Sprachverstand: Korrektur beim Öffnen fehlgeschlagen.");})
+    .catch(error => {console.error("Sprachverstand: Korrektur beim Öffnen fehlgeschlagen.", error);})
     .finally(() => event.completed());
 }
 

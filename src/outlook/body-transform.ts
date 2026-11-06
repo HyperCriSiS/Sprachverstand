@@ -5,7 +5,6 @@ import {aggregateReplacementSummaries, maximumReportedReplacementSummaries,
 import {defaultRules} from "../rules";
 import {disabledRuleIdsForGroups} from "../rules/catalog";
 import type {Settings} from "../settings/defaults";
-import {transformHtmlWithoutDom} from "./html-text";
 
 export interface BodyResult {
   readonly body: string;
@@ -14,8 +13,9 @@ export interface BodyResult {
 }
 
 // Wandelt einen Nachrichtentext wie die Thunderbird-Ausgabe um: HTML in einer
-// inerten Kopie über den DOM-Kern, ohne DOM (Ereignisse im klassischen
-// Outlook) abschnittsweise, Nur-Text direkt über die Regel-Engine.
+// inerten Kopie über den DOM-Kern, Nur-Text direkt über die Regel-Engine.
+// Ohne DOM (Ereignisse im klassischen Outlook) stellt installDomWithoutBrowser
+// den DOMParser bereit.
 export function transformBody(body: string, html: boolean, settings: Settings): BodyResult {
   const options = {profile: "aggressive" as const,
     disabledRuleIds: disabledRuleIdsForGroups(settings.enabledRuleGroupIds),
@@ -26,10 +26,6 @@ export function transformBody(body: string, html: boolean, settings: Settings): 
   if (!html) {
     const result = transformTextWithSummary(body, defaultRules, options);
     return {body: result.text, count: result.replacements, replacements: summarize(result.summaries)};
-  }
-  if (typeof DOMParser === "undefined") {
-    const result = transformHtmlWithoutDom(body, text => transformTextWithSummary(text, defaultRules, options));
-    return {body: result.body, count: result.count, replacements: summarize(result.summaries)};
   }
   const doc = new DOMParser().parseFromString(body, "text/html");
   const processor = new DomProcessor(doc, {...options, rules: defaultRules,

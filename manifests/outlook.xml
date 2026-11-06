@@ -14,9 +14,6 @@
   <IconUrl DefaultValue="{{BASE_URL}}icons/icon48.png"/>
   <HighResolutionIconUrl DefaultValue="{{BASE_URL}}icons/icon128.png"/>
   <SupportUrl DefaultValue="https://github.com/HyperCriSiS/Sprachverstand"/>
-  <AppDomains>
-    <AppDomain>{{BASE_URL}}</AppDomain>
-  </AppDomains>
   <Hosts>
     <Host Name="Mailbox"/>
   </Hosts>

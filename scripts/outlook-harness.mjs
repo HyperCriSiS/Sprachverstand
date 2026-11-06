@@ -12,7 +12,7 @@ const projectRoot = process.cwd();
 const source = path.join(projectRoot, "dist", "outlook");
 const target = path.join(projectRoot, "dist", "outlook-harness");
 const port = Number(process.env.PORT || 8765);
-const officeScript = '<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>';
+const officeScript = /<script src="https:\/\/appsforoffice\.microsoft\.com\/lib\/(1|beta)\/hosted\/office\.js"><\/script>/;
 
 await rm(target, { recursive: true, force: true });
 await cp(source, target, { recursive: true });
@@ -20,7 +20,7 @@ await cp(path.join(projectRoot, "scripts", "outlook-harness", "mock-office.js"),
 for (const [page, prefix] of [["popup/popup.html", "../"], ["options/options.html", "../"], ["launchevent.html", ""]]) {
   const file = path.join(target, page);
   const html = await readFile(file, "utf8");
-  if (!html.includes(officeScript)) throw new Error(`Office.js fehlt in ${page}.`);
+  if (!officeScript.test(html)) throw new Error(`Office.js fehlt in ${page}.`);
   await writeFile(file, html.replace(officeScript, `<script src="${prefix}mock-office.js"></script>`), "utf8");
 }
 
