@@ -124,7 +124,7 @@ describe("Outlook: Nachrichtentext", () => {
       "<html><body><p>jede*r&nbsp;Teilnehmer*in und Lehrer&shy;*innen</p>" +
         "<a href=\"https://shop.example/?id=1&amp;region=de\">Kolleg*innen</a></body></html>",
       // Word-Bedingungen außerhalb von Kommentaren.
-      "<html><body><p>Kolleg*innen</p><!--[if gte vml 1]><v:shape>Bild</v:shape><![endif]-->" +
+      "<html><body><p>Kolleg*innen</p><!--[if gte vml 1]><v:shape>Bild</v:shape><![if x]><![endif]><![endif]-->" +
         "<![if !vml]><img src=\"cid:image002.png@01DB\"><![endif]></body></html>",
       "<div>Liebe Kolleg*innen</div>"
     ];
@@ -156,6 +156,7 @@ describe("Outlook: Nachrichtentext", () => {
       expect(results[1]).toContain("cid:image001.png@01DB");
       expect(results[3]).toContain('href="https://shop.example/?id=1&amp;region=de"');
       expect(body(results[3]!)).toContain("jeder&nbsp;Teilnehmer und Lehrer</p>");
+      expect(results[4]).toContain("<!--[if gte vml 1]><v:shape>Bild</v:shape><![if x]><![endif]><![endif]-->");
       expect(results[4]).toContain("<!--[if !vml]--><img src=\"cid:image002.png@01DB\"><!--[endif]-->");
       expect(body(results[5]!)).toBe("<div>Liebe Kollegen</div>");
     });

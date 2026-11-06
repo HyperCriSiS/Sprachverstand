@@ -19,8 +19,10 @@ const escapeAttribute = (value: string) =>
 class OutlookParser {
   parseFromString(markup: string) {
     // Word-Bedingungen außerhalb von Kommentaren (`<![if !vml]>`) macht der
-    // Browser zu Kommentaren; linkedom würde sie verwerfen.
-    const html = markup.replace(/<!\[(if [^\]]*|endif)\]>/gi, "<!--[$1]-->");
+    // Browser zu Kommentaren; linkedom würde sie verwerfen. Inhalte von
+    // Kommentaren bleiben unberührt.
+    const html = markup.replace(/<!--[\s\S]*?-->|<!\[(if [^\]]*|endif)\]>/gi,
+      (match, condition?: string) => condition ? `<!--[${condition}]-->` : match);
     const doc = new Parser().parseFromString(/<html[\s>]/i.test(html) ? html : `<html><body>${html}</body></html>`, "text/html",
       {setTimeout: timer("setTimeout"), clearTimeout: timer("clearTimeout")});
     // htmlparser2 legt je Entität einen eigenen Textknoten an (`jede*r&nbsp;…`).
