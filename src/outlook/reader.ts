@@ -79,25 +79,26 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
     const original = await call<string>(callback => item.body.getAsync("html", {}, callback));
     if (current !== generation) return;
     if (!settings.enabled) {
-      if (displayed) await display(item, displayed.original);
-      displayed = undefined;
       view.showPreview(undefined);
       publish(0, []);
+      const restore = displayed?.original;
+      displayed = undefined;
+      if (restore !== undefined) await display(item, restore);
       return;
     }
     const result = transformBody(original, true, settings);
-    if (current !== generation) return;
-    let replaced = false;
-    if (item.display?.body && (result.count || displayed)) {
-      // Vorschau-API: Lehnt Outlook sie ab, bleibt die Fassung im Seitenbereich.
-      replaced = await display(item, result.body).then(() => true, () => false);
-      if (current !== generation) return;
-      displayed = replaced && result.count ? {item, original} : undefined;
-    }
-    const preview = result.count && !replaced ? await inlineImages(item, result.body) : undefined;
+    publish(result.count, result.replacements);
+    // Die Fassung im Seitenbereich erscheint sofort. Die neue Outlook-App
+    // beantwortet die Vorschau-API erst nach etwa einer Minute mit einem Fehler.
+    const preview = result.count ? await inlineImages(item, result.body) : undefined;
     if (current !== generation) return;
     view.showPreview(preview);
-    publish(result.count, result.replacements);
+    if (item.display?.body && (result.count || displayed)) {
+      const replaced = await display(item, result.body).then(() => true, () => false);
+      if (current !== generation) return;
+      displayed = replaced && result.count ? {item, original} : undefined;
+      if (replaced) view.showPreview(undefined);
+    }
   }
 
   const run = () => process().catch((error: unknown) => {

@@ -160,7 +160,7 @@ describe("Outlook: Nachrichtentext", () => {
       expect(results[4]).toContain("<!--[if !vml]--><img src=\"cid:image002.png@01DB\"><!--[endif]-->");
       expect(body(results[5]!)).toBe("<div>Liebe Kollegen</div>");
     });
-  });
+  }, 60_000); // baut die Ereignisdatei mit esbuild
 });
 
 // Office-Attrappe für die gebaute Ereignisdatei: Antwort mit eingeschalteter
@@ -228,7 +228,7 @@ describe("Outlook: Antworten und Weiterleitungen beim Öffnen", () => {
 });
 
 describe("Outlook: Leseansicht", () => {
-  function readItem(withDisplay: boolean, fails: false | "callback" | "throw" = false) {
+  function readItem(withDisplay: boolean, fails: false | "callback" | "throw" | "hang" = false) {
     const shown: string[] = [];
     const item: OutlookItem = {
       itemId: "1",
@@ -236,6 +236,7 @@ describe("Outlook: Leseansicht", () => {
       ...(withDisplay ? {display: {body: {setAsync: (html: string, _options: Record<string, unknown>, callback: (result: never) => void) => {
         // Die stabile office.js wirft synchron („only enabled on the beta api endpoint“).
         if (fails === "throw") throw new Error("The feature setUIAsync, is only enabled on the beta api endpoint");
+        if (fails === "hang") return;
         if (fails) return callback({status: "failed", error: {message: "Vorschau"}} as never);
         shown.push(html);
         callback(ok() as never);
@@ -283,6 +284,13 @@ describe("Outlook: Leseansicht", () => {
       await vi.waitFor(() => expect(preview).toHaveBeenCalledWith(expect.stringContaining("Liebe Kollegen")));
       expect(shown).toHaveLength(0);
     }
+  });
+
+  it("zeigt die Fassung im Seitenbereich, ohne auf die Antwort der Vorschau-API zu warten", async () => {
+    const {api, preview} = start(readItem(true, "hang").item);
+    await vi.waitFor(() => expect(preview).toHaveBeenCalledWith(expect.stringContaining("Liebe Kollegen")));
+    expect(await api.runtime.sendMessage({type: "sprachverstand.get-replacement-state", tabId: 1}))
+      .toMatchObject({count: 2});
   });
 
   it("setzt eingebettete Bilder in die Fassung im Seitenbereich ein", async () => {
