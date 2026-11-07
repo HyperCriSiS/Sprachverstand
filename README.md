@@ -215,7 +215,7 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
   <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii"><img src="https://img.shields.io/badge/Vivaldi-EF3939?logo=vivaldi&logoColor=white" alt="Vivaldi"></a>
 </p>
 
-<p><strong>Sollte laufen, nicht eigens getestet</strong></p>
+<p><strong>Sollte laufen, nicht selbst getestet</strong></p>
 
 <p>
   <a href="#microsoft-edge"><img src="https://img.shields.io/badge/Microsoft%20Edge-0078D7?logo=microsoftedge&logoColor=white" alt="Microsoft Edge"></a>
