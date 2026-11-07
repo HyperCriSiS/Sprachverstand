@@ -38,7 +38,7 @@ await cp(path.join(projectRoot, "src", "outlook", "outlook.css"), path.join(outp
 // Lesefenster (Office-Dialog) für „Korrigiert lesen“.
 await writeFile(path.join(outputDirectory, "read-window.html"),
   `<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"/><title>Sprachverstand</title>${officeScript}` +
+<html lang="de"><head><meta charset="utf-8"/><meta name="color-scheme" content="light dark"/><title>Sprachverstand</title>${officeScript}` +
   `<link href="outlook.css" rel="stylesheet"/><script type="module" src="read-window.js"></script></head>` +
   `<body class="read-window"><h1>Sprachverstand</h1><iframe sandbox="" title="Sprachverstand"></iframe></body></html>
 `);

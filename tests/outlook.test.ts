@@ -113,6 +113,8 @@ describe("Outlook: Nachrichtentext", () => {
     const out = mkdtempSync(path.join(tmpdir(), "sprachverstand-outlook-"));
     execFileSync(process.execPath, ["scripts/build-outlook.mjs", "--out", out], {stdio: "ignore"});
     const code = readFileSync(path.join(out, "launchevent.js"), "utf8");
+    // Das Lesefenster folgt samt Rand dem Systemdesign, nicht nur die Nachricht.
+    expect(readFileSync(path.join(out, "read-window.html"), "utf8")).toContain('<meta name="color-scheme" content="light dark"/>');
     rmSync(out, {recursive: true, force: true});
     const samples = [
       "<html><body><p>Liebe Lehrer*<b>innen</b>, das Projekt der <em>Künstler*in</em>.</p></body></html>",
