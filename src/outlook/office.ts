@@ -41,6 +41,7 @@ export interface OfficeGlobal {
   onReady(): Promise<unknown>;
   readonly context: {
     readonly displayLanguage?: string;
+    readonly requirements?: {isSetSupported(name: string, version?: string): boolean};
     readonly ui?: {
       displayDialogAsync(url: string, options: Record<string, unknown>, callback: AsyncCallback<OfficeDialog>): void;
       addHandlerAsync(type: string, handler: (arg: {readonly message: string}) => void, callback?: AsyncCallback<void>): void;

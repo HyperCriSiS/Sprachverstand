@@ -66,6 +66,7 @@
         }
       },
       mailbox,
+      requirements: {isSetSupported: () => !params.has("nodialogapi")},
       // Dialog als Rahmen über der Seite; Nachrichten laufen über postMessage.
       ui: {
         displayDialogAsync(url, options, callback) {

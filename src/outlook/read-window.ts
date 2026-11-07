@@ -8,7 +8,8 @@ import {inlineImages} from "./reader";
 
 // Das Lesefenster ist ein Office-Dialog. Dialoge kennen das Postfach nicht;
 // die Schaltfläche wandelt die Nachricht um und schickt sie in Teilen hinüber,
-// weil Outlook für Dialognachrichten keine Größe zusichert.
+// weil Outlook für Dialognachrichten keine Größe zusichert. Jeder Teil ist
+// „Nummer/Anzahl:Text“, damit seine Länge vorhersagbar bleibt.
 export const readWindowChunk = 30_000;
 
 export interface ReadWindowContent {
@@ -32,7 +33,16 @@ export async function readWindowContent(Office: OfficeGlobal): Promise<ReadWindo
 }
 
 // Öffnet das Lesefenster und meldet über done, wenn es geschlossen ist.
-export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadWindowContent, done: () => void): void {
+export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadWindowContent, completed: () => void): void {
+  // messageChild (DialogApi 1.2) fehlt etwa in Volumenlizenzen von Outlook 2016/2019.
+  if (!Office.context.requirements?.isSetSupported("DialogApi", "1.2")) {
+    throw new Error("Outlook unterstützt DialogApi 1.2 nicht.");
+  }
+  let finished = false;
+  const done = () => {
+    if (!finished) completed();
+    finished = true;
+  };
   const text = JSON.stringify(content);
   const total = Math.max(1, Math.ceil(text.length / readWindowChunk));
   Office.context.ui!.displayDialogAsync(url, {height: 85, width: 60, displayInIframe: true}, result => {
@@ -45,11 +55,11 @@ export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadW
     dialog.addEventHandler("dialogMessageReceived", ({message}) => {
       if (message !== "ready") return;
       for (let index = 0; index < total; index++) {
-        dialog.messageChild?.(JSON.stringify({index, total,
-          text: text.slice(index * readWindowChunk, (index + 1) * readWindowChunk)}));
+        dialog.messageChild!(`${index}/${total}:${text.slice(index * readWindowChunk, (index + 1) * readWindowChunk)}`);
       }
     });
-    // Schließen durch den Nutzer (12006) und alle Fehler im Fenster.
+    // Schließen durch den Nutzer (12006) und alle Fehler im Fenster; nach
+    // einem Fehler kann noch 12006 folgen, completed gilt nur einmal.
     dialog.addEventHandler("dialogEventReceived", () => done());
   });
 }

@@ -128,6 +128,7 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
     Vorher die Option in den Einstellungen einschalten.
     `harness.read(0)` simuliert „Korrigiert lesen“ und zeigt das Lesefenster als
     Rahmen über der Seite; `harness.closeDialog()` schließt es wie das X.
+    Parameter `nodialogapi` simuliert Outlook ohne DialogApi 1.2.
 
 ## In Outlook testen
 

@@ -358,7 +358,11 @@ describe("Outlook: Lesefenster", () => {
   });
 
   it("schickt große Nachrichten in Teilen und meldet das Schließen", () => {
-    const content = {title: "Sprachverstand: 1 Korrektur", html: `<p>${"Bürger ".repeat(readWindowChunk / 3)}</p>`};
+    // Ein Emoji (Surrogatpaar) genau an der ersten Teilgrenze.
+    const prefix = JSON.stringify({title: "Sprachverstand: 1 Korrektur", html: ""}).length - 2;
+    const html = `${"a".repeat(readWindowChunk - prefix - 1)}😀<p>${"\"Bürger\" ".repeat(readWindowChunk / 5)}</p>`;
+    const content = {title: "Sprachverstand: 1 Korrektur", html};
+    expect(JSON.stringify(content).slice(readWindowChunk - 1, readWindowChunk + 1)).toBe("😀");
     const events: Record<string, (arg: {message?: string; error?: number}) => void> = {};
     const sent: string[] = [];
     const dialog: OfficeDialog = {addEventHandler: (type, handler) => {events[type] = handler;},
@@ -369,20 +373,29 @@ describe("Outlook: Lesefenster", () => {
         options.push(opened);
         callback(ok(dialog) as never);
       },
-      addHandlerAsync: () => undefined, messageParent: () => undefined}}};
+      addHandlerAsync: () => undefined, messageParent: () => undefined},
+      requirements: {isSetSupported: (name: string, version?: string) => name === "DialogApi" && version === "1.2"}}};
     const done = vi.fn();
     openReadWindow(office, "https://example.org/read-window.html", content, done);
     expect(options[0]).toMatchObject({displayInIframe: true});
     events.dialogMessageReceived!({message: "ready"});
     expect(sent.length).toBeGreaterThan(1);
+    // Vorhersagbare Länge: Präfix plus höchstens ein Teil.
+    for (const message of sent) expect(message.length).toBeLessThanOrEqual(readWindowChunk + 12);
+    // Ein zweites „ready“ schickt alles erneut; das Fenster zeigt es einmal an.
+    events.dialogMessageReceived!({message: "ready"});
     const shown = vi.fn();
     const receive = receiveReadWindow(shown);
     // Reihenfolge ist nicht zugesichert.
-    for (const message of [...sent].reverse()) receive(message);
+    for (const message of [...sent.slice(0, sent.length / 2)].reverse()) receive(message);
     expect(shown).toHaveBeenCalledExactlyOnceWith(content);
     expect(done).not.toHaveBeenCalled();
+    // Nach einem Fehler (12002) folgt beim Schließen noch 12006; completed nur einmal.
+    events.dialogEventReceived!({error: 12002});
     events.dialogEventReceived!({error: 12006});
     expect(done).toHaveBeenCalledOnce();
+    expect(() => openReadWindow({...office, context: {...office.context, requirements: {isSetSupported: () => false}}},
+      "https://example.org/", content, vi.fn())).toThrow("DialogApi 1.2");
 
     const failed = vi.fn();
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
