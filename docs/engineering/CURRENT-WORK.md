@@ -1,6 +1,6 @@
 # Aktueller Arbeitsstand
 
-Stand: 2026-11-06  
+Stand: 2026-11-07  
 Autorität: `main`
 
 > **Nur aktiver Übergabe-Checkpoint.** Der [vollständige bisherige Stand](archive/CURRENT-WORK-SNAPSHOT-20261009.md) ist unverändert archiviert. Das Archiv **nicht routinemäßig lesen**: frühere „Nächste Schritte“, Store-Vorgaben und CI-Stände können überholt sein. Bei Widersprüchen neuere nachgewiesene Entscheidungen bevorzugen.
@@ -16,12 +16,14 @@ Autorität: `main`
 - [Thunderbird-CI](https://github.com/HyperCriSiS/Sprachverstand/actions/runs/41746915193) erfolgreich; Quellarchiv unabhängig nachgebaut und Ausgabe verglichen. Branchschutz aktiv: PR, verpflichtende Thunderbird-Prüfung, kein Löschen/Force-Push.
 - Noch offen: vollständige echte Versionsmatrix und Empfänger-End-to-End-Prüfung der optionalen Entwurfskorrektur. Storeeinreichung nicht erfolgt. Branchspezifische Details und Datenschutz liegen in `thunderbird`; dieser Checkpoint auf `main` bleibt die projektweite Autorität.
 
-## Outlook (06.11.2026)
+## Outlook (07.11.2026)
 
 - Eigene Outlook-Linie auf Nutzerwunsch im geschützten Branch `outlook`, Basis `main` 0.9.3; [PR #615](https://github.com/HyperCriSiS/Sprachverstand/pull/615) integriert (`c4ed15a`). Branchschutz wie `thunderbird`: Squash-PR, verpflichtende „Outlook-Prüfung“, kein Löschen/Force-Push.
 - Office-Add-in für neues Outlook, Outlook im Web und klassisches Outlook ab Version 2403: Leseansicht über den Seitenbereich, Korrektur beim Antworten über die Ereignisdatei. Im klassischen Outlook läuft der DOM-Kern ohne Browser-DOM über `linkedom`. Manifestversion `1.<Version>` (0.9.3 → 1.0.9.3); Microsofts Validator meldet das Manifest als gültig.
 - Der Seitenbereich lädt bewusst Office.js `beta`, weil nur dort `item.display.body` an Outlook weitergereicht wird. Vor einer Storeeinreichung neu bewerten.
-- Noch offen: Prüfung in echtem Outlook (Ersetzen der Leseansicht je Client, `cid:`-Bilder in der ersetzten Anzeige, JavaScript-Umfang der klassischen Ereignislaufzeit). Kein Testpostfach vorhanden. Storeeinreichung nicht erfolgt. Details in `docs/OUTLOOK.md` auf `outlook`.
+- Bereitstellung über GitHub Pages bei jedem Push auf `outlook` ([PR #617](https://github.com/HyperCriSiS/Sprachverstand/pull/617)); Manifest unter <https://hypercrisis.github.io/Sprachverstand/manifest.xml>.
+- Echt geprüft am 07.11.2026 (Office LTSC 2024 und neue Outlook-App, Outlook.com-Konto): Klassisches Outlook zeigt die Schaltfläche im Menüband und ersetzt die Leseansicht. Die neue App ersetzt sie nicht und meldet den Aufruf erst nach etwa einer Minute als fehlgeschlagen; der Seitenbereich zeigt seine Fassung seit [PR #618](https://github.com/HyperCriSiS/Sprachverstand/pull/618) sofort.
+- Noch offen: Korrektur beim Antworten im klassischen Outlook (LTSC-Installation nicht aktiviert), `cid:`-Bilder in der ersetzten Anzeige, Symbol 64×64 für Store-Regeln. Storeeinreichung nicht erfolgt. Details in `docs/OUTLOOK.md` auf `outlook`.
 
 ## DOM-/Videoperformance (#419)
 
