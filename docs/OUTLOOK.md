@@ -42,6 +42,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | Thunderbird | Outlook |
 | --- | --- |
 | Nachricht wird beim Anzeigen umgewandelt | Seitenbereich anheften. Bei jeder ausgewählten Nachricht ersetzt das Add-in die Anzeige über `item.display.body.setAsync`. Die Nachricht im Postfach bleibt unverändert. |
+| Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Schaltfläche „Korrigiert lesen“ öffnet die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog), weil die neue App die Anzeige nicht ersetzt. Das Fenster lädt wie die Fassung im Seitenbereich nichts von außen. |
 | Symbol mit Zähler, Popup mit Ersetzungsliste | Schaltfläche „Sprachverstand“ in der Leseansicht öffnet den Seitenbereich mit demselben Popup. Ein Zähler am Symbol ist in Outlook nicht möglich. |
 | Einstellungsseite in eigenem Tab | Einstellungsseite im selben Seitenbereich, „Zurück“ führt zum Popup. |
 | Antworten und Weiterleitungen beim Öffnen korrigieren (optional) | Gleiche Option, über das Ereignis `OnNewMessageCompose`. Der ganze Verlauf wird umgewandelt (`bodyMode: FullBody`). Ändert Outlook den Text inzwischen (etwa durch die Signatur), bleibt er unverändert. |
@@ -73,6 +74,11 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
   production environment“). Fehlt die API oder lehnt Outlook den Aufruf ab, zeigt
   der Seitenbereich die umgewandelte Nachricht oberhalb der Einstellungen. Diese
   Fassung lädt keine externen Bilder, Schriften oder Stile.
+- Lehnt Outlook die Anzeige-API ab, schreibt der Seitenbereich den Grund als
+  Warnung „Outlook hat die Anzeige nicht ersetzt“ in die Konsole.
+- Ob das Lesefenster in der neuen Outlook-App offen bleibt, solange der Nutzer
+  liest, ist ungeprüft: Microsoft nennt für Funktionsbefehle mit Dialog keine
+  Zeitgrenze.
 - Die Leseansicht wird nur umgewandelt, solange der Seitenbereich offen und
   angeheftet ist. Outlook bietet kein allgemeines Ereignis beim Öffnen einer
   Nachricht.
@@ -120,6 +126,8 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
     `OnNewMessageCompose`; `false` entfernt den DOMParser, die Ereignisdatei
     setzt dann linkedom ein.
     Vorher die Option in den Einstellungen einschalten.
+    `harness.read(0)` simuliert „Korrigiert lesen“ und zeigt das Lesefenster als
+    Rahmen über der Seite; `harness.closeDialog()` schließt es wie das X.
 
 ## In Outlook testen
 
@@ -135,7 +143,9 @@ Zertifikat ist nicht nötig.
    Seite. Das Add-in gilt danach für alle Outlook-Fassungen desselben Kontos.
 3. Eine Nachricht mit Genderzeichen öffnen, „Sprachverstand“ wählen, Seitenbereich
    anheften und weitere Nachrichten auswählen.
-4. Beim Antworten: Option in den Einstellungen einschalten und auf eine Nachricht
+4. „Korrigiert lesen“ (in der neuen App unter „Apps“ → „Sprachverstand“) öffnet
+   die Nachricht korrigiert in einem eigenen Fenster.
+5. Beim Antworten: Option in den Einstellungen einschalten und auf eine Nachricht
    mit Genderzeichen antworten.
 
 Zu prüfen sind das klassische Outlook (ab 2403, z. B. Office LTSC 2024), die

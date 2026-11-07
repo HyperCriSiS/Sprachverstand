@@ -65,7 +65,34 @@
           later(callback, ok());
         }
       },
-      mailbox
+      mailbox,
+      // Dialog als Rahmen über der Seite; Nachrichten laufen über postMessage.
+      ui: {
+        displayDialogAsync(url, options, callback) {
+          const frame = document.createElement("iframe");
+          frame.id = "harness-dialog";
+          frame.src = url;
+          frame.style.cssText = `position:fixed;top:5%;left:${(100 - options.width) / 2}%;width:${options.width}%;height:${options.height}%;border:2px solid #888;background:#fff`;
+          const events = {};
+          window.addEventListener("message", event => {
+            if (event.source === frame.contentWindow) events.dialogMessageReceived?.({message: event.data});
+          });
+          document.body.append(frame);
+          state.dialog = {url, options, messages: []};
+          // Wie das X des Fensters: Outlook meldet 12006.
+          state.dialog.close = () => {frame.remove(); events.dialogEventReceived?.({error: 12006});};
+          later(callback, ok({
+            addEventHandler: (type, handler) => {events[type] = handler;},
+            messageChild: message => {state.dialog.messages.push(message); frame.contentWindow.postMessage(message, "*");},
+            close: () => frame.remove()
+          }));
+        },
+        addHandlerAsync(type, handler, callback) {
+          window.addEventListener("message", event => {if (event.source === window.parent) handler({message: event.data});});
+          later(callback, ok());
+        },
+        messageParent: message => window.parent.postMessage(message, "*")
+      }
     },
     MailboxEnums: {BodyMode: {FullBody: "fullBody"}},
     actions: {associate: (name, handler) => {handlers[name] = handler;}}
@@ -75,6 +102,14 @@
     state,
     roaming,
     select(index) {state.mail = index; mailbox.item = readItem(); itemChanged && itemChanged();},
+    // Simuliert „Korrigiert lesen“; das Versprechen erfüllt sich beim Schließen
+    // (document.getElementById("harness-dialog") ist das Fenster).
+    read(index = state.mail) {
+      state.mail = index;
+      mailbox.item = readItem();
+      return new Promise(resolve => handlers.openReadWindow({completed: resolve}));
+    },
+    closeDialog() {state.dialog?.close();},
     // Simuliert OnNewMessageCompose; mit dom=false wie im klassischen Outlook.
     compose(composeType, type, dom = true) {
       mailbox.item = composeItem(composeType, type);

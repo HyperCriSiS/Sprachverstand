@@ -55,6 +55,21 @@
               <OfficeTab id="TabDefault">
                 <Group id="readGroup">
                   <Label resid="Group.Label"/>
+                  <Control xsi:type="Button" id="readWindowButton">
+                    <Label resid="ReadButton.Label"/>
+                    <Supertip>
+                      <Title resid="ReadButton.Label"/>
+                      <Description resid="ReadButton.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Icon.16"/>
+                      <bt:Image size="32" resid="Icon.32"/>
+                      <bt:Image size="80" resid="Icon.80"/>
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>openReadWindow</FunctionName>
+                    </Action>
+                  </Control>
                   <Control xsi:type="Button" id="openPaneButton">
                     <Label resid="Button.Label"/>
                     <Supertip>
@@ -97,9 +112,11 @@
         <bt:ShortStrings>
           <bt:String id="Group.Label" DefaultValue="Sprachverstand"/>
           <bt:String id="Button.Label" DefaultValue="Sprachverstand"/>
+          <bt:String id="ReadButton.Label" DefaultValue="Korrigiert lesen"/>
         </bt:ShortStrings>
         <bt:LongStrings>
           <bt:String id="Button.Tooltip" DefaultValue="Korrekturen dieser Nachricht und Einstellungen anzeigen."/>
+          <bt:String id="ReadButton.Tooltip" DefaultValue="Diese Nachricht korrigiert in einem eigenen Fenster lesen."/>
         </bt:LongStrings>
       </Resources>
     </VersionOverrides>

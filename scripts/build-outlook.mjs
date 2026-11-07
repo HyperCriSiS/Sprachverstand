@@ -35,6 +35,13 @@ for (const [page, entry] of [["popup/popup.html", "taskpane"], ["options/options
   await writeFile(file, html, "utf8");
 }
 await cp(path.join(projectRoot, "src", "outlook", "outlook.css"), path.join(outputDirectory, "outlook.css"));
+// Lesefenster (Office-Dialog) für „Korrigiert lesen“.
+await writeFile(path.join(outputDirectory, "read-window.html"),
+  `<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"/><title>Sprachverstand</title>${officeScript}` +
+  `<link href="outlook.css" rel="stylesheet"/><script type="module" src="read-window.js"></script></head>` +
+  `<body class="read-window"><h1>Sprachverstand</h1><iframe sandbox="" title="Sprachverstand"></iframe></body></html>
+`);
 await writeFile(path.join(outputDirectory, "launchevent.html"),
   `<!DOCTYPE html>\n<html><head><meta charset="utf-8"/>${officeScript}<script src="launchevent.js"></script></head><body></body></html>\n`);
 
@@ -49,7 +56,8 @@ const common = { bundle: true, target: ["es2022"], platform: "browser", minify: 
   outdir: outputDirectory };
 await build({ ...common, entryPoints: {
   taskpane: path.join(projectRoot, "src", "outlook", "taskpane.ts"),
-  options: path.join(projectRoot, "src", "outlook", "options-entry.ts")
+  options: path.join(projectRoot, "src", "outlook", "options-entry.ts"),
+  "read-window": path.join(projectRoot, "src", "outlook", "read-window-page.ts")
 }, format: "esm", splitting: true, chunkNames: "chunks/[name]-[hash]" });
 // Klassisches Outlook lädt die Ereignisdatei ohne Module als einzelnes Skript.
 // linkedom greift optional auf das Node-Paket canvas zu und nutzt sonst einen

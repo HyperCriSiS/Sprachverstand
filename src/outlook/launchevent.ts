@@ -5,6 +5,7 @@ import {composeSettingKey} from "./compose-option";
 import {installDomWithoutBrowser} from "./dom-without-browser";
 import {createOutlookApi} from "./extension-shim";
 import {call, office, type OfficeGlobal} from "./office";
+import {openReadWindow, readWindowContent} from "./read-window";
 
 // Gegenstück zu compose-background.ts der Thunderbird-Ausgabe: Antworten und
 // Weiterleitungen werden einmal beim Öffnen korrigiert, beim Senden nicht.
@@ -38,4 +39,18 @@ function onNewMessageComposeHandler(event: {completed(options?: unknown): void})
     .finally(() => event.completed());
 }
 
+// Schaltfläche „Korrigiert lesen“: Die neue Outlook-App ersetzt die Anzeige
+// nicht, deshalb zeigt ein eigenes Fenster die umgewandelte Nachricht.
+function openReadWindowHandler(event: {completed(options?: unknown): void}): void {
+  const Office = office();
+  readWindowContent(Office)
+    .then(content => openReadWindow(Office, new URL("read-window.html", location.href).toString(), content,
+      () => event.completed()))
+    .catch(error => {
+      console.error("Sprachverstand: Das Lesefenster ließ sich nicht öffnen.", error);
+      event.completed();
+    });
+}
+
 office()?.actions?.associate("onNewMessageComposeHandler", onNewMessageComposeHandler);
+office()?.actions?.associate("openReadWindow", openReadWindowHandler);

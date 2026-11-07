@@ -2,3 +2,7 @@
 .outlook-preview { margin-top: 12px; }
 .outlook-preview iframe { width: 100%; min-height: 320px; border: 1px solid currentColor; border-radius: 6px; background: #fff; }
 .outlook-back { display: inline-block; margin-block-end: 8px; color: inherit; }
+/* Lesefenster („Korrigiert lesen“). */
+.read-window { margin: 0; height: 100vh; display: flex; flex-direction: column; font: 14px system-ui, sans-serif; }
+.read-window h1 { margin: 0; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+.read-window iframe { flex: 1; width: 100%; border: 0; background: #fff; }

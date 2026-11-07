@@ -2,7 +2,7 @@
 export interface AsyncResult<T> {
   readonly status: string;
   readonly value: T;
-  readonly error?: {readonly message: string};
+  readonly error?: {readonly message: string; readonly code?: number; readonly name?: string};
 }
 export type AsyncCallback<T> = (result: AsyncResult<T>) => void;
 
@@ -31,10 +31,21 @@ export interface OutlookItem {
   getComposeTypeAsync?(callback: AsyncCallback<{composeType: string; coercionType: string}>): void;
 }
 
+export interface OfficeDialog {
+  addEventHandler(type: string, handler: (arg: {readonly message?: string; readonly error?: number}) => void): void;
+  messageChild?(message: string): void;
+  close(): void;
+}
+
 export interface OfficeGlobal {
   onReady(): Promise<unknown>;
   readonly context: {
     readonly displayLanguage?: string;
+    readonly ui?: {
+      displayDialogAsync(url: string, options: Record<string, unknown>, callback: AsyncCallback<OfficeDialog>): void;
+      addHandlerAsync(type: string, handler: (arg: {readonly message: string}) => void, callback?: AsyncCallback<void>): void;
+      messageParent(message: string): void;
+    };
     readonly roamingSettings: RoamingSettings;
     readonly mailbox?: {
       readonly item?: OutlookItem | null;
@@ -52,5 +63,7 @@ export function office(): OfficeGlobal {
 // Office.js meldet Ergebnisse über Callbacks; hier als Promise.
 export function call<T>(start: (callback: AsyncCallback<T>) => void): Promise<T> {
   return new Promise((resolve, reject) => start(result =>
-    result.status === "succeeded" ? resolve(result.value) : reject(new Error(result.error?.message ?? "Office.js"))));
+    result.status === "succeeded" ? resolve(result.value)
+      // Code und Name helfen bei der Fehlersuche in Outlook.
+      : reject(Object.assign(new Error(result.error?.message ?? "Office.js"), {code: result.error?.code, name: result.error?.name ?? "Error"}))));
 }
