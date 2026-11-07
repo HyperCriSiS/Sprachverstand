@@ -338,6 +338,8 @@ describe("Outlook: Leseansicht", () => {
       offlinePreview("<html><head></head><body><img src=\"https://x.invalid/p.gif\"></body></html>"), "text/html");
     expect(doc.head.querySelector("meta[http-equiv=Content-Security-Policy]")?.getAttribute("content"))
       .toBe("default-src 'none'; img-src data:; style-src 'unsafe-inline'");
+    // Hell oder dunkel nach Systemdesign.
+    expect(doc.head.querySelector("meta[name=color-scheme]")?.getAttribute("content")).toBe("light dark");
   });
 });
 

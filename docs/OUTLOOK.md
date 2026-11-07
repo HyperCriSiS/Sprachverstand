@@ -42,7 +42,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | Thunderbird | Outlook |
 | --- | --- |
 | Nachricht wird beim Anzeigen umgewandelt | Seitenbereich anheften. Bei jeder ausgewählten Nachricht ersetzt das Add-in die Anzeige über `item.display.body.setAsync`. Die Nachricht im Postfach bleibt unverändert. |
-| Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Die neue App ersetzt die Anzeige nicht. Der Seitenbereich zeigt dann den Button „Korrigiert lesen“, der die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog, 60 × 85 % des Bildschirms) öffnet. Das Fenster lädt nichts von außen. Lässt es sich nicht öffnen, steht der Grund unter dem Button. |
+| Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Die neue App ersetzt die Anzeige nicht. Der Seitenbereich zeigt dann den Button „Korrigiert lesen“, der die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog, 60 × 85 % des Bildschirms) öffnet. Das Fenster lädt nichts von außen und folgt dem hellen oder dunklen Systemdesign; Nachrichten mit eigenen Farben behalten diese. Lässt es sich nicht öffnen, steht der Grund unter dem Button. |
 | Symbol mit Zähler, Popup mit Ersetzungsliste | Schaltfläche „Sprachverstand“ in der Leseansicht öffnet den Seitenbereich mit demselben Popup. Ein Zähler am Symbol ist in Outlook nicht möglich. |
 | Einstellungsseite in eigenem Tab | Einstellungsseite im selben Seitenbereich, „Zurück“ führt zum Popup. |
 | Antworten und Weiterleitungen beim Öffnen korrigieren (optional) | Gleiche Option, über das Ereignis `OnNewMessageCompose`. Der ganze Verlauf wird umgewandelt (`bodyMode: FullBody`). Ändert Outlook den Text inzwischen (etwa durch die Signatur), bleibt er unverändert. |
