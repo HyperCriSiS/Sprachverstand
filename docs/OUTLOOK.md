@@ -2,8 +2,10 @@
 
 Portierung der Thunderbird-Ausgabe auf das Office-Add-in-Modell, für das neue
 Outlook (Windows), Outlook im Web und das klassische Outlook für Windows. Stand:
-Entwicklung, nicht veröffentlicht, nur mit der Office-Attrappe und dem
-Manifest-Validator von Microsoft geprüft, noch nicht in einem echten Outlook.
+Entwicklung, nicht veröffentlicht. Am 07.11.2026 in Office LTSC 2024
+(klassisches Outlook) und der neuen Outlook-App unter Windows 11 mit einem
+Outlook.com-Konto geprüft: Lesen klappt in beiden, die Korrektur beim Antworten
+ist noch ungeprüft.
 
 Die Outlook-Ausgabe lebt wie `thunderbird` und `palemoon` auf dem geschützten
 Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
@@ -58,7 +60,8 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | | Neues Outlook, Outlook im Web | Klassisches Outlook für Windows |
 | --- | --- | --- |
 | Seitenbereich, Popup, Einstellungen | ja | ja, mit WebView2 |
-| Leseansicht ersetzen | sobald Outlook `item.display.body` umsetzt (ein Bericht von 2025 nennt es für das neue Outlook als fehlend), sonst Fassung im Seitenbereich | laut einem Bericht von 2025 verfügbar, sonst Fassung im Seitenbereich |
+| Schaltfläche | nur unter „Apps“; einzelne Add-ins lassen sich nicht ins Menüband holen | direkt im Menüband |
+| Leseansicht ersetzen | nein: Outlook meldet den Aufruf erst nach etwa einer Minute als fehlgeschlagen, es gilt die Fassung im Seitenbereich (geprüft 07.11.2026) | ja: die Nachricht lädt kurz neu und erscheint korrigiert, beim Ausschalten wieder im Original (geprüft in LTSC 2024) |
 | Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, über denselben DOM-Kern mit linkedom, also auch über Tags hinweg (`Lehrer*<b>innen</b>`). Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Version 2403 oder neuer (ältere Builds kennen in Ereignissen nur ES2016), Windows 10 1903 oder neuer. Outlook LTSC 2021 (Version 2108) reicht daher nicht. Kern und linkedom nutzen APIs bis ES2023 (`Object.hasOwn`, `findLast`); dass die Laufzeit sie hat, ist nur für V8 belegt. |
 
 Ältere Clients mit Internet-Explorer-Webview werden nicht unterstützt: Der
