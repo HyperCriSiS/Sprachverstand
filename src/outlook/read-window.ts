@@ -1,13 +1,7 @@
-import type {ExtensionApi} from "../browser/api";
-import {loadSettings} from "../settings/storage";
-import {transformBody} from "./body-transform";
-import {installDomWithoutBrowser} from "./dom-without-browser";
-import {createOutlookApi} from "./extension-shim";
-import {call, type OfficeGlobal} from "./office";
-import {inlineImages} from "./reader";
+import type {OfficeGlobal} from "./office";
 
 // Das Lesefenster ist ein Office-Dialog. Dialoge kennen das Postfach nicht;
-// die Schaltfläche wandelt die Nachricht um und schickt sie in Teilen hinüber,
+// der Seitenbereich schickt die umgewandelte Nachricht in Teilen hinüber,
 // weil Outlook für Dialognachrichten keine Größe zusichert. Jeder Teil ist
 // „Nummer/Anzahl:Text“, damit seine Länge vorhersagbar bleibt.
 export const readWindowChunk = 30_000;
@@ -17,38 +11,25 @@ export interface ReadWindowContent {
   readonly html: string;
 }
 
-export async function readWindowContent(Office: OfficeGlobal): Promise<ReadWindowContent> {
-  const api = createOutlookApi(Office.context.roamingSettings, "de", [], () => undefined);
-  (globalThis as {browser?: ExtensionApi}).browser = api;
-  const item = Office.context.mailbox?.item;
-  if (!item?.itemId) throw new Error("Keine Nachricht zum Lesen ausgewählt.");
-  const original = await call<string>(callback => item.body.getAsync("html", {}, callback));
-  const settings = await loadSettings();
-  installDomWithoutBrowser();
-  const result = settings.enabled ? transformBody(original, true, settings) : {body: original, count: 0};
-  const german = (Office.context.displayLanguage ?? "de").toLowerCase().startsWith("de");
-  const corrections = german ? `${result.count} ${result.count === 1 ? "Korrektur" : "Korrekturen"}`
-    : `${result.count} ${result.count === 1 ? "correction" : "corrections"}`;
-  return {title: `Sprachverstand: ${corrections}`, html: await inlineImages(item, result.body)};
-}
-
-// Öffnet das Lesefenster und meldet über done, wenn es geschlossen ist.
-export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadWindowContent, completed: () => void): void {
-  // messageChild (DialogApi 1.2) fehlt etwa in Volumenlizenzen von Outlook 2016/2019.
-  if (!Office.context.requirements?.isSetSupported("DialogApi", "1.2")) {
-    throw new Error("Outlook unterstützt DialogApi 1.2 nicht.");
-  }
+// Öffnet das Lesefenster. done meldet einmal: ohne Fehler beim Schließen,
+// mit Fehler, wenn sich das Fenster nicht öffnen ließ oder darin etwas scheiterte.
+export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadWindowContent,
+  done: (error?: string) => void): void {
   let finished = false;
-  const done = () => {
-    if (!finished) completed();
+  const finish = (error?: string) => {
+    if (!finished) done(error);
     finished = true;
   };
+  // messageChild (DialogApi 1.2) fehlt etwa in Volumenlizenzen von Outlook 2016/2019.
+  if (!Office.context.ui || !Office.context.requirements?.isSetSupported("DialogApi", "1.2")) {
+    finish("Outlook unterstützt DialogApi 1.2 nicht.");
+    return;
+  }
   const text = JSON.stringify(content);
   const total = Math.max(1, Math.ceil(text.length / readWindowChunk));
-  Office.context.ui!.displayDialogAsync(url, {height: 85, width: 60, displayInIframe: true}, result => {
+  Office.context.ui.displayDialogAsync(url, {height: 85, width: 60, displayInIframe: true}, result => {
     if (result.status !== "succeeded") {
-      console.error("Sprachverstand: Das Lesefenster ließ sich nicht öffnen.", result.error);
-      done();
+      finish(`${result.error?.message ?? "unbekannter Fehler"} (${result.error?.code ?? "ohne Code"})`);
       return;
     }
     const dialog = result.value;
@@ -58,8 +39,8 @@ export function openReadWindow(Office: OfficeGlobal, url: string, content: ReadW
         dialog.messageChild!(`${index}/${total}:${text.slice(index * readWindowChunk, (index + 1) * readWindowChunk)}`);
       }
     });
-    // Schließen durch den Nutzer (12006) und alle Fehler im Fenster; nach
-    // einem Fehler kann noch 12006 folgen, completed gilt nur einmal.
-    dialog.addEventHandler("dialogEventReceived", () => done());
+    // 12006: vom Nutzer geschlossen. Andere Codes sind Fehler im Fenster.
+    dialog.addEventHandler("dialogEventReceived", ({error}) =>
+      finish(error === 12006 ? undefined : `Fehler im Fenster (${error ?? "ohne Code"})`));
   });
 }

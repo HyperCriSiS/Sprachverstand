@@ -42,7 +42,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | Thunderbird | Outlook |
 | --- | --- |
 | Nachricht wird beim Anzeigen umgewandelt | Seitenbereich anheften. Bei jeder ausgewählten Nachricht ersetzt das Add-in die Anzeige über `item.display.body.setAsync`. Die Nachricht im Postfach bleibt unverändert. |
-| Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Schaltfläche „Korrigiert lesen“ öffnet die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog), weil die neue App die Anzeige nicht ersetzt. Das Fenster lädt wie die Fassung im Seitenbereich nichts von außen. |
+| Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Die neue App ersetzt die Anzeige nicht. Der Seitenbereich zeigt dann den Button „Korrigiert lesen“, der die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog, 60 × 85 % des Bildschirms) öffnet. Das Fenster lädt nichts von außen. Lässt es sich nicht öffnen, steht der Grund unter dem Button. |
 | Symbol mit Zähler, Popup mit Ersetzungsliste | Schaltfläche „Sprachverstand“ in der Leseansicht öffnet den Seitenbereich mit demselben Popup. Ein Zähler am Symbol ist in Outlook nicht möglich. |
 | Einstellungsseite in eigenem Tab | Einstellungsseite im selben Seitenbereich, „Zurück“ führt zum Popup. |
 | Antworten und Weiterleitungen beim Öffnen korrigieren (optional) | Gleiche Option, über das Ereignis `OnNewMessageCompose`. Der ganze Verlauf wird umgewandelt (`bodyMode: FullBody`). Ändert Outlook den Text inzwischen (etwa durch die Signatur), bleibt er unverändert. |
@@ -62,7 +62,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | --- | --- | --- |
 | Seitenbereich, Popup, Einstellungen | ja | ja, mit WebView2 |
 | Schaltfläche | nur unter „Apps“; einzelne Add-ins lassen sich nicht ins Menüband holen | direkt im Menüband |
-| Leseansicht ersetzen | nein: Outlook meldet den Aufruf erst nach etwa einer Minute als fehlgeschlagen, es gilt die Fassung im Seitenbereich (geprüft 07.11.2026) | ja: die Nachricht lädt kurz neu und erscheint korrigiert, beim Ausschalten wieder im Original (geprüft in LTSC 2024) |
+| Leseansicht ersetzen | nein: Outlook meldet den Aufruf erst nach etwa einer Minute als fehlgeschlagen, es gilt das Lesefenster (geprüft 07.11.2026) | ja: die Nachricht lädt kurz neu und erscheint korrigiert, beim Ausschalten wieder im Original (geprüft in LTSC 2024) |
 | Antworten beim Öffnen korrigieren | ja, über den DOM-Kern | ja, über denselben DOM-Kern mit linkedom, also auch über Tags hinweg (`Lehrer*<b>innen</b>`). Es gelten Standardeinstellungen und synchronisierte Kategorien, weil die Ereignislaufzeit den Gerätespeicher nicht sieht. Version 2403 oder neuer (ältere Builds kennen in Ereignissen nur ES2016), Windows 10 1903 oder neuer. Outlook LTSC 2021 (Version 2108) reicht daher nicht. Kern und linkedom nutzen APIs bis ES2023 (`Object.hasOwn`, `findLast`); dass die Laufzeit sie hat, ist nur für V8 belegt. |
 
 Ältere Clients mit Internet-Explorer-Webview werden nicht unterstützt: Der
@@ -71,14 +71,13 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
 ## Einschränkungen
 
 - `item.display.body` ist bei Microsoft noch Vorschau („Do not use this API in a
-  production environment“). Fehlt die API oder lehnt Outlook den Aufruf ab, zeigt
-  der Seitenbereich die umgewandelte Nachricht oberhalb der Einstellungen. Diese
-  Fassung lädt keine externen Bilder, Schriften oder Stile.
+  production environment“). Fehlt die API oder lehnt Outlook den Aufruf ab, bietet
+  der Seitenbereich das Lesefenster an. Es lädt keine externen Bilder, Schriften
+  oder Stile.
 - Lehnt Outlook die Anzeige-API ab, schreibt der Seitenbereich den Grund als
   Warnung „Outlook hat die Anzeige nicht ersetzt“ in die Konsole.
-- Ob das Lesefenster in der neuen Outlook-App offen bleibt, solange der Nutzer
-  liest, ist ungeprüft: Microsoft nennt für Funktionsbefehle mit Dialog keine
-  Zeitgrenze.
+- Ein Seitenbereich kann nur ein Lesefenster zugleich öffnen; ein zweiter Klick
+  bei offenem Fenster meldet Fehler 12007 unter dem Button.
 - Die Leseansicht wird nur umgewandelt, solange der Seitenbereich offen und
   angeheftet ist. Outlook bietet kein allgemeines Ereignis beim Öffnen einer
   Nachricht.
@@ -90,12 +89,12 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
 - Eingebettete Bilder: Outlook liefert sie im HTML als `cid:`-Verweis (klassisch
   schon immer, neu und Web seit Ende 2025). In der ersetzten Anzeige bleiben die
   Verweise stehen; ob Outlook sie dort auflöst, ist nicht dokumentiert und
-  ungeprüft. Die Fassung im Seitenbereich setzt die Bilder aus den Anhängen als
+  ungeprüft. Das Lesefenster setzt die Bilder aus den Anhängen als
   `data:`-URL ein (`contentId`, Mailbox 1.16, und `getAttachmentContentAsync`,
   Mailbox 1.8). Ältere Abruf-URLs von Outlook im Web blockiert sie wie alle
   externen Inhalte.
 - Die ersetzte Anzeige ist auf 1 000 000 Zeichen begrenzt; längere Nachrichten
-  zeigt der Seitenbereich.
+  zeigt das Lesefenster.
 - Die Domain-Schaltfläche im Popup bleibt wie in Thunderbird deaktiviert sichtbar.
 
 ## Testen
@@ -119,16 +118,16 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
     `nodisplay` (ohne Anzeige-API), `displayfails` (Outlook lehnt die Anzeige
     ab), `stableoffice` (Anzeige-API wirft wie in der stabilen Office.js),
     `displayhangs` (Anzeige-API antwortet nicht, wie in der neuen Outlook-App),
+    `nodialogapi` (ohne DialogApi 1.2), `dialogfails` (Outlook öffnet das
+    Lesefenster nicht, 12009),
     `lang=en-US`. In der Konsole
     wechselt `harness.select(1)` die Nachricht, `harness.state.displayed` zeigt die
-    ersetzten Anzeigen.
+    ersetzten Anzeigen. „Korrigiert lesen“ zeigt das Lesefenster als Rahmen über
+    der Seite; `harness.closeDialog()` schließt es wie das X.
   - `launchevent.html`: `await harness.compose("reply", "html", false)` simuliert
     `OnNewMessageCompose`; `false` entfernt den DOMParser, die Ereignisdatei
     setzt dann linkedom ein.
     Vorher die Option in den Einstellungen einschalten.
-    `harness.read(0)` simuliert „Korrigiert lesen“ und zeigt das Lesefenster als
-    Rahmen über der Seite; `harness.closeDialog()` schließt es wie das X.
-    Parameter `nodialogapi` simuliert Outlook ohne DialogApi 1.2.
 
 ## In Outlook testen
 
@@ -144,8 +143,8 @@ Zertifikat ist nicht nötig.
    Seite. Das Add-in gilt danach für alle Outlook-Fassungen desselben Kontos.
 3. Eine Nachricht mit Genderzeichen öffnen, „Sprachverstand“ wählen, Seitenbereich
    anheften und weitere Nachrichten auswählen.
-4. „Korrigiert lesen“ (in der neuen App unter „Apps“ → „Sprachverstand“) öffnet
-   die Nachricht korrigiert in einem eigenen Fenster.
+4. In der neuen App: im Seitenbereich „Korrigiert lesen“ wählen; die Nachricht
+   öffnet sich korrigiert in einem eigenen Fenster.
 5. Beim Antworten: Option in den Einstellungen einschalten und auf eine Nachricht
    mit Genderzeichen antworten.
 

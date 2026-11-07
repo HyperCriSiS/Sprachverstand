@@ -79,6 +79,7 @@
             if (event.source === frame.contentWindow) events.dialogMessageReceived?.({message: event.data});
           });
           document.body.append(frame);
+          if (params.has("dialogfails")) return later(callback, {status: "failed", error: {message: "Vom Nutzer ignoriert", code: 12009}});
           state.dialog = {url, options, messages: []};
           // Wie das X des Fensters: Outlook meldet 12006.
           state.dialog.close = () => {frame.remove(); events.dialogEventReceived?.({error: 12006});};
@@ -103,13 +104,7 @@
     state,
     roaming,
     select(index) {state.mail = index; mailbox.item = readItem(); itemChanged && itemChanged();},
-    // Simuliert „Korrigiert lesen“; das Versprechen erfüllt sich beim Schließen
-    // (document.getElementById("harness-dialog") ist das Fenster).
-    read(index = state.mail) {
-      state.mail = index;
-      mailbox.item = readItem();
-      return new Promise(resolve => handlers.openReadWindow({completed: resolve}));
-    },
+    // Schließt das Lesefenster wie das X (document.getElementById("harness-dialog")).
     closeDialog() {state.dialog?.close();},
     // Simuliert OnNewMessageCompose; mit dom=false wie im klassischen Outlook.
     compose(composeType, type, dom = true) {

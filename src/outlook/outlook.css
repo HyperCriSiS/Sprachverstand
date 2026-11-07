@@ -1,6 +1,7 @@
 /* Ergänzungen für den Outlook-Seitenbereich. */
-.outlook-preview { margin-top: 12px; }
-.outlook-preview iframe { width: 100%; min-height: 320px; border: 1px solid currentColor; border-radius: 6px; background: #fff; }
+.outlook-read { margin-top: 8px; }
+.outlook-read[hidden] { display: none; }
+.outlook-read-status:empty { display: none; }
 .outlook-back { display: inline-block; margin-block-end: 8px; color: inherit; }
 /* Lesefenster („Korrigiert lesen“). */
 .read-window { margin: 0; height: 100vh; display: flex; flex-direction: column; font: 14px system-ui, sans-serif; }
