@@ -7,7 +7,10 @@ import type {ReadWindowContent} from "./read-window";
 export function receiveReadWindow(show: (content: ReadWindowContent) => void): (message: string) => void {
   const parts: string[] = [];
   return message => {
-    const [, index, total, text] = /^(\d+)\/(\d+):([\s\S]*)$/.exec(message)!;
+    // Andere Nachrichten (etwa ein zurückgespiegeltes „ready“) bleiben unbeachtet.
+    const match = /^(\d+)\/(\d+):([\s\S]*)$/.exec(message);
+    if (!match) return;
+    const [, index, total, text] = match;
     parts[Number(index)] = text!;
     if (parts.filter(part => part !== undefined).length === Number(total)) show(JSON.parse(parts.join("")) as ReadWindowContent);
   };

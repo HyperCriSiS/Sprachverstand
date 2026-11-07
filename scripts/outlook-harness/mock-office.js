@@ -15,7 +15,7 @@
   const logo = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==";
   const ok = value => ({status: "succeeded", value});
   const later = (callback, result) => setTimeout(() => callback && callback(result));
-  const state = {mail: Number(params.get("mail") || 0), displayed: [], composeBody: undefined, displayFails: params.has("displayfails")};
+  const state = {mail: Number(params.get("mail") || 0), displayed: [], composeBody: undefined, notes: [], displayFails: params.has("displayfails")};
   let itemChanged;
 
   function readItem() {
@@ -46,7 +46,9 @@
         getAsync: (coercion, options, callback) => later(callback, ok(state.composeBody)),
         setAsync: (data, options, callback) => {state.composeBody = data; later(callback, ok());}
       },
-      getComposeTypeAsync: callback => later(callback, ok({composeType, coercionType: type}))
+      getComposeTypeAsync: callback => later(callback, ok({composeType, coercionType: type})),
+      // Hinweisleiste im Antwortfenster; harness.state.notes sammelt die Texte.
+      notificationMessages: {replaceAsync: (key, details, callback) => {state.notes.push(details.message); later(callback, ok());}}
     };
   }
 
