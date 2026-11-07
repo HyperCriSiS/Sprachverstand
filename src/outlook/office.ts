@@ -29,6 +29,9 @@ export interface OutlookItem {
     callback: AsyncCallback<{content: string; format: string}>): void;
   readonly display?: {readonly body?: {setAsync(data: string, options: Record<string, unknown>, callback: AsyncCallback<void>): void}};
   getComposeTypeAsync?(callback: AsyncCallback<{composeType: string; coercionType: string}>): void;
+  readonly notificationMessages?: {
+    replaceAsync(key: string, details: Record<string, unknown>, callback?: AsyncCallback<void>): void;
+  };
 }
 
 export interface OfficeDialog {

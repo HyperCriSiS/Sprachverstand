@@ -45,7 +45,7 @@ Branch `outlook` (Änderungen nur per Pull Request mit Squash, Pflichtprüfung
 | Nachricht wird beim Anzeigen umgewandelt (neue Outlook-App) | Die neue App ersetzt die Anzeige nicht. Der Seitenbereich zeigt dann den Button „Korrigiert lesen“, der die umgewandelte Nachricht in einem eigenen Fenster (Office-Dialog, 60 × 85 % des Bildschirms) öffnet. Das Fenster lädt nichts von außen und folgt dem hellen oder dunklen Systemdesign; Nachrichten mit eigenen Farben behalten diese. Lässt es sich nicht öffnen, steht der Grund unter dem Button. |
 | Symbol mit Zähler, Popup mit Ersetzungsliste | Schaltfläche „Sprachverstand“ in der Leseansicht öffnet den Seitenbereich mit demselben Popup. Ein Zähler am Symbol ist in Outlook nicht möglich. |
 | Einstellungsseite in eigenem Tab | Einstellungsseite im selben Seitenbereich, „Zurück“ führt zum Popup. |
-| Antworten und Weiterleitungen beim Öffnen korrigieren (optional) | Gleiche Option, über das Ereignis `OnNewMessageCompose`. Der ganze Verlauf wird umgewandelt (`bodyMode: FullBody`). Ändert Outlook den Text inzwischen (etwa durch die Signatur), bleibt er unverändert. |
+| Antworten und Weiterleitungen beim Öffnen korrigieren (optional) | Gleiche Option, über das Ereignis `OnNewMessageCompose`. Der ganze Verlauf wird umgewandelt (`bodyMode: FullBody`). Ändert Outlook den Text inzwischen (etwa durch die Signatur), bleibt er unverändert. Eine Hinweisleiste im Antwortfenster nennt die Zahl der Korrekturen oder den Grund, warum nichts korrigiert wurde; ohne Option und ohne Genderformen bleibt sie aus. |
 
 ## Speicher
 
@@ -126,7 +126,8 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
     der Seite; `harness.closeDialog()` schließt es wie das X.
   - `launchevent.html`: `await harness.compose("reply", "html", false)` simuliert
     `OnNewMessageCompose`; `false` entfernt den DOMParser, die Ereignisdatei
-    setzt dann linkedom ein.
+    setzt dann linkedom ein. `harness.state.notes` zeigt die Texte der
+    Hinweisleiste.
     Vorher die Option in den Einstellungen einschalten.
 
 ## In Outlook testen

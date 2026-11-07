@@ -192,20 +192,28 @@ function composeOffice(body: string) {
 function composeItem(composeType: string, type = "html", body = mail) {
   const setAsync = vi.fn((_data: string, _options: Record<string, unknown>, callback: (result: never) => void) => callback(ok() as never));
   const getAsync = vi.fn((_type: string, _options: Record<string, unknown>, callback: (result: never) => void) => callback(ok(body) as never));
+  const notes: string[] = [];
   const item: OutlookItem = {
     body: {getTypeAsync: callback => callback(ok(type)), getAsync, setAsync},
-    getComposeTypeAsync: callback => callback(ok({composeType, coercionType: type}))
+    getComposeTypeAsync: callback => callback(ok({composeType, coercionType: type})),
+    notificationMessages: {replaceAsync: (key, details, callback) => {
+      expect(key).toBe("sprachverstand");
+      expect(details).toMatchObject({type: "informationalMessage", icon: "Icon.16", persistent: false});
+      notes.push(details.message as string);
+      callback?.(ok() as never);
+    }}
   };
-  return {item, setAsync, getAsync};
+  return {item, setAsync, getAsync, notes};
 }
 
 describe("Outlook: Antworten und Weiterleitungen beim Öffnen", () => {
   const enabled = () => roaming({[`sync:${composeSettingKey}`]: "true"});
 
   it("bleibt ohne die Option unverändert", async () => {
-    const {item, setAsync} = composeItem("reply");
+    const {item, setAsync, notes} = composeItem("reply");
     await correctComposeOnOpen(officeWith(item));
     expect(setAsync).not.toHaveBeenCalled();
+    expect(notes).toEqual([]);
   });
 
   it("korrigiert Antworten samt Verlauf, aber keine neuen Nachrichten", async () => {
@@ -214,14 +222,32 @@ describe("Outlook: Antworten und Weiterleitungen beim Öffnen", () => {
     expect(reply.getAsync).toHaveBeenCalledWith("html", {bodyMode: "fullBody"}, expect.any(Function));
     expect(reply.setAsync.mock.calls[0]?.[0]).toContain("Liebe Kollegen");
     expect(reply.setAsync.mock.calls[0]?.[1]).toEqual({coercionType: "html"});
+    expect(reply.notes).toEqual(["Sprachverstand: 2 Korrekturen im Verlauf."]);
 
     const forward = composeItem("forward", "text", "Die Lehrer:innen");
     await correctComposeOnOpen(officeWith(forward.item, enabled()));
     expect(forward.setAsync.mock.calls[0]?.[0]).toBe("Die Lehrer");
+    expect(forward.notes).toEqual(["Sprachverstand: 1 Korrektur im Verlauf."]);
 
     const fresh = composeItem("newMail");
     await correctComposeOnOpen(officeWith(fresh.item, enabled()));
     expect(fresh.setAsync).not.toHaveBeenCalled();
+    expect(fresh.notes).toEqual([]);
+
+    // Ohne Genderformen bleibt die Hinweisleiste aus.
+    const plain = composeItem("reply", "text", "Hallo zusammen");
+    await correctComposeOnOpen(officeWith(plain.item, enabled()));
+    expect(plain.notes).toEqual([]);
+  });
+
+  it("nennt in der Hinweisleiste den Grund, wenn die Korrektur scheitert", async () => {
+    const failing = composeItem("reply");
+    failing.item = {...failing.item, getComposeTypeAsync: callback =>
+      callback({status: "failed", error: {message: "Zeitüberschreitung"}} as never)};
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await correctComposeOnOpen(officeWith(failing.item, enabled()));
+    expect(failing.notes).toEqual(["Sprachverstand: Korrektur fehlgeschlagen: Zeitüberschreitung"]);
+    error.mockRestore();
   });
 
   it("lässt den Text stehen, wenn Outlook ihn zwischendurch ändert (Signatur)", async () => {
@@ -231,6 +257,7 @@ describe("Outlook: Antworten und Weiterleitungen beim Öffnen", () => {
       callback(ok(reads++ ? `${mail}<p>Signatur</p>` : mail) as never));
     await correctComposeOnOpen(officeWith(changed.item, enabled()));
     expect(changed.setAsync).not.toHaveBeenCalled();
+    expect(changed.notes).toEqual(["Sprachverstand: Outlook hat den Text beim Öffnen geändert (etwa durch die Signatur); nichts wurde korrigiert."]);
   });
 });
 
@@ -378,6 +405,7 @@ describe("Outlook: Lesefenster", () => {
     events.dialogMessageReceived!({message: "ready"});
     const shown = vi.fn();
     const receive = receiveReadWindow(shown);
+    receive("ready");
     // Reihenfolge ist nicht zugesichert.
     for (const message of [...sent.slice(0, sent.length / 2)].reverse()) receive(message);
     expect(shown).toHaveBeenCalledExactlyOnceWith(content);
