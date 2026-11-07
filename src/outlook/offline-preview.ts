@@ -1,4 +1,4 @@
-// Umgewandelte Nachrichten im Seitenbereich und im Lesefenster laden nichts
+// Umgewandelte Nachrichten im Lesefenster laden nichts
 // nach: externe Bilder, Schriften und Stile könnten sonst dem Absender das
 // Öffnen verraten.
 export function offlinePreview(html: string): string {

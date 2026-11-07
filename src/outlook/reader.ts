@@ -11,10 +11,9 @@ export interface ReaderView {
   showPreview(html: string | undefined): void;
 }
 
-export {offlinePreview} from "./offline-preview";
 
-// Eingebettete Bilder verweisen per cid: auf Anhänge, die die Fassung im
-// Seitenbereich nicht kennt. Sie werden als data:-URL eingesetzt (Mailbox 1.8
+// Eingebettete Bilder verweisen per cid: auf Anhänge, die das Lesefenster
+// nicht kennt. Sie werden als data:-URL eingesetzt (Mailbox 1.8
 // und 1.16); fehlt etwas davon, bleibt der Verweis.
 export async function inlineImages(item: OutlookItem, html: string): Promise<string> {
   // Verweise sind unabhängig von Groß- und Kleinschreibung und dürfen
@@ -84,7 +83,7 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
     }
     const result = transformBody(original, true, settings);
     publish(result.count, result.replacements);
-    // Die Fassung im Seitenbereich erscheint sofort. Die neue Outlook-App
+    // Das Lesefenster steht sofort bereit. Die neue Outlook-App
     // beantwortet die Vorschau-API erst nach etwa einer Minute mit einem Fehler.
     const preview = result.count ? await inlineImages(item, result.body) : undefined;
     if (current !== generation) return;

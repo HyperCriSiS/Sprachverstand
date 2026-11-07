@@ -7,8 +7,9 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {createOutlookApi, deviceStore, formatMessage, localeCandidates} from "../src/outlook/extension-shim";
 import {transformBody} from "../src/outlook/body-transform";
 import {correctComposeOnOpen} from "../src/outlook/launchevent";
-import {connectReader, inlineImages, offlinePreview} from "../src/outlook/reader";
-import {openReadWindow, readWindowChunk, readWindowContent} from "../src/outlook/read-window";
+import {connectReader, inlineImages} from "../src/outlook/reader";
+import {offlinePreview} from "../src/outlook/offline-preview";
+import {openReadWindow, readWindowChunk} from "../src/outlook/read-window";
 import {receiveReadWindow} from "../src/outlook/read-window-page";
 import {composeSettingKey} from "../src/outlook/compose-option";
 import {defaultSettings} from "../src/settings/defaults";
@@ -344,19 +345,6 @@ describe("Outlook: Lesefenster", () => {
   const item: OutlookItem = {itemId: "1",
     body: {getTypeAsync: () => undefined, getAsync: (_type, _options, callback) => callback(ok(mail))}};
 
-  it("wandelt die ausgewählte Nachricht um und beachtet den Hauptschalter", async () => {
-    expect(await readWindowContent(officeWith(item))).toEqual({title: "Sprachverstand: 2 Korrekturen",
-      html: expect.stringContaining("Liebe Kollegen, die Lehrer kommen.")});
-    // Einstellungen liegen wie im Seitenbereich im Gerätespeicher derselben Herkunft.
-    const off = officeWith(item);
-    await createOutlookApi(off.context.roamingSettings, "de", [], () => undefined).storage.local
-      .set({settings: {...defaultSettings, enabled: false}});
-    expect(await readWindowContent(off)).toEqual({title: "Sprachverstand: 0 Korrekturen", html: mail});
-    localStorage.clear();
-    const {itemId: _ignored, ...compose} = item;
-    await expect(readWindowContent(officeWith(compose))).rejects.toThrow("Keine Nachricht");
-  });
-
   it("schickt große Nachrichten in Teilen und meldet das Schließen", () => {
     // Ein Emoji (Surrogatpaar) genau an der ersten Teilgrenze.
     const prefix = JSON.stringify({title: "Sprachverstand: 1 Korrektur", html: ""}).length - 2;
@@ -393,17 +381,22 @@ describe("Outlook: Lesefenster", () => {
     // Nach einem Fehler (12002) folgt beim Schließen noch 12006; completed nur einmal.
     events.dialogEventReceived!({error: 12002});
     events.dialogEventReceived!({error: 12006});
-    expect(done).toHaveBeenCalledOnce();
-    expect(() => openReadWindow({...office, context: {...office.context, requirements: {isSetSupported: () => false}}},
-      "https://example.org/", content, vi.fn())).toThrow("DialogApi 1.2");
+    expect(done).toHaveBeenCalledExactlyOnceWith("Fehler im Fenster (12002)");
+    const closed = vi.fn();
+    openReadWindow(office, "https://example.org/read-window.html", content, closed);
+    events.dialogEventReceived!({error: 12006});
+    expect(closed).toHaveBeenCalledExactlyOnceWith(undefined);
+    const unsupported = vi.fn();
+    openReadWindow({...office, context: {...office.context, requirements: {isSetSupported: () => false}}},
+      "https://example.org/", content, unsupported);
+    expect(unsupported).toHaveBeenCalledExactlyOnceWith("Outlook unterstützt DialogApi 1.2 nicht.");
 
     const failed = vi.fn();
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     openReadWindow({...office, context: {...office.context, ui: {...office.context.ui,
       displayDialogAsync: (_url: string, _options: Record<string, unknown>, callback: (result: never) => void) =>
-        callback({status: "failed", error: {message: "12009"}} as never)}}}, "https://example.org/", content, failed);
-    expect(failed).toHaveBeenCalledOnce();
-    error.mockRestore();
+        callback({status: "failed", error: {message: "Vom Nutzer ignoriert", code: 12009}} as never)}}},
+      "https://example.org/", content, failed);
+    expect(failed).toHaveBeenCalledExactlyOnceWith("Vom Nutzer ignoriert (12009)");
   });
 });
 

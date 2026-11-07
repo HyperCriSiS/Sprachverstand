@@ -6,8 +6,8 @@ import process from "node:process";
 // Testumgebung für das Outlook-Add-in ohne Outlook: kopiert dist/outlook nach
 // dist/outlook-harness, ersetzt Office.js durch scripts/outlook-harness/mock-office.js
 // und stellt alles unter http://localhost:8765/ bereit.
-// Seiten: popup/popup.html (Parameter: mail, nodisplay, displayfails, displayhangs, lang),
-// options/options.html, launchevent.html (window.harness.compose, window.harness.read).
+// Seiten: popup/popup.html (Parameter: mail, nodisplay, displayfails, displayhangs, nodialogapi, dialogfails, lang),
+// options/options.html, launchevent.html (window.harness.compose).
 const projectRoot = process.cwd();
 const source = path.join(projectRoot, "dist", "outlook");
 const target = path.join(projectRoot, "dist", "outlook-harness");
