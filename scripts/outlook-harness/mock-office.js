@@ -28,6 +28,8 @@
       display: params.has("nodisplay") ? undefined : {body: {setAsync(html, options, callback) {
         // Wie die stabile office.js (lib/1): Die Vorschau-API wirft synchron.
         if (params.has("stableoffice")) throw new Error("The feature setUIAsync, is only enabled on the beta api endpoint");
+        // Wie die neue Outlook-App: keine Antwort (dort erst nach etwa einer Minute).
+        if (params.has("displayhangs")) return;
         if (state.displayFails) return later(callback, {status: "failed", error: {message: "Vorschau-API abgelehnt"}});
         state.displayed.push(html);
         later(callback, ok());

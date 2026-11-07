@@ -109,6 +109,7 @@ Regelkern braucht Unicode-Klassen in regulären Ausdrücken.
   - `popup/popup.html`, Parameter `mail=0|1|2|3` (3 mit eingebettetem Bild),
     `nodisplay` (ohne Anzeige-API), `displayfails` (Outlook lehnt die Anzeige
     ab), `stableoffice` (Anzeige-API wirft wie in der stabilen Office.js),
+    `displayhangs` (Anzeige-API antwortet nicht, wie in der neuen Outlook-App),
     `lang=en-US`. In der Konsole
     wechselt `harness.select(1)` die Nachricht, `harness.state.displayed` zeigt die
     ersetzten Anzeigen.
