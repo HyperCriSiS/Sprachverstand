@@ -1,5 +1,6 @@
 import {installOutlookApi} from "./extension-shim";
-import {connectReader, offlinePreview} from "./reader";
+import {connectReader} from "./reader";
+import {offlinePreview} from "./offline-preview";
 import {hideSubtitleOption} from "./platform-ui";
 import {office} from "./office";
 

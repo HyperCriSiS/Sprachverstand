@@ -11,11 +11,7 @@ export interface ReaderView {
   showPreview(html: string | undefined): void;
 }
 
-// Die Fassung im Seitenbereich lädt nichts nach: externe Bilder, Schriften
-// und Stile könnten sonst dem Absender das Öffnen verraten.
-export function offlinePreview(html: string): string {
-  return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">${html}`;
-}
+export {offlinePreview} from "./offline-preview";
 
 // Eingebettete Bilder verweisen per cid: auf Anhänge, die die Fassung im
 // Seitenbereich nicht kennt. Sie werden als data:-URL eingesetzt (Mailbox 1.8
@@ -94,7 +90,10 @@ export function connectReader(api: OutlookApi, Office: OfficeGlobal, view: Reade
     if (current !== generation) return;
     view.showPreview(preview);
     if (item.display?.body && (result.count || displayed)) {
-      const replaced = await display(item, result.body).then(() => true, () => false);
+      const replaced = await display(item, result.body).then(() => true, (error: unknown) => {
+        console.warn("Sprachverstand: Outlook hat die Anzeige nicht ersetzt.", error);
+        return false;
+      });
       if (current !== generation) return;
       displayed = replaced && result.count ? {item, original} : undefined;
       if (replaced) view.showPreview(undefined);

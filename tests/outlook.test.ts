@@ -8,9 +8,11 @@ import {createOutlookApi, deviceStore, formatMessage, localeCandidates} from "..
 import {transformBody} from "../src/outlook/body-transform";
 import {correctComposeOnOpen} from "../src/outlook/launchevent";
 import {connectReader, inlineImages, offlinePreview} from "../src/outlook/reader";
+import {openReadWindow, readWindowChunk, readWindowContent} from "../src/outlook/read-window";
+import {receiveReadWindow} from "../src/outlook/read-window-page";
 import {composeSettingKey} from "../src/outlook/compose-option";
 import {defaultSettings} from "../src/settings/defaults";
-import type {OfficeGlobal, OutlookItem} from "../src/outlook/office";
+import type {OfficeDialog, OfficeGlobal, OutlookItem} from "../src/outlook/office";
 
 const mail = "<html><body><p>Liebe Kolleg*innen, die Lehrer:innen kommen.</p></body></html>";
 const ok = <T>(value?: T) => ({status: "succeeded", value: value as T});
@@ -176,7 +178,9 @@ function composeOffice(body: string) {
   };
   const Office = {context: {roamingSettings: roaming({[`sync:${composeSettingKey}`]: "true"}), mailbox: {item}},
     MailboxEnums: {BodyMode: {FullBody: "fullBody"}},
-    actions: {associate: (_name: string, callback: typeof handler) => {handler = callback;}}};
+    actions: {associate: (name: string, callback: typeof handler) => {
+      if (name === "onNewMessageComposeHandler") handler = callback;
+    }}};
   return {Office, get done() {
     return new Promise<string | undefined>(resolve => handler!({completed: () => resolve(written)}));
   }};
@@ -278,12 +282,17 @@ describe("Outlook: Leseansicht", () => {
   });
 
   it("fällt auf die Fassung im Seitenbereich zurück, wenn Outlook die Anzeige ablehnt", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     for (const fails of ["callback", "throw"] as const) {
       const {item, shown} = readItem(true, fails);
       const {preview} = start(item);
       await vi.waitFor(() => expect(preview).toHaveBeenCalledWith(expect.stringContaining("Liebe Kollegen")));
       expect(shown).toHaveLength(0);
     }
+    // Der Grund landet in der Konsole, zur Fehlersuche in echtem Outlook.
+    expect(warn).toHaveBeenCalledWith("Sprachverstand: Outlook hat die Anzeige nicht ersetzt.",
+      expect.objectContaining({message: "Vorschau"}));
+    warn.mockRestore();
   });
 
   it("zeigt die Fassung im Seitenbereich, ohne auf die Antwort der Vorschau-API zu warten", async () => {
@@ -328,6 +337,73 @@ describe("Outlook: Leseansicht", () => {
       offlinePreview("<html><head></head><body><img src=\"https://x.invalid/p.gif\"></body></html>"), "text/html");
     expect(doc.head.querySelector("meta[http-equiv=Content-Security-Policy]")?.getAttribute("content"))
       .toBe("default-src 'none'; img-src data:; style-src 'unsafe-inline'");
+  });
+});
+
+describe("Outlook: Lesefenster", () => {
+  const item: OutlookItem = {itemId: "1",
+    body: {getTypeAsync: () => undefined, getAsync: (_type, _options, callback) => callback(ok(mail))}};
+
+  it("wandelt die ausgewählte Nachricht um und beachtet den Hauptschalter", async () => {
+    expect(await readWindowContent(officeWith(item))).toEqual({title: "Sprachverstand: 2 Korrekturen",
+      html: expect.stringContaining("Liebe Kollegen, die Lehrer kommen.")});
+    // Einstellungen liegen wie im Seitenbereich im Gerätespeicher derselben Herkunft.
+    const off = officeWith(item);
+    await createOutlookApi(off.context.roamingSettings, "de", [], () => undefined).storage.local
+      .set({settings: {...defaultSettings, enabled: false}});
+    expect(await readWindowContent(off)).toEqual({title: "Sprachverstand: 0 Korrekturen", html: mail});
+    localStorage.clear();
+    const {itemId: _ignored, ...compose} = item;
+    await expect(readWindowContent(officeWith(compose))).rejects.toThrow("Keine Nachricht");
+  });
+
+  it("schickt große Nachrichten in Teilen und meldet das Schließen", () => {
+    // Ein Emoji (Surrogatpaar) genau an der ersten Teilgrenze.
+    const prefix = JSON.stringify({title: "Sprachverstand: 1 Korrektur", html: ""}).length - 2;
+    const html = `${"a".repeat(readWindowChunk - prefix - 1)}😀<p>${"\"Bürger\" ".repeat(readWindowChunk / 5)}</p>`;
+    const content = {title: "Sprachverstand: 1 Korrektur", html};
+    expect(JSON.stringify(content).slice(readWindowChunk - 1, readWindowChunk + 1)).toBe("😀");
+    const events: Record<string, (arg: {message?: string; error?: number}) => void> = {};
+    const sent: string[] = [];
+    const dialog: OfficeDialog = {addEventHandler: (type, handler) => {events[type] = handler;},
+      messageChild: message => {sent.push(message);}, close: () => undefined};
+    const options: Record<string, unknown>[] = [];
+    const office = {...officeWith(item), context: {...officeWith(item).context, ui: {
+      displayDialogAsync: (_url: string, opened: Record<string, unknown>, callback: (result: never) => void) => {
+        options.push(opened);
+        callback(ok(dialog) as never);
+      },
+      addHandlerAsync: () => undefined, messageParent: () => undefined},
+      requirements: {isSetSupported: (name: string, version?: string) => name === "DialogApi" && version === "1.2"}}};
+    const done = vi.fn();
+    openReadWindow(office, "https://example.org/read-window.html", content, done);
+    expect(options[0]).toMatchObject({displayInIframe: true});
+    events.dialogMessageReceived!({message: "ready"});
+    expect(sent.length).toBeGreaterThan(1);
+    // Vorhersagbare Länge: Präfix plus höchstens ein Teil.
+    for (const message of sent) expect(message.length).toBeLessThanOrEqual(readWindowChunk + 12);
+    // Ein zweites „ready“ schickt alles erneut; das Fenster zeigt es einmal an.
+    events.dialogMessageReceived!({message: "ready"});
+    const shown = vi.fn();
+    const receive = receiveReadWindow(shown);
+    // Reihenfolge ist nicht zugesichert.
+    for (const message of [...sent.slice(0, sent.length / 2)].reverse()) receive(message);
+    expect(shown).toHaveBeenCalledExactlyOnceWith(content);
+    expect(done).not.toHaveBeenCalled();
+    // Nach einem Fehler (12002) folgt beim Schließen noch 12006; completed nur einmal.
+    events.dialogEventReceived!({error: 12002});
+    events.dialogEventReceived!({error: 12006});
+    expect(done).toHaveBeenCalledOnce();
+    expect(() => openReadWindow({...office, context: {...office.context, requirements: {isSetSupported: () => false}}},
+      "https://example.org/", content, vi.fn())).toThrow("DialogApi 1.2");
+
+    const failed = vi.fn();
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    openReadWindow({...office, context: {...office.context, ui: {...office.context.ui,
+      displayDialogAsync: (_url: string, _options: Record<string, unknown>, callback: (result: never) => void) =>
+        callback({status: "failed", error: {message: "12009"}} as never)}}}, "https://example.org/", content, failed);
+    expect(failed).toHaveBeenCalledOnce();
+    error.mockRestore();
   });
 });
 
