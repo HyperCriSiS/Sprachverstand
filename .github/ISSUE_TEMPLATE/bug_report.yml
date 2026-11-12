@@ -1,0 +1,38 @@
+name: Fehlerbericht
+description: Etwas funktioniert nicht wie beschrieben.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Was ist passiert?
+      description: Was du getan hast, was du erwartet hast und was stattdessen passiert ist.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Schritte zum Nachstellen
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Beispiel
+      description: Der betroffene Text oder die Adresse der Seite.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Version von Sprachverstand, Browser und Browserversion.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Protokoll
+      description: Passwörter, Tokens und persönliche Daten vor dem Einfügen entfernen.
+      render: text
