@@ -12,12 +12,14 @@
 </p>
 
 <p align="center">
-  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/">Für Firefox installieren</a>
-  · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Für Chrome installieren</a>
+  Installieren für:
+  <a href="https://addons.mozilla.org/firefox/addon/sprachverstand/">Firefox</a>
+  · <a href="https://chromewebstore.google.com/detail/sprachverstand/pldojodppdcomlljcgpeeelleomieeii">Chrome</a>
   · <a href="#microsoft-edge">Edge</a>
   · <a href="#opera">Opera</a>
-  · <a href="#thunderbird">Thunderbird</a>
-  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases">Weitere Downloads</a>
+  · <a href="#pale-moon">Pale Moon</a>
+  · <a href="https://addons.thunderbird.net/thunderbird/addon/sprachverstand/">Thunderbird</a>
+  · <a href="https://github.com/HyperCriSiS/Sprachverstand/releases/latest">Alle Downloads</a>
 </p>
 
 <p align="center">
@@ -71,9 +73,10 @@ Doppelnennungen und ausgewählte Partizipformen wie „Studierende“.
 3. Über das Erweiterungssymbol kannst du Sprachverstand ausschalten, Regelgruppen
    wählen und die Einstellungen öffnen.
 
-Firefox für Android wird ebenfalls unterstützt. Für [Microsoft Edge](#microsoft-edge)
-und [Opera](#opera) gibt es eigene Hinweise weiter unten. Downloads für weitere
-Browser findest du unter [Releases](https://github.com/HyperCriSiS/Sprachverstand/releases).
+Firefox für Android wird ebenfalls unterstützt. Für [Microsoft Edge](#microsoft-edge),
+[Opera](#opera) und [Pale Moon](#pale-moon) gibt es eigene Hinweise weiter unten.
+Alle Pakete der aktuellen Version findest du im
+[aktuellen Release](https://github.com/HyperCriSiS/Sprachverstand/releases/latest).
 Diese README beschreibt den aktuellen Entwicklungsstand. Welche Funktionen die
 veröffentlichte Version enthält, erfährst du in den Versionshinweisen des
 jeweiligen Stores.
@@ -112,23 +115,31 @@ Klappt das nicht, kannst du das Paket von Hand laden:
 So installiert gibt es keine automatischen Updates. Für eine neue Version
 wiederholst du diese Schritte.
 
+### Pale Moon
+
+Für Pale Moon gibt es einen eigenständig gepflegten Port. Er ist nicht in einem
+Add-on-Store veröffentlicht:
+
+1. Lade `sprachverstand-0.9.3-palemoon.1-palemoon.xpi` aus dem
+   [aktuellen Pale-Moon-Release](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/v0.9.3-palemoon.1).
+2. Öffne die Datei in Pale Moon, zum Beispiel per Ziehen auf ein Browserfenster,
+   und bestätige die Installation.
+
+Aus Datei installierte Add-ons aktualisieren sich nicht selbst. Für eine neue
+Version wiederholst du diese Schritte.
+
 ## Thunderbird
 
-Die separate Thunderbird-Ausgabe **0.9.3** gibt es als
-[Download](https://github.com/HyperCriSiS/Sprachverstand/releases/tag/thunderbird-v0.9.3).
-Lade `sprachverstand-thunderbird-0.9.3.xpi` und installiere sie in Thunderbird
-unter **Add-ons und Themes → Zahnrad → Add-on aus Datei installieren**.
-Öffne danach Nachrichten neu. Technische Mindestversion ist Thunderbird 128.
-Aus Datei installierte Add-ons aktualisieren sich nicht selbst: Für eine neue
-Version wiederholst du diese Schritte; die installierte Version steht unter
-**Add-ons und Themes**.
+Die separate Thunderbird-Ausgabe installierst du von
+[addons.thunderbird.net](https://addons.thunderbird.net/thunderbird/addon/sprachverstand/).
+Alternativ suchst du in Thunderbird unter **Add-ons und Themes** nach
+„Sprachverstand“. Öffne danach Nachrichten neu. Vorausgesetzt wird
+Thunderbird ab Version 128. Updates kommen automatisch über addons.thunderbird.net.
 
 Beim Lesen wird nur die Darstellung verändert. Optional lässt sich der
 tatsächliche Text neu geöffneter Antworten und Weiterleitungen einmalig korrigieren;
 die dafür nötige Verfassen-Berechtigung wird erst beim Einschalten angefordert.
 Die Originalmail bleibt erhalten.
-Die Thunderbird-Linie wird im geschützten Branch
-[`thunderbird`](https://github.com/HyperCriSiS/Sprachverstand/tree/thunderbird) gepflegt.
 [Datenschutz und Hinweise](https://github.com/HyperCriSiS/Sprachverstand/blob/thunderbird/docs/THUNDERBIRD-PRIVACY.md).
 
 ## Was wird verändert – und was bleibt stehen?
@@ -229,7 +240,7 @@ Die Browser-Unterstützung ist nach den zugrunde liegenden Engines gegliedert:
 <h3>Goanna</h3>
 
 <p>
-  <a href="https://github.com/HyperCriSiS/Sprachverstand/releases"><img src="https://img.shields.io/badge/Pale%20Moon-8A9BB8" alt="Pale Moon"></a>
+  <a href="#pale-moon"><img src="https://img.shields.io/badge/Pale%20Moon-8A9BB8" alt="Pale Moon"></a>
 </p>
 
 <p>
@@ -245,24 +256,12 @@ und Arc verwenden denselben Chromium-Build und sollten ebenso funktionieren; wir
 testen sie aber nicht selbst. In Zen Browser 1.24b wird Sprachverstand derzeit
 geladen, verändert aber keine Texte; das untersuchen wir noch. Falls etwas nicht
 klappt, freuen wir uns über ein
-[Issue](https://github.com/HyperCriSiS/Sprachverstand/issues). Pale Moon erhält
-einen eigenständig gepflegten Port mit eigener Prüfung.
-Vorausgesetzt werden Firefox ab Version 140 und Chrome beziehungsweise Chromium ab
-Version 148; ältere Chromium-Versionen erhalten vom Hintergrund der Erweiterung
-keine Antworten und werden deshalb nicht unterstützt.
+[Issue](https://github.com/HyperCriSiS/Sprachverstand/issues).
+Vorausgesetzt werden Firefox ab Version 140 (für Android ab 142) und Chrome beziehungsweise Chromium ab
+Version 148.
 
 Google Chrome für Android unterstützt keine regulären Browser-Erweiterungen und
 ist deshalb kein Veröffentlichungsziel.
-
-## Projektstatus
-
-Sprachverstand wird für Gecko, Blink/Chromium und Goanna getrennt geprüft.
-Die README zeigt deshalb für jede regulär gebaute Engine einen eigenen CI-Status.
-Die Regel-Engine ist bewusst konservativ aufgebaut und wird mit automatisierten
-Unit-, DOM-, Performance-, Browserziel- und Regressionstests abgesichert.
-
-Die versionierten deutschen Storetexte stehen in
-[`docs/STORE-LISTING-DE.md`](docs/STORE-LISTING-DE.md).
 
 ## Entwicklung
 
@@ -278,6 +277,9 @@ npm run check
 
 Browser-Builds werden anschließend unter `dist/chromium/` und `dist/firefox/`
 erstellt. Alle Chromium-Browser verwenden dasselbe Chromium-Paket.
+
+Die Regel-Engine ist bewusst konservativ aufgebaut und wird mit automatisierten
+Unit-, DOM-, Performance-, Browserziel- und Regressionstests abgesichert.
 
 Weitere Hinweise stehen in [`docs/BETA-TEST.md`](docs/BETA-TEST.md). Änderungen
 und bekannte Grenzen werden im [`CHANGELOG.md`](CHANGELOG.md) dokumentiert. Das
